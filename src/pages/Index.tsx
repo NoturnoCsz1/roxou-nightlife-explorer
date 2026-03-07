@@ -17,6 +17,7 @@ const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const [events, setEvents] = useState<SupabaseEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   usePageTracking();
 
@@ -44,6 +45,16 @@ const Index = () => {
   const popularEvents = events.filter((e) => e.featured);
   const filtered = category ? events.filter((e) => e.category === category) : null;
 
+  const searchTerm = searchQuery.trim().toLowerCase();
+  const searchResults = searchTerm
+    ? events.filter(
+        (e) =>
+          e.title.toLowerCase().includes(searchTerm) ||
+          (e.venue_name || "").toLowerCase().includes(searchTerm) ||
+          (e.category || "").toLowerCase().includes(searchTerm)
+      )
+    : null;
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-40 glass border-b border-border/30">
@@ -62,7 +73,7 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2.5 rounded-2xl bg-secondary/80 px-4 py-3">
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input type="text" placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
         </div>
       </header>
@@ -77,6 +88,14 @@ const Index = () => {
 
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-12">Carregando eventos...</p>
+        ) : searchResults ? (
+          <section>
+            <SectionHeader title={`Resultados para "${searchQuery}"`} />
+            <div className="grid grid-cols-2 gap-3">
+              {searchResults.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+            </div>
+            {searchResults.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento encontrado.</p>}
+          </section>
         ) : filtered ? (
           <section>
             <SectionHeader title="Resultados" />
