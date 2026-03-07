@@ -41,6 +41,11 @@ const Hoje = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <SEO
+        title="Eventos Hoje em Presidente Prudente | ROXOU"
+        description="Veja todos os eventos, festas e baladas acontecendo hoje em Presidente Prudente."
+        canonical="https://roxou.com.br/hoje"
+      />
       <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
         <div className="mx-auto max-w-lg">
           <h1 className="text-xl font-black font-display text-foreground">🔥 Hoje em Prudente</h1>
