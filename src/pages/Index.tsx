@@ -5,6 +5,8 @@ import FeaturedCarousel from "@/components/FeaturedCarousel";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import CategoryPills from "@/components/CategoryPills";
+import DateFilterPills from "@/components/DateFilterPills";
+import type { DateFilter } from "@/components/DateFilterPills";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import SectionHeader from "@/components/SectionHeader";
@@ -16,6 +18,7 @@ type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "fun
 
 const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("todos");
   const [events, setEvents] = useState<SupabaseEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,6 +40,28 @@ const Index = () => {
   const now = new Date();
   const todayStr = now.toDateString();
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  // Date filter logic
+  const getDateFiltered = () => {
+    if (dateFilter === "hoje") {
+      return events.filter((e) => new Date(e.date_time).toDateString() === todayStr);
+    }
+    if (dateFilter === "amanha") {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return events.filter((e) => new Date(e.date_time).toDateString() === tomorrow.toDateString());
+    }
+    if (dateFilter === "fds") {
+      const dayOfWeek = now.getDay();
+      const daysUntilSat = dayOfWeek <= 5 ? 6 - dayOfWeek : 0;
+      const saturday = new Date(now); saturday.setDate(now.getDate() + daysUntilSat); saturday.setHours(0,0,0,0);
+      const monday = new Date(saturday); monday.setDate(saturday.getDate() + 2); monday.setHours(23,59,59,999);
+      return events.filter((e) => { const d = new Date(e.date_time); return d >= saturday && d <= monday; });
+    }
+    return null; // "todos" — show default sections
+  };
+
+  const dateFiltered = getDateFiltered();
 
   const todayEvents = events.filter((e) => new Date(e.date_time).toDateString() === todayStr);
   const upcomingEvents = events.filter((e) => {
@@ -82,9 +107,14 @@ const Index = () => {
       <main className="mx-auto max-w-lg px-4 mt-5 space-y-8">
         <section><FeaturedCarousel /></section>
 
+        {/* Date filters */}
+        <section>
+          <DateFilterPills selected={dateFilter} onSelect={(f) => { setDateFilter(f); setCategory(null); }} />
+        </section>
+
         <section>
           <SectionHeader title="Categorias" onSeeAll={() => navigate("/categorias")} />
-          <CategoryPills selected={category} onSelect={setCategory} />
+          <CategoryPills selected={category} onSelect={(c) => { setCategory(c); setDateFilter("todos"); }} />
         </section>
 
         {loading ? (
