@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
+import Footer from "@/components/Footer";
 import CategoryPills from "@/components/CategoryPills";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -45,6 +46,7 @@ const Categorias = () => {
           </>
         )}
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );
