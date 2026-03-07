@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { Search, MapPin } from "lucide-react";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import EventCard from "@/components/EventCard";
@@ -16,6 +17,7 @@ const popularEvents = events.filter((e) => e.popular);
 const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const navigate = useNavigate();
+  usePageTracking();
 
   const filtered = category ? events.filter((e) => e.category === category) : null;
 

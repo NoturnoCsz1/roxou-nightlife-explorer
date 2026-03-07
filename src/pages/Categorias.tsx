@@ -3,8 +3,10 @@ import { EventCategory, events } from "@/data/events";
 import EventCard from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
 import CategoryPills from "@/components/CategoryPills";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 const Categorias = () => {
+  usePageTracking();
   const [selected, setSelected] = useState<EventCategory | null>(null);
   const filtered = selected ? events.filter((e) => e.category === selected) : events;
 

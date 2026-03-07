@@ -3,12 +3,14 @@ import { ArrowLeft, Calendar, Clock, MapPin, Bookmark, Share2, ExternalLink } fr
 import { events } from "@/data/events";
 import { useState } from "react";
 import { toast } from "sonner";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const event = events.find((e) => e.id === id);
   const [saved, setSaved] = useState(false);
+  usePageTracking({ event_id: id });
 
   if (!event) {
     return (
