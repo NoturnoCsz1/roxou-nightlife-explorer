@@ -6,44 +6,56 @@
 
 @layer base {
   :root {
-    --background: 260 20% 6%;
-    --foreground: 0 0% 95%;
+    --background: 260 25% 5%;
+    --foreground: 0 0% 96%;
 
-    --card: 260 18% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 260 20% 9%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 260 18% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 260 20% 9%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 270 80% 60%;
+    --primary: 270 85% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 20% 16%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 260 22% 14%;
+    --secondary-foreground: 0 0% 88%;
 
-    --muted: 260 15% 14%;
-    --muted-foreground: 260 10% 55%;
+    --muted: 260 18% 12%;
+    --muted-foreground: 260 8% 50%;
 
-    --accent: 280 90% 65%;
+    --accent: 285 90% 62%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 15% 18%;
-    --input: 260 15% 18%;
-    --ring: 270 80% 60%;
+    --border: 260 18% 14%;
+    --input: 260 18% 14%;
+    --ring: 270 85% 58%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    --neon-glow: 270 100% 70%;
-    --neon-pink: 320 90% 60%;
-    --surface-elevated: 260 18% 12%;
+    /* Badge palette */
+    --badge-hoje: 15 90% 55%;
+    --badge-balada: 270 85% 58%;
+    --badge-show: 200 90% 50%;
+    --badge-festival: 45 95% 55%;
+    --badge-bar: 160 70% 45%;
+    --badge-funk: 320 85% 55%;
+    --badge-sertanejo: 30 85% 55%;
+    --badge-eletronica: 270 85% 58%;
+
+    /* Surfaces */
+    --surface-elevated: 260 20% 11%;
+    --surface-glass: 260 20% 8%;
+    --neon-glow: 270 100% 65%;
+    --neon-pink: 320 90% 58%;
   }
 
   .dark {
-    --background: 260 20% 6%;
-    --foreground: 0 0% 95%;
+    --background: 260 25% 5%;
+    --foreground: 0 0% 96%;
   }
 }
 
@@ -51,7 +63,6 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
@@ -59,23 +70,37 @@
 
 @layer utilities {
   .neon-text {
-    text-shadow: 0 0 10px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.3);
+    text-shadow: 0 0 12px hsl(var(--primary) / 0.5), 0 0 48px hsl(var(--primary) / 0.2);
   }
 
   .neon-border {
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.3), inset 0 0 10px hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25), 0 0 16px hsl(var(--primary) / 0.15);
   }
 
   .neon-glow {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 24px hsl(var(--primary) / 0.35), 0 0 80px hsl(var(--primary) / 0.1);
   }
 
   .gradient-primary {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
   }
 
-  .gradient-card {
-    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(260 18% 8%) 100%);
+  .gradient-card-hover {
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(260 22% 7%) 100%);
+  }
+
+  .card-shadow {
+    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.4), 0 2px 8px hsl(0 0% 0% / 0.3);
+  }
+
+  .card-shadow-lg {
+    box-shadow: 0 16px 48px hsl(0 0% 0% / 0.5), 0 4px 12px hsl(0 0% 0% / 0.4);
+  }
+
+  .glass {
+    background: hsl(var(--surface-glass) / 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .scrollbar-hide {
@@ -84,5 +109,40 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+@layer components {
+  .badge-hoje {
+    background: hsl(var(--badge-hoje));
+    color: white;
+  }
+  .badge-balada {
+    background: linear-gradient(135deg, hsl(var(--badge-balada)), hsl(var(--accent)));
+    color: white;
+  }
+  .badge-show {
+    background: hsl(var(--badge-show));
+    color: white;
+  }
+  .badge-festival {
+    background: hsl(var(--badge-festival));
+    color: hsl(260 25% 10%);
+  }
+  .badge-bar {
+    background: hsl(var(--badge-bar));
+    color: white;
+  }
+  .badge-funk {
+    background: hsl(var(--badge-funk));
+    color: white;
+  }
+  .badge-sertanejo {
+    background: hsl(var(--badge-sertanejo));
+    color: white;
+  }
+  .badge-eletronica {
+    background: linear-gradient(135deg, hsl(var(--badge-eletronica)), hsl(var(--accent)));
+    color: white;
   }
 }
