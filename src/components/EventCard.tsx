@@ -1,5 +1,6 @@
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatTime, formatDateShort, isToday } from "@/lib/dateUtils";
 
 // Category config for mapping DB category to badge classes
 const categoryConfig: Record<string, { label: string; badge: string }> = {
@@ -39,14 +40,14 @@ interface EventCardProps {
 const EventCard = ({ event, variant = "default", index = 0 }: EventCardProps) => {
   const navigate = useNavigate();
   const dt = new Date(event.date_time);
-  const isToday = dt.toDateString() === new Date().toDateString();
+  const todayEvent = isToday(dt);
   const cat = categoryConfig[event.category] || { label: event.category, badge: "bg-secondary" };
   const image = event.image_url || "/placeholder.svg";
   const venue = event.venue_name || "";
   const venueLink = event.partner_slug ? `/local/${event.partner_slug}` : null;
-  const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const time = formatTime(dt);
 
-  const formatDate = () => dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  const formatDate = () => formatDateShort(dt);
 
   if (variant === "compact") {
     return (
