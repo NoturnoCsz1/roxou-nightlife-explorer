@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import EventDetail from "./pages/EventDetail";
+import Hoje from "./pages/Hoje";
 import Semana from "./pages/Semana";
 import Categorias from "./pages/Categorias";
 import Salvos from "./pages/Salvos";
+import LocalDetail from "./pages/LocalDetail";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -29,9 +31,11 @@ const App = () => (
           {/* Public */}
           <Route path="/" element={<Index />} />
           <Route path="/evento/:slug" element={<EventDetail />} />
+          <Route path="/hoje" element={<Hoje />} />
           <Route path="/semana" element={<Semana />} />
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/salvos" element={<Salvos />} />
+          <Route path="/local/:slug" element={<LocalDetail />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<AdminLogin />} />
