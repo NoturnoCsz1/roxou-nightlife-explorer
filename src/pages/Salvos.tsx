@@ -1,7 +1,9 @@
 import BottomNav from "@/components/BottomNav";
 import { Bookmark } from "lucide-react";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 const Salvos = () => {
+  usePageTracking();
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { Search, MapPin } from "lucide-react";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import EventCard from "@/components/EventCard";
