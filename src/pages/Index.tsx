@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Search, MapPin } from "lucide-react";
+import SEO from "@/components/SEO";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
