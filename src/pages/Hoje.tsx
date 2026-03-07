@@ -12,21 +12,30 @@ const Hoje = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+    async function load() {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
 
-    supabase
-      .from("events")
-      .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-      .eq("status", "published")
-      .gte("date_time", startOfDay)
-      .lt("date_time", endOfDay)
-      .order("date_time", { ascending: true })
-      .then(({ data }) => {
-        setEvents(data || []);
-        setLoading(false);
-      });
+      const { data: eventsData } = await supabase
+        .from("events")
+        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .eq("status", "published")
+        .gte("date_time", startOfDay)
+        .lt("date_time", endOfDay)
+        .order("date_time", { ascending: true });
+
+      const evts = eventsData || [];
+      const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
+      let slugMap: Record<string, string> = {};
+      if (partnerIds.length > 0) {
+        const { data: partners } = await supabase.from("partners").select("id, slug").in("id", partnerIds);
+        (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
+      }
+      setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
+      setLoading(false);
+    }
+    load();
   }, []);
 
   return (

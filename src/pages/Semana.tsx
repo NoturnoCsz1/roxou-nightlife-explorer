@@ -12,16 +12,28 @@ const Semana = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const now = new Date().toISOString();
-    const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    supabase
-      .from("events")
-      .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-      .eq("status", "published")
-      .gte("date_time", now)
-      .lte("date_time", weekLater)
-      .order("date_time", { ascending: true })
-      .then(({ data }) => { setEvents(data || []); setLoading(false); });
+    async function load() {
+      const now = new Date().toISOString();
+      const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: eventsData } = await supabase
+        .from("events")
+        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .eq("status", "published")
+        .gte("date_time", now)
+        .lte("date_time", weekLater)
+        .order("date_time", { ascending: true });
+
+      const evts = eventsData || [];
+      const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
+      let slugMap: Record<string, string> = {};
+      if (partnerIds.length > 0) {
+        const { data: partners } = await supabase.from("partners").select("id, slug").in("id", partnerIds);
+        (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
+      }
+      setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
+      setLoading(false);
+    }
+    load();
   }, []);
 
   return (
