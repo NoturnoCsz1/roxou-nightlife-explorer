@@ -17,6 +17,7 @@ const popularEvents = events.filter((e) => e.popular);
 const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const navigate = useNavigate();
+  usePageTracking();
 
   const filtered = category ? events.filter((e) => e.category === category) : null;
 
