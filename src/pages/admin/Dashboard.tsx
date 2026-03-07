@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, Users, Star, Eye, Monitor, Smartphone, Tablet, TrendingUp, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/admin/MetricCard";
+import TopPartners from "@/components/admin/TopPartners";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"];
@@ -168,6 +169,9 @@ const Dashboard = () => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Top partners */}
+      <TopPartners />
 
       {/* Recent activity */}
       <div className="grid md:grid-cols-2 gap-3">
