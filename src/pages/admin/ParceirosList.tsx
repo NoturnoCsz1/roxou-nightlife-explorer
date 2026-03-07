@@ -28,7 +28,7 @@ const ParceirosList = () => {
   const filtered = partners.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.neighborhood || "").toLowerCase().includes(search.toLowerCase())
+      (p.type || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -70,10 +70,7 @@ const ParceirosList = () => {
                   <span className="text-sm font-semibold text-foreground truncate">{p.name}</span>
                   {p.verified_partner && <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-muted-foreground">{p.type}</span>
-                  {p.neighborhood && <span className="text-[10px] text-muted-foreground">• {p.neighborhood}</span>}
-                </div>
+                <span className="text-[10px] text-muted-foreground mt-0.5">{p.type}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0 ml-2">
                 {p.active ? (

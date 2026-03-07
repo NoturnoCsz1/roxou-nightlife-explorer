@@ -17,7 +17,7 @@ const ParceiroForm = () => {
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "", slug: "", type: "bar", address: "", neighborhood: "",
+    name: "", slug: "", type: "bar", address: "",
     city: "Presidente Prudente", instagram: "", whatsapp: "",
     short_description: "", full_description: "", logo_url: "",
     verified_partner: false, active: true,
@@ -29,7 +29,7 @@ const ParceiroForm = () => {
     const { data } = await supabase.from("partners").select("*").eq("id", id!).single();
     if (data) setForm({
       name: data.name, slug: data.slug, type: data.type,
-      address: data.address || "", neighborhood: data.neighborhood || "",
+      address: data.address || "",
       city: data.city, instagram: data.instagram || "", whatsapp: data.whatsapp || "",
       short_description: data.short_description || "", full_description: data.full_description || "",
       logo_url: data.logo_url || "", verified_partner: data.verified_partner, active: data.active,
@@ -88,10 +88,6 @@ const ParceiroForm = () => {
             <select className={inputClass} value={form.type} onChange={(e) => handleChange("type", e.target.value)}>
               {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
-          </div>
-          <div>
-            <label className="text-[11px] font-medium text-muted-foreground">Bairro</label>
-            <input className={inputClass} value={form.neighborhood} onChange={(e) => handleChange("neighborhood", e.target.value)} />
           </div>
           <div className="col-span-2">
             <label className="text-[11px] font-medium text-muted-foreground">Endereço</label>
