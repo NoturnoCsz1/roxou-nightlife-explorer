@@ -384,13 +384,40 @@ const EventDetail = () => {
           )}
         </div>
 
+        {/* Event info summary card */}
+        <div className="mb-6 rounded-xl bg-secondary/30 p-4 space-y-2.5">
+          <div className="flex items-center gap-2 text-sm text-foreground">
+            <Calendar className="h-4 w-4 text-primary shrink-0" />
+            <span className="font-semibold capitalize">{dateFormatted}</span>
+            <span className="text-foreground/60">·</span>
+            <span>{time}</span>
+          </div>
+          {event.venue_name && (
+            <div className="flex items-center gap-2 text-sm text-foreground">
+              <MapPin className="h-4 w-4 text-primary shrink-0" />
+              <span>{event.venue_name}</span>
+            </div>
+          )}
+          {event.address && (
+            <div className="flex items-center gap-2 text-sm text-foreground/80">
+              <Navigation className="h-4 w-4 text-primary shrink-0" />
+              <span>{event.address}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-sm text-foreground/80">
+            <span className={`${cat.badge} rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider`}>
+              {cat.label}
+            </span>
+          </div>
+        </div>
+
         {/* About event */}
         {event.description && (
           <div className="mb-8">
             <h2 className="mb-3 text-base font-black font-display text-foreground">
               Sobre o evento
             </h2>
-            <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+            <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line space-y-2">
               {event.description}
             </p>
           </div>
