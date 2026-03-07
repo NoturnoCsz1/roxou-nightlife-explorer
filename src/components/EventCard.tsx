@@ -27,6 +27,7 @@ export interface SupabaseEvent {
   featured: boolean;
   status: string;
   partner_id: string | null;
+  partner_slug?: string | null;
 }
 
 interface EventCardProps {
@@ -42,6 +43,7 @@ const EventCard = ({ event, variant = "default", index = 0 }: EventCardProps) =>
   const cat = categoryConfig[event.category] || { label: event.category, badge: "bg-secondary" };
   const image = event.image_url || "/placeholder.svg";
   const venue = event.venue_name || "";
+  const venueLink = event.partner_slug ? `/local/${event.partner_slug}` : null;
   const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
   const formatDate = () => dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -61,7 +63,11 @@ const EventCard = ({ event, variant = "default", index = 0 }: EventCardProps) =>
           <div>
             <span className={`${cat.badge} mb-1.5 inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide`}>{cat.label}</span>
             <h3 className="truncate text-[15px] font-bold text-foreground font-display leading-tight">{event.title}</h3>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">{venue}</p>
+            {venueLink ? (
+              <p className="mt-0.5 truncate text-xs text-primary hover:underline" onClick={(e) => { e.stopPropagation(); navigate(venueLink); }}>{venue}</p>
+            ) : (
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{venue}</p>
+            )}
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1"><Calendar className="h-3 w-3 text-primary" />{formatDate()}</span>
@@ -89,7 +95,7 @@ const EventCard = ({ event, variant = "default", index = 0 }: EventCardProps) =>
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <h3 className="text-lg font-bold text-foreground font-display leading-tight mb-1">{event.title}</h3>
             <div className="flex items-center gap-3 text-xs text-foreground/70">
-              <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{venue}</span>
+              <span className={`flex items-center gap-1 ${venueLink ? "text-primary hover:underline" : ""}`} onClick={venueLink ? (e) => { e.stopPropagation(); navigate(venueLink); } : undefined}><MapPin className="h-3 w-3" />{venue}</span>
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{time}</span>
             </div>
           </div>
@@ -114,7 +120,11 @@ const EventCard = ({ event, variant = "default", index = 0 }: EventCardProps) =>
       </div>
       <div className="p-3.5">
         <h3 className="mb-1 text-sm font-bold text-foreground font-display leading-tight line-clamp-2">{event.title}</h3>
-        <p className="mb-2.5 text-xs text-muted-foreground">{venue}</p>
+        {venueLink ? (
+          <p className="mb-2.5 text-xs text-primary hover:underline" onClick={(e) => { e.stopPropagation(); navigate(venueLink); }}>{venue}</p>
+        ) : (
+          <p className="mb-2.5 text-xs text-muted-foreground">{venue}</p>
+        )}
         <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
           <span className="flex items-center gap-1"><Calendar className="h-3 w-3 text-primary" />{formatDate()}</span>
           <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-primary" />{time}</span>

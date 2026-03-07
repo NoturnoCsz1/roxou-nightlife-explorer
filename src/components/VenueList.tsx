@@ -1,16 +1,21 @@
 import { useEffect, useState } from "react";
 import { MapPin, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface VenueData {
   name: string;
+  slug: string;
   type: string;
   address: string;
   eventsCount: number;
 }
 
-const VenueCard = ({ venue }: { venue: VenueData }) => (
-  <div className="group flex items-center gap-3 rounded-2xl bg-card p-4 transition-all hover:neon-border card-shadow cursor-pointer">
+const VenueCard = ({ venue, onClick }: { venue: VenueData; onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    className="group flex w-full items-center gap-3 rounded-2xl bg-card p-4 text-left transition-all hover:neon-border card-shadow cursor-pointer"
+  >
     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl gradient-primary">
       <MapPin className="h-5 w-5 text-primary-foreground" />
     </div>
@@ -22,24 +27,24 @@ const VenueCard = ({ venue }: { venue: VenueData }) => (
       <span className="text-[11px] font-bold text-primary">{venue.eventsCount}</span>
       <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
     </div>
-  </div>
+  </button>
 );
 
 const VenueList = () => {
   const [venues, setVenues] = useState<VenueData[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
       const { data: partners } = await supabase
         .from("partners")
-        .select("id, name, type, neighborhood")
+        .select("id, name, slug, type, neighborhood")
         .eq("active", true)
         .order("name")
         .limit(5);
 
       if (!partners || partners.length === 0) return;
 
-      // Count events per partner
       const { data: events } = await supabase
         .from("events")
         .select("partner_id")
@@ -54,6 +59,7 @@ const VenueList = () => {
       setVenues(
         partners.map((p) => ({
           name: p.name,
+          slug: p.slug,
           type: p.type,
           address: p.neighborhood || "",
           eventsCount: countMap[p.id] || 0,
@@ -68,7 +74,7 @@ const VenueList = () => {
   return (
     <div className="space-y-2.5">
       {venues.map((v) => (
-        <VenueCard key={v.name} venue={v} />
+        <VenueCard key={v.slug} venue={v} onClick={() => navigate(`/local/${v.slug}`)} />
       ))}
     </div>
   );

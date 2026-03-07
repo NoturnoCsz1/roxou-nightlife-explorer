@@ -26,15 +26,30 @@ const Index = () => {
   usePageTracking();
 
   useEffect(() => {
-    supabase
-      .from("events")
-      .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-      .eq("status", "published")
-      .order("date_time", { ascending: true })
-      .then(({ data }) => {
-        setEvents(data || []);
-        setLoading(false);
-      });
+    async function load() {
+      const { data: eventsData } = await supabase
+        .from("events")
+        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .eq("status", "published")
+        .order("date_time", { ascending: true });
+
+      const evts = eventsData || [];
+
+      // Fetch partner slugs for linked events
+      const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
+      let slugMap: Record<string, string> = {};
+      if (partnerIds.length > 0) {
+        const { data: partners } = await supabase
+          .from("partners")
+          .select("id, slug")
+          .in("id", partnerIds);
+        (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
+      }
+
+      setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
+      setLoading(false);
+    }
+    load();
   }, []);
 
   const now = new Date();
