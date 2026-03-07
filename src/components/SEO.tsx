@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface SEOProps {
   title: string;
@@ -44,29 +45,17 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
       }
       link.setAttribute("href", canonical);
     }
+  }, [title, description, canonical, ogImage, ogType]);
 
-    // JSON-LD structured data
-    const jsonLdId = "seo-jsonld";
-    let script = document.getElementById(jsonLdId) as HTMLScriptElement | null;
-    if (jsonLd) {
-      if (!script) {
-        script = document.createElement("script");
-        script.id = jsonLdId;
-        script.type = "application/ld+json";
-        document.head.appendChild(script);
-      }
-      script.textContent = JSON.stringify(jsonLd);
-    } else if (script) {
-      script.remove();
-    }
+  if (!jsonLd) return null;
 
-    return () => {
-      const el = document.getElementById(jsonLdId);
-      if (el) el.remove();
-    };
-  }, [title, description, canonical, ogImage, ogType, jsonLd]);
-
-  return null;
+  return createPortal(
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />,
+    document.head
+  );
 };
 
 export default SEO;
