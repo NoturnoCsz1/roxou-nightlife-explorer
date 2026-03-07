@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, MapPin, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { SupabaseEvent } from "./EventCard";
+import { formatTime, isToday } from "@/lib/dateUtils";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
   balada: { label: "Balada", badge: "badge-balada" },
@@ -46,8 +47,8 @@ const FeaturedCarousel = () => {
   const cat = categoryConfig[event.category] || { label: event.category, badge: "bg-secondary" };
   const image = event.image_url || "/placeholder.svg";
   const dt = new Date(event.date_time);
-  const isToday = dt.toDateString() === new Date().toDateString();
-  const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const todayEvent = isToday(dt);
+  const time = formatTime(dt);
 
   return (
     <div className="relative overflow-hidden rounded-3xl card-shadow-lg">
@@ -60,7 +61,7 @@ const FeaturedCarousel = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-background/40 to-transparent" />
         <div className="absolute left-4 top-4 flex gap-2">
           <span className="gradient-primary rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-primary-foreground">✦ Destaque</span>
-          {isToday && <span className="badge-hoje rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-widest">Hoje</span>}
+          {todayEvent && <span className="badge-hoje rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-widest">Hoje</span>}
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
           <span className={`${cat.badge} mb-3 inline-block rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{cat.label}</span>

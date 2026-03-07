@@ -19,6 +19,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EventCard from "@/components/EventCard";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
   balada: { label: "Balada", badge: "badge-balada" },
@@ -105,27 +106,16 @@ const EventDetail = () => {
   }
 
   const dt = new Date(event.date_time);
-  const isToday = dt.toDateString() === new Date().toDateString();
+  const todayEvent = isToday(dt);
   const cat = categoryConfig[event.category] || {
     label: event.category,
     badge: "bg-secondary",
   };
   const image = event.image_url || "/placeholder.svg";
-  const time = dt.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const dateFormatted = dt.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const dayNumber = dt.toLocaleDateString("pt-BR", { day: "2-digit" });
-  const monthShort = dt
-    .toLocaleDateString("pt-BR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase();
+  const time = formatTime(dt);
+  const dateFormatted = formatDateFull(dt);
+  const dayNumber = formatDay(dt);
+  const monthShort = formatMonthShort(dt);
 
   const handleSave = () => {
     setSaved(!saved);
@@ -203,7 +193,7 @@ const EventDetail = () => {
 
         {/* Badges */}
         <div className="absolute left-4 bottom-20 flex gap-2">
-          {isToday && (
+          {todayEvent && (
             <span className="badge-hoje rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">
               Hoje
             </span>
