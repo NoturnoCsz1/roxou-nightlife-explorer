@@ -193,7 +193,7 @@ const EventDetail = () => {
 
         {/* Badges */}
         <div className="absolute left-4 bottom-20 flex gap-2">
-          {isToday && (
+          {todayEvent && (
             <span className="badge-hoje rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">
               Hoje
             </span>
