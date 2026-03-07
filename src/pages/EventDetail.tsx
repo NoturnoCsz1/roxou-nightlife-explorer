@@ -218,12 +218,13 @@ const EventDetail = () => {
           {event.venue_name && (
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5 text-primary" />
-              {event.venue_name}
+              {partner ? (
+                <button onClick={() => navigate(`/local/${partner.slug}`)} className="text-primary hover:underline">{event.venue_name}</button>
+              ) : (
+                event.venue_name
+              )}
               {event.address && (
-                <span className="text-muted-foreground/60">
-                  {" "}
-                  · Presidente Prudente
-                </span>
+                <span className="text-muted-foreground/60"> · Presidente Prudente</span>
               )}
             </p>
           )}
@@ -373,7 +374,7 @@ const EventDetail = () => {
             <h2 className="mb-3 text-base font-black font-display text-foreground">
               Sobre o local
             </h2>
-            <div className="rounded-2xl bg-card p-4 card-shadow">
+            <button onClick={() => navigate(`/local/${partner.slug}`)} className="rounded-2xl bg-card p-4 card-shadow w-full text-left transition hover:neon-border">
               <div className="flex items-center gap-3 mb-3">
                 {partner.logo_url ? (
                   <img
@@ -413,7 +414,7 @@ const EventDetail = () => {
                   {partner.address}
                 </p>
               )}
-            </div>
+            </button>
           </div>
         )}
 
