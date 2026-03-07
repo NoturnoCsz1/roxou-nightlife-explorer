@@ -12,6 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import SectionHeader from "@/components/SectionHeader";
 import VenueList from "@/components/VenueList";
+import PopularVenues from "@/components/PopularVenues";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { isToday, isTomorrow } from "@/lib/dateUtils";
@@ -204,6 +205,11 @@ const Index = () => {
                 </div>
               </section>
             )}
+
+            <section>
+              <SectionHeader emoji="🔥" title="Lugares mais populares" subtitle="Onde o público mais vai" />
+              <PopularVenues />
+            </section>
 
             <section>
               <SectionHeader emoji="📍" title="Lugares em Destaque" subtitle="Os melhores da cidade" />
