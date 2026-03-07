@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
+import { formatDateHeader } from "@/lib/dateUtils";
 
 const Hoje = () => {
   usePageTracking();
@@ -50,7 +51,7 @@ const Hoje = () => {
         <div className="mx-auto max-w-lg">
           <h1 className="text-xl font-black font-display text-foreground">🔥 Hoje em Prudente</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+            {formatDateHeader(new Date())}
           </p>
         </div>
       </header>

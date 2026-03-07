@@ -105,27 +105,16 @@ const EventDetail = () => {
   }
 
   const dt = new Date(event.date_time);
-  const isToday = dt.toDateString() === new Date().toDateString();
+  const todayEvent = isToday(dt);
   const cat = categoryConfig[event.category] || {
     label: event.category,
     badge: "bg-secondary",
   };
   const image = event.image_url || "/placeholder.svg";
-  const time = dt.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const dateFormatted = dt.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const dayNumber = dt.toLocaleDateString("pt-BR", { day: "2-digit" });
-  const monthShort = dt
-    .toLocaleDateString("pt-BR", { month: "short" })
-    .replace(".", "")
-    .toUpperCase();
+  const time = formatTime(dt);
+  const dateFormatted = formatDateFull(dt);
+  const dayNumber = formatDay(dt);
+  const monthShort = formatMonthShort(dt);
 
   const handleSave = () => {
     setSaved(!saved);

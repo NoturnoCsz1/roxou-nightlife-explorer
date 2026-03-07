@@ -54,18 +54,15 @@ const Index = () => {
   }, []);
 
   const now = new Date();
-  const todayStr = now.toDateString();
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   // Date filter logic
   const getDateFiltered = () => {
     if (dateFilter === "hoje") {
-      return events.filter((e) => new Date(e.date_time).toDateString() === todayStr);
+      return events.filter((e) => isToday(new Date(e.date_time)));
     }
     if (dateFilter === "amanha") {
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return events.filter((e) => new Date(e.date_time).toDateString() === tomorrow.toDateString());
+      return events.filter((e) => isTomorrow(new Date(e.date_time)));
     }
     if (dateFilter === "fds") {
       const dayOfWeek = now.getDay();
@@ -79,7 +76,7 @@ const Index = () => {
 
   const dateFiltered = getDateFiltered();
 
-  const todayEvents = events.filter((e) => new Date(e.date_time).toDateString() === todayStr);
+  const todayEvents = events.filter((e) => isToday(new Date(e.date_time)));
   const upcomingEvents = events.filter((e) => {
     const d = new Date(e.date_time);
     return d > now && d <= weekFromNow;
