@@ -1,4 +1,5 @@
 import BottomNav from "@/components/BottomNav";
+import Footer from "@/components/Footer";
 import { Bookmark } from "lucide-react";
 import { usePageTracking } from "@/hooks/usePageTracking";
 
@@ -20,6 +21,7 @@ const Salvos = () => {
           Salve seus eventos favoritos para acessá-los rapidamente aqui.
         </p>
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
+import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
 
@@ -40,6 +41,7 @@ const Semana = () => {
           events.map((e, i) => <EventCard key={e.id} event={e} variant="compact" index={i} />)
         )}
       </main>
+      <Footer />
       <BottomNav />
     </div>
   );

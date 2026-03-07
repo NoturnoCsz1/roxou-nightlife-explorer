@@ -6,6 +6,7 @@ import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import CategoryPills from "@/components/CategoryPills";
 import BottomNav from "@/components/BottomNav";
+import Footer from "@/components/Footer";
 import SectionHeader from "@/components/SectionHeader";
 import VenueList from "@/components/VenueList";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +144,7 @@ const Index = () => {
         )}
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );
