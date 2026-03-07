@@ -14,6 +14,7 @@ import SectionHeader from "@/components/SectionHeader";
 import VenueList from "@/components/VenueList";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { isToday, isTomorrow } from "@/lib/dateUtils";
 
 type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica";
 

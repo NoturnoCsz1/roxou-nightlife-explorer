@@ -19,6 +19,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EventCard from "@/components/EventCard";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
   balada: { label: "Balada", badge: "badge-balada" },
