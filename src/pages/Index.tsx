@@ -135,6 +135,14 @@ const Index = () => {
             </div>
             {filtered.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento nessa categoria.</p>}
           </section>
+        ) : dateFiltered ? (
+          <section>
+            <SectionHeader title={dateFilter === "hoje" ? "Hoje" : dateFilter === "amanha" ? "Amanhã" : "Fim de Semana"} />
+            <div className="grid grid-cols-2 gap-3">
+              {dateFiltered.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+            </div>
+            {dateFiltered.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento nesse período.</p>}
+          </section>
         ) : (
           <>
             {todayEvents.length > 0 && (
