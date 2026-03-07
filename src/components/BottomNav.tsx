@@ -2,7 +2,7 @@ import { CalendarDays, CalendarRange, Grid3X3, Bookmark, Home } from "lucide-rea
 import { useLocation, useNavigate } from "react-router-dom";
 
 const tabs = [
-  { label: "Início", icon: CalendarDays, path: "/" },
+  { label: "Início", icon: Home, path: "/" },
   { label: "Hoje", icon: CalendarDays, path: "/hoje" },
   { label: "Semana", icon: CalendarRange, path: "/semana" },
   { label: "Categorias", icon: Grid3X3, path: "/categorias" },
