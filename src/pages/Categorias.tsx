@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import CategoryPills from "@/components/CategoryPills";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import SEO from "@/components/SEO";
 
 type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica";
 
@@ -28,6 +29,11 @@ const Categorias = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <SEO
+        title="Categorias de Eventos em Presidente Prudente | ROXOU"
+        description="Explore eventos por categoria: baladas, shows, bares, festivais e mais em Presidente Prudente."
+        canonical="https://roxou.com.br/categorias"
+      />
       <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
         <div className="mx-auto max-w-lg">
           <h1 className="text-xl font-black font-display text-foreground mb-3">🎭 Categorias</h1>

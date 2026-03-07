@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { Search, MapPin } from "lucide-react";
+import SEO from "@/components/SEO";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
@@ -98,6 +99,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      <SEO
+        title="ROXOU — Eventos e bares em Presidente Prudente"
+        description="Descubra festas, bares, baladas e shows acontecendo hoje em Presidente Prudente. Guia de eventos Roxou."
+        canonical="https://roxou.com.br"
+      />
       <header className="sticky top-0 z-40 glass border-b border-border/30">
         <div className="mx-auto max-w-lg px-4 pt-4 pb-3">
           <div className="flex items-center justify-between mb-3">
