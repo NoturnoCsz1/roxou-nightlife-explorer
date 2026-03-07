@@ -14,7 +14,209 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          address: string | null
+          category: string
+          created_at: string
+          date_time: string
+          description: string | null
+          featured: boolean
+          id: string
+          image_url: string | null
+          instagram: string | null
+          partner_id: string | null
+          slug: string
+          status: string
+          title: string
+          venue_name: string | null
+          verification_source: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          date_time: string
+          description?: string | null
+          featured?: boolean
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          partner_id?: string | null
+          slug: string
+          status?: string
+          title: string
+          venue_name?: string | null
+          verification_source?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          date_time?: string
+          description?: string | null
+          featured?: boolean
+          id?: string
+          image_url?: string | null
+          instagram?: string | null
+          partner_id?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          venue_name?: string | null
+          verification_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_views: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          event_id: string | null
+          id: string
+          page_path: string
+          partner_id: string | null
+          region: string | null
+          session_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_id?: string | null
+          id?: string
+          page_path: string
+          partner_id?: string | null
+          region?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_id?: string | null
+          id?: string
+          page_path?: string
+          partner_id?: string | null
+          region?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_views_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          active: boolean
+          address: string | null
+          city: string
+          created_at: string
+          full_description: string | null
+          id: string
+          instagram: string | null
+          logo_url: string | null
+          name: string
+          neighborhood: string | null
+          short_description: string | null
+          slug: string
+          type: string
+          verified_partner: boolean
+          whatsapp: string | null
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          city?: string
+          created_at?: string
+          full_description?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          name: string
+          neighborhood?: string | null
+          short_description?: string | null
+          slug: string
+          type?: string
+          verified_partner?: boolean
+          whatsapp?: string | null
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          city?: string
+          created_at?: string
+          full_description?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string
+          neighborhood?: string | null
+          short_description?: string | null
+          slug?: string
+          type?: string
+          verified_partner?: boolean
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      visitor_sessions: {
+        Row: {
+          city: string | null
+          country: string | null
+          device_type: string | null
+          id: string
+          last_seen_at: string
+          region: string | null
+          session_id: string
+          started_at: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          last_seen_at?: string
+          region?: string | null
+          session_id: string
+          started_at?: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          last_seen_at?: string
+          region?: string | null
+          session_id?: string
+          started_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
