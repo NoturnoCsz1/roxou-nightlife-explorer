@@ -157,6 +157,36 @@ const EventDetail = () => {
         canonical={`https://roxou.com.br/evento/${event.slug}`}
         ogImage={event.image_url || "https://roxou.com.br/og-image.png"}
         ogType="article"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: event.title,
+          description: event.description || `${event.title} em Presidente Prudente.`,
+          startDate: event.date_time,
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          image: event.image_url || "https://roxou.com.br/og-image.png",
+          location: {
+            "@type": "Place",
+            name: event.venue_name || "Presidente Prudente",
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: event.address || "",
+              addressLocality: "Presidente Prudente",
+              addressRegion: "SP",
+              addressCountry: "BR",
+            },
+          },
+          ...(partner
+            ? {
+                organizer: {
+                  "@type": "Organization",
+                  name: partner.name,
+                  url: `https://roxou.com.br/local/${partner.slug}`,
+                },
+              }
+            : {}),
+        }}
       />
       {/* Hero image */}
       <div className="relative">

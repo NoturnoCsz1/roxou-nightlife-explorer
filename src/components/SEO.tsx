@@ -6,9 +6,10 @@ interface SEOProps {
   canonical?: string;
   ogImage?: string;
   ogType?: string;
+  jsonLd?: Record<string, unknown>;
 }
 
-const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogType = "website" }: SEOProps) => {
+const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogType = "website", jsonLd }: SEOProps) => {
   useEffect(() => {
     document.title = title;
 
@@ -43,7 +44,27 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
       }
       link.setAttribute("href", canonical);
     }
-  }, [title, description, canonical, ogImage, ogType]);
+
+    // JSON-LD structured data
+    const jsonLdId = "seo-jsonld";
+    let script = document.getElementById(jsonLdId) as HTMLScriptElement | null;
+    if (jsonLd) {
+      if (!script) {
+        script = document.createElement("script");
+        script.id = jsonLdId;
+        script.type = "application/ld+json";
+        document.head.appendChild(script);
+      }
+      script.textContent = JSON.stringify(jsonLd);
+    } else if (script) {
+      script.remove();
+    }
+
+    return () => {
+      const el = document.getElementById(jsonLdId);
+      if (el) el.remove();
+    };
+  }, [title, description, canonical, ogImage, ogType, jsonLd]);
 
   return null;
 };

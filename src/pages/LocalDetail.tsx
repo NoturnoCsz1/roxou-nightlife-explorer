@@ -90,6 +90,24 @@ const LocalDetail = () => {
         description={`Veja eventos e festas que acontecem no ${partner.name} em Presidente Prudente.`}
         canonical={`https://roxou.com.br/local/${partner.slug}`}
         ogImage={partner.logo_url || "https://roxou.com.br/og-image.png"}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          name: partner.name,
+          description: partner.full_description || partner.short_description || `${partner.name} em Presidente Prudente.`,
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: partner.address || "",
+            addressLocality: "Presidente Prudente",
+            addressRegion: "SP",
+            addressCountry: "BR",
+          },
+          ...(partner.whatsapp ? { telephone: partner.whatsapp } : {}),
+          ...(partner.instagram
+            ? { sameAs: [`https://instagram.com/${partner.instagram.replace("@", "")}`] }
+            : {}),
+          ...(partner.logo_url ? { image: partner.logo_url } : {}),
+        }}
       />
       <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
         <div className="mx-auto max-w-lg flex items-center gap-3">
