@@ -101,6 +101,18 @@ const Index = () => {
         title="ROXOU — Eventos e bares em Presidente Prudente"
         description="Descubra festas, bares, baladas e shows acontecendo hoje em Presidente Prudente. Guia de eventos Roxou."
         canonical="https://roxou.com.br"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "ROXOU",
+          url: "https://roxou.com.br",
+          description: "Descubra festas, bares, baladas e shows acontecendo hoje em Presidente Prudente.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://roxou.com.br/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
       />
       <header className="sticky top-0 z-40 glass border-b border-border/30">
         <div className="mx-auto max-w-lg px-4 pt-4 pb-3">
