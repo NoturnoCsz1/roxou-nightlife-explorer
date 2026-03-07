@@ -3,14 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 function slugify(str: string) {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
 const TYPES = ["bar", "balada", "restaurante", "casa de shows", "pub", "lounge", "outro"];
@@ -21,41 +17,22 @@ const ParceiroForm = () => {
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    slug: "",
-    type: "bar",
-    address: "",
-    neighborhood: "",
-    city: "Presidente Prudente",
-    instagram: "",
-    whatsapp: "",
-    short_description: "",
-    full_description: "",
-    logo_url: "",
-    verified_partner: false,
-    active: true,
+    name: "", slug: "", type: "bar", address: "", neighborhood: "",
+    city: "Presidente Prudente", instagram: "", whatsapp: "",
+    short_description: "", full_description: "", logo_url: "",
+    verified_partner: false, active: true,
   });
 
-  useEffect(() => {
-    if (isEdit) loadPartner();
-  }, [id]);
+  useEffect(() => { if (isEdit) loadPartner(); }, [id]);
 
   async function loadPartner() {
     const { data } = await supabase.from("partners").select("*").eq("id", id!).single();
     if (data) setForm({
-      name: data.name,
-      slug: data.slug,
-      type: data.type,
-      address: data.address || "",
-      neighborhood: data.neighborhood || "",
-      city: data.city,
-      instagram: data.instagram || "",
-      whatsapp: data.whatsapp || "",
-      short_description: data.short_description || "",
-      full_description: data.full_description || "",
-      logo_url: data.logo_url || "",
-      verified_partner: data.verified_partner,
-      active: data.active,
+      name: data.name, slug: data.slug, type: data.type,
+      address: data.address || "", neighborhood: data.neighborhood || "",
+      city: data.city, instagram: data.instagram || "", whatsapp: data.whatsapp || "",
+      short_description: data.short_description || "", full_description: data.full_description || "",
+      logo_url: data.logo_url || "", verified_partner: data.verified_partner, active: data.active,
     });
   }
 
@@ -69,10 +46,7 @@ const ParceiroForm = () => {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.slug) {
-      toast.error("Nome e slug são obrigatórios");
-      return;
-    }
+    if (!form.name || !form.slug) { toast.error("Nome e slug são obrigatórios"); return; }
     setSaving(true);
     try {
       if (isEdit) {
@@ -87,9 +61,7 @@ const ParceiroForm = () => {
       navigate("/admin/parceiros");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
   const inputClass = "w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm outline-none focus:border-primary/50 transition";
@@ -137,9 +109,13 @@ const ParceiroForm = () => {
             <label className="text-[11px] font-medium text-muted-foreground">WhatsApp</label>
             <input className={inputClass} value={form.whatsapp} onChange={(e) => handleChange("whatsapp", e.target.value)} />
           </div>
-          <div>
-            <label className="text-[11px] font-medium text-muted-foreground">Logo URL</label>
-            <input className={inputClass} value={form.logo_url} onChange={(e) => handleChange("logo_url", e.target.value)} />
+          <div className="col-span-2">
+            <ImageUpload
+              folder="partners"
+              currentUrl={form.logo_url}
+              onUploaded={(url) => handleChange("logo_url", url)}
+              label="Logo do Parceiro"
+            />
           </div>
           <div className="col-span-2">
             <label className="text-[11px] font-medium text-muted-foreground">Descrição curta</label>
@@ -162,11 +138,7 @@ const ParceiroForm = () => {
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50"
-        >
+        <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50">
           <Save className="h-4 w-4" />
           {saving ? "Salvando..." : "Salvar"}
         </button>

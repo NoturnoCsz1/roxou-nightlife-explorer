@@ -1,6 +1,7 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft } from "lucide-react";
+import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
+import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -10,6 +11,19 @@ const navItems = [
 
 const AdminLayout = () => {
   const { pathname } = useLocation();
+  const { user, loading, signOut } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,6 +56,13 @@ const AdminLayout = () => {
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Parceiro</span>
             </Link>
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition"
+              title="Sair"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
       </header>
@@ -73,7 +94,7 @@ const AdminLayout = () => {
         </div>
       </nav>
 
-      {/* Desktop sidebar-style tabs */}
+      {/* Desktop sidebar */}
       <div className="hidden md:block fixed left-0 top-12 bottom-0 w-44 border-r border-border/40 bg-card/50 backdrop-blur-sm">
         <nav className="flex flex-col gap-0.5 p-2 mt-2">
           {navItems.map((item) => {

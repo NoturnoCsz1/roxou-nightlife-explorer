@@ -1,5 +1,16 @@
-import { categoryConfig, EventCategory } from "@/data/events";
 import { Music, Mic2, Beer, Tent, Guitar, Disc3, Headphones } from "lucide-react";
+
+type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica";
+
+const categoryConfig: Record<EventCategory, { label: string; badge: string }> = {
+  balada: { label: "Balada", badge: "badge-balada" },
+  show: { label: "Show", badge: "badge-show" },
+  bar: { label: "Bar", badge: "badge-bar" },
+  festival: { label: "Festival", badge: "badge-festival" },
+  sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
+  funk: { label: "Funk", badge: "badge-funk" },
+  eletronica: { label: "Eletrônica", badge: "badge-eletronica" },
+};
 
 const categoryIcons: Record<EventCategory, React.ElementType> = {
   balada: Music,
@@ -22,9 +33,7 @@ const CategoryPills = ({ selected, onSelect }: Props) => {
       <button
         onClick={() => onSelect(null)}
         className={`shrink-0 rounded-xl px-4 py-2.5 text-xs font-bold tracking-wide transition-all duration-200 ${
-          !selected
-            ? "gradient-primary text-primary-foreground neon-glow"
-            : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+          !selected ? "gradient-primary text-primary-foreground neon-glow" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
         }`}
       >
         Todos
@@ -38,9 +47,7 @@ const CategoryPills = ({ selected, onSelect }: Props) => {
             key={cat}
             onClick={() => onSelect(active ? null : cat)}
             className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold tracking-wide transition-all duration-200 ${
-              active
-                ? `${config.badge} neon-glow`
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              active ? `${config.badge} neon-glow` : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
             }`}
           >
             <Icon className="h-3.5 w-3.5" />

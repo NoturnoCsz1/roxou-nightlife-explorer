@@ -4,6 +4,7 @@ import { ArrowLeft, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 type Partner = Tables<"partners">;
 
@@ -23,25 +24,12 @@ const EventoForm = () => {
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
 
   const [form, setForm] = useState({
-    title: "",
-    slug: "",
-    date_time: "",
-    category: "festa",
-    partner_id: "",
-    venue_name: "",
-    address: "",
-    instagram: "",
-    description: "",
-    status: "draft",
-    verification_source: "",
-    featured: false,
-    image_url: "",
+    title: "", slug: "", date_time: "", category: "festa", partner_id: "",
+    venue_name: "", address: "", instagram: "", description: "",
+    status: "draft", verification_source: "", featured: false, image_url: "",
   });
 
-  useEffect(() => {
-    loadPartners();
-    if (isEdit) loadEvent();
-  }, [id]);
+  useEffect(() => { loadPartners(); if (isEdit) loadEvent(); }, [id]);
 
   async function loadPartners() {
     const { data } = await supabase.from("partners").select("*").eq("active", true).order("name");
@@ -52,19 +40,13 @@ const EventoForm = () => {
     const { data } = await supabase.from("events").select("*").eq("id", id!).single();
     if (data) {
       setForm({
-        title: data.title,
-        slug: data.slug,
+        title: data.title, slug: data.slug,
         date_time: data.date_time ? data.date_time.slice(0, 16) : "",
-        category: data.category,
-        partner_id: data.partner_id || "",
-        venue_name: data.venue_name || "",
-        address: data.address || "",
-        instagram: data.instagram || "",
-        description: data.description || "",
-        status: data.status,
-        verification_source: data.verification_source || "",
-        featured: data.featured,
-        image_url: data.image_url || "",
+        category: data.category, partner_id: data.partner_id || "",
+        venue_name: data.venue_name || "", address: data.address || "",
+        instagram: data.instagram || "", description: data.description || "",
+        status: data.status, verification_source: data.verification_source || "",
+        featured: data.featured, image_url: data.image_url || "",
       });
       if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     }
@@ -79,35 +61,23 @@ const EventoForm = () => {
   }
 
   function handlePartnerSelect(partnerId: string) {
-    handleChange("partner_id", partnerId);
     if (partnerId) {
       const p = partners.find((p) => p.id === partnerId);
       if (p) {
-        setForm((prev) => ({
-          ...prev,
-          partner_id: partnerId,
-          venue_name: p.name,
-          address: p.address || "",
-          instagram: p.instagram || "",
-        }));
+        setForm((prev) => ({ ...prev, partner_id: partnerId, venue_name: p.name, address: p.address || "", instagram: p.instagram || "" }));
         setManualVenue(false);
       }
     } else {
+      handleChange("partner_id", "");
       setManualVenue(true);
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.title || !form.slug || !form.date_time) {
-      toast.error("Título, slug e data são obrigatórios");
-      return;
-    }
+    if (!form.title || !form.slug || !form.date_time) { toast.error("Título, slug e data são obrigatórios"); return; }
     setSaving(true);
-    const payload = {
-      ...form,
-      partner_id: form.partner_id || null,
-    };
+    const payload = { ...form, partner_id: form.partner_id || null };
     try {
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);
@@ -121,18 +91,12 @@ const EventoForm = () => {
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }
 
   const inputClass = "w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm outline-none focus:border-primary/50 transition";
   const sectionHeader = (key: keyof typeof sections, label: string) => (
-    <button
-      type="button"
-      onClick={() => setSections((s) => ({ ...s, [key]: !s[key] }))}
-      className="flex items-center justify-between w-full text-xs font-semibold text-muted-foreground uppercase tracking-wide py-1.5 border-b border-border/30"
-    >
+    <button type="button" onClick={() => setSections((s) => ({ ...s, [key]: !s[key] }))} className="flex items-center justify-between w-full text-xs font-semibold text-muted-foreground uppercase tracking-wide py-1.5 border-b border-border/30">
       {label}
       {sections[key] ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
     </button>
@@ -146,7 +110,7 @@ const EventoForm = () => {
       <h1 className="text-lg font-bold text-foreground mb-4">{isEdit ? "Editar Evento" : "Novo Evento"}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Section 1: Main info */}
+        {/* Main info */}
         <div className="space-y-2.5">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/30 pb-1">Informações Principais</p>
           <div className="grid grid-cols-2 gap-2.5">
@@ -178,7 +142,7 @@ const EventoForm = () => {
           </div>
         </div>
 
-        {/* Section 2: Venue */}
+        {/* Venue */}
         <div className="space-y-2.5">
           {sectionHeader("venue", "Informações do Local")}
           {sections.venue && (
@@ -186,9 +150,7 @@ const EventoForm = () => {
               {form.partner_id && !manualVenue ? (
                 <div className="rounded-lg bg-secondary/30 p-2.5 text-xs">
                   <p className="text-muted-foreground mb-1">Preenchido pelo parceiro: <strong className="text-foreground">{form.venue_name}</strong></p>
-                  <button type="button" onClick={() => setManualVenue(true)} className="text-primary text-[11px] font-medium hover:underline">
-                    Editar local manualmente
-                  </button>
+                  <button type="button" onClick={() => setManualVenue(true)} className="text-primary text-[11px] font-medium hover:underline">Editar local manualmente</button>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2.5">
@@ -210,7 +172,7 @@ const EventoForm = () => {
           )}
         </div>
 
-        {/* Section 3: Content */}
+        {/* Content */}
         <div className="space-y-2.5">
           {sectionHeader("content", "Conteúdo do Evento")}
           {sections.content && (
@@ -240,25 +202,20 @@ const EventoForm = () => {
           )}
         </div>
 
-        {/* Section 4: Media */}
+        {/* Media */}
         <div className="space-y-2.5">
           {sectionHeader("media", "Mídia")}
           {sections.media && (
-            <div>
-              <label className="text-[11px] font-medium text-muted-foreground">URL do Flyer</label>
-              <input className={inputClass} value={form.image_url} onChange={(e) => handleChange("image_url", e.target.value)} placeholder="https://..." />
-              {form.image_url && (
-                <img src={form.image_url} alt="preview" className="mt-2 rounded-lg max-h-40 object-cover" />
-              )}
-            </div>
+            <ImageUpload
+              folder="events"
+              currentUrl={form.image_url}
+              onUploaded={(url) => handleChange("image_url", url)}
+              label="Flyer do Evento"
+            />
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50"
-        >
+        <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50">
           <Save className="h-4 w-4" />
           {saving ? "Salvando..." : "Salvar"}
         </button>
