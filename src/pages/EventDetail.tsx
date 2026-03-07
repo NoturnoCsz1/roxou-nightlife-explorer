@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import EventCard from "@/components/EventCard";
 import Footer from "@/components/Footer";
+import SEO from "@/components/SEO";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
   balada: { label: "Balada", badge: "badge-balada" },
@@ -160,6 +161,13 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${event.title} — Evento em Presidente Prudente | ROXOU`}
+        description={`${event.title} acontece em ${event.venue_name || "Presidente Prudente"} em Presidente Prudente. Veja informações completas do evento.`}
+        canonical={`https://roxou.com.br/evento/${event.slug}`}
+        ogImage={event.image_url || "https://roxou.com.br/og-image.png"}
+        ogType="article"
+      />
       {/* Hero image */}
       <div className="relative">
         <img

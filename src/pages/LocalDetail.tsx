@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import SEO from "@/components/SEO";
 
 interface Partner {
   id: string;
@@ -84,7 +85,12 @@ const LocalDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
+      <SEO
+        title={`${partner.name} — Eventos e festas em Presidente Prudente`}
+        description={`Veja eventos e festas que acontecem no ${partner.name} em Presidente Prudente.`}
+        canonical={`https://roxou.com.br/local/${partner.slug}`}
+        ogImage={partner.logo_url || "https://roxou.com.br/og-image.png"}
+      />
       <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
         <div className="mx-auto max-w-lg flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="rounded-full bg-secondary p-2">
