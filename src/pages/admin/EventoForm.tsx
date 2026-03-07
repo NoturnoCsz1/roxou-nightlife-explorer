@@ -39,9 +39,21 @@ const EventoForm = () => {
   async function loadEvent() {
     const { data } = await supabase.from("events").select("*").eq("id", id!).single();
     if (data) {
+      // Convert stored UTC timestamp to São Paulo local time for the form input
+      let localDateTime = "";
+      if (data.date_time) {
+        const d = new Date(data.date_time);
+        const parts = new Intl.DateTimeFormat("sv-SE", {
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit",
+          timeZone: "America/Sao_Paulo", hour12: false,
+        }).formatToParts(d);
+        const get = (type: string) => parts.find(p => p.type === type)?.value || "";
+        localDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+      }
       setForm({
         title: data.title, slug: data.slug,
-        date_time: data.date_time ? data.date_time.slice(0, 16) : "",
+        date_time: localDateTime,
         category: data.category, partner_id: data.partner_id || "",
         venue_name: data.venue_name || "", address: data.address || "",
         instagram: data.instagram || "", description: data.description || "",
@@ -77,7 +89,9 @@ const EventoForm = () => {
     e.preventDefault();
     if (!form.title || !form.slug || !form.date_time) { toast.error("Título, slug e data são obrigatórios"); return; }
     setSaving(true);
-    const payload = { ...form, partner_id: form.partner_id || null };
+    // Append São Paulo timezone offset so Supabase stores the correct UTC value
+    const dateTimeWithTz = form.date_time ? form.date_time + ":00-03:00" : form.date_time;
+    const payload = { ...form, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
     try {
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);
