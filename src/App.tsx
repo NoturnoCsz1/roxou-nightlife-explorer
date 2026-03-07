@@ -10,6 +10,7 @@ import Categorias from "./pages/Categorias";
 import Salvos from "./pages/Salvos";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./components/admin/AdminLayout";
+import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import ParceirosList from "./pages/admin/ParceirosList";
 import ParceiroForm from "./pages/admin/ParceiroForm";
@@ -27,12 +28,13 @@ const App = () => (
         <Routes>
           {/* Public */}
           <Route path="/" element={<Index />} />
-          <Route path="/evento/:id" element={<EventDetail />} />
+          <Route path="/evento/:slug" element={<EventDetail />} />
           <Route path="/semana" element={<Semana />} />
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/salvos" element={<Salvos />} />
 
           {/* Admin */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
