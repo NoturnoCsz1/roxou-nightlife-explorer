@@ -22,14 +22,33 @@ const FeaturedCarousel = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase
-      .from("events")
-      .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-      .eq("featured", true)
-      .eq("status", "published")
-      .order("date_time", { ascending: true })
-      .limit(5)
-      .then(({ data }) => setFeatured(data || []));
+    async function load() {
+      const now = new Date().toISOString();
+      // Try featured future events first
+      const { data: featuredData } = await supabase
+        .from("events")
+        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .eq("featured", true)
+        .eq("status", "published")
+        .gt("date_time", now)
+        .order("date_time", { ascending: true })
+        .limit(5);
+
+      if (featuredData && featuredData.length > 0) {
+        setFeatured(featuredData);
+      } else {
+        // Fallback: show the most upcoming event
+        const { data: fallback } = await supabase
+          .from("events")
+          .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+          .eq("status", "published")
+          .gt("date_time", now)
+          .order("date_time", { ascending: true })
+          .limit(1);
+        setFeatured(fallback || []);
+      }
+    }
+    load();
   }, []);
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % (featured.length || 1)), [featured.length]);
