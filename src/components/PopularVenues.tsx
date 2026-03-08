@@ -30,11 +30,12 @@ const PopularVenues = () => {
         .from("page_views")
         .select("page_path");
 
-      // Get events with partner_id to map event slugs to partners
+      // Get events with partner_id to map event slugs to partners (future only for fallback)
       const { data: events } = await supabase
         .from("events")
         .select("slug, partner_id")
         .eq("status", "published")
+        .gt("date_time", new Date().toISOString())
         .not("partner_id", "is", null);
 
       const partnerSlugMap = new Map(partners.map((p) => [p.slug, p.id]));

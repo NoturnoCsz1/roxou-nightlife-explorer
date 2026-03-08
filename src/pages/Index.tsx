@@ -70,9 +70,21 @@ const Index = () => {
     }
     if (dateFilter === "fds") {
       const dayOfWeek = now.getDay();
-      const daysUntilSat = dayOfWeek <= 5 ? 6 - dayOfWeek : 0;
-      const saturday = new Date(now); saturday.setDate(now.getDate() + daysUntilSat); saturday.setHours(0,0,0,0);
-      const monday = new Date(saturday); monday.setDate(saturday.getDate() + 2); monday.setHours(23,59,59,999);
+      let saturday: Date, monday: Date;
+      if (dayOfWeek === 0) {
+        // Sunday: show from today (Sunday) through end of Sunday
+        saturday = new Date(now); saturday.setHours(0,0,0,0);
+        monday = new Date(saturday); monday.setHours(23,59,59,999);
+      } else if (dayOfWeek === 6) {
+        // Saturday: show Sat + Sun
+        saturday = new Date(now); saturday.setHours(0,0,0,0);
+        monday = new Date(saturday); monday.setDate(saturday.getDate() + 1); monday.setHours(23,59,59,999);
+      } else {
+        // Weekday: show next Sat + Sun
+        const daysUntilSat = 6 - dayOfWeek;
+        saturday = new Date(now); saturday.setDate(now.getDate() + daysUntilSat); saturday.setHours(0,0,0,0);
+        monday = new Date(saturday); monday.setDate(saturday.getDate() + 1); monday.setHours(23,59,59,999);
+      }
       return events.filter((e) => { const d = new Date(e.date_time); return d >= saturday && d <= monday; });
     }
     return null; // "todos" — show default sections
@@ -81,9 +93,10 @@ const Index = () => {
   const dateFiltered = getDateFiltered();
 
   const todayEvents = events.filter((e) => isToday(new Date(e.date_time)));
+  const todayIds = new Set(todayEvents.map((e) => e.id));
   const upcomingEvents = events.filter((e) => {
     const d = new Date(e.date_time);
-    return d > now && d <= weekFromNow;
+    return !todayIds.has(e.id) && d > now && d <= weekFromNow;
   });
   const popularEvents = events.filter((e) => e.featured);
   const filtered = category ? events.filter((e) => e.category === category) : null;

@@ -49,6 +49,7 @@ const VenueList = () => {
         .from("events")
         .select("partner_id")
         .eq("status", "published")
+        .gt("date_time", new Date().toISOString())
         .not("partner_id", "is", null);
 
       const countMap: Record<string, number> = {};
