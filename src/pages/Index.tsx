@@ -30,10 +30,12 @@ const Index = () => {
 
   useEffect(() => {
     async function load() {
+      const now = new Date().toISOString();
       const { data: eventsData } = await supabase
         .from("events")
         .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
         .eq("status", "published")
+        .gt("date_time", now)
         .order("date_time", { ascending: true });
 
       const evts = eventsData || [];
