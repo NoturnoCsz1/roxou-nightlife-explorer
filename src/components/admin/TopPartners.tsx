@@ -11,11 +11,20 @@ interface RankedPartner {
   total: number;
 }
 
-interface TopPartnersProps {
-  since: string;
+export interface TopPartnerExport {
+  name: string;
+  pageViews: number;
+  eventViews: number;
+  eventCount: number;
+  total: number;
 }
 
-const TopPartners = ({ since }: TopPartnersProps) => {
+interface TopPartnersProps {
+  since: string;
+  onDataLoaded?: (data: TopPartnerExport[]) => void;
+}
+
+const TopPartners = ({ since, onDataLoaded }: TopPartnersProps) => {
   const [ranked, setRanked] = useState<RankedPartner[]>([]);
 
   useEffect(() => {
@@ -71,9 +80,16 @@ const TopPartners = ({ since }: TopPartnersProps) => {
         .slice(0, 10);
 
       setRanked(result);
+      onDataLoaded?.(result.map((r) => ({
+        name: r.name,
+        pageViews: r.views,
+        eventViews: r.eventViews,
+        eventCount: r.eventCount,
+        total: r.total,
+      })));
     }
     load();
-  }, [since]);
+  }, [since, onDataLoaded]);
 
   if (ranked.length === 0) return null;
 

@@ -1,12 +1,15 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus } from "lucide-react";
+import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/admin/MetricCard";
 import TopPartners from "@/components/admin/TopPartners";
 import TopEvents from "@/components/admin/TopEvents";
 import PeriodFilter from "@/components/admin/PeriodFilter";
 import { DashboardPeriod, getPeriodRange, getPeriodLabel, getPeriodDayCount } from "@/lib/dashboardPeriod";
+import { exportCSV, exportExcel } from "@/lib/dashboardExport";
+import type { TopEventExport } from "@/components/admin/TopEvents";
+import type { TopPartnerExport } from "@/components/admin/TopPartners";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"];
@@ -33,7 +36,37 @@ const Dashboard = () => {
   const [recentEvents, setRecentEvents] = useState<{ id: string; title: string; created_at: string }[]>([]);
   const [recentPartners, setRecentPartners] = useState<{ id: string; name: string; created_at: string }[]>([]);
 
+  const topEventsRef = useRef<TopEventExport[]>([]);
+  const topPartnersRef = useRef<TopPartnerExport[]>([]);
+
   const sinceISO = getPeriodRange(period).toISOString();
+
+  const handleTopEventsLoaded = useCallback((data: TopEventExport[]) => {
+    topEventsRef.current = data;
+  }, []);
+
+  const handleTopPartnersLoaded = useCallback((data: TopPartnerExport[]) => {
+    topPartnersRef.current = data;
+  }, []);
+
+  const handleExport = useCallback((format: "csv" | "excel") => {
+    const data = {
+      period,
+      metrics: {
+        "Total Eventos": metrics.totalEvents,
+        "Próximos": metrics.upcomingEvents,
+        "Hoje": metrics.eventsToday,
+        "Parceiros Ativos": metrics.activePartners,
+        [`Views (${getPeriodLabel(period)})`]: metrics.periodViews,
+        "Visitantes Únicos": metrics.uniqueVisitors,
+      },
+      topPages: topPages.map((p) => ({ label: p.label, views: p.views })),
+      topEvents: topEventsRef.current,
+      topPartners: topPartnersRef.current,
+    };
+    if (format === "csv") exportCSV(data);
+    else exportExcel(data);
+  }, [period, metrics, topPages]);
 
   const loadDashboard = useCallback(async () => {
     const now = new Date().toISOString();
@@ -67,11 +100,9 @@ const Dashboard = () => {
       uniqueVisitors: sessions.length,
     });
 
-    // Build slug->title maps
     const eventSlugTitle = new Map(evts.map((e) => [e.slug, e.title]));
     const partnerSlugName = new Map(parts.map((p) => [p.slug, p.name]));
 
-    // Views by day
     const dayCount = getPeriodDayCount(period);
     const days = Array.from({ length: dayCount }, (_, i) => {
       const d = new Date();
@@ -86,7 +117,6 @@ const Dashboard = () => {
     });
     setViewsByDay(days.map((d) => ({ day: d.slice(5), views: dayMap[d] })));
 
-    // Device breakdown
     const devMap: Record<string, number> = { mobile: 0, desktop: 0, tablet: 0 };
     views.forEach((v) => {
       const t = v.device_type || "desktop";
@@ -94,7 +124,6 @@ const Dashboard = () => {
     });
     setDeviceData(Object.entries(devMap).map(([name, value]) => ({ name, value })));
 
-    // Top pages
     const pageMap: Record<string, number> = {};
     views.forEach((v) => {
       pageMap[v.page_path] = (pageMap[v.page_path] || 0) + 1;
@@ -122,7 +151,6 @@ const Dashboard = () => {
       });
     setTopPages(topPagesData);
 
-    // Recent
     setRecentEvents(
       evts
         .sort((a, b) => b.created_at.localeCompare(a.created_at))
@@ -143,17 +171,35 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 md:ml-44">
-      {/* Quick actions + period filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex gap-2.5">
-          <Link to="/admin/eventos/novo" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
-            <Plus className="h-3.5 w-3.5" /> Novo Evento
-          </Link>
-          <Link to="/admin/parceiros/novo" className="flex items-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-sm hover:opacity-90 transition">
-            <Plus className="h-3.5 w-3.5" /> Novo Parceiro
-          </Link>
+      {/* Quick actions + period filter + export */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex gap-2.5">
+            <Link to="/admin/eventos/novo" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
+              <Plus className="h-3.5 w-3.5" /> Novo Evento
+            </Link>
+            <Link to="/admin/parceiros/novo" className="flex items-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-sm hover:opacity-90 transition">
+              <Plus className="h-3.5 w-3.5" /> Novo Parceiro
+            </Link>
+          </div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <PeriodFilter value={period} onChange={setPeriod} />
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => handleExport("csv")}
+                className="flex items-center gap-1 rounded-lg border border-border/40 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-border transition"
+              >
+                <Download className="h-3 w-3" /> CSV
+              </button>
+              <button
+                onClick={() => handleExport("excel")}
+                className="flex items-center gap-1 rounded-lg border border-border/40 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-border transition"
+              >
+                <Download className="h-3 w-3" /> Excel
+              </button>
+            </div>
+          </div>
         </div>
-        <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
       {/* Metrics grid */}
@@ -225,8 +271,8 @@ const Dashboard = () => {
 
       {/* Top events + Top partners */}
       <div className="grid md:grid-cols-2 gap-4">
-        <TopEvents since={sinceISO} />
-        <TopPartners since={sinceISO} />
+        <TopEvents since={sinceISO} onDataLoaded={handleTopEventsLoaded} />
+        <TopPartners since={sinceISO} onDataLoaded={handleTopPartnersLoaded} />
       </div>
 
       {/* Recent activity */}
