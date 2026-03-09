@@ -130,6 +130,13 @@ const EventosList = () => {
       </Link>
       <div className="flex items-center shrink-0 ml-2 gap-0.5">
         <button
+          onClick={() => handleDuplicate(e.id)}
+          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
+          title="Duplicar evento"
+        >
+          <Copy className="h-4 w-4 text-muted-foreground" />
+        </button>
+        <button
           onClick={() => toggleFeatured(e.id, e.featured)}
           className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
           title={e.featured ? "Remover destaque" : "Destacar"}

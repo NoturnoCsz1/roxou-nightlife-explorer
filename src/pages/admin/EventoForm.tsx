@@ -32,7 +32,27 @@ const EventoForm = () => {
     ticket_url: "",
   });
 
-  useEffect(() => { loadPartners(); if (isEdit) loadEvent(); }, [id]);
+  useEffect(() => {
+    loadPartners();
+    if (isEdit) {
+      loadEvent();
+    } else if (duplicateData) {
+      setForm((prev) => ({
+        ...prev,
+        ...duplicateData,
+        slug: slugify(duplicateData.title) + "-" + Date.now().toString(36),
+        date_time: "",
+        status: "draft",
+        featured: false,
+      }));
+      if (duplicateData.partner_id) {
+        setManualVenue(false);
+      } else if (duplicateData.venue_name || duplicateData.address) {
+        setManualVenue(true);
+      }
+      toast.info("Evento duplicado. Defina a nova data antes de publicar.");
+    }
+  }, [id]);
 
   async function loadPartners() {
     const { data } = await supabase.from("partners").select("*").eq("active", true).order("name");
