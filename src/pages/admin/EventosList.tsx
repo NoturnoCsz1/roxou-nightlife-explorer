@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ChevronDown, Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronDown, Copy, Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
