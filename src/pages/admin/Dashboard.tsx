@@ -63,14 +63,17 @@ const Dashboard = () => {
         "Parceiros Ativos": metrics.activePartners,
         [`Views (${getPeriodLabel(period)})`]: metrics.periodViews,
         "Visitantes Únicos": metrics.uniqueVisitors,
+        [`Cliques Ingresso (${getPeriodLabel(period)})`]: metrics.ticketClicks,
       },
       topPages: topPages.map((p) => ({ label: p.label, views: p.views })),
       topEvents: topEventsRef.current,
       topPartners: topPartnersRef.current,
+      clicksByDay,
+      topClickedEvents,
     };
     if (format === "csv") exportCSV(data);
     else exportExcel(data);
-  }, [period, metrics, topPages]);
+  }, [period, metrics, topPages, clicksByDay, topClickedEvents]);
 
   const loadDashboard = useCallback(async () => {
     const now = new Date().toISOString();

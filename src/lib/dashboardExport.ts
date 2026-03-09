@@ -6,6 +6,8 @@ interface ExportData {
   topPages: { label: string; views: number }[];
   topEvents: { title: string; views: number; date: string }[];
   topPartners: { name: string; pageViews: number; eventViews: number; eventCount: number; total: number }[];
+  clicksByDay?: { day: string; clicks: number }[];
+  topClickedEvents?: { title: string; clicks: number }[];
 }
 
 function escapeCSV(val: string | number): string {
@@ -54,6 +56,26 @@ function buildCSVContent(data: ExportData): string {
   data.topPartners.forEach((p) => {
     lines.push(`${escapeCSV(p.name)},${p.pageViews},${p.eventViews},${p.eventCount},${p.total}`);
   });
+  lines.push("");
+
+  // Click trend
+  if (data.clicksByDay?.length) {
+    lines.push("=== Cliques de Ingresso por Dia ===");
+    lines.push("Dia,Cliques");
+    data.clicksByDay.forEach((d) => {
+      lines.push(`${escapeCSV(d.day)},${d.clicks}`);
+    });
+    lines.push("");
+  }
+
+  // Top clicked events
+  if (data.topClickedEvents?.length) {
+    lines.push("=== Eventos Mais Clicados ===");
+    lines.push("Evento,Cliques");
+    data.topClickedEvents.forEach((e) => {
+      lines.push(`${escapeCSV(e.title)},${e.clicks}`);
+    });
+  }
 
   return lines.join("\n");
 }
@@ -117,7 +139,25 @@ export function exportExcel(data: ExportData) {
   data.topPartners.forEach((p) => {
     rows.push(`<tr><td>${p.name}</td><td>${p.pageViews}</td><td>${p.eventViews}</td><td>${p.eventCount}</td><td>${p.total}</td></tr>`);
   });
-  rows.push("</table>");
+  rows.push("</table><br/>");
+
+  // Click trend
+  if (data.clicksByDay?.length) {
+    rows.push("<table border='1'><tr><th colspan='2'>Cliques de Ingresso por Dia</th></tr><tr><th>Dia</th><th>Cliques</th></tr>");
+    data.clicksByDay.forEach((d) => {
+      rows.push(`<tr><td>${d.day}</td><td>${d.clicks}</td></tr>`);
+    });
+    rows.push("</table><br/>");
+  }
+
+  // Top clicked events
+  if (data.topClickedEvents?.length) {
+    rows.push("<table border='1'><tr><th colspan='2'>Eventos Mais Clicados</th></tr><tr><th>Evento</th><th>Cliques</th></tr>");
+    data.topClickedEvents.forEach((e) => {
+      rows.push(`<tr><td>${e.title}</td><td>${e.clicks}</td></tr>`);
+    });
+    rows.push("</table>");
+  }
 
   rows.push("</body></html>");
 
