@@ -36,6 +36,7 @@ const EventosList = () => {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
   const [pastOpen, setPastOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -89,9 +90,9 @@ const EventosList = () => {
     }
   }
 
-  const filtered = events.filter((e) =>
-    e.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = events
+    .filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((e) => !activeCategory || e.category === activeCategory);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -99,6 +100,13 @@ const EventosList = () => {
   const todayEvents = filtered.filter((e) => e.date_time.slice(0, 10) === todayStr);
   const upcomingEvents = filtered.filter((e) => e.date_time.slice(0, 10) > todayStr);
   const pastEvents = filtered.filter((e) => e.date_time.slice(0, 10) < todayStr);
+
+  const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"] as const;
+  const categoryCounts = CATEGORIES.map((c) => ({
+    key: c,
+    label: c === "eletronica" ? "Eletrônica" : c.charAt(0).toUpperCase() + c.slice(1),
+    count: events.filter((e) => e.category === c).length,
+  }));
 
   const categoryBadge: Record<string, string> = {
     balada: "badge-balada",
@@ -186,6 +194,22 @@ const EventosList = () => {
           placeholder="Buscar evento..."
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
+      </div>
+
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {categoryCounts.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => setActiveCategory(activeCategory === c.key ? null : c.key)}
+            className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
+              activeCategory === c.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
+          </button>
+        ))}
       </div>
 
       {loading ? (
