@@ -7,6 +7,7 @@ interface RankedPartner {
   slug: string;
   views: number;
   eventViews: number;
+  eventCount: number;
   total: number;
 }
 
@@ -27,6 +28,15 @@ const TopPartners = () => {
 
       const partnerSlugMap = new Map(partners.map((p) => [p.slug, p.id]));
       const eventToPartner = new Map(events.filter((e) => e.partner_id).map((e) => [e.slug, e.partner_id!]));
+
+      // Count events per partner
+      const eventCountMap: Record<string, number> = {};
+      partners.forEach((p) => { eventCountMap[p.id] = 0; });
+      events.forEach((e) => {
+        if (e.partner_id && eventCountMap[e.partner_id] !== undefined) {
+          eventCountMap[e.partner_id]++;
+        }
+      });
 
       const directMap: Record<string, number> = {};
       const eventMap: Record<string, number> = {};
@@ -51,6 +61,7 @@ const TopPartners = () => {
           slug: p.slug,
           views: directMap[p.id] || 0,
           eventViews: eventMap[p.id] || 0,
+          eventCount: eventCountMap[p.id] || 0,
           total: (directMap[p.id] || 0) + (eventMap[p.id] || 0),
         }))
         .sort((a, b) => b.total - a.total)
@@ -64,30 +75,32 @@ const TopPartners = () => {
   if (ranked.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card p-3">
-      <div className="flex items-center gap-1.5 mb-2">
-        <TrendingUp className="h-3.5 w-3.5 text-primary" />
-        <h3 className="text-xs font-semibold text-foreground">Parceiros Mais Populares</h3>
+    <div className="rounded-xl border border-border/40 bg-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Parceiros Mais Populares</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="text-muted-foreground border-b border-border/30">
-              <th className="text-left py-1.5 font-medium">#</th>
-              <th className="text-left py-1.5 font-medium">Parceiro</th>
-              <th className="text-right py-1.5 font-medium">Página</th>
-              <th className="text-right py-1.5 font-medium">Eventos</th>
-              <th className="text-right py-1.5 font-medium">Total</th>
+              <th className="text-left py-2 font-medium">#</th>
+              <th className="text-left py-2 font-medium">Parceiro</th>
+              <th className="text-right py-2 font-medium">Página</th>
+              <th className="text-right py-2 font-medium">Eventos</th>
+              <th className="text-right py-2 font-medium">Nº Eventos</th>
+              <th className="text-right py-2 font-medium">Total</th>
             </tr>
           </thead>
           <tbody>
             {ranked.map((p, i) => (
               <tr key={p.slug} className="border-b border-border/20 last:border-0">
-                <td className="py-1.5 font-bold text-primary">{i + 1}</td>
-                <td className="py-1.5 font-medium truncate max-w-[120px]">{p.name}</td>
-                <td className="py-1.5 text-right text-muted-foreground">{p.views}</td>
-                <td className="py-1.5 text-right text-muted-foreground">{p.eventViews}</td>
-                <td className="py-1.5 text-right font-bold">{p.total}</td>
+                <td className="py-2 font-bold text-primary">{i + 1}</td>
+                <td className="py-2 font-medium truncate max-w-[140px]">{p.name}</td>
+                <td className="py-2 text-right text-muted-foreground">{p.views}</td>
+                <td className="py-2 text-right text-muted-foreground">{p.eventViews}</td>
+                <td className="py-2 text-right text-muted-foreground">{p.eventCount}</td>
+                <td className="py-2 text-right font-bold">{p.total}</td>
               </tr>
             ))}
           </tbody>
