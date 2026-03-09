@@ -199,6 +199,24 @@ const EventosList = () => {
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {[
+          { key: null, label: "Todos", count: events.length },
+          { key: "published", label: "Publicado", count: events.filter((e) => e.status === "published").length },
+          { key: "draft", label: "Rascunho", count: events.filter((e) => e.status === "draft").length },
+        ].map((s) => (
+          <button
+            key={s.key ?? "all"}
+            onClick={() => setActiveStatus(activeStatus === s.key ? null : s.key)}
+            className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
+              activeStatus === s.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            {s.label} <span className="ml-0.5 opacity-70">{s.count}</span>
+          </button>
+        ))}
+        <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
         {categoryCounts.map((c) => (
           <button
             key={c.key}
