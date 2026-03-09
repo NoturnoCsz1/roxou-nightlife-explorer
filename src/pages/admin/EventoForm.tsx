@@ -209,6 +209,10 @@ const EventoForm = () => {
                 <input className={inputClass} value={form.verification_source} onChange={(e) => handleChange("verification_source", e.target.value)} placeholder="Instagram, site..." />
               </div>
               <div className="col-span-2">
+                <label className="text-[11px] font-medium text-muted-foreground">Link de ingresso / reserva (opcional)</label>
+                <input className={inputClass} value={form.ticket_url} onChange={(e) => handleChange("ticket_url", e.target.value)} placeholder="https://... ou link WhatsApp" />
+              </div>
+              <div className="col-span-2">
                 <label className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" checked={form.featured} onChange={(e) => handleChange("featured", e.target.checked)} className="accent-primary" />
                   Evento em destaque
