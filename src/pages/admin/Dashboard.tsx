@@ -30,6 +30,7 @@ const Dashboard = () => {
     activePartners: 0,
     periodViews: 0,
     uniqueVisitors: 0,
+    ticketClicks: 0,
   });
   const [viewsByDay, setViewsByDay] = useState<{ day: string; views: number }[]>([]);
   const [deviceData, setDeviceData] = useState<{ name: string; value: number }[]>([]);
