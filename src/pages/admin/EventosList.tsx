@@ -90,9 +90,9 @@ const EventosList = () => {
     }
   }
 
-  const filtered = events.filter((e) =>
-    e.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = events
+    .filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((e) => !activeCategory || e.category === activeCategory);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -100,6 +100,13 @@ const EventosList = () => {
   const todayEvents = filtered.filter((e) => e.date_time.slice(0, 10) === todayStr);
   const upcomingEvents = filtered.filter((e) => e.date_time.slice(0, 10) > todayStr);
   const pastEvents = filtered.filter((e) => e.date_time.slice(0, 10) < todayStr);
+
+  const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"] as const;
+  const categoryCounts = CATEGORIES.map((c) => ({
+    key: c,
+    label: c === "eletronica" ? "Eletrônica" : c.charAt(0).toUpperCase() + c.slice(1),
+    count: events.filter((e) => e.category === c).length,
+  }));
 
   const categoryBadge: Record<string, string> = {
     balada: "badge-balada",
