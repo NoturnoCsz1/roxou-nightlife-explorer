@@ -190,7 +190,7 @@ const Index = () => {
         ) : (
           <>
             {todayEvents.length > 0 && (
-              <section ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36">
+              <section id="section-hoje" ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🔥" title="Eventos de Hoje" subtitle={`${todayEvents.length} rolês pra você`} />
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
                   {todayEvents.map((e, i) => (
