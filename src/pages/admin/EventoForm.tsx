@@ -17,6 +17,8 @@ const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "e
 const EventoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const duplicateData = (location.state as any)?.duplicate;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
