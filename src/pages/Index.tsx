@@ -156,7 +156,7 @@ const Index = () => {
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
           <div className="mt-3">
-            <DateFilterPills onScrollTo={scrollTo} />
+            <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
           </div>
         </div>
       </header>
