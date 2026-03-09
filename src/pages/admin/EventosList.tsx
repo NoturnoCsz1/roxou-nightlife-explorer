@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Copy, Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
+import { ChevronDown, Copy, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -230,6 +230,17 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
+        {(search || activeCategory || activeStatus) && (
+          <>
+            <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
+            <button
+              onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); }}
+              className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
+            >
+              <X className="h-3 w-3" /> Limpar
+            </button>
+          </>
+        )}
       </div>
 
       {loading ? (
