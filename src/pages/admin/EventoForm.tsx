@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,6 +17,8 @@ const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "e
 const EventoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const duplicateData = (location.state as any)?.duplicate;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -30,7 +32,27 @@ const EventoForm = () => {
     ticket_url: "",
   });
 
-  useEffect(() => { loadPartners(); if (isEdit) loadEvent(); }, [id]);
+  useEffect(() => {
+    loadPartners();
+    if (isEdit) {
+      loadEvent();
+    } else if (duplicateData) {
+      setForm((prev) => ({
+        ...prev,
+        ...duplicateData,
+        slug: slugify(duplicateData.title) + "-" + Date.now().toString(36),
+        date_time: "",
+        status: "draft",
+        featured: false,
+      }));
+      if (duplicateData.partner_id) {
+        setManualVenue(false);
+      } else if (duplicateData.venue_name || duplicateData.address) {
+        setManualVenue(true);
+      }
+      toast.info("Evento duplicado. Defina a nova data antes de publicar.");
+    }
+  }, [id]);
 
   async function loadPartners() {
     const { data } = await supabase.from("partners").select("*").eq("active", true).order("name");

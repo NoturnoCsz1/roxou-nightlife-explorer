@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ChevronDown, Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronDown, Copy, Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -30,11 +30,32 @@ interface EventRow {
 }
 
 const EventosList = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
   const [pastOpen, setPastOpen] = useState(false);
+
+  async function handleDuplicate(eventId: string) {
+    const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
+    if (!data) { toast.error("Erro ao carregar evento"); return; }
+    navigate("/admin/eventos/novo", {
+      state: {
+        duplicate: {
+          title: data.title,
+          description: data.description || "",
+          category: data.category,
+          venue_name: data.venue_name || "",
+          address: data.address || "",
+          instagram: data.instagram || "",
+          image_url: data.image_url || "",
+          partner_id: data.partner_id || "",
+          ticket_url: (data as any).ticket_url || "",
+        },
+      },
+    });
+  }
 
   useEffect(() => {
     loadEvents();
@@ -108,6 +129,13 @@ const EventosList = () => {
         </div>
       </Link>
       <div className="flex items-center shrink-0 ml-2 gap-0.5">
+        <button
+          onClick={() => handleDuplicate(e.id)}
+          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
+          title="Duplicar evento"
+        >
+          <Copy className="h-4 w-4 text-muted-foreground" />
+        </button>
         <button
           onClick={() => toggleFeatured(e.id, e.featured)}
           className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
