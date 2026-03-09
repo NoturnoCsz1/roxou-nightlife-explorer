@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/admin/MetricCard";
 import TopPartners from "@/components/admin/TopPartners";
 import TopEvents from "@/components/admin/TopEvents";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+import PeriodFilter from "@/components/admin/PeriodFilter";
+import { DashboardPeriod, getPeriodRange, getPeriodLabel, getPeriodDayCount } from "@/lib/dashboardPeriod";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"];
 
@@ -16,12 +18,13 @@ interface TopPageItem {
 }
 
 const Dashboard = () => {
+  const [period, setPeriod] = useState<DashboardPeriod>("7d");
   const [metrics, setMetrics] = useState({
     totalEvents: 0,
     upcomingEvents: 0,
     eventsToday: 0,
     activePartners: 0,
-    views7d: 0,
+    periodViews: 0,
     uniqueVisitors: 0,
   });
   const [viewsByDay, setViewsByDay] = useState<{ day: string; views: number }[]>([]);
@@ -30,24 +33,19 @@ const Dashboard = () => {
   const [recentEvents, setRecentEvents] = useState<{ id: string; title: string; created_at: string }[]>([]);
   const [recentPartners, setRecentPartners] = useState<{ id: string; name: string; created_at: string }[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  const sinceISO = getPeriodRange(period).toISOString();
 
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
     const now = new Date().toISOString();
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
     const [eventsRes, partnersRes, viewsRes, sessionsRes] = await Promise.all([
       supabase.from("events").select("id, title, slug, status, date_time, created_at"),
       supabase.from("partners").select("id, name, slug, active, created_at"),
-      supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sevenDaysAgo.toISOString()),
+      supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO),
       supabase.from("visitor_sessions").select("session_id"),
     ]);
 
@@ -65,27 +63,28 @@ const Dashboard = () => {
       upcomingEvents: upcoming.length,
       eventsToday: today.length,
       activePartners: parts.filter((p) => p.active).length,
-      views7d: views.length,
+      periodViews: views.length,
       uniqueVisitors: sessions.length,
     });
 
-    // Build slug->title maps for friendly labels
+    // Build slug->title maps
     const eventSlugTitle = new Map(evts.map((e) => [e.slug, e.title]));
     const partnerSlugName = new Map(parts.map((p) => [p.slug, p.name]));
 
-    // Views by day (last 7 days)
-    const last7 = Array.from({ length: 7 }, (_, i) => {
+    // Views by day
+    const dayCount = getPeriodDayCount(period);
+    const days = Array.from({ length: dayCount }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
+      d.setDate(d.getDate() - (dayCount - 1 - i));
       return d.toISOString().split("T")[0];
     });
     const dayMap: Record<string, number> = {};
-    last7.forEach((d) => (dayMap[d] = 0));
+    days.forEach((d) => (dayMap[d] = 0));
     views.forEach((v) => {
       const day = v.created_at.split("T")[0];
       if (dayMap[day] !== undefined) dayMap[day]++;
     });
-    setViewsByDay(last7.map((d) => ({ day: d.slice(5), views: dayMap[d] })));
+    setViewsByDay(days.map((d) => ({ day: d.slice(5), views: dayMap[d] })));
 
     // Device breakdown
     const devMap: Record<string, number> = { mobile: 0, desktop: 0, tablet: 0 };
@@ -95,7 +94,7 @@ const Dashboard = () => {
     });
     setDeviceData(Object.entries(devMap).map(([name, value]) => ({ name, value })));
 
-    // Top pages with friendly labels
+    // Top pages
     const pageMap: Record<string, number> = {};
     views.forEach((v) => {
       pageMap[v.page_path] = (pageMap[v.page_path] || 0) + 1;
@@ -136,18 +135,25 @@ const Dashboard = () => {
         .slice(0, 5)
         .map(({ id, name, created_at }) => ({ id, name, created_at }))
     );
-  }
+  }, [sinceISO, period]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   return (
     <div className="space-y-6 md:ml-44">
-      {/* Quick actions */}
-      <div className="flex gap-2.5">
-        <Link to="/admin/eventos/novo" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
-          <Plus className="h-3.5 w-3.5" /> Novo Evento
-        </Link>
-        <Link to="/admin/parceiros/novo" className="flex items-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-sm hover:opacity-90 transition">
-          <Plus className="h-3.5 w-3.5" /> Novo Parceiro
-        </Link>
+      {/* Quick actions + period filter */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex gap-2.5">
+          <Link to="/admin/eventos/novo" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
+            <Plus className="h-3.5 w-3.5" /> Novo Evento
+          </Link>
+          <Link to="/admin/parceiros/novo" className="flex items-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-sm hover:opacity-90 transition">
+            <Plus className="h-3.5 w-3.5" /> Novo Parceiro
+          </Link>
+        </div>
+        <PeriodFilter value={period} onChange={setPeriod} />
       </div>
 
       {/* Metrics grid */}
@@ -156,18 +162,18 @@ const Dashboard = () => {
         <MetricCard title="Próximos" value={metrics.upcomingEvents} icon={Clock} />
         <MetricCard title="Hoje" value={metrics.eventsToday} icon={CalendarCheck} />
         <MetricCard title="Parceiros Ativos" value={metrics.activePartners} icon={Users} />
-        <MetricCard title="Views (7d)" value={metrics.views7d} icon={Eye} />
+        <MetricCard title={`Views (${getPeriodLabel(period)})`} value={metrics.periodViews} icon={Eye} />
         <MetricCard title="Visitantes Únicos" value={metrics.uniqueVisitors} icon={Monitor} />
       </div>
 
       {/* Charts row */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-xl border border-border/40 bg-card p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Visualizações (7 dias)</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Visualizações ({getPeriodLabel(period)})</h3>
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={viewsByDay}>
-                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={period === "30d" || period === "mes" ? 4 : 0} />
                 <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                 <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
                 <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
@@ -177,7 +183,7 @@ const Dashboard = () => {
         </div>
 
         <div className="rounded-xl border border-border/40 bg-card p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Dispositivos</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Dispositivos ({getPeriodLabel(period)})</h3>
           <div className="h-44 flex items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -193,9 +199,9 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Top pages with friendly names */}
+      {/* Top pages */}
       <div className="rounded-xl border border-border/40 bg-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Páginas Mais Visitadas</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Páginas Mais Visitadas ({getPeriodLabel(period)})</h3>
         <div className="space-y-2">
           {topPages.map((p, i) => (
             <div key={p.page} className="flex items-center gap-3">
@@ -219,8 +225,8 @@ const Dashboard = () => {
 
       {/* Top events + Top partners */}
       <div className="grid md:grid-cols-2 gap-4">
-        <TopEvents />
-        <TopPartners />
+        <TopEvents since={sinceISO} />
+        <TopPartners since={sinceISO} />
       </div>
 
       {/* Recent activity */}

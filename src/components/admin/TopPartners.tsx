@@ -11,14 +11,18 @@ interface RankedPartner {
   total: number;
 }
 
-const TopPartners = () => {
+interface TopPartnersProps {
+  since: string;
+}
+
+const TopPartners = ({ since }: TopPartnersProps) => {
   const [ranked, setRanked] = useState<RankedPartner[]>([]);
 
   useEffect(() => {
     async function load() {
       const [partnersRes, viewsRes, eventsRes] = await Promise.all([
         supabase.from("partners").select("id, name, slug").eq("active", true),
-        supabase.from("page_views").select("page_path"),
+        supabase.from("page_views").select("page_path").gte("created_at", since),
         supabase.from("events").select("slug, partner_id").eq("status", "published").not("partner_id", "is", null),
       ]);
 
@@ -29,7 +33,6 @@ const TopPartners = () => {
       const partnerSlugMap = new Map(partners.map((p) => [p.slug, p.id]));
       const eventToPartner = new Map(events.filter((e) => e.partner_id).map((e) => [e.slug, e.partner_id!]));
 
-      // Count events per partner
       const eventCountMap: Record<string, number> = {};
       partners.forEach((p) => { eventCountMap[p.id] = 0; });
       events.forEach((e) => {
@@ -70,7 +73,7 @@ const TopPartners = () => {
       setRanked(result);
     }
     load();
-  }, []);
+  }, [since]);
 
   if (ranked.length === 0) return null;
 

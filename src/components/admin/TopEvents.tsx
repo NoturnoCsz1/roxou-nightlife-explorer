@@ -9,14 +9,18 @@ interface RankedEvent {
   date_time: string;
 }
 
-const TopEvents = () => {
+interface TopEventsProps {
+  since: string;
+}
+
+const TopEvents = ({ since }: TopEventsProps) => {
   const [ranked, setRanked] = useState<RankedEvent[]>([]);
 
   useEffect(() => {
     async function load() {
       const [eventsRes, viewsRes] = await Promise.all([
         supabase.from("events").select("title, slug, date_time").eq("status", "published"),
-        supabase.from("page_views").select("page_path"),
+        supabase.from("page_views").select("page_path").gte("created_at", since),
       ]);
 
       const events = eventsRes.data || [];
@@ -43,7 +47,7 @@ const TopEvents = () => {
       setRanked(result);
     }
     load();
-  }, []);
+  }, [since]);
 
   if (ranked.length === 0) return null;
 
