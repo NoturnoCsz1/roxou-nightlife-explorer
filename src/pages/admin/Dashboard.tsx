@@ -302,6 +302,56 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Ticket clicks analytics */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border/40 bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <MousePointerClick className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Cliques de Ingresso ({getPeriodLabel(period)})</h3>
+          </div>
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={clicksByDay}>
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={period === "30d" || period === "mes" ? 4 : 0} />
+                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                <Line type="monotone" dataKey="clicks" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/40 bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <MousePointerClick className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Eventos Mais Clicados</h3>
+          </div>
+          {topClickedEvents.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-6 text-center">Nenhum clique registrado no período</p>
+          ) : (
+            <div className="space-y-2">
+              {topClickedEvents.map((e, i) => (
+                <div key={e.title} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-primary w-5 shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium truncate">{e.title}</span>
+                      <span className="text-xs font-bold text-foreground shrink-0">{e.clicks}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-accent/70"
+                        style={{ width: `${topClickedEvents[0] ? (e.clicks / topClickedEvents[0].clicks) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Top events + Top partners */}
       <div className="grid md:grid-cols-2 gap-4">
         <TopEvents since={sinceISO} onDataLoaded={handleTopEventsLoaded} />
