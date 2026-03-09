@@ -7,6 +7,7 @@ import TopPartners from "@/components/admin/TopPartners";
 import TopEvents from "@/components/admin/TopEvents";
 import PeriodFilter from "@/components/admin/PeriodFilter";
 import { DashboardPeriod, getPeriodRange, getPeriodLabel, getPeriodDayCount } from "@/lib/dashboardPeriod";
+import DashboardAlerts from "@/components/admin/DashboardAlerts";
 import { exportCSV, exportExcel } from "@/lib/dashboardExport";
 import type { TopEventExport } from "@/components/admin/TopEvents";
 import type { TopPartnerExport } from "@/components/admin/TopPartners";
