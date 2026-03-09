@@ -196,6 +196,22 @@ const EventosList = () => {
         />
       </div>
 
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {categoryCounts.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => setActiveCategory(activeCategory === c.key ? null : c.key)}
+            className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
+              activeCategory === c.key
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <p className="text-xs text-muted-foreground text-center py-8">Carregando...</p>
       ) : filtered.length === 0 ? (
