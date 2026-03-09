@@ -213,6 +213,9 @@ const Dashboard = () => {
         <MetricCard title="Visitantes Únicos" value={metrics.uniqueVisitors} icon={Monitor} />
       </div>
 
+      {/* Insights / Alerts */}
+      <DashboardAlerts period={period} />
+
       {/* Charts row */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="rounded-xl border border-border/40 bg-card p-4">
