@@ -93,7 +93,8 @@ const EventosList = () => {
 
   const filtered = events
     .filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
-    .filter((e) => !activeCategory || e.category === activeCategory);
+    .filter((e) => !activeCategory || e.category === activeCategory)
+    .filter((e) => !activeStatus || e.status === activeStatus);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
