@@ -4,6 +4,7 @@ import { ArrowLeft, MapPin, Instagram, MessageCircle, ExternalLink } from "lucid
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
+import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -84,7 +85,7 @@ const LocalDetail = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
         title={`${partner.name} — Eventos e festas em Presidente Prudente`}
         description={`Veja eventos e festas que acontecem no ${partner.name} em Presidente Prudente.`}
@@ -109,7 +110,8 @@ const LocalDetail = () => {
           ...(partner.logo_url ? { image: partner.logo_url } : {}),
         }}
       />
-      <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
+      <DesktopNav />
+      <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3 md:hidden">
         <div className="mx-auto max-w-lg flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="rounded-full bg-secondary p-2">
             <ArrowLeft className="h-4 w-4 text-foreground" />
@@ -118,7 +120,7 @@ const LocalDetail = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 mt-5 space-y-6">
+      <main className="mx-auto max-w-lg md:max-w-4xl px-4 md:px-6 mt-5 md:mt-8 space-y-6">
         {/* Partner Info */}
         <div className="rounded-2xl bg-card p-5 card-shadow">
           <div className="flex items-start gap-4">
@@ -139,7 +141,6 @@ const LocalDetail = () => {
             </div>
           </div>
 
-          {/* Location */}
           {partner.address && (
             <div className="flex items-start gap-2 mt-4 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -147,7 +148,6 @@ const LocalDetail = () => {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-2 mt-4">
             {partner.instagram && (
               <a
@@ -185,7 +185,6 @@ const LocalDetail = () => {
           </div>
         </div>
 
-        {/* Full description */}
         {partner.full_description && (
           <div className="rounded-2xl bg-card p-5 card-shadow">
             <h3 className="text-sm font-bold text-foreground mb-2">Sobre</h3>
@@ -193,11 +192,10 @@ const LocalDetail = () => {
           </div>
         )}
 
-        {/* Upcoming events */}
         {events.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-foreground mb-3">Próximos Eventos</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {events.map((e, i) => (
                 <EventCard key={e.id} event={e} index={i} />
               ))}

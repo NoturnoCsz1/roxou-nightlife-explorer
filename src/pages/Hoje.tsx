@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
+import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -41,13 +42,14 @@ const Hoje = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
         title="Eventos Hoje em Presidente Prudente | ROXOU"
         description="Veja todos os eventos, festas e baladas acontecendo hoje em Presidente Prudente."
         canonical="https://roxou.com.br/hoje"
       />
-      <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
+      <DesktopNav />
+      <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3 md:hidden">
         <div className="mx-auto max-w-lg">
           <h1 className="text-xl font-black font-display text-foreground">🔥 Hoje em Prudente</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -55,13 +57,20 @@ const Hoje = () => {
           </p>
         </div>
       </header>
-      <main className="mx-auto max-w-lg px-4 mt-5">
+      {/* Desktop page title */}
+      <div className="hidden md:block border-b border-border/20 bg-card/30">
+        <div className="mx-auto max-w-6xl px-6 py-5">
+          <h1 className="text-2xl font-black font-display text-foreground">🔥 Hoje em Prudente</h1>
+          <p className="text-sm text-muted-foreground mt-1">{formatDateHeader(new Date())}</p>
+        </div>
+      </div>
+      <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8">
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-12">Carregando...</p>
         ) : events.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento hoje.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {events.map((e, i) => (
               <EventCard key={e.id} event={e} index={i} />
             ))}

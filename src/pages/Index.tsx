@@ -9,6 +9,7 @@ import CategoryPills from "@/components/CategoryPills";
 import DateFilterPills from "@/components/DateFilterPills";
 import type { DateAnchor } from "@/components/DateFilterPills";
 import BottomNav from "@/components/BottomNav";
+import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import SectionHeader from "@/components/SectionHeader";
 import VenueList from "@/components/VenueList";
@@ -42,7 +43,6 @@ const Index = () => {
       (obs) => {
         obs.forEach(e => visibilityMap.set(e.target.id, e));
         const order: DateAnchor[] = ["hoje", "amanha", "fds"];
-        // Pick the most visible section, or the first intersecting one
         let best: DateAnchor | null = null;
         let bestRatio = 0;
         for (const k of order) {
@@ -135,7 +135,7 @@ const Index = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
         title="ROXOU — Eventos e bares em Presidente Prudente"
         description="Descubra festas, bares, baladas e shows acontecendo hoje em Presidente Prudente. Guia de eventos Roxou."
@@ -146,7 +146,12 @@ const Index = () => {
           potentialAction: { "@type": "SearchAction", target: "https://roxou.com.br/?q={search_term_string}", "query-input": "required name=search_term_string" },
         }}
       />
-      <header className="sticky top-0 z-40 glass border-b border-border/30">
+
+      {/* Desktop top nav */}
+      <DesktopNav />
+
+      {/* Mobile header */}
+      <header className="sticky top-0 z-40 glass border-b border-border/30 md:hidden">
         <div className="mx-auto max-w-lg px-4 pt-4 pb-3">
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -170,8 +175,22 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 mt-5 space-y-8">
-        <section><FeaturedCarousel /></section>
+      {/* Desktop search + pills bar */}
+      <div className="hidden md:block border-b border-border/20 bg-card/30">
+        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center gap-6">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-secondary/80 px-4 py-3 flex-1 max-w-md">
+            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+          </div>
+          <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8 space-y-8 md:space-y-12">
+        {/* Featured hero - larger on desktop */}
+        <section className="md:max-w-4xl md:mx-auto">
+          <FeaturedCarousel />
+        </section>
 
         <section>
           <SectionHeader title="Categorias" onSeeAll={() => navigate("/categorias")} />
@@ -183,7 +202,7 @@ const Index = () => {
         ) : searchResults ? (
           <section>
             <SectionHeader title={`Resultados para "${searchQuery}"`} />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {searchResults.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
             </div>
             {searchResults.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento encontrado.</p>}
@@ -191,7 +210,7 @@ const Index = () => {
         ) : filtered ? (
           <section>
             <SectionHeader title="Resultados" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {filtered.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
             </div>
             {filtered.length === 0 && <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento nessa categoria.</p>}
@@ -201,9 +220,9 @@ const Index = () => {
             {todayEvents.length > 0 && (
               <section id="section-hoje" ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🔥" title="Eventos de Hoje" subtitle={`${todayEvents.length} rolês pra você`} />
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
                   {todayEvents.map((e, i) => (
-                    <div key={e.id} className="w-[200px] shrink-0"><EventCard event={e} index={i} /></div>
+                    <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
                   ))}
                 </div>
               </section>
@@ -212,9 +231,9 @@ const Index = () => {
             {tomorrowEvents.length > 0 && (
               <section id="section-amanha" ref={el => { sectionRefs.current.amanha = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="📅" title="Eventos de Amanhã" subtitle={`${tomorrowEvents.length} rolês confirmados`} />
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
                   {tomorrowEvents.map((e, i) => (
-                    <div key={e.id} className="w-[200px] shrink-0"><EventCard event={e} index={i} /></div>
+                    <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
                   ))}
                 </div>
               </section>
@@ -223,7 +242,7 @@ const Index = () => {
             {weekendEvents.length > 0 && (
               <section id="section-fds" ref={el => { sectionRefs.current.fds = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🎉" title="Eventos do Fim de Semana" subtitle="Sábado e domingo" />
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {weekendEvents.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
                 </div>
               </section>
@@ -232,7 +251,7 @@ const Index = () => {
             {popularEvents.length > 0 && (
               <section>
                 <SectionHeader emoji="⚡" title="Populares da Semana" subtitle="Os mais procurados" onSeeAll={() => navigate("/semana")} />
-                <div className="space-y-3">
+                <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                   {popularEvents.map((e, i) => <EventCard key={e.id} event={e} variant="wide" index={i} />)}
                 </div>
               </section>
@@ -241,21 +260,23 @@ const Index = () => {
             {upcomingEvents.length > 0 && (
               <section>
                 <SectionHeader emoji="📅" title="Próximos Eventos" onSeeAll={() => navigate("/semana")} />
-                <div className="space-y-2.5">
+                <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                   {upcomingEvents.map((e, i) => <EventCard key={e.id} event={e} variant="compact" index={i} />)}
                 </div>
               </section>
             )}
 
-            <section>
-              <SectionHeader emoji="🔥" title="Lugares mais populares" subtitle="Onde o público mais vai" />
-              <PopularVenues />
-            </section>
+            <div className="md:grid md:grid-cols-2 md:gap-8">
+              <section>
+                <SectionHeader emoji="🔥" title="Lugares mais populares" subtitle="Onde o público mais vai" />
+                <PopularVenues />
+              </section>
 
-            <section>
-              <SectionHeader emoji="📍" title="Lugares em Destaque" subtitle="Os melhores da cidade" />
-              <VenueList />
-            </section>
+              <section>
+                <SectionHeader emoji="📍" title="Lugares em Destaque" subtitle="Os melhores da cidade" />
+                <VenueList />
+              </section>
+            </div>
           </>
         )}
       </main>
