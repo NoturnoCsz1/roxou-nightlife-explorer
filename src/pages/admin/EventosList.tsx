@@ -62,6 +62,7 @@ const EventosList = () => {
 
   useEffect(() => {
     loadEvents();
+    loadClickCounts();
   }, []);
 
   async function loadEvents() {
