@@ -148,6 +148,12 @@ const EventosList = () => {
           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
             {e.status === "published" ? "Publicado" : "Rascunho"}
           </span>
+          {clickCounts[e.id] > 0 && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
+              <MousePointerClick className="h-2.5 w-2.5" />
+              {clickCounts[e.id]}
+            </span>
+          )}
         </div>
       </Link>
       <div className="flex items-center shrink-0 ml-2 gap-0.5">
