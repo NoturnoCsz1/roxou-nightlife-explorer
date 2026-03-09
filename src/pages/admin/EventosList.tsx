@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Star, StarOff } from "lucide-react";
+import { Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface EventRow {
   id: string;
@@ -18,6 +28,7 @@ const EventosList = () => {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
 
   useEffect(() => {
     loadEvents();
@@ -37,6 +48,18 @@ const EventosList = () => {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
     toast.success(!current ? "Marcado como destaque" : "Removido do destaque");
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from("events").delete().eq("id", deleteTarget.id);
+    setDeleteTarget(null);
+    if (error) {
+      toast.error("Erro ao excluir evento. Tente novamente.");
+    } else {
+      toast.success("Evento excluído com sucesso.");
+      loadEvents();
+    }
   }
 
   const filtered = events.filter((e) =>
@@ -99,17 +122,43 @@ const EventosList = () => {
                   </span>
                 </div>
               </Link>
-              <button
-                onClick={() => toggleFeatured(e.id, e.featured)}
-                className="shrink-0 ml-2 p-1.5 rounded-lg hover:bg-secondary/50 transition"
-                title={e.featured ? "Remover destaque" : "Destacar"}
-              >
-                {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
-              </button>
+              <div className="flex items-center shrink-0 ml-2 gap-0.5">
+                <button
+                  onClick={() => toggleFeatured(e.id, e.featured)}
+                  className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
+                  title={e.featured ? "Remover destaque" : "Destacar"}
+                >
+                  {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(e)}
+                  className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
+                  title="Excluir evento"
+                >
+                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir evento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir <strong>"{deleteTarget?.title}"</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
