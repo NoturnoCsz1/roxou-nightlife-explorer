@@ -27,11 +27,30 @@ const Index = () => {
   const navigate = useNavigate();
   usePageTracking();
 
+  const [activeAnchor, setActiveAnchor] = useState<DateAnchor | null>(null);
   const sectionRefs = useRef<Record<DateAnchor, HTMLElement | null>>({ hoje: null, amanha: null, fds: null });
 
   const scrollTo = useCallback((anchor: DateAnchor) => {
+    setActiveAnchor(anchor);
     sectionRefs.current[anchor]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  // Track which section is in view
+  useEffect(() => {
+    const entries = new Map<string, boolean>();
+    const observer = new IntersectionObserver(
+      (obs) => {
+        obs.forEach(e => entries.set(e.target.id, e.isIntersecting));
+        const order: DateAnchor[] = ["hoje", "amanha", "fds"];
+        const visible = order.find(k => entries.get(`section-${k}`));
+        setActiveAnchor(visible ?? null);
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
+    );
+    const keys: DateAnchor[] = ["hoje", "amanha", "fds"];
+    keys.forEach(k => { const el = sectionRefs.current[k]; if (el) observer.observe(el); });
+    return () => observer.disconnect();
+  }, [loading, events]);
 
   useEffect(() => {
     async function load() {
