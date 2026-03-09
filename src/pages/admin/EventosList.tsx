@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Copy, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
+import { ChevronDown, Copy, MousePointerClick, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -38,6 +38,7 @@ const EventosList = () => {
   const [pastOpen, setPastOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -61,6 +62,7 @@ const EventosList = () => {
 
   useEffect(() => {
     loadEvents();
+    loadClickCounts();
   }, []);
 
   async function loadEvents() {
@@ -71,6 +73,16 @@ const EventosList = () => {
       .order("date_time", { ascending: false });
     setEvents(data || []);
     setLoading(false);
+  }
+
+  async function loadClickCounts() {
+    const { data } = await supabase.from("ticket_clicks").select("event_id");
+    if (!data) return;
+    const counts: Record<string, number> = {};
+    data.forEach((row) => {
+      if (row.event_id) counts[row.event_id] = (counts[row.event_id] || 0) + 1;
+    });
+    setClickCounts(counts);
   }
 
   async function toggleFeatured(id: string, current: boolean) {
@@ -136,6 +148,12 @@ const EventosList = () => {
           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
             {e.status === "published" ? "Publicado" : "Rascunho"}
           </span>
+          {clickCounts[e.id] > 0 && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
+              <MousePointerClick className="h-2.5 w-2.5" />
+              {clickCounts[e.id]}
+            </span>
+          )}
         </div>
       </Link>
       <div className="flex items-center shrink-0 ml-2 gap-0.5">

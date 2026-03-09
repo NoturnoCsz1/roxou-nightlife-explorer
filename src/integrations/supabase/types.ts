@@ -187,6 +187,32 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_clicks: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_clicks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visitor_sessions: {
         Row: {
           city: string | null
