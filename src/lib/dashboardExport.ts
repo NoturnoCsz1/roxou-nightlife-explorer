@@ -56,6 +56,26 @@ function buildCSVContent(data: ExportData): string {
   data.topPartners.forEach((p) => {
     lines.push(`${escapeCSV(p.name)},${p.pageViews},${p.eventViews},${p.eventCount},${p.total}`);
   });
+  lines.push("");
+
+  // Click trend
+  if (data.clicksByDay?.length) {
+    lines.push("=== Cliques de Ingresso por Dia ===");
+    lines.push("Dia,Cliques");
+    data.clicksByDay.forEach((d) => {
+      lines.push(`${escapeCSV(d.day)},${d.clicks}`);
+    });
+    lines.push("");
+  }
+
+  // Top clicked events
+  if (data.topClickedEvents?.length) {
+    lines.push("=== Eventos Mais Clicados ===");
+    lines.push("Evento,Cliques");
+    data.topClickedEvents.forEach((e) => {
+      lines.push(`${escapeCSV(e.title)},${e.clicks}`);
+    });
+  }
 
   return lines.join("\n");
 }
