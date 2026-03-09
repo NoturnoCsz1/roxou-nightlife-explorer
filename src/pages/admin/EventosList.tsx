@@ -37,6 +37,7 @@ const EventosList = () => {
   const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
   const [pastOpen, setPastOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<string | null>(null);
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
