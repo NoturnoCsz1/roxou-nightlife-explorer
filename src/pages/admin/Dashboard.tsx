@@ -79,11 +79,12 @@ const Dashboard = () => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const [eventsRes, partnersRes, viewsRes, sessionsRes] = await Promise.all([
+    const [eventsRes, partnersRes, viewsRes, sessionsRes, clicksRes] = await Promise.all([
       supabase.from("events").select("id, title, slug, status, date_time, created_at"),
       supabase.from("partners").select("id, name, slug, active, created_at"),
       supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO),
       supabase.from("visitor_sessions").select("session_id"),
+      supabase.from("ticket_clicks").select("event_id, created_at").gte("created_at", sinceISO),
     ]);
 
     const evts = eventsRes.data || [];
