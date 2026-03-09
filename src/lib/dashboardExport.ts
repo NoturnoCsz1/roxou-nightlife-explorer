@@ -139,7 +139,25 @@ export function exportExcel(data: ExportData) {
   data.topPartners.forEach((p) => {
     rows.push(`<tr><td>${p.name}</td><td>${p.pageViews}</td><td>${p.eventViews}</td><td>${p.eventCount}</td><td>${p.total}</td></tr>`);
   });
-  rows.push("</table>");
+  rows.push("</table><br/>");
+
+  // Click trend
+  if (data.clicksByDay?.length) {
+    rows.push("<table border='1'><tr><th colspan='2'>Cliques de Ingresso por Dia</th></tr><tr><th>Dia</th><th>Cliques</th></tr>");
+    data.clicksByDay.forEach((d) => {
+      rows.push(`<tr><td>${d.day}</td><td>${d.clicks}</td></tr>`);
+    });
+    rows.push("</table><br/>");
+  }
+
+  // Top clicked events
+  if (data.topClickedEvents?.length) {
+    rows.push("<table border='1'><tr><th colspan='2'>Eventos Mais Clicados</th></tr><tr><th>Evento</th><th>Cliques</th></tr>");
+    data.topClickedEvents.forEach((e) => {
+      rows.push(`<tr><td>${e.title}</td><td>${e.clicks}</td></tr>`);
+    });
+    rows.push("</table>");
+  }
 
   rows.push("</body></html>");
 
