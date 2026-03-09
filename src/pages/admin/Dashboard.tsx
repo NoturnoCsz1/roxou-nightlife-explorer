@@ -124,6 +124,28 @@ const Dashboard = () => {
     });
     setViewsByDay(days.map((d) => ({ day: d.slice(5), views: dayMap[d] })));
 
+    // Ticket clicks by day
+    const clickDayMap: Record<string, number> = {};
+    days.forEach((d) => (clickDayMap[d] = 0));
+    clicks.forEach((c) => {
+      const day = c.created_at.split("T")[0];
+      if (clickDayMap[day] !== undefined) clickDayMap[day]++;
+    });
+    setClicksByDay(days.map((d) => ({ day: d.slice(5), clicks: clickDayMap[d] })));
+
+    // Top clicked events
+    const eventIdTitle = new Map(evts.map((e) => [e.id, e.title]));
+    const clickEventMap: Record<string, number> = {};
+    clicks.forEach((c) => {
+      if (c.event_id) clickEventMap[c.event_id] = (clickEventMap[c.event_id] || 0) + 1;
+    });
+    setTopClickedEvents(
+      Object.entries(clickEventMap)
+        .map(([id, count]) => ({ title: eventIdTitle.get(id) || id, clicks: count }))
+        .sort((a, b) => b.clicks - a.clicks)
+        .slice(0, 5)
+    );
+
     const devMap: Record<string, number> = { mobile: 0, desktop: 0, tablet: 0 };
     views.forEach((v) => {
       const t = v.device_type || "desktop";
