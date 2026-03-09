@@ -239,6 +239,7 @@ const Dashboard = () => {
         <MetricCard title="Parceiros Ativos" value={metrics.activePartners} icon={Users} />
         <MetricCard title={`Views (${getPeriodLabel(period)})`} value={metrics.periodViews} icon={Eye} />
         <MetricCard title="Visitantes Únicos" value={metrics.uniqueVisitors} icon={Monitor} />
+        <MetricCard title={`Cliques Ingresso (${getPeriodLabel(period)})`} value={metrics.ticketClicks} icon={MousePointerClick} />
       </div>
 
       {/* Insights / Alerts */}
