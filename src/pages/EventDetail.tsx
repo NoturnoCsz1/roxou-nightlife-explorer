@@ -411,6 +411,19 @@ const EventDetail = () => {
           </div>
         </div>
 
+        {/* Ticket / reservation button */}
+        {(event as any).ticket_url && (
+          <a
+            href={(event as any).ticket_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full rounded-2xl gradient-primary py-3.5 px-6 text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] mb-6 card-shadow"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Garantir Entrada
+          </a>
+        )}
+
         {/* About event */}
         {event.description && (
           <div className="mb-8">
