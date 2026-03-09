@@ -91,6 +91,7 @@ const Dashboard = () => {
     const parts = partnersRes.data || [];
     const views = viewsRes.data || [];
     const sessions = sessionsRes.data || [];
+    const clicks = clicksRes.data || [];
 
     const published = evts.filter((e) => e.status === "published");
     const upcoming = published.filter((e) => e.date_time > now);
