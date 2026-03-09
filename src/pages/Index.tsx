@@ -266,17 +266,10 @@ const Index = () => {
               </section>
             )}
 
-            <div className="md:grid md:grid-cols-2 md:gap-8">
-              <section>
-                <SectionHeader emoji="🔥" title="Lugares mais populares" subtitle="Onde o público mais vai" />
-                <PopularVenues />
-              </section>
-
-              <section>
-                <SectionHeader emoji="📍" title="Lugares em Destaque" subtitle="Os melhores da cidade" />
-                <VenueList />
-              </section>
-            </div>
+            <section>
+              <SectionHeader emoji="🔥" title="Lugares mais populares" subtitle="Onde o público mais vai" />
+              <PopularVenues />
+            </section>
           </>
         )}
       </main>
