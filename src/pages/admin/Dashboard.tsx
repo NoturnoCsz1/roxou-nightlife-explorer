@@ -286,10 +286,11 @@ const Dashboard = () => {
           {recentEvents.length === 0 ? (
             <p className="text-xs text-muted-foreground py-6 text-center">Nenhum evento ainda</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {recentEvents.map((e) => (
                 <li key={e.id} className="min-w-0">
-                  <Link to={`/admin/eventos/${e.id}/editar`} className="flex items-center gap-2 text-xs hover:text-primary transition min-w-0">
+                  <Link to={`/admin/eventos/${e.id}/editar`} className="flex items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-lg text-xs hover:bg-muted/50 hover:text-primary transition min-w-0">
+                    <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate min-w-0 flex-1 font-medium">{e.title}</span>
                     <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
                       {new Date(e.created_at).toLocaleDateString("pt-BR")}
@@ -305,10 +306,11 @@ const Dashboard = () => {
           {recentPartners.length === 0 ? (
             <p className="text-xs text-muted-foreground py-6 text-center">Nenhum parceiro ainda</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {recentPartners.map((p) => (
                 <li key={p.id} className="min-w-0">
-                  <Link to={`/admin/parceiros/${p.id}/editar`} className="flex items-center gap-2 text-xs hover:text-primary transition min-w-0">
+                  <Link to={`/admin/parceiros/${p.id}/editar`} className="flex items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-lg text-xs hover:bg-muted/50 hover:text-primary transition min-w-0">
+                    <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <span className="truncate min-w-0 flex-1 font-medium">{p.name}</span>
                     <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
                       {new Date(p.created_at).toLocaleDateString("pt-BR")}
