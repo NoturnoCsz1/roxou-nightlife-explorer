@@ -27,11 +27,30 @@ const Index = () => {
   const navigate = useNavigate();
   usePageTracking();
 
+  const [activeAnchor, setActiveAnchor] = useState<DateAnchor | null>(null);
   const sectionRefs = useRef<Record<DateAnchor, HTMLElement | null>>({ hoje: null, amanha: null, fds: null });
 
   const scrollTo = useCallback((anchor: DateAnchor) => {
+    setActiveAnchor(anchor);
     sectionRefs.current[anchor]?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  // Track which section is in view
+  useEffect(() => {
+    const entries = new Map<string, boolean>();
+    const observer = new IntersectionObserver(
+      (obs) => {
+        obs.forEach(e => entries.set(e.target.id, e.isIntersecting));
+        const order: DateAnchor[] = ["hoje", "amanha", "fds"];
+        const visible = order.find(k => entries.get(`section-${k}`));
+        setActiveAnchor(visible ?? null);
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
+    );
+    const keys: DateAnchor[] = ["hoje", "amanha", "fds"];
+    keys.forEach(k => { const el = sectionRefs.current[k]; if (el) observer.observe(el); });
+    return () => observer.disconnect();
+  }, [loading, events]);
 
   useEffect(() => {
     async function load() {
@@ -137,7 +156,7 @@ const Index = () => {
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
           <div className="mt-3">
-            <DateFilterPills onScrollTo={scrollTo} />
+            <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
           </div>
         </div>
       </header>
@@ -171,7 +190,7 @@ const Index = () => {
         ) : (
           <>
             {todayEvents.length > 0 && (
-              <section ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36">
+              <section id="section-hoje" ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🔥" title="Eventos de Hoje" subtitle={`${todayEvents.length} rolês pra você`} />
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
                   {todayEvents.map((e, i) => (
@@ -182,7 +201,7 @@ const Index = () => {
             )}
 
             {tomorrowEvents.length > 0 && (
-              <section ref={el => { sectionRefs.current.amanha = el; }} className="scroll-mt-36">
+              <section id="section-amanha" ref={el => { sectionRefs.current.amanha = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="📅" title="Eventos de Amanhã" subtitle={`${tomorrowEvents.length} rolês confirmados`} />
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2">
                   {tomorrowEvents.map((e, i) => (
@@ -193,7 +212,7 @@ const Index = () => {
             )}
 
             {weekendEvents.length > 0 && (
-              <section ref={el => { sectionRefs.current.fds = el; }} className="scroll-mt-36">
+              <section id="section-fds" ref={el => { sectionRefs.current.fds = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🎉" title="Eventos do Fim de Semana" subtitle="Sábado e domingo" />
                 <div className="grid grid-cols-2 gap-3">
                   {weekendEvents.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
