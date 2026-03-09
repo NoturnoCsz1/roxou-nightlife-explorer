@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Search, Star, StarOff, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface EventRow {
   id: string;
@@ -29,6 +34,7 @@ const EventosList = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
+  const [pastOpen, setPastOpen] = useState(false);
 
   useEffect(() => {
     loadEvents();
@@ -66,6 +72,13 @@ const EventosList = () => {
     e.title.toLowerCase().includes(search.toLowerCase())
   );
 
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  const todayEvents = filtered.filter((e) => e.date_time.slice(0, 10) === todayStr);
+  const upcomingEvents = filtered.filter((e) => e.date_time.slice(0, 10) > todayStr);
+  const pastEvents = filtered.filter((e) => e.date_time.slice(0, 10) < todayStr);
+
   const categoryBadge: Record<string, string> = {
     balada: "badge-balada",
     show: "badge-show",
@@ -75,6 +88,54 @@ const EventosList = () => {
     funk: "badge-funk",
     eletronica: "badge-eletronica",
     festa: "badge-balada",
+  };
+
+  const renderEventRow = (e: EventRow) => (
+    <div key={e.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3">
+      <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
+        <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
+            {e.category}
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {new Date(e.date_time).toLocaleDateString("pt-BR")}
+          </span>
+          {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
+          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
+            {e.status === "published" ? "Publicado" : "Rascunho"}
+          </span>
+        </div>
+      </Link>
+      <div className="flex items-center shrink-0 ml-2 gap-0.5">
+        <button
+          onClick={() => toggleFeatured(e.id, e.featured)}
+          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
+          title={e.featured ? "Remover destaque" : "Destacar"}
+        >
+          {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
+        </button>
+        <button
+          onClick={() => setDeleteTarget(e)}
+          className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
+          title="Excluir evento"
+        >
+          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderSection = (title: string, items: EventRow[], emoji: string) => {
+    if (items.length === 0) return null;
+    return (
+      <div>
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">
+          {emoji} {title} ({items.length})
+        </h2>
+        <div className="space-y-2">{items.map(renderEventRow)}</div>
+      </div>
+    );
   };
 
   return (
@@ -104,42 +165,23 @@ const EventosList = () => {
       ) : filtered.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>
       ) : (
-        <div className="space-y-2">
-          {filtered.map((e) => (
-            <div key={e.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3">
-              <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
-                <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
-                    {e.category}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(e.date_time).toLocaleDateString("pt-BR")}
-                  </span>
-                  {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
-                    {e.status === "published" ? "Publicado" : "Rascunho"}
-                  </span>
-                </div>
-              </Link>
-              <div className="flex items-center shrink-0 ml-2 gap-0.5">
-                <button
-                  onClick={() => toggleFeatured(e.id, e.featured)}
-                  className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
-                  title={e.featured ? "Remover destaque" : "Destacar"}
-                >
-                  {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(e)}
-                  className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
-                  title="Excluir evento"
-                >
-                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="space-y-6">
+          {renderSection("Hoje", todayEvents, "📌")}
+          {renderSection("Próximos", upcomingEvents, "🔜")}
+
+          {pastEvents.length > 0 && (
+            <Collapsible open={pastOpen} onOpenChange={setPastOpen}>
+              <CollapsibleTrigger className="flex items-center gap-2 w-full group">
+                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                  📂 Eventos Passados ({pastEvents.length})
+                </h2>
+                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${pastOpen ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="space-y-2">{pastEvents.map(renderEventRow)}</div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       )}
 
