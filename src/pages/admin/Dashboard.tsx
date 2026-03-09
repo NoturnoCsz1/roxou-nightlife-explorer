@@ -281,17 +281,17 @@ const Dashboard = () => {
 
       {/* Recent activity */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border/40 bg-card p-4">
+        <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden">
           <h3 className="text-sm font-semibold text-foreground mb-3">Últimos Eventos</h3>
           {recentEvents.length === 0 ? (
             <p className="text-xs text-muted-foreground py-6 text-center">Nenhum evento ainda</p>
           ) : (
             <ul className="space-y-2">
               {recentEvents.map((e) => (
-                <li key={e.id}>
-                  <Link to={`/admin/eventos/${e.id}/editar`} className="flex justify-between items-center text-xs hover:text-primary transition">
-                    <span className="truncate font-medium">{e.title}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
+                <li key={e.id} className="min-w-0">
+                  <Link to={`/admin/eventos/${e.id}/editar`} className="flex items-center gap-2 text-xs hover:text-primary transition min-w-0">
+                    <span className="truncate min-w-0 flex-1 font-medium">{e.title}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
                       {new Date(e.created_at).toLocaleDateString("pt-BR")}
                     </span>
                   </Link>
@@ -300,17 +300,17 @@ const Dashboard = () => {
             </ul>
           )}
         </div>
-        <div className="rounded-xl border border-border/40 bg-card p-4">
+        <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden">
           <h3 className="text-sm font-semibold text-foreground mb-3">Últimos Parceiros</h3>
           {recentPartners.length === 0 ? (
             <p className="text-xs text-muted-foreground py-6 text-center">Nenhum parceiro ainda</p>
           ) : (
             <ul className="space-y-2">
               {recentPartners.map((p) => (
-                <li key={p.id}>
-                  <Link to={`/admin/parceiros/${p.id}/editar`} className="flex justify-between items-center text-xs hover:text-primary transition">
-                    <span className="truncate font-medium">{p.name}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
+                <li key={p.id} className="min-w-0">
+                  <Link to={`/admin/parceiros/${p.id}/editar`} className="flex items-center gap-2 text-xs hover:text-primary transition min-w-0">
+                    <span className="truncate min-w-0 flex-1 font-medium">{p.name}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
                       {new Date(p.created_at).toLocaleDateString("pt-BR")}
                     </span>
                   </Link>
