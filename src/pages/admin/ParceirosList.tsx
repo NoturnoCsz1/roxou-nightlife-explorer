@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Search, CheckCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Partner = Tables<"partners">;
 
@@ -10,6 +21,8 @@ const ParceirosList = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<Partner | null>(null);
+  const [hasLinkedEvents, setHasLinkedEvents] = useState(false);
 
   useEffect(() => {
     loadPartners();
@@ -23,6 +36,33 @@ const ParceirosList = () => {
       .order("created_at", { ascending: false });
     setPartners(data || []);
     setLoading(false);
+  }
+
+  async function handleDeleteClick(partner: Partner) {
+    // Check for linked events
+    const { count } = await supabase
+      .from("events")
+      .select("id", { count: "exact", head: true })
+      .eq("partner_id", partner.id);
+
+    if (count && count > 0) {
+      setHasLinkedEvents(true);
+    } else {
+      setHasLinkedEvents(false);
+    }
+    setDeleteTarget(partner);
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget || hasLinkedEvents) return;
+    const { error } = await supabase.from("partners").delete().eq("id", deleteTarget.id);
+    setDeleteTarget(null);
+    if (error) {
+      toast.error("Erro ao excluir parceiro. Tente novamente.");
+    } else {
+      toast.success("Parceiro excluído com sucesso.");
+      loadPartners();
+    }
   }
 
   const filtered = partners.filter(
@@ -60,29 +100,60 @@ const ParceirosList = () => {
       ) : (
         <div className="space-y-2">
           {filtered.map((p) => (
-            <Link
+            <div
               key={p.id}
-              to={`/admin/parceiros/${p.id}/editar`}
               className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3 hover:border-primary/30 transition"
             >
-              <div className="min-w-0">
+              <Link to={`/admin/parceiros/${p.id}/editar`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-semibold text-foreground truncate">{p.name}</span>
                   {p.verified_partner && <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />}
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-0.5">{p.type}</span>
-              </div>
+              </Link>
               <div className="flex items-center gap-1.5 shrink-0 ml-2">
                 {p.active ? (
                   <span className="text-[10px] font-medium text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded">Ativo</span>
                 ) : (
                   <span className="text-[10px] font-medium text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Inativo</span>
                 )}
+                <button
+                  onClick={() => handleDeleteClick(p)}
+                  className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
+                  title="Excluir parceiro"
+                >
+                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {hasLinkedEvents ? "Não é possível excluir" : "Excluir parceiro"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {hasLinkedEvents ? (
+                <>Este parceiro possui eventos vinculados. Remova ou reatribua os eventos antes de excluí-lo.</>
+              ) : (
+                <>Tem certeza que deseja excluir <strong>"{deleteTarget?.name}"</strong>? Esta ação não pode ser desfeita.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            {!hasLinkedEvents && (
+              <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                Excluir
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
