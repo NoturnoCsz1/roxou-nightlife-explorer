@@ -27,6 +27,7 @@ const EventoForm = () => {
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
     venue_name: "", address: "", instagram: "", description: "",
     status: "draft", verification_source: "", featured: false, image_url: "",
+    ticket_url: "",
   });
 
   useEffect(() => { loadPartners(); if (isEdit) loadEvent(); }, [id]);
