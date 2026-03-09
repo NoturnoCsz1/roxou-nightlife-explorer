@@ -38,6 +38,7 @@ const EventosList = () => {
   const [pastOpen, setPastOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
