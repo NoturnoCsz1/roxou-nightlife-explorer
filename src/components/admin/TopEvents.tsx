@@ -9,11 +9,18 @@ interface RankedEvent {
   date_time: string;
 }
 
-interface TopEventsProps {
-  since: string;
+export interface TopEventExport {
+  title: string;
+  views: number;
+  date: string;
 }
 
-const TopEvents = ({ since }: TopEventsProps) => {
+interface TopEventsProps {
+  since: string;
+  onDataLoaded?: (data: TopEventExport[]) => void;
+}
+
+const TopEvents = ({ since, onDataLoaded }: TopEventsProps) => {
   const [ranked, setRanked] = useState<RankedEvent[]>([]);
 
   useEffect(() => {
@@ -45,9 +52,14 @@ const TopEvents = ({ since }: TopEventsProps) => {
         .slice(0, 10);
 
       setRanked(result);
+      onDataLoaded?.(result.map((r) => ({
+        title: r.title,
+        views: r.views,
+        date: new Date(r.date_time).toLocaleDateString("pt-BR"),
+      })));
     }
     load();
-  }, [since]);
+  }, [since, onDataLoaded]);
 
   if (ranked.length === 0) return null;
 
