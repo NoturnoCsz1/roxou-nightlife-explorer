@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import DesktopNav from "@/components/DesktopNav";
 import {
   ArrowLeft,
   Calendar,
@@ -151,6 +152,7 @@ const EventDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <DesktopNav />
       <SEO
         title={`${event.title} — Evento em Presidente Prudente | ROXOU`}
         description={`${event.title} acontece em ${event.venue_name || "Presidente Prudente"} em Presidente Prudente. Veja informações completas do evento.`}

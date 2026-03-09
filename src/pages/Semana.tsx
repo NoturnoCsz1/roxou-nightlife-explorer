@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
+import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -38,25 +39,34 @@ const Semana = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
         title="Eventos da Semana em Presidente Prudente | ROXOU"
         description="Confira todos os eventos dos próximos 7 dias em Presidente Prudente. Festas, shows e baladas."
         canonical="https://roxou.com.br/semana"
       />
-      <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3">
+      <DesktopNav />
+      <header className="sticky top-0 z-40 glass border-b border-border/30 px-4 pt-4 pb-3 md:hidden">
         <div className="mx-auto max-w-lg">
           <h1 className="text-xl font-black font-display text-foreground">📅 Esta Semana</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Todos os eventos dos próximos 7 dias</p>
         </div>
       </header>
-      <main className="mx-auto max-w-lg px-4 mt-5 space-y-3">
+      <div className="hidden md:block border-b border-border/20 bg-card/30">
+        <div className="mx-auto max-w-6xl px-6 py-5">
+          <h1 className="text-2xl font-black font-display text-foreground">📅 Esta Semana</h1>
+          <p className="text-sm text-muted-foreground mt-1">Todos os eventos dos próximos 7 dias</p>
+        </div>
+      </div>
+      <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8 space-y-3 md:space-y-0">
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-12">Carregando...</p>
         ) : events.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento esta semana.</p>
         ) : (
-          events.map((e, i) => <EventCard key={e.id} event={e} variant="compact" index={i} />)
+          <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
+            {events.map((e, i) => <EventCard key={e.id} event={e} variant="compact" index={i} />)}
+          </div>
         )}
       </main>
       <Footer />
