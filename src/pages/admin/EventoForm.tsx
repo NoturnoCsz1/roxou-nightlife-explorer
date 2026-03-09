@@ -60,6 +60,7 @@ const EventoForm = () => {
         instagram: data.instagram || "", description: data.description || "",
         status: data.status, verification_source: data.verification_source || "",
         featured: data.featured, image_url: data.image_url || "",
+        ticket_url: (data as any).ticket_url || "",
       });
       if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     }
