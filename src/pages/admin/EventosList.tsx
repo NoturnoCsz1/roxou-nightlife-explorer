@@ -75,6 +75,16 @@ const EventosList = () => {
     setLoading(false);
   }
 
+  async function loadClickCounts() {
+    const { data } = await supabase.from("ticket_clicks").select("event_id");
+    if (!data) return;
+    const counts: Record<string, number> = {};
+    data.forEach((row) => {
+      if (row.event_id) counts[row.event_id] = (counts[row.event_id] || 0) + 1;
+    });
+    setClickCounts(counts);
+  }
+
   async function toggleFeatured(id: string, current: boolean) {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
