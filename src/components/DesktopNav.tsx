@@ -33,10 +33,10 @@ const DesktopNav = () => {
               <button
                 key={tab.path}
                 onClick={() => navigate(tab.path)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-250 ${
                   active
                     ? "gradient-primary text-primary-foreground neon-glow"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)]"
                 }`}
               >
                 <tab.icon className="h-4 w-4" />

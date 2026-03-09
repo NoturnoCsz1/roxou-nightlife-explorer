@@ -98,13 +98,13 @@ const PopularVenues = () => {
         <button
           key={v.id}
           onClick={() => navigate(`/local/${v.slug}`)}
-          className="group flex w-full items-center gap-3 rounded-2xl bg-card p-4 text-left transition-all hover:neon-border card-shadow cursor-pointer"
+          className="group flex w-full items-center gap-3 rounded-2xl bg-card p-4 text-left transition-all duration-300 hover:neon-border card-shadow cursor-pointer md:hover:-translate-y-0.5 md:hover:shadow-[0_12px_40px_hsl(0_0%_0%/0.5)]"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary font-black text-sm font-display">
             {i + 1}º
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-foreground font-display truncate">{v.name}</h3>
+            <h3 className="text-sm font-bold text-foreground font-display truncate md:group-hover:text-primary transition-colors duration-200">{v.name}</h3>
             <p className="text-[11px] text-muted-foreground capitalize">{v.type}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">

@@ -14,13 +14,13 @@ interface VenueData {
 const VenueCard = ({ venue, onClick }: { venue: VenueData; onClick: () => void }) => (
   <button
     onClick={onClick}
-    className="group flex w-full items-center gap-3 rounded-2xl bg-card p-4 text-left transition-all hover:neon-border card-shadow cursor-pointer"
+    className="group flex w-full items-center gap-3 rounded-2xl bg-card p-4 text-left transition-all duration-300 hover:neon-border card-shadow cursor-pointer md:hover:-translate-y-0.5 md:hover:shadow-[0_12px_40px_hsl(0_0%_0%/0.5)]"
   >
     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl gradient-primary">
       <MapPin className="h-5 w-5 text-primary-foreground" />
     </div>
     <div className="flex-1 min-w-0">
-      <h3 className="text-sm font-bold text-foreground font-display truncate">{venue.name}</h3>
+      <h3 className="text-sm font-bold text-foreground font-display truncate md:group-hover:text-primary transition-colors duration-200">{venue.name}</h3>
       <p className="text-[11px] text-muted-foreground">{venue.type} · {venue.address}</p>
     </div>
     <div className="text-right shrink-0 flex items-center gap-1">
