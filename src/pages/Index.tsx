@@ -37,15 +37,24 @@ const Index = () => {
 
   // Track which section is in view
   useEffect(() => {
-    const entries = new Map<string, boolean>();
+    const visibilityMap = new Map<string, IntersectionObserverEntry>();
     const observer = new IntersectionObserver(
       (obs) => {
-        obs.forEach(e => entries.set(e.target.id, e.isIntersecting));
+        obs.forEach(e => visibilityMap.set(e.target.id, e));
         const order: DateAnchor[] = ["hoje", "amanha", "fds"];
-        const visible = order.find(k => entries.get(`section-${k}`));
-        setActiveAnchor(visible ?? null);
+        // Pick the most visible section, or the first intersecting one
+        let best: DateAnchor | null = null;
+        let bestRatio = 0;
+        for (const k of order) {
+          const entry = visibilityMap.get(`section-${k}`);
+          if (entry?.isIntersecting && entry.intersectionRatio > bestRatio) {
+            best = k;
+            bestRatio = entry.intersectionRatio;
+          }
+        }
+        setActiveAnchor(best);
       },
-      { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
+      { rootMargin: "-20% 0px -40% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
     );
     const keys: DateAnchor[] = ["hoje", "amanha", "fds"];
     keys.forEach(k => { const el = sectionRefs.current[k]; if (el) observer.observe(el); });
