@@ -6,6 +6,8 @@ interface ExportData {
   topPages: { label: string; views: number }[];
   topEvents: { title: string; views: number; date: string }[];
   topPartners: { name: string; pageViews: number; eventViews: number; eventCount: number; total: number }[];
+  clicksByDay?: { day: string; clicks: number }[];
+  topClickedEvents?: { title: string; clicks: number }[];
 }
 
 function escapeCSV(val: string | number): string {
