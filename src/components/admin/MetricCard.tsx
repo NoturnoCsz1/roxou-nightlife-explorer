@@ -10,13 +10,13 @@ interface MetricCardProps {
 }
 
 const MetricCard = ({ title, value, icon: Icon, trend, className }: MetricCardProps) => (
-  <div className={cn("rounded-xl border border-border/40 bg-card p-3", className)}>
-    <div className="flex items-center justify-between mb-1">
-      <span className="text-[11px] text-muted-foreground font-medium">{title}</span>
-      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+  <div className={cn("rounded-xl border border-border/40 bg-card p-4", className)}>
+    <div className="flex items-center justify-between mb-1.5">
+      <span className="text-xs text-muted-foreground font-medium">{title}</span>
+      <Icon className="h-4 w-4 text-muted-foreground" />
     </div>
-    <p className="text-xl font-bold text-foreground">{value}</p>
-    {trend && <p className="text-[10px] text-muted-foreground mt-0.5">{trend}</p>}
+    <p className="text-2xl font-bold text-foreground">{value}</p>
+    {trend && <p className="text-[11px] text-muted-foreground mt-1">{trend}</p>}
   </div>
 );
 
