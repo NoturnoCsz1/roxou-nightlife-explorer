@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download } from "lucide-react";
+import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download, MousePointerClick } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/admin/MetricCard";
 import TopPartners from "@/components/admin/TopPartners";
@@ -30,12 +30,15 @@ const Dashboard = () => {
     activePartners: 0,
     periodViews: 0,
     uniqueVisitors: 0,
+    ticketClicks: 0,
   });
   const [viewsByDay, setViewsByDay] = useState<{ day: string; views: number }[]>([]);
   const [deviceData, setDeviceData] = useState<{ name: string; value: number }[]>([]);
   const [topPages, setTopPages] = useState<TopPageItem[]>([]);
   const [recentEvents, setRecentEvents] = useState<{ id: string; title: string; created_at: string }[]>([]);
   const [recentPartners, setRecentPartners] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  const [clicksByDay, setClicksByDay] = useState<{ day: string; clicks: number }[]>([]);
+  const [topClickedEvents, setTopClickedEvents] = useState<{ title: string; clicks: number }[]>([]);
 
   const topEventsRef = useRef<TopEventExport[]>([]);
   const topPartnersRef = useRef<TopPartnerExport[]>([]);
@@ -76,17 +79,19 @@ const Dashboard = () => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const [eventsRes, partnersRes, viewsRes, sessionsRes] = await Promise.all([
+    const [eventsRes, partnersRes, viewsRes, sessionsRes, clicksRes] = await Promise.all([
       supabase.from("events").select("id, title, slug, status, date_time, created_at"),
       supabase.from("partners").select("id, name, slug, active, created_at"),
       supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO),
       supabase.from("visitor_sessions").select("session_id"),
+      supabase.from("ticket_clicks").select("event_id, created_at").gte("created_at", sinceISO),
     ]);
 
     const evts = eventsRes.data || [];
     const parts = partnersRes.data || [];
     const views = viewsRes.data || [];
     const sessions = sessionsRes.data || [];
+    const clicks = clicksRes.data || [];
 
     const published = evts.filter((e) => e.status === "published");
     const upcoming = published.filter((e) => e.date_time > now);
@@ -99,6 +104,7 @@ const Dashboard = () => {
       activePartners: parts.filter((p) => p.active).length,
       periodViews: views.length,
       uniqueVisitors: sessions.length,
+      ticketClicks: clicks.length,
     });
 
     const eventSlugTitle = new Map(evts.map((e) => [e.slug, e.title]));
@@ -117,6 +123,28 @@ const Dashboard = () => {
       if (dayMap[day] !== undefined) dayMap[day]++;
     });
     setViewsByDay(days.map((d) => ({ day: d.slice(5), views: dayMap[d] })));
+
+    // Ticket clicks by day
+    const clickDayMap: Record<string, number> = {};
+    days.forEach((d) => (clickDayMap[d] = 0));
+    clicks.forEach((c) => {
+      const day = c.created_at.split("T")[0];
+      if (clickDayMap[day] !== undefined) clickDayMap[day]++;
+    });
+    setClicksByDay(days.map((d) => ({ day: d.slice(5), clicks: clickDayMap[d] })));
+
+    // Top clicked events
+    const eventIdTitle = new Map(evts.map((e) => [e.id, e.title]));
+    const clickEventMap: Record<string, number> = {};
+    clicks.forEach((c) => {
+      if (c.event_id) clickEventMap[c.event_id] = (clickEventMap[c.event_id] || 0) + 1;
+    });
+    setTopClickedEvents(
+      Object.entries(clickEventMap)
+        .map(([id, count]) => ({ title: eventIdTitle.get(id) || id, clicks: count }))
+        .sort((a, b) => b.clicks - a.clicks)
+        .slice(0, 5)
+    );
 
     const devMap: Record<string, number> = { mobile: 0, desktop: 0, tablet: 0 };
     views.forEach((v) => {
@@ -204,13 +232,14 @@ const Dashboard = () => {
       </div>
 
       {/* Metrics grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <MetricCard title="Total Eventos" value={metrics.totalEvents} icon={CalendarDays} />
         <MetricCard title="Próximos" value={metrics.upcomingEvents} icon={Clock} />
         <MetricCard title="Hoje" value={metrics.eventsToday} icon={CalendarCheck} />
         <MetricCard title="Parceiros Ativos" value={metrics.activePartners} icon={Users} />
         <MetricCard title={`Views (${getPeriodLabel(period)})`} value={metrics.periodViews} icon={Eye} />
         <MetricCard title="Visitantes Únicos" value={metrics.uniqueVisitors} icon={Monitor} />
+        <MetricCard title={`Cliques Ingresso (${getPeriodLabel(period)})`} value={metrics.ticketClicks} icon={MousePointerClick} />
       </div>
 
       {/* Insights / Alerts */}
@@ -270,6 +299,56 @@ const Dashboard = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Ticket clicks analytics */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-xl border border-border/40 bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <MousePointerClick className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Cliques de Ingresso ({getPeriodLabel(period)})</h3>
+          </div>
+          <div className="h-44">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={clicksByDay}>
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={period === "30d" || period === "mes" ? 4 : 0} />
+                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                <Line type="monotone" dataKey="clicks" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/40 bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <MousePointerClick className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Eventos Mais Clicados</h3>
+          </div>
+          {topClickedEvents.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-6 text-center">Nenhum clique registrado no período</p>
+          ) : (
+            <div className="space-y-2">
+              {topClickedEvents.map((e, i) => (
+                <div key={e.title} className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-primary w-5 shrink-0">{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium truncate">{e.title}</span>
+                      <span className="text-xs font-bold text-foreground shrink-0">{e.clicks}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-accent/70"
+                        style={{ width: `${topClickedEvents[0] ? (e.clicks / topClickedEvents[0].clicks) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
