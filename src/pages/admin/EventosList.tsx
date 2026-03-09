@@ -30,11 +30,32 @@ interface EventRow {
 }
 
 const EventosList = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<EventRow | null>(null);
   const [pastOpen, setPastOpen] = useState(false);
+
+  async function handleDuplicate(eventId: string) {
+    const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
+    if (!data) { toast.error("Erro ao carregar evento"); return; }
+    navigate("/admin/eventos/novo", {
+      state: {
+        duplicate: {
+          title: data.title,
+          description: data.description || "",
+          category: data.category,
+          venue_name: data.venue_name || "",
+          address: data.address || "",
+          instagram: data.instagram || "",
+          image_url: data.image_url || "",
+          partner_id: data.partner_id || "",
+          ticket_url: (data as any).ticket_url || "",
+        },
+      },
+    });
+  }
 
   useEffect(() => {
     loadEvents();
