@@ -212,7 +212,7 @@ const Index = () => {
             )}
 
             {weekendEvents.length > 0 && (
-              <section ref={el => { sectionRefs.current.fds = el; }} className="scroll-mt-36">
+              <section id="section-fds" ref={el => { sectionRefs.current.fds = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🎉" title="Eventos do Fim de Semana" subtitle="Sábado e domingo" />
                 <div className="grid grid-cols-2 gap-3">
                   {weekendEvents.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
