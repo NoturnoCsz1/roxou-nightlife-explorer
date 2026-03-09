@@ -28,6 +28,7 @@ export type Database = {
           partner_id: string | null
           slug: string
           status: string
+          ticket_url: string | null
           title: string
           venue_name: string | null
           verification_source: string | null
@@ -45,6 +46,7 @@ export type Database = {
           partner_id?: string | null
           slug: string
           status?: string
+          ticket_url?: string | null
           title: string
           venue_name?: string | null
           verification_source?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           partner_id?: string | null
           slug?: string
           status?: string
+          ticket_url?: string | null
           title?: string
           venue_name?: string | null
           verification_source?: string | null

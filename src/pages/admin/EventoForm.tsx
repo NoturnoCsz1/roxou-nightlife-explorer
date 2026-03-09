@@ -27,6 +27,7 @@ const EventoForm = () => {
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
     venue_name: "", address: "", instagram: "", description: "",
     status: "draft", verification_source: "", featured: false, image_url: "",
+    ticket_url: "",
   });
 
   useEffect(() => { loadPartners(); if (isEdit) loadEvent(); }, [id]);
@@ -59,6 +60,7 @@ const EventoForm = () => {
         instagram: data.instagram || "", description: data.description || "",
         status: data.status, verification_source: data.verification_source || "",
         featured: data.featured, image_url: data.image_url || "",
+        ticket_url: (data as any).ticket_url || "",
       });
       if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     }
@@ -205,6 +207,10 @@ const EventoForm = () => {
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Fonte de verificação</label>
                 <input className={inputClass} value={form.verification_source} onChange={(e) => handleChange("verification_source", e.target.value)} placeholder="Instagram, site..." />
+              </div>
+              <div className="col-span-2">
+                <label className="text-[11px] font-medium text-muted-foreground">Link de ingresso / reserva (opcional)</label>
+                <input className={inputClass} value={form.ticket_url} onChange={(e) => handleChange("ticket_url", e.target.value)} placeholder="https://... ou link WhatsApp" />
               </div>
               <div className="col-span-2">
                 <label className="flex items-center gap-1.5 text-xs">

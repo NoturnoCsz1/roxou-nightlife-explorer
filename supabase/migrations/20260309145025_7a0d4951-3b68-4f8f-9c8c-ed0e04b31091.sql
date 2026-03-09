@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN ticket_url text DEFAULT NULL;
