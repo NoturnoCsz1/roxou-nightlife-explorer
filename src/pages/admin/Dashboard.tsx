@@ -37,6 +37,8 @@ const Dashboard = () => {
   const [topPages, setTopPages] = useState<TopPageItem[]>([]);
   const [recentEvents, setRecentEvents] = useState<{ id: string; title: string; created_at: string }[]>([]);
   const [recentPartners, setRecentPartners] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  const [clicksByDay, setClicksByDay] = useState<{ day: string; clicks: number }[]>([]);
+  const [topClickedEvents, setTopClickedEvents] = useState<{ title: string; clicks: number }[]>([]);
 
   const topEventsRef = useRef<TopEventExport[]>([]);
   const topPartnersRef = useRef<TopPartnerExport[]>([]);
