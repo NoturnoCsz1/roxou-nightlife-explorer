@@ -20,7 +20,7 @@ const VenueCard = ({ venue, onClick }: { venue: VenueData; onClick: () => void }
       <MapPin className="h-5 w-5 text-primary-foreground" />
     </div>
     <div className="flex-1 min-w-0">
-      <h3 className="text-sm font-bold text-foreground font-display truncate">{venue.name}</h3>
+      <h3 className="text-sm font-bold text-foreground font-display truncate md:group-hover:text-primary transition-colors duration-200">{venue.name}</h3>
       <p className="text-[11px] text-muted-foreground">{venue.type} · {venue.address}</p>
     </div>
     <div className="text-right shrink-0 flex items-center gap-1">

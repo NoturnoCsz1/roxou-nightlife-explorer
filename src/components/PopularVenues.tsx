@@ -104,7 +104,7 @@ const PopularVenues = () => {
             {i + 1}º
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-foreground font-display truncate">{v.name}</h3>
+            <h3 className="text-sm font-bold text-foreground font-display truncate md:group-hover:text-primary transition-colors duration-200">{v.name}</h3>
             <p className="text-[11px] text-muted-foreground capitalize">{v.type}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
