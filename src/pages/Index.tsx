@@ -12,7 +12,7 @@ import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import SectionHeader from "@/components/SectionHeader";
-import VenueList from "@/components/VenueList";
+
 import PopularVenues from "@/components/PopularVenues";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
