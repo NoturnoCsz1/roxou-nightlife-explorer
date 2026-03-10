@@ -51,6 +51,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       });
 
       if (fnError) throw new Error(fnError.message);
+      if (data?.debug) setDebugInfo(data.debug);
       if (data?.error && data?.weak_metadata) {
         // Weak/blocked metadata - switch to manual
         setMode("manual");
