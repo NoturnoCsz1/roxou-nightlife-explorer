@@ -6,6 +6,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface DebugInfo {
+  firecrawl_returned_content: boolean;
+  markdown_length: number;
+  metadata_keys: string[];
+  og_image_found: boolean;
+  caption_found: boolean;
+  login_wall_detected: boolean;
+  blocked_page_detected: boolean;
+  extracted_title: string;
+  error_detail?: string;
+}
+
+function buildDebugInfo(overrides: Partial<DebugInfo> = {}): DebugInfo {
+  return {
+    firecrawl_returned_content: false,
+    markdown_length: 0,
+    metadata_keys: [],
+    og_image_found: false,
+    caption_found: false,
+    login_wall_detected: false,
+    blocked_page_detected: false,
+    extracted_title: "",
+    ...overrides,
+  };
+}
+
 async function scrapeWithFirecrawl(url: string) {
   const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
   if (!apiKey) throw new Error("FIRECRAWL_API_KEY not configured");
@@ -32,23 +58,70 @@ async function scrapeWithFirecrawl(url: string) {
   return data;
 }
 
-function extractFromFirecrawl(data: any) {
+function detectLoginWall(html: string, markdown: string): boolean {
+  const indicators = [
+    "login",
+    "log in",
+    "sign up",
+    "create an account",
+    "entrar",
+    "cadastre-se",
+  ];
+  const lowerHtml = (html || "").toLowerCase();
+  const lowerMd = (markdown || "").toLowerCase();
+  const combined = lowerHtml + " " + lowerMd;
+
+  // Instagram login wall typically has very short content with login prompts
+  const hasLoginIndicator = indicators.some((i) => combined.includes(i));
+  const isShortContent = markdown.length < 200;
+  return hasLoginIndicator && isShortContent;
+}
+
+function detectBlockedPage(html: string, markdown: string): boolean {
+  const blockedIndicators = [
+    "sorry, this page isn't available",
+    "esta página não está disponível",
+    "content isn't available",
+    "conteúdo não está disponível",
+    "page not found",
+  ];
+  const combined = ((html || "") + " " + (markdown || "")).toLowerCase();
+  return blockedIndicators.some((i) => combined.includes(i));
+}
+
+function extractFromFirecrawl(data: any): {
+  caption: string;
+  imageUrl: string;
+  pageTitle: string;
+  instagramHandle: string;
+  debug: Partial<DebugInfo>;
+} {
   const html = data.data?.html || data.html || "";
   const markdown = data.data?.markdown || data.markdown || "";
   const metadata = data.data?.metadata || data.metadata || {};
 
+  const metadataKeys = Object.keys(metadata);
+  const loginWall = detectLoginWall(html, markdown);
+  const blockedPage = detectBlockedPage(html, markdown);
+
   // Extract og:image from HTML
   let imageUrl = "";
-  const ogImageMatch = html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"/i) ||
+  const ogImageMatch =
+    html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"/i) ||
     html.match(/content="([^"]+)"\s+(?:property|name)="og:image"/i);
   if (ogImageMatch) imageUrl = ogImageMatch[1];
   if (!imageUrl && metadata.ogImage) imageUrl = metadata.ogImage;
 
   // Extract og:description as caption
   let caption = "";
-  const ogDescMatch = html.match(/<meta\s+(?:property|name)="og:description"\s+content="([^"]+)"/i) ||
+  const ogDescMatch =
+    html.match(/<meta\s+(?:property|name)="og:description"\s+content="([^"]+)"/i) ||
     html.match(/content="([^"]+)"\s+(?:property|name)="og:description"/i);
-  if (ogDescMatch) caption = ogDescMatch[1].replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  if (ogDescMatch)
+    caption = ogDescMatch[1]
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
   if (!caption && metadata.description) caption = metadata.description;
 
   // Use markdown as fallback/supplement for caption
@@ -70,7 +143,18 @@ function extractFromFirecrawl(data: any) {
     if (handleFromCaption) instagramHandle = handleFromCaption[1];
   }
 
-  return { caption, imageUrl, pageTitle, instagramHandle };
+  const debug: Partial<DebugInfo> = {
+    firecrawl_returned_content: !!(html || markdown),
+    markdown_length: markdown.length,
+    metadata_keys: metadataKeys,
+    og_image_found: !!imageUrl,
+    caption_found: !!(caption && caption.length > 10),
+    login_wall_detected: loginWall,
+    blocked_page_detected: blockedPage,
+    extracted_title: pageTitle.substring(0, 100),
+  };
+
+  return { caption, imageUrl, pageTitle, instagramHandle, debug };
 }
 
 async function extractWithAI(caption: string, pageTitle: string, instagramHandle: string) {
@@ -183,6 +267,7 @@ serve(async (req) => {
     let imageUrl = "";
     let pageTitle = "";
     let instagramHandle = "";
+    let debug: DebugInfo = buildDebugInfo();
 
     // URL mode: use Firecrawl to scrape
     if (url) {
@@ -195,29 +280,52 @@ serve(async (req) => {
         imageUrl = extracted.imageUrl;
         pageTitle = extracted.pageTitle;
         instagramHandle = extracted.instagramHandle;
+        debug = buildDebugInfo(extracted.debug);
+
+        console.log("[DEBUG] Firecrawl result:", JSON.stringify(debug));
 
         // Check if we got useful content
-        const hasUsefulContent = (caption && caption.length > 20) ||
+        const hasUsefulContent =
+          (caption && caption.length > 20) ||
           (pageTitle && !pageTitle.toLowerCase().includes("instagram") && pageTitle.length > 10);
 
         if (!hasUsefulContent && !manualCaption) {
           console.log("Weak metadata from Firecrawl - caption length:", caption.length);
-          return new Response(JSON.stringify({
-            success: false,
-            weak_metadata: true,
-            error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
-            extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: "", ticket_url: "", image_url: imageUrl || "" },
-          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(
+            JSON.stringify({
+              success: false,
+              weak_metadata: true,
+              error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+              debug,
+              extracted: {
+                title: "", description: "", date: "", time: "", venue_name: "",
+                category: "", city: "", instagram: "", ticket_url: "", image_url: imageUrl || "",
+              },
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
       } catch (fetchErr) {
         console.error("Firecrawl scrape failed:", fetchErr);
+        debug = buildDebugInfo({
+          error_detail: fetchErr instanceof Error ? fetchErr.message : "Unknown error",
+        });
+        console.log("[DEBUG] Firecrawl failure:", JSON.stringify(debug));
+
         if (!manualCaption) {
-          return new Response(JSON.stringify({
-            success: false,
-            weak_metadata: true,
-            error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
-            extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: "", ticket_url: "", image_url: "" },
-          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          return new Response(
+            JSON.stringify({
+              success: false,
+              weak_metadata: true,
+              error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+              debug,
+              extracted: {
+                title: "", description: "", date: "", time: "", venue_name: "",
+                category: "", city: "", instagram: "", ticket_url: "", image_url: "",
+              },
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
       }
     }
@@ -235,39 +343,53 @@ serve(async (req) => {
         extractedData = await extractWithAI(caption, pageTitle, instagramHandle);
       } catch (aiErr) {
         console.error("AI extraction error:", aiErr);
+        debug.error_detail = aiErr instanceof Error ? aiErr.message : "AI error";
       }
     }
 
     const confidence = extractedData.confidence || "low";
+    debug.extracted_title = extractedData.title || debug.extracted_title || "";
 
     // Low confidence from URL mode → fallback
     if (confidence === "low" && url && !manualCaption) {
-      return new Response(JSON.stringify({
-        success: false,
-        weak_metadata: true,
-        confidence,
-        error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
-        extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: instagramHandle || "", ticket_url: "", image_url: imageUrl || "" },
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.log("[DEBUG] Low confidence fallback:", JSON.stringify(debug));
+      return new Response(
+        JSON.stringify({
+          success: false,
+          weak_metadata: true,
+          confidence,
+          error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+          debug,
+          extracted: {
+            title: "", description: "", date: "", time: "", venue_name: "",
+            category: "", city: "", instagram: instagramHandle || "", ticket_url: "", image_url: imageUrl || "",
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      confidence,
-      raw: { caption, imageUrl, pageTitle, instagramHandle },
-      extracted: {
-        title: extractedData.title || "",
-        description: extractedData.description || (manualCaption ? caption : "") || "",
-        date: extractedData.date || "",
-        time: extractedData.time || "",
-        venue_name: extractedData.venue_name || "",
-        category: extractedData.category || "",
-        city: extractedData.city || "",
-        instagram: extractedData.instagram || instagramHandle || "",
-        ticket_url: extractedData.ticket_url || "",
-        image_url: imageUrl || "",
-      },
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        confidence,
+        debug,
+        raw: { caption, imageUrl, pageTitle, instagramHandle },
+        extracted: {
+          title: extractedData.title || "",
+          description: extractedData.description || (manualCaption ? caption : "") || "",
+          date: extractedData.date || "",
+          time: extractedData.time || "",
+          venue_name: extractedData.venue_name || "",
+          category: extractedData.category || "",
+          city: extractedData.city || "",
+          instagram: extractedData.instagram || instagramHandle || "",
+          ticket_url: extractedData.ticket_url || "",
+          image_url: imageUrl || "",
+        },
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (e) {
     console.error("import-instagram error:", e);
     return new Response(
