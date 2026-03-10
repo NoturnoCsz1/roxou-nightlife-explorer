@@ -236,6 +236,9 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
             </div>
           )}
 
+          {/* Debug panel (dev only) */}
+          <ImportDebugPanel debug={debugInfo} />
+
           {/* Preview */}
           {preview && (
             <div className="space-y-3">
