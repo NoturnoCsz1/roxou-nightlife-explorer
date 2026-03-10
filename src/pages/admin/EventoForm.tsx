@@ -282,6 +282,27 @@ const EventoForm = () => {
         onClose={() => setIgModalOpen(false)}
         onImport={(data) => {
           const dateTime = data.date && data.time ? `${data.date}T${data.time}` : data.date ? `${data.date}T22:00` : "";
+
+          // Auto-match partner: prefer exact instagram, then venue name similarity
+          let matchedPartner: Partner | undefined;
+          if (data.instagram) {
+            const igNorm = data.instagram.replace(/^@/, "").toLowerCase();
+            matchedPartner = partners.find(
+              (p) => p.instagram && p.instagram.replace(/^@/, "").toLowerCase() === igNorm
+            );
+          }
+          if (!matchedPartner && data.venue_name) {
+            const vnNorm = data.venue_name.toLowerCase().trim();
+            matchedPartner = partners.find(
+              (p) => p.name.toLowerCase().trim() === vnNorm
+            );
+            if (!matchedPartner) {
+              matchedPartner = partners.find(
+                (p) => vnNorm.includes(p.name.toLowerCase().trim()) || p.name.toLowerCase().trim().includes(vnNorm)
+              );
+            }
+          }
+
           setForm((prev) => ({
             ...prev,
             title: data.title || prev.title,
@@ -289,14 +310,22 @@ const EventoForm = () => {
             description: data.description || prev.description,
             date_time: dateTime || prev.date_time,
             category: data.category || prev.category,
-            venue_name: data.venue_name || prev.venue_name,
-            instagram: data.instagram || prev.instagram,
+            venue_name: matchedPartner?.name || data.venue_name || prev.venue_name,
+            address: matchedPartner?.address || prev.address,
+            instagram: matchedPartner?.instagram || data.instagram || prev.instagram,
+            partner_id: matchedPartner?.id || prev.partner_id,
             ticket_url: data.ticket_url || prev.ticket_url,
             image_url: data.image_url || prev.image_url,
             status: "draft",
             verification_source: "Instagram",
           }));
-          if (data.venue_name && !form.partner_id) setManualVenue(true);
+
+          if (matchedPartner) {
+            setManualVenue(false);
+            toast.success(`Parceiro "${matchedPartner.name}" vinculado automaticamente!`);
+          } else if (data.venue_name) {
+            setManualVenue(true);
+          }
           toast.success("Dados importados! Revise e complete as informações.");
         }}
       />
