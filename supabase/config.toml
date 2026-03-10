@@ -2,3 +2,6 @@ project_id = "bapdgykghciiyvlqdrqx"
 
 [functions.sitemap]
 verify_jwt = false
+
+[functions.import-instagram]
+verify_jwt = false
