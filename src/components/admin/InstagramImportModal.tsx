@@ -48,16 +48,21 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       });
 
       if (fnError) throw new Error(fnError.message);
+      if (data?.error && data?.weak_metadata) {
+        // Weak/blocked metadata - switch to manual
+        setMode("manual");
+        setError(data.error);
+        toast.warning("Troque para o modo manual para continuar.");
+        return;
+      }
       if (data?.error) throw new Error(data.error);
 
       if (data?.extracted && data.extracted.title) {
         setPreview(data.extracted);
         toast.success("Post analisado com sucesso!");
       } else {
-        // Auto-switch to manual mode
         setMode("manual");
-        setError("Não foi possível ler o post automaticamente. Cole a legenda abaixo.");
-        toast.info("Troque para o modo manual para continuar.");
+        setError("Não foi possível ler o post automaticamente com confiança. Use o modo manual.");
       }
     } catch (err: any) {
       console.error("Import error:", err);
