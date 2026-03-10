@@ -35,6 +35,7 @@ serve(async (req) => {
     let imageUrl = "";
     let pageTitle = "";
 
+    let fetchFailed = false;
     if (url) {
       try {
         const pageResp = await fetch(url, {
@@ -63,9 +64,29 @@ serve(async (req) => {
           const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
           if (titleMatch) pageTitle = titleMatch[1];
         }
+
+        // Check if metadata is weak/blocked (Instagram login wall, empty page, etc.)
+        const hasUsefulContent = (caption && caption.length > 20) || (pageTitle && !pageTitle.toLowerCase().includes("instagram") && pageTitle.length > 10);
+        if (!hasUsefulContent) {
+          fetchFailed = true;
+          console.log("Weak metadata detected - caption length:", caption.length, "pageTitle:", pageTitle);
+        }
       } catch (fetchErr) {
         console.error("Failed to fetch Instagram page:", fetchErr);
+        fetchFailed = true;
       }
+    }
+
+    // If URL fetch produced weak/no data, return early with warning
+    if (url && !manualCaption && fetchFailed) {
+      return new Response(JSON.stringify({
+        success: false,
+        weak_metadata: true,
+        error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+        extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: "", ticket_url: "", image_url: imageUrl || "" },
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Extract Instagram handle from text
@@ -97,8 +118,21 @@ serve(async (req) => {
               messages: [
                 {
                   role: "system",
-                  content: `Você é um assistente que extrai informações de eventos a partir de textos de posts do Instagram de casas noturnas, bares e eventos em cidades brasileiras. Responda APENAS com a chamada da função, sem texto adicional.`,
-                },
+                   content: `Você é um assistente que extrai informações de eventos a partir de textos de posts do Instagram de casas noturnas, bares e eventos em cidades brasileiras.
+
+REGRAS OBRIGATÓRIAS:
+- Extraia APENAS campos que estão EXPLICITAMENTE mencionados no texto fornecido.
+- NÃO invente, adivinhe ou infira valores que não estão claramente escritos no texto.
+- Se um campo não está presente no texto, retorne string vazia "".
+- NÃO preencha título se não houver um nome de evento claro.
+- NÃO preencha data se não houver uma data explícita.
+- NÃO preencha local se não houver um nome de venue explícito.
+- NÃO preencha ticket_url se não houver um link explícito.
+- NÃO preencha descrição inventando texto. Use apenas o que está escrito.
+- Prefira retornar campos vazios do que adivinhar valores incorretos.
+
+Responda APENAS com a chamada da função, sem texto adicional.`,
+                 },
                 {
                   role: "user",
                   content: `Extraia as informações do evento a partir deste texto de post do Instagram:\n\nTítulo da página: ${pageTitle}\n\nLegenda: ${caption}\n\nHandle do Instagram: @${instagramHandle}`,
@@ -110,24 +144,25 @@ serve(async (req) => {
                   function: {
                     name: "extract_event",
                     description: "Extrai dados estruturados de um evento",
-                    parameters: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string", description: "Nome/título do evento" },
-                        description: { type: "string", description: "Descrição do evento" },
-                        date: { type: "string", description: "Data no formato YYYY-MM-DD se encontrada" },
-                        time: { type: "string", description: "Horário no formato HH:MM se encontrado" },
-                        venue_name: { type: "string", description: "Nome do local/casa" },
-                        category: {
-                          type: "string",
-                          enum: ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"],
-                          description: "Categoria do evento",
-                        },
-                        city: { type: "string", description: "Cidade do evento" },
-                        instagram: { type: "string", description: "Handle do Instagram sem @" },
-                        ticket_url: { type: "string", description: "Link de ingresso ou reserva se mencionado" },
-                      },
-                      required: ["title"],
+                     parameters: {
+                       type: "object",
+                       properties: {
+                         title: { type: "string", description: "Nome/título do evento. Retorne '' se não houver nome claro." },
+                         description: { type: "string", description: "Descrição do evento extraída diretamente do texto. Retorne '' se não houver." },
+                         date: { type: "string", description: "Data no formato YYYY-MM-DD. Retorne '' se não houver data explícita." },
+                         time: { type: "string", description: "Horário no formato HH:MM. Retorne '' se não houver horário explícito." },
+                         venue_name: { type: "string", description: "Nome do local/casa. Retorne '' se não estiver explícito." },
+                         category: {
+                           type: "string",
+                           enum: ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa", ""],
+                           description: "Categoria do evento. Retorne '' se não for possível determinar com certeza.",
+                         },
+                         city: { type: "string", description: "Cidade do evento. Retorne '' se não mencionada." },
+                         instagram: { type: "string", description: "Handle do Instagram sem @. Retorne '' se não encontrado." },
+                         ticket_url: { type: "string", description: "Link de ingresso ou reserva. Retorne '' se não houver link explícito." },
+                         confidence: { type: "string", enum: ["high", "medium", "low"], description: "Nível de confiança na extração. 'high' se os dados são claros, 'low' se o texto é vago ou insuficiente." },
+                       },
+                      required: ["title", "confidence"],
                       additionalProperties: false,
                     },
                   },
@@ -153,16 +188,34 @@ serve(async (req) => {
       }
     }
 
+    const confidence = extractedData.confidence || "low";
+    const isLowConfidence = confidence === "low";
+
+    // If low confidence from URL mode (not manual), clear unreliable fields
+    if (isLowConfidence && url && !manualCaption) {
+      const result = {
+        success: false,
+        weak_metadata: true,
+        confidence,
+        error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+        extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: instagramHandle || "", ticket_url: "", image_url: imageUrl || "" },
+      };
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const result = {
       success: true,
+      confidence,
       raw: { caption, imageUrl, pageTitle, instagramHandle },
       extracted: {
         title: extractedData.title || "",
-        description: extractedData.description || caption || "",
+        description: extractedData.description || (manualCaption ? caption : "") || "",
         date: extractedData.date || "",
         time: extractedData.time || "",
         venue_name: extractedData.venue_name || "",
-        category: extractedData.category || "festa",
+        category: extractedData.category || "",
         city: extractedData.city || "",
         instagram: extractedData.instagram || instagramHandle || "",
         ticket_url: extractedData.ticket_url || "",
