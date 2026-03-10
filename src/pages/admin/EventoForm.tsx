@@ -147,7 +147,19 @@ const EventoForm = () => {
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
         <ArrowLeft className="h-3.5 w-3.5" /> Voltar
       </button>
-      <h1 className="text-lg font-bold text-foreground mb-4">{isEdit ? "Editar Evento" : "Novo Evento"}</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-lg font-bold text-foreground">{isEdit ? "Editar Evento" : "Novo Evento"}</h1>
+        {!isEdit && (
+          <button
+            type="button"
+            onClick={() => setIgModalOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition"
+          >
+            <Instagram className="h-3.5 w-3.5" />
+            Importar do Instagram
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Main info */}
