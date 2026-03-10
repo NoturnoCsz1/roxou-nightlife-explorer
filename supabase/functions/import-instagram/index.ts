@@ -188,16 +188,34 @@ Responda APENAS com a chamada da função, sem texto adicional.`,
       }
     }
 
+    const confidence = extractedData.confidence || "low";
+    const isLowConfidence = confidence === "low";
+
+    // If low confidence from URL mode (not manual), clear unreliable fields
+    if (isLowConfidence && url && !manualCaption) {
+      const result = {
+        success: false,
+        weak_metadata: true,
+        confidence,
+        error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+        extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: instagramHandle || "", ticket_url: "", image_url: imageUrl || "" },
+      };
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const result = {
       success: true,
+      confidence,
       raw: { caption, imageUrl, pageTitle, instagramHandle },
       extracted: {
         title: extractedData.title || "",
-        description: extractedData.description || caption || "",
+        description: extractedData.description || (manualCaption ? caption : "") || "",
         date: extractedData.date || "",
         time: extractedData.time || "",
         venue_name: extractedData.venue_name || "",
-        category: extractedData.category || "festa",
+        category: extractedData.category || "",
         city: extractedData.city || "",
         instagram: extractedData.instagram || instagramHandle || "",
         ticket_url: extractedData.ticket_url || "",
