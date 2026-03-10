@@ -312,25 +312,33 @@ const EventoForm = () => {
         onImport={(data) => {
           const dateTime = data.date && data.time ? `${data.date}T${data.time}` : data.date ? `${data.date}T22:00` : "";
 
-          // Auto-match partner: prefer exact instagram, then venue name similarity
-          let matchedPartner: Partner | undefined;
+          // Auto-match: exact instagram or exact name → auto-link. Similar name → suggest only.
+          let autoLinked: Partner | undefined;
+          let suggested: Partner | undefined;
+
           if (data.instagram) {
             const igNorm = data.instagram.replace(/^@/, "").toLowerCase();
-            matchedPartner = partners.find(
+            autoLinked = partners.find(
               (p) => p.instagram && p.instagram.replace(/^@/, "").toLowerCase() === igNorm
             );
           }
-          if (!matchedPartner && data.venue_name) {
+
+          if (!autoLinked && data.venue_name) {
             const vnNorm = data.venue_name.toLowerCase().trim();
-            matchedPartner = partners.find(
-              (p) => p.name.toLowerCase().trim() === vnNorm
-            );
-            if (!matchedPartner) {
-              matchedPartner = partners.find(
+            const exactMatch = partners.find((p) => p.name.toLowerCase().trim() === vnNorm);
+            if (exactMatch) {
+              autoLinked = exactMatch;
+            } else {
+              const similarMatches = partners.filter(
                 (p) => vnNorm.includes(p.name.toLowerCase().trim()) || p.name.toLowerCase().trim().includes(vnNorm)
               );
+              if (similarMatches.length === 1) {
+                suggested = similarMatches[0];
+              }
             }
           }
+
+          setSuggestedPartner(null);
 
           setForm((prev) => ({
             ...prev,
@@ -339,21 +347,22 @@ const EventoForm = () => {
             description: data.description || prev.description,
             date_time: dateTime || prev.date_time,
             category: data.category || prev.category,
-            venue_name: matchedPartner?.name || data.venue_name || prev.venue_name,
-            address: matchedPartner?.address || prev.address,
-            instagram: matchedPartner?.instagram || data.instagram || prev.instagram,
-            partner_id: matchedPartner?.id || prev.partner_id,
+            venue_name: autoLinked?.name || data.venue_name || prev.venue_name,
+            address: autoLinked?.address || prev.address,
+            instagram: autoLinked?.instagram || data.instagram || prev.instagram,
+            partner_id: autoLinked?.id || prev.partner_id,
             ticket_url: data.ticket_url || prev.ticket_url,
             image_url: data.image_url || prev.image_url,
             status: "draft",
             verification_source: "Instagram",
           }));
 
-          if (matchedPartner) {
+          if (autoLinked) {
             setManualVenue(false);
-            toast.success(`Parceiro "${matchedPartner.name}" vinculado automaticamente!`);
-          } else if (data.venue_name) {
-            setManualVenue(true);
+            toast.success(`Parceiro "${autoLinked.name}" vinculado automaticamente!`);
+          } else {
+            if (data.venue_name) setManualVenue(true);
+            if (suggested) setSuggestedPartner(suggested);
           }
           toast.success("Dados importados! Revise e complete as informações.");
         }}
