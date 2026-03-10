@@ -91,6 +91,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       });
 
       if (fnError) throw new Error(fnError.message);
+      if (data?.debug) setDebugInfo(data.debug);
       if (data?.error) throw new Error(data.error);
 
       if (data?.extracted) {
