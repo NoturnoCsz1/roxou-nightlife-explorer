@@ -12,8 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
-    if (!url || (!url.includes("instagram.com/p/") && !url.includes("instagram.com/reel/"))) {
+    const body = await req.json();
+    const { url, caption: manualCaption } = body;
+
+    // Validate: need either a URL or a manual caption
+    if (!url && !manualCaption) {
+      return new Response(
+        JSON.stringify({ error: "Forneça uma URL do Instagram ou cole a legenda manualmente" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (url && !url.includes("instagram.com/p/") && !url.includes("instagram.com/reel/")) {
       return new Response(
         JSON.stringify({ error: "URL de post do Instagram inválida" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
