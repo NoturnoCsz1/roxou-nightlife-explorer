@@ -15,6 +15,7 @@ interface ExtractedEvent {
   instagram: string;
   ticket_url: string;
   image_url: string;
+  confidence?: "high" | "medium" | "low";
 }
 
 interface Props {
