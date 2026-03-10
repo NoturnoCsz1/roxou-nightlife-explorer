@@ -118,8 +118,21 @@ serve(async (req) => {
               messages: [
                 {
                   role: "system",
-                  content: `Você é um assistente que extrai informações de eventos a partir de textos de posts do Instagram de casas noturnas, bares e eventos em cidades brasileiras. Responda APENAS com a chamada da função, sem texto adicional.`,
-                },
+                   content: `Você é um assistente que extrai informações de eventos a partir de textos de posts do Instagram de casas noturnas, bares e eventos em cidades brasileiras.
+
+REGRAS OBRIGATÓRIAS:
+- Extraia APENAS campos que estão EXPLICITAMENTE mencionados no texto fornecido.
+- NÃO invente, adivinhe ou infira valores que não estão claramente escritos no texto.
+- Se um campo não está presente no texto, retorne string vazia "".
+- NÃO preencha título se não houver um nome de evento claro.
+- NÃO preencha data se não houver uma data explícita.
+- NÃO preencha local se não houver um nome de venue explícito.
+- NÃO preencha ticket_url se não houver um link explícito.
+- NÃO preencha descrição inventando texto. Use apenas o que está escrito.
+- Prefira retornar campos vazios do que adivinhar valores incorretos.
+
+Responda APENAS com a chamada da função, sem texto adicional.`,
+                 },
                 {
                   role: "user",
                   content: `Extraia as informações do evento a partir deste texto de post do Instagram:\n\nTítulo da página: ${pageTitle}\n\nLegenda: ${caption}\n\nHandle do Instagram: @${instagramHandle}`,
