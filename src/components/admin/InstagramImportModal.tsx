@@ -83,6 +83,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
     setLoading(true);
     setError("");
     setPreview(null);
+    setDebugInfo(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("import-instagram", {
