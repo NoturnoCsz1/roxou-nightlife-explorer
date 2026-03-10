@@ -3,6 +3,7 @@ import { Instagram, Loader2, X, AlertCircle, Link2, FileText } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
+import ImportDebugPanel from "@/components/admin/ImportDebugPanel";
 
 interface ExtractedEvent {
   title: string;
