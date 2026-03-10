@@ -94,7 +94,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
         if (manualImageUrl) {
           data.extracted.image_url = manualImageUrl;
         }
-        setPreview(data.extracted);
+        setPreview({ ...data.extracted, confidence: data.confidence || "medium" });
         toast.success("Legenda analisada com sucesso!");
       } else {
         setError("Não foi possível extrair dados da legenda.");
