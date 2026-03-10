@@ -59,7 +59,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       if (data?.error) throw new Error(data.error);
 
       if (data?.extracted && data.extracted.title) {
-        setPreview(data.extracted);
+        setPreview({ ...data.extracted, confidence: data.confidence || "medium" });
         toast.success("Post analisado com sucesso!");
       } else {
         setMode("manual");
