@@ -50,15 +50,20 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       if (fnError) throw new Error(fnError.message);
       if (data?.error) throw new Error(data.error);
 
-      if (data?.extracted) {
+      if (data?.extracted && data.extracted.title) {
         setPreview(data.extracted);
         toast.success("Post analisado com sucesso!");
       } else {
-        setError("Não foi possível extrair dados do post. Tente o modo manual.");
+        // Auto-switch to manual mode
+        setMode("manual");
+        setError("Não foi possível ler o post automaticamente. Cole a legenda abaixo.");
+        toast.info("Troque para o modo manual para continuar.");
       }
     } catch (err: any) {
       console.error("Import error:", err);
-      setError((err.message || "Erro ao analisar post") + " — Tente o modo manual.");
+      // Auto-switch to manual mode on failure
+      setMode("manual");
+      setError("Não foi possível ler o post automaticamente. Cole a legenda abaixo.");
     } finally {
       setLoading(false);
     }
