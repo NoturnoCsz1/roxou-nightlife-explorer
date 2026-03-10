@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Save, ChevronDown, ChevronUp, Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
+import InstagramImportModal from "@/components/admin/InstagramImportModal";
 
 type Partner = Tables<"partners">;
 
