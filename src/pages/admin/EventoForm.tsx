@@ -26,6 +26,7 @@ const EventoForm = () => {
   const [manualVenue, setManualVenue] = useState(false);
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
   const [igModalOpen, setIgModalOpen] = useState(false);
+  const [suggestedPartner, setSuggestedPartner] = useState<Partner | null>(null);
 
   const [form, setForm] = useState({
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
