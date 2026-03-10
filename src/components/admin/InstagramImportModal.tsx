@@ -34,6 +34,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
   const [manualImageUrl, setManualImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<ExtractedEvent | null>(null);
+  const [error, setError] = useState("");
   const [debugInfo, setDebugInfo] = useState<any>(null);
 
   if (!open) return null;
