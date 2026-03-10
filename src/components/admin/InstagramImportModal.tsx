@@ -15,6 +15,7 @@ interface ExtractedEvent {
   instagram: string;
   ticket_url: string;
   image_url: string;
+  confidence?: "high" | "medium" | "low";
 }
 
 interface Props {
@@ -58,7 +59,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       if (data?.error) throw new Error(data.error);
 
       if (data?.extracted && data.extracted.title) {
-        setPreview(data.extracted);
+        setPreview({ ...data.extracted, confidence: data.confidence || "medium" });
         toast.success("Post analisado com sucesso!");
       } else {
         setMode("manual");
@@ -93,7 +94,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
         if (manualImageUrl) {
           data.extracted.image_url = manualImageUrl;
         }
-        setPreview(data.extracted);
+        setPreview({ ...data.extracted, confidence: data.confidence || "medium" });
         toast.success("Legenda analisada com sucesso!");
       } else {
         setError("Não foi possível extrair dados da legenda.");
@@ -232,9 +233,34 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
           {/* Preview */}
           {preview && (
             <div className="space-y-3">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide border-b border-border/30 pb-1">
-                Dados Extraídos
-              </p>
+              <div className="flex items-center justify-between border-b border-border/30 pb-1">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                  Dados Extraídos
+                </p>
+                {preview.confidence && (() => {
+                  const conf = preview.confidence;
+                  const label = conf === "high" ? "Alta confiança" : conf === "medium" ? "Média confiança" : "Baixa confiança";
+                  const cls = conf === "high"
+                    ? "bg-green-500/15 text-green-600 border-green-500/30"
+                    : conf === "medium"
+                    ? "bg-yellow-500/15 text-yellow-600 border-yellow-500/30"
+                    : "bg-destructive/10 text-destructive border-destructive/30";
+                  return (
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
+                      {label}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {preview.confidence === "low" && (
+                <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-2.5">
+                  <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-destructive leading-tight">
+                    Confiança baixa na extração. Revise os dados com atenção antes de usar ou prefira o modo manual.
+                  </p>
+                </div>
+              )}
 
               {preview.image_url && (
                 <div className="rounded-lg overflow-hidden border border-border/30">
