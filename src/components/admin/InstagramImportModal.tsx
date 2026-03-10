@@ -125,6 +125,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
     setManualImageUrl("");
     setPreview(null);
     setError("");
+    setDebugInfo(null);
     setLoading(false);
     setMode("url");
     onClose();
