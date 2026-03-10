@@ -12,56 +12,63 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
-    if (!url || (!url.includes("instagram.com/p/") && !url.includes("instagram.com/reel/"))) {
+    const body = await req.json();
+    const { url, caption: manualCaption } = body;
+
+    // Validate: need either a URL or a manual caption
+    if (!url && !manualCaption) {
+      return new Response(
+        JSON.stringify({ error: "Forneça uma URL do Instagram ou cole a legenda manualmente" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (url && !url.includes("instagram.com/p/") && !url.includes("instagram.com/reel/")) {
       return new Response(
         JSON.stringify({ error: "URL de post do Instagram inválida" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Step 1: Fetch Instagram page and extract og:tags
-    let caption = "";
+    // Step 1: Get caption and image - either from URL fetch or manual input
+    let caption = manualCaption || "";
     let imageUrl = "";
     let pageTitle = "";
 
-    try {
-      const pageResp = await fetch(url, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml",
-          "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-        },
-      });
-      const html = await pageResp.text();
+    if (url) {
+      try {
+        const pageResp = await fetch(url, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml",
+            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+          },
+        });
+        const html = await pageResp.text();
 
-      // Extract og:image
-      const ogImageMatch = html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"/i) ||
-        html.match(/content="([^"]+)"\s+(?:property|name)="og:image"/i);
-      if (ogImageMatch) imageUrl = ogImageMatch[1];
+        const ogImageMatch = html.match(/<meta\s+(?:property|name)="og:image"\s+content="([^"]+)"/i) ||
+          html.match(/content="([^"]+)"\s+(?:property|name)="og:image"/i);
+        if (ogImageMatch) imageUrl = ogImageMatch[1];
 
-      // Extract og:description (usually has the caption)
-      const ogDescMatch = html.match(/<meta\s+(?:property|name)="og:description"\s+content="([^"]+)"/i) ||
-        html.match(/content="([^"]+)"\s+(?:property|name)="og:description"/i);
-      if (ogDescMatch) caption = ogDescMatch[1].replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+        const ogDescMatch = html.match(/<meta\s+(?:property|name)="og:description"\s+content="([^"]+)"/i) ||
+          html.match(/content="([^"]+)"\s+(?:property|name)="og:description"/i);
+        if (ogDescMatch && !caption) caption = ogDescMatch[1].replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 
-      // Extract og:title
-      const ogTitleMatch = html.match(/<meta\s+(?:property|name)="og:title"\s+content="([^"]+)"/i) ||
-        html.match(/content="([^"]+)"\s+(?:property|name)="og:title"/i);
-      if (ogTitleMatch) pageTitle = ogTitleMatch[1];
+        const ogTitleMatch = html.match(/<meta\s+(?:property|name)="og:title"\s+content="([^"]+)"/i) ||
+          html.match(/content="([^"]+)"\s+(?:property|name)="og:title"/i);
+        if (ogTitleMatch) pageTitle = ogTitleMatch[1];
 
-      // Also try <title> tag
-      if (!pageTitle) {
-        const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
-        if (titleMatch) pageTitle = titleMatch[1];
+        if (!pageTitle) {
+          const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+          if (titleMatch) pageTitle = titleMatch[1];
+        }
+      } catch (fetchErr) {
+        console.error("Failed to fetch Instagram page:", fetchErr);
       }
-    } catch (fetchErr) {
-      console.error("Failed to fetch Instagram page:", fetchErr);
-      // Continue - we'll return what we have
     }
 
-    // Extract Instagram handle from URL or page title
+    // Extract Instagram handle from text
     let instagramHandle = "";
     const handleFromTitle = pageTitle.match(/@([a-zA-Z0-9_.]+)/);
     if (handleFromTitle) instagramHandle = handleFromTitle[1];
