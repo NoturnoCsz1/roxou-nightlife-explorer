@@ -35,6 +35,7 @@ serve(async (req) => {
     let imageUrl = "";
     let pageTitle = "";
 
+    let fetchFailed = false;
     if (url) {
       try {
         const pageResp = await fetch(url, {
@@ -63,9 +64,29 @@ serve(async (req) => {
           const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
           if (titleMatch) pageTitle = titleMatch[1];
         }
+
+        // Check if metadata is weak/blocked (Instagram login wall, empty page, etc.)
+        const hasUsefulContent = (caption && caption.length > 20) || (pageTitle && !pageTitle.toLowerCase().includes("instagram") && pageTitle.length > 10);
+        if (!hasUsefulContent) {
+          fetchFailed = true;
+          console.log("Weak metadata detected - caption length:", caption.length, "pageTitle:", pageTitle);
+        }
       } catch (fetchErr) {
         console.error("Failed to fetch Instagram page:", fetchErr);
+        fetchFailed = true;
       }
+    }
+
+    // If URL fetch produced weak/no data, return early with warning
+    if (url && !manualCaption && fetchFailed) {
+      return new Response(JSON.stringify({
+        success: false,
+        weak_metadata: true,
+        error: "Não foi possível ler o post automaticamente com confiança. Use o modo manual.",
+        extracted: { title: "", description: "", date: "", time: "", venue_name: "", category: "", city: "", instagram: "", ticket_url: "", image_url: imageUrl || "" },
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Extract Instagram handle from text
