@@ -276,6 +276,30 @@ const EventoForm = () => {
           {saving ? "Salvando..." : "Salvar"}
         </button>
       </form>
+
+      <InstagramImportModal
+        open={igModalOpen}
+        onClose={() => setIgModalOpen(false)}
+        onImport={(data) => {
+          const dateTime = data.date && data.time ? `${data.date}T${data.time}` : data.date ? `${data.date}T22:00` : "";
+          setForm((prev) => ({
+            ...prev,
+            title: data.title || prev.title,
+            slug: data.title ? slugify(data.title) : prev.slug,
+            description: data.description || prev.description,
+            date_time: dateTime || prev.date_time,
+            category: data.category || prev.category,
+            venue_name: data.venue_name || prev.venue_name,
+            instagram: data.instagram || prev.instagram,
+            ticket_url: data.ticket_url || prev.ticket_url,
+            image_url: data.image_url || prev.image_url,
+            status: "draft",
+            verification_source: "Instagram",
+          }));
+          if (data.venue_name && !form.partner_id) setManualVenue(true);
+          toast.success("Dados importados! Revise e complete as informações.");
+        }}
+      />
     </div>
   );
 };
