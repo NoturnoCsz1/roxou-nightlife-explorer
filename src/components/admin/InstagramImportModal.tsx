@@ -3,6 +3,7 @@ import { Instagram, Loader2, X, AlertCircle, Link2, FileText } from "lucide-reac
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
+import ImportDebugPanel from "@/components/admin/ImportDebugPanel";
 
 interface ExtractedEvent {
   title: string;
@@ -34,6 +35,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<ExtractedEvent | null>(null);
   const [error, setError] = useState("");
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   if (!open) return null;
 
@@ -42,6 +44,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
     setLoading(true);
     setError("");
     setPreview(null);
+    setDebugInfo(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("import-instagram", {
@@ -49,6 +52,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       });
 
       if (fnError) throw new Error(fnError.message);
+      if (data?.debug) setDebugInfo(data.debug);
       if (data?.error && data?.weak_metadata) {
         // Weak/blocked metadata - switch to manual
         setMode("manual");
@@ -80,6 +84,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
     setLoading(true);
     setError("");
     setPreview(null);
+    setDebugInfo(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("import-instagram", {
@@ -87,6 +92,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
       });
 
       if (fnError) throw new Error(fnError.message);
+      if (data?.debug) setDebugInfo(data.debug);
       if (data?.error) throw new Error(data.error);
 
       if (data?.extracted) {
@@ -120,6 +126,7 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
     setManualImageUrl("");
     setPreview(null);
     setError("");
+    setDebugInfo(null);
     setLoading(false);
     setMode("url");
     onClose();
@@ -229,6 +236,9 @@ const InstagramImportModal = ({ open, onClose, onImport }: Props) => {
               <p className="text-xs text-destructive">{error}</p>
             </div>
           )}
+
+          {/* Debug panel (dev only) */}
+          <ImportDebugPanel debug={debugInfo} />
 
           {/* Preview */}
           {preview && (
