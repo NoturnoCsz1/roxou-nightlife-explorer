@@ -25,6 +25,7 @@ const EventoForm = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [manualVenue, setManualVenue] = useState(false);
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
+  const [igModalOpen, setIgModalOpen] = useState(false);
 
   const [form, setForm] = useState({
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
