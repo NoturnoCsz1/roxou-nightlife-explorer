@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import AdBanner from "@/components/AdBanner";
 import { Search, MapPin } from "lucide-react";
 import SEO from "@/components/SEO";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
