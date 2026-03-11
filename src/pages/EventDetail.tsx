@@ -20,6 +20,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EventCard from "@/components/EventCard";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import AdBanner from "@/components/AdBanner";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
@@ -428,6 +429,9 @@ const EventDetail = () => {
             Garantir Entrada
           </button>
         )}
+
+        {/* Ad banner */}
+        <AdBanner adSlot="1234567890" className="mb-6" />
 
         {/* About event */}
         {event.description && (
