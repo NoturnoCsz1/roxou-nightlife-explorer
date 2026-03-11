@@ -430,6 +430,9 @@ const EventDetail = () => {
           </button>
         )}
 
+        {/* Ad banner */}
+        <AdBanner adSlot="1234567890" className="mb-6" />
+
         {/* About event */}
         {event.description && (
           <div className="mb-8">
