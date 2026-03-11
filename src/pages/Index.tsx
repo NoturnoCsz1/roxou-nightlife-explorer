@@ -229,6 +229,8 @@ const Index = () => {
               </section>
             )}
 
+            <AdBanner adSlot="1234567890" className="my-2" />
+
             {tomorrowEvents.length > 0 && (
               <section id="section-amanha" ref={el => { sectionRefs.current.amanha = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="📅" title="Eventos de Amanhã" subtitle={`${tomorrowEvents.length} rolês confirmados`} />
