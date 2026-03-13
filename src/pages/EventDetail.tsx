@@ -23,6 +23,7 @@ import SEO from "@/components/SEO";
 import AdBanner from "@/components/AdBanner";
 import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
+import { generateICS, downloadICS } from "@/lib/calendarUtils";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
   balada: { label: "Balada", badge: "badge-balada" },
