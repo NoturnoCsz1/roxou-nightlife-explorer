@@ -177,8 +177,8 @@ const EventDetail = () => {
     <div className="min-h-screen bg-background">
       <DesktopNav />
       <SEO
-        title={`${event.title} — Evento em Presidente Prudente | ROXOU`}
-        description={`${event.title} acontece em ${event.venue_name || "Presidente Prudente"} em Presidente Prudente. Veja informações completas do evento.`}
+        title={`${event.title} – ${dateFormatted} | Roxou Eventos em Presidente Prudente`}
+        description={`${event.title} acontece ${dateFormatted} às ${time} em ${event.venue_name || "Presidente Prudente"}. Confira informações, local e ingressos.`}
         canonical={`https://roxou.com.br/evento/${event.slug}`}
         ogImage={event.image_url || "https://roxou.com.br/og-image.png"}
         ogType="article"
