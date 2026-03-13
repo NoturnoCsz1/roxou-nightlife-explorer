@@ -280,6 +280,7 @@ const EventDetail = () => {
               )}
             </p>
           )}
+          <EventCountdown dateTime={event.date_time} />
         </div>
 
         {/* Date & time card */}
