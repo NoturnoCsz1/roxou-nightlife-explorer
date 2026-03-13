@@ -34,14 +34,14 @@ const EventCountdown = ({ dateTime }: EventCountdownProps) => {
   ];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 animate-fade-in">
       {blocks.map((b, i) => (
         <div key={b.label} className="flex items-center gap-2">
-          <div className="flex flex-col items-center rounded-xl bg-primary/10 px-3 py-2 min-w-[3.2rem]">
-            <span className="text-lg font-black text-primary leading-none">{b.value}</span>
+          <div className="flex flex-col items-center rounded-xl bg-primary/10 px-3 py-2 min-w-[3.2rem] transition-transform duration-200 hover:scale-105 hover:bg-primary/15">
+            <span className="text-lg font-black text-primary leading-none transition-all duration-300">{b.value}</span>
             <span className="text-[10px] font-semibold text-primary/70 uppercase">{b.label}</span>
           </div>
-          {i < blocks.length - 1 && <span className="text-primary/40 font-bold text-sm">:</span>}
+          {i < blocks.length - 1 && <span className="text-primary/40 font-bold text-sm animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]">:</span>}
         </div>
       ))}
     </div>
