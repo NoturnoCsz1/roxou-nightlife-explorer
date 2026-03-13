@@ -21,6 +21,7 @@ import EventCard from "@/components/EventCard";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import AdBanner from "@/components/AdBanner";
+import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 
 const categoryConfig: Record<string, { label: string; badge: string }> = {
