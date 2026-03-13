@@ -519,7 +519,7 @@ const EventDetail = () => {
         {relatedEvents.length > 0 && (
           <div className="mb-4">
             <h2 className="mb-3 text-base font-black font-display text-foreground">
-              Eventos relacionados
+              Eventos parecidos
             </h2>
             <div className="space-y-2.5">
               {relatedEvents.map((e, i) => (
