@@ -303,6 +303,24 @@ const EventDetail = () => {
               {time} · Horário de início
             </p>
           </div>
+          <button
+            onClick={() => {
+              const ics = generateICS({
+                title: event.title,
+                dateTime: event.date_time,
+                venue: event.venue_name,
+                address: event.address,
+                description: event.description,
+                url: `https://roxou.com.br/evento/${event.slug}`,
+              });
+              downloadICS(event.slug, ics);
+              toast("Evento adicionado ao calendário! 📅");
+            }}
+            className="flex items-center justify-center gap-2 w-full rounded-xl bg-secondary py-2.5 text-xs font-semibold text-foreground transition hover:bg-secondary/80 active:scale-[0.98] mt-1"
+          >
+            <Calendar className="h-3.5 w-3.5 text-primary" />
+            Adicionar ao calendário
+          </button>
         </div>
 
         {/* Location card */}
