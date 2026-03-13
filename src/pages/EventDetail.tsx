@@ -314,12 +314,11 @@ const EventDetail = () => {
                 url: `https://roxou.com.br/evento/${event.slug}`,
               });
               downloadICS(event.slug, ics);
-              toast("Evento adicionado ao calendário! 📅");
+              toast("Evento salvo na agenda ✅");
             }}
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-secondary py-2.5 text-xs font-semibold text-foreground transition hover:bg-secondary/80 active:scale-[0.98] mt-1"
+            className="flex items-center justify-center gap-2 w-full rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] mt-2 card-shadow"
           >
-            <Calendar className="h-3.5 w-3.5 text-primary" />
-            Adicionar ao calendário
+            📅 Salvar na agenda
           </button>
         </div>
 
