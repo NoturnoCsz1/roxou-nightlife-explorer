@@ -63,9 +63,10 @@ const EventDetail = () => {
         setPartner(p);
       }
 
-      // Fetch related events (same category, excluding current)
+      // Fetch similar events (same category or same date, excluding current)
       if (data) {
-        const { data: related } = await supabase
+        const eventDate = data.date_time.split("T")[0];
+        const { data: byCat } = await supabase
           .from("events")
           .select("*")
           .eq("status", "published")
@@ -74,7 +75,26 @@ const EventDetail = () => {
           .gte("date_time", new Date().toISOString())
           .order("date_time", { ascending: true })
           .limit(4);
-        setRelatedEvents(related || []);
+        const { data: byDate } = await supabase
+          .from("events")
+          .select("*")
+          .eq("status", "published")
+          .neq("id", data.id)
+          .gte("date_time", `${eventDate}T00:00:00`)
+          .lte("date_time", `${eventDate}T23:59:59`)
+          .order("date_time", { ascending: true })
+          .limit(4);
+        // Merge and deduplicate, limit to 4
+        const seen = new Set<string>();
+        const merged: typeof byCat = [];
+        for (const e of [...(byCat || []), ...(byDate || [])]) {
+          if (!seen.has(e.id)) {
+            seen.add(e.id);
+            merged.push(e);
+          }
+          if (merged.length >= 4) break;
+        }
+        setRelatedEvents(merged);
       }
 
       setLoading(false);
@@ -499,7 +519,7 @@ const EventDetail = () => {
         {relatedEvents.length > 0 && (
           <div className="mb-4">
             <h2 className="mb-3 text-base font-black font-display text-foreground">
-              Eventos relacionados
+              Eventos parecidos
             </h2>
             <div className="space-y-2.5">
               {relatedEvents.map((e, i) => (
