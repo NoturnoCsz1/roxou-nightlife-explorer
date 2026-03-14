@@ -1,18 +1,7 @@
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatTime, formatDateShort, isToday } from "@/lib/dateUtils";
-
-// Category config for mapping DB category to badge classes
-const categoryConfig: Record<string, { label: string; badge: string }> = {
-  balada: { label: "Balada", badge: "badge-balada" },
-  show: { label: "Show", badge: "badge-show" },
-  bar: { label: "Bar", badge: "badge-bar" },
-  festival: { label: "Festival", badge: "badge-festival" },
-  sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
-  funk: { label: "Funk", badge: "badge-funk" },
-  eletronica: { label: "Eletrônica", badge: "badge-eletronica" },
-  festa: { label: "Festa", badge: "badge-balada" },
-};
+import { categoryConfig } from "@/lib/categoryConfig";
 
 export interface SupabaseEvent {
   id: string;

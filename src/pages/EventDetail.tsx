@@ -24,17 +24,7 @@ import AdBanner from "@/components/AdBanner";
 import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
-
-const categoryConfig: Record<string, { label: string; badge: string }> = {
-  balada: { label: "Balada", badge: "badge-balada" },
-  show: { label: "Show", badge: "badge-show" },
-  bar: { label: "Bar", badge: "badge-bar" },
-  festival: { label: "Festival", badge: "badge-festival" },
-  sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
-  funk: { label: "Funk", badge: "badge-funk" },
-  eletronica: { label: "Eletrônica", badge: "badge-eletronica" },
-  festa: { label: "Festa", badge: "badge-balada" },
-};
+import { categoryConfig } from "@/lib/categoryConfig";
 
 const EventDetail = () => {
   const { slug } = useParams();

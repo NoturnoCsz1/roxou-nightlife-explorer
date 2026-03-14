@@ -4,12 +4,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
-
-function slugify(str: string) {
-  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
-
-const TYPES = ["bar", "balada", "restaurante", "casa de shows", "pub", "lounge", "outro"];
+import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
 
 const ParceiroForm = () => {
   const { id } = useParams();
