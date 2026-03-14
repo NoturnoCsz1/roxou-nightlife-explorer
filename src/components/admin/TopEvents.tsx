@@ -69,29 +69,19 @@ const TopEvents = ({ since, onDataLoaded }: TopEventsProps) => {
         <Flame className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Eventos Mais Vistos</h3>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs table-fixed">
-          <thead>
-            <tr className="text-muted-foreground border-b border-border/30">
-              <th className="text-left py-2 font-medium w-6">#</th>
-              <th className="text-left py-2 font-medium">Evento</th>
-              <th className="text-right py-2 font-medium w-16 shrink-0">Data</th>
-              <th className="text-right py-2 font-medium w-14 shrink-0">Views</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((e, i) => (
-              <tr key={e.slug} className="border-b border-border/20 last:border-0">
-                <td className="py-2 font-bold text-primary">{i + 1}</td>
-                <td className="py-2 font-medium truncate overflow-hidden">{e.title}</td>
-                <td className="py-2 text-right text-muted-foreground whitespace-nowrap shrink-0">
-                  {new Date(e.date_time).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                </td>
-                <td className="py-2 text-right font-bold shrink-0">{e.views}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-1">
+        {ranked.map((e, i) => (
+          <div key={e.slug} className="flex items-center gap-2.5 py-2 border-b border-border/20 last:border-0 min-w-0">
+            <span className="text-xs font-bold text-primary w-4 shrink-0 text-center">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{e.title}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {new Date(e.date_time).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+              </p>
+            </div>
+            <span className="text-xs font-bold text-foreground shrink-0 tabular-nums">{e.views}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
