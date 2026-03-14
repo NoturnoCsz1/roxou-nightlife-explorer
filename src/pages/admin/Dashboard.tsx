@@ -202,7 +202,7 @@ const Dashboard = () => {
   }, [loadDashboard]);
 
   return (
-    <div className="space-y-6 md:ml-44">
+    <div className="space-y-6 md:ml-44 overflow-hidden min-w-0">
       {/* Quick actions + period filter + export */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

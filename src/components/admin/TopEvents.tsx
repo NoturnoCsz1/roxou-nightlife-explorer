@@ -64,30 +64,30 @@ const TopEvents = ({ since, onDataLoaded }: TopEventsProps) => {
   if (ranked.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card p-4">
+    <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden min-w-0">
       <div className="flex items-center gap-2 mb-3">
         <Flame className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Eventos Mais Vistos</h3>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs table-fixed">
           <thead>
             <tr className="text-muted-foreground border-b border-border/30">
-              <th className="text-left py-2 font-medium">#</th>
+              <th className="text-left py-2 font-medium w-6">#</th>
               <th className="text-left py-2 font-medium">Evento</th>
-              <th className="text-right py-2 font-medium">Data</th>
-              <th className="text-right py-2 font-medium">Views</th>
+              <th className="text-right py-2 font-medium w-16 shrink-0">Data</th>
+              <th className="text-right py-2 font-medium w-14 shrink-0">Views</th>
             </tr>
           </thead>
           <tbody>
             {ranked.map((e, i) => (
               <tr key={e.slug} className="border-b border-border/20 last:border-0">
                 <td className="py-2 font-bold text-primary">{i + 1}</td>
-                <td className="py-2 font-medium truncate max-w-[180px]">{e.title}</td>
-                <td className="py-2 text-right text-muted-foreground whitespace-nowrap">
+                <td className="py-2 font-medium truncate overflow-hidden">{e.title}</td>
+                <td className="py-2 text-right text-muted-foreground whitespace-nowrap shrink-0">
                   {new Date(e.date_time).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                 </td>
-                <td className="py-2 text-right font-bold">{e.views}</td>
+                <td className="py-2 text-right font-bold shrink-0">{e.views}</td>
               </tr>
             ))}
           </tbody>

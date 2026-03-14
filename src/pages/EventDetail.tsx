@@ -303,24 +303,26 @@ const EventDetail = () => {
               {time} · Horário de início
             </p>
           </div>
-          <button
-            onClick={() => {
-              const ics = generateICS({
-                title: event.title,
-                dateTime: event.date_time,
-                venue: event.venue_name,
-                address: event.address,
-                description: event.description,
-                url: `https://roxou.com.br/evento/${event.slug}`,
-              });
-              downloadICS(event.slug, ics);
-              toast("Evento salvo na agenda ✅");
-            }}
-            className="flex items-center justify-center gap-2 w-full rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] mt-2 card-shadow"
-          >
-            📅 Salvar na agenda
-          </button>
         </div>
+
+        {/* Calendar save button */}
+        <button
+          onClick={() => {
+            const ics = generateICS({
+              title: event.title,
+              dateTime: event.date_time,
+              venue: event.venue_name,
+              address: event.address,
+              description: event.description,
+              url: `https://roxou.com.br/evento/${event.slug}`,
+            });
+            downloadICS(event.slug, ics);
+            toast("Evento salvo na agenda ✅");
+          }}
+          className="flex items-center justify-center gap-2 w-full rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] mb-3 card-shadow"
+        >
+          📅 Salvar na agenda
+        </button>
 
         {/* Location card */}
         <div className="flex items-center gap-4 rounded-2xl bg-card p-4 card-shadow mb-6">
