@@ -99,31 +99,19 @@ const TopPartners = ({ since, onDataLoaded }: TopPartnersProps) => {
         <TrendingUp className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Parceiros Mais Populares</h3>
       </div>
-      <div className="overflow-x-auto -mx-4 px-4">
-        <table className="w-full text-xs" style={{ minWidth: "360px" }}>
-          <thead>
-            <tr className="text-muted-foreground border-b border-border/30">
-              <th className="text-left py-2 font-medium">#</th>
-              <th className="text-left py-2 font-medium">Parceiro</th>
-              <th className="text-right py-2 font-medium">Pág</th>
-              <th className="text-right py-2 font-medium">Evt</th>
-              <th className="text-right py-2 font-medium">Nº</th>
-              <th className="text-right py-2 font-medium">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((p, i) => (
-              <tr key={p.slug} className="border-b border-border/20 last:border-0">
-                <td className="py-2 font-bold text-primary">{i + 1}</td>
-                <td className="py-2 font-medium truncate max-w-[100px]">{p.name}</td>
-                <td className="py-2 text-right text-muted-foreground">{p.views}</td>
-                <td className="py-2 text-right text-muted-foreground">{p.eventViews}</td>
-                <td className="py-2 text-right text-muted-foreground">{p.eventCount}</td>
-                <td className="py-2 text-right font-bold">{p.total}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-1">
+        {ranked.map((p, i) => (
+          <div key={p.slug} className="flex items-center gap-2.5 py-2 border-b border-border/20 last:border-0 min-w-0">
+            <span className="text-xs font-bold text-primary w-4 shrink-0 text-center">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{p.name}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Pág {p.views} · Evt {p.eventViews} · {p.eventCount} evento{p.eventCount !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <span className="text-xs font-bold text-foreground shrink-0 tabular-nums">{p.total}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
