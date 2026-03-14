@@ -10,6 +10,10 @@ import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
 
+function slugify(str: string) {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
 const EventoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();

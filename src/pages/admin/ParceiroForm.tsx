@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
 
+function slugify(str: string) {
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
 const ParceiroForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
