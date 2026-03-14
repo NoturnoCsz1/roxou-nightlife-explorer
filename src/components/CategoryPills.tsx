@@ -1,16 +1,7 @@
 import { Music, Mic2, Beer, Tent, Guitar, Disc3, Headphones } from "lucide-react";
+import { categoryConfig } from "@/lib/categoryConfig";
 
 type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica";
-
-const categoryConfig: Record<EventCategory, { label: string; badge: string }> = {
-  balada: { label: "Balada", badge: "badge-balada" },
-  show: { label: "Show", badge: "badge-show" },
-  bar: { label: "Bar", badge: "badge-bar" },
-  festival: { label: "Festival", badge: "badge-festival" },
-  sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
-  funk: { label: "Funk", badge: "badge-funk" },
-  eletronica: { label: "Eletrônica", badge: "badge-eletronica" },
-};
 
 const categoryIcons: Record<EventCategory, React.ElementType> = {
   balada: Music,

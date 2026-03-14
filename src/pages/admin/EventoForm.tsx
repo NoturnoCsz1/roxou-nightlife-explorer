@@ -6,14 +6,13 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
+import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
 
 function slugify(str: string) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
-
-const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"];
 
 const EventoForm = () => {
   const { id } = useParams();
@@ -31,7 +30,7 @@ const EventoForm = () => {
   const [form, setForm] = useState({
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
     venue_name: "", address: "", instagram: "", description: "",
-    status: "draft", verification_source: "", featured: false, image_url: "",
+    status: "draft", verification_source: "Instagram", featured: false, image_url: "",
     ticket_url: "",
   });
 
@@ -182,7 +181,7 @@ const EventoForm = () => {
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
               <select className={inputClass} value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>

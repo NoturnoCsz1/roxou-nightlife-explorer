@@ -4,17 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { SupabaseEvent } from "./EventCard";
 import { formatTime, isToday } from "@/lib/dateUtils";
-
-const categoryConfig: Record<string, { label: string; badge: string }> = {
-  balada: { label: "Balada", badge: "badge-balada" },
-  show: { label: "Show", badge: "badge-show" },
-  bar: { label: "Bar", badge: "badge-bar" },
-  festival: { label: "Festival", badge: "badge-festival" },
-  sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
-  funk: { label: "Funk", badge: "badge-funk" },
-  eletronica: { label: "Eletrônica", badge: "badge-eletronica" },
-  festa: { label: "Festa", badge: "badge-balada" },
-};
+import { categoryConfig } from "@/lib/categoryConfig";
 
 const FeaturedCarousel = () => {
   const [featured, setFeatured] = useState<SupabaseEvent[]>([]);
