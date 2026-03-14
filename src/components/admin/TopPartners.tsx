@@ -94,20 +94,20 @@ const TopPartners = ({ since, onDataLoaded }: TopPartnersProps) => {
   if (ranked.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card p-4">
+    <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden min-w-0">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">Parceiros Mais Populares</h3>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+      <div className="overflow-x-auto -mx-4 px-4">
+        <table className="w-full text-xs" style={{ minWidth: "360px" }}>
           <thead>
             <tr className="text-muted-foreground border-b border-border/30">
               <th className="text-left py-2 font-medium">#</th>
               <th className="text-left py-2 font-medium">Parceiro</th>
-              <th className="text-right py-2 font-medium">Página</th>
-              <th className="text-right py-2 font-medium">Eventos</th>
-              <th className="text-right py-2 font-medium">Nº Eventos</th>
+              <th className="text-right py-2 font-medium">Pág</th>
+              <th className="text-right py-2 font-medium">Evt</th>
+              <th className="text-right py-2 font-medium">Nº</th>
               <th className="text-right py-2 font-medium">Total</th>
             </tr>
           </thead>
@@ -115,7 +115,7 @@ const TopPartners = ({ since, onDataLoaded }: TopPartnersProps) => {
             {ranked.map((p, i) => (
               <tr key={p.slug} className="border-b border-border/20 last:border-0">
                 <td className="py-2 font-bold text-primary">{i + 1}</td>
-                <td className="py-2 font-medium truncate max-w-[140px]">{p.name}</td>
+                <td className="py-2 font-medium truncate max-w-[100px]">{p.name}</td>
                 <td className="py-2 text-right text-muted-foreground">{p.views}</td>
                 <td className="py-2 text-right text-muted-foreground">{p.eventViews}</td>
                 <td className="py-2 text-right text-muted-foreground">{p.eventCount}</td>
