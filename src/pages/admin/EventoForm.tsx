@@ -181,7 +181,7 @@ const EventoForm = () => {
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
               <select className={inputClass} value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>

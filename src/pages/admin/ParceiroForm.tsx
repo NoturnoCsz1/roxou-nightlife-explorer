@@ -85,7 +85,7 @@ const ParceiroForm = () => {
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Tipo</label>
             <select className={inputClass} value={form.type} onChange={(e) => handleChange("type", e.target.value)}>
-              {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              {ADMIN_PARTNER_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div className="col-span-2">
