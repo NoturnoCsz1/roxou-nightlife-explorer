@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
 
-type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica";
+type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica" | "festa";
 
 const Categorias = () => {
   usePageTracking();
