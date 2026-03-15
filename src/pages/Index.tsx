@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { isToday, isTomorrow } from "@/lib/dateUtils";
 
-type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica";
+type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica" | "festa";
 
 const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
