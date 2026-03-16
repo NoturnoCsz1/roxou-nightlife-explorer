@@ -258,6 +258,24 @@ const EventDetail = () => {
           <h1 className="text-2xl sm:text-3xl font-black text-foreground font-display neon-text mb-2 leading-tight">
             {event.title}
           </h1>
+          {/* Calendar save button */}
+          <button
+            onClick={() => {
+              const ics = generateICS({
+                title: event.title,
+                dateTime: event.date_time,
+                venue: event.venue_name,
+                address: event.address,
+                description: event.description,
+                url: `https://roxou.com.br/evento/${event.slug}`,
+              });
+              downloadICS(event.slug, ics);
+              toast("Evento salvo na agenda ✅");
+            }}
+            className="flex items-center justify-center gap-2 w-full rounded-2xl gradient-primary py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] mb-3 card-shadow"
+          >
+            📅 Salvar na agenda
+          </button>
           {event.venue_name && (
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5 text-primary" />
@@ -295,24 +313,6 @@ const EventDetail = () => {
           </div>
         </div>
 
-        {/* Calendar save button */}
-        <button
-          onClick={() => {
-            const ics = generateICS({
-              title: event.title,
-              dateTime: event.date_time,
-              venue: event.venue_name,
-              address: event.address,
-              description: event.description,
-              url: `https://roxou.com.br/evento/${event.slug}`,
-            });
-            downloadICS(event.slug, ics);
-            toast("Evento salvo na agenda ✅");
-          }}
-          className="flex items-center justify-center gap-2 w-full rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition hover:opacity-90 active:scale-[0.98] mb-3 card-shadow"
-        >
-          📅 Salvar na agenda
-        </button>
 
         {/* Location card */}
         <div className="flex items-center gap-4 rounded-2xl bg-card p-4 card-shadow mb-6">
