@@ -1,11 +1,12 @@
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut, Instagram } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/eventos", icon: CalendarDays, label: "Eventos" },
+  { to: "/admin/instagram", icon: Instagram, label: "Instagram" },
   { to: "/admin/parceiros", icon: Users, label: "Parceiros" },
 ];
 

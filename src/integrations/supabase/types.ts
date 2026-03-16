@@ -79,6 +79,63 @@ export type Database = {
           },
         ]
       }
+      instagram_imports: {
+        Row: {
+          caption: string | null
+          confidence: string | null
+          created_at: string
+          error_detail: string | null
+          event_id: string | null
+          id: string
+          image_url: string | null
+          import_status: string
+          instagram_handle: string
+          partner_id: string | null
+          post_url: string
+        }
+        Insert: {
+          caption?: string | null
+          confidence?: string | null
+          created_at?: string
+          error_detail?: string | null
+          event_id?: string | null
+          id?: string
+          image_url?: string | null
+          import_status?: string
+          instagram_handle: string
+          partner_id?: string | null
+          post_url: string
+        }
+        Update: {
+          caption?: string | null
+          confidence?: string | null
+          created_at?: string
+          error_detail?: string | null
+          event_id?: string | null
+          id?: string
+          image_url?: string | null
+          import_status?: string
+          instagram_handle?: string
+          partner_id?: string | null
+          post_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_imports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_imports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_views: {
         Row: {
           city: string | null

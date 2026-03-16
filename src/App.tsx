@@ -18,6 +18,7 @@ import ParceirosList from "./pages/admin/ParceirosList";
 import ParceiroForm from "./pages/admin/ParceiroForm";
 import EventosList from "./pages/admin/EventosList";
 import EventoForm from "./pages/admin/EventoForm";
+import InstagramDetected from "./pages/admin/InstagramDetected";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="eventos" element={<EventosList />} />
             <Route path="eventos/novo" element={<EventoForm />} />
             <Route path="eventos/:id/editar" element={<EventoForm />} />
+            <Route path="instagram" element={<InstagramDetected />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
