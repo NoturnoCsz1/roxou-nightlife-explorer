@@ -31,7 +31,8 @@ const LocalDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [partner, setPartner] = useState<Partner | null>(null);
-  const [events, setEvents] = useState<SupabaseEvent[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<SupabaseEvent[]>([]);
+  const [pastEvents, setPastEvents] = useState<SupabaseEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,18 +46,29 @@ const LocalDetail = () => {
       .then(({ data }) => {
         setPartner(data);
         if (data) {
-          supabase
-            .from("events")
-            .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-            .eq("status", "published")
-            .eq("partner_id", data.id)
-            .gte("date_time", new Date().toISOString())
-            .order("date_time", { ascending: true })
-            .limit(6)
-            .then(({ data: evts }) => {
-              setEvents(evts || []);
-              setLoading(false);
-            });
+          const now = new Date().toISOString();
+          Promise.all([
+            supabase
+              .from("events")
+              .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+              .eq("status", "published")
+              .eq("partner_id", data.id)
+              .gte("date_time", now)
+              .order("date_time", { ascending: true })
+              .limit(6),
+            supabase
+              .from("events")
+              .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+              .eq("status", "published")
+              .eq("partner_id", data.id)
+              .lt("date_time", now)
+              .order("date_time", { ascending: false })
+              .limit(10),
+          ]).then(([{ data: upcoming }, { data: past }]) => {
+            setUpcomingEvents(upcoming || []);
+            setPastEvents(past || []);
+            setLoading(false);
+          });
         } else {
           setLoading(false);
         }
@@ -192,11 +204,22 @@ const LocalDetail = () => {
           </div>
         )}
 
-        {events.length > 0 && (
+        {upcomingEvents.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-foreground mb-3">Próximos Eventos</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {events.map((e, i) => (
+              {upcomingEvents.map((e, i) => (
+                <EventCard key={e.id} event={e} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pastEvents.length > 0 && (
+          <div>
+            <h3 className="text-sm font-bold text-foreground mb-3">Eventos já realizados</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {pastEvents.map((e, i) => (
                 <EventCard key={e.id} event={e} index={i} />
               ))}
             </div>
