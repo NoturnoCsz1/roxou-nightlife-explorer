@@ -204,11 +204,22 @@ const LocalDetail = () => {
           </div>
         )}
 
-        {events.length > 0 && (
+        {upcomingEvents.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-foreground mb-3">Próximos Eventos</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-              {events.map((e, i) => (
+              {upcomingEvents.map((e, i) => (
+                <EventCard key={e.id} event={e} index={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pastEvents.length > 0 && (
+          <div>
+            <h3 className="text-sm font-bold text-foreground mb-3">Eventos já realizados</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {pastEvents.map((e, i) => (
                 <EventCard key={e.id} event={e} index={i} />
               ))}
             </div>
