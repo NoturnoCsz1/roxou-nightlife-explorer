@@ -49,6 +49,7 @@ const App = () => (
             <Route path="eventos" element={<EventosList />} />
             <Route path="eventos/novo" element={<EventoForm />} />
             <Route path="eventos/:id/editar" element={<EventoForm />} />
+            <Route path="instagram" element={<InstagramDetected />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
