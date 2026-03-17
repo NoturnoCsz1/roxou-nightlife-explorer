@@ -40,7 +40,29 @@ const InstagramDetected = () => {
   const navigate = useNavigate();
   const [imports, setImports] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ImportRow | null>(null);
+
+  async function handleScanNow() {
+    setScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("instagram-scraper", { body: {} });
+      if (error) throw error;
+      if (data?.success) {
+        const s = data.stats;
+        toast.success(`Scan concluído`, {
+          description: `Parceiros: ${s.partnersProcessed} · Posts: ${s.postsFound} · Novos: ${s.newInserted} · Erros: ${s.errors}`,
+        });
+      } else {
+        toast.error("Erro no scan", { description: data?.error || "Falha desconhecida" });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao executar scan", { description: err.message || "Falha na requisição" });
+    } finally {
+      setScanning(false);
+      loadImports();
+    }
+  }
 
   useEffect(() => {
     loadImports();
