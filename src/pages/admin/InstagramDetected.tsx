@@ -70,9 +70,16 @@ const InstagramDetected = () => {
         const now = new Date().toISOString();
         localStorage.setItem(LAST_SCAN_KEY, now);
         setLastScan(now);
-        toast.success(`Scan concluído`, {
-          description: `Parceiros: ${s.partnersProcessed} · Posts: ${s.postsFound} · Novos: ${s.newInserted} · Erros: ${s.errors}`,
-        });
+        const desc = `Parceiros: ${s.partnersProcessed} · Posts: ${s.postsFound} · Novos: ${s.newInserted} · Erros: ${s.errors}`;
+        if (s.errors > 0 && s.newInserted > 0) {
+          toast.warning("Scan concluído com erros parciais", { description: desc });
+        } else if (s.errors > 0 && s.newInserted === 0) {
+          toast.error("Scan concluído com erros", { description: desc });
+        } else if (s.newInserted > 0) {
+          toast.success(`${s.newInserted} novo${s.newInserted > 1 ? "s" : ""} post${s.newInserted > 1 ? "s" : ""} detectado${s.newInserted > 1 ? "s" : ""}`, { description: desc });
+        } else {
+          toast.info("Nenhum post novo encontrado", { description: desc });
+        }
       } else {
         toast.error("Erro no scan", { description: data?.error || "Falha desconhecida" });
       }
