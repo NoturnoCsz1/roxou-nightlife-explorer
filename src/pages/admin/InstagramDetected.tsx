@@ -166,6 +166,21 @@ const InstagramDetected = () => {
             <p className="text-[10px] text-muted-foreground">Posts do Instagram dos parceiros</p>
           </div>
         </div>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleScanNow}
+            disabled={scanning}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition"
+          >
+            {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {scanning ? "Escaneando…" : "Escanear agora"}
+          </button>
+          {lastScan && (
+            <span className="text-[10px] text-muted-foreground">
+              Última verificação: {formatLastScan(lastScan)}
+            </span>
+          )}
+        </div>
         <button
           onClick={handleScanNow}
           disabled={scanning}
