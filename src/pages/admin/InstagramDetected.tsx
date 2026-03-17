@@ -36,12 +36,29 @@ const statusConfig: Record<string, { label: string; icon: typeof Clock; cls: str
   error: { label: "Erro", icon: XCircle, cls: "text-destructive bg-destructive/10" },
 };
 
+function formatLastScan(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return `hoje às ${time}`;
+  if (isYesterday) return `ontem às ${time}`;
+  return `${d.toLocaleDateString("pt-BR")} às ${time}`;
+}
+
+const LAST_SCAN_KEY = "roxou_last_instagram_scan";
+
 const InstagramDetected = () => {
   const navigate = useNavigate();
   const [imports, setImports] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ImportRow | null>(null);
+  const [lastScan, setLastScan] = useState<string | null>(() => localStorage.getItem(LAST_SCAN_KEY));
 
   async function handleScanNow() {
     setScanning(true);
@@ -50,6 +67,9 @@ const InstagramDetected = () => {
       if (error) throw error;
       if (data?.success) {
         const s = data.stats;
+        const now = new Date().toISOString();
+        localStorage.setItem(LAST_SCAN_KEY, now);
+        setLastScan(now);
         toast.success(`Scan concluído`, {
           description: `Parceiros: ${s.partnersProcessed} · Posts: ${s.postsFound} · Novos: ${s.newInserted} · Erros: ${s.errors}`,
         });
