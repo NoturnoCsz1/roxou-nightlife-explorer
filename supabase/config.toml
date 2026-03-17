@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.import-instagram]
 verify_jwt = false
+
+[functions.instagram-scraper]
+verify_jwt = false
