@@ -36,12 +36,29 @@ const statusConfig: Record<string, { label: string; icon: typeof Clock; cls: str
   error: { label: "Erro", icon: XCircle, cls: "text-destructive bg-destructive/10" },
 };
 
+function formatLastScan(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (isToday) return `hoje às ${time}`;
+  if (isYesterday) return `ontem às ${time}`;
+  return `${d.toLocaleDateString("pt-BR")} às ${time}`;
+}
+
+const LAST_SCAN_KEY = "roxou_last_instagram_scan";
+
 const InstagramDetected = () => {
   const navigate = useNavigate();
   const [imports, setImports] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ImportRow | null>(null);
+  const [lastScan, setLastScan] = useState<string | null>(() => localStorage.getItem(LAST_SCAN_KEY));
 
   async function handleScanNow() {
     setScanning(true);
@@ -50,6 +67,9 @@ const InstagramDetected = () => {
       if (error) throw error;
       if (data?.success) {
         const s = data.stats;
+        const now = new Date().toISOString();
+        localStorage.setItem(LAST_SCAN_KEY, now);
+        setLastScan(now);
         toast.success(`Scan concluído`, {
           description: `Parceiros: ${s.partnersProcessed} · Posts: ${s.postsFound} · Novos: ${s.newInserted} · Erros: ${s.errors}`,
         });
@@ -146,14 +166,21 @@ const InstagramDetected = () => {
             <p className="text-[10px] text-muted-foreground">Posts do Instagram dos parceiros</p>
           </div>
         </div>
-        <button
-          onClick={handleScanNow}
-          disabled={scanning}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition"
-        >
-          {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          {scanning ? "Escaneando…" : "Escanear agora"}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={handleScanNow}
+            disabled={scanning}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition"
+          >
+            {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {scanning ? "Escaneando…" : "Escanear agora"}
+          </button>
+          {lastScan && (
+            <span className="text-[10px] text-muted-foreground">
+              Última verificação: {formatLastScan(lastScan)}
+            </span>
+          )}
+        </div>
       </div>
 
       {loading ? (
