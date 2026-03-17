@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Instagram, Loader2, CheckCircle, XCircle, Clock, ExternalLink, Trash2, Eye } from "lucide-react";
+import { Instagram, Loader2, CheckCircle, XCircle, Clock, ExternalLink, Trash2, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -40,7 +40,29 @@ const InstagramDetected = () => {
   const navigate = useNavigate();
   const [imports, setImports] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ImportRow | null>(null);
+
+  async function handleScanNow() {
+    setScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("instagram-scraper", { body: {} });
+      if (error) throw error;
+      if (data?.success) {
+        const s = data.stats;
+        toast.success(`Scan concluído`, {
+          description: `Parceiros: ${s.partnersProcessed} · Posts: ${s.postsFound} · Novos: ${s.newInserted} · Erros: ${s.errors}`,
+        });
+      } else {
+        toast.error("Erro no scan", { description: data?.error || "Falha desconhecida" });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao executar scan", { description: err.message || "Falha na requisição" });
+    } finally {
+      setScanning(false);
+      loadImports();
+    }
+  }
 
   useEffect(() => {
     loadImports();
@@ -124,6 +146,14 @@ const InstagramDetected = () => {
             <p className="text-[10px] text-muted-foreground">Posts do Instagram dos parceiros</p>
           </div>
         </div>
+        <button
+          onClick={handleScanNow}
+          disabled={scanning}
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition"
+        >
+          {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          {scanning ? "Escaneando…" : "Escanear agora"}
+        </button>
       </div>
 
       {loading ? (
