@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Copy, MousePointerClick, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
+import { ChevronDown, Copy, Layers, MousePointerClick, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
