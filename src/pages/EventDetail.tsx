@@ -150,6 +150,12 @@ const EventDetail = () => {
     }
   };
 
+  const handleWhatsAppShare = () => {
+    const text = `🎉 *${event.title}*\n📅 ${dateFormatted} às ${time}\n📍 ${event.venue_name || "Presidente Prudente"}\n\nVeja mais: ${window.location.href}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const instagramUrl =
     partner?.instagram || event.instagram
       ? `https://instagram.com/${(partner?.instagram || event.instagram || "").replace("@", "")}`
@@ -555,6 +561,13 @@ const EventDetail = () => {
               className={`h-5 w-5 ${saved ? "fill-current" : ""}`}
             />
             {saved ? "Salvo" : "Salvar"}
+          </button>
+          <button
+            onClick={handleWhatsAppShare}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[hsl(142,70%,40%)] py-4 text-sm font-bold text-primary-foreground transition-all active:scale-95 hover:opacity-90"
+          >
+            <MessageCircle className="h-5 w-5" />
+            WhatsApp
           </button>
           <button
             onClick={handleShare}
