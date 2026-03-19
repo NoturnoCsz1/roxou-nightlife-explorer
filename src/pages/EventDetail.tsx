@@ -563,6 +563,13 @@ const EventDetail = () => {
             {saved ? "Salvo" : "Salvar"}
           </button>
           <button
+            onClick={handleWhatsAppShare}
+            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[hsl(142,70%,40%)] py-4 text-sm font-bold text-primary-foreground transition-all active:scale-95 hover:opacity-90"
+          >
+            <MessageCircle className="h-5 w-5" />
+            WhatsApp
+          </button>
+          <button
             onClick={handleShare}
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl gradient-primary py-4 text-sm font-bold text-primary-foreground transition-all active:scale-95 neon-glow"
           >
