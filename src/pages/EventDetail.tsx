@@ -150,6 +150,12 @@ const EventDetail = () => {
     }
   };
 
+  const handleWhatsAppShare = () => {
+    const text = `🎉 *${event.title}*\n📅 ${dateFormatted} às ${time}\n📍 ${event.venue_name || "Presidente Prudente"}\n\nVeja mais: ${window.location.href}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   const instagramUrl =
     partner?.instagram || event.instagram
       ? `https://instagram.com/${(partner?.instagram || event.instagram || "").replace("@", "")}`
