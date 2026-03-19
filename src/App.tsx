@@ -18,6 +18,7 @@ import ParceirosList from "./pages/admin/ParceirosList";
 import ParceiroForm from "./pages/admin/ParceiroForm";
 import EventosList from "./pages/admin/EventosList";
 import EventoForm from "./pages/admin/EventoForm";
+import EventoBulkForm from "./pages/admin/EventoBulkForm";
 import InstagramDetected from "./pages/admin/InstagramDetected";
 
 const queryClient = new QueryClient();
