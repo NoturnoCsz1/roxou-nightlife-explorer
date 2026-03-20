@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categoryConfig";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type Partner = Tables<"partners">;
 
