@@ -121,7 +121,8 @@ const EventoForm = () => {
     setSaving(true);
     // Append São Paulo timezone offset so Supabase stores the correct UTC value
     const dateTimeWithTz = form.date_time ? form.date_time + ":00-03:00" : form.date_time;
-    const payload = { ...form, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
+    const payload: any = { ...form, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
+    if (cityFilter) payload.city = cityFilter;
     try {
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);

@@ -96,7 +96,8 @@ const ParceiroForm = () => {
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Cidade</label>
-            <input className={inputClass} value={form.city} onChange={(e) => handleChange("city", e.target.value)} />
+            <input className={inputClass} value={form.city} onChange={(e) => handleChange("city", e.target.value)} disabled={isCityEditor} />
+            {isCityEditor && <p className="text-[10px] text-muted-foreground mt-0.5">Cidade definida pelo seu perfil</p>}
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Instagram</label>
