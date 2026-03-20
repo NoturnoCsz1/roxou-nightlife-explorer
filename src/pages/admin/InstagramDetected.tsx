@@ -55,6 +55,7 @@ const LAST_SCAN_KEY = "roxou_last_instagram_scan";
 
 const InstagramDetected = () => {
   const navigate = useNavigate();
+  const { cityFilter } = useAdminProfile();
   const [imports, setImports] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
