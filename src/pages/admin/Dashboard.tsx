@@ -23,6 +23,7 @@ interface TopPageItem {
 }
 
 const Dashboard = () => {
+  const { cityFilter } = useAdminProfile();
   const [period, setPeriod] = useState<DashboardPeriod>("7d");
   const [metrics, setMetrics] = useState({
     totalEvents: 0,
