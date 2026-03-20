@@ -32,10 +32,12 @@ const ParceirosList = () => {
 
   async function loadPartners() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("partners")
       .select("*")
       .order("created_at", { ascending: false });
+    if (cityFilter) query = query.eq("city", cityFilter);
+    const { data } = await query;
     setPartners(data || []);
     setLoading(false);
   }

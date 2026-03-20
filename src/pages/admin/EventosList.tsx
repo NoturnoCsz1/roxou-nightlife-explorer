@@ -69,10 +69,12 @@ const EventosList = () => {
 
   async function loadEvents() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("events")
       .select("id, title, venue_name, date_time, category, status, featured")
       .order("date_time", { ascending: false });
+    if (cityFilter) query = query.eq("city", cityFilter);
+    const { data } = await query;
     setEvents(data || []);
     setLoading(false);
   }
