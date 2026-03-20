@@ -19,7 +19,7 @@ const ParceiroForm = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "", slug: "", type: "bar", address: "",
-    city: "Presidente Prudente", instagram: "", whatsapp: "",
+    city: cityFilter || "Presidente Prudente", instagram: "", whatsapp: "",
     short_description: "", full_description: "", logo_url: "",
     verified_partner: false, active: true,
   });
