@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download, MousePointerClick } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import MetricCard from "@/components/admin/MetricCard";
 import TopPartners from "@/components/admin/TopPartners";
 import TopEvents from "@/components/admin/TopEvents";
