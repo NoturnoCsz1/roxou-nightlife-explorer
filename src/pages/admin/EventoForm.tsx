@@ -67,31 +67,36 @@ const EventoForm = () => {
 
   async function loadEvent() {
     const { data } = await supabase.from("events").select("*").eq("id", id!).single();
-    if (data) {
-      // Convert stored UTC timestamp to São Paulo local time for the form input
-      let localDateTime = "";
-      if (data.date_time) {
-        const d = new Date(data.date_time);
-        const parts = new Intl.DateTimeFormat("sv-SE", {
-          year: "numeric", month: "2-digit", day: "2-digit",
-          hour: "2-digit", minute: "2-digit",
-          timeZone: "America/Sao_Paulo", hour12: false,
-        }).formatToParts(d);
-        const get = (type: string) => parts.find(p => p.type === type)?.value || "";
-        localDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
-      }
-      setForm({
-        title: data.title, slug: data.slug,
-        date_time: localDateTime,
-        category: data.category, partner_id: data.partner_id || "",
-        venue_name: data.venue_name || "", address: data.address || "",
-        instagram: data.instagram || "", description: data.description || "",
-        status: data.status, verification_source: data.verification_source || "",
-        featured: data.featured, image_url: data.image_url || "",
-        ticket_url: (data as any).ticket_url || "",
-      });
-      if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
+    if (!data) return;
+    // City guard: city_editors can only edit events in their city
+    if (cityFilter && (data as any).city && (data as any).city !== cityFilter) {
+      toast.error("Você não tem permissão para editar este evento.");
+      navigate("/admin/eventos");
+      return;
     }
+    // Convert stored UTC timestamp to São Paulo local time for the form input
+    let localDateTime = "";
+    if (data.date_time) {
+      const d = new Date(data.date_time);
+      const parts = new Intl.DateTimeFormat("sv-SE", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit",
+        timeZone: "America/Sao_Paulo", hour12: false,
+      }).formatToParts(d);
+      const get = (type: string) => parts.find(p => p.type === type)?.value || "";
+      localDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+    }
+    setForm({
+      title: data.title, slug: data.slug,
+      date_time: localDateTime,
+      category: data.category, partner_id: data.partner_id || "",
+      venue_name: data.venue_name || "", address: data.address || "",
+      instagram: data.instagram || "", description: data.description || "",
+      status: data.status, verification_source: data.verification_source || "",
+      featured: data.featured, image_url: data.image_url || "",
+      ticket_url: (data as any).ticket_url || "",
+    });
+    if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
   }
 
   function handleChange(key: string, value: string | boolean) {

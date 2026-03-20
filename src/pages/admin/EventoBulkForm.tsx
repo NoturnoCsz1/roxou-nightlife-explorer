@@ -5,19 +5,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import EventFormBlock, { emptyEventForm, type EventFormData } from "@/components/admin/EventFormBlock";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type Partner = Tables<"partners">;
 
 const EventoBulkForm = () => {
   const navigate = useNavigate();
+  const { cityFilter } = useAdminProfile();
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [forms, setForms] = useState<EventFormData[]>([emptyEventForm()]);
 
   useEffect(() => {
-    supabase.from("partners").select("*").eq("active", true).order("name")
-      .then(({ data }) => setPartners(data || []));
-  }, []);
+    let query = supabase.from("partners").select("*").eq("active", true).order("name");
+    if (cityFilter) query = query.eq("city", cityFilter);
+    query.then(({ data }) => setPartners(data || []));
+  }, [cityFilter]);
 
   function handleFormChange(index: number, updated: EventFormData) {
     setForms((prev) => prev.map((f, i) => (i === index ? updated : f)));
@@ -45,6 +48,7 @@ const EventoBulkForm = () => {
       status,
       date_time: f.date_time ? f.date_time + ":00-03:00" : f.date_time,
       partner_id: f.partner_id || null,
+      ...(cityFilter ? { city: cityFilter } : {}),
     }));
 
     try {

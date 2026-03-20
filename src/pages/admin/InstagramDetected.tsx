@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Instagram, Loader2, CheckCircle, XCircle, Clock, ExternalLink, Trash2, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -54,6 +55,7 @@ const LAST_SCAN_KEY = "roxou_last_instagram_scan";
 
 const InstagramDetected = () => {
   const navigate = useNavigate();
+  const { cityFilter } = useAdminProfile();
   const [imports, setImports] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -97,11 +99,29 @@ const InstagramDetected = () => {
 
   async function loadImports() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("instagram_imports")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
+
+    // City filter: only show imports from partners in the allowed city
+    if (cityFilter) {
+      const { data: cityPartners } = await supabase
+        .from("partners")
+        .select("id")
+        .eq("city", cityFilter);
+      const ids = (cityPartners || []).map(p => p.id);
+      if (ids.length > 0) {
+        query = query.in("partner_id", ids);
+      } else {
+        setImports([]);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const { data } = await query;
 
     if (data && data.length > 0) {
       // Fetch partner names
