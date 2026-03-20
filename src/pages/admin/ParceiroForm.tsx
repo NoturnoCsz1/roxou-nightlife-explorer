@@ -14,6 +14,7 @@ function slugify(str: string) {
 const ParceiroForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isCityEditor, cityFilter } = useAdminProfile();
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
