@@ -32,6 +32,7 @@ interface EventRow {
 
 const EventosList = () => {
   const navigate = useNavigate();
+  const { cityFilter } = useAdminProfile();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
