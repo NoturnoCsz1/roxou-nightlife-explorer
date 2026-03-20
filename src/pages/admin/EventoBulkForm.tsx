@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import EventFormBlock, { emptyEventForm, type EventFormData } from "@/components/admin/EventFormBlock";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type Partner = Tables<"partners">;
 
