@@ -11,14 +11,16 @@ type Partner = Tables<"partners">;
 
 const EventoBulkForm = () => {
   const navigate = useNavigate();
+  const { cityFilter } = useAdminProfile();
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [forms, setForms] = useState<EventFormData[]>([emptyEventForm()]);
 
   useEffect(() => {
-    supabase.from("partners").select("*").eq("active", true).order("name")
-      .then(({ data }) => setPartners(data || []));
-  }, []);
+    let query = supabase.from("partners").select("*").eq("active", true).order("name");
+    if (cityFilter) query = query.eq("city", cityFilter);
+    query.then(({ data }) => setPartners(data || []));
+  }, [cityFilter]);
 
   function handleFormChange(index: number, updated: EventFormData) {
     setForms((prev) => prev.map((f, i) => (i === index ? updated : f)));
