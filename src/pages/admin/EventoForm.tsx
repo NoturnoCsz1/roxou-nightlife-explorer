@@ -59,7 +59,9 @@ const EventoForm = () => {
   }, [id]);
 
   async function loadPartners() {
-    const { data } = await supabase.from("partners").select("*").eq("active", true).order("name");
+    let query = supabase.from("partners").select("*").eq("active", true).order("name");
+    if (cityFilter) query = query.eq("city", cityFilter);
+    const { data } = await query;
     setPartners(data || []);
   }
 
