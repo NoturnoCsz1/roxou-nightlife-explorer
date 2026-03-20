@@ -19,6 +19,7 @@ const EventoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isCityEditor, cityFilter } = useAdminProfile();
   const duplicateData = (location.state as any)?.duplicate;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
