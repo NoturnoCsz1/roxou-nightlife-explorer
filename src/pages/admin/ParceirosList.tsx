@@ -19,6 +19,7 @@ import {
 type Partner = Tables<"partners">;
 
 const ParceirosList = () => {
+  const { cityFilter } = useAdminProfile();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
