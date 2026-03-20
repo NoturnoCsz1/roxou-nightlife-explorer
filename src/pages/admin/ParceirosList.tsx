@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, CheckCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -18,6 +19,7 @@ import {
 type Partner = Tables<"partners">;
 
 const ParceirosList = () => {
+  const { cityFilter } = useAdminProfile();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -30,10 +32,12 @@ const ParceirosList = () => {
 
   async function loadPartners() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("partners")
       .select("*")
       .order("created_at", { ascending: false });
+    if (cityFilter) query = query.eq("city", cityFilter);
+    const { data } = await query;
     setPartners(data || []);
     setLoading(false);
   }

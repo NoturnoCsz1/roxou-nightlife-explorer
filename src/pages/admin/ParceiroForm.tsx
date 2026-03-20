@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 function slugify(str: string) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -13,11 +14,12 @@ function slugify(str: string) {
 const ParceiroForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isCityEditor, cityFilter } = useAdminProfile();
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "", slug: "", type: "bar", address: "",
-    city: "Presidente Prudente", instagram: "", whatsapp: "",
+    city: cityFilter || "Presidente Prudente", instagram: "", whatsapp: "",
     short_description: "", full_description: "", logo_url: "",
     verified_partner: false, active: true,
   });
@@ -94,7 +96,8 @@ const ParceiroForm = () => {
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Cidade</label>
-            <input className={inputClass} value={form.city} onChange={(e) => handleChange("city", e.target.value)} />
+            <input className={inputClass} value={form.city} onChange={(e) => handleChange("city", e.target.value)} disabled={isCityEditor} />
+            {isCityEditor && <p className="text-[10px] text-muted-foreground mt-0.5">Cidade definida pelo seu perfil</p>}
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Instagram</label>

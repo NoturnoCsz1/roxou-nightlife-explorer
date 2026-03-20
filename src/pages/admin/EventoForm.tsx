@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categoryConfig";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type Partner = Tables<"partners">;
 
@@ -18,6 +19,7 @@ const EventoForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isCityEditor, cityFilter } = useAdminProfile();
   const duplicateData = (location.state as any)?.duplicate;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
@@ -57,7 +59,9 @@ const EventoForm = () => {
   }, [id]);
 
   async function loadPartners() {
-    const { data } = await supabase.from("partners").select("*").eq("active", true).order("name");
+    let query = supabase.from("partners").select("*").eq("active", true).order("name");
+    if (cityFilter) query = query.eq("city", cityFilter);
+    const { data } = await query;
     setPartners(data || []);
   }
 
@@ -117,7 +121,8 @@ const EventoForm = () => {
     setSaving(true);
     // Append São Paulo timezone offset so Supabase stores the correct UTC value
     const dateTimeWithTz = form.date_time ? form.date_time + ":00-03:00" : form.date_time;
-    const payload = { ...form, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
+    const payload: any = { ...form, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
+    if (cityFilter) payload.city = cityFilter;
     try {
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);

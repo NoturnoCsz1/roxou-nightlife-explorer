@@ -14,10 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          allowed_city: string | null
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          allowed_city?: string | null
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          allowed_city?: string | null
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           address: string | null
           category: string
+          city: string
           created_at: string
           date_time: string
           description: string | null
@@ -36,6 +61,7 @@ export type Database = {
         Insert: {
           address?: string | null
           category?: string
+          city?: string
           created_at?: string
           date_time: string
           description?: string | null
@@ -54,6 +80,7 @@ export type Database = {
         Update: {
           address?: string | null
           category?: string
+          city?: string
           created_at?: string
           date_time?: string
           description?: string | null

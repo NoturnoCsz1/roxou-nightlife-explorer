@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, Copy, Layers, MousePointerClick, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ interface EventRow {
 
 const EventosList = () => {
   const navigate = useNavigate();
+  const { cityFilter } = useAdminProfile();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -67,10 +69,12 @@ const EventosList = () => {
 
   async function loadEvents() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("events")
       .select("id, title, venue_name, date_time, category, status, featured")
       .order("date_time", { ascending: false });
+    if (cityFilter) query = query.eq("city", cityFilter);
+    const { data } = await query;
     setEvents(data || []);
     setLoading(false);
   }
