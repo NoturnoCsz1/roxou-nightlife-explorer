@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Search, CheckCircle, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import {
