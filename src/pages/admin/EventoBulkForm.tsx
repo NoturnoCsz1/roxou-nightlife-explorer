@@ -48,6 +48,7 @@ const EventoBulkForm = () => {
       status,
       date_time: f.date_time ? f.date_time + ":00-03:00" : f.date_time,
       partner_id: f.partner_id || null,
+      ...(cityFilter ? { city: cityFilter } : {}),
     }));
 
     try {

@@ -99,11 +99,29 @@ const InstagramDetected = () => {
 
   async function loadImports() {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from("instagram_imports")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
+
+    // City filter: only show imports from partners in the allowed city
+    if (cityFilter) {
+      const { data: cityPartners } = await supabase
+        .from("partners")
+        .select("id")
+        .eq("city", cityFilter);
+      const ids = (cityPartners || []).map(p => p.id);
+      if (ids.length > 0) {
+        query = query.in("partner_id", ids);
+      } else {
+        setImports([]);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const { data } = await query;
 
     if (data && data.length > 0) {
       // Fetch partner names

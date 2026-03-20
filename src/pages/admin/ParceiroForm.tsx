@@ -28,7 +28,14 @@ const ParceiroForm = () => {
 
   async function loadPartner() {
     const { data } = await supabase.from("partners").select("*").eq("id", id!).single();
-    if (data) setForm({
+    if (!data) return;
+    // City guard
+    if (cityFilter && data.city !== cityFilter) {
+      toast.error("Você não tem permissão para editar este parceiro.");
+      navigate("/admin/parceiros");
+      return;
+    }
+    setForm({
       name: data.name, slug: data.slug, type: data.type,
       address: data.address || "",
       city: data.city, instagram: data.instagram || "", whatsapp: data.whatsapp || "",
