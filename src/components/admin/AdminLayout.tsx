@@ -14,7 +14,7 @@ const navItems = [
 const AdminLayout = () => {
   const { pathname } = useLocation();
   const { user, loading, signOut } = useAuth();
-
+  const { profile, isCityEditor, cityFilter } = useAdminProfile();
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
