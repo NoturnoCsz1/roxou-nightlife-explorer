@@ -1,8 +1,8 @@
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut, Instagram, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut, Instagram, ShieldCheck, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 const navItems = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/eventos", icon: CalendarDays, label: "Eventos" },
@@ -14,7 +14,7 @@ const navItems = [
 const AdminLayout = () => {
   const { pathname } = useLocation();
   const { user, loading, signOut } = useAuth();
-
+  const { profile, isCityEditor, cityFilter } = useAdminProfile();
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -42,6 +42,12 @@ const AdminLayout = () => {
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
               Admin
             </span>
+            {isCityEditor && cityFilter && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                <MapPin className="h-3 w-3" />
+                {cityFilter}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <Link
