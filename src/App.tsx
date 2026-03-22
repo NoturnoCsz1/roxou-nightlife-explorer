@@ -53,6 +53,7 @@ const App = () => (
             <Route path="eventos/novo/lote" element={<EventoBulkForm />} />
             <Route path="eventos/:id/editar" element={<EventoForm />} />
             <Route path="instagram" element={<InstagramDetected />} />
+            <Route path="editores" element={<Editores />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
