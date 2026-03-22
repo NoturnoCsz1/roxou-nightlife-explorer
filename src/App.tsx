@@ -20,6 +20,7 @@ import EventosList from "./pages/admin/EventosList";
 import EventoForm from "./pages/admin/EventoForm";
 import EventoBulkForm from "./pages/admin/EventoBulkForm";
 import InstagramDetected from "./pages/admin/InstagramDetected";
+import Editores from "./pages/admin/Editores";
 
 const queryClient = new QueryClient();
 
