@@ -42,7 +42,12 @@ const AdminLayout = () => {
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
               Admin
             </span>
-          </div>
+            {isCityEditor && cityFilter && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                <MapPin className="h-3 w-3" />
+                {cityFilter}
+              </span>
+            )}
           <div className="flex items-center gap-1.5">
             <Link
               to="/admin/eventos/novo"
