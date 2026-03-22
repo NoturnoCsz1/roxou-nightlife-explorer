@@ -48,6 +48,7 @@ const AdminLayout = () => {
                 {cityFilter}
               </span>
             )}
+          </div>
           <div className="flex items-center gap-1.5">
             <Link
               to="/admin/eventos/novo"
