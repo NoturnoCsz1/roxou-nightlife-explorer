@@ -231,6 +231,14 @@ const LocalDetail = () => {
                 <EventCard key={e.id} event={e} index={i} />
               ))}
             </div>
+            {pastTotal > 10 && (
+              <button
+                onClick={() => navigate(`/local/${slug}/eventos`)}
+                className="mt-4 w-full rounded-xl bg-secondary py-2.5 text-xs font-bold text-foreground hover:bg-secondary/80 transition"
+              >
+                Ver todos os eventos passados ({pastTotal})
+              </button>
+            )}
           </div>
         )}
       </main>
