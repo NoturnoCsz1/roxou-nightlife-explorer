@@ -10,6 +10,7 @@ import Semana from "./pages/Semana";
 import Categorias from "./pages/Categorias";
 import Salvos from "./pages/Salvos";
 import LocalDetail from "./pages/LocalDetail";
+import LocalEventos from "./pages/LocalEventos";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/salvos" element={<Salvos />} />
           <Route path="/local/:slug" element={<LocalDetail />} />
+          <Route path="/local/:slug/eventos" element={<LocalEventos />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<AdminLogin />} />
