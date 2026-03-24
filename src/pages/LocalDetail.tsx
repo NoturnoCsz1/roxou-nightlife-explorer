@@ -33,6 +33,7 @@ const LocalDetail = () => {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<SupabaseEvent[]>([]);
   const [pastEvents, setPastEvents] = useState<SupabaseEvent[]>([]);
+  const [pastTotal, setPastTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,9 +65,16 @@ const LocalDetail = () => {
               .lt("date_time", now)
               .order("date_time", { ascending: false })
               .limit(10),
-          ]).then(([{ data: upcoming }, { data: past }]) => {
+            supabase
+              .from("events")
+              .select("id", { count: "exact", head: true })
+              .eq("status", "published")
+              .eq("partner_id", data.id)
+              .lt("date_time", now),
+          ]).then(([{ data: upcoming }, { data: past }, { count }]) => {
             setUpcomingEvents(upcoming || []);
             setPastEvents(past || []);
+            setPastTotal(count || 0);
             setLoading(false);
           });
         } else {
@@ -217,7 +225,7 @@ const LocalDetail = () => {
 
         {pastEvents.length > 0 && (
           <div>
-            <h3 className="text-sm font-bold text-foreground mb-3">Eventos já realizados</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3">Eventos já realizados ({pastTotal})</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {pastEvents.map((e, i) => (
                 <EventCard key={e.id} event={e} index={i} />
