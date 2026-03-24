@@ -45,7 +45,7 @@ const AdminLayout = () => {
             {isCityEditor && cityFilter && (
               <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
                 <MapPin className="h-3 w-3" />
-                {cityFilter}
+                Cidade ativa: {cityFilter}
               </span>
             )}
           </div>
