@@ -30,14 +30,15 @@ const TopPartners = ({ since, onDataLoaded }: TopPartnersProps) => {
 
   useEffect(() => {
     async function load() {
-      const [partnersRes, viewsRes, eventsRes] = await Promise.all([
+      const [partnersRes, views, eventsRes] = await Promise.all([
         supabase.from("partners").select("id, name, slug").eq("active", true),
-        supabase.from("page_views").select("page_path").gte("created_at", since),
+        fetchAllRows<{ page_path: string }>(
+          () => supabase.from("page_views").select("page_path").gte("created_at", since)
+        ),
         supabase.from("events").select("slug, partner_id").eq("status", "published").not("partner_id", "is", null),
       ]);
 
       const partners = partnersRes.data || [];
-      const views = viewsRes.data || [];
       const events = eventsRes.data || [];
 
       const partnerSlugMap = new Map(partners.map((p) => [p.slug, p.id]));
