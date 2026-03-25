@@ -91,12 +91,13 @@ const Dashboard = () => {
       partnersQuery = partnersQuery.eq("city", cityFilter);
     }
 
-    const [eventsRes, partnersRes, viewsRes, sessionsRes, clicksRes] = await Promise.all([
+    const [eventsRes, partnersRes, viewsRes, sessionsRes, clicksRes, viewsCountRes] = await Promise.all([
       eventsQuery,
       partnersQuery,
       supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO),
       supabase.from("visitor_sessions").select("session_id"),
       supabase.from("ticket_clicks").select("event_id, created_at").gte("created_at", sinceISO),
+      supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", sinceISO),
     ]);
 
     const evts = eventsRes.data || [];
