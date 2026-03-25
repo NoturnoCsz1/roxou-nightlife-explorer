@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Zap, TrendingUp, TrendingDown, Flame, AlertTriangle, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import { DashboardPeriod, getPeriodRange, getPeriodLabel, getPeriodDayCount } from "@/lib/dashboardPeriod";
 
 interface Alert {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabaseFetchAll";
 
 interface RankedEvent {
   title: string;

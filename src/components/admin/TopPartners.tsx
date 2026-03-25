@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabaseFetchAll";
 
 interface RankedPartner {
   name: string;
