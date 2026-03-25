@@ -50,7 +50,14 @@ const DashboardAlerts = ({ period }: DashboardAlertsProps) => {
       const prevStart = new Date(sinceDate);
       prevStart.setDate(prevStart.getDate() - dayCount);
 
-      const [eventsRes, views, prevViews] = await Promise.all([
+      // Trending event: last 24h vs previous 24h
+      const now24h = new Date();
+      const since24h = new Date(now24h);
+      since24h.setHours(since24h.getHours() - 24);
+      const prev24hStart = new Date(since24h);
+      prev24hStart.setHours(prev24hStart.getHours() - 24);
+
+      const [eventsRes, views, prevViews, views24h, prevViews24h] = await Promise.all([
         supabase.from("events").select("title, slug, status, date_time").eq("status", "published"),
         fetchAllRows<{ page_path: string; created_at: string }>(
           () => supabase.from("page_views").select("page_path, created_at").gte("created_at", sinceISO)
@@ -58,14 +65,64 @@ const DashboardAlerts = ({ period }: DashboardAlertsProps) => {
         fetchAllRows<{ page_path: string; created_at: string }>(
           () => supabase.from("page_views").select("page_path, created_at").gte("created_at", prevStart.toISOString()).lt("created_at", sinceISO)
         ),
+        fetchAllRows<{ page_path: string }>(
+          () => supabase.from("page_views").select("page_path").gte("created_at", since24h.toISOString())
+        ),
+        fetchAllRows<{ page_path: string }>(
+          () => supabase.from("page_views").select("page_path").gte("created_at", prev24hStart.toISOString()).lt("created_at", since24h.toISOString())
+        ),
       ]);
 
       const events = eventsRes.data || [];
 
       const result: Alert[] = [];
 
-      // 1. Most viewed event
       const slugToTitle = new Map(events.map((e) => [e.slug, e.title]));
+
+      // 0. 🔥 Trending event (24h vs previous 24h)
+      const views24hMap: Record<string, number> = {};
+      const prevViews24hMap: Record<string, number> = {};
+      views24h.forEach((v) => {
+        const m = v.page_path.match(/^\/evento\/(.+)$/);
+        if (m && slugToTitle.has(m[1])) views24hMap[m[1]] = (views24hMap[m[1]] || 0) + 1;
+      });
+      prevViews24h.forEach((v) => {
+        const m = v.page_path.match(/^\/evento\/(.+)$/);
+        if (m && slugToTitle.has(m[1])) prevViews24hMap[m[1]] = (prevViews24hMap[m[1]] || 0) + 1;
+      });
+
+      let trendingSlug = "";
+      let trendingGrowth = 0;
+      let trendingViews = 0;
+      Object.entries(views24hMap).forEach(([slug, curr]) => {
+        const prev = prevViews24hMap[slug] || 0;
+        if (curr >= 3 && prev >= 1) {
+          const growth = ((curr - prev) / prev) * 100;
+          if (growth > trendingGrowth) {
+            trendingGrowth = growth;
+            trendingSlug = slug;
+            trendingViews = curr;
+          }
+        } else if (curr >= 5 && prev === 0) {
+          // New spike from zero
+          const growth = curr * 100;
+          if (growth > trendingGrowth) {
+            trendingGrowth = growth;
+            trendingSlug = slug;
+            trendingViews = curr;
+          }
+        }
+      });
+      if (trendingSlug) {
+        result.push({
+          icon: "fire",
+          title: "Evento em alta hoje",
+          description: `"${slugToTitle.get(trendingSlug)}" com ${trendingViews} views nas últimas 24h (+${trendingGrowth.toFixed(0)}%)`,
+          type: "positive",
+        });
+      }
+
+      // 1. Most viewed event (period)
       const eventViewMap: Record<string, number> = {};
       views.forEach((v) => {
         const m = v.page_path.match(/^\/evento\/(.+)$/);
@@ -76,7 +133,7 @@ const DashboardAlerts = ({ period }: DashboardAlertsProps) => {
       const topEvent = Object.entries(eventViewMap).sort((a, b) => b[1] - a[1])[0];
       if (topEvent) {
         result.push({
-          icon: "fire",
+          icon: "star",
           title: "Evento mais visto",
           description: `"${slugToTitle.get(topEvent[0])}" com ${topEvent[1]} visualizações`,
           type: "positive",
@@ -126,9 +183,9 @@ const DashboardAlerts = ({ period }: DashboardAlertsProps) => {
         }
       }
 
-      // 4. Low-performing published events (have upcoming events with 0 or very few views)
-      const now = new Date().toISOString();
-      const upcomingEvents = events.filter((e) => e.date_time > now);
+      // 4. Low-performing published events
+      const nowISO = new Date().toISOString();
+      const upcomingEvents = events.filter((e) => e.date_time > nowISO);
       const lowPerformers = upcomingEvents
         .filter((e) => (eventViewMap[e.slug] || 0) <= 1)
         .slice(0, 3);
