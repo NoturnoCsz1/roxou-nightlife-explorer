@@ -115,7 +115,7 @@ const Dashboard = () => {
       upcomingEvents: upcoming.length,
       eventsToday: today.length,
       activePartners: parts.filter((p) => p.active).length,
-      periodViews: views.length,
+      periodViews: viewsCountRes.count ?? views.length,
       uniqueVisitors: sessions.length,
       ticketClicks: clicks.length,
     });
