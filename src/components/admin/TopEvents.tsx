@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabaseFetchAll";
 
 interface RankedEvent {
   title: string;
@@ -25,13 +26,14 @@ const TopEvents = ({ since, onDataLoaded }: TopEventsProps) => {
 
   useEffect(() => {
     async function load() {
-      const [eventsRes, viewsRes] = await Promise.all([
+      const [eventsRes, views] = await Promise.all([
         supabase.from("events").select("title, slug, date_time").eq("status", "published"),
-        supabase.from("page_views").select("page_path").gte("created_at", since),
+        fetchAllRows<{ page_path: string }>(
+          () => supabase.from("page_views").select("page_path").gte("created_at", since)
+        ),
       ]);
 
       const events = eventsRes.data || [];
-      const views = viewsRes.data || [];
 
       const slugToEvent = new Map(events.map((e) => [e.slug, e]));
       const viewMap: Record<string, number> = {};

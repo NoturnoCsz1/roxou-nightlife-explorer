@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
+import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download, MousePointerClick } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
@@ -91,20 +92,26 @@ const Dashboard = () => {
       partnersQuery = partnersQuery.eq("city", cityFilter);
     }
 
-    const [eventsRes, partnersRes, viewsRes, sessionsRes, clicksRes, viewsCountRes] = await Promise.all([
+    const [eventsRes, partnersRes, sessionsCountRes, viewsCountRes, clicksCountRes] = await Promise.all([
       eventsQuery,
       partnersQuery,
-      supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO),
-      supabase.from("visitor_sessions").select("session_id"),
-      supabase.from("ticket_clicks").select("event_id, created_at").gte("created_at", sinceISO),
+      supabase.from("visitor_sessions").select("id", { count: "exact", head: true }),
       supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", sinceISO),
+      supabase.from("ticket_clicks").select("id", { count: "exact", head: true }).gte("created_at", sinceISO),
     ]);
 
     const evts = eventsRes.data || [];
     const parts = partnersRes.data || [];
-    const views = viewsRes.data || [];
-    const sessions = sessionsRes.data || [];
-    const clicks = clicksRes.data || [];
+
+    // Fetch all rows for charts/breakdowns (paginated to avoid 1000-row cap)
+    const [views, clicks] = await Promise.all([
+      fetchAllRows<{ id: string; page_path: string; device_type: string | null; created_at: string; session_id: string | null }>(
+        () => supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO)
+      ),
+      fetchAllRows<{ event_id: string; created_at: string }>(
+        () => supabase.from("ticket_clicks").select("event_id, created_at").gte("created_at", sinceISO)
+      ),
+    ]);
 
     const published = evts.filter((e) => e.status === "published");
     const upcoming = published.filter((e) => e.date_time > now);
@@ -116,8 +123,8 @@ const Dashboard = () => {
       eventsToday: today.length,
       activePartners: parts.filter((p) => p.active).length,
       periodViews: viewsCountRes.count ?? views.length,
-      uniqueVisitors: sessions.length,
-      ticketClicks: clicks.length,
+      uniqueVisitors: sessionsCountRes.count ?? 0,
+      ticketClicks: clicksCountRes.count ?? clicks.length,
     });
 
     const eventSlugTitle = new Map(evts.map((e) => [e.slug, e.title]));
