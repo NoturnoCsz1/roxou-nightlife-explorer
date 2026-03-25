@@ -50,15 +50,17 @@ const DashboardAlerts = ({ period }: DashboardAlertsProps) => {
       const prevStart = new Date(sinceDate);
       prevStart.setDate(prevStart.getDate() - dayCount);
 
-      const [eventsRes, viewsRes, prevViewsRes] = await Promise.all([
+      const [eventsRes, views, prevViews] = await Promise.all([
         supabase.from("events").select("title, slug, status, date_time").eq("status", "published"),
-        supabase.from("page_views").select("page_path, created_at").gte("created_at", sinceISO),
-        supabase.from("page_views").select("page_path, created_at").gte("created_at", prevStart.toISOString()).lt("created_at", sinceISO),
+        fetchAllRows<{ page_path: string; created_at: string }>(
+          () => supabase.from("page_views").select("page_path, created_at").gte("created_at", sinceISO)
+        ),
+        fetchAllRows<{ page_path: string; created_at: string }>(
+          () => supabase.from("page_views").select("page_path, created_at").gte("created_at", prevStart.toISOString()).lt("created_at", sinceISO)
+        ),
       ]);
 
       const events = eventsRes.data || [];
-      const views = viewsRes.data || [];
-      const prevViews = prevViewsRes.data || [];
 
       const result: Alert[] = [];
 
