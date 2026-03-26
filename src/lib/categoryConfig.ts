@@ -10,7 +10,7 @@ export const categoryConfig: Record<string, { label: string; badge: string }> = 
   balada: { label: "Universitário", badge: "badge-balada" },
   show: { label: "Rock", badge: "badge-show" },
   bar: { label: "Bar", badge: "badge-bar" },
-  festival: { label: "Festival", badge: "badge-festival" },
+  festival: { label: "Futebol", badge: "badge-festival" },
   sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
   funk: { label: "Funk", badge: "badge-funk" },
   eletronica: { label: "Eletrônico", badge: "badge-eletronica" },
