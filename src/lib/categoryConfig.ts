@@ -26,9 +26,12 @@ export const ADMIN_CATEGORY_OPTIONS = [
   { value: "festa", label: "Samba / Pagode" },
   { value: "funk", label: "Funk" },
   { value: "show", label: "Rock" },
+  { value: "show", label: "Pop Rock" },
+  { value: "show", label: "MPB" },
   { value: "eletronica", label: "Eletrônico" },
   { value: "sertanejo", label: "Sertanejo" },
   { value: "balada", label: "Universitário" },
+  { value: "festival", label: "Futebol" },
 ] as const;
 
 /**
