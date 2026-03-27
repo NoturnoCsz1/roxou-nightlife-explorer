@@ -1,4 +1,4 @@
-import { Music, Mic2, Beer, Tent, Guitar, Disc3, Headphones, PartyPopper } from "lucide-react";
+import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper } from "lucide-react";
 import { categoryConfig } from "@/lib/categoryConfig";
 
 type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica" | "festa";
