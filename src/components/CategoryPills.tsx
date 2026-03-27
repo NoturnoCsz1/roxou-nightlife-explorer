@@ -7,7 +7,7 @@ const categoryIcons: Record<EventCategory, React.ElementType> = {
   balada: Music,
   show: Mic2,
   bar: Beer,
-  festival: Tent,
+  festival: Goal,
   sertanejo: Guitar,
   funk: Disc3,
   eletronica: Headphones,
