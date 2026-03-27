@@ -219,13 +219,27 @@ const Index = () => {
         ) : (
           <>
             {todayEvents.length > 0 && (
-              <section id="section-hoje" ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36">
-                <SectionHeader emoji="🔥" title="Eventos de Hoje" subtitle={`${todayEvents.length} rolês pra você`} />
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
-                  {todayEvents.map((e, i) => (
-                    <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
-                  ))}
-                </div>
+              <section id="section-hoje" ref={el => { sectionRefs.current.hoje = el; }} className="scroll-mt-36 space-y-6">
+                {todayEvents.filter(e => e.category === "festival").length > 0 && (
+                  <>
+                    <SectionHeader emoji="⚽" title="Futebol hoje" subtitle={`${todayEvents.filter(e => e.category === "festival").length} jogo(s)`} />
+                    <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
+                      {todayEvents.filter(e => e.category === "festival").map((e, i) => (
+                        <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {todayEvents.filter(e => e.category !== "festival").length > 0 && (
+                  <>
+                    <SectionHeader emoji="🎧" title="Música hoje" subtitle={`${todayEvents.filter(e => e.category !== "festival").length} rolê(s)`} />
+                    <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
+                      {todayEvents.filter(e => e.category !== "festival").map((e, i) => (
+                        <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </section>
             )}
 
