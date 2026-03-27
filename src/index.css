@@ -128,7 +128,7 @@
   .badge-festival {
     background: hsl(var(--badge-festival));
     color: hsl(260 25% 10%);
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.35);
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4), 0 0 14px rgba(34, 197, 94, 0.25);
   }
   .badge-bar {
     background: hsl(var(--badge-bar));
