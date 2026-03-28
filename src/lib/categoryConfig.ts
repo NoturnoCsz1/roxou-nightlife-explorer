@@ -23,16 +23,27 @@ export const categoryConfig: Record<string, { label: string; badge: string }> = 
  * `label` = what the admin sees in the selector.
  */
 export const ADMIN_CATEGORY_OPTIONS = [
-  { value: "festa", label: "Samba / Pagode" },
-  { value: "funk", label: "Funk" },
-  { value: "show", label: "Rock" },
-  { value: "show", label: "Pop Rock" },
-  { value: "show", label: "MPB" },
-  { value: "eletronica", label: "Eletrônico" },
-  { value: "sertanejo", label: "Sertanejo" },
-  { value: "balada", label: "Universitário" },
-  { value: "festival", label: "Futebol" },
+  { value: "festa", label: "Samba / Pagode", sub: "festa" },
+  { value: "funk", label: "Funk", sub: "funk" },
+  { value: "show", label: "Rock", sub: "rock" },
+  { value: "show", label: "Pop Rock", sub: "pop_rock" },
+  { value: "show", label: "MPB", sub: "mpb" },
+  { value: "eletronica", label: "Eletrônico", sub: "eletronica" },
+  { value: "sertanejo", label: "Sertanejo", sub: "sertanejo" },
+  { value: "balada", label: "Universitário", sub: "balada" },
+  { value: "festival", label: "Futebol", sub: "festival" },
 ] as const;
+
+/** Build a composite key for admin category selection (value:sub) */
+export function categoryKey(value: string, sub: string): string {
+  return `${value}:${sub}`;
+}
+
+/** Parse a composite key back to { value, sub } */
+export function parseCategoryKey(key: string): { value: string; sub: string } {
+  const [value, sub] = key.split(":");
+  return { value, sub: sub || value };
+}
 
 /**
  * New admin-facing partner type options.

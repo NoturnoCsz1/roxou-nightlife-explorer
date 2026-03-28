@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { ADMIN_CATEGORY_OPTIONS } from "@/lib/categoryConfig";
+import { ADMIN_CATEGORY_OPTIONS, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
 
@@ -103,8 +103,11 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove 
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
-            <select className={inputClass} value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
-              {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            <select className={inputClass} value={categoryKey(form.category, (form as any)._sub || form.category)} onChange={(e) => {
+              const { value, sub } = parseCategoryKey(e.target.value);
+              onChange(index, { ...form, category: value, _sub: sub } as any);
+            }}>
+              {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={categoryKey(c.value, c.sub)} value={categoryKey(c.value, c.sub)}>{c.label}</option>)}
             </select>
           </div>
           <div>
