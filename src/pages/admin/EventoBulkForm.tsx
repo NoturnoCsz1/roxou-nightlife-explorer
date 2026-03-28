@@ -43,13 +43,16 @@ const EventoBulkForm = () => {
     }
 
     setSaving(true);
-    const payloads = forms.map((f) => ({
-      ...f,
-      status,
-      date_time: f.date_time ? f.date_time + ":00-03:00" : f.date_time,
-      partner_id: f.partner_id || null,
-      ...(cityFilter ? { city: cityFilter } : {}),
-    }));
+    const payloads = forms.map((f) => {
+      const { _sub, ...rest } = f as any;
+      return {
+        ...rest,
+        status,
+        date_time: f.date_time ? f.date_time + ":00-03:00" : f.date_time,
+        partner_id: f.partner_id || null,
+        ...(cityFilter ? { city: cityFilter } : {}),
+      };
+    });
 
     try {
       const { error } = await supabase.from("events").insert(payloads);
