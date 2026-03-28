@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { ADMIN_CATEGORY_OPTIONS } from "@/lib/categoryConfig";
+import { ADMIN_CATEGORY_OPTIONS, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
 
