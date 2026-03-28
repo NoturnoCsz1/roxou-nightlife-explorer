@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
-import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel } from "@/lib/categoryConfig";
+import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 
 type Partner = Tables<"partners">;
@@ -126,7 +126,8 @@ const EventoForm = () => {
     setSaving(true);
     // Append São Paulo timezone offset so Supabase stores the correct UTC value
     const dateTimeWithTz = form.date_time ? form.date_time + ":00-03:00" : form.date_time;
-    const payload: any = { ...form, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
+    const { _sub, ...formWithoutSub } = form as any;
+    const payload: any = { ...formWithoutSub, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
     if (cityFilter) payload.city = cityFilter;
     try {
       if (isEdit) {
@@ -190,8 +191,11 @@ const EventoForm = () => {
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
-              <select className={inputClass} value={form.category} onChange={(e) => handleChange("category", e.target.value)}>
-                {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              <select className={inputClass} value={categoryKey(form.category, (form as any)._sub || form.category)} onChange={(e) => {
+                const { value, sub } = parseCategoryKey(e.target.value);
+                setForm((prev) => ({ ...prev, category: value, _sub: sub } as any));
+              }}>
+                {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={categoryKey(c.value, c.sub)} value={categoryKey(c.value, c.sub)}>{c.label}</option>)}
               </select>
             </div>
             <div>
