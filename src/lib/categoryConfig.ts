@@ -35,8 +35,11 @@ export const ADMIN_CATEGORY_OPTIONS = [
 ] as const;
 
 /** Build a composite key for admin category selection (value:sub) */
-export function categoryKey(value: string, sub: string): string {
-  return `${value}:${sub}`;
+export function categoryKey(value: string, sub?: string): string {
+  if (sub && sub !== value) return `${value}:${sub}`;
+  // Find the first matching sub for this value
+  const match = ADMIN_CATEGORY_OPTIONS.find((o) => o.value === value);
+  return match ? `${value}:${match.sub}` : `${value}:${value}`;
 }
 
 /** Parse a composite key back to { value, sub } */
