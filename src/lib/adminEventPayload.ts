@@ -1,0 +1,52 @@
+import type { TablesInsert } from "@/integrations/supabase/types";
+
+export type AdminEventFormInput = {
+  title: string;
+  slug: string;
+  date_time: string;
+  category: string;
+  partner_id?: string;
+  venue_name?: string;
+  address?: string;
+  instagram?: string;
+  description?: string;
+  status?: string;
+  verification_source?: string;
+  featured?: boolean;
+  image_url?: string;
+  ticket_url?: string;
+  _sub?: string;
+};
+
+interface BuildEventPayloadOptions {
+  city?: string | null;
+  status?: "draft" | "published";
+}
+
+export function buildEventPayload(
+  form: AdminEventFormInput,
+  options: BuildEventPayloadOptions = {},
+): TablesInsert<"events"> {
+  const payload: TablesInsert<"events"> = {
+    title: form.title,
+    slug: form.slug,
+    date_time: `${form.date_time}:00-03:00`,
+    category: form.category,
+    partner_id: form.partner_id || null,
+    venue_name: form.venue_name || null,
+    address: form.address || null,
+    instagram: form.instagram || null,
+    description: form.description || null,
+    status: options.status ?? form.status ?? "draft",
+    verification_source: form.verification_source || null,
+    featured: Boolean(form.featured),
+    image_url: form.image_url || null,
+    ticket_url: form.ticket_url || null,
+  };
+
+  if (options.city) {
+    payload.city = options.city;
+  }
+
+  return payload;
+}

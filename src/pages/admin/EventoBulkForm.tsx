@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import EventFormBlock, { emptyEventForm, type EventFormData } from "@/components/admin/EventFormBlock";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { buildEventPayload } from "@/lib/adminEventPayload";
 
 type Partner = Tables<"partners">;
 
@@ -35,7 +36,6 @@ const EventoBulkForm = () => {
   }
 
   async function handleBulkSave(status: "draft" | "published") {
-    // Validate all
     const invalid = forms.findIndex((f) => !f.title || !f.slug || !f.date_time);
     if (invalid !== -1) {
       toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
@@ -43,16 +43,7 @@ const EventoBulkForm = () => {
     }
 
     setSaving(true);
-    const payloads = forms.map((f) => {
-      const { _sub, ...rest } = f as any;
-      return {
-        ...rest,
-        status,
-        date_time: f.date_time ? f.date_time + ":00-03:00" : f.date_time,
-        partner_id: f.partner_id || null,
-        ...(cityFilter ? { city: cityFilter } : {}),
-      };
-    });
+    const payloads = forms.map((form) => buildEventPayload(form, { city: cityFilter, status }));
 
     try {
       const { error } = await supabase.from("events").insert(payloads);
