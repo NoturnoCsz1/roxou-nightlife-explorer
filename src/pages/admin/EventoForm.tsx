@@ -8,6 +8,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { buildEventPayload } from "@/lib/adminEventPayload";
 
 type Partner = Tables<"partners">;
 
@@ -68,13 +69,12 @@ const EventoForm = () => {
   async function loadEvent() {
     const { data } = await supabase.from("events").select("*").eq("id", id!).single();
     if (!data) return;
-    // City guard: city_editors can only edit events in their city
     if (cityFilter && (data as any).city && (data as any).city !== cityFilter) {
       toast.error("Você não tem permissão para editar este evento.");
       navigate("/admin/eventos");
       return;
     }
-    // Convert stored UTC timestamp to São Paulo local time for the form input
+
     let localDateTime = "";
     if (data.date_time) {
       const d = new Date(data.date_time);
@@ -86,6 +86,7 @@ const EventoForm = () => {
       const get = (type: string) => parts.find(p => p.type === type)?.value || "";
       localDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
     }
+
     setForm({
       title: data.title, slug: data.slug,
       date_time: localDateTime,
@@ -122,13 +123,14 @@ const EventoForm = () => {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.title || !form.slug || !form.date_time) { toast.error("Título, slug e data são obrigatórios"); return; }
+    if (!form.title || !form.slug || !form.date_time) {
+      toast.error("Título, slug e data são obrigatórios");
+      return;
+    }
+
     setSaving(true);
-    // Append São Paulo timezone offset so Supabase stores the correct UTC value
-    const dateTimeWithTz = form.date_time ? form.date_time + ":00-03:00" : form.date_time;
-    const { _sub, ...formWithoutSub } = form as any;
-    const payload: any = { ...formWithoutSub, date_time: dateTimeWithTz, partner_id: form.partner_id || null };
-    if (cityFilter) payload.city = cityFilter;
+    const payload = buildEventPayload(form as any, { city: cityFilter });
+
     try {
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);
@@ -142,7 +144,9 @@ const EventoForm = () => {
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   }
 
   const inputClass = "w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm outline-none focus:border-primary/50 transition";
@@ -173,7 +177,6 @@ const EventoForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Main info */}
         <div className="space-y-2.5">
           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide border-b border-border/30 pb-1">Informações Principais</p>
           <div className="grid grid-cols-2 gap-2.5">
@@ -208,12 +211,10 @@ const EventoForm = () => {
           </div>
         </div>
 
-        {/* Venue */}
         <div className="space-y-2.5">
           {sectionHeader("venue", "Informações do Local")}
           {sections.venue && (
             <>
-              {/* Partner suggestion banner */}
               {suggestedPartner && !form.partner_id && (
                 <div className="flex items-center justify-between rounded-lg bg-primary/10 border border-primary/20 p-2.5 text-xs">
                   <p className="text-muted-foreground">
@@ -266,7 +267,6 @@ const EventoForm = () => {
           )}
         </div>
 
-        {/* Content */}
         <div className="space-y-2.5">
           {sectionHeader("content", "Conteúdo do Evento")}
           {sections.content && (
@@ -300,7 +300,6 @@ const EventoForm = () => {
           )}
         </div>
 
-        {/* Media */}
         <div className="space-y-2.5">
           {sectionHeader("media", "Mídia")}
           {sections.media && (
@@ -325,7 +324,6 @@ const EventoForm = () => {
         onImport={(data) => {
           const dateTime = data.date && data.time ? `${data.date}T${data.time}` : data.date ? `${data.date}T22:00` : "";
 
-          // Auto-match: exact instagram or exact name → auto-link. Similar name → suggest only.
           let autoLinked: Partner | undefined;
           let suggested: Partner | undefined;
 
