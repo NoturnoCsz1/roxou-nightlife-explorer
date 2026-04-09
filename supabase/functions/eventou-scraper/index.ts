@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < newUrls.length; i += CONCURRENCY) {
       const batch = newUrls.slice(i, i + CONCURRENCY);
       const results = await Promise.allSettled(
-        batch.map((eventUrl) => scrapeAndInsert(eventUrl, firecrawlKey, supabase, partners, stats))
+        batch.map((eventUrl) => scrapeAndInsert(eventUrl, firecrawlKey, supabase, partners, stats, dedupCtx))
       );
       results.forEach((r) => {
         if (r.status === "rejected") {
