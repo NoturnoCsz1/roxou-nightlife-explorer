@@ -253,19 +253,24 @@ async function scrapeAndInsert(
   const venue = extractVenue(md);
   const dateTime = extractDateTime(md);
 
-  // Dedup by title + venue
-  if (venue) {
-    const { data: dupCheck } = await supabase
-      .from("eventou_imports")
-      .select("id")
-      .eq("title", title)
-      .eq("venue_name", venue)
-      .limit(1);
-    if (dupCheck && dupCheck.length > 0) {
-      stats.duplicates++;
-      return;
-    }
+  // Dedup: check external_id (slug) and normalized title+venue+date
+  const slug = eventUrl.split("/").pop() || "";
+  if (slug && dedupCtx.existingExtIds.has(slug)) {
+    console.log("Duplicate by external_id:", slug);
+    stats.duplicates++;
+    return;
   }
+
+  const dedupKey = buildDedupKey(title, venue, dateTime);
+  if (dedupKey && dedupCtx.existingTitleVenueDate.has(dedupKey)) {
+    console.log("Duplicate by title+venue+date:", title);
+    stats.duplicates++;
+    return;
+  }
+
+  // Mark as seen to prevent intra-batch duplicates
+  if (slug) dedupCtx.existingExtIds.add(slug);
+  if (dedupKey) dedupCtx.existingTitleVenueDate.add(dedupKey);
 
   // Match partner by venue name (in-memory)
   let partnerId: string | null = null;
