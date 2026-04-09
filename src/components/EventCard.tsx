@@ -48,6 +48,7 @@ const EventCard = ({ event, variant = "default", index = 0, sponsored = false }:
       >
         <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-xl">
           <img src={image} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+          {sponsored && <span className="absolute right-1.5 top-1.5 rounded-md bg-amber-500/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">Ad</span>}
           {todayEvent && <span className="absolute left-1.5 top-1.5 badge-hoje rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">Hoje</span>}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
