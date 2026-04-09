@@ -211,7 +211,7 @@ const InstagramContentGenerator = () => {
           {/* Low performing */}
           {lowPerformEvents.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-amber-400 flex items-center gap-1">
+              <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 ⚠️ Precisam de divulgação
               </h4>
               {lowPerformEvents.slice(0, 3).map((e) => (
@@ -223,7 +223,7 @@ const InstagramContentGenerator = () => {
           {/* Football */}
           {footballEvents.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-green-400 flex items-center gap-1">
+              <h4 className="text-xs font-semibold text-primary flex items-center gap-1">
                 <Trophy className="h-3 w-3" /> Futebol
               </h4>
               {footballEvents.slice(0, 3).map((e) => (
@@ -235,7 +235,7 @@ const InstagramContentGenerator = () => {
           {/* Top Partners */}
           {topPartners.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-blue-400 flex items-center gap-1">
+              <h4 className="text-xs font-semibold text-accent flex items-center gap-1">
                 <Megaphone className="h-3 w-3" /> Parceiros Destaque
               </h4>
               {topPartners.slice(0, 3).map((p) => (
