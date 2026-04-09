@@ -392,14 +392,62 @@ const EventouAdmin = () => {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Quality filters */}
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-[9px] text-muted-foreground font-medium self-center mr-1"><Filter className="h-3 w-3 inline" /> Filtros:</span>
+            {[
+              { key: "high", label: "🔥 Alta prioridade", icon: Star },
+              { key: "image", label: "🖼️ Com imagem", icon: ImageIcon },
+              { key: "partner", label: "🤝 Com parceiro", icon: Users },
+              { key: "date", label: "📅 Com data", icon: Clock },
+              { key: "actionable", label: "✅ Acionáveis", icon: CheckCircle2 },
+            ].map((f) => {
+              const active = qualityFilters.has(f.key);
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setQualityFilters((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(f.key)) next.delete(f.key); else next.add(f.key);
+                    return next;
+                  })}
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition ${active ? "bg-primary/20 text-primary" : "bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+            {qualityFilters.size > 0 && (
+              <button onClick={() => setQualityFilters(new Set())} className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-medium hover:bg-destructive/20 transition">
+                Limpar
+              </button>
+            )}
+          </div>
+
           {/* Priority groups */}
-          {[
-            { items: highPriority, tier: "high" as const },
-            { items: normalPriority, tier: "normal" as const },
-            { items: lowPriority, tier: "low" as const },
-          ]
-            .filter((g) => g.items.length > 0)
-            .map((group) => {
+          {(() => {
+            const applyQF = (list: EventouRow[]) => {
+              if (qualityFilters.size === 0) return list;
+              return list.filter((i) => {
+                if (qualityFilters.has("high") && i.priority_tier !== "high") return false;
+                if (qualityFilters.has("image") && !i.image_url) return false;
+                if (qualityFilters.has("partner") && !i.partner_id) return false;
+                if (qualityFilters.has("date") && !i.date_time) return false;
+                if (qualityFilters.has("actionable") && i.import_status !== "pending" && i.import_status !== "auto_ready") return false;
+                return true;
+              });
+            };
+            const groups = [
+              { items: applyQF(highPriority), tier: "high" as const },
+              { items: applyQF(normalPriority), tier: "normal" as const },
+              { items: applyQF(lowPriority), tier: "low" as const },
+            ].filter((g) => g.items.length > 0);
+
+            if (qualityFilters.size > 0 && groups.length === 0) {
+              return <p className="text-xs text-muted-foreground text-center py-6">Nenhum item corresponde aos filtros selecionados.</p>;
+            }
+
+            return groups.map((group) => {
               const tc = tierConfig[group.tier];
               return (
                 <div key={group.tier}>
@@ -422,7 +470,8 @@ const EventouAdmin = () => {
                   </div>
                 </div>
               );
-            })}
+            });
+          })()}
 
           {/* History */}
           {history.length > 0 && (
