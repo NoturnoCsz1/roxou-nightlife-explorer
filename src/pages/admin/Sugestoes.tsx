@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lightbulb, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Lightbulb, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, Link as LinkIcon, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
