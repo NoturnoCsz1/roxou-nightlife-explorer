@@ -222,7 +222,7 @@ async function scrapeAndInsert(
   supabase: any,
   partners: { id: string; name: string }[],
   stats: any,
-  dedupCtx: { existingExtIds: Set<string>; existingTitleVenueDate: Set<string> }
+  dedupCtx: { existingExtIds: Set<string>; existingTitleVenueDate: Set<string>; existingEventKeys: Set<string> }
 ) {
   stats.pagesScraped++;
 
