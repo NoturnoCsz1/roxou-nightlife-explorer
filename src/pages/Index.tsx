@@ -25,6 +25,7 @@ const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const [events, setEvents] = useState<SupabaseEvent[]>([]);
   const [trendingIds, setTrendingIds] = useState<string[]>([]);
+  const [featuredIds, setFeaturedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -147,9 +148,13 @@ const Index = () => {
     return !allShownIds.has(e.id) && !popularEvents.some(p => p.id === e.id) && d > now && d <= weekFromNow;
   });
 
+  const featuredIdSet = useMemo(() => new Set(featuredIds), [featuredIds]);
   const trendingEvents = useMemo(() =>
-    trendingIds.map(id => events.find(e => e.id === id)).filter(Boolean) as SupabaseEvent[],
-    [trendingIds, events]
+    trendingIds
+      .filter(id => !featuredIdSet.has(id))
+      .map(id => events.find(e => e.id === id))
+      .filter(Boolean) as SupabaseEvent[],
+    [trendingIds, events, featuredIdSet]
   );
 
   const filtered = category ? events.filter(e => e.category === category) : null;
@@ -218,7 +223,7 @@ const Index = () => {
       <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8 space-y-8 md:space-y-12">
         {/* Featured hero */}
         <section className="md:max-w-4xl md:mx-auto">
-          <FeaturedCarousel />
+          <FeaturedCarousel onFeaturedLoad={setFeaturedIds} />
         </section>
 
         {/* Trending now */}

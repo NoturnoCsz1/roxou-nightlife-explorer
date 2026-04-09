@@ -6,7 +6,11 @@ import type { SupabaseEvent } from "./EventCard";
 import { formatTime, isToday } from "@/lib/dateUtils";
 import { categoryConfig } from "@/lib/categoryConfig";
 
-const FeaturedCarousel = () => {
+interface FeaturedCarouselProps {
+  onFeaturedLoad?: (ids: string[]) => void;
+}
+
+const FeaturedCarousel = ({ onFeaturedLoad }: FeaturedCarouselProps = {}) => {
   const [featured, setFeatured] = useState<SupabaseEvent[]>([]);
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
@@ -26,6 +30,7 @@ const FeaturedCarousel = () => {
 
       if (featuredData && featuredData.length > 0) {
         setFeatured(featuredData);
+        onFeaturedLoad?.(featuredData.map(e => e.id));
       } else {
         // Fallback: show the most upcoming event
         const { data: fallback } = await supabase
@@ -35,10 +40,13 @@ const FeaturedCarousel = () => {
           .gt("date_time", now)
           .order("date_time", { ascending: true })
           .limit(1);
-        setFeatured(fallback || []);
+        const fb = fallback || [];
+        setFeatured(fb);
+        onFeaturedLoad?.(fb.map(e => e.id));
       }
     }
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const next = useCallback(() => setCurrent((c) => (c + 1) % (featured.length || 1)), [featured.length]);
