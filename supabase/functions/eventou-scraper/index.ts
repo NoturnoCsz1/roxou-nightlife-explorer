@@ -101,26 +101,52 @@ Deno.serve(async (req) => {
 
     if (eventUrls.length === 0) return json(stats);
 
-    // Phase 2: Early dedup — check ALL URLs against DB at once
+    // Phase 2: Early dedup — check URLs, external_ids, and title+venue combos
     stats.phase = "deduplicating";
     console.log("Phase 2: Dedup check");
 
-    // Batch check in chunks of 50 (Supabase .in() limit)
+    // Load ALL existing imports for comprehensive dedup
     const existingUrls = new Set<string>();
+    const existingExtIds = new Set<string>();
+    const existingTitleVenueDate = new Set<string>();
+
+    // Fetch in chunks of 50
     for (let i = 0; i < eventUrls.length; i += 50) {
       const chunk = eventUrls.slice(i, i + 50);
       const { data: existing } = await supabase
         .from("eventou_imports")
-        .select("eventou_url")
+        .select("eventou_url, external_id, title, venue_name, date_time")
         .in("eventou_url", chunk);
-      (existing || []).forEach((e: any) => existingUrls.add(e.eventou_url));
+      (existing || []).forEach((e: any) => {
+        existingUrls.add(e.eventou_url);
+        if (e.external_id) existingExtIds.add(e.external_id);
+        const key = buildDedupKey(e.title, e.venue_name, e.date_time);
+        if (key) existingTitleVenueDate.add(key);
+      });
     }
 
-    const newUrls = eventUrls.filter((u) => !existingUrls.has(u)).slice(0, MAX_NEW_SCRAPE);
-    stats.duplicates = eventUrls.length - newUrls.length - (eventUrls.length - existingUrls.size - newUrls.length);
-    stats.duplicates = existingUrls.size;
+    // Also load recent imports not matched by URL (for title+venue dedup)
+    const { data: recentImports } = await supabase
+      .from("eventou_imports")
+      .select("external_id, title, venue_name, date_time")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    (recentImports || []).forEach((e: any) => {
+      if (e.external_id) existingExtIds.add(e.external_id);
+      const key = buildDedupKey(e.title, e.venue_name, e.date_time);
+      if (key) existingTitleVenueDate.add(key);
+    });
 
-    console.log(`${existingUrls.size} already imported, ${newUrls.length} new to scrape`);
+    // Filter: skip URLs already imported or with known external_id
+    const newUrls = eventUrls.filter((u) => {
+      if (existingUrls.has(u)) return false;
+      const slug = u.split("/").pop() || "";
+      if (slug && existingExtIds.has(slug)) return false;
+      return true;
+    }).slice(0, MAX_NEW_SCRAPE);
+
+    stats.duplicates = eventUrls.length - newUrls.length;
+    console.log(`${stats.duplicates} already imported, ${newUrls.length} new to scrape`);
 
     if (newUrls.length === 0) return json(stats);
 
@@ -131,6 +157,9 @@ Deno.serve(async (req) => {
     // Pre-load partner names for matching
     const { data: allPartners } = await supabase.from("partners").select("id, name");
     const partners = allPartners || [];
+
+    // Pass dedup sets to scrapeAndInsert
+    const dedupCtx = { existingExtIds, existingTitleVenueDate };
 
     for (let i = 0; i < newUrls.length; i += CONCURRENCY) {
       const batch = newUrls.slice(i, i + CONCURRENCY);
