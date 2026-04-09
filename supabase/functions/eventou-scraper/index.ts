@@ -189,13 +189,28 @@ Deno.serve(async (req) => {
   }
 });
 
+/* ── normalize text for dedup ── */
+function normalize(s: string | null): string {
+  if (!s) return "";
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function buildDedupKey(title: string | null, venue: string | null, dateTime: string | null): string | null {
+  const t = normalize(title);
+  if (!t) return null;
+  const v = normalize(venue);
+  const d = dateTime ? dateTime.slice(0, 10) : "";
+  return `${t}|${v}|${d}`;
+}
+
 /* ── scrape a single event URL and insert ── */
 async function scrapeAndInsert(
   eventUrl: string,
   firecrawlKey: string,
   supabase: any,
   partners: { id: string; name: string }[],
-  stats: any
+  stats: any,
+  dedupCtx: { existingExtIds: Set<string>; existingTitleVenueDate: Set<string> }
 ) {
   stats.pagesScraped++;
 
