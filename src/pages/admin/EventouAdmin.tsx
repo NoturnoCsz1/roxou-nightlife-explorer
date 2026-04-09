@@ -116,6 +116,7 @@ const EventouAdmin = () => {
   const [captionPreview, setCaptionPreview] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [lastScan, setLastScan] = useState<ScanStats | null>(null);
+  const [qualityFilters, setQualityFilters] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadItems();
