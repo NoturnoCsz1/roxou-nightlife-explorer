@@ -237,6 +237,8 @@ const Index = () => {
             </div>
           </section>
         )}
+
+        <section>
           <SectionHeader title="Categorias" onSeeAll={() => navigate("/categorias")} />
           <CategoryPills selected={category} onSelect={c => setCategory(c)} />
         </section>
