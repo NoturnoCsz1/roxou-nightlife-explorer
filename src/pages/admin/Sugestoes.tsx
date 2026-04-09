@@ -64,8 +64,42 @@ const Sugestoes = () => {
   // new suggestion form
   const [newUrl, setNewUrl] = useState("");
   const [newCaption, setNewCaption] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+
+  async function fetchPostPreview(url: string) {
+    if (!isValidInstagramUrl(url)) return;
+    setFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-instagram", {
+        body: { url: url.trim() },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        if (data.image_url) setPreviewImage(data.image_url);
+        else if (data.screenshot) setPreviewImage(data.screenshot);
+        if (data.caption && !newCaption.trim()) setNewCaption(data.caption.slice(0, 500));
+      }
+    } catch (err) {
+      console.error("Preview fetch failed:", err);
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  function handleUrlChange(val: string) {
+    setNewUrl(val);
+    setPreviewImage(null);
+  }
+
+  function handleUrlPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData("text");
+    if (isValidInstagramUrl(pasted.trim())) {
+      setTimeout(() => fetchPostPreview(pasted.trim()), 100);
+    }
+  }
 
   useEffect(() => {
     loadSuggestions();
