@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban } from "lucide-react";
+import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban, Filter, ImageIcon, Users, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
