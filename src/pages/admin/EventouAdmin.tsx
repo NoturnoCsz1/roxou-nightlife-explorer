@@ -89,7 +89,7 @@ function generateCaption(row: EventouRow): string {
     "",
     "#roxou #eventos #presidenteprudente",
   ]
-    .filter((l) => l !== undefined && l !== false)
+    .filter(Boolean)
     .join(br);
 }
 
