@@ -221,6 +221,21 @@ const InstagramContentGenerator = () => {
     toast.success(newVal ? "Adicionado aos favoritos" : "Removido dos favoritos");
   };
 
+  const duplicateToGenerator = (item: GenerationRecord) => {
+    if (item.generated_text) {
+      setGeneratedContent({ type: item.type === "story" ? "Story" : "Post", text: item.generated_text });
+    }
+    if (item.image_url) {
+      setGeneratedImage(item.image_url);
+      setArtPromptPreview(null);
+    }
+    if (item.source_type && item.source_id && item.title) {
+      setCurrentGenCtx({ sourceType: item.source_type as ContentType, sourceId: item.source_id, title: item.title });
+    }
+    setActiveTab("generate");
+    toast.success("Conteúdo carregado no gerador — edite e copie!");
+  };
+
   const handleGenerate = (type: ContentType, item: EventRow | PartnerRow, isStory = false) => {
     const text = generatePostCopy(type, item, isStory);
     const title = "title" in item ? item.title : (item as PartnerRow).name;
