@@ -60,6 +60,7 @@ const App = () => (
             <Route path="eventos/:id/editar" element={<EventoForm />} />
             <Route path="sugestoes" element={<Sugestoes />} />
             <Route path="eventou" element={<EventouAdmin />} />
+            <Route path="instagram" element={<InstagramAdminPage />} />
             <Route path="editores" element={<Editores />} />
           </Route>
 
