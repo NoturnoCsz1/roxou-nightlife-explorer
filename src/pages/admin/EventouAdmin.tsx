@@ -98,6 +98,7 @@ interface ScanStats {
   eventsFound: number;
   newInserted: number;
   duplicates: number;
+  dupReasons?: { url: number; external_id: number; title_venue_date: number; existing_event: number; db_constraint: number };
   errors: number;
   urlsDiscovered: number;
   skippedNonCity: number;
