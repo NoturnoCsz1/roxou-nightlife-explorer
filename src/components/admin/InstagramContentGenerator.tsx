@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone } from "lucide-react";
+import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventRow {
@@ -11,6 +11,7 @@ interface EventRow {
   venue_name: string | null;
   slug: string;
   featured: boolean;
+  image_url: string | null;
 }
 
 interface PartnerRow {
@@ -20,6 +21,7 @@ interface PartnerRow {
   slug: string;
   instagram: string | null;
   short_description: string | null;
+  logo_url: string | null;
 }
 
 type ContentType = "trending" | "partner" | "football" | "gastro";
@@ -30,6 +32,70 @@ const CONTENT_TEMPLATES: Record<ContentType, { icon: typeof TrendingUp; label: s
   football: { icon: Trophy, label: "Futebol", emoji: "⚽" },
   gastro: { icon: Utensils, label: "Roxou Indica", emoji: "🍔" },
 };
+
+const CATEGORY_LABELS: Record<string, string> = {
+  festa: "festa/balada",
+  show: "show ao vivo",
+  festival: "esporte/futebol",
+  sertanejo: "sertanejo",
+  teatro: "teatro/cultura",
+  infantil: "infantil",
+  gastronomia: "gastronomia",
+};
+
+function buildArtPrompt(
+  type: ContentType,
+  item: EventRow | PartnerRow,
+  format: "post" | "story"
+): string {
+  const aspect = format === "post" ? "1:1 square" : "9:16 vertical";
+  const isEvent = "date_time" in item;
+
+  const base = [
+    `Modern dark-themed Instagram ${format} graphic for ROXOU events platform.`,
+    `Format: ${aspect}.`,
+    `Style: premium dark background (#1a1a2e), neon magenta/pink (#e91e8c) accent glow, clean typography, bold headline.`,
+    `Brand: "ROXOU" logo watermark in corner.`,
+  ];
+
+  if (type === "trending" && isEvent) {
+    const e = item as EventRow;
+    const date = new Date(e.date_time).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+    base.push(
+      `Headline: "${e.title}"`,
+      `Subtext: "${date}${e.venue_name ? ` · ${e.venue_name}` : ""}"`,
+      `Category: ${CATEGORY_LABELS[e.category] || e.category}`,
+      `Vibe: energetic, fire emoji accents, trending badge.`
+    );
+  } else if (type === "football" && isEvent) {
+    const e = item as EventRow;
+    const date = new Date(e.date_time).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+    base.push(
+      `Headline: "${e.title}"`,
+      `Subtext: "${date}${e.venue_name ? ` · ${e.venue_name}` : ""}"`,
+      `Theme: football/soccer, green accent (#22c55e) glow, stadium feel.`,
+      `Add subtle soccer ball icon or field lines in background.`
+    );
+  } else if (type === "partner" && !isEvent) {
+    const p = item as PartnerRow;
+    base.push(
+      `Headline: "${p.name}"`,
+      `Subtext: "${p.short_description || p.type}"`,
+      `Theme: partner spotlight, blue accent highlights, elegant.`,
+      `Badge: "PARCEIRO ROXOU"`
+    );
+  } else if (type === "gastro" && !isEvent) {
+    const p = item as PartnerRow;
+    base.push(
+      `Headline: "${p.name}"`,
+      `Subtext: "${p.short_description || "Recomendado pelo Roxou"}"`,
+      `Theme: food/gastronomy, warm amber/orange accents, appetizing.`,
+      `Badge: "ROXOU INDICA"`
+    );
+  }
+
+  return base.join("\n");
+}
 
 const generatePostCopy = (type: ContentType, item: EventRow | PartnerRow, isStory = false) => {
   const br = "\n";
@@ -56,7 +122,6 @@ const generatePostCopy = (type: ContentType, item: EventRow | PartnerRow, isStor
     }
     return `⚽ FUTEBOL NO ROXOU${br}${br}${e.title}${br}${br}📅 ${date}${br}${e.venue_name ? `📍 ${e.venue_name}${br}` : ""}${br}Bora torcer! 🏟️${br}${br}#roxou #futebol #presidenteprudente #esporte`;
   }
-  // gastro
   const p = item as PartnerRow;
   if (isStory) {
     return `🍔 ROXOU INDICA${br}${br}${p.name}${br}${p.short_description || "Descubra este lugar incrível!"}${br}${br}Confira no Roxou! 👆`;
@@ -71,6 +136,9 @@ const InstagramContentGenerator = () => {
   const [gastroPartners, setGastroPartners] = useState<PartnerRow[]>([]);
   const [footballEvents, setFootballEvents] = useState<EventRow[]>([]);
   const [generatedContent, setGeneratedContent] = useState<{ type: string; text: string } | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [artPromptPreview, setArtPromptPreview] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -81,33 +149,24 @@ const InstagramContentGenerator = () => {
     const since24h = new Date(Date.now() - 86400000).toISOString();
 
     const [eventsRes, partnersRes, viewsRes] = await Promise.all([
-      supabase.from("events").select("id, title, category, date_time, venue_name, slug, featured").eq("status", "published").gte("date_time", now).order("date_time"),
-      supabase.from("partners").select("id, name, type, slug, instagram, short_description").eq("active", true),
+      supabase.from("events").select("id, title, category, date_time, venue_name, slug, featured, image_url").eq("status", "published").gte("date_time", now).order("date_time"),
+      supabase.from("partners").select("id, name, type, slug, instagram, short_description, logo_url").eq("active", true),
       supabase.from("page_views").select("event_id").gte("created_at", since24h).not("event_id", "is", null),
     ]);
 
-    const events = eventsRes.data || [];
-    const partners = partnersRes.data || [];
+    const events = (eventsRes.data || []) as EventRow[];
+    const partners = (partnersRes.data || []) as PartnerRow[];
     const views = viewsRes.data || [];
 
-    // Count views per event
     const viewMap: Record<string, number> = {};
     views.forEach((v) => { if (v.event_id) viewMap[v.event_id] = (viewMap[v.event_id] || 0) + 1; });
 
-    // Trending (most views)
     const sorted = [...events].sort((a, b) => (viewMap[b.id] || 0) - (viewMap[a.id] || 0));
     setTrendingEvents(sorted.slice(0, 5));
-
-    // Low performing (upcoming events with 0 views)
     setLowPerformEvents(events.filter((e) => !viewMap[e.id]).slice(0, 5));
-
-    // Football events
     setFootballEvents(events.filter((e) => e.category === "festival").slice(0, 5));
-
-    // Top partners (those with instagram)
     setTopPartners(partners.filter((p) => p.instagram).slice(0, 5));
 
-    // Gastro partners
     const gastroTypes = ["bar", "restaurant", "restaurante", "lanchonete", "pizzaria", "cafeteria"];
     setGastroPartners(partners.filter((p) => gastroTypes.includes(p.type.toLowerCase())).slice(0, 5));
   };
@@ -120,6 +179,36 @@ const InstagramContentGenerator = () => {
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Texto copiado!");
+  };
+
+  const handleGenerateArt = async (type: ContentType, item: EventRow | PartnerRow, format: "post" | "story") => {
+    const prompt = buildArtPrompt(type, item, format);
+    setArtPromptPreview(prompt);
+    setGeneratedImage(null);
+    setGeneratingImage(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-art", {
+        body: {
+          prompt,
+          format,
+          referenceImage: "image_url" in item ? (item as EventRow).image_url : "logo_url" in item ? (item as PartnerRow).logo_url : null,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        toast.success(`Arte ${format} gerada!`);
+      } else {
+        toast.error("Não foi possível gerar a arte");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao gerar arte", { description: err.message });
+      // Keep prompt visible so user can copy it
+    } finally {
+      setGeneratingImage(false);
+    }
   };
 
   const OpportunityCard = ({ item, type, viewCount }: { item: EventRow | PartnerRow; type: ContentType; viewCount?: number }) => {
@@ -143,7 +232,8 @@ const InstagramContentGenerator = () => {
           </div>
           <span className="text-sm shrink-0">{config.emoji}</span>
         </div>
-        <div className="flex gap-1.5">
+        {/* Copy buttons */}
+        <div className="flex gap-1.5 flex-wrap">
           <button
             onClick={() => handleGenerate(type, item, false)}
             className="flex items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25 transition"
@@ -155,6 +245,23 @@ const InstagramContentGenerator = () => {
             className="flex items-center gap-1 rounded-md bg-accent/15 px-2 py-1 text-[10px] font-semibold text-accent hover:bg-accent/25 transition"
           >
             <LayoutGrid className="h-3 w-3" /> GERAR STORY
+          </button>
+        </div>
+        {/* Art buttons */}
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => handleGenerateArt(type, item, "post")}
+            disabled={generatingImage}
+            className="flex items-center gap-1 rounded-md bg-secondary/50 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition disabled:opacity-50"
+          >
+            <Paintbrush className="h-3 w-3" /> GERAR ARTE POST
+          </button>
+          <button
+            onClick={() => handleGenerateArt(type, item, "story")}
+            disabled={generatingImage}
+            className="flex items-center gap-1 rounded-md bg-secondary/50 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition disabled:opacity-50"
+          >
+            <Paintbrush className="h-3 w-3" /> GERAR ARTE STORY
           </button>
         </div>
       </div>
@@ -171,10 +278,7 @@ const InstagramContentGenerator = () => {
               <Instagram className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-bold text-foreground">Conteúdo Gerado — {generatedContent.type}</h3>
             </div>
-            <button
-              onClick={() => setGeneratedContent(null)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >✕</button>
+            <button onClick={() => setGeneratedContent(null)} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
           </div>
           <pre className="whitespace-pre-wrap text-xs text-foreground bg-card rounded-lg p-3 border border-border/30 font-sans leading-relaxed">
             {generatedContent.text}
@@ -188,6 +292,59 @@ const InstagramContentGenerator = () => {
         </div>
       )}
 
+      {/* Generated art preview */}
+      {(generatingImage || generatedImage || artPromptPreview) && (
+        <div className="rounded-xl border-2 border-accent/30 bg-accent/5 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Paintbrush className="h-4 w-4 text-accent" />
+              <h3 className="text-sm font-bold text-foreground">Arte Gerada</h3>
+            </div>
+            <button
+              onClick={() => { setGeneratedImage(null); setArtPromptPreview(null); }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >✕</button>
+          </div>
+
+          {generatingImage && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+              <span className="ml-2 text-xs text-muted-foreground">Gerando arte…</span>
+            </div>
+          )}
+
+          {generatedImage && (
+            <div className="space-y-2">
+              <img src={generatedImage} alt="Arte gerada" className="rounded-lg max-h-80 mx-auto" />
+              <div className="flex gap-2">
+                <a
+                  href={generatedImage}
+                  download="roxou-art.png"
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-accent-foreground hover:opacity-90 transition"
+                >
+                  ⬇ BAIXAR
+                </a>
+              </div>
+            </div>
+          )}
+
+          {artPromptPreview && (
+            <details className="text-xs">
+              <summary className="text-muted-foreground cursor-pointer hover:text-foreground transition">Ver prompt usado</summary>
+              <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground bg-card rounded-lg p-3 border border-border/30 font-sans leading-relaxed mt-2">
+                {artPromptPreview}
+              </pre>
+              <button
+                onClick={() => handleCopy(artPromptPreview)}
+                className="flex items-center gap-1 mt-2 rounded-lg bg-secondary/50 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition"
+              >
+                <Copy className="h-3 w-3" /> COPIAR PROMPT
+              </button>
+            </details>
+          )}
+        </div>
+      )}
+
       {/* Opportunities grid */}
       <div className="rounded-xl border border-border/40 bg-card p-4">
         <div className="flex items-center gap-2 mb-4">
@@ -196,7 +353,6 @@ const InstagramContentGenerator = () => {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Trending */}
           {trendingEvents.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-primary flex items-center gap-1">
@@ -208,7 +364,6 @@ const InstagramContentGenerator = () => {
             </div>
           )}
 
-          {/* Low performing */}
           {lowPerformEvents.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
@@ -220,7 +375,6 @@ const InstagramContentGenerator = () => {
             </div>
           )}
 
-          {/* Football */}
           {footballEvents.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-primary flex items-center gap-1">
@@ -232,7 +386,6 @@ const InstagramContentGenerator = () => {
             </div>
           )}
 
-          {/* Top Partners */}
           {topPartners.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-accent flex items-center gap-1">
@@ -246,7 +399,6 @@ const InstagramContentGenerator = () => {
         </div>
       </div>
 
-      {/* Roxou Indica */}
       {gastroPartners.length > 0 && (
         <div className="rounded-xl border border-border/40 bg-card p-4">
           <div className="flex items-center gap-2 mb-4">
