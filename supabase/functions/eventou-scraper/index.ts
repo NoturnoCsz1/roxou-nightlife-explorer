@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
     const existingUrls = new Set<string>();
     const existingExtIds = new Set<string>();
     const existingTitleVenueDate = new Set<string>();
+    const existingEventKeys = new Set<string>();
 
     // Fetch in chunks of 50
     for (let i = 0; i < eventUrls.length; i += 50) {
