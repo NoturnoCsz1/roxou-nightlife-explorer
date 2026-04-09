@@ -179,6 +179,7 @@ const Sugestoes = () => {
       post_url: newUrl.trim(),
       instagram_handle: handle || "manual",
       caption: newCaption.trim() || null,
+      image_url: previewImage || null,
       import_status: "pending",
       partner_id: partnerId,
     });
@@ -189,6 +190,7 @@ const Sugestoes = () => {
       toast.success("Sugestão adicionada!");
       setNewUrl("");
       setNewCaption("");
+      setPreviewImage(null);
       setShowForm(false);
       loadSuggestions();
     }
