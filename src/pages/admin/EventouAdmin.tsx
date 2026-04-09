@@ -98,6 +98,7 @@ interface ScanStats {
   eventsFound: number;
   newInserted: number;
   duplicates: number;
+  dupReasons?: { url: number; external_id: number; title_venue_date: number; existing_event: number; db_constraint: number };
   errors: number;
   urlsDiscovered: number;
   skippedNonCity: number;
@@ -329,6 +330,25 @@ const EventouAdmin = () => {
               </div>
             ))}
           </div>
+          {/* Duplicate reasons breakdown */}
+          {lastScan.dupReasons && lastScan.duplicates > 0 && (
+            <div className="rounded-lg bg-card/50 p-2.5 space-y-1">
+              <p className="text-[10px] font-semibold text-muted-foreground">Motivos de duplicatas:</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "url", label: "Mesma URL", icon: "🔗" },
+                  { key: "external_id", label: "Mesmo slug", icon: "🏷️" },
+                  { key: "title_venue_date", label: "Título+Local+Data", icon: "📋" },
+                  { key: "existing_event", label: "Já no ROXOU", icon: "✅" },
+                  { key: "db_constraint", label: "Constraint DB", icon: "🔒" },
+                ].filter((r) => (lastScan.dupReasons as any)[r.key] > 0).map((r) => (
+                  <span key={r.key} className="text-[10px] bg-secondary/40 rounded-full px-2 py-0.5 text-muted-foreground">
+                    {r.icon} {r.label}: <strong className="text-foreground">{(lastScan.dupReasons as any)[r.key]}</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

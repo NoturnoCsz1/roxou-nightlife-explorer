@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     eventsFound: 0,
     newInserted: 0,
     duplicates: 0,
+    dupReasons: { url: 0, external_id: 0, title_venue_date: 0, existing_event: 0, db_constraint: 0 } as Record<string, number>,
     errors: 0,
     urlsDiscovered: 0,
     skippedNonCity: 0,
@@ -109,6 +110,7 @@ Deno.serve(async (req) => {
     const existingUrls = new Set<string>();
     const existingExtIds = new Set<string>();
     const existingTitleVenueDate = new Set<string>();
+    const existingEventKeys = new Set<string>();
 
     // Fetch in chunks of 50
     for (let i = 0; i < eventUrls.length; i += 50) {
@@ -145,18 +147,17 @@ Deno.serve(async (req) => {
       .limit(500);
     (existingEvents || []).forEach((e: any) => {
       const key = buildDedupKey(e.title, e.venue_name, e.date_time);
-      if (key) existingTitleVenueDate.add(key);
+      if (key) existingEventKeys.add(key);
     });
 
     // Filter: skip URLs already imported or with known external_id
     const newUrls = eventUrls.filter((u) => {
-      if (existingUrls.has(u)) return false;
+      if (existingUrls.has(u)) { stats.dupReasons.url++; stats.duplicates++; return false; }
       const slug = u.split("/").pop() || "";
-      if (slug && existingExtIds.has(slug)) return false;
+      if (slug && existingExtIds.has(slug)) { stats.dupReasons.external_id++; stats.duplicates++; return false; }
       return true;
     }).slice(0, MAX_NEW_SCRAPE);
 
-    stats.duplicates = eventUrls.length - newUrls.length;
     console.log(`${stats.duplicates} already imported, ${newUrls.length} new to scrape`);
 
     if (newUrls.length === 0) return json(stats);
@@ -170,7 +171,7 @@ Deno.serve(async (req) => {
     const partners = allPartners || [];
 
     // Pass dedup sets to scrapeAndInsert
-    const dedupCtx = { existingExtIds, existingTitleVenueDate };
+    const dedupCtx = { existingExtIds, existingTitleVenueDate, existingEventKeys };
 
     for (let i = 0; i < newUrls.length; i += CONCURRENCY) {
       const batch = newUrls.slice(i, i + CONCURRENCY);
@@ -221,7 +222,7 @@ async function scrapeAndInsert(
   supabase: any,
   partners: { id: string; name: string }[],
   stats: any,
-  dedupCtx: { existingExtIds: Set<string>; existingTitleVenueDate: Set<string> }
+  dedupCtx: { existingExtIds: Set<string>; existingTitleVenueDate: Set<string>; existingEventKeys: Set<string> }
 ) {
   stats.pagesScraped++;
 
@@ -269,13 +270,25 @@ async function scrapeAndInsert(
   if (slug && dedupCtx.existingExtIds.has(slug)) {
     console.log("Duplicate by external_id:", slug);
     stats.duplicates++;
+    stats.dupReasons.external_id++;
     return;
   }
 
   const dedupKey = buildDedupKey(title, venue, dateTime);
+
+  // Check against existing events table
+  if (dedupKey && dedupCtx.existingEventKeys.has(dedupKey)) {
+    console.log("Duplicate: already in events table:", title);
+    stats.duplicates++;
+    stats.dupReasons.existing_event++;
+    return;
+  }
+
+  // Check against existing imports
   if (dedupKey && dedupCtx.existingTitleVenueDate.has(dedupKey)) {
     console.log("Duplicate by title+venue+date:", title);
     stats.duplicates++;
+    stats.dupReasons.title_venue_date++;
     return;
   }
 
@@ -310,6 +323,7 @@ async function scrapeAndInsert(
   if (insertError) {
     if (insertError.code === "23505") {
       stats.duplicates++;
+      stats.dupReasons.db_constraint++;
     } else {
       console.error("Insert error:", insertError);
       stats.errors++;
