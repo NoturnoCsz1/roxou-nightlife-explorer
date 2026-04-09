@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw } from "lucide-react";
+import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw, Star } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventRow {
@@ -137,6 +137,7 @@ interface GenerationRecord {
   title: string | null;
   generated_text: string | null;
   image_url: string | null;
+  favorited: boolean;
   created_at: string;
 }
 
@@ -156,6 +157,7 @@ const InstagramContentGenerator = () => {
   const [hFilterType, setHFilterType] = useState<string>("all");
   const [hFilterSource, setHFilterSource] = useState<string>("all");
   const [hFilterContent, setHFilterContent] = useState<string>("all");
+  const [hFilterFav, setHFilterFav] = useState(false);
   // Track current generation context for saving
   const [currentGenCtx, setCurrentGenCtx] = useState<{ sourceType: ContentType; sourceId: string; title: string } | null>(null);
 
@@ -210,6 +212,13 @@ const InstagramContentGenerator = () => {
       .limit(30);
     setHistory((data as any as GenerationRecord[]) || []);
     setHistoryLoading(false);
+  };
+
+  const toggleFavorite = async (item: GenerationRecord) => {
+    const newVal = !item.favorited;
+    await supabase.from("content_generations" as any).update({ favorited: newVal } as any).eq("id", item.id);
+    setHistory((prev) => prev.map((h) => h.id === item.id ? { ...h, favorited: newVal } : h));
+    toast.success(newVal ? "Adicionado aos favoritos" : "Removido dos favoritos");
   };
 
   const handleGenerate = (type: ContentType, item: EventRow | PartnerRow, isStory = false) => {
@@ -352,6 +361,7 @@ const InstagramContentGenerator = () => {
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum conteúdo gerado ainda.</p>
           ) : (() => {
             const filtered = history.filter((h) => {
+              if (hFilterFav && !h.favorited) return false;
               if (hFilterType !== "all" && h.type !== hFilterType) return false;
               if (hFilterSource !== "all" && h.source_type !== hFilterSource) return false;
               if (hFilterContent === "text" && !h.generated_text) return false;
@@ -386,8 +396,12 @@ const InstagramContentGenerator = () => {
                       >{f.l}</button>
                     ))}
                   </div>
+                  <div className="flex flex-wrap gap-1">
+                    <button onClick={() => setHFilterFav(!hFilterFav)}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition flex items-center gap-1 ${hFilterFav ? "bg-yellow-400/20 text-yellow-500" : "bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                    ><Star className="h-3 w-3" /> Favoritos</button>
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground">{filtered.length} de {history.length} itens</p>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {filtered.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-4">Nenhum item com estes filtros.</p>
@@ -400,9 +414,14 @@ const InstagramContentGenerator = () => {
                           </span>
                           <span className="ml-1.5 text-[10px] text-muted-foreground">{h.source_type}</span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {new Date(h.created_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button onClick={() => toggleFavorite(h)} className="transition" title={h.favorited ? "Remover favorito" : "Favoritar"}>
+                            <Star className={`h-3.5 w-3.5 ${h.favorited ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40 hover:text-yellow-400"}`} />
+                          </button>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(h.created_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
                       </div>
                       {h.title && <p className="text-xs font-semibold text-foreground">{h.title}</p>}
                       {h.generated_text && (
