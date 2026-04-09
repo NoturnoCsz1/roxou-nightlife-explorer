@@ -129,6 +129,17 @@ const generatePostCopy = (type: ContentType, item: EventRow | PartnerRow, isStor
   return `🍔 ROXOU INDICA${br}${br}${p.name}${br}${p.short_description || "Um lugar que você precisa conhecer!"}${br}${br}${p.instagram ? `📸 @${p.instagram.replace("@", "")}${br}` : ""}${br}#roxou #roxouindica #gastronomia #presidenteprudente #${p.type}`;
 };
 
+interface GenerationRecord {
+  id: string;
+  type: string;
+  source_type: string;
+  source_id: string | null;
+  title: string | null;
+  generated_text: string | null;
+  image_url: string | null;
+  created_at: string;
+}
+
 const InstagramContentGenerator = () => {
   const [trendingEvents, setTrendingEvents] = useState<EventRow[]>([]);
   const [lowPerformEvents, setLowPerformEvents] = useState<EventRow[]>([]);
@@ -139,6 +150,11 @@ const InstagramContentGenerator = () => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [artPromptPreview, setArtPromptPreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"generate" | "history">("generate");
+  const [history, setHistory] = useState<GenerationRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  // Track current generation context for saving
+  const [currentGenCtx, setCurrentGenCtx] = useState<{ sourceType: ContentType; sourceId: string; title: string } | null>(null);
 
   useEffect(() => {
     loadData();
