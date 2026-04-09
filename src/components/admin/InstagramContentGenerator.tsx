@@ -143,6 +143,7 @@ interface GenerationRecord {
 }
 
 const InstagramContentGenerator = () => {
+  const navigate = useNavigate();
   const [trendingEvents, setTrendingEvents] = useState<EventRow[]>([]);
   const [lowPerformEvents, setLowPerformEvents] = useState<EventRow[]>([]);
   const [topPartners, setTopPartners] = useState<PartnerRow[]>([]);
