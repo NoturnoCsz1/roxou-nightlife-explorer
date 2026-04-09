@@ -49,7 +49,16 @@ const InstagramAdmin = () => {
     if (searchParams.get("connected") === "true") {
       toast.success("Conta Instagram conectada com sucesso!");
     }
+    // Pre-fill from content generator
+    const paramCaption = searchParams.get("caption");
+    const paramImage = searchParams.get("image");
+    if (paramCaption || paramImage) {
+      setNewCaption(paramCaption || "");
+      setNewImageUrl(paramImage || "");
+      setShowForm(true);
+    }
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadData() {
