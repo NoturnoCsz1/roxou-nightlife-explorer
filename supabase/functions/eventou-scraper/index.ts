@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
     const partners = allPartners || [];
 
     // Pass dedup sets to scrapeAndInsert
-    const dedupCtx = { existingExtIds, existingTitleVenueDate };
+    const dedupCtx = { existingExtIds, existingTitleVenueDate, existingEventKeys };
 
     for (let i = 0; i < newUrls.length; i += CONCURRENCY) {
       const batch = newUrls.slice(i, i + CONCURRENCY);
