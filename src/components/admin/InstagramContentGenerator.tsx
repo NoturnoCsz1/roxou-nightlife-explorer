@@ -244,6 +244,7 @@ const InstagramContentGenerator = () => {
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
         toast.success(`Arte ${format} gerada!`);
+        saveGeneration(format, type, item.id, title, null, data.imageUrl);
       } else {
         toast.error("Não foi possível gerar a arte");
       }
