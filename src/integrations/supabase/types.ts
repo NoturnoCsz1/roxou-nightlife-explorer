@@ -38,6 +38,39 @@ export type Database = {
         }
         Relationships: []
       }
+      content_generations: {
+        Row: {
+          created_at: string
+          generated_text: string | null
+          id: string
+          image_url: string | null
+          source_id: string | null
+          source_type: string
+          title: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          generated_text?: string | null
+          id?: string
+          image_url?: string | null
+          source_id?: string | null
+          source_type?: string
+          title?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          generated_text?: string | null
+          id?: string
+          image_url?: string | null
+          source_id?: string | null
+          source_type?: string
+          title?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       eventou_imports: {
         Row: {
           city: string | null

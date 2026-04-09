@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush } from "lucide-react";
+import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventRow {
@@ -129,6 +129,17 @@ const generatePostCopy = (type: ContentType, item: EventRow | PartnerRow, isStor
   return `🍔 ROXOU INDICA${br}${br}${p.name}${br}${p.short_description || "Um lugar que você precisa conhecer!"}${br}${br}${p.instagram ? `📸 @${p.instagram.replace("@", "")}${br}` : ""}${br}#roxou #roxouindica #gastronomia #presidenteprudente #${p.type}`;
 };
 
+interface GenerationRecord {
+  id: string;
+  type: string;
+  source_type: string;
+  source_id: string | null;
+  title: string | null;
+  generated_text: string | null;
+  image_url: string | null;
+  created_at: string;
+}
+
 const InstagramContentGenerator = () => {
   const [trendingEvents, setTrendingEvents] = useState<EventRow[]>([]);
   const [lowPerformEvents, setLowPerformEvents] = useState<EventRow[]>([]);
@@ -139,6 +150,11 @@ const InstagramContentGenerator = () => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [artPromptPreview, setArtPromptPreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"generate" | "history">("generate");
+  const [history, setHistory] = useState<GenerationRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  // Track current generation context for saving
+  const [currentGenCtx, setCurrentGenCtx] = useState<{ sourceType: ContentType; sourceId: string; title: string } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -171,9 +187,35 @@ const InstagramContentGenerator = () => {
     setGastroPartners(partners.filter((p) => gastroTypes.includes(p.type.toLowerCase())).slice(0, 5));
   };
 
+  const saveGeneration = async (type: string, sourceType: string, sourceId: string, title: string, text: string | null, imageUrl: string | null) => {
+    await supabase.from("content_generations" as any).insert({
+      type,
+      source_type: sourceType,
+      source_id: sourceId,
+      title,
+      generated_text: text,
+      image_url: imageUrl,
+    } as any);
+  };
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    const { data } = await supabase
+      .from("content_generations" as any)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    setHistory((data as any as GenerationRecord[]) || []);
+    setHistoryLoading(false);
+  };
+
   const handleGenerate = (type: ContentType, item: EventRow | PartnerRow, isStory = false) => {
     const text = generatePostCopy(type, item, isStory);
+    const title = "title" in item ? item.title : (item as PartnerRow).name;
     setGeneratedContent({ type: isStory ? "Story" : "Post", text });
+    setCurrentGenCtx({ sourceType: type, sourceId: item.id, title });
+    // Save text generation
+    saveGeneration(isStory ? "story" : "post", type, item.id, title, text, null);
   };
 
   const handleCopy = (text: string) => {
@@ -183,9 +225,11 @@ const InstagramContentGenerator = () => {
 
   const handleGenerateArt = async (type: ContentType, item: EventRow | PartnerRow, format: "post" | "story") => {
     const prompt = buildArtPrompt(type, item, format);
+    const title = "title" in item ? item.title : (item as PartnerRow).name;
     setArtPromptPreview(prompt);
     setGeneratedImage(null);
     setGeneratingImage(true);
+    setCurrentGenCtx({ sourceType: type, sourceId: item.id, title });
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-art", {
@@ -200,6 +244,7 @@ const InstagramContentGenerator = () => {
       if (data?.imageUrl) {
         setGeneratedImage(data.imageUrl);
         toast.success(`Arte ${format} gerada!`);
+        saveGeneration(format, type, item.id, title, null, data.imageUrl);
       } else {
         toast.error("Não foi possível gerar a arte");
       }
@@ -270,6 +315,88 @@ const InstagramContentGenerator = () => {
 
   return (
     <div className="space-y-4">
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActiveTab("generate")}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${activeTab === "generate" ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:text-foreground"}`}
+        >
+          <Instagram className="h-3.5 w-3.5" /> Gerar Conteúdo
+        </button>
+        <button
+          onClick={() => { setActiveTab("history"); loadHistory(); }}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${activeTab === "history" ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:text-foreground"}`}
+        >
+          <History className="h-3.5 w-3.5" /> Histórico
+        </button>
+      </div>
+
+      {activeTab === "history" && (
+        <div className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" /> Histórico de Gerações
+            </h3>
+            <button onClick={loadHistory} className="text-xs text-muted-foreground hover:text-foreground">
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {historyLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : history.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-6">Nenhum conteúdo gerado ainda.</p>
+          ) : (
+            <div className="space-y-2 max-h-[600px] overflow-y-auto">
+              {history.map((h) => (
+                <div key={h.id} className="rounded-lg border border-border/30 bg-card/50 p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${h.type === "story" ? "bg-accent/20 text-accent" : "bg-primary/20 text-primary"}`}>
+                        {h.type}
+                      </span>
+                      <span className="ml-1.5 text-[10px] text-muted-foreground">{h.source_type}</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {new Date(h.created_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  {h.title && <p className="text-xs font-semibold text-foreground">{h.title}</p>}
+                  {h.generated_text && (
+                    <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground bg-background/50 rounded-md p-2 font-sans leading-relaxed max-h-32 overflow-y-auto">
+                      {h.generated_text}
+                    </pre>
+                  )}
+                  {h.image_url && (
+                    <img src={h.image_url} alt="Arte gerada" className="rounded-md max-h-40 mx-auto" />
+                  )}
+                  <div className="flex gap-1.5">
+                    {h.generated_text && (
+                      <button
+                        onClick={() => handleCopy(h.generated_text!)}
+                        className="flex items-center gap-1 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25 transition"
+                      >
+                        <Copy className="h-3 w-3" /> COPIAR
+                      </button>
+                    )}
+                    {h.image_url && (
+                      <button
+                        onClick={() => { setGeneratedImage(h.image_url); setActiveTab("generate"); }}
+                        className="flex items-center gap-1 rounded-md bg-accent/15 px-2 py-1 text-[10px] font-semibold text-accent hover:bg-accent/25 transition"
+                      >
+                        <Paintbrush className="h-3 w-3" /> VER ARTE
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "generate" && (<>
       {/* Generated content preview */}
       {generatedContent && (
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
@@ -412,6 +539,7 @@ const InstagramContentGenerator = () => {
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 };
