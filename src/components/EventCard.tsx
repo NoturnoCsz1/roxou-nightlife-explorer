@@ -80,6 +80,11 @@ const EventCard = ({ event, variant = "default", index = 0, sponsored = false }:
           <img src={image} alt={event.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           <div className="absolute left-4 top-4 flex gap-2">
+            {sponsored && (
+              <span className="rounded-lg bg-amber-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white flex items-center gap-1">
+                <Megaphone className="h-3 w-3" /> Patrocinado
+              </span>
+            )}
             {todayEvent && <span className="badge-hoje rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">Hoje</span>}
             <span className={`${cat.badge} rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{cat.label}</span>
           </div>
