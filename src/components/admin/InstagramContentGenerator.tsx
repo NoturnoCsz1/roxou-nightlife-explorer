@@ -214,6 +214,13 @@ const InstagramContentGenerator = () => {
     setHistoryLoading(false);
   };
 
+  const toggleFavorite = async (item: GenerationRecord) => {
+    const newVal = !item.favorited;
+    await supabase.from("content_generations" as any).update({ favorited: newVal } as any).eq("id", item.id);
+    setHistory((prev) => prev.map((h) => h.id === item.id ? { ...h, favorited: newVal } : h));
+    toast.success(newVal ? "Adicionado aos favoritos" : "Removido dos favoritos");
+  };
+
   const handleGenerate = (type: ContentType, item: EventRow | PartnerRow, isStory = false) => {
     const text = generatePostCopy(type, item, isStory);
     const title = "title" in item ? item.title : (item as PartnerRow).name;
