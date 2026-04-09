@@ -24,6 +24,7 @@ type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "fun
 const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const [events, setEvents] = useState<SupabaseEvent[]>([]);
+  const [trendingIds, setTrendingIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
