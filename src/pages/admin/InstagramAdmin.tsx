@@ -66,11 +66,6 @@ const InstagramAdmin = () => {
   async function handleConnect() {
     setConnecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("instagram-oauth", {
-        body: {},
-        method: "GET",
-      });
-      // Use query param approach
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=auth_url`,
         { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
