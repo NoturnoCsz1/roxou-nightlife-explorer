@@ -361,6 +361,7 @@ const InstagramContentGenerator = () => {
             <p className="text-xs text-muted-foreground text-center py-6">Nenhum conteúdo gerado ainda.</p>
           ) : (() => {
             const filtered = history.filter((h) => {
+              if (hFilterFav && !h.favorited) return false;
               if (hFilterType !== "all" && h.type !== hFilterType) return false;
               if (hFilterSource !== "all" && h.source_type !== hFilterSource) return false;
               if (hFilterContent === "text" && !h.generated_text) return false;
