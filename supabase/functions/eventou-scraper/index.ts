@@ -280,7 +280,7 @@ async function scrapeAndInsert(
     if (match) partnerId = match.id;
   }
 
-  const slug = eventUrl.split("/").pop() || "";
+
 
   const { error: insertError } = await supabase.from("eventou_imports").insert({
     eventou_url: eventUrl,
