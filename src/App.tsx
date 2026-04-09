@@ -9,6 +9,7 @@ import Hoje from "./pages/Hoje";
 import Semana from "./pages/Semana";
 import Categorias from "./pages/Categorias";
 import Salvos from "./pages/Salvos";
+import Indica from "./pages/Indica";
 import LocalDetail from "./pages/LocalDetail";
 import LocalEventos from "./pages/LocalEventos";
 import NotFound from "./pages/NotFound";

@@ -1,10 +1,11 @@
-import { CalendarDays, CalendarRange, Grid3X3, Bookmark, Home, MapPin } from "lucide-react";
+import { CalendarDays, CalendarRange, Grid3X3, Bookmark, Home, MapPin, Star } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const tabs = [
   { label: "Início", icon: Home, path: "/" },
   { label: "Hoje", icon: CalendarDays, path: "/hoje" },
   { label: "Semana", icon: CalendarRange, path: "/semana" },
+  { label: "Indica", icon: Star, path: "/indica" },
   { label: "Categorias", icon: Grid3X3, path: "/categorias" },
   { label: "Salvos", icon: Bookmark, path: "/salvos" },
 ];
