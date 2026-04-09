@@ -187,9 +187,35 @@ const InstagramContentGenerator = () => {
     setGastroPartners(partners.filter((p) => gastroTypes.includes(p.type.toLowerCase())).slice(0, 5));
   };
 
+  const saveGeneration = async (type: string, sourceType: string, sourceId: string, title: string, text: string | null, imageUrl: string | null) => {
+    await supabase.from("content_generations" as any).insert({
+      type,
+      source_type: sourceType,
+      source_id: sourceId,
+      title,
+      generated_text: text,
+      image_url: imageUrl,
+    } as any);
+  };
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    const { data } = await supabase
+      .from("content_generations" as any)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    setHistory((data as any as GenerationRecord[]) || []);
+    setHistoryLoading(false);
+  };
+
   const handleGenerate = (type: ContentType, item: EventRow | PartnerRow, isStory = false) => {
     const text = generatePostCopy(type, item, isStory);
+    const title = "title" in item ? item.title : (item as PartnerRow).name;
     setGeneratedContent({ type: isStory ? "Story" : "Post", text });
+    setCurrentGenCtx({ sourceType: type, sourceId: item.id, title });
+    // Save text generation
+    saveGeneration(isStory ? "story" : "post", type, item.id, title, text, null);
   };
 
   const handleCopy = (text: string) => {
@@ -199,9 +225,11 @@ const InstagramContentGenerator = () => {
 
   const handleGenerateArt = async (type: ContentType, item: EventRow | PartnerRow, format: "post" | "story") => {
     const prompt = buildArtPrompt(type, item, format);
+    const title = "title" in item ? item.title : (item as PartnerRow).name;
     setArtPromptPreview(prompt);
     setGeneratedImage(null);
     setGeneratingImage(true);
+    setCurrentGenCtx({ sourceType: type, sourceId: item.id, title });
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-art", {
