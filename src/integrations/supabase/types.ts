@@ -196,6 +196,45 @@ export type Database = {
           },
         ]
       }
+      instagram_accounts: {
+        Row: {
+          access_token: string
+          connected_by: string
+          created_at: string
+          id: string
+          ig_account_id: string
+          page_id: string
+          status: string
+          token_expires_at: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          access_token: string
+          connected_by: string
+          created_at?: string
+          id?: string
+          ig_account_id: string
+          page_id: string
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          access_token?: string
+          connected_by?: string
+          created_at?: string
+          id?: string
+          ig_account_id?: string
+          page_id?: string
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       instagram_imports: {
         Row: {
           caption: string | null
@@ -249,6 +288,59 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instagram_posts: {
+        Row: {
+          caption: string | null
+          content_generation_id: string | null
+          created_at: string
+          created_by: string
+          error_detail: string | null
+          id: string
+          ig_media_id: string | null
+          image_url: string | null
+          instagram_account_id: string | null
+          published_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          content_generation_id?: string | null
+          created_at?: string
+          created_by: string
+          error_detail?: string | null
+          id?: string
+          ig_media_id?: string | null
+          image_url?: string | null
+          instagram_account_id?: string | null
+          published_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          content_generation_id?: string | null
+          created_at?: string
+          created_by?: string
+          error_detail?: string | null
+          id?: string
+          ig_media_id?: string | null
+          image_url?: string | null
+          instagram_account_id?: string | null
+          published_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_posts_instagram_account_id_fkey"
+            columns: ["instagram_account_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_accounts"
             referencedColumns: ["id"]
           },
         ]
