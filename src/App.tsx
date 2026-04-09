@@ -23,6 +23,7 @@ import EventoForm from "./pages/admin/EventoForm";
 import EventoBulkForm from "./pages/admin/EventoBulkForm";
 import Sugestoes from "./pages/admin/Sugestoes";
 import EventouAdmin from "./pages/admin/EventouAdmin";
+import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="eventos/:id/editar" element={<EventoForm />} />
             <Route path="sugestoes" element={<Sugestoes />} />
             <Route path="eventou" element={<EventouAdmin />} />
+            <Route path="instagram" element={<InstagramAdminPage />} />
             <Route path="editores" element={<Editores />} />
           </Route>
 

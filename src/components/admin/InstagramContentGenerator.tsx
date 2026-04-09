@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw, Star, CopyPlus } from "lucide-react";
+import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw, Star, CopyPlus, Send } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventRow {
@@ -142,6 +143,7 @@ interface GenerationRecord {
 }
 
 const InstagramContentGenerator = () => {
+  const navigate = useNavigate();
   const [trendingEvents, setTrendingEvents] = useState<EventRow[]>([]);
   const [lowPerformEvents, setLowPerformEvents] = useState<EventRow[]>([]);
   const [topPartners, setTopPartners] = useState<PartnerRow[]>([]);
@@ -494,12 +496,25 @@ const InstagramContentGenerator = () => {
           <pre className="whitespace-pre-wrap text-xs text-foreground bg-card rounded-lg p-3 border border-border/30 font-sans leading-relaxed">
             {generatedContent.text}
           </pre>
-          <button
-            onClick={() => handleCopy(generatedContent.text)}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition"
-          >
-            <Copy className="h-3.5 w-3.5" /> COPIAR COPY
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => handleCopy(generatedContent.text)}
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition"
+            >
+              <Copy className="h-3.5 w-3.5" /> COPIAR COPY
+            </button>
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (generatedContent.text) params.set("caption", generatedContent.text);
+                if (generatedImage) params.set("image", generatedImage);
+                navigate(`/admin/instagram?${params.toString()}`);
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
+            >
+              <Send className="h-3.5 w-3.5" /> ENVIAR P/ INSTAGRAM
+            </button>
+          </div>
         </div>
       )}
 
