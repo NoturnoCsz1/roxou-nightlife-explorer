@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const EVENTOU_EXPLORE = "https://eventou.com.br/explorar";
 const TARGET_CITY = "presidente prudente";
+const MAX_NEW_SCRAPE = 10;
+const CONCURRENCY = 3;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -26,65 +28,64 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
-  const stats = { pagesScraped: 0, eventsFound: 0, newInserted: 0, duplicates: 0, errors: 0 };
+  const stats = {
+    pagesScraped: 0,
+    eventsFound: 0,
+    newInserted: 0,
+    duplicates: 0,
+    errors: 0,
+    urlsDiscovered: 0,
+    skippedNonCity: 0,
+    phase: "idle",
+    timeMs: 0,
+  };
+  const startTime = Date.now();
+
+  const json = (s: typeof stats) =>
+    new Response(JSON.stringify({ success: true, stats: { ...s, timeMs: Date.now() - startTime } }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
   try {
-    // Step 1: Scrape the explore page to get event links and data
-    console.log("Scraping Eventou explore page");
-    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: EVENTOU_EXPLORE,
-        formats: ["markdown", "links"],
-        onlyMainContent: true,
-        waitFor: 3000,
+    // Phase 1: Discover URLs (scrape + map in parallel)
+    stats.phase = "discovering";
+    console.log("Phase 1: Discovering event URLs");
+
+    const [scrapeRes, mapRes] = await Promise.all([
+      fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: EVENTOU_EXPLORE,
+          formats: ["links"],
+          onlyMainContent: true,
+          waitFor: 2000,
+        }),
       }),
-    });
+      fetch("https://api.firecrawl.dev/v1/map", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: EVENTOU_EXPLORE,
+          search: "presidente prudente",
+          limit: 200,
+          includeSubdomains: false,
+        }),
+      }),
+    ]);
 
-    const scrapeData = await scrapeRes.json();
-    if (!scrapeRes.ok) {
-      console.error("Scrape failed:", scrapeData);
-      return new Response(
-        JSON.stringify({ success: false, error: "Failed to scrape Eventou explore", detail: scrapeData }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
-    const links: string[] = scrapeData.data?.links || scrapeData.links || [];
+    const [scrapeData, mapData] = await Promise.all([scrapeRes.json(), mapRes.json()]);
     stats.pagesScraped = 1;
 
-    console.log(`Explore page: ${markdown.length} chars, ${links.length} links`);
-
-    // Step 2: Also map for event detail URLs
-    const mapRes = await fetch("https://api.firecrawl.dev/v1/map", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url: EVENTOU_EXPLORE,
-        search: "presidente prudente",
-        limit: 200,
-        includeSubdomains: false,
-      }),
-    });
-
-    const mapData = await mapRes.json();
+    const scrapeLinks: string[] = scrapeData.data?.links || scrapeData.links || [];
     const mappedLinks: string[] = mapData.links || [];
-    console.log(`Map returned ${mappedLinks.length} links`);
+    console.log(`Scrape: ${scrapeLinks.length} links, Map: ${mappedLinks.length} links`);
 
-    // Combine all links and filter for event detail pages
-    const allLinks = [...new Set([...links, ...mappedLinks])];
+    // Combine & filter event URLs
+    const allLinks = [...new Set([...scrapeLinks, ...mappedLinks])];
     const eventUrls = allLinks.filter((url) => {
       try {
         const u = new URL(url);
-        // Match patterns like /evento/slug or /eventos/cidade/slug
         return (
           (u.pathname.startsWith("/evento/") || u.pathname.startsWith("/eventos/")) &&
           !u.pathname.endsWith("/explorar")
@@ -94,144 +95,169 @@ Deno.serve(async (req) => {
       }
     });
 
-    console.log(`Found ${eventUrls.length} event URLs from combined sources`);
+    stats.urlsDiscovered = allLinks.length;
     stats.eventsFound = eventUrls.length;
+    console.log(`Found ${eventUrls.length} event URLs`);
 
-    // Step 3: Check existing imports
-    const { data: existing } = await supabase
-      .from("eventou_imports")
-      .select("eventou_url")
-      .in("eventou_url", eventUrls.slice(0, 50));
+    if (eventUrls.length === 0) return json(stats);
 
-    const existingUrls = new Set((existing || []).map((e: any) => e.eventou_url));
-    const newUrls = eventUrls.filter((u) => !existingUrls.has(u)).slice(0, 15);
-    stats.duplicates = eventUrls.length - newUrls.length;
+    // Phase 2: Early dedup — check ALL URLs against DB at once
+    stats.phase = "deduplicating";
+    console.log("Phase 2: Dedup check");
 
-    // Step 4: Scrape each new event page
-    for (const eventUrl of newUrls) {
-      try {
-        console.log("Scraping:", eventUrl);
-        stats.pagesScraped++;
-
-        const detailRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${firecrawlKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            url: eventUrl,
-            formats: ["markdown"],
-            onlyMainContent: true,
-            waitFor: 2000,
-          }),
-        });
-
-        const detailData = await detailRes.json();
-        if (!detailRes.ok) {
-          console.error("Scrape failed for", eventUrl, detailData);
-          stats.errors++;
-          continue;
-        }
-
-        const meta = detailData.data?.metadata || detailData.metadata || {};
-        const md = detailData.data?.markdown || detailData.markdown || "";
-
-        const title = meta.ogTitle || meta.title || extractTitle(md);
-        if (!title) {
-          console.log("No title found, skipping:", eventUrl);
-          stats.errors++;
-          continue;
-        }
-
-        // Filter: only Presidente Prudente events
-        const cityFromPage = extractCity(md) || meta.ogDescription || "";
-        const isTargetCity = cityFromPage.toLowerCase().includes(TARGET_CITY);
-        // If we can detect a city and it's not our target, skip
-        const detectedCity = extractCity(md);
-        if (detectedCity && !detectedCity.toLowerCase().includes(TARGET_CITY)) {
-          console.log("Skipping non-PP event:", title, "city:", detectedCity);
-          continue;
-        }
-
-        const description = meta.ogDescription || meta.description || extractDescription(md);
-        const imageUrl = meta.ogImage || meta["og:image"] || null;
-        const venue = extractVenue(md);
-        const dateTime = extractDateTime(md);
-
-        // Dedup by title + venue
-        if (venue) {
-          const { data: dupCheck } = await supabase
-            .from("eventou_imports")
-            .select("id")
-            .eq("title", title)
-            .eq("venue_name", venue)
-            .limit(1);
-          if (dupCheck && dupCheck.length > 0) {
-            console.log("Duplicate by title+venue:", title);
-            stats.duplicates++;
-            continue;
-          }
-        }
-
-        // Auto-match partner
-        let partnerId: string | null = null;
-        if (venue) {
-          const { data: matchedPartners } = await supabase
-            .from("partners")
-            .select("id")
-            .ilike("name", `%${venue}%`)
-            .limit(1);
-          if (matchedPartners && matchedPartners.length > 0) {
-            partnerId = matchedPartners[0].id;
-          }
-        }
-
-        const slug = eventUrl.split("/").pop() || "";
-
-        const { error: insertError } = await supabase.from("eventou_imports").insert({
-          eventou_url: eventUrl,
-          external_id: slug,
-          title,
-          description: description?.slice(0, 2000) || null,
-          venue_name: venue,
-          city: "Presidente Prudente",
-          state: "SP",
-          date_time: dateTime,
-          image_url: imageUrl,
-          partner_id: partnerId,
-          import_status: "pending",
-        });
-
-        if (insertError) {
-          if (insertError.code === "23505") {
-            stats.duplicates++;
-          } else {
-            console.error("Insert error:", insertError);
-            stats.errors++;
-          }
-        } else {
-          stats.newInserted++;
-        }
-      } catch (err) {
-        console.error("Error processing", eventUrl, err);
-        stats.errors++;
-      }
+    // Batch check in chunks of 50 (Supabase .in() limit)
+    const existingUrls = new Set<string>();
+    for (let i = 0; i < eventUrls.length; i += 50) {
+      const chunk = eventUrls.slice(i, i + 50);
+      const { data: existing } = await supabase
+        .from("eventou_imports")
+        .select("eventou_url")
+        .in("eventou_url", chunk);
+      (existing || []).forEach((e: any) => existingUrls.add(e.eventou_url));
     }
 
+    const newUrls = eventUrls.filter((u) => !existingUrls.has(u)).slice(0, MAX_NEW_SCRAPE);
+    stats.duplicates = eventUrls.length - newUrls.length - (eventUrls.length - existingUrls.size - newUrls.length);
+    stats.duplicates = existingUrls.size;
+
+    console.log(`${existingUrls.size} already imported, ${newUrls.length} new to scrape`);
+
+    if (newUrls.length === 0) return json(stats);
+
+    // Phase 3: Scrape new pages in parallel batches
+    stats.phase = "scraping";
+    console.log(`Phase 3: Scraping ${newUrls.length} pages (concurrency=${CONCURRENCY})`);
+
+    // Pre-load partner names for matching
+    const { data: allPartners } = await supabase.from("partners").select("id, name");
+    const partners = allPartners || [];
+
+    for (let i = 0; i < newUrls.length; i += CONCURRENCY) {
+      const batch = newUrls.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        batch.map((eventUrl) => scrapeAndInsert(eventUrl, firecrawlKey, supabase, partners, stats))
+      );
+      results.forEach((r) => {
+        if (r.status === "rejected") {
+          console.error("Batch item failed:", r.reason);
+          stats.errors++;
+        }
+      });
+    }
+
+    stats.phase = "done";
+    stats.timeMs = Date.now() - startTime;
     console.log("Scan complete:", stats);
-    return new Response(
-      JSON.stringify({ success: true, stats }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json(stats);
   } catch (err) {
     console.error("Fatal error:", err);
+    stats.phase = "error";
+    stats.timeMs = Date.now() - startTime;
     return new Response(
       JSON.stringify({ success: false, error: err instanceof Error ? err.message : "Unknown error", stats }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
+
+/* ── scrape a single event URL and insert ── */
+async function scrapeAndInsert(
+  eventUrl: string,
+  firecrawlKey: string,
+  supabase: any,
+  partners: { id: string; name: string }[],
+  stats: any
+) {
+  stats.pagesScraped++;
+
+  const detailRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      url: eventUrl,
+      formats: ["markdown"],
+      onlyMainContent: true,
+      waitFor: 1500,
+    }),
+  });
+
+  const detailData = await detailRes.json();
+  if (!detailRes.ok) {
+    console.error("Scrape failed for", eventUrl);
+    stats.errors++;
+    return;
+  }
+
+  const meta = detailData.data?.metadata || detailData.metadata || {};
+  const md = detailData.data?.markdown || detailData.markdown || "";
+
+  const title = meta.ogTitle || meta.title || extractTitle(md);
+  if (!title) {
+    stats.errors++;
+    return;
+  }
+
+  // City filter
+  const detectedCity = extractCity(md);
+  if (detectedCity && !detectedCity.toLowerCase().includes(TARGET_CITY)) {
+    stats.skippedNonCity++;
+    return;
+  }
+
+  const description = meta.ogDescription || meta.description || extractDescription(md);
+  const imageUrl = meta.ogImage || meta["og:image"] || null;
+  const venue = extractVenue(md);
+  const dateTime = extractDateTime(md);
+
+  // Dedup by title + venue
+  if (venue) {
+    const { data: dupCheck } = await supabase
+      .from("eventou_imports")
+      .select("id")
+      .eq("title", title)
+      .eq("venue_name", venue)
+      .limit(1);
+    if (dupCheck && dupCheck.length > 0) {
+      stats.duplicates++;
+      return;
+    }
+  }
+
+  // Match partner by venue name (in-memory)
+  let partnerId: string | null = null;
+  if (venue) {
+    const venueLower = venue.toLowerCase();
+    const match = partners.find((p) => venueLower.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(venueLower));
+    if (match) partnerId = match.id;
+  }
+
+  const slug = eventUrl.split("/").pop() || "";
+
+  const { error: insertError } = await supabase.from("eventou_imports").insert({
+    eventou_url: eventUrl,
+    external_id: slug,
+    title,
+    description: description?.slice(0, 2000) || null,
+    venue_name: venue,
+    city: "Presidente Prudente",
+    state: "SP",
+    date_time: dateTime,
+    image_url: imageUrl,
+    partner_id: partnerId,
+    import_status: "pending",
+  });
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      stats.duplicates++;
+    } else {
+      console.error("Insert error:", insertError);
+      stats.errors++;
+    }
+  } else {
+    stats.newInserted++;
+  }
+}
 
 /* ── extraction helpers ── */
 
