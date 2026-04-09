@@ -147,6 +147,11 @@ const Index = () => {
     return !allShownIds.has(e.id) && !popularEvents.some(p => p.id === e.id) && d > now && d <= weekFromNow;
   });
 
+  const trendingEvents = useMemo(() =>
+    trendingIds.map(id => events.find(e => e.id === id)).filter(Boolean) as SupabaseEvent[],
+    [trendingIds, events]
+  );
+
   const filtered = category ? events.filter(e => e.category === category) : null;
 
   const searchTerm = searchQuery.trim().toLowerCase();
