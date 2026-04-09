@@ -152,13 +152,12 @@ Deno.serve(async (req) => {
 
     // Filter: skip URLs already imported or with known external_id
     const newUrls = eventUrls.filter((u) => {
-      if (existingUrls.has(u)) return false;
+      if (existingUrls.has(u)) { stats.dupReasons.url++; stats.duplicates++; return false; }
       const slug = u.split("/").pop() || "";
-      if (slug && existingExtIds.has(slug)) return false;
+      if (slug && existingExtIds.has(slug)) { stats.dupReasons.external_id++; stats.duplicates++; return false; }
       return true;
     }).slice(0, MAX_NEW_SCRAPE);
 
-    stats.duplicates = eventUrls.length - newUrls.length;
     console.log(`${stats.duplicates} already imported, ${newUrls.length} new to scrape`);
 
     if (newUrls.length === 0) return json(stats);
