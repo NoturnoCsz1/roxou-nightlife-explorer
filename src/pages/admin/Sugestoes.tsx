@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lightbulb, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Lightbulb, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, Link as LinkIcon, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
@@ -64,8 +64,42 @@ const Sugestoes = () => {
   // new suggestion form
   const [newUrl, setNewUrl] = useState("");
   const [newCaption, setNewCaption] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+
+  async function fetchPostPreview(url: string) {
+    if (!isValidInstagramUrl(url)) return;
+    setFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-instagram", {
+        body: { url: url.trim() },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        if (data.image_url) setPreviewImage(data.image_url);
+        else if (data.screenshot) setPreviewImage(data.screenshot);
+        if (data.caption && !newCaption.trim()) setNewCaption(data.caption.slice(0, 500));
+      }
+    } catch (err) {
+      console.error("Preview fetch failed:", err);
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  function handleUrlChange(val: string) {
+    setNewUrl(val);
+    setPreviewImage(null);
+  }
+
+  function handleUrlPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData("text");
+    if (isValidInstagramUrl(pasted.trim())) {
+      setTimeout(() => fetchPostPreview(pasted.trim()), 100);
+    }
+  }
 
   useEffect(() => {
     loadSuggestions();
@@ -145,6 +179,7 @@ const Sugestoes = () => {
       post_url: newUrl.trim(),
       instagram_handle: handle || "manual",
       caption: newCaption.trim() || null,
+      image_url: previewImage || null,
       import_status: "pending",
       partner_id: partnerId,
     });
@@ -155,6 +190,7 @@ const Sugestoes = () => {
       toast.success("Sugestão adicionada!");
       setNewUrl("");
       setNewCaption("");
+      setPreviewImage(null);
       setShowForm(false);
       loadSuggestions();
     }
@@ -232,13 +268,39 @@ const Sugestoes = () => {
                 <input
                   type="url"
                   value={newUrl}
-                  onChange={e => setNewUrl(e.target.value)}
+                  onChange={e => handleUrlChange(e.target.value)}
+                  onPaste={handleUrlPaste}
                   placeholder="https://www.instagram.com/p/..."
                   className="w-full rounded-lg border border-border/60 bg-background pl-8 pr-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
+              {fetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />}
             </div>
           </div>
+
+          {/* Image preview */}
+          {previewImage && (
+            <div className="flex items-center gap-3">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="h-20 w-20 rounded-lg object-cover border border-border/40"
+                onError={() => setPreviewImage(null)}
+              />
+              <div className="flex-1">
+                <p className="text-[11px] text-green-400 flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> Imagem detectada
+                </p>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="text-[10px] text-muted-foreground hover:text-destructive mt-1"
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-semibold text-foreground mb-1 block">Observação (opcional)</label>
             <textarea
@@ -259,7 +321,7 @@ const Sugestoes = () => {
               Salvar sugestão
             </button>
             <button
-              onClick={() => { setShowForm(false); setNewUrl(""); setNewCaption(""); }}
+              onClick={() => { setShowForm(false); setNewUrl(""); setNewCaption(""); setPreviewImage(null); }}
               className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/50 transition"
             >
               Cancelar
