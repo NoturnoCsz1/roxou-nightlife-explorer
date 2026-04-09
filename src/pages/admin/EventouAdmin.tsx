@@ -93,6 +93,18 @@ function generateCaption(row: EventouRow): string {
     .join(br);
 }
 
+interface ScanStats {
+  pagesScraped: number;
+  eventsFound: number;
+  newInserted: number;
+  duplicates: number;
+  errors: number;
+  urlsDiscovered: number;
+  skippedNonCity: number;
+  timeMs: number;
+  phase: string;
+}
+
 const EventouAdmin = () => {
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
@@ -102,6 +114,7 @@ const EventouAdmin = () => {
   const [deleteTarget, setDeleteTarget] = useState<EventouRow | null>(null);
   const [captionPreview, setCaptionPreview] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [lastScan, setLastScan] = useState<ScanStats | null>(null);
 
   useEffect(() => {
     loadItems();
