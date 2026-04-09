@@ -65,7 +65,7 @@ const Semana = () => {
           <p className="text-center text-sm text-muted-foreground py-12">Nenhum evento esta semana.</p>
         ) : (
           <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
-            {events.map((e, i) => <EventCard key={e.id} event={e} variant="compact" index={i} />)}
+            {events.map((e, i) => <EventCard key={e.id} event={e} variant="compact" index={i} sponsored={e.featured} />)}
           </div>
         )}
       </main>
