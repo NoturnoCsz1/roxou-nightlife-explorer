@@ -101,26 +101,52 @@ Deno.serve(async (req) => {
 
     if (eventUrls.length === 0) return json(stats);
 
-    // Phase 2: Early dedup — check ALL URLs against DB at once
+    // Phase 2: Early dedup — check URLs, external_ids, and title+venue combos
     stats.phase = "deduplicating";
     console.log("Phase 2: Dedup check");
 
-    // Batch check in chunks of 50 (Supabase .in() limit)
+    // Load ALL existing imports for comprehensive dedup
     const existingUrls = new Set<string>();
+    const existingExtIds = new Set<string>();
+    const existingTitleVenueDate = new Set<string>();
+
+    // Fetch in chunks of 50
     for (let i = 0; i < eventUrls.length; i += 50) {
       const chunk = eventUrls.slice(i, i + 50);
       const { data: existing } = await supabase
         .from("eventou_imports")
-        .select("eventou_url")
+        .select("eventou_url, external_id, title, venue_name, date_time")
         .in("eventou_url", chunk);
-      (existing || []).forEach((e: any) => existingUrls.add(e.eventou_url));
+      (existing || []).forEach((e: any) => {
+        existingUrls.add(e.eventou_url);
+        if (e.external_id) existingExtIds.add(e.external_id);
+        const key = buildDedupKey(e.title, e.venue_name, e.date_time);
+        if (key) existingTitleVenueDate.add(key);
+      });
     }
 
-    const newUrls = eventUrls.filter((u) => !existingUrls.has(u)).slice(0, MAX_NEW_SCRAPE);
-    stats.duplicates = eventUrls.length - newUrls.length - (eventUrls.length - existingUrls.size - newUrls.length);
-    stats.duplicates = existingUrls.size;
+    // Also load recent imports not matched by URL (for title+venue dedup)
+    const { data: recentImports } = await supabase
+      .from("eventou_imports")
+      .select("external_id, title, venue_name, date_time")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    (recentImports || []).forEach((e: any) => {
+      if (e.external_id) existingExtIds.add(e.external_id);
+      const key = buildDedupKey(e.title, e.venue_name, e.date_time);
+      if (key) existingTitleVenueDate.add(key);
+    });
 
-    console.log(`${existingUrls.size} already imported, ${newUrls.length} new to scrape`);
+    // Filter: skip URLs already imported or with known external_id
+    const newUrls = eventUrls.filter((u) => {
+      if (existingUrls.has(u)) return false;
+      const slug = u.split("/").pop() || "";
+      if (slug && existingExtIds.has(slug)) return false;
+      return true;
+    }).slice(0, MAX_NEW_SCRAPE);
+
+    stats.duplicates = eventUrls.length - newUrls.length;
+    console.log(`${stats.duplicates} already imported, ${newUrls.length} new to scrape`);
 
     if (newUrls.length === 0) return json(stats);
 
@@ -132,10 +158,13 @@ Deno.serve(async (req) => {
     const { data: allPartners } = await supabase.from("partners").select("id, name");
     const partners = allPartners || [];
 
+    // Pass dedup sets to scrapeAndInsert
+    const dedupCtx = { existingExtIds, existingTitleVenueDate };
+
     for (let i = 0; i < newUrls.length; i += CONCURRENCY) {
       const batch = newUrls.slice(i, i + CONCURRENCY);
       const results = await Promise.allSettled(
-        batch.map((eventUrl) => scrapeAndInsert(eventUrl, firecrawlKey, supabase, partners, stats))
+        batch.map((eventUrl) => scrapeAndInsert(eventUrl, firecrawlKey, supabase, partners, stats, dedupCtx))
       );
       results.forEach((r) => {
         if (r.status === "rejected") {
@@ -160,13 +189,28 @@ Deno.serve(async (req) => {
   }
 });
 
+/* ── normalize text for dedup ── */
+function normalize(s: string | null): string {
+  if (!s) return "";
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function buildDedupKey(title: string | null, venue: string | null, dateTime: string | null): string | null {
+  const t = normalize(title);
+  if (!t) return null;
+  const v = normalize(venue);
+  const d = dateTime ? dateTime.slice(0, 10) : "";
+  return `${t}|${v}|${d}`;
+}
+
 /* ── scrape a single event URL and insert ── */
 async function scrapeAndInsert(
   eventUrl: string,
   firecrawlKey: string,
   supabase: any,
   partners: { id: string; name: string }[],
-  stats: any
+  stats: any,
+  dedupCtx: { existingExtIds: Set<string>; existingTitleVenueDate: Set<string> }
 ) {
   stats.pagesScraped++;
 
@@ -209,19 +253,24 @@ async function scrapeAndInsert(
   const venue = extractVenue(md);
   const dateTime = extractDateTime(md);
 
-  // Dedup by title + venue
-  if (venue) {
-    const { data: dupCheck } = await supabase
-      .from("eventou_imports")
-      .select("id")
-      .eq("title", title)
-      .eq("venue_name", venue)
-      .limit(1);
-    if (dupCheck && dupCheck.length > 0) {
-      stats.duplicates++;
-      return;
-    }
+  // Dedup: check external_id (slug) and normalized title+venue+date
+  const slug = eventUrl.split("/").pop() || "";
+  if (slug && dedupCtx.existingExtIds.has(slug)) {
+    console.log("Duplicate by external_id:", slug);
+    stats.duplicates++;
+    return;
   }
+
+  const dedupKey = buildDedupKey(title, venue, dateTime);
+  if (dedupKey && dedupCtx.existingTitleVenueDate.has(dedupKey)) {
+    console.log("Duplicate by title+venue+date:", title);
+    stats.duplicates++;
+    return;
+  }
+
+  // Mark as seen to prevent intra-batch duplicates
+  if (slug) dedupCtx.existingExtIds.add(slug);
+  if (dedupKey) dedupCtx.existingTitleVenueDate.add(dedupKey);
 
   // Match partner by venue name (in-memory)
   let partnerId: string | null = null;
@@ -231,7 +280,7 @@ async function scrapeAndInsert(
     if (match) partnerId = match.id;
   }
 
-  const slug = eventUrl.split("/").pop() || "";
+
 
   const { error: insertError } = await supabase.from("eventou_imports").insert({
     eventou_url: eventUrl,
