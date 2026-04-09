@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     eventsFound: 0,
     newInserted: 0,
     duplicates: 0,
+    dupReasons: { url: 0, external_id: 0, title_venue_date: 0, existing_event: 0, db_constraint: 0 } as Record<string, number>,
     errors: 0,
     urlsDiscovered: 0,
     skippedNonCity: 0,
