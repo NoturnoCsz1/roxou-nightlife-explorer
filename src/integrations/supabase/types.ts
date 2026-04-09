@@ -38,6 +38,60 @@ export type Database = {
         }
         Relationships: []
       }
+      eventou_imports: {
+        Row: {
+          city: string | null
+          created_at: string
+          date_time: string | null
+          description: string | null
+          event_id: string | null
+          eventou_url: string
+          external_id: string | null
+          id: string
+          image_url: string | null
+          import_status: string
+          partner_id: string | null
+          state: string | null
+          title: string
+          updated_at: string
+          venue_name: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          date_time?: string | null
+          description?: string | null
+          event_id?: string | null
+          eventou_url: string
+          external_id?: string | null
+          id?: string
+          image_url?: string | null
+          import_status?: string
+          partner_id?: string | null
+          state?: string | null
+          title: string
+          updated_at?: string
+          venue_name?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          date_time?: string | null
+          description?: string | null
+          event_id?: string | null
+          eventou_url?: string
+          external_id?: string | null
+          id?: string
+          image_url?: string | null
+          import_status?: string
+          partner_id?: string | null
+          state?: string | null
+          title?: string
+          updated_at?: string
+          venue_name?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           address: string | null
