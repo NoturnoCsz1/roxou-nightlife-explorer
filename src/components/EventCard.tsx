@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, Megaphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatTime, formatDateShort, isToday } from "@/lib/dateUtils";
 import { categoryConfig } from "@/lib/categoryConfig";
@@ -24,9 +24,10 @@ interface EventCardProps {
   event: SupabaseEvent;
   variant?: "default" | "compact" | "wide";
   index?: number;
+  sponsored?: boolean;
 }
 
-const EventCard = ({ event, variant = "default", index = 0 }: EventCardProps) => {
+const EventCard = ({ event, variant = "default", index = 0, sponsored = false }: EventCardProps) => {
   const navigate = useNavigate();
   const dt = new Date(event.date_time);
   const todayEvent = isToday(dt);
