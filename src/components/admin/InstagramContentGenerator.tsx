@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Music, Megaphone } from "lucide-react";
+import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventRow {
@@ -104,9 +104,7 @@ const InstagramContentGenerator = () => {
     // Football events
     setFootballEvents(events.filter((e) => e.category === "festival").slice(0, 5));
 
-    // Top partners (those with events)
-    const partnerEventCount: Record<string, number> = {};
-    events.forEach((e) => { /* partner_id not in select, use venue matching */ });
+    // Top partners (those with instagram)
     setTopPartners(partners.filter((p) => p.instagram).slice(0, 5));
 
     // Gastro partners
