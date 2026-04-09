@@ -270,7 +270,7 @@ const Index = () => {
                     <SectionHeader emoji="⚽" title="Futebol hoje" subtitle={`${todayEvents.filter(e => e.category === "festival").length} jogo(s)`} />
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
                       {todayEvents.filter(e => e.category === "festival").map((e, i) => (
-                        <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
+                        <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} sponsored={e.featured} /></div>
                       ))}
                     </div>
                   </>
@@ -280,7 +280,7 @@ const Index = () => {
                     <SectionHeader emoji="🎧" title="Música hoje" subtitle={`${todayEvents.filter(e => e.category !== "festival").length} rolê(s)`} />
                     <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
                       {todayEvents.filter(e => e.category !== "festival").map((e, i) => (
-                        <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
+                        <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} sponsored={e.featured} /></div>
                       ))}
                     </div>
                   </>
@@ -295,7 +295,7 @@ const Index = () => {
                 <SectionHeader emoji="📅" title="Eventos de Amanhã" subtitle={`${tomorrowEvents.length} rolês confirmados`} />
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
                   {tomorrowEvents.map((e, i) => (
-                    <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} /></div>
+                    <div key={e.id} className="w-[200px] shrink-0 md:w-auto"><EventCard event={e} index={i} sponsored={e.featured} /></div>
                   ))}
                 </div>
               </section>
@@ -305,7 +305,7 @@ const Index = () => {
               <section id="section-fds" ref={el => { sectionRefs.current.fds = el; }} className="scroll-mt-36">
                 <SectionHeader emoji="🎉" title="Eventos do Fim de Semana" subtitle="Sábado e domingo" />
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                  {weekendEvents.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+                  {weekendEvents.map((e, i) => <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />)}
                 </div>
               </section>
             )}
