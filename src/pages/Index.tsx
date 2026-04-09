@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import AdBanner from "@/components/AdBanner";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, TrendingUp } from "lucide-react";
 import SEO from "@/components/SEO";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import EventCard from "@/components/EventCard";
@@ -24,6 +24,7 @@ type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "fun
 const Index = () => {
   const [category, setCategory] = useState<EventCategory | null>(null);
   const [events, setEvents] = useState<SupabaseEvent[]>([]);
+  const [trendingIds, setTrendingIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -65,14 +66,21 @@ const Index = () => {
   useEffect(() => {
     async function load() {
       const now = new Date().toISOString();
-      const { data: eventsData } = await supabase
-        .from("events")
-        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-        .eq("status", "published")
-        .gt("date_time", now)
-        .order("date_time", { ascending: true });
+      const [eventsRes, trendingRes] = await Promise.all([
+        supabase
+          .from("events")
+          .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+          .eq("status", "published")
+          .gt("date_time", now)
+          .order("date_time", { ascending: true }),
+        supabase
+          .from("page_views")
+          .select("event_id")
+          .not("event_id", "is", null)
+          .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+      ]);
 
-      const evts = eventsData || [];
+      const evts = eventsRes.data || [];
       const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
       let slugMap: Record<string, string> = {};
       if (partnerIds.length > 0) {
@@ -80,6 +88,21 @@ const Index = () => {
         (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
       }
       setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
+
+      // Count views per event and get top 5
+      const viewCounts: Record<string, number> = {};
+      const evtIds = new Set(evts.map(e => e.id));
+      (trendingRes.data || []).forEach(v => {
+        if (v.event_id && evtIds.has(v.event_id)) {
+          viewCounts[v.event_id] = (viewCounts[v.event_id] || 0) + 1;
+        }
+      });
+      const top5 = Object.entries(viewCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([id]) => id);
+      setTrendingIds(top5);
+
       setLoading(false);
     }
     load();
@@ -123,6 +146,11 @@ const Index = () => {
     const d = new Date(e.date_time);
     return !allShownIds.has(e.id) && !popularEvents.some(p => p.id === e.id) && d > now && d <= weekFromNow;
   });
+
+  const trendingEvents = useMemo(() =>
+    trendingIds.map(id => events.find(e => e.id === id)).filter(Boolean) as SupabaseEvent[],
+    [trendingIds, events]
+  );
 
   const filtered = category ? events.filter(e => e.category === category) : null;
 
@@ -188,10 +216,27 @@ const Index = () => {
       </div>
 
       <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8 space-y-8 md:space-y-12">
-        {/* Featured hero - larger on desktop */}
+        {/* Featured hero */}
         <section className="md:max-w-4xl md:mx-auto">
           <FeaturedCarousel />
         </section>
+
+        {/* Trending now */}
+        {!loading && trendingEvents.length > 0 && !searchResults && !filtered && (
+          <section>
+            <SectionHeader emoji="🔥" title="Em alta agora" subtitle="Mais vistos nas últimas 24h" />
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-5 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
+              {trendingEvents.map((e, i) => (
+                <div key={e.id} className="w-[180px] shrink-0 md:w-auto relative">
+                  <div className="absolute -top-1 -left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {i + 1}
+                  </div>
+                  <EventCard event={e} index={i} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section>
           <SectionHeader title="Categorias" onSeeAll={() => navigate("/categorias")} />
