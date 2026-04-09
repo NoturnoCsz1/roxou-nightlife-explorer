@@ -216,12 +216,27 @@ const Index = () => {
       </div>
 
       <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8 space-y-8 md:space-y-12">
-        {/* Featured hero - larger on desktop */}
+        {/* Featured hero */}
         <section className="md:max-w-4xl md:mx-auto">
           <FeaturedCarousel />
         </section>
 
-        <section>
+        {/* Trending now */}
+        {!loading && trendingEvents.length > 0 && !searchResults && !filtered && (
+          <section>
+            <SectionHeader emoji="🔥" title="Em alta agora" subtitle="Mais vistos nas últimas 24h" />
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-2 md:grid md:grid-cols-3 lg:grid-cols-5 md:overflow-x-visible md:mx-0 md:px-0 md:gap-4">
+              {trendingEvents.map((e, i) => (
+                <div key={e.id} className="w-[180px] shrink-0 md:w-auto relative">
+                  <div className="absolute -top-1 -left-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {i + 1}
+                  </div>
+                  <EventCard event={e} index={i} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
           <SectionHeader title="Categorias" onSeeAll={() => navigate("/categorias")} />
           <CategoryPills selected={category} onSelect={c => setCategory(c)} />
         </section>
