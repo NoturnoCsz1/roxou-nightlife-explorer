@@ -137,6 +137,7 @@ interface GenerationRecord {
   title: string | null;
   generated_text: string | null;
   image_url: string | null;
+  favorited: boolean;
   created_at: string;
 }
 
