@@ -323,6 +323,7 @@ async function scrapeAndInsert(
   if (insertError) {
     if (insertError.code === "23505") {
       stats.duplicates++;
+      stats.dupReasons.db_constraint++;
     } else {
       console.error("Insert error:", insertError);
       stats.errors++;
