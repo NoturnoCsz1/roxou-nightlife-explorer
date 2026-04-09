@@ -66,14 +66,21 @@ const Index = () => {
   useEffect(() => {
     async function load() {
       const now = new Date().toISOString();
-      const { data: eventsData } = await supabase
-        .from("events")
-        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
-        .eq("status", "published")
-        .gt("date_time", now)
-        .order("date_time", { ascending: true });
+      const [eventsRes, trendingRes] = await Promise.all([
+        supabase
+          .from("events")
+          .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+          .eq("status", "published")
+          .gt("date_time", now)
+          .order("date_time", { ascending: true }),
+        supabase
+          .from("page_views")
+          .select("event_id")
+          .not("event_id", "is", null)
+          .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+      ]);
 
-      const evts = eventsData || [];
+      const evts = eventsRes.data || [];
       const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
       let slugMap: Record<string, string> = {};
       if (partnerIds.length > 0) {
@@ -81,6 +88,21 @@ const Index = () => {
         (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
       }
       setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
+
+      // Count views per event and get top 5
+      const viewCounts: Record<string, number> = {};
+      const evtIds = new Set(evts.map(e => e.id));
+      (trendingRes.data || []).forEach(v => {
+        if (v.event_id && evtIds.has(v.event_id)) {
+          viewCounts[v.event_id] = (viewCounts[v.event_id] || 0) + 1;
+        }
+      });
+      const top5 = Object.entries(viewCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([id]) => id);
+      setTrendingIds(top5);
+
       setLoading(false);
     }
     load();
