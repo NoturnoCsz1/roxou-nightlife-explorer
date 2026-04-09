@@ -396,8 +396,12 @@ const InstagramContentGenerator = () => {
                       >{f.l}</button>
                     ))}
                   </div>
+                  <div className="flex flex-wrap gap-1">
+                    <button onClick={() => setHFilterFav(!hFilterFav)}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition flex items-center gap-1 ${hFilterFav ? "bg-yellow-400/20 text-yellow-500" : "bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+                    ><Star className="h-3 w-3" /> Favoritos</button>
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground">{filtered.length} de {history.length} itens</p>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {filtered.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-4">Nenhum item com estes filtros.</p>
