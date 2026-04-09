@@ -58,6 +58,7 @@ const App = () => (
             <Route path="eventos/novo/lote" element={<EventoBulkForm />} />
             <Route path="eventos/:id/editar" element={<EventoForm />} />
             <Route path="sugestoes" element={<Sugestoes />} />
+            <Route path="eventou" element={<EventouAdmin />} />
             <Route path="editores" element={<Editores />} />
           </Route>
 
