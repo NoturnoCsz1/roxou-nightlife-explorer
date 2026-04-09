@@ -447,7 +447,7 @@ const InstagramContentGenerator = () => {
                       {h.image_url && (
                         <img src={h.image_url} alt="Arte gerada" className="rounded-md max-h-40 mx-auto" />
                       )}
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 flex-wrap">
                         {h.generated_text && (
                           <button
                             onClick={() => handleCopy(h.generated_text!)}
@@ -464,6 +464,12 @@ const InstagramContentGenerator = () => {
                             <Paintbrush className="h-3 w-3" /> VER ARTE
                           </button>
                         )}
+                        <button
+                          onClick={() => duplicateToGenerator(h)}
+                          className="flex items-center gap-1 rounded-md bg-secondary/50 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+                        >
+                          <CopyPlus className="h-3 w-3" /> DUPLICAR
+                        </button>
                       </div>
                     </div>
                   ))}
