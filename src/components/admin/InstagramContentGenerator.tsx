@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw, Star, CopyPlus } from "lucide-react";
+import { Instagram, TrendingUp, Copy, Image, LayoutGrid, Utensils, Trophy, Megaphone, Loader2, Paintbrush, History, RotateCcw, Star, CopyPlus, Send } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventRow {
