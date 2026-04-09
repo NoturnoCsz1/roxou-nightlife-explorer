@@ -268,13 +268,39 @@ const Sugestoes = () => {
                 <input
                   type="url"
                   value={newUrl}
-                  onChange={e => setNewUrl(e.target.value)}
+                  onChange={e => handleUrlChange(e.target.value)}
+                  onPaste={handleUrlPaste}
                   placeholder="https://www.instagram.com/p/..."
                   className="w-full rounded-lg border border-border/60 bg-background pl-8 pr-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
+              {fetching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />}
             </div>
           </div>
+
+          {/* Image preview */}
+          {previewImage && (
+            <div className="flex items-center gap-3">
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="h-20 w-20 rounded-lg object-cover border border-border/40"
+                onError={() => setPreviewImage(null)}
+              />
+              <div className="flex-1">
+                <p className="text-[11px] text-green-400 flex items-center gap-1">
+                  <ImageIcon className="h-3 w-3" /> Imagem detectada
+                </p>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="text-[10px] text-muted-foreground hover:text-destructive mt-1"
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-semibold text-foreground mb-1 block">Observação (opcional)</label>
             <textarea
