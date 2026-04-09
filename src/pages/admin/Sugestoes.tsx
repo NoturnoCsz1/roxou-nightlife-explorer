@@ -321,7 +321,7 @@ const Sugestoes = () => {
               Salvar sugestão
             </button>
             <button
-              onClick={() => { setShowForm(false); setNewUrl(""); setNewCaption(""); }}
+              onClick={() => { setShowForm(false); setNewUrl(""); setNewCaption(""); setPreviewImage(null); }}
               className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/50 transition"
             >
               Cancelar
