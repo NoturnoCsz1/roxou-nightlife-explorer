@@ -1,0 +1,1 @@
+ALTER TABLE public.content_generations ADD COLUMN favorited BOOLEAN NOT NULL DEFAULT false;
