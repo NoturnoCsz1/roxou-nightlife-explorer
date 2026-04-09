@@ -10,6 +10,7 @@ import TopEvents from "@/components/admin/TopEvents";
 import PeriodFilter from "@/components/admin/PeriodFilter";
 import { DashboardPeriod, getPeriodRange, getPeriodLabel, getPeriodDayCount } from "@/lib/dashboardPeriod";
 import DashboardAlerts from "@/components/admin/DashboardAlerts";
+import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
 import { exportCSV, exportExcel } from "@/lib/dashboardExport";
 import type { TopEventExport } from "@/components/admin/TopEvents";
 import type { TopPartnerExport } from "@/components/admin/TopPartners";
@@ -377,6 +378,9 @@ const Dashboard = () => {
         <TopEvents since={sinceISO} onDataLoaded={handleTopEventsLoaded} />
         <TopPartners since={sinceISO} onDataLoaded={handleTopPartnersLoaded} />
       </div>
+
+      {/* Instagram Content Generator */}
+      <InstagramContentGenerator />
 
       {/* Recent activity */}
       <div className="grid md:grid-cols-2 gap-4">
