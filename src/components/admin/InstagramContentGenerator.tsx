@@ -157,6 +157,7 @@ const InstagramContentGenerator = () => {
   const [hFilterType, setHFilterType] = useState<string>("all");
   const [hFilterSource, setHFilterSource] = useState<string>("all");
   const [hFilterContent, setHFilterContent] = useState<string>("all");
+  const [hFilterFav, setHFilterFav] = useState(false);
   // Track current generation context for saving
   const [currentGenCtx, setCurrentGenCtx] = useState<{ sourceType: ContentType; sourceId: string; title: string } | null>(null);
 
