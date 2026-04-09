@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
       .limit(500);
     (existingEvents || []).forEach((e: any) => {
       const key = buildDedupKey(e.title, e.venue_name, e.date_time);
-      if (key) existingTitleVenueDate.add(key);
+      if (key) existingEventKeys.add(key);
     });
 
     // Filter: skip URLs already imported or with known external_id
