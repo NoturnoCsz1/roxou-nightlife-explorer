@@ -270,13 +270,25 @@ async function scrapeAndInsert(
   if (slug && dedupCtx.existingExtIds.has(slug)) {
     console.log("Duplicate by external_id:", slug);
     stats.duplicates++;
+    stats.dupReasons.external_id++;
     return;
   }
 
   const dedupKey = buildDedupKey(title, venue, dateTime);
+
+  // Check against existing events table
+  if (dedupKey && dedupCtx.existingEventKeys.has(dedupKey)) {
+    console.log("Duplicate: already in events table:", title);
+    stats.duplicates++;
+    stats.dupReasons.existing_event++;
+    return;
+  }
+
+  // Check against existing imports
   if (dedupKey && dedupCtx.existingTitleVenueDate.has(dedupKey)) {
     console.log("Duplicate by title+venue+date:", title);
     stats.duplicates++;
+    stats.dupReasons.title_venue_date++;
     return;
   }
 
