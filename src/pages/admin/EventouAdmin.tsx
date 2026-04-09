@@ -156,13 +156,17 @@ const EventouAdmin = () => {
 
   async function handleScan() {
     setScanning(true);
+    setLastScan(null);
     try {
       const { data, error } = await supabase.functions.invoke("eventou-scraper", { body: {} });
       if (error) throw error;
       if (data?.success) {
-        const s = data.stats;
-        toast.success(`Scan concluído: ${s.newInserted} novos, ${s.duplicates} duplicados, ${s.errors} erros`);
+        const s = data.stats as ScanStats;
+        setLastScan(s);
+        const secs = (s.timeMs / 1000).toFixed(1);
+        toast.success(`Scan concluído em ${secs}s: ${s.newInserted} novos, ${s.duplicates} duplicados`);
       } else {
+        if (data?.stats) setLastScan(data.stats);
         toast.error("Erro no scan", { description: data?.error || "Falha" });
       }
     } catch (err: any) {
