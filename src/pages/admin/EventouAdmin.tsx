@@ -302,6 +302,36 @@ const EventouAdmin = () => {
         ))}
       </div>
 
+      {/* Last scan results */}
+      {lastScan && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+              Resultado do Scan
+            </h3>
+            <button onClick={() => setLastScan(null)} className="text-[10px] text-muted-foreground hover:text-foreground">✕</button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            {[
+              { label: "URLs encontradas", value: lastScan.urlsDiscovered },
+              { label: "Eventos detectados", value: lastScan.eventsFound },
+              { label: "Páginas raspadas", value: lastScan.pagesScraped },
+              { label: "Novos importados", value: lastScan.newInserted, highlight: true },
+              { label: "Já importados", value: lastScan.duplicates },
+              { label: "Outra cidade", value: lastScan.skippedNonCity },
+              { label: "Erros", value: lastScan.errors, error: lastScan.errors > 0 },
+              { label: "Tempo total", value: `${(lastScan.timeMs / 1000).toFixed(1)}s` },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-lg p-2 ${s.highlight ? "bg-primary/10" : s.error ? "bg-destructive/10" : "bg-card/50"}`}>
+                <p className={`text-sm font-bold ${s.highlight ? "text-primary" : s.error ? "text-destructive" : "text-foreground"}`}>{s.value}</p>
+                <p className="text-[9px] text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Caption preview modal */}
       {captionPreview && (
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
