@@ -35,10 +35,39 @@ const EventoBulkForm = () => {
     setForms((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function findDuplicates(): number[] {
+    const seen = new Map<string, number>();
+    const dupes: number[] = [];
+    for (let i = 0; i < forms.length; i++) {
+      const slug = forms[i].slug.trim().toLowerCase();
+      const title = forms[i].title.trim().toLowerCase();
+      const keys = [`slug:${slug}`, `title:${title}`];
+      for (const key of keys) {
+        if (!key.endsWith(":")) {
+          const prev = seen.get(key);
+          if (prev !== undefined) {
+            if (!dupes.includes(prev)) dupes.push(prev);
+            if (!dupes.includes(i)) dupes.push(i);
+          } else {
+            seen.set(key, i);
+          }
+        }
+      }
+    }
+    return dupes.sort((a, b) => a - b);
+  }
+
   async function handleBulkSave(status: "draft" | "published") {
     const invalid = forms.findIndex((f) => !f.title || !f.slug || !f.date_time);
     if (invalid !== -1) {
       toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
+      return;
+    }
+
+    const dupes = findDuplicates();
+    if (dupes.length > 0) {
+      const blocos = dupes.map((i) => `Bloco ${i + 1}${forms[i].title ? ` (${forms[i].title})` : ""}`).join(", ");
+      toast.error(`Duplicidade detectada: ${blocos}. Verifique título ou slug repetido.`);
       return;
     }
 
