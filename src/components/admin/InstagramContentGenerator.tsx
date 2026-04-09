@@ -414,9 +414,14 @@ const InstagramContentGenerator = () => {
                           </span>
                           <span className="ml-1.5 text-[10px] text-muted-foreground">{h.source_type}</span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {new Date(h.created_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button onClick={() => toggleFavorite(h)} className="transition" title={h.favorited ? "Remover favorito" : "Favoritar"}>
+                            <Star className={`h-3.5 w-3.5 ${h.favorited ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40 hover:text-yellow-400"}`} />
+                          </button>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(h.created_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
                       </div>
                       {h.title && <p className="text-xs font-semibold text-foreground">{h.title}</p>}
                       {h.generated_text && (
