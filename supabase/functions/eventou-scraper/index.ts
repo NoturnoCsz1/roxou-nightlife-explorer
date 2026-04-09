@@ -137,6 +137,17 @@ Deno.serve(async (req) => {
       if (key) existingTitleVenueDate.add(key);
     });
 
+    // Also check the main events table (published + draft) for title+venue+date dedup
+    const { data: existingEvents } = await supabase
+      .from("events")
+      .select("title, venue_name, date_time")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    (existingEvents || []).forEach((e: any) => {
+      const key = buildDedupKey(e.title, e.venue_name, e.date_time);
+      if (key) existingTitleVenueDate.add(key);
+    });
+
     // Filter: skip URLs already imported or with known external_id
     const newUrls = eventUrls.filter((u) => {
       if (existingUrls.has(u)) return false;
