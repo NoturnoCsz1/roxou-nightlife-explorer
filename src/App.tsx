@@ -40,6 +40,7 @@ const App = () => (
           <Route path="/semana" element={<Semana />} />
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/salvos" element={<Salvos />} />
+          <Route path="/indica" element={<Indica />} />
           <Route path="/local/:slug" element={<LocalDetail />} />
           <Route path="/local/:slug/eventos" element={<LocalEventos />} />
 
