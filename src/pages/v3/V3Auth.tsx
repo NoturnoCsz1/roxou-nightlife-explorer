@@ -18,9 +18,27 @@ export default function V3Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/v3";
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) throw result.error;
+      if (result.redirected) return;
+      toast.success("Login realizado!");
+      navigate(redirectTo);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao entrar com Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
