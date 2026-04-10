@@ -277,7 +277,7 @@ async function handleEnrich(firecrawlKey: string, supabase: any) {
             const organizer = extractOrganizer(md, html);
             if (organizer) updates.organizer = organizer.slice(0, 500);
 
-            const dateTime = extractDateTime(md);
+            const dateTime = extractDateTime(md, html);
             if (dateTime) updates.date_time = dateTime;
 
             // Clean title (remove " - Eventou" suffix)
@@ -400,7 +400,7 @@ async function scrapeAndInsert(
   // Enhanced organizer extraction
   const organizer = extractOrganizer(md, html);
 
-  const dateTime = extractDateTime(md);
+            const dateTime = extractDateTime(md, html);
 
   // Dedup: check external_id (slug) and normalized title+venue+date
   const slug = eventUrl.split("/").pop() || "";
