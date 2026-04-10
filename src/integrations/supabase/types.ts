@@ -477,6 +477,133 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          accepted_terms_at: string | null
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_terms_at?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_terms_at?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ride_offers: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          message: string | null
+          ride_request_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          message?: string | null
+          ride_request_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          message?: string | null
+          ride_request_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_offers_ride_request_id_fkey"
+            columns: ["ride_request_id"]
+            isOneToOne: false
+            referencedRelation: "ride_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_requests: {
+        Row: {
+          created_at: string
+          destination_address: string | null
+          event_date: string | null
+          event_id: string | null
+          event_name: string | null
+          id: string
+          notes: string | null
+          passenger_id: string | null
+          passengers_count: number
+          pickup_address: string | null
+          status: string
+          updated_at: string
+          venue_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          destination_address?: string | null
+          event_date?: string | null
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          notes?: string | null
+          passenger_id?: string | null
+          passengers_count?: number
+          pickup_address?: string | null
+          status?: string
+          updated_at?: string
+          venue_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          destination_address?: string | null
+          event_date?: string | null
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          notes?: string | null
+          passenger_id?: string | null
+          passengers_count?: number
+          pickup_address?: string | null
+          status?: string
+          updated_at?: string
+          venue_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_clicks: {
         Row: {
           created_at: string
@@ -502,6 +629,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      transport_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          ride_request_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          ride_request_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          ride_request_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_messages_ride_request_id_fkey"
+            columns: ["ride_request_id"]
+            isOneToOne: false
+            referencedRelation: "ride_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
       visitor_sessions: {
         Row: {
@@ -541,10 +721,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "passenger" | "driver" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -671,6 +857,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["passenger", "driver", "admin"],
+    },
   },
 } as const
