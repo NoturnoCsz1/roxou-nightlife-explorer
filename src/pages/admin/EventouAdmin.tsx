@@ -722,7 +722,13 @@ function EventouCard({
             </p>
           )}
 
-          {row.partner_name && <p className="text-[10px] text-primary mt-0.5">Parceiro: {row.partner_name}</p>}
+          {row.partner_name && (
+            <p className="text-[10px] text-primary mt-0.5 flex items-center gap-1">
+              <Users className="h-2.5 w-2.5 shrink-0" />
+              <span className="font-medium">{row.partner_name}</span>
+              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full font-semibold">🔗 Auto-vinculado</span>
+            </p>
+          )}
 
           {row.description && (
             <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{row.description}</p>
