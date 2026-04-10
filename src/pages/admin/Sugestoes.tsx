@@ -37,7 +37,7 @@ interface CaptureRow {
   partner_name?: string;
 }
 
-type StatusKey = "novo" | "em_analise" | "aprovado" | "rejeitado" | "virou_evento";
+
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; emoji: string }> = {
   pending: { label: "Novo", cls: "text-yellow-400 bg-yellow-400/10", emoji: "🆕" },
@@ -449,7 +449,7 @@ const Captacao = () => {
             <label className="text-xs font-semibold text-foreground mb-1 block">Imagem</label>
             <ImageUpload
               currentUrl={form.image_url}
-              onUpload={(url) => setForm(f => ({ ...f, image_url: url }))}
+              onUploaded={(url) => setForm(f => ({ ...f, image_url: url }))}
               folder="events"
             />
           </div>
