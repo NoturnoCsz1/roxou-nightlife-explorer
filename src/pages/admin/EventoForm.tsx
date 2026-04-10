@@ -152,19 +152,7 @@ const EventoForm = () => {
 
           // Auto-create content generation with imported image
           const imageUrl = form.image_url || null;
-          const date = form.date_time
-            ? new Date(form.date_time).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
-            : "";
-          const caption = [
-            `🔥 ${form.title}`,
-            "",
-            date && `📅 ${date}`,
-            form.venue_name && `📍 ${form.venue_name}`,
-            "",
-            "Veja mais no Roxou! Link na bio 🔗",
-            "",
-            "#roxou #eventos #presidenteprudente",
-          ].filter(Boolean).join("\n");
+          const caption = buildRoxouCaption(form);
 
           await supabase.from("content_generations").insert({
             type: "post",
