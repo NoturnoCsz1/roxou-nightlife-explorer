@@ -88,6 +88,7 @@ const App = () => (
             <Route path="pedir-carona" element={<V3RideRequest />} />
             <Route path="motorista" element={<V3DriverBoard />} />
             <Route path="chat/:requestId" element={<V3Chat />} />
+            <Route path="meus-pedidos" element={<V3MyRides />} />
             <Route path="terms" element={<V3Terms />} />
             <Route path="privacy" element={<V3Privacy />} />
             <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
