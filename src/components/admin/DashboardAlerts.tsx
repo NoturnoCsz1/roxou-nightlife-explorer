@@ -239,24 +239,33 @@ const DashboardAlerts = ({ period }: DashboardAlertsProps) => {
   if (alerts.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-        <Zap className="h-4 w-4 text-primary" />
-        Insights ({getPeriodLabel(period)})
-      </h3>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10">
+          <Zap className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          Insights · {getPeriodLabel(period)}
+        </h3>
+      </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
         {alerts.map((alert, i) => {
           const Icon = ICON_MAP[alert.icon];
           return (
             <div
               key={i}
-              className={`rounded-xl border p-3.5 ${TYPE_STYLES[alert.type]}`}
+              className={`rounded-2xl border p-4 backdrop-blur-sm transition-all hover:scale-[1.01] ${TYPE_STYLES[alert.type]}`}
             >
-              <div className="flex items-start gap-2.5">
-                <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${ICON_STYLES[alert.type]}`} />
+              <div className="flex items-start gap-3">
+                <div className={`flex items-center justify-center h-8 w-8 rounded-xl shrink-0 ${
+                  alert.type === "positive" ? "bg-green-500/10" :
+                  alert.type === "negative" ? "bg-red-500/10" : "bg-primary/10"
+                }`}>
+                  <Icon className={`h-4 w-4 ${ICON_STYLES[alert.type]}`} />
+                </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground">{alert.title}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{alert.description}</p>
+                  <p className="text-xs font-bold text-foreground">{alert.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{alert.description}</p>
                 </div>
               </div>
             </div>
