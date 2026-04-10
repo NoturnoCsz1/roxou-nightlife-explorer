@@ -3,12 +3,13 @@
  *
  * DB values are NEVER changed — we only map them to display labels.
  * Old stored values (balada, show, bar, festival, festa, etc.) remain valid.
+ * The new `sub_category` column stores the specific genre (rock, pop_rock, mpb…).
  */
 
 /** Display config for every DB category value (old + current) */
 export const categoryConfig: Record<string, { label: string; badge: string }> = {
   balada: { label: "Universitário", badge: "badge-balada" },
-  show: { label: "Rock", badge: "badge-show" },
+  show: { label: "Show", badge: "badge-show" },
   bar: { label: "Bar", badge: "badge-bar" },
   festival: { label: "Futebol", badge: "badge-festival" },
   sertanejo: { label: "Sertanejo", badge: "badge-sertanejo" },
@@ -17,9 +18,23 @@ export const categoryConfig: Record<string, { label: string; badge: string }> = 
   festa: { label: "Samba / Pagode", badge: "badge-balada" },
 };
 
+/** Maps sub_category values to their display labels */
+export const subCategoryLabels: Record<string, string> = {
+  festa: "Samba / Pagode",
+  funk: "Funk",
+  rock: "Rock",
+  pop_rock: "Pop Rock",
+  mpb: "MPB",
+  eletronica: "Eletrônico",
+  sertanejo: "Sertanejo",
+  balada: "Universitário",
+  festival: "Futebol",
+};
+
 /**
  * New admin-facing category options.
- * `value` = what gets stored in the DB (backward-compatible).
+ * `value` = what gets stored in the DB category column (backward-compatible).
+ * `sub`   = what gets stored in the DB sub_category column.
  * `label` = what the admin sees in the selector.
  */
 export const ADMIN_CATEGORY_OPTIONS = [
@@ -37,7 +52,6 @@ export const ADMIN_CATEGORY_OPTIONS = [
 /** Build a composite key for admin category selection (value:sub) */
 export function categoryKey(value: string, sub?: string): string {
   if (sub && sub !== value) return `${value}:${sub}`;
-  // Find the first matching sub for this value
   const match = ADMIN_CATEGORY_OPTIONS.find((o) => o.value === value);
   return match ? `${value}:${match.sub}` : `${value}:${value}`;
 }
@@ -50,7 +64,6 @@ export function parseCategoryKey(key: string): { value: string; sub: string } {
 
 /**
  * New admin-facing partner type options.
- * Keeps old DB values working; only changes the selector labels.
  */
 export const ADMIN_PARTNER_TYPE_OPTIONS = [
   { value: "bar", label: "Bar" },
@@ -62,8 +75,14 @@ export const ADMIN_PARTNER_TYPE_OPTIONS = [
   { value: "outro", label: "Outro" },
 ] as const;
 
-/** Get a safe label for any DB category value */
-export function getCategoryLabel(dbValue: string): string {
+/**
+ * Get the display label for an event, preferring the sub_category.
+ * Falls back to the main category label if no sub_category exists.
+ */
+export function getCategoryLabel(dbValue: string, subCategory?: string | null): string {
+  if (subCategory && subCategoryLabels[subCategory]) {
+    return subCategoryLabels[subCategory];
+  }
   return categoryConfig[dbValue]?.label || dbValue;
 }
 

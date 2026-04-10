@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import type { SupabaseEvent } from "./EventCard";
 import { formatTime, isToday } from "@/lib/dateUtils";
-import { categoryConfig } from "@/lib/categoryConfig";
+import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
 
 interface FeaturedCarouselProps {
   onFeaturedLoad?: (ids: string[]) => void;
@@ -21,7 +21,7 @@ const FeaturedCarousel = ({ onFeaturedLoad }: FeaturedCarouselProps = {}) => {
       // Try featured future events first
       const { data: featuredData } = await supabase
         .from("events")
-        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
         .eq("featured", true)
         .eq("status", "published")
         .gt("date_time", now)
@@ -35,7 +35,7 @@ const FeaturedCarousel = ({ onFeaturedLoad }: FeaturedCarouselProps = {}) => {
         // Fallback: show the most upcoming event
         const { data: fallback } = await supabase
           .from("events")
-          .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+          .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
           .eq("status", "published")
           .gt("date_time", now)
           .order("date_time", { ascending: true })
@@ -62,6 +62,7 @@ const FeaturedCarousel = ({ onFeaturedLoad }: FeaturedCarouselProps = {}) => {
 
   const event = featured[current];
   const cat = categoryConfig[event.category] || { label: event.category, badge: "bg-secondary" };
+  const catLabel = getCategoryLabel(event.category, event.sub_category);
   const image = event.image_url || "/placeholder.svg";
   const dt = new Date(event.date_time);
   const todayEvent = isToday(dt);
@@ -81,7 +82,7 @@ const FeaturedCarousel = ({ onFeaturedLoad }: FeaturedCarouselProps = {}) => {
           {todayEvent && <span className="badge-hoje rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-widest">Hoje</span>}
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-          <span className={`${cat.badge} mb-3 inline-block rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{cat.label}</span>
+          <span className={`${cat.badge} mb-3 inline-block rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{catLabel}</span>
           <h2 className="mb-2 text-2xl sm:text-3xl font-black text-foreground font-display leading-tight neon-text">{event.title}</h2>
           <div className="flex items-center gap-4 text-sm text-foreground/80">
             <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" />{event.venue_name}</span>

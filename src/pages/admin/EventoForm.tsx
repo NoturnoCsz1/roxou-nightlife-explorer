@@ -158,7 +158,8 @@ const EventoForm = () => {
       status: data.status, verification_source: data.verification_source || "",
       featured: data.featured, image_url: data.image_url || "",
       ticket_url: (data as any).ticket_url || "",
-    });
+      _sub: (data as any).sub_category || data.category,
+    } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
   }
 

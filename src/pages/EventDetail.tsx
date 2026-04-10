@@ -24,7 +24,7 @@ import AdBanner from "@/components/AdBanner";
 import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
-import { categoryConfig } from "@/lib/categoryConfig";
+import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
 
 const EventDetail = () => {
   const { slug } = useParams();
@@ -125,6 +125,7 @@ const EventDetail = () => {
     label: event.category,
     badge: "bg-secondary",
   };
+  const catLabel = getCategoryLabel(event.category, (event as any).sub_category);
   const image = event.image_url || "/placeholder.svg";
   const time = formatTime(dt);
   const dateFormatted = formatDateFull(dt);
@@ -252,7 +253,7 @@ const EventDetail = () => {
           <span
             className={`${cat.badge} rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}
           >
-            {cat.label}
+            {catLabel}
           </span>
         </div>
       </div>
@@ -447,7 +448,7 @@ const EventDetail = () => {
           )}
           <div className="flex items-center gap-2 text-sm text-foreground/80">
             <span className={`${cat.badge} rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider`}>
-              {cat.label}
+              {catLabel}
             </span>
           </div>
         </div>

@@ -51,7 +51,7 @@ const LocalDetail = () => {
           Promise.all([
             supabase
               .from("events")
-              .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+              .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
               .eq("status", "published")
               .eq("partner_id", data.id)
               .gte("date_time", now)
@@ -59,7 +59,7 @@ const LocalDetail = () => {
               .limit(6),
             supabase
               .from("events")
-              .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+              .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
               .eq("status", "published")
               .eq("partner_id", data.id)
               .lt("date_time", now)

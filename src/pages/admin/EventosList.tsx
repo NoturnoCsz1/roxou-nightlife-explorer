@@ -4,6 +4,7 @@ import { ChevronDown, Copy, Layers, MousePointerClick, Plus, Search, Star, StarO
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { getCategoryLabel } from "@/lib/categoryConfig";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,7 @@ interface EventRow {
   venue_name: string | null;
   date_time: string;
   category: string;
+  sub_category: string | null;
   status: string;
   featured: boolean;
 }
@@ -57,6 +59,7 @@ const EventosList = () => {
           image_url: data.image_url || "",
           partner_id: data.partner_id || "",
           ticket_url: (data as any).ticket_url || "",
+          _sub: (data as any).sub_category || data.category,
         },
       },
     });
@@ -71,7 +74,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, venue_name, date_time, category, status, featured")
+      .select("id, title, venue_name, date_time, category, sub_category, status, featured")
       .order("date_time", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -143,7 +146,7 @@ const EventosList = () => {
         <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
-            {e.category}
+            {getCategoryLabel(e.category, e.sub_category)}
           </span>
           <span className="text-[10px] text-muted-foreground">
             {new Date(e.date_time).toLocaleDateString("pt-BR")}

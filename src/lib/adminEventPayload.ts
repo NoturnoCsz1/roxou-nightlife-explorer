@@ -27,7 +27,7 @@ export function buildEventPayload(
   form: AdminEventFormInput,
   options: BuildEventPayloadOptions = {},
 ): TablesInsert<"events"> {
-  const payload: TablesInsert<"events"> = {
+  const payload: Record<string, unknown> = {
     title: form.title,
     slug: form.slug,
     date_time: `${form.date_time}:00-03:00`,
@@ -42,11 +42,12 @@ export function buildEventPayload(
     featured: Boolean(form.featured),
     image_url: form.image_url || null,
     ticket_url: form.ticket_url || null,
+    sub_category: form._sub || null,
   };
 
   if (options.city) {
     payload.city = options.city;
   }
 
-  return payload;
+  return payload as TablesInsert<"events">;
 }
