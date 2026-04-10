@@ -116,6 +116,7 @@ const EventouAdmin = () => {
   const [items, setItems] = useState<EventouRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EventouRow | null>(null);
   const [captionPreview, setCaptionPreview] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -147,6 +148,8 @@ const EventouAdmin = () => {
           const isAutoReady = score >= 6 && d.partner_id && d.import_status === "pending";
           return {
             ...d,
+            title: d.title?.replace(/ - Eventou$/, "") || d.title,
+            venue_name: d.venue_name === "será?" ? null : d.venue_name,
             partner_name: d.partner_id ? partnerMap[d.partner_id] : undefined,
             priority_score: score,
             priority_tier: tier,
@@ -179,6 +182,25 @@ const EventouAdmin = () => {
       toast.error("Erro ao executar scan", { description: err.message });
     } finally {
       setScanning(false);
+      loadItems();
+    }
+  }
+
+  async function handleEnrich() {
+    setEnriching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("eventou-scraper", { body: { mode: "enrich" } });
+      if (error) throw error;
+      if (data?.success) {
+        const s = data.stats;
+        toast.success(`Enriquecimento: ${s.enriched} atualizados, ${s.skipped} sem dados novos`);
+      } else {
+        toast.error("Erro no enriquecimento", { description: data?.error || "Falha" });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao enriquecer", { description: err.message });
+    } finally {
+      setEnriching(false);
       loadItems();
     }
   }
@@ -280,14 +302,24 @@ const EventouAdmin = () => {
             <p className="text-[10px] text-muted-foreground">Importação automática com priorização</p>
           </div>
         </div>
-        <button
-          onClick={handleScan}
-          disabled={scanning}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition"
-        >
-          {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          {scanning ? "Importando…" : "Importar agora"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleEnrich}
+            disabled={enriching || scanning}
+            className="flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50 transition"
+          >
+            {enriching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {enriching ? "Enriquecendo…" : "Enriquecer"}
+          </button>
+          <button
+            onClick={handleScan}
+            disabled={scanning || enriching}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition"
+          >
+            {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {scanning ? "Importando…" : "Importar agora"}
+          </button>
+        </div>
       </div>
 
       {/* Stats bar */}

@@ -28,6 +28,15 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Check for enrich mode
+  let body: Record<string, any> = {};
+  try { body = await req.json(); } catch { /* empty body = normal scan */ }
+
+  if (body.mode === "enrich") {
+    return await handleEnrich(firecrawlKey, supabase);
+  }
+
   const stats = {
     pagesScraped: 0,
     eventsFound: 0,
@@ -201,7 +210,123 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── normalize text for dedup ── */
+/* ── Enrich mode: re-scrape existing imports missing metadata ── */
+async function handleEnrich(firecrawlKey: string, supabase: any) {
+  const startTime = Date.now();
+  const stats = { total: 0, enriched: 0, errors: 0, skipped: 0, timeMs: 0 };
+
+  try {
+    // Find pending imports missing address, organizer, or image_url
+    const { data: rows, error } = await supabase
+      .from("eventou_imports")
+      .select("id, eventou_url, title")
+      .eq("import_status", "pending")
+      .or("address.is.null,organizer.is.null,image_url.is.null")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (error || !rows?.length) {
+      stats.timeMs = Date.now() - startTime;
+      return new Response(
+        JSON.stringify({ success: true, mode: "enrich", stats, message: rows?.length === 0 ? "No rows to enrich" : error?.message }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    stats.total = rows.length;
+    console.log(`Enrich: ${rows.length} rows to process`);
+
+    for (let i = 0; i < rows.length; i += CONCURRENCY) {
+      const batch = rows.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        batch.map(async (row: any) => {
+          try {
+            const detailRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                url: row.eventou_url,
+                formats: ["markdown", "html"],
+                onlyMainContent: false,
+                waitFor: 1500,
+              }),
+            });
+
+            const detailData = await detailRes.json();
+            if (!detailRes.ok) {
+              console.error("Enrich scrape failed for", row.eventou_url);
+              stats.errors++;
+              return;
+            }
+
+            const meta = detailData.data?.metadata || detailData.metadata || {};
+            const md = detailData.data?.markdown || detailData.markdown || "";
+            const html = detailData.data?.html || detailData.html || "";
+
+            const updates: Record<string, any> = {};
+
+            const imageUrl = extractImage(meta, html);
+            if (imageUrl) updates.image_url = imageUrl;
+
+            const venue = extractVenue(md, html);
+            if (venue && venue !== "será?") updates.venue_name = venue;
+
+            const address = extractAddress(md, html);
+            if (address) updates.address = address.slice(0, 500);
+
+            const organizer = extractOrganizer(md, html);
+            if (organizer) updates.organizer = organizer.slice(0, 500);
+
+            const dateTime = extractDateTime(md);
+            if (dateTime) updates.date_time = dateTime;
+
+            // Clean title (remove " - Eventou" suffix)
+            if (row.title?.endsWith(" - Eventou")) {
+              updates.title = row.title.replace(/ - Eventou$/, "");
+            }
+
+            if (Object.keys(updates).length === 0) {
+              stats.skipped++;
+              console.log(`Enrich: no new data for "${row.title}"`);
+              return;
+            }
+
+            const { error: updateError } = await supabase
+              .from("eventou_imports")
+              .update(updates)
+              .eq("id", row.id);
+
+            if (updateError) {
+              console.error("Enrich update error:", updateError);
+              stats.errors++;
+            } else {
+              stats.enriched++;
+              console.log(`Enriched: "${row.title}" with fields: ${Object.keys(updates).join(", ")}`);
+            }
+          } catch (e) {
+            console.error("Enrich row error:", e);
+            stats.errors++;
+          }
+        })
+      );
+    }
+
+    stats.timeMs = Date.now() - startTime;
+    console.log("Enrich complete:", stats);
+    return new Response(
+      JSON.stringify({ success: true, mode: "enrich", stats }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    stats.timeMs = Date.now() - startTime;
+    return new Response(
+      JSON.stringify({ success: false, mode: "enrich", error: err instanceof Error ? err.message : "Unknown", stats }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+}
+
+
 function normalize(s: string | null): string {
   if (!s) return "";
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
