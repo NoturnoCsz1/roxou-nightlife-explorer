@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CalendarCheck, Clock, Eye, Monitor, MousePointerClick, Globe, Instagram, Users, ChevronDown, Flame, Star, AlertTriangle, TrendingUp } from "lucide-react";
+import { CalendarDays, CalendarCheck, Clock, Eye, Monitor, MousePointerClick, Globe, Instagram, Users, ChevronDown, Flame, Star, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { fetchAllRows } from "@/lib/supabaseFetchAll";
