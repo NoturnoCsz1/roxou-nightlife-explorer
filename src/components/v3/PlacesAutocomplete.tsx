@@ -7,7 +7,7 @@ let mapsLoadPromise: Promise<void> | null = null;
 let mapsApiKey: string | null = null;
 
 async function loadGoogleMaps(): Promise<void> {
-  if (window.google?.maps?.places) return;
+  if (window.google?.maps) return;
   if (mapsLoadPromise) return mapsLoadPromise;
 
   mapsLoadPromise = (async () => {
@@ -18,7 +18,7 @@ async function loadGoogleMaps(): Promise<void> {
     }
     return new Promise<void>((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places&language=pt-BR`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places&language=pt-BR&loading=async`;
       script.async = true;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Failed to load Google Maps"));
@@ -29,9 +29,7 @@ async function loadGoogleMaps(): Promise<void> {
 }
 
 declare global {
-  interface Window {
-    google: any;
-  }
+  interface Window { google: any; }
 }
 
 interface PlacesAutocompleteProps {
@@ -44,90 +42,144 @@ interface PlacesAutocompleteProps {
   showMap?: boolean;
 }
 
+const MAP_STYLES = [
+  { elementType: "geometry", stylers: [{ color: "#1a1025" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#1a1025" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#746b8a" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2040" }] },
+  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9e94af" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#140e1e" }] },
+  { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+];
+
+interface Suggestion {
+  placePrediction: any;
+  mainText: string;
+  secondaryText: string;
+}
+
 export default function PlacesAutocomplete({
-  value,
-  onChange,
-  onPlaceSelect,
+  value, onChange, onPlaceSelect,
   placeholder = "Buscar endereço...",
-  label,
-  required,
-  showMap = false,
+  label, required, showMap = false,
 }: PlacesAutocompleteProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  const autocompleteRef = useRef<any>(null);
+  const sessionTokenRef = useRef<any>(null);
+  const debounceRef = useRef<any>(null);
+
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const initMap = useCallback((lat: number, lng: number) => {
     if (!mapRef.current || !window.google?.maps) return;
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: { lat, lng },
-        zoom: 15,
-        disableDefaultUI: true,
-        zoomControl: true,
-        styles: [
-          { elementType: "geometry", stylers: [{ color: "#1a1025" }] },
-          { elementType: "labels.text.stroke", stylers: [{ color: "#1a1025" }] },
-          { elementType: "labels.text.fill", stylers: [{ color: "#746b8a" }] },
-          { featureType: "road", elementType: "geometry", stylers: [{ color: "#2a2040" }] },
-          { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9e94af" }] },
-          { featureType: "water", elementType: "geometry", stylers: [{ color: "#140e1e" }] },
-          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-        ],
+        center: { lat, lng }, zoom: 15,
+        disableDefaultUI: true, zoomControl: true, styles: MAP_STYLES,
       });
-      markerRef.current = new window.google.maps.Marker({
-        position: { lat, lng },
-        map: mapInstanceRef.current,
-      });
+      markerRef.current = new window.google.maps.Marker({ position: { lat, lng }, map: mapInstanceRef.current });
     } else {
-      const pos = { lat, lng };
-      mapInstanceRef.current.panTo(pos);
-      markerRef.current?.setPosition(pos);
+      mapInstanceRef.current.panTo({ lat, lng });
+      markerRef.current?.setPosition({ lat, lng });
     }
   }, []);
 
+  // Load SDK
   useEffect(() => {
     let cancelled = false;
-    loadGoogleMaps()
-      .then(() => {
-        if (cancelled || !inputRef.current) return;
-        setLoading(false);
+    loadGoogleMaps().then(async () => {
+      if (cancelled) return;
+      // Import places library
+      await window.google.maps.importLibrary("places");
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+      setReady(true);
+      setLoading(false);
+    }).catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: "br" },
-          fields: ["formatted_address", "geometry", "name"],
-        });
-
-        autocompleteRef.current.addListener("place_changed", () => {
-          const place = autocompleteRef.current.getPlace();
-          if (!place?.geometry) return;
-          const addr = place.formatted_address || place.name || "";
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          onChange(addr);
-          setCoords({ lat, lng });
-          onPlaceSelect?.({ address: addr, lat, lng });
-          if (showMap) initMap(lat, lng);
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
+  // Fetch suggestions using new API
+  const fetchSuggestions = useCallback(async (input: string) => {
+    if (!ready || !input.trim() || input.length < 3) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const { AutocompleteSuggestion } = window.google.maps.places;
+      const { suggestions: results } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input,
+        includedRegionCodes: ["br"],
+        sessionToken: sessionTokenRef.current,
       });
 
-    return () => { cancelled = true; };
+      const mapped: Suggestion[] = results
+        .filter((s: any) => s.placePrediction)
+        .map((s: any) => ({
+          placePrediction: s.placePrediction,
+          mainText: s.placePrediction.mainText?.text || s.placePrediction.text?.text || input,
+          secondaryText: s.placePrediction.secondaryText?.text || "",
+        }));
+
+      setSuggestions(mapped);
+      setShowSuggestions(mapped.length > 0);
+    } catch (err) {
+      console.error("Places suggestions error:", err);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [ready]);
+
+  const handleInputChange = useCallback((val: string) => {
+    onChange(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+  }, [onChange, fetchSuggestions]);
+
+  const handleSelect = useCallback(async (suggestion: Suggestion) => {
+    setShowSuggestions(false);
+    const fullText = `${suggestion.mainText}${suggestion.secondaryText ? `, ${suggestion.secondaryText}` : ""}`;
+    onChange(fullText);
+
+    try {
+      const place = suggestion.placePrediction.toPlace();
+      await place.fetchFields({ fields: ["location", "formattedAddress"] });
+      // Refresh session token
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+
+      const loc = place.location;
+      if (loc) {
+        const lat = loc.lat();
+        const lng = loc.lng();
+        const addr = place.formattedAddress || fullText;
+        onChange(addr);
+        setCoords({ lat, lng });
+        onPlaceSelect?.({ address: addr, lat, lng });
+        if (showMap) initMap(lat, lng);
+      }
+    } catch (err) {
+      console.error("Place details error:", err);
+    }
   }, [onChange, onPlaceSelect, showMap, initMap]);
 
-  // Update map when coords change externally
   useEffect(() => {
     if (showMap && coords) initMap(coords.lat, coords.lng);
   }, [showMap, coords, initMap]);
 
+  // Close on outside click
+  useEffect(() => {
+    const handler = () => setShowSuggestions(false);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
       {label && (
         <label className="text-xs text-muted-foreground flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5" /> {label} {required && "*"}
@@ -135,23 +187,46 @@ export default function PlacesAutocomplete({
       )}
       <div className="relative">
         <input
-          ref={inputRef}
           type="text"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
           placeholder={loading ? "Carregando mapa..." : placeholder}
           disabled={loading}
           required={required}
+          autoComplete="off"
           className="w-full h-11 rounded-xl bg-card border border-border/40 px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 transition disabled:opacity-50"
         />
         {loading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
         )}
+
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute z-50 mt-1 w-full rounded-xl bg-card border border-border/60 shadow-2xl overflow-hidden max-h-[220px] overflow-y-auto">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleSelect(s)}
+                className="w-full text-left px-3 py-2.5 text-sm text-foreground hover:bg-secondary/60 transition-colors flex items-start gap-2 border-b border-border/20 last:border-0"
+              >
+                <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{s.mainText}</p>
+                  {s.secondaryText && <p className="text-[10px] text-muted-foreground truncate">{s.secondaryText}</p>}
+                </div>
+              </button>
+            ))}
+            <div className="px-3 py-1.5 text-[9px] text-muted-foreground/50 text-right">
+              Powered by Google
+            </div>
+          </div>
+        )}
       </div>
       {showMap && (
         <div
           ref={mapRef}
-          className={`w-full rounded-xl overflow-hidden border border-border/40 transition-all ${
+          className={`w-full rounded-xl overflow-hidden border border-border/40 transition-all duration-300 ${
             coords ? "h-[180px] opacity-100" : "h-0 opacity-0"
           }`}
         />
