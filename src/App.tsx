@@ -32,6 +32,9 @@ import V3Home from "./pages/v3/V3Home";
 import V3EventDetail from "./pages/v3/V3EventDetail";
 import V3LocalDetail from "./pages/v3/V3LocalDetail";
 import V3Transport from "./pages/v3/V3Transport";
+import V3RideRequest from "./pages/v3/V3RideRequest";
+import V3DriverBoard from "./pages/v3/V3DriverBoard";
+import V3Chat from "./pages/v3/V3Chat";
 import V3Terms from "./pages/v3/V3Terms";
 import V3Privacy from "./pages/v3/V3Privacy";
 import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
@@ -81,6 +84,9 @@ const App = () => (
             <Route path="evento/:slug" element={<V3EventDetail />} />
             <Route path="local/:slug" element={<V3LocalDetail />} />
             <Route path="transporte" element={<V3Transport />} />
+            <Route path="pedir-carona" element={<V3RideRequest />} />
+            <Route path="motorista" element={<V3DriverBoard />} />
+            <Route path="chat/:requestId" element={<V3Chat />} />
             <Route path="terms" element={<V3Terms />} />
             <Route path="privacy" element={<V3Privacy />} />
             <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
