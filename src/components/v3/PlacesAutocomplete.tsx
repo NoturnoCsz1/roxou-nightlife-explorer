@@ -7,7 +7,7 @@ let mapsLoadPromise: Promise<void> | null = null;
 let mapsApiKey: string | null = null;
 
 async function loadGoogleMaps(): Promise<void> {
-  if (window.google?.maps?.places) return;
+  if (window.google?.maps) return;
   if (mapsLoadPromise) return mapsLoadPromise;
 
   mapsLoadPromise = (async () => {
@@ -29,9 +29,7 @@ async function loadGoogleMaps(): Promise<void> {
 }
 
 declare global {
-  interface Window {
-    google: any;
-  }
+  interface Window { google: any; }
 }
 
 interface PlacesAutocompleteProps {
@@ -44,7 +42,6 @@ interface PlacesAutocompleteProps {
   showMap?: boolean;
 }
 
-/* Dark map style */
 const MAP_STYLES = [
   { elementType: "geometry", stylers: [{ color: "#1a1025" }] },
   { elementType: "labels.text.stroke", stylers: [{ color: "#1a1025" }] },
@@ -55,90 +52,88 @@ const MAP_STYLES = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
 ];
 
+interface Suggestion {
+  placePrediction: any;
+  mainText: string;
+  secondaryText: string;
+}
+
 export default function PlacesAutocomplete({
-  value,
-  onChange,
-  onPlaceSelect,
+  value, onChange, onPlaceSelect,
   placeholder = "Buscar endereço...",
-  label,
-  required,
-  showMap = false,
+  label, required, showMap = false,
 }: PlacesAutocompleteProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const sessionTokenRef = useRef<any>(null);
-  const autocompleteServiceRef = useRef<any>(null);
-  const placesServiceRef = useRef<any>(null);
   const debounceRef = useRef<any>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const initMap = useCallback((lat: number, lng: number) => {
     if (!mapRef.current || !window.google?.maps) return;
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-        center: { lat, lng },
-        zoom: 15,
-        disableDefaultUI: true,
-        zoomControl: true,
-        styles: MAP_STYLES,
+        center: { lat, lng }, zoom: 15,
+        disableDefaultUI: true, zoomControl: true, styles: MAP_STYLES,
       });
-      markerRef.current = new window.google.maps.Marker({
-        position: { lat, lng },
-        map: mapInstanceRef.current,
-      });
+      markerRef.current = new window.google.maps.Marker({ position: { lat, lng }, map: mapInstanceRef.current });
     } else {
-      const pos = { lat, lng };
-      mapInstanceRef.current.panTo(pos);
-      markerRef.current?.setPosition(pos);
+      mapInstanceRef.current.panTo({ lat, lng });
+      markerRef.current?.setPosition({ lat, lng });
     }
   }, []);
 
+  // Load SDK
   useEffect(() => {
     let cancelled = false;
-    loadGoogleMaps()
-      .then(() => {
-        if (cancelled) return;
-        setLoading(false);
-        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-        // Create a hidden div for PlacesService
-        const div = document.createElement("div");
-        placesServiceRef.current = new window.google.maps.places.PlacesService(div);
-        sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
+    loadGoogleMaps().then(async () => {
+      if (cancelled) return;
+      // Import places library
+      await window.google.maps.importLibrary("places");
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+      setReady(true);
+      setLoading(false);
+    }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
-  const fetchSuggestions = useCallback((input: string) => {
-    if (!autocompleteServiceRef.current || !input.trim() || input.length < 3) {
+  // Fetch suggestions using new API
+  const fetchSuggestions = useCallback(async (input: string) => {
+    if (!ready || !input.trim() || input.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
+    try {
+      const { AutocompleteSuggestion } = window.google.maps.places;
+      const { suggestions: results } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input,
-        componentRestrictions: { country: "br" },
+        includedRegionCodes: ["br"],
         sessionToken: sessionTokenRef.current,
-      },
-      (predictions: any[] | null, status: string) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-          setSuggestions(predictions);
-          setShowSuggestions(true);
-        } else {
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
-      },
-    );
-  }, []);
+      });
+
+      const mapped: Suggestion[] = results
+        .filter((s: any) => s.placePrediction)
+        .map((s: any) => ({
+          placePrediction: s.placePrediction,
+          mainText: s.placePrediction.mainText?.text || s.placePrediction.text?.text || input,
+          secondaryText: s.placePrediction.secondaryText?.text || "",
+        }));
+
+      setSuggestions(mapped);
+      setShowSuggestions(mapped.length > 0);
+    } catch (err) {
+      console.error("Places suggestions error:", err);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [ready]);
 
   const handleInputChange = useCallback((val: string) => {
     onChange(val);
@@ -146,32 +141,29 @@ export default function PlacesAutocomplete({
     debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
   }, [onChange, fetchSuggestions]);
 
-  const handleSelect = useCallback((prediction: any) => {
+  const handleSelect = useCallback(async (suggestion: Suggestion) => {
     setShowSuggestions(false);
-    onChange(prediction.description);
+    const fullText = `${suggestion.mainText}${suggestion.secondaryText ? `, ${suggestion.secondaryText}` : ""}`;
+    onChange(fullText);
 
-    if (placesServiceRef.current) {
-      placesServiceRef.current.getDetails(
-        {
-          placeId: prediction.place_id,
-          fields: ["formatted_address", "geometry", "name"],
-          sessionToken: sessionTokenRef.current,
-        },
-        (place: any, status: string) => {
-          // Refresh session token after selection
-          sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+    try {
+      const place = suggestion.placePrediction.toPlace();
+      await place.fetchFields({ fields: ["location", "formattedAddress"] });
+      // Refresh session token
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
 
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.geometry) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-            const addr = place.formatted_address || prediction.description;
-            onChange(addr);
-            setCoords({ lat, lng });
-            onPlaceSelect?.({ address: addr, lat, lng });
-            if (showMap) initMap(lat, lng);
-          }
-        },
-      );
+      const loc = place.location;
+      if (loc) {
+        const lat = loc.lat();
+        const lng = loc.lng();
+        const addr = place.formattedAddress || fullText;
+        onChange(addr);
+        setCoords({ lat, lng });
+        onPlaceSelect?.({ address: addr, lat, lng });
+        if (showMap) initMap(lat, lng);
+      }
+    } catch (err) {
+      console.error("Place details error:", err);
     }
   }, [onChange, onPlaceSelect, showMap, initMap]);
 
@@ -179,7 +171,7 @@ export default function PlacesAutocomplete({
     if (showMap && coords) initMap(coords.lat, coords.lng);
   }, [showMap, coords, initMap]);
 
-  // Close dropdown on outside click
+  // Close on outside click
   useEffect(() => {
     const handler = () => setShowSuggestions(false);
     document.addEventListener("click", handler);
@@ -195,7 +187,6 @@ export default function PlacesAutocomplete({
       )}
       <div className="relative">
         <input
-          ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => handleInputChange(e.target.value)}
@@ -210,20 +201,19 @@ export default function PlacesAutocomplete({
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
         )}
 
-        {/* Suggestions dropdown */}
         {showSuggestions && suggestions.length > 0 && (
           <div className="absolute z-50 mt-1 w-full rounded-xl bg-card border border-border/60 shadow-2xl overflow-hidden max-h-[220px] overflow-y-auto">
             {suggestions.map((s, i) => (
               <button
-                key={s.place_id || i}
+                key={i}
                 type="button"
                 onClick={() => handleSelect(s)}
                 className="w-full text-left px-3 py-2.5 text-sm text-foreground hover:bg-secondary/60 transition-colors flex items-start gap-2 border-b border-border/20 last:border-0"
               >
                 <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{s.structured_formatting?.main_text || s.description}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{s.structured_formatting?.secondary_text || ""}</p>
+                  <p className="text-sm font-medium truncate">{s.mainText}</p>
+                  {s.secondaryText && <p className="text-[10px] text-muted-foreground truncate">{s.secondaryText}</p>}
                 </div>
               </button>
             ))}
