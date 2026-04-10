@@ -35,6 +35,7 @@ import V3Transport from "./pages/v3/V3Transport";
 import V3RideRequest from "./pages/v3/V3RideRequest";
 import V3DriverBoard from "./pages/v3/V3DriverBoard";
 import V3Chat from "./pages/v3/V3Chat";
+import V3MyRides from "./pages/v3/V3MyRides";
 import V3Terms from "./pages/v3/V3Terms";
 import V3Privacy from "./pages/v3/V3Privacy";
 import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
