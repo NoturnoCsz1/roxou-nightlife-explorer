@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink,
-  Link as LinkIcon, ImageIcon, Filter, ChevronDown, ChevronUp,
+  Link as LinkIcon, ChevronDown, ChevronUp,
   Calendar, MapPin, Clock, FileText, Globe, Instagram, Ticket
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
