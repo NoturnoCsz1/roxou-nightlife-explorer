@@ -22,7 +22,7 @@ const Hoje = () => {
 
       const { data: eventsData } = await supabase
         .from("events")
-        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
         .eq("status", "published")
         .gte("date_time", startOfDay)
         .lt("date_time", endOfDay)

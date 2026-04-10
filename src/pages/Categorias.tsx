@@ -20,7 +20,7 @@ const Categorias = () => {
   useEffect(() => {
     supabase
       .from("events")
-      .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+      .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
       .eq("status", "published")
       .gt("date_time", new Date().toISOString())
       .order("date_time", { ascending: true })

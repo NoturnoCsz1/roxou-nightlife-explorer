@@ -49,7 +49,7 @@ const LocalEventos = () => {
     Promise.all([
       supabase
         .from("events")
-        .select("id, title, slug, description, date_time, category, venue_name, address, instagram, image_url, featured, status, partner_id")
+        .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
         .eq("status", "published")
         .eq("partner_id", partnerId)
         .lt("date_time", now)
