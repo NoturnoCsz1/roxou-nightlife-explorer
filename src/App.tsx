@@ -74,6 +74,17 @@ const App = () => (
             <Route path="editores" element={<Editores />} />
           </Route>
 
+          {/* V3 */}
+          <Route path="/v3" element={<V3Layout />}>
+            <Route index element={<V3Home />} />
+            <Route path="evento/:slug" element={<V3EventDetail />} />
+            <Route path="local/:slug" element={<V3LocalDetail />} />
+            <Route path="transporte" element={<V3Transport />} />
+            <Route path="terms" element={<V3Terms />} />
+            <Route path="privacy" element={<V3Privacy />} />
+            <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
