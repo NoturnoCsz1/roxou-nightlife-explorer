@@ -59,6 +59,7 @@ const EventosList = () => {
           image_url: data.image_url || "",
           partner_id: data.partner_id || "",
           ticket_url: (data as any).ticket_url || "",
+          _sub: (data as any).sub_category || data.category,
         },
       },
     });
