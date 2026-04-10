@@ -76,6 +76,7 @@ export type Database = {
       }
       eventou_imports: {
         Row: {
+          address: string | null
           city: string | null
           created_at: string
           date_time: string | null
@@ -86,6 +87,7 @@ export type Database = {
           id: string
           image_url: string | null
           import_status: string
+          organizer: string | null
           partner_id: string | null
           state: string | null
           title: string
@@ -93,6 +95,7 @@ export type Database = {
           venue_name: string | null
         }
         Insert: {
+          address?: string | null
           city?: string | null
           created_at?: string
           date_time?: string | null
@@ -103,6 +106,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           import_status?: string
+          organizer?: string | null
           partner_id?: string | null
           state?: string | null
           title: string
@@ -110,6 +114,7 @@ export type Database = {
           venue_name?: string | null
         }
         Update: {
+          address?: string | null
           city?: string | null
           created_at?: string
           date_time?: string | null
@@ -120,6 +125,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           import_status?: string
+          organizer?: string | null
           partner_id?: string | null
           state?: string | null
           title?: string
