@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban, Filter, ImageIcon, Users, Clock } from "lucide-react";
+import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban, Filter, ImageIcon, Users, Clock, User, ClipboardCopy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ interface EventouRow {
   import_status: string;
   event_id: string | null;
   created_at: string;
+  organizer: string | null;
+  address: string | null;
   partner_name?: string;
   priority_score?: number;
   priority_tier?: "high" | "normal" | "low";
@@ -195,7 +197,7 @@ const EventouAdmin = () => {
           description: row.description || "",
           category: "",
           venue_name: row.venue_name || "",
-          address: "",
+          address: row.address || "",
           instagram: "",
           image_url: row.image_url || "",
           partner_id: row.partner_id || "",
