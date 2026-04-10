@@ -676,12 +676,12 @@ function extractDateTime(md: string, html?: string): string | null {
   const isoMatch = md.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2})/);
   if (isoMatch) {
     try {
-      const d = new Date(isoMatch[1]);
+      const d = new Date(isoMatch[1].replace(" ", "T") + ":00-03:00");
       if (!isNaN(d.getTime())) return d.toISOString();
     } catch { /* skip */ }
   }
 
-  // 3. Brazilian date + separate time extraction
+  // 3. Brazilian date patterns (dd/mm/yyyy or dd.mm.yyyy)
   const brMatch = md.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})/);
   if (brMatch) {
     const [, day, month, year] = brMatch;
@@ -691,27 +691,56 @@ function extractDateTime(md: string, html?: string): string | null {
     ).toISOString();
   }
 
+  // 4. Written-out Brazilian date: "15 de maio de 2025"
+  const months: Record<string, string> = {
+    janeiro: "01", fevereiro: "02", marco: "03", março: "03", abril: "04",
+    maio: "05", junho: "06", julho: "07", agosto: "08", setembro: "09",
+    outubro: "10", novembro: "11", dezembro: "12",
+  };
+  const writtenMatch = md.match(/(\d{1,2})\s+de\s+(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)(?:\s+de)?\s+(\d{4})/i);
+  if (writtenMatch) {
+    const day = writtenMatch[1].padStart(2, "0");
+    const monthKey = writtenMatch[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const mon = months[monthKey] || "01";
+    const year = writtenMatch[3];
+    const time = extractBrazilianTime(md);
+    return new Date(`${year}-${mon}-${day}T${time}-03:00`).toISOString();
+  }
+
+  // 5. HTML fallback: look for date patterns in raw HTML
+  if (html) {
+    const htmlBrMatch = html.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})/);
+    if (htmlBrMatch) {
+      const [, day, month, year] = htmlBrMatch;
+      const time = extractBrazilianTime(html);
+      return new Date(
+        `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${time}-03:00`
+      ).toISOString();
+    }
+  }
+
   return null;
 }
 
 function extractBrazilianTime(text: string): string {
-  // Match patterns: às 22h, às 22:30, 22h30, início 21h, abertura 20h, 22h, 22:30
   const patterns = [
-    /(?:às|as|inicio|início|abertura|a partir das|doors?)\s+(\d{1,2})[h:](\d{2})/i,
-    /(?:às|as|inicio|início|abertura|a partir das|doors?)\s+(\d{1,2})h\b/i,
-    /(\d{1,2})h(\d{2})/,
+    /(?:às|as|inicio|início|abertura|a partir das|doors?|portões?)\s+(\d{1,2})[h:](\d{2})/i,
+    /(?:às|as|inicio|início|abertura|a partir das|doors?|portões?)\s+(\d{1,2})h\b/i,
+    /(\d{1,2})h(\d{2})\b/,
     /(\d{1,2})[h:](\d{2})\s*(?:hrs?|horas?|min)/i,
+    /(?:horário|hora)[:\s]+(\d{1,2})[h:](\d{2})/i,
+    /(?:horário|hora)[:\s]+(\d{1,2})h\b/i,
     /(\d{1,2})h\b/,
   ];
   for (const p of patterns) {
     const m = text.match(p);
     if (m) {
       const h = parseInt(m[1]);
-      if (h >= 0 && h <= 23) {
+      if (h >= 6 && h <= 23) {
         const min = m[2] || "00";
         return `${String(h).padStart(2, "0")}:${min}:00`;
       }
     }
   }
-  return "20:00:00";
+  return "22:00:00";
 }

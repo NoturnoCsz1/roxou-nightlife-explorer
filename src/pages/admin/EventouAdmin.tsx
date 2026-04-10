@@ -123,9 +123,17 @@ const EventouAdmin = () => {
   const [lastScan, setLastScan] = useState<ScanStats | null>(null);
   const [qualityFilters, setQualityFilters] = useState<Set<string>>(new Set());
 
+  const [allPartners, setAllPartners] = useState<{ id: string; name: string; address: string | null; instagram: string | null }[]>([]);
+
   useEffect(() => {
     loadItems();
+    loadAllPartners();
   }, []);
+
+  async function loadAllPartners() {
+    const { data } = await supabase.from("partners").select("id, name, address, instagram").eq("active", true);
+    setAllPartners(data || []);
+  }
 
   async function loadItems() {
     setLoading(true);
@@ -205,6 +213,30 @@ const EventouAdmin = () => {
     }
   }
 
+  function normalizeForMatch(s: string | null): string {
+    if (!s) return "";
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  function findMatchingPartner(venueName: string | null, address: string | null): typeof allPartners[0] | null {
+    if (!venueName && !address) return null;
+    const vnNorm = normalizeForMatch(venueName);
+    const addrNorm = normalizeForMatch(address);
+
+    for (const p of allPartners) {
+      const pNameNorm = normalizeForMatch(p.name);
+      const pAddrNorm = normalizeForMatch(p.address);
+
+      // Exact name match
+      if (vnNorm && pNameNorm && vnNorm === pNameNorm) return p;
+      // Partial name match (contains in either direction)
+      if (vnNorm && pNameNorm && vnNorm.length >= 4 && (vnNorm.includes(pNameNorm) || pNameNorm.includes(vnNorm))) return p;
+      // Address match
+      if (addrNorm && pAddrNorm && addrNorm.length >= 8 && (addrNorm.includes(pAddrNorm) || pAddrNorm.includes(addrNorm))) return p;
+    }
+    return null;
+  }
+
   function handleApprove(row: EventouRow) {
     const slug = (row.title || "")
       .toLowerCase()
@@ -214,19 +246,59 @@ const EventouAdmin = () => {
       .replace(/^-|-$/g, "")
       .slice(0, 60);
 
+    // Auto-link partner if not already linked
+    let partnerId = row.partner_id || "";
+    let venueNameFinal = row.venue_name || "";
+    let addressFinal = row.address || "";
+    let instagramFinal = "";
+
+    if (!partnerId) {
+      const matched = findMatchingPartner(row.venue_name, row.address);
+      if (matched) {
+        partnerId = matched.id;
+        venueNameFinal = matched.name;
+        addressFinal = matched.address || addressFinal;
+        instagramFinal = matched.instagram || "";
+        toast.info(`Parceiro "${matched.name}" vinculado automaticamente!`);
+      }
+    } else {
+      const linked = allPartners.find((p) => p.id === partnerId);
+      if (linked) {
+        instagramFinal = linked.instagram || "";
+      }
+    }
+
+    // Format date_time for datetime-local input
+    let formDateTime = "";
+    if (row.date_time) {
+      try {
+        const d = new Date(row.date_time);
+        const parts = new Intl.DateTimeFormat("sv-SE", {
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit",
+          timeZone: "America/Sao_Paulo", hour12: false,
+        }).formatToParts(d);
+        const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+        formDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+      } catch {
+        formDateTime = row.date_time.slice(0, 16);
+      }
+    }
+
     navigate("/admin/eventos/novo", {
       state: {
         duplicate: {
           title: row.title || "",
           description: row.description || "",
           category: "",
-          venue_name: row.venue_name || "",
-          address: row.address || "",
-          instagram: "",
+          venue_name: venueNameFinal,
+          address: addressFinal,
+          instagram: instagramFinal,
           image_url: row.image_url || "",
-          partner_id: row.partner_id || "",
-          date_time: row.date_time ? row.date_time.slice(0, 16) : "",
+          partner_id: partnerId,
+          date_time: formDateTime,
           verification_source: "Eventou",
+          ticket_url: row.eventou_url || "",
           slug,
         },
         eventou_import_id: row.id,
