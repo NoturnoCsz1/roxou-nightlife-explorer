@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Save, Send } from "lucide-react";
+import { ArrowLeft, Plus, Save, Send, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -16,6 +16,45 @@ const EventoBulkForm = () => {
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [forms, setForms] = useState<EventFormData[]>([emptyEventForm()]);
+  const [generatingIdx, setGeneratingIdx] = useState<number | null>(null);
+
+  async function handleGenerateDescription(index: number) {
+    const form = forms[index];
+    if (!form.title) return;
+    setGeneratingIdx(index);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-description", {
+        body: {
+          title: form.title,
+          venue_name: form.venue_name,
+          date_time: form.date_time,
+          category: form.category,
+          image_url: form.image_url,
+        },
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setForms((prev) => prev.map((f, i) => i === index ? { ...f, description: f.description || data.description } : f));
+        toast.success(`Descrição gerada para o evento ${index + 1}!`);
+      }
+    } catch (err: any) {
+      console.error("Erro ao gerar descrição:", err);
+      toast.error("Erro ao gerar descrição");
+    } finally {
+      setGeneratingIdx(null);
+    }
+  }
+
+  async function handleGenerateAll() {
+    const empty = forms.map((f, i) => ({ f, i })).filter(({ f }) => !f.description && f.title);
+    if (!empty.length) {
+      toast.info("Todos os eventos já possuem descrição");
+      return;
+    }
+    for (const { i } of empty) {
+      await handleGenerateDescription(i);
+    }
+  }
 
   useEffect(() => {
     let query = supabase.from("partners").select("*").eq("active", true).order("name");
@@ -93,7 +132,18 @@ const EventoBulkForm = () => {
       </button>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-lg font-bold text-foreground">Criar Eventos em Lote</h1>
-        <span className="text-xs text-muted-foreground">{forms.length} evento(s)</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={generatingIdx !== null}
+            onClick={handleGenerateAll}
+            className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition disabled:opacity-50"
+          >
+            {generatingIdx !== null ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Gerar descrições
+          </button>
+          <span className="text-xs text-muted-foreground">{forms.length} evento(s)</span>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -106,6 +156,8 @@ const EventoBulkForm = () => {
             onChange={handleFormChange}
             onRemove={removeForm}
             showRemove={forms.length > 1}
+            onGenerateDescription={handleGenerateDescription}
+            generatingDesc={generatingIdx === i}
           />
         ))}
       </div>
