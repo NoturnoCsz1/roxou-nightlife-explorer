@@ -304,7 +304,7 @@ const EventouAdmin = () => {
     let instagramFinal = "";
 
     if (!partnerId) {
-      const matched = findMatchingPartner(row.venue_name, row.address, row.organizer, row.title);
+      const matched = findMatchingPartnerStatic(row.venue_name, row.address, row.organizer, row.title, allPartners);
       if (matched) {
         partnerId = matched.id;
         venueNameFinal = matched.name;
