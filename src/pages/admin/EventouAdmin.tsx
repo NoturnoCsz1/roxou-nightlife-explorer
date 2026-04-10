@@ -137,28 +137,47 @@ const EventouAdmin = () => {
 
   async function loadItems() {
     setLoading(true);
-    const { data } = await supabase
-      .from("eventou_imports")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const [{ data }, { data: partnersData }] = await Promise.all([
+      supabase.from("eventou_imports").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("partners").select("id, name, address, instagram").eq("active", true),
+    ]);
+
+    const freshPartners = partnersData || [];
+    setAllPartners(freshPartners);
 
     if (data && data.length > 0) {
-      const partnerIds = [...new Set(data.filter((d) => d.partner_id).map((d) => d.partner_id!))];
-      let partnerMap: Record<string, string> = {};
-      if (partnerIds.length > 0) {
-        const { data: partners } = await supabase.from("partners").select("id, name").in("id", partnerIds);
-        if (partners) partnerMap = Object.fromEntries(partners.map((p) => [p.id, p.name]));
-      }
+      const partnerMap: Record<string, string> = {};
+      freshPartners.forEach((p) => { partnerMap[p.id] = p.name; });
+
       setItems(
         data.map((d) => {
-          const { score, tier } = calcPriority(d as EventouRow);
-          const isAutoReady = score >= 6 && d.partner_id && d.import_status === "pending";
-          return {
+          const cleanVenue = d.venue_name === "será?" ? null : d.venue_name;
+          let effectivePartnerId = d.partner_id;
+          let partnerName = d.partner_id ? partnerMap[d.partner_id] : undefined;
+
+          // Auto-match partner if not already linked (using all signals)
+          if (!effectivePartnerId && d.import_status === "pending") {
+            const matched = findMatchingPartnerStatic(
+              cleanVenue, d.address, d.organizer, d.title, freshPartners
+            );
+            if (matched) {
+              effectivePartnerId = matched.id;
+              partnerName = matched.name;
+            }
+          }
+
+          const row = {
             ...d,
             title: d.title?.replace(/ - Eventou$/, "") || d.title,
-            venue_name: d.venue_name === "será?" ? null : d.venue_name,
-            partner_name: d.partner_id ? partnerMap[d.partner_id] : undefined,
+            venue_name: cleanVenue,
+            partner_id: effectivePartnerId,
+            partner_name: partnerName,
+          } as EventouRow;
+
+          const { score, tier } = calcPriority(row);
+          const isAutoReady = score >= 6 && effectivePartnerId && d.import_status === "pending";
+          return {
+            ...row,
             priority_score: score,
             priority_tier: tier,
             import_status: isAutoReady ? "auto_ready" : d.import_status,
