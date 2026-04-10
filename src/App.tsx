@@ -26,6 +26,16 @@ import EventouAdmin from "./pages/admin/EventouAdmin";
 import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
 
+// V3
+import V3Layout from "./components/v3/V3Layout";
+import V3Home from "./pages/v3/V3Home";
+import V3EventDetail from "./pages/v3/V3EventDetail";
+import V3LocalDetail from "./pages/v3/V3LocalDetail";
+import V3Transport from "./pages/v3/V3Transport";
+import V3Terms from "./pages/v3/V3Terms";
+import V3Privacy from "./pages/v3/V3Privacy";
+import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -62,6 +72,17 @@ const App = () => (
             <Route path="eventou" element={<EventouAdmin />} />
             <Route path="instagram" element={<InstagramAdminPage />} />
             <Route path="editores" element={<Editores />} />
+          </Route>
+
+          {/* V3 */}
+          <Route path="/v3" element={<V3Layout />}>
+            <Route index element={<V3Home />} />
+            <Route path="evento/:slug" element={<V3EventDetail />} />
+            <Route path="local/:slug" element={<V3LocalDetail />} />
+            <Route path="transporte" element={<V3Transport />} />
+            <Route path="terms" element={<V3Terms />} />
+            <Route path="privacy" element={<V3Privacy />} />
+            <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
