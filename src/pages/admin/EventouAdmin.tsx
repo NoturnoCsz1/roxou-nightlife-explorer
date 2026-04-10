@@ -116,6 +116,7 @@ const EventouAdmin = () => {
   const [items, setItems] = useState<EventouRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<EventouRow | null>(null);
   const [captionPreview, setCaptionPreview] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
