@@ -109,8 +109,69 @@ interface ScanStats {
   timeMs: number;
   phase: string;
 }
+type PartnerForMatch = { id: string; name: string; address: string | null; instagram: string | null };
 
-const EventouAdmin = () => {
+function normalizeText(s: string | null): string {
+  if (!s) return "";
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function extractStreetKey(addr: string | null): string {
+  if (!addr) return "";
+  const norm = normalizeText(addr);
+  const m = norm.match(/(?:rua|r|av|avenida|alameda|travessa|rod)?\s*(.+?)\s*(\d{1,5})/);
+  if (m) return `${m[1].trim()} ${m[2]}`;
+  return norm.slice(0, 40);
+}
+
+function findMatchingPartnerStatic(
+  venueName: string | null,
+  address: string | null,
+  organizer: string | null | undefined,
+  title: string | null | undefined,
+  partners: PartnerForMatch[],
+): PartnerForMatch | null {
+  const vnNorm = normalizeText(venueName);
+  const addrNorm = normalizeText(address);
+  const orgNorm = normalizeText(organizer);
+  const titleNorm = normalizeText(title);
+  const addrKey = extractStreetKey(address);
+
+  let bestMatch: PartnerForMatch | null = null;
+  let bestScore = 0;
+
+  for (const p of partners) {
+    const pNameNorm = normalizeText(p.name);
+    const pAddrNorm = normalizeText(p.address);
+    const pAddrKey = extractStreetKey(p.address);
+    let score = 0;
+
+    // 1. Exact venue name match (strongest)
+    if (vnNorm && pNameNorm && vnNorm === pNameNorm) score += 10;
+    // 2. Partial venue name match
+    else if (vnNorm && pNameNorm && vnNorm.length >= 4 && (vnNorm.includes(pNameNorm) || pNameNorm.includes(vnNorm))) score += 8;
+
+    // 3. Organizer matches partner name
+    if (orgNorm && pNameNorm && orgNorm.length >= 4 && (orgNorm.includes(pNameNorm) || pNameNorm.includes(orgNorm))) score += 7;
+
+    // 4. Title contains partner name (e.g. "PRÉ JUR (AUPP & Casa di Bambù)")
+    if (titleNorm && pNameNorm && pNameNorm.length >= 4 && titleNorm.includes(pNameNorm)) score += 6;
+
+    // 5. Address: street + number match (very reliable)
+    if (addrKey && pAddrKey && addrKey.length >= 6 && (addrKey.includes(pAddrKey) || pAddrKey.includes(addrKey))) score += 9;
+    // 6. Full address partial match
+    else if (addrNorm && pAddrNorm && addrNorm.length >= 10 && (addrNorm.includes(pAddrNorm) || pAddrNorm.includes(addrNorm))) score += 5;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = p;
+    }
+  }
+
+  return bestScore >= 5 ? bestMatch : null;
+}
+
+
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
   const [items, setItems] = useState<EventouRow[]>([]);
