@@ -171,7 +171,7 @@ function findMatchingPartnerStatic(
   return bestScore >= 5 ? bestMatch : null;
 }
 
-
+const EventouAdmin = () => {
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
   const [items, setItems] = useState<EventouRow[]>([]);
