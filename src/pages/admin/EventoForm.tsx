@@ -22,6 +22,7 @@ const EventoForm = () => {
   const location = useLocation();
   const { isCityEditor, cityFilter } = useAdminProfile();
   const duplicateData = (location.state as any)?.duplicate;
+  const eventouImportId = (location.state as any)?.eventou_import_id;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -137,9 +138,47 @@ const EventoForm = () => {
         if (error) throw error;
         toast.success("Evento atualizado!");
       } else {
-        const { error } = await supabase.from("events").insert(payload);
+        const { data: inserted, error } = await supabase.from("events").insert(payload).select("id").single();
         if (error) throw error;
-        toast.success("Evento criado!");
+
+        const eventId = inserted?.id;
+
+        // If from Eventou import, mark as approved and auto-create ROXOU post
+        if (eventouImportId && eventId) {
+          await supabase
+            .from("eventou_imports")
+            .update({ import_status: "approved", event_id: eventId })
+            .eq("id", eventouImportId);
+
+          // Auto-create content generation with imported image
+          const imageUrl = form.image_url || null;
+          const date = form.date_time
+            ? new Date(form.date_time).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
+            : "";
+          const caption = [
+            `🔥 ${form.title}`,
+            "",
+            date && `📅 ${date}`,
+            form.venue_name && `📍 ${form.venue_name}`,
+            "",
+            "Veja mais no Roxou! Link na bio 🔗",
+            "",
+            "#roxou #eventos #presidenteprudente",
+          ].filter(Boolean).join("\n");
+
+          await supabase.from("content_generations").insert({
+            type: "post",
+            source_type: "event",
+            source_id: eventId,
+            title: form.title,
+            generated_text: caption,
+            image_url: imageUrl,
+          });
+
+          toast.success("Evento criado + post ROXOU preparado!");
+        } else {
+          toast.success("Evento criado!");
+        }
       }
       navigate("/admin/eventos");
     } catch (err: any) {
