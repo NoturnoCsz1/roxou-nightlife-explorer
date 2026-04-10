@@ -184,7 +184,24 @@ const EventouAdmin = () => {
     }
   }
 
-  function handleApprove(row: EventouRow) {
+  async function handleEnrich() {
+    setEnriching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("eventou-scraper", { body: { mode: "enrich" } });
+      if (error) throw error;
+      if (data?.success) {
+        const s = data.stats;
+        toast.success(`Enriquecimento: ${s.enriched} atualizados, ${s.skipped} sem dados novos`);
+      } else {
+        toast.error("Erro no enriquecimento", { description: data?.error || "Falha" });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao enriquecer", { description: err.message });
+    } finally {
+      setEnriching(false);
+      loadItems();
+    }
+  }
     const slug = (row.title || "")
       .toLowerCase()
       .normalize("NFD")
