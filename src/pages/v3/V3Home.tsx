@@ -5,14 +5,13 @@ import { Link } from "react-router-dom";
 import { isAfter, startOfDay, addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  CalendarDays, MapPin, Sparkles, Car, ArrowRight, ChevronRight,
-  Flame, Music, Mic2, Beer, Zap, PartyPopper, Crown, Eye,
+  CalendarDays, MapPin, Sparkles, Car, ArrowRight,
+  Flame, Music, Mic2, Beer, Zap, PartyPopper, Crown, Eye, TrendingUp,
 } from "lucide-react";
 
 /* ───── helpers ───── */
 const fmtDate = (d: string) => format(new Date(d), "EEE, d MMM · HH'h'mm", { locale: ptBR });
 
-/* ───── types ───── */
 interface Ev {
   id: string; slug: string; title: string; image_url: string | null;
   date_time: string; venue_name: string | null; category: string;
@@ -28,7 +27,7 @@ export default function V3Home() {
   const today = startOfDay(now);
 
   /* events */
-  const { data: events = [] } = useQuery<Ev[]>({
+  const { data: events = [], isLoading: loadingEvents } = useQuery<Ev[]>({
     queryKey: ["v3-events"],
     queryFn: async () => {
       const { data } = await supabase
@@ -37,13 +36,13 @@ export default function V3Home() {
         .eq("status", "published")
         .gte("date_time", today.toISOString())
         .order("date_time", { ascending: true })
-        .limit(60);
+        .limit(80);
       return (data as Ev[]) || [];
     },
   });
 
   /* trending (views last 24h) */
-  const { data: trendingIds = [] } = useQuery({
+  const { data: trendingIds = [], isLoading: loadingTrending } = useQuery({
     queryKey: ["v3-trending"],
     queryFn: async () => {
       const since = new Date(Date.now() - 86400000).toISOString();
@@ -65,7 +64,7 @@ export default function V3Home() {
   });
 
   /* popular venues */
-  const { data: venues = [] } = useQuery({
+  const { data: venues = [], isLoading: loadingVenues } = useQuery({
     queryKey: ["v3-popular-venues"],
     queryFn: async () => {
       const since = new Date(Date.now() - 7 * 86400000).toISOString();
@@ -94,26 +93,45 @@ export default function V3Home() {
     },
   });
 
-  /* derived */
+  /* ─── DEDUPLICATION: each event appears in only ONE section ─── */
   const hero = useMemo(() => events.find((e) => e.featured) || events[0], [events]);
   const heroIsToday = hero && isAfter(addDays(today, 1), new Date(hero.date_time)) && isAfter(new Date(hero.date_time), today);
 
+  const usedIds = useMemo(() => {
+    const s = new Set<string>();
+    if (hero) s.add(hero.id);
+    return s;
+  }, [hero]);
+
   const trending = useMemo(() => {
     const ids = new Set(trendingIds.map((t) => t.id));
-    return events.filter((e) => ids.has(e.id)).slice(0, 8);
-  }, [events, trendingIds]);
+    const result = events.filter((e) => ids.has(e.id) && !usedIds.has(e.id)).slice(0, 8);
+    result.forEach((e) => usedIds.add(e.id));
+    return result;
+  }, [events, trendingIds, usedIds]);
 
   const todayEvents = useMemo(
-    () => events.filter((e) => e.id !== hero?.id && isAfter(new Date(e.date_time), today) && isAfter(addDays(today, 1), new Date(e.date_time))),
-    [events, today, hero],
+    () => events
+      .filter((e) => !usedIds.has(e.id) && isAfter(new Date(e.date_time), today) && isAfter(addDays(today, 1), new Date(e.date_time)))
+      .slice(0, 12)
+      .map((e) => { usedIds.add(e.id); return e; }),
+    [events, today, usedIds],
+  );
+
+  const featured = useMemo(
+    () => events
+      .filter((e) => e.featured && !usedIds.has(e.id))
+      .slice(0, 8)
+      .map((e) => { usedIds.add(e.id); return e; }),
+    [events, usedIds],
   );
 
   const weekEvents = useMemo(
-    () => events.filter((e) => isAfter(new Date(e.date_time), addDays(today, 1)) && isAfter(addDays(today, 7), new Date(e.date_time))),
-    [events, today],
+    () => events
+      .filter((e) => !usedIds.has(e.id) && isAfter(new Date(e.date_time), addDays(today, 1)) && isAfter(addDays(today, 7), new Date(e.date_time)))
+      .slice(0, 12),
+    [events, today, usedIds],
   );
-
-  const featured = useMemo(() => events.filter((e) => e.featured && e.id !== hero?.id), [events, hero]);
 
   const filtered = useMemo(
     () => (catFilter ? events.filter((e) => e.category === catFilter) : []),
@@ -121,31 +139,43 @@ export default function V3Home() {
   );
 
   const maxVenueViews = venues[0]?.views || 1;
+  const isLoading = loadingEvents;
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {/* ─── 1. HERO ─── */}
-      {hero && <HeroSection ev={hero} isToday={!!heroIsToday} />}
+      {isLoading ? <HeroSkeleton /> : hero ? <HeroSection ev={hero} isToday={!!heroIsToday} /> : <EmptyHero />}
 
       {/* ─── 2. CATEGORIES ─── */}
       <CategoryChips selected={catFilter} onSelect={setCatFilter} />
 
       {/* filtered results */}
       {catFilter && filtered.length > 0 && (
-        <Rail title={`${catFilter}`}>
+        <Rail title={catFilter}>
           {filtered.slice(0, 12).map((e) => <EventCard key={e.id} ev={e} />)}
         </Rail>
       )}
 
       {/* ─── 3. TRENDING ─── */}
-      {trending.length > 0 && (
+      {loadingTrending ? (
+        <RailSkeleton title="🔥 Em alta agora" count={3} />
+      ) : trending.length > 0 ? (
         <Rail title="🔥 Em alta agora" subtitle="Mais vistos nas últimas 24h">
           {trending.map((e) => <EventCard key={e.id} ev={e} size="lg" />)}
         </Rail>
+      ) : (
+        <EmptyRail icon={<TrendingUp className="w-5 h-5" />} text="Dados de tendência em breve" />
       )}
 
       {/* ─── 4. POPULAR VENUES ─── */}
-      {venues.length > 0 && (
+      {loadingVenues ? (
+        <section className="px-4 py-4">
+          <div className="h-5 w-44 bg-secondary/60 rounded mb-2 animate-pulse" />
+          <div className="space-y-2">
+            {[0,1,2].map((i) => <div key={i} className="h-16 rounded-xl bg-card border border-border/30 animate-pulse" />)}
+          </div>
+        </section>
+      ) : venues.length > 0 ? (
         <section className="px-4 py-4">
           <h2 className="font-display font-bold text-lg text-foreground">📍 Locais em destaque</h2>
           <p className="text-xs text-muted-foreground mb-3">Ranking da semana</p>
@@ -161,17 +191,17 @@ export default function V3Home() {
                 </span>
                 <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden shrink-0">
                   {v.logo_url ? (
-                    <img src={v.logo_url} alt={v.name} className="w-full h-full object-cover" />
+                    <img src={v.logo_url} alt={v.name} className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs font-bold">{v.name[0]}</div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-semibold text-sm text-foreground truncate">{v.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{v.type}</p>
+                  <p className="text-[10px] text-muted-foreground capitalize">{v.type}</p>
                   <div className="mt-1 h-1 rounded-full bg-secondary overflow-hidden">
                     <div
-                      className="h-full rounded-full gradient-primary"
+                      className="h-full rounded-full gradient-primary transition-all duration-500"
                       style={{ width: `${Math.round((v.views / maxVenueViews) * 100)}%` }}
                     />
                   </div>
@@ -184,14 +214,16 @@ export default function V3Home() {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* ─── 5. TODAY ─── */}
-      {todayEvents.length > 0 && (
+      {isLoading ? (
+        <RailSkeleton title="⚡ Hoje" count={3} />
+      ) : todayEvents.length > 0 ? (
         <Rail title="⚡ Hoje" subtitle="Acontecendo agora">
           {todayEvents.map((e) => <EventCard key={e.id} ev={e} size="lg" />)}
         </Rail>
-      )}
+      ) : null}
 
       {/* ─── 6. TRANSPORT CTA ─── */}
       <div className="px-4 py-2">
@@ -220,11 +252,16 @@ export default function V3Home() {
       )}
 
       {/* ─── 8. THIS WEEK ─── */}
-      {weekEvents.length > 0 && (
+      {isLoading ? (
+        <RailSkeleton title="📅 Esta semana" count={4} />
+      ) : weekEvents.length > 0 ? (
         <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
-          {weekEvents.slice(0, 12).map((e) => <EventCard key={e.id} ev={e} />)}
+          {weekEvents.map((e) => <EventCard key={e.id} ev={e} />)}
         </Rail>
-      )}
+      ) : null}
+
+      {/* bottom spacer for nav */}
+      <div className="h-4" />
     </div>
   );
 }
@@ -252,7 +289,7 @@ function HeroSection({ ev, isToday }: { ev: Ev; isToday: boolean }) {
         </div>
 
         {/* content */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
+        <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2.5">
           <span className="text-[10px] font-semibold text-primary uppercase tracking-wider">{ev.category}</span>
           <h1 className="font-display font-bold text-2xl text-foreground leading-tight line-clamp-2 neon-text">{ev.title}</h1>
           <div className="flex items-center gap-3 text-muted-foreground">
@@ -269,7 +306,7 @@ function HeroSection({ ev, isToday }: { ev: Ev; isToday: boolean }) {
           </div>
 
           {/* CTAs */}
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-2 pt-0.5">
             <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full gradient-primary text-primary-foreground text-xs font-bold neon-glow">
               Ver evento <ArrowRight className="w-3.5 h-3.5" />
             </span>
@@ -283,9 +320,50 @@ function HeroSection({ ev, isToday }: { ev: Ev; isToday: boolean }) {
           </div>
         </div>
       </Link>
-      {/* bottom glow */}
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-2/3 h-8 bg-primary/15 blur-2xl rounded-full" />
     </div>
+  );
+}
+
+/* ─── HERO SKELETON ─── */
+function HeroSkeleton() {
+  return (
+    <div className="relative h-[340px] bg-card animate-pulse">
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
+        <div className="h-3 w-16 bg-secondary/60 rounded" />
+        <div className="h-7 w-3/4 bg-secondary/60 rounded" />
+        <div className="h-4 w-1/2 bg-secondary/40 rounded" />
+        <div className="flex gap-2 pt-1">
+          <div className="h-9 w-28 rounded-full bg-secondary/50" />
+          <div className="h-9 w-36 rounded-full bg-secondary/30" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── EMPTY HERO ─── */
+function EmptyHero() {
+  return (
+    <div className="relative h-[220px] flex items-center justify-center bg-card border-b border-border/30">
+      <div className="text-center space-y-2">
+        <Sparkles className="w-8 h-8 text-primary mx-auto opacity-50" />
+        <p className="text-sm text-muted-foreground">Novos eventos em breve</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── EMPTY RAIL ─── */
+function EmptyRail({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <section className="px-4 py-4">
+      <div className="flex items-center gap-3 p-4 rounded-xl border border-dashed border-border/40 bg-card/50">
+        <div className="text-muted-foreground/50">{icon}</div>
+        <p className="text-xs text-muted-foreground">{text}</p>
+      </div>
+    </section>
   );
 }
 
@@ -297,9 +375,9 @@ function EventCard({ ev, size = "md", premium }: { ev: Ev; size?: "md" | "lg"; p
       to={`/v3/evento/${ev.slug}`}
       className={`shrink-0 snap-start rounded-xl overflow-hidden bg-card border group transition-all active:scale-[0.97] ${
         premium ? "border-primary/30 neon-border" : "border-border/40"
-      } ${isLg ? "w-[260px]" : "w-[180px]"}`}
+      } ${isLg ? "w-[240px]" : "w-[170px]"}`}
     >
-      <div className={`relative ${isLg ? "h-[150px]" : "h-[120px]"} overflow-hidden`}>
+      <div className={`relative ${isLg ? "h-[140px]" : "h-[110px]"} overflow-hidden`}>
         <img
           src={ev.image_url || "/placeholder.svg"}
           alt={ev.title}
@@ -316,11 +394,11 @@ function EventCard({ ev, size = "md", premium }: { ev: Ev; size?: "md" | "lg"; p
           </span>
         )}
       </div>
-      <div className="p-3 space-y-1">
-        <h3 className="font-display font-semibold text-sm text-foreground line-clamp-2 leading-tight">{ev.title}</h3>
+      <div className="p-2.5 space-y-0.5">
+        <h3 className="font-display font-semibold text-[13px] text-foreground line-clamp-2 leading-snug">{ev.title}</h3>
         <div className="flex items-center gap-1 text-muted-foreground">
           <CalendarDays className="w-3 h-3 shrink-0" />
-          <span className="text-[10px] capitalize">{fmtDate(ev.date_time)}</span>
+          <span className="text-[10px] capitalize truncate">{fmtDate(ev.date_time)}</span>
         </div>
         {ev.venue_name && (
           <div className="flex items-center gap-1 text-muted-foreground">
@@ -330,6 +408,28 @@ function EventCard({ ev, size = "md", premium }: { ev: Ev; size?: "md" | "lg"; p
         )}
       </div>
     </Link>
+  );
+}
+
+/* ─── RAIL SKELETON ─── */
+function RailSkeleton({ title, count = 3 }: { title: string; count?: number }) {
+  return (
+    <section className="py-3">
+      <div className="px-4 mb-2">
+        <div className="h-5 w-40 bg-secondary/50 rounded animate-pulse" />
+      </div>
+      <div className="flex gap-3 overflow-x-auto px-4 pb-1">
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} className="shrink-0 w-[240px] rounded-xl bg-card border border-border/30 animate-pulse">
+            <div className="h-[140px] bg-secondary/30 rounded-t-xl" />
+            <div className="p-2.5 space-y-2">
+              <div className="h-4 w-3/4 bg-secondary/40 rounded" />
+              <div className="h-3 w-1/2 bg-secondary/30 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
