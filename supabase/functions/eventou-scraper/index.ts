@@ -660,20 +660,58 @@ function cleanExtracted(val: string): string {
   return val.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ").replace(/[*_#\[\]]/g, "").trim().slice(0, 500);
 }
 
-function extractDateTime(md: string): string | null {
-  const isoMatch = md.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2})/);
-  if (isoMatch) return new Date(isoMatch[1]).toISOString();
+function extractDateTime(md: string, html?: string): string | null {
+  // 1. JSON-LD startDate (highest priority)
+  if (html) {
+    const jsonLdStart = extractJsonLdField(html, "startDate");
+    if (jsonLdStart && typeof jsonLdStart === "string") {
+      try {
+        const d = new Date(jsonLdStart);
+        if (!isNaN(d.getTime())) return d.toISOString();
+      } catch { /* skip */ }
+    }
+  }
 
+  // 2. Full ISO datetime in markdown
+  const isoMatch = md.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2})/);
+  if (isoMatch) {
+    try {
+      const d = new Date(isoMatch[1]);
+      if (!isNaN(d.getTime())) return d.toISOString();
+    } catch { /* skip */ }
+  }
+
+  // 3. Brazilian date + separate time extraction
   const brMatch = md.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{4})/);
   if (brMatch) {
-    const [, d, m, y] = brMatch;
-    const timeMatch = md.match(/(\d{1,2})[h:](\d{2})/);
-    const h = timeMatch ? timeMatch[1] : "20";
-    const min = timeMatch ? timeMatch[2] : "00";
+    const [, day, month, year] = brMatch;
+    const time = extractBrazilianTime(md);
     return new Date(
-      `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${h.padStart(2, "0")}:${min}:00-03:00`
+      `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${time}-03:00`
     ).toISOString();
   }
 
   return null;
+}
+
+function extractBrazilianTime(text: string): string {
+  // Match patterns: às 22h, às 22:30, 22h30, início 21h, abertura 20h, 22h, 22:30
+  const patterns = [
+    /(?:às|as|inicio|início|abertura|a partir das|doors?)\s+(\d{1,2})[h:](\d{2})/i,
+    /(?:às|as|inicio|início|abertura|a partir das|doors?)\s+(\d{1,2})h\b/i,
+    /(\d{1,2})h(\d{2})/,
+    /(\d{1,2})[h:](\d{2})\s*(?:hrs?|horas?|min)/i,
+    /(\d{1,2})h\b/,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) {
+      const h = parseInt(m[1]);
+      if (h >= 0 && h <= 23) {
+        const min = m[2] || "00";
+        return `${String(h).padStart(2, "0")}:${min}:00`;
+      }
+    }
+  }
+  return "20:00:00";
 }
