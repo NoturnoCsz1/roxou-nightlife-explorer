@@ -118,6 +118,7 @@ const Captacao = () => {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<"link" | "manual">("link");
   const [saving, setSaving] = useState(false);
+  const [scraping, setScraping] = useState(false);
   const [form, setForm] = useState({
     url: "",
     title: "",
@@ -127,6 +128,38 @@ const Captacao = () => {
     observation: "",
     image_url: "",
   });
+
+  async function autoDetectFromUrl(url: string) {
+    const source = detectSourceType(url);
+    if (source !== "instagram" && source !== "link") return;
+    setScraping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-instagram", {
+        body: { url: url.trim() },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        setForm(f => ({
+          ...f,
+          image_url: f.image_url || data.image_url || data.screenshot || "",
+          title: f.title || data.title || "",
+          observation: f.observation || (data.caption || data.description || "").slice(0, 500),
+        }));
+        toast.success("Dados detectados automaticamente");
+      }
+    } catch (err) {
+      console.error("Auto-detect failed:", err);
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  function handleUrlPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (pasted && (pasted.startsWith("http://") || pasted.startsWith("https://"))) {
+      setTimeout(() => autoDetectFromUrl(pasted), 150);
+    }
+  }
 
   // partners for selector
   const [partners, setPartners] = useState<{ id: string; name: string }[]>([]);
@@ -355,17 +388,26 @@ const Captacao = () => {
           {formMode === "link" && (
             <div>
               <label className="text-xs font-semibold text-foreground mb-1 block">Link do evento</label>
-              <div className="relative">
-                <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                <input
-                  type="url"
-                  value={form.url}
-                  onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-                  placeholder="Instagram, Eventou, Sympla ou qualquer link"
-                  className="w-full rounded-lg border border-border/60 bg-background pl-8 pr-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
+              <div className="relative flex items-center gap-2">
+                <div className="relative flex-1">
+                  <LinkIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="url"
+                    value={form.url}
+                    onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
+                    onPaste={handleUrlPaste}
+                    placeholder="Instagram, Eventou, Sympla ou qualquer link"
+                    className="w-full rounded-lg border border-border/60 bg-background pl-8 pr-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+                {scraping && <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />}
               </div>
-              {form.url && (
+              {scraping && (
+                <p className="text-[10px] text-primary mt-1 flex items-center gap-1">
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" /> Detectando imagem e dados...
+                </p>
+              )}
+              {form.url && !scraping && (
                 <span className="inline-flex items-center gap-1 mt-1 text-[10px] text-muted-foreground">
                   {sourceIcon(detectSourceType(form.url))} {sourceLabel(detectSourceType(form.url))}
                 </span>
