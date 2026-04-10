@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Clock, Users, Send } from "lucide-react";
+import { ArrowLeft, Clock, Users, Send } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
+import PlacesAutocomplete from "@/components/v3/PlacesAutocomplete";
 
 function toLocalDatetime(iso: string): string {
   if (!iso) return "";
@@ -86,32 +87,26 @@ export default function V3RideRequest() {
           />
         </div>
 
-        {/* Pickup */}
-        <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" /> Origem
-          </Label>
-          <Input
-            value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
-            placeholder="De onde você sai?"
-            className="h-11 rounded-xl bg-card border-border/40 text-sm"
-          />
-        </div>
+        {/* Pickup with Google Maps Autocomplete */}
+        <PlacesAutocomplete
+          value={pickup}
+          onChange={setPickup}
+          onPlaceSelect={(p) => setPickup(p.address)}
+          placeholder="De onde você sai?"
+          label="Origem"
+          showMap
+        />
 
-        {/* Destination */}
-        <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" /> Destino *
-          </Label>
-          <Input
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            placeholder="Para onde você vai?"
-            className="h-11 rounded-xl bg-card border-border/40 text-sm"
-            required
-          />
-        </div>
+        {/* Destination with Google Maps Autocomplete */}
+        <PlacesAutocomplete
+          value={destination}
+          onChange={setDestination}
+          onPlaceSelect={(p) => setDestination(p.address)}
+          placeholder="Para onde você vai?"
+          label="Destino"
+          required
+          showMap
+        />
 
         {/* Date/time */}
         <div className="space-y-2">
