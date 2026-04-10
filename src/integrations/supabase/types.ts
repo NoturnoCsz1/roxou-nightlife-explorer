@@ -149,6 +149,7 @@ export type Database = {
           partner_id: string | null
           slug: string
           status: string
+          sub_category: string | null
           ticket_url: string | null
           title: string
           venue_name: string | null
@@ -168,6 +169,7 @@ export type Database = {
           partner_id?: string | null
           slug: string
           status?: string
+          sub_category?: string | null
           ticket_url?: string | null
           title: string
           venue_name?: string | null
@@ -187,6 +189,7 @@ export type Database = {
           partner_id?: string | null
           slug?: string
           status?: string
+          sub_category?: string | null
           ticket_url?: string | null
           title?: string
           venue_name?: string | null
