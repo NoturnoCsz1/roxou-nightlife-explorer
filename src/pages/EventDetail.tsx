@@ -24,7 +24,7 @@ import AdBanner from "@/components/AdBanner";
 import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
-import { categoryConfig } from "@/lib/categoryConfig";
+import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
 
 const EventDetail = () => {
   const { slug } = useParams();
@@ -125,6 +125,7 @@ const EventDetail = () => {
     label: event.category,
     badge: "bg-secondary",
   };
+  const catLabel = getCategoryLabel(event.category, (event as any).sub_category);
   const image = event.image_url || "/placeholder.svg";
   const time = formatTime(dt);
   const dateFormatted = formatDateFull(dt);
