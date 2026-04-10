@@ -334,7 +334,6 @@ const Index = () => {
             )}
 
             <section>
-              <SectionHeader emoji="🔥" title="Lugares mais populares" subtitle="Onde o público mais vai" />
               <PopularVenues />
             </section>
           </>
