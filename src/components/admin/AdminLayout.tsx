@@ -1,12 +1,12 @@
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut, Lightbulb, ShieldCheck, MapPin, Globe, Instagram } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut, Search, ShieldCheck, MapPin, Globe, Instagram } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 const navItems = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/eventos", icon: CalendarDays, label: "Eventos" },
-  { to: "/admin/sugestoes", icon: Lightbulb, label: "Sugestões" },
+  { to: "/admin/sugestoes", icon: Search, label: "Captação" },
   { to: "/admin/eventou", icon: Globe, label: "Eventou" },
   { to: "/admin/instagram", icon: Instagram, label: "Instagram" },
   { to: "/admin/parceiros", icon: Users, label: "Parceiros" },
