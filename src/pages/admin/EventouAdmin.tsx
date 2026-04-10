@@ -148,6 +148,8 @@ const EventouAdmin = () => {
           const isAutoReady = score >= 6 && d.partner_id && d.import_status === "pending";
           return {
             ...d,
+            title: d.title?.replace(/ - Eventou$/, "") || d.title,
+            venue_name: d.venue_name === "será?" ? null : d.venue_name,
             partner_name: d.partner_id ? partnerMap[d.partner_id] : undefined,
             priority_score: score,
             priority_tier: tier,
