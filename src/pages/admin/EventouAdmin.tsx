@@ -64,6 +64,8 @@ function calcPriority(row: EventouRow): { score: number; tier: "high" | "normal"
   if (row.description && row.description.length > 30) score += 1;
   if (row.venue_name) score += 1;
   if (row.city) score += 1;
+  if (row.organizer) score += 1;
+  if (row.address) score += 1;
 
   const tier = score >= 7 ? "high" : score >= 4 ? "normal" : "low";
   return { score, tier };
