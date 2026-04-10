@@ -68,11 +68,12 @@ const EventoForm = () => {
     if (isEdit) {
       loadEvent();
     } else if (duplicateData) {
+      const hasDateFromImport = eventouImportId && duplicateData.date_time;
       setForm((prev) => ({
         ...prev,
         ...duplicateData,
         slug: slugify(duplicateData.title) + "-" + Date.now().toString(36),
-        date_time: "",
+        date_time: hasDateFromImport ? duplicateData.date_time : "",
         status: "draft",
         featured: false,
       }));
@@ -81,7 +82,7 @@ const EventoForm = () => {
       } else if (duplicateData.venue_name || duplicateData.address) {
         setManualVenue(true);
       }
-      toast.info("Evento duplicado. Defina a nova data antes de publicar.");
+      toast.info(hasDateFromImport ? "Dados importados! Revise e publique." : "Evento duplicado. Defina a nova data antes de publicar.");
     }
   }, [id]);
 

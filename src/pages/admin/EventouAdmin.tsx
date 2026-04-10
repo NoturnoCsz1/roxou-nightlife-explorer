@@ -744,10 +744,10 @@ function EventouCard({
             )}
           </div>
 
-          {row.venue_name ? (
+          {(row.venue_name || row.partner_name) ? (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-              <MapPin className="h-2.5 w-2.5 shrink-0" /> {row.venue_name}
-              {!row.partner_id && onCreatePartner && (
+              <MapPin className="h-2.5 w-2.5 shrink-0" /> {row.venue_name || row.partner_name}
+              {!row.partner_id && !row.partner_name && onCreatePartner && (
                 <button
                   onClick={onCreatePartner}
                   className="text-[9px] text-primary ml-1 flex items-center gap-0.5 hover:underline"
