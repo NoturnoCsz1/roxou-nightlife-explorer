@@ -1,5 +1,5 @@
 import { useSearchParams, Link } from "react-router-dom";
-import { Car, Users, Clock, Info, LogIn, Shield } from "lucide-react";
+import { Car, Users, Clock, Info, LogIn, Shield, ClipboardList } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
 import { useV3Profile } from "@/hooks/useV3Profile";
@@ -96,7 +96,19 @@ export default function V3Transport() {
         </div>
       </div>
 
-      {/* How it works */}
+      {/* My rides link */}
+      {user && (
+        <Link to="/v3/meus-pedidos" className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border/40 hover:border-primary/30 transition-colors">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <ClipboardList className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-display font-semibold text-sm text-foreground">Meus pedidos</p>
+            <p className="text-[11px] text-muted-foreground">Acompanhe suas caronas e propostas</p>
+          </div>
+        </Link>
+      )}
+
       <div className="space-y-3">
         <h2 className="font-display font-semibold text-base text-foreground">Como funciona</h2>
         {[

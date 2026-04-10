@@ -9,13 +9,22 @@ import { toast } from "sonner";
 import { ArrowLeft, MapPin, Clock, Users, Send } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 
+function toLocalDatetime(iso: string): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch { return ""; }
+}
+
 export default function V3RideRequest() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [eventName, setEventName] = useState(searchParams.get("event") || "");
   const [venueName, setVenueName] = useState(searchParams.get("venue") || "");
-  const [eventDate, setEventDate] = useState(searchParams.get("date") || "");
+  const [eventDate, setEventDate] = useState(toLocalDatetime(searchParams.get("date") || ""));
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState(searchParams.get("venue") || "");
   const [passengersCount, setPassengersCount] = useState(1);
