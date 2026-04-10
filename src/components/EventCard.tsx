@@ -55,7 +55,7 @@ const EventCard = ({ event, variant = "default", index = 0, sponsored = false }:
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
           <div>
-            <span className={`${cat.badge} mb-1.5 inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide`}>{cat.label}</span>
+            <span className={`${cat.badge} mb-1.5 inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide`}>{catLabel}</span>
             <h3 className="truncate text-[15px] font-bold text-foreground font-display leading-tight md:group-hover:text-primary transition-colors duration-200">{event.title}</h3>
             {venueLink ? (
               <p className="mt-0.5 truncate text-xs text-primary hover:underline" onClick={(e) => { e.stopPropagation(); navigate(venueLink); }}>{venue}</p>
@@ -89,7 +89,7 @@ const EventCard = ({ event, variant = "default", index = 0, sponsored = false }:
               </span>
             )}
             {todayEvent && <span className="badge-hoje rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">Hoje</span>}
-            <span className={`${cat.badge} rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{cat.label}</span>
+            <span className={`${cat.badge} rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{catLabel}</span>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <h3 className="text-lg font-bold text-foreground font-display leading-tight mb-1 md:group-hover:text-primary transition-colors duration-200">{event.title}</h3>
@@ -119,7 +119,7 @@ const EventCard = ({ event, variant = "default", index = 0, sponsored = false }:
             </span>
           )}
           {todayEvent && <span className="badge-hoje w-fit rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider">Hoje</span>}
-          <span className={`${cat.badge} w-fit rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{cat.label}</span>
+          <span className={`${cat.badge} w-fit rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}>{catLabel}</span>
         </div>
       </div>
       <div className="p-3.5">
