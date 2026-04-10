@@ -575,7 +575,7 @@ function EventouCard({
             )}
           </div>
 
-          {row.venue_name && (
+          {row.venue_name ? (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
               <MapPin className="h-2.5 w-2.5 shrink-0" /> {row.venue_name}
               {!row.partner_id && onCreatePartner && (
@@ -586,6 +586,33 @@ function EventouCard({
                   <Plus className="h-2.5 w-2.5" /> Criar parceiro
                 </button>
               )}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground/50 flex items-center gap-1 mt-0.5">
+              <MapPin className="h-2.5 w-2.5 shrink-0" /> Local não identificado
+            </p>
+          )}
+
+          {row.address && (
+            <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1 mt-0.5">
+              📍 {row.address}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(row.address!);
+                  toast.success("Endereço copiado!");
+                }}
+                className="text-primary hover:text-primary/80 transition ml-0.5"
+                title="Copiar endereço"
+              >
+                <ClipboardCopy className="h-2.5 w-2.5" />
+              </button>
+            </p>
+          )}
+
+          {row.organizer && (
+            <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1 mt-0.5">
+              <User className="h-2.5 w-2.5 shrink-0" /> {row.organizer}
             </p>
           )}
 
