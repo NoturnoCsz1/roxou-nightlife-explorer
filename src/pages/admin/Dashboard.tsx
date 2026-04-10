@@ -14,7 +14,7 @@ import InstagramContentGenerator from "@/components/admin/InstagramContentGenera
 import { exportCSV, exportExcel } from "@/lib/dashboardExport";
 import type { TopEventExport } from "@/components/admin/TopEvents";
 import type { TopPartnerExport } from "@/components/admin/TopPartners";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--secondary))"];
 
@@ -23,6 +23,16 @@ interface TopPageItem {
   label: string;
   views: number;
 }
+
+
+const ChartCard = ({ children, title }: { children: React.ReactNode; title: string }) => (
+  <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5 transition-all hover:border-border/50">
+    <div className="flex items-center gap-2 mb-4">
+      <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">{title}</h3>
+    </div>
+    {children}
+  </div>
+);
 
 const Dashboard = () => {
   const { cityFilter } = useAdminProfile();
@@ -104,7 +114,6 @@ const Dashboard = () => {
     const evts = eventsRes.data || [];
     const parts = partnersRes.data || [];
 
-    // Fetch all rows for charts/breakdowns (paginated to avoid 1000-row cap)
     const [views, clicks] = await Promise.all([
       fetchAllRows<{ id: string; page_path: string; device_type: string | null; created_at: string; session_id: string | null }>(
         () => supabase.from("page_views").select("id, page_path, device_type, created_at, session_id").gte("created_at", sinceISO)
@@ -145,7 +154,6 @@ const Dashboard = () => {
     });
     setViewsByDay(days.map((d) => ({ day: d.slice(5), views: dayMap[d] })));
 
-    // Ticket clicks by day
     const clickDayMap: Record<string, number> = {};
     days.forEach((d) => (clickDayMap[d] = 0));
     clicks.forEach((c) => {
@@ -154,7 +162,6 @@ const Dashboard = () => {
     });
     setClicksByDay(days.map((d) => ({ day: d.slice(5), clicks: clickDayMap[d] })));
 
-    // Top clicked events
     const eventIdTitle = new Map(evts.map((e) => [e.id, e.title]));
     const clickEventMap: Record<string, number> = {};
     clicks.forEach((c) => {
@@ -220,30 +227,30 @@ const Dashboard = () => {
   }, [loadDashboard]);
 
   return (
-    <div className="space-y-6 md:ml-44 overflow-hidden min-w-0">
-      {/* Quick actions + period filter + export */}
-      <div className="flex flex-col gap-3">
+    <div className="space-y-5 md:ml-44 overflow-hidden min-w-0">
+      {/* Header row */}
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex gap-2.5">
-            <Link to="/admin/eventos/novo" className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition">
-              <Plus className="h-3.5 w-3.5" /> Novo Evento
+          <div className="flex gap-2">
+            <Link to="/admin/eventos/novo" className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] transition-all">
+              <Plus className="h-3.5 w-3.5" /> Evento
             </Link>
-            <Link to="/admin/parceiros/novo" className="flex items-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground shadow-sm hover:opacity-90 transition">
-              <Plus className="h-3.5 w-3.5" /> Novo Parceiro
+            <Link to="/admin/parceiros/novo" className="flex items-center gap-1.5 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-secondary-foreground hover:bg-secondary/80 transition-all">
+              <Plus className="h-3.5 w-3.5" /> Parceiro
             </Link>
           </div>
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <PeriodFilter value={period} onChange={setPeriod} />
-            <div className="flex gap-1.5">
+            <div className="flex gap-1">
               <button
                 onClick={() => handleExport("csv")}
-                className="flex items-center gap-1 rounded-lg border border-border/40 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-border transition"
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
               >
                 <Download className="h-3 w-3" /> CSV
               </button>
               <button
                 onClick={() => handleExport("excel")}
-                className="flex items-center gap-1 rounded-lg border border-border/40 bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-border transition"
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition"
               >
                 <Download className="h-3 w-3" /> Excel
               </button>
@@ -252,116 +259,151 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Metrics grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <MetricCard title="Total Eventos" value={metrics.totalEvents} icon={CalendarDays} />
-        <MetricCard title="Próximos" value={metrics.upcomingEvents} icon={Clock} />
-        <MetricCard title="Hoje" value={metrics.eventsToday} icon={CalendarCheck} />
-        <MetricCard title="Parceiros Ativos" value={metrics.activePartners} icon={Users} />
-        <MetricCard title={`Views (${getPeriodLabel(period)})`} value={metrics.periodViews} icon={Eye} />
-        <MetricCard title="Visitantes Únicos" value={metrics.uniqueVisitors} icon={Monitor} />
-        <MetricCard title={`Cliques Ingresso (${getPeriodLabel(period)})`} value={metrics.ticketClicks} icon={MousePointerClick} />
+      {/* Metrics — 2 rows on mobile, all visible */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <MetricCard title="Total Eventos" value={metrics.totalEvents} icon={CalendarDays} accent="primary" />
+        <MetricCard title="Próximos" value={metrics.upcomingEvents} icon={Clock} accent="accent" />
+        <MetricCard title="Hoje" value={metrics.eventsToday} icon={CalendarCheck} accent="green" />
+        <MetricCard title="Parceiros" value={metrics.activePartners} icon={Users} accent="amber" />
       </div>
 
-      {/* Insights / Alerts */}
+      {/* Analytics metrics */}
+      <div className="grid grid-cols-3 gap-3">
+        <MetricCard title={`Views`} value={metrics.periodViews} icon={Eye} accent="primary" />
+        <MetricCard title="Visitantes" value={metrics.uniqueVisitors} icon={Monitor} accent="accent" />
+        <MetricCard title="Cliques" value={metrics.ticketClicks} icon={MousePointerClick} accent="green" />
+      </div>
+
+      {/* Insights */}
       <DashboardAlerts period={period} />
 
-      {/* Charts row */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border/40 bg-card p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Visualizações ({getPeriodLabel(period)})</h3>
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={viewsByDay}>
-                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={period === "30d" || period === "mes" ? 4 : 0} />
-                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-                <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Main chart — views trend */}
+      <ChartCard title={`Visualizações · ${getPeriodLabel(period)}`}>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={viewsByDay}>
+              <defs>
+                <linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} interval={period === "30d" || period === "mes" ? 4 : 0} />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 12,
+                  fontSize: 12,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                }}
+              />
+              <Area type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#viewsGradient)" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
+      </ChartCard>
 
-        <div className="rounded-xl border border-border/40 bg-card p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Dispositivos ({getPeriodLabel(period)})</h3>
-          <div className="h-44 flex items-center">
+      {/* Two-column: Devices + Top Pages */}
+      <div className="grid md:grid-cols-5 gap-4">
+        {/* Devices — compact */}
+        <ChartCard title="Dispositivos">
+          <div className="h-36 flex items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={deviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                <Pie
+                  data={deviceData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={50}
+                  innerRadius={28}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                  strokeWidth={0}
+                >
                   {deviceData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      </div>
+        </ChartCard>
 
-      {/* Top pages */}
-      <div className="rounded-xl border border-border/40 bg-card p-4">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Páginas Mais Visitadas ({getPeriodLabel(period)})</h3>
-        <div className="space-y-2">
-          {topPages.map((p, i) => (
-            <div key={p.page} className="flex items-center gap-3">
-              <span className="text-xs font-bold text-primary w-5 shrink-0">{i + 1}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium truncate">{p.label}</span>
-                  <span className="text-xs font-bold text-foreground shrink-0">{p.views}</span>
-                </div>
-                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary/70"
-                    style={{ width: `${topPages[0] ? (p.views / topPages[0].views) * 100 : 0}%` }}
-                  />
+        {/* Top Pages */}
+        <div className="md:col-span-3 rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5">
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Páginas Mais Visitadas</h3>
+          <div className="space-y-2.5">
+            {topPages.map((p, i) => (
+              <div key={p.page} className="flex items-center gap-3">
+                <span className="text-[11px] font-bold text-primary/70 w-4 shrink-0 text-right">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-xs font-medium truncate text-foreground/90">{p.label}</span>
+                    <span className="text-[11px] font-bold text-foreground tabular-nums shrink-0">{p.views}</span>
+                  </div>
+                  <div className="h-1 rounded-full bg-muted/50 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary/30 transition-all duration-500"
+                      style={{ width: `${topPages[0] ? (p.views / topPages[0].views) * 100 : 0}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Ticket clicks analytics */}
+      {/* Ticket clicks */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border/40 bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MousePointerClick className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">Cliques de Ingresso ({getPeriodLabel(period)})</h3>
-          </div>
-          <div className="h-44">
+        <ChartCard title={`Cliques Ingresso · ${getPeriodLabel(period)}`}>
+          <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={clicksByDay}>
-                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" interval={period === "30d" || period === "mes" ? 4 : 0} />
-                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-                <Line type="monotone" dataKey="clicks" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
-              </LineChart>
+              <AreaChart data={clicksByDay}>
+                <defs>
+                  <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} interval={period === "30d" || period === "mes" ? 4 : 0} />
+                <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 12,
+                    fontSize: 12,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                  }}
+                />
+                <Area type="monotone" dataKey="clicks" stroke="hsl(var(--accent))" strokeWidth={2.5} fill="url(#clicksGradient)" />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </ChartCard>
 
-        <div className="rounded-xl border border-border/40 bg-card p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MousePointerClick className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">Eventos Mais Clicados</h3>
-          </div>
+        <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5">
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Eventos Mais Clicados</h3>
           {topClickedEvents.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-6 text-center">Nenhum clique registrado no período</p>
+            <p className="text-xs text-muted-foreground py-8 text-center">Nenhum clique no período</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {topClickedEvents.map((e, i) => (
                 <div key={e.title} className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-primary w-5 shrink-0">{i + 1}</span>
+                  <span className="text-[11px] font-bold text-accent/70 w-4 shrink-0 text-right">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium truncate">{e.title}</span>
-                      <span className="text-xs font-bold text-foreground shrink-0">{e.clicks}</span>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs font-medium truncate text-foreground/90">{e.title}</span>
+                      <span className="text-[11px] font-bold text-foreground tabular-nums shrink-0">{e.clicks}</span>
                     </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-1 rounded-full bg-muted/50 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-accent/70"
+                        className="h-full rounded-full bg-gradient-to-r from-accent/80 to-accent/30 transition-all duration-500"
                         style={{ width: `${topClickedEvents[0] ? (e.clicks / topClickedEvents[0].clicks) * 100 : 0}%` }}
                       />
                     </div>
@@ -384,18 +426,20 @@ const Dashboard = () => {
 
       {/* Recent activity */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Últimos Eventos</h3>
+        <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5">
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Últimos Eventos</h3>
           {recentEvents.length === 0 ? (
             <p className="text-xs text-muted-foreground py-6 text-center">Nenhum evento ainda</p>
           ) : (
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {recentEvents.map((e) => (
-                <li key={e.id} className="min-w-0">
-                  <Link to={`/admin/eventos/${e.id}/editar`} className="flex items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-lg text-xs hover:bg-muted/50 hover:text-primary transition min-w-0">
-                    <CalendarDays className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate min-w-0 flex-1 font-medium">{e.title}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
+                <li key={e.id}>
+                  <Link to={`/admin/eventos/${e.id}/editar`} className="flex items-center gap-2.5 py-2 px-2 -mx-2 rounded-xl text-xs hover:bg-muted/40 transition group">
+                    <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 shrink-0">
+                      <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <span className="truncate min-w-0 flex-1 font-medium group-hover:text-primary transition">{e.title}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
                       {new Date(e.created_at).toLocaleDateString("pt-BR")}
                     </span>
                   </Link>
@@ -404,18 +448,20 @@ const Dashboard = () => {
             </ul>
           )}
         </div>
-        <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden">
-          <h3 className="text-sm font-semibold text-foreground mb-3">Últimos Parceiros</h3>
+        <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5">
+          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-4">Últimos Parceiros</h3>
           {recentPartners.length === 0 ? (
             <p className="text-xs text-muted-foreground py-6 text-center">Nenhum parceiro ainda</p>
           ) : (
-            <ul className="space-y-1">
+            <ul className="space-y-0.5">
               {recentPartners.map((p) => (
-                <li key={p.id} className="min-w-0">
-                  <Link to={`/admin/parceiros/${p.id}/editar`} className="flex items-center gap-2.5 py-1.5 px-1 -mx-1 rounded-lg text-xs hover:bg-muted/50 hover:text-primary transition min-w-0">
-                    <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="truncate min-w-0 flex-1 font-medium">{p.name}</span>
-                    <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">
+                <li key={p.id}>
+                  <Link to={`/admin/parceiros/${p.id}/editar`} className="flex items-center gap-2.5 py-2 px-2 -mx-2 rounded-xl text-xs hover:bg-muted/40 transition group">
+                    <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-accent/10 shrink-0">
+                      <Users className="h-3.5 w-3.5 text-accent" />
+                    </div>
+                    <span className="truncate min-w-0 flex-1 font-medium group-hover:text-accent transition">{p.name}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
                       {new Date(p.created_at).toLocaleDateString("pt-BR")}
                     </span>
                   </Link>

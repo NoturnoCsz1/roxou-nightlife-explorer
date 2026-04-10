@@ -34,7 +34,6 @@ const TopEvents = ({ since, onDataLoaded }: TopEventsProps) => {
       ]);
 
       const events = eventsRes.data || [];
-
       const slugToEvent = new Map(events.map((e) => [e.slug, e]));
       const viewMap: Record<string, number> = {};
 
@@ -65,23 +64,35 @@ const TopEvents = ({ since, onDataLoaded }: TopEventsProps) => {
 
   if (ranked.length === 0) return null;
 
+  const maxViews = ranked[0]?.views || 1;
+
   return (
-    <div className="rounded-xl border border-border/40 bg-card p-4 overflow-hidden min-w-0">
-      <div className="flex items-center gap-2 mb-3">
-        <Flame className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold text-foreground">Eventos Mais Vistos</h3>
+    <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5 overflow-hidden min-w-0">
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10">
+          <Flame className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Eventos Mais Vistos</h3>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {ranked.map((e, i) => (
-          <div key={e.slug} className="flex items-center gap-2.5 py-2 border-b border-border/20 last:border-0 min-w-0">
-            <span className="text-xs font-bold text-primary w-4 shrink-0 text-center">{i + 1}</span>
+          <div key={e.slug} className="flex items-center gap-2.5 py-1.5 min-w-0 group">
+            <span className="text-[11px] font-bold text-primary/60 w-4 shrink-0 text-right">{i + 1}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">{e.title}</p>
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <p className="text-xs font-medium truncate group-hover:text-primary transition">{e.title}</p>
+                <span className="text-[11px] font-bold text-foreground shrink-0 tabular-nums">{e.views}</span>
+              </div>
+              <div className="h-1 rounded-full bg-muted/40 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary/20 transition-all duration-500"
+                  style={{ width: `${(e.views / maxViews) * 100}%` }}
+                />
+              </div>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {new Date(e.date_time).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
               </p>
             </div>
-            <span className="text-xs font-bold text-foreground shrink-0 tabular-nums">{e.views}</span>
           </div>
         ))}
       </div>
