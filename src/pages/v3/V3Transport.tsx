@@ -1,5 +1,5 @@
 import { useSearchParams, Link } from "react-router-dom";
-import { Car, Users, Clock, Info, LogIn, Shield } from "lucide-react";
+import { Car, Users, Clock, Info, LogIn, Shield, ClipboardList } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
 import { useV3Profile } from "@/hooks/useV3Profile";
