@@ -70,11 +70,16 @@ const EventoForm = () => {
       loadEvent();
     } else if (duplicateData) {
       const hasDateFromImport = eventouImportId && duplicateData.date_time;
+      const isGenericDesc = !duplicateData.description || 
+        duplicateData.description.startsWith("Plataforma segura e intuitiva") ||
+        duplicateData.description.length < 10;
+
       setForm((prev) => ({
         ...prev,
         ...duplicateData,
         slug: slugify(duplicateData.title) + "-" + Date.now().toString(36),
         date_time: hasDateFromImport ? duplicateData.date_time : "",
+        description: isGenericDesc ? "" : duplicateData.description,
         status: "draft",
         featured: false,
       }));
@@ -84,6 +89,17 @@ const EventoForm = () => {
         setManualVenue(true);
       }
       toast.info(hasDateFromImport ? "Dados importados! Revise e publique." : "Evento duplicado. Defina a nova data antes de publicar.");
+
+      // Auto-generate description for Eventou imports with missing/generic descriptions
+      if (eventouImportId && isGenericDesc) {
+        generateDescription({
+          title: duplicateData.title,
+          venue_name: duplicateData.venue_name,
+          date_time: hasDateFromImport ? duplicateData.date_time : "",
+          category: duplicateData.category,
+          image_url: duplicateData.image_url,
+        });
+      }
     }
   }, [id]);
 
