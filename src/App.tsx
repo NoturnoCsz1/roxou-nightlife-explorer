@@ -35,6 +35,7 @@ import V3Transport from "./pages/v3/V3Transport";
 import V3Terms from "./pages/v3/V3Terms";
 import V3Privacy from "./pages/v3/V3Privacy";
 import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
+import V3Auth from "./pages/v3/V3Auth";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="terms" element={<V3Terms />} />
             <Route path="privacy" element={<V3Privacy />} />
             <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
+            <Route path="auth" element={<V3Auth />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

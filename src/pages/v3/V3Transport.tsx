@@ -1,13 +1,64 @@
-import { useSearchParams } from "react-router-dom";
-import { Car, Users, Clock, Info } from "lucide-react";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { Car, Users, Clock, Info, LogIn, Shield } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useV3Profile } from "@/hooks/useV3Profile";
+
+function AuthGate() {
+  return (
+    <div className="p-6 rounded-2xl bg-card border border-border/40 text-center space-y-4">
+      <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto">
+        <LogIn className="w-7 h-7 text-primary" />
+      </div>
+      <h2 className="font-display font-bold text-lg text-foreground">Entre para continuar</h2>
+      <p className="text-sm text-muted-foreground">
+        Motoristas precisam de conta para oferecer corridas. Passageiros podem criar pedidos sem login.
+      </p>
+      <Link to="/v3/auth?redirect=/v3/transporte">
+        <Button className="w-full h-12 rounded-xl font-semibold text-sm">
+          Entrar ou criar conta
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+function TermsGate() {
+  return (
+    <div className="p-6 rounded-2xl bg-card border border-border/40 text-center space-y-4">
+      <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto">
+        <Shield className="w-7 h-7 text-primary" />
+      </div>
+      <h2 className="font-display font-bold text-lg text-foreground">Aceite os Termos</h2>
+      <p className="text-sm text-muted-foreground">
+        Para usar o Roxou Transporte, você precisa aceitar nossos termos de uso e política de privacidade.
+      </p>
+      <Link to="/v3/terms-acceptance">
+        <Button className="w-full h-12 rounded-xl font-semibold text-sm">
+          Aceitar termos
+        </Button>
+      </Link>
+    </div>
+  );
+}
 
 export default function V3Transport() {
   const [searchParams] = useSearchParams();
   const eventName = searchParams.get("event") || "";
   const venueName = searchParams.get("venue") || "";
+  const { user, loading, isDriver, hasAcceptedTerms } = useV3Profile();
+
+  // Driver must be logged in and have accepted terms
+  const driverBlocked = !user;
+  const termsBlocked = user && !hasAcceptedTerms;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-6 space-y-6">
@@ -18,31 +69,6 @@ export default function V3Transport() {
       </div>
 
       <LegalDisclaimer />
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-xl bg-card border border-border/40 space-y-2">
-          <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
-            <Car className="w-5 h-5 text-primary" />
-          </div>
-          <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
-          <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
-          <Button size="sm" className="w-full mt-1 rounded-lg text-xs h-8">
-            Pedir carona
-          </Button>
-        </div>
-
-        <div className="p-4 rounded-xl bg-card border border-border/40 space-y-2">
-          <div className="w-10 h-10 rounded-lg bg-accent/15 flex items-center justify-center">
-            <Users className="w-5 h-5 text-accent" />
-          </div>
-          <h3 className="font-display font-semibold text-sm text-foreground">Sou motorista</h3>
-          <p className="text-[11px] text-muted-foreground">Veja pedidos próximos e ofereça corridas</p>
-          <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
-            Ver pedidos
-          </Button>
-        </div>
-      </div>
 
       {/* Pre-filled event info */}
       {eventName && (
@@ -55,6 +81,51 @@ export default function V3Transport() {
           {venueName && <p className="text-xs text-muted-foreground">📍 {venueName}</p>}
         </div>
       )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Passenger card — always available */}
+        <div className="p-4 rounded-xl bg-card border border-border/40 space-y-2">
+          <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center">
+            <Car className="w-5 h-5 text-primary" />
+          </div>
+          <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
+          <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
+          <Button size="sm" className="w-full mt-1 rounded-lg text-xs h-8">
+            Pedir carona
+          </Button>
+        </div>
+
+        {/* Driver card — gated */}
+        <div className="p-4 rounded-xl bg-card border border-border/40 space-y-2">
+          <div className="w-10 h-10 rounded-lg bg-accent/15 flex items-center justify-center">
+            <Users className="w-5 h-5 text-accent" />
+          </div>
+          <h3 className="font-display font-semibold text-sm text-foreground">Sou motorista</h3>
+          <p className="text-[11px] text-muted-foreground">Veja pedidos próximos e ofereça corridas</p>
+          {driverBlocked ? (
+            <Link to="/v3/auth?redirect=/v3/transporte">
+              <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
+                Entrar
+              </Button>
+            </Link>
+          ) : termsBlocked ? (
+            <Link to="/v3/terms-acceptance">
+              <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
+                Aceitar termos
+              </Button>
+            </Link>
+          ) : (
+            <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
+              Ver pedidos
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Auth/Terms gate banners for drivers */}
+      {driverBlocked && <AuthGate />}
+      {termsBlocked && <TermsGate />}
 
       {/* How it works */}
       <div className="space-y-3">
