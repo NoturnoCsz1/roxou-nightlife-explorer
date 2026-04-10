@@ -438,8 +438,13 @@ async function scrapeAndInsert(
   const matchNorm = (s: string | null) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim() : "";
   const streetKey = (s: string | null) => {
     if (!s) return "";
-    const n = matchNorm(s);
-    const m = n.match(/(?:rua|r|av|avenida|alameda|travessa|rod)?\s*(.+?)\s*(\d{1,5})/);
+    let n = matchNorm(s);
+    n = n.replace(/\b(r|rua)\b/g,"rua").replace(/\b(av|avenida)\b/g,"avenida")
+      .replace(/\b(ten|tenente)\b/g,"tenente").replace(/\b(cel|coronel)\b/g,"coronel")
+      .replace(/\b(dr|doutor|dra|doutora)\b/g,"doutor").replace(/\b(pres|presidente)\b/g,"presidente")
+      .replace(/\b(com|comendador)\b/g,"comendador").replace(/\b(rod|rodovia)\b/g,"rodovia")
+      .replace(/\b(al|alameda)\b/g,"alameda").replace(/\b(trav|travessa)\b/g,"travessa");
+    const m = n.match(/(?:rua|avenida|alameda|travessa|rodovia)?\s*(.+?)\s*(\d{1,5})/);
     return m ? `${m[1].trim()} ${m[2]}` : n.slice(0, 40);
   };
 
