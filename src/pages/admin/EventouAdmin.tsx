@@ -109,6 +109,79 @@ interface ScanStats {
   timeMs: number;
   phase: string;
 }
+type PartnerForMatch = { id: string; name: string; address: string | null; instagram: string | null };
+
+function normalizeText(s: string | null): string {
+  if (!s) return "";
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+}
+
+function extractStreetKey(addr: string | null): string {
+  if (!addr) return "";
+  let norm = normalizeText(addr);
+  // Normalize common Brazilian abbreviations
+  norm = norm
+    .replace(/\b(r|rua)\b/g, "rua")
+    .replace(/\b(av|avenida)\b/g, "avenida")
+    .replace(/\b(ten|tenente)\b/g, "tenente")
+    .replace(/\b(cel|coronel)\b/g, "coronel")
+    .replace(/\b(dr|doutor|dra|doutora)\b/g, "doutor")
+    .replace(/\b(pres|presidente)\b/g, "presidente")
+    .replace(/\b(com|comendador)\b/g, "comendador")
+    .replace(/\b(rod|rodovia)\b/g, "rodovia")
+    .replace(/\b(al|alameda)\b/g, "alameda")
+    .replace(/\b(trav|travessa)\b/g, "travessa");
+  const m = norm.match(/(?:rua|avenida|alameda|travessa|rodovia)?\s*(.+?)\s*(\d{1,5})/);
+  if (m) return `${m[1].trim()} ${m[2]}`;
+  return norm.slice(0, 40);
+}
+
+function findMatchingPartnerStatic(
+  venueName: string | null,
+  address: string | null,
+  organizer: string | null | undefined,
+  title: string | null | undefined,
+  partners: PartnerForMatch[],
+): PartnerForMatch | null {
+  const vnNorm = normalizeText(venueName);
+  const addrNorm = normalizeText(address);
+  const orgNorm = normalizeText(organizer);
+  const titleNorm = normalizeText(title);
+  const addrKey = extractStreetKey(address);
+
+  let bestMatch: PartnerForMatch | null = null;
+  let bestScore = 0;
+
+  for (const p of partners) {
+    const pNameNorm = normalizeText(p.name);
+    const pAddrNorm = normalizeText(p.address);
+    const pAddrKey = extractStreetKey(p.address);
+    let score = 0;
+
+    // 1. Exact venue name match (strongest)
+    if (vnNorm && pNameNorm && vnNorm === pNameNorm) score += 10;
+    // 2. Partial venue name match
+    else if (vnNorm && pNameNorm && vnNorm.length >= 4 && (vnNorm.includes(pNameNorm) || pNameNorm.includes(vnNorm))) score += 8;
+
+    // 3. Organizer matches partner name
+    if (orgNorm && pNameNorm && orgNorm.length >= 4 && (orgNorm.includes(pNameNorm) || pNameNorm.includes(orgNorm))) score += 7;
+
+    // 4. Title contains partner name (e.g. "PRÉ JUR (AUPP & Casa di Bambù)")
+    if (titleNorm && pNameNorm && pNameNorm.length >= 4 && titleNorm.includes(pNameNorm)) score += 6;
+
+    // 5. Address: street + number match (very reliable)
+    if (addrKey && pAddrKey && addrKey.length >= 6 && (addrKey.includes(pAddrKey) || pAddrKey.includes(addrKey))) score += 9;
+    // 6. Full address partial match
+    else if (addrNorm && pAddrNorm && addrNorm.length >= 10 && (addrNorm.includes(pAddrNorm) || pAddrNorm.includes(addrNorm))) score += 5;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = p;
+    }
+  }
+
+  return bestScore >= 5 ? bestMatch : null;
+}
 
 const EventouAdmin = () => {
   const navigate = useNavigate();
@@ -127,38 +200,51 @@ const EventouAdmin = () => {
 
   useEffect(() => {
     loadItems();
-    loadAllPartners();
   }, []);
-
-  async function loadAllPartners() {
-    const { data } = await supabase.from("partners").select("id, name, address, instagram").eq("active", true);
-    setAllPartners(data || []);
-  }
 
   async function loadItems() {
     setLoading(true);
-    const { data } = await supabase
-      .from("eventou_imports")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const [{ data }, { data: partnersData }] = await Promise.all([
+      supabase.from("eventou_imports").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("partners").select("id, name, address, instagram").eq("active", true),
+    ]);
+
+    const freshPartners = partnersData || [];
+    setAllPartners(freshPartners);
 
     if (data && data.length > 0) {
-      const partnerIds = [...new Set(data.filter((d) => d.partner_id).map((d) => d.partner_id!))];
-      let partnerMap: Record<string, string> = {};
-      if (partnerIds.length > 0) {
-        const { data: partners } = await supabase.from("partners").select("id, name").in("id", partnerIds);
-        if (partners) partnerMap = Object.fromEntries(partners.map((p) => [p.id, p.name]));
-      }
+      const partnerMap: Record<string, string> = {};
+      freshPartners.forEach((p) => { partnerMap[p.id] = p.name; });
+
       setItems(
         data.map((d) => {
-          const { score, tier } = calcPriority(d as EventouRow);
-          const isAutoReady = score >= 6 && d.partner_id && d.import_status === "pending";
-          return {
+          const cleanVenue = d.venue_name === "será?" ? null : d.venue_name;
+          let effectivePartnerId = d.partner_id;
+          let partnerName = d.partner_id ? partnerMap[d.partner_id] : undefined;
+
+          // Auto-match partner if not already linked (using all signals)
+          if (!effectivePartnerId && d.import_status === "pending") {
+            const matched = findMatchingPartnerStatic(
+              cleanVenue, d.address, d.organizer, d.title, freshPartners
+            );
+            if (matched) {
+              effectivePartnerId = matched.id;
+              partnerName = matched.name;
+            }
+          }
+
+          const row = {
             ...d,
             title: d.title?.replace(/ - Eventou$/, "") || d.title,
-            venue_name: d.venue_name === "será?" ? null : d.venue_name,
-            partner_name: d.partner_id ? partnerMap[d.partner_id] : undefined,
+            venue_name: cleanVenue,
+            partner_id: effectivePartnerId,
+            partner_name: partnerName,
+          } as EventouRow;
+
+          const { score, tier } = calcPriority(row);
+          const isAutoReady = score >= 6 && effectivePartnerId && d.import_status === "pending";
+          return {
+            ...row,
             priority_score: score,
             priority_tier: tier,
             import_status: isAutoReady ? "auto_ready" : d.import_status,
@@ -213,29 +299,6 @@ const EventouAdmin = () => {
     }
   }
 
-  function normalizeForMatch(s: string | null): string {
-    if (!s) return "";
-    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
-  }
-
-  function findMatchingPartner(venueName: string | null, address: string | null): typeof allPartners[0] | null {
-    if (!venueName && !address) return null;
-    const vnNorm = normalizeForMatch(venueName);
-    const addrNorm = normalizeForMatch(address);
-
-    for (const p of allPartners) {
-      const pNameNorm = normalizeForMatch(p.name);
-      const pAddrNorm = normalizeForMatch(p.address);
-
-      // Exact name match
-      if (vnNorm && pNameNorm && vnNorm === pNameNorm) return p;
-      // Partial name match (contains in either direction)
-      if (vnNorm && pNameNorm && vnNorm.length >= 4 && (vnNorm.includes(pNameNorm) || pNameNorm.includes(vnNorm))) return p;
-      // Address match
-      if (addrNorm && pAddrNorm && addrNorm.length >= 8 && (addrNorm.includes(pAddrNorm) || pAddrNorm.includes(addrNorm))) return p;
-    }
-    return null;
-  }
 
   function handleApprove(row: EventouRow) {
     const slug = (row.title || "")
@@ -253,7 +316,7 @@ const EventouAdmin = () => {
     let instagramFinal = "";
 
     if (!partnerId) {
-      const matched = findMatchingPartner(row.venue_name, row.address);
+      const matched = findMatchingPartnerStatic(row.venue_name, row.address, row.organizer, row.title, allPartners);
       if (matched) {
         partnerId = matched.id;
         venueNameFinal = matched.name;
