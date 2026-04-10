@@ -26,6 +26,16 @@ import EventouAdmin from "./pages/admin/EventouAdmin";
 import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
 
+// V3
+import V3Layout from "./components/v3/V3Layout";
+import V3Home from "./pages/v3/V3Home";
+import V3EventDetail from "./pages/v3/V3EventDetail";
+import V3LocalDetail from "./pages/v3/V3LocalDetail";
+import V3Transport from "./pages/v3/V3Transport";
+import V3Terms from "./pages/v3/V3Terms";
+import V3Privacy from "./pages/v3/V3Privacy";
+import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
+
 const queryClient = new QueryClient();
 
 const App = () => (
