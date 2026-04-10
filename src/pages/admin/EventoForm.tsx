@@ -50,6 +50,7 @@ const EventoForm = () => {
   const eventouImportId = (location.state as any)?.eventou_import_id;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [manualVenue, setManualVenue] = useState(false);
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
