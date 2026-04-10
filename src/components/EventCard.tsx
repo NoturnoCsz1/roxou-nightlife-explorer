@@ -1,7 +1,7 @@
 import { Calendar, Clock, MapPin, Megaphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatTime, formatDateShort, isToday } from "@/lib/dateUtils";
-import { categoryConfig } from "@/lib/categoryConfig";
+import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
 
 export interface SupabaseEvent {
   id: string;
@@ -10,6 +10,7 @@ export interface SupabaseEvent {
   description: string | null;
   date_time: string;
   category: string;
+  sub_category?: string | null;
   venue_name: string | null;
   address: string | null;
   instagram: string | null;
@@ -32,6 +33,7 @@ const EventCard = ({ event, variant = "default", index = 0, sponsored = false }:
   const dt = new Date(event.date_time);
   const todayEvent = isToday(dt);
   const cat = categoryConfig[event.category] || { label: event.category, badge: "bg-secondary" };
+  const catLabel = getCategoryLabel(event.category, event.sub_category);
   const image = event.image_url || "/placeholder.svg";
   const venue = event.venue_name || "";
   const venueLink = event.partner_slug ? `/local/${event.partner_slug}` : null;
