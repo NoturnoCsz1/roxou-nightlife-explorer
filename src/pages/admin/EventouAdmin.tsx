@@ -118,8 +118,20 @@ function normalizeText(s: string | null): string {
 
 function extractStreetKey(addr: string | null): string {
   if (!addr) return "";
-  const norm = normalizeText(addr);
-  const m = norm.match(/(?:rua|r|av|avenida|alameda|travessa|rod)?\s*(.+?)\s*(\d{1,5})/);
+  let norm = normalizeText(addr);
+  // Normalize common Brazilian abbreviations
+  norm = norm
+    .replace(/\b(r|rua)\b/g, "rua")
+    .replace(/\b(av|avenida)\b/g, "avenida")
+    .replace(/\b(ten|tenente)\b/g, "tenente")
+    .replace(/\b(cel|coronel)\b/g, "coronel")
+    .replace(/\b(dr|doutor|dra|doutora)\b/g, "doutor")
+    .replace(/\b(pres|presidente)\b/g, "presidente")
+    .replace(/\b(com|comendador)\b/g, "comendador")
+    .replace(/\b(rod|rodovia)\b/g, "rodovia")
+    .replace(/\b(al|alameda)\b/g, "alameda")
+    .replace(/\b(trav|travessa)\b/g, "travessa");
+  const m = norm.match(/(?:rua|avenida|alameda|travessa|rodovia)?\s*(.+?)\s*(\d{1,5})/);
   if (m) return `${m[1].trim()} ${m[2]}`;
   return norm.slice(0, 40);
 }
