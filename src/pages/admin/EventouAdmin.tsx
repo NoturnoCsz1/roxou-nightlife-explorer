@@ -127,13 +127,7 @@ const EventouAdmin = () => {
 
   useEffect(() => {
     loadItems();
-    loadAllPartners();
   }, []);
-
-  async function loadAllPartners() {
-    const { data } = await supabase.from("partners").select("id, name, address, instagram").eq("active", true);
-    setAllPartners(data || []);
-  }
 
   async function loadItems() {
     setLoading(true);
