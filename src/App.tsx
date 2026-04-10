@@ -84,6 +84,9 @@ const App = () => (
             <Route path="evento/:slug" element={<V3EventDetail />} />
             <Route path="local/:slug" element={<V3LocalDetail />} />
             <Route path="transporte" element={<V3Transport />} />
+            <Route path="pedir-carona" element={<V3RideRequest />} />
+            <Route path="motorista" element={<V3DriverBoard />} />
+            <Route path="chat/:requestId" element={<V3Chat />} />
             <Route path="terms" element={<V3Terms />} />
             <Route path="privacy" element={<V3Privacy />} />
             <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
