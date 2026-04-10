@@ -231,8 +231,8 @@ async function scrapeAndInsert(
     headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       url: eventUrl,
-      formats: ["markdown"],
-      onlyMainContent: true,
+      formats: ["markdown", "html"],
+      onlyMainContent: false,
       waitFor: 1500,
     }),
   });
@@ -246,6 +246,7 @@ async function scrapeAndInsert(
 
   const meta = detailData.data?.metadata || detailData.metadata || {};
   const md = detailData.data?.markdown || detailData.markdown || "";
+  const html = detailData.data?.html || detailData.html || "";
 
   const title = meta.ogTitle || meta.title || extractTitle(md);
   if (!title) {
@@ -261,8 +262,19 @@ async function scrapeAndInsert(
   }
 
   const description = meta.ogDescription || meta.description || extractDescription(md);
-  const imageUrl = meta.ogImage || meta["og:image"] || null;
-  const venue = extractVenue(md);
+
+  // Enhanced image extraction (priority chain)
+  const imageUrl = extractImage(meta, html);
+
+  // Enhanced venue extraction
+  const venue = extractVenue(md, html);
+
+  // Enhanced address extraction
+  const address = extractAddress(md, html);
+
+  // Enhanced organizer extraction
+  const organizer = extractOrganizer(md, html);
+
   const dateTime = extractDateTime(md);
 
   // Dedup: check external_id (slug) and normalized title+venue+date
@@ -304,7 +316,7 @@ async function scrapeAndInsert(
     if (match) partnerId = match.id;
   }
 
-
+  console.log(`Inserting: "${title}" | venue="${venue}" | organizer="${organizer}" | address="${address}" | image=${!!imageUrl}`);
 
   const { error: insertError } = await supabase.from("eventou_imports").insert({
     eventou_url: eventUrl,
@@ -318,6 +330,8 @@ async function scrapeAndInsert(
     image_url: imageUrl,
     partner_id: partnerId,
     import_status: "pending",
+    organizer: organizer?.slice(0, 500) || null,
+    address: address?.slice(0, 500) || null,
   });
 
   if (insertError) {
@@ -358,16 +372,167 @@ function extractCity(md: string): string | null {
   return null;
 }
 
-function extractVenue(md: string): string | null {
+/* ── Enhanced image extraction ── */
+function extractImage(meta: Record<string, any>, html: string): string | null {
+  // 1. og:image
+  const ogImage = meta.ogImage || meta["og:image"];
+  if (ogImage && isValidImageUrl(ogImage)) return ogImage;
+
+  // 2. twitter:image
+  const twitterImage = meta["twitter:image"] || meta.twitterImage;
+  if (twitterImage && isValidImageUrl(twitterImage)) return twitterImage;
+
+  // 3. JSON-LD image
+  const jsonLdImage = extractJsonLdField(html, "image");
+  if (jsonLdImage && isValidImageUrl(jsonLdImage)) return jsonLdImage;
+
+  // 4. Main event image in HTML (large images, skip icons/logos)
+  const imgMatches = html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi);
+  for (const m of imgMatches) {
+    const src = m[1];
+    if (isValidImageUrl(src) && !isSmallIcon(m[0])) return src;
+  }
+
+  return null;
+}
+
+function isValidImageUrl(url: string): boolean {
+  if (!url || url.length < 10) return false;
+  try {
+    const u = new URL(url.startsWith("//") ? `https:${url}` : url);
+    return /\.(jpg|jpeg|png|webp|avif)/i.test(u.pathname) || u.hostname.includes("img") || u.hostname.includes("image") || u.pathname.includes("/image");
+  } catch {
+    return false;
+  }
+}
+
+function isSmallIcon(imgTag: string): boolean {
+  const widthMatch = imgTag.match(/width=["']?(\d+)/i);
+  const heightMatch = imgTag.match(/height=["']?(\d+)/i);
+  if (widthMatch && parseInt(widthMatch[1]) < 100) return true;
+  if (heightMatch && parseInt(heightMatch[1]) < 100) return true;
+  if (/favicon|icon|logo|avatar|badge/i.test(imgTag)) return true;
+  return false;
+}
+
+/* ── Enhanced venue extraction ── */
+function extractVenue(md: string, html: string): string | null {
+  // 1. JSON-LD location.name or location
+  const jsonLdLocation = extractJsonLdField(html, "location");
+  if (jsonLdLocation) {
+    if (typeof jsonLdLocation === "object" && jsonLdLocation.name) {
+      return cleanExtracted(jsonLdLocation.name);
+    }
+    if (typeof jsonLdLocation === "string") {
+      return cleanExtracted(jsonLdLocation);
+    }
+  }
+
+  // 2. Markdown patterns (priority order)
   const patterns = [
-    /(?:Local|Onde|Endereço|Local do evento)[:\s]+(.+)/i,
+    /(?:Local do evento|Venue)[:\s]+(.+)/i,
+    /(?:Local|Onde|Endereço)[:\s]+(.+)/i,
     /📍\s*(.+)/,
   ];
   for (const p of patterns) {
     const m = md.match(p);
-    if (m) return m[1].trim().slice(0, 200);
+    if (m) {
+      const val = m[1].trim();
+      // Skip if it looks like an address (has number + street pattern)
+      if (val.length > 3 && val.length < 200) return cleanExtracted(val);
+    }
+  }
+
+  return null;
+}
+
+/* ── Enhanced address extraction ── */
+function extractAddress(md: string, html: string): string | null {
+  // 1. JSON-LD address
+  const jsonLdLocation = extractJsonLdField(html, "location");
+  if (jsonLdLocation && typeof jsonLdLocation === "object") {
+    const addr = jsonLdLocation.address;
+    if (addr) {
+      if (typeof addr === "string") return cleanExtracted(addr);
+      if (typeof addr === "object") {
+        const parts = [addr.streetAddress, addr.addressLocality, addr.addressRegion].filter(Boolean);
+        if (parts.length) return cleanExtracted(parts.join(", "));
+      }
+    }
+  }
+
+  // 2. Markdown patterns
+  const patterns = [
+    /(?:Endereço|Address)[:\s]+(.+)/i,
+    /(?:Rua|Av\.|Avenida|Alameda|Travessa|Rodovia)\s+[^,\n]{5,}[,\s]+\d+/i,
+  ];
+  for (const p of patterns) {
+    const m = md.match(p);
+    if (m) {
+      const val = (m[1] || m[0]).trim();
+      if (val.length > 5 && val.length < 300) return cleanExtracted(val);
+    }
+  }
+
+  return null;
+}
+
+/* ── Enhanced organizer extraction ── */
+function extractOrganizer(md: string, html: string): string | null {
+  // 1. JSON-LD organizer/performer
+  for (const field of ["organizer", "performer"]) {
+    const val = extractJsonLdField(html, field);
+    if (val) {
+      if (typeof val === "object" && val.name) return cleanExtracted(val.name);
+      if (typeof val === "string") return cleanExtracted(val);
+    }
+  }
+
+  // 2. Markdown patterns
+  const patterns = [
+    /(?:Organizad(?:o|a|or)|Organização)[:\s]+(.+)/i,
+    /(?:Produção|Produzido por|Realização)[:\s]+(.+)/i,
+    /(?:Promoter|Promotora|Produtora)[:\s]+(.+)/i,
+    /(?:Por|By)[:\s]+(.{3,60})/i,
+  ];
+  for (const p of patterns) {
+    const m = md.match(p);
+    if (m) {
+      const val = m[1].trim();
+      if (val.length > 2 && val.length < 200) return cleanExtracted(val);
+    }
+  }
+
+  return null;
+}
+
+/* ── JSON-LD helper ── */
+function extractJsonLdField(html: string, field: string): any {
+  const scriptMatches = html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+  for (const m of scriptMatches) {
+    try {
+      const data = JSON.parse(m[1]);
+      // Handle array of JSON-LD objects
+      const items = Array.isArray(data) ? data : [data];
+      for (const item of items) {
+        if (item[field] !== undefined) return item[field];
+        // Check @graph
+        if (item["@graph"] && Array.isArray(item["@graph"])) {
+          for (const g of item["@graph"]) {
+            if (g[field] !== undefined) return g[field];
+          }
+        }
+      }
+    } catch {
+      // skip invalid JSON-LD
+    }
   }
   return null;
+}
+
+/* ── cleanup helper ── */
+function cleanExtracted(val: string): string {
+  return val.replace(/[\n\r]+/g, " ").replace(/\s+/g, " ").replace(/[*_#\[\]]/g, "").trim().slice(0, 500);
 }
 
 function extractDateTime(md: string): string | null {
