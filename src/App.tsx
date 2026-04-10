@@ -84,6 +84,7 @@ const App = () => (
             <Route path="terms" element={<V3Terms />} />
             <Route path="privacy" element={<V3Privacy />} />
             <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
+            <Route path="auth" element={<V3Auth />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
