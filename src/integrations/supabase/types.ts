@@ -255,8 +255,13 @@ export type Database = {
           image_url: string | null
           import_status: string
           instagram_handle: string
+          observation: string | null
           partner_id: string | null
           post_url: string
+          source_type: string
+          suggested_date: string | null
+          title: string | null
+          venue_name: string | null
         }
         Insert: {
           caption?: string | null
@@ -268,8 +273,13 @@ export type Database = {
           image_url?: string | null
           import_status?: string
           instagram_handle: string
+          observation?: string | null
           partner_id?: string | null
           post_url: string
+          source_type?: string
+          suggested_date?: string | null
+          title?: string | null
+          venue_name?: string | null
         }
         Update: {
           caption?: string | null
@@ -281,8 +291,13 @@ export type Database = {
           image_url?: string | null
           import_status?: string
           instagram_handle?: string
+          observation?: string | null
           partner_id?: string | null
           post_url?: string
+          source_type?: string
+          suggested_date?: string | null
+          title?: string | null
+          venue_name?: string | null
         }
         Relationships: [
           {
