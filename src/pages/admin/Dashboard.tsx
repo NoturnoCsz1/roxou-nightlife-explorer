@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { fetchAllRows } from "@/lib/supabaseFetchAll";
-import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download, MousePointerClick, BarChart3, Activity } from "lucide-react";
+import { CalendarDays, Users, CalendarCheck, Clock, Eye, Monitor, Plus, Download, MousePointerClick } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import MetricCard from "@/components/admin/MetricCard";
@@ -24,19 +24,11 @@ interface TopPageItem {
   views: number;
 }
 
-const SectionTitle = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
-  <div className="flex items-center gap-2.5">
-    <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10">
-      <Icon className="h-3.5 w-3.5 text-primary" />
-    </div>
-    <h3 className="text-sm font-bold text-foreground tracking-tight">{title}</h3>
-  </div>
 );
 
-const ChartCard = ({ children, title, icon }: { children: React.ReactNode; title: string; icon?: React.ElementType }) => (
+const ChartCard = ({ children, title }: { children: React.ReactNode; title: string }) => (
   <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5 transition-all hover:border-border/50">
     <div className="flex items-center gap-2 mb-4">
-      {icon && <icon className="h-4 w-4 text-primary" />}
       <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">{title}</h3>
     </div>
     {children}
