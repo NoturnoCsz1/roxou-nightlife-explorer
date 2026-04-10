@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Save, ChevronDown, ChevronUp, Instagram } from "lucide-react";
+import { ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -50,6 +50,25 @@ const EventoForm = () => {
   const eventouImportId = (location.state as any)?.eventou_import_id;
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+
+  async function generateDescription(info: { title: string; venue_name?: string; date_time?: string; category?: string; image_url?: string }) {
+    setGeneratingDesc(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-description", {
+        body: info,
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setForm((prev) => ({ ...prev, description: prev.description || data.description }));
+        toast.success("Descrição gerada automaticamente!");
+      }
+    } catch (err: any) {
+      console.error("Erro ao gerar descrição:", err);
+    } finally {
+      setGeneratingDesc(false);
+    }
+  }
   const [partners, setPartners] = useState<Partner[]>([]);
   const [manualVenue, setManualVenue] = useState(false);
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
@@ -69,11 +88,16 @@ const EventoForm = () => {
       loadEvent();
     } else if (duplicateData) {
       const hasDateFromImport = eventouImportId && duplicateData.date_time;
+      const isGenericDesc = !duplicateData.description || 
+        duplicateData.description.startsWith("Plataforma segura e intuitiva") ||
+        duplicateData.description.length < 10;
+
       setForm((prev) => ({
         ...prev,
         ...duplicateData,
         slug: slugify(duplicateData.title) + "-" + Date.now().toString(36),
         date_time: hasDateFromImport ? duplicateData.date_time : "",
+        description: isGenericDesc ? "" : duplicateData.description,
         status: "draft",
         featured: false,
       }));
@@ -83,6 +107,17 @@ const EventoForm = () => {
         setManualVenue(true);
       }
       toast.info(hasDateFromImport ? "Dados importados! Revise e publique." : "Evento duplicado. Defina a nova data antes de publicar.");
+
+      // Auto-generate description for Eventou imports with missing/generic descriptions
+      if (eventouImportId && isGenericDesc) {
+        generateDescription({
+          title: duplicateData.title,
+          venue_name: duplicateData.venue_name,
+          date_time: hasDateFromImport ? duplicateData.date_time : "",
+          category: duplicateData.category,
+          image_url: duplicateData.image_url,
+        });
+      }
     }
   }, [id]);
 
@@ -325,8 +360,25 @@ const EventoForm = () => {
           {sections.content && (
             <div className="grid grid-cols-2 gap-2.5">
               <div className="col-span-2">
-                <label className="text-[11px] font-medium text-muted-foreground">Descrição</label>
-                <textarea className={`${inputClass} min-h-[60px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-muted-foreground">Descrição</label>
+                  <button
+                    type="button"
+                    disabled={generatingDesc || !form.title}
+                    onClick={() => generateDescription({
+                      title: form.title,
+                      venue_name: form.venue_name,
+                      date_time: form.date_time,
+                      category: form.category,
+                      image_url: form.image_url,
+                    })}
+                    className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
+                  >
+                    {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    {generatingDesc ? "Gerando..." : "Gerar com IA"}
+                  </button>
+                </div>
+                <textarea className={`${inputClass} min-h-[60px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Gerando descrição com IA..." : ""} />
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Status</label>
