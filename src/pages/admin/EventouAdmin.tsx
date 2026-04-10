@@ -287,67 +287,6 @@ function findMatchingPartnerStatic(
     }
   }
 
-  function normalizeForMatch(s: string | null): string {
-    if (!s) return "";
-    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
-  }
-
-  /** Extract street name + number from an address for flexible matching */
-  function extractStreetKey(addr: string | null): string {
-    if (!addr) return "";
-    const norm = normalizeForMatch(addr);
-    // Match: "rua xxx, NNN" or "av xxx, NNN" or "xxx NNN"
-    const m = norm.match(/(?:rua|r|av|avenida|alameda|travessa|rod)?\s*(.+?)\s*(\d{1,5})/);
-    if (m) return `${m[1].trim()} ${m[2]}`;
-    return norm.slice(0, 40);
-  }
-
-  function findMatchingPartner(
-    venueName: string | null,
-    address: string | null,
-    organizer?: string | null,
-    title?: string | null,
-  ): typeof allPartners[0] | null {
-    const vnNorm = normalizeForMatch(venueName);
-    const addrNorm = normalizeForMatch(address);
-    const orgNorm = normalizeForMatch(organizer);
-    const titleNorm = normalizeForMatch(title);
-    const addrKey = extractStreetKey(address);
-
-    // Score each partner, pick the best
-    let bestMatch: typeof allPartners[0] | null = null;
-    let bestScore = 0;
-
-    for (const p of allPartners) {
-      const pNameNorm = normalizeForMatch(p.name);
-      const pAddrNorm = normalizeForMatch(p.address);
-      const pAddrKey = extractStreetKey(p.address);
-      let score = 0;
-
-      // 1. Exact venue name match (strongest)
-      if (vnNorm && pNameNorm && vnNorm === pNameNorm) score += 10;
-      // 2. Partial venue name match
-      else if (vnNorm && pNameNorm && vnNorm.length >= 4 && (vnNorm.includes(pNameNorm) || pNameNorm.includes(vnNorm))) score += 8;
-
-      // 3. Organizer matches partner name
-      if (orgNorm && pNameNorm && orgNorm.length >= 4 && (orgNorm.includes(pNameNorm) || pNameNorm.includes(orgNorm))) score += 7;
-
-      // 4. Title contains partner name (e.g. "PRÉ JUR (AUPP & Casa di Bambù)")
-      if (titleNorm && pNameNorm && pNameNorm.length >= 4 && titleNorm.includes(pNameNorm)) score += 6;
-
-      // 5. Address: street + number match (very reliable)
-      if (addrKey && pAddrKey && addrKey.length >= 6 && (addrKey.includes(pAddrKey) || pAddrKey.includes(addrKey))) score += 9;
-      // 6. Full address partial match
-      else if (addrNorm && pAddrNorm && addrNorm.length >= 10 && (addrNorm.includes(pAddrNorm) || pAddrNorm.includes(addrNorm))) score += 5;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = p;
-      }
-    }
-
-    return bestScore >= 5 ? bestMatch : null;
-  }
 
   function handleApprove(row: EventouRow) {
     const slug = (row.title || "")
