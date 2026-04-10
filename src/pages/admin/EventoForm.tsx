@@ -51,6 +51,24 @@ const EventoForm = () => {
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
+
+  async function generateDescription(info: { title: string; venue_name?: string; date_time?: string; category?: string; image_url?: string }) {
+    setGeneratingDesc(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-description", {
+        body: info,
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setForm((prev) => ({ ...prev, description: prev.description || data.description }));
+        toast.success("Descrição gerada automaticamente!");
+      }
+    } catch (err: any) {
+      console.error("Erro ao gerar descrição:", err);
+    } finally {
+      setGeneratingDesc(false);
+    }
+  }
   const [partners, setPartners] = useState<Partner[]>([]);
   const [manualVenue, setManualVenue] = useState(false);
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
