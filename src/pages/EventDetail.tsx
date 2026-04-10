@@ -253,7 +253,7 @@ const EventDetail = () => {
           <span
             className={`${cat.badge} rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider`}
           >
-            {cat.label}
+            {catLabel}
           </span>
         </div>
       </div>
@@ -448,7 +448,7 @@ const EventDetail = () => {
           )}
           <div className="flex items-center gap-2 text-sm text-foreground/80">
             <span className={`${cat.badge} rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider`}>
-              {cat.label}
+              {catLabel}
             </span>
           </div>
         </div>
