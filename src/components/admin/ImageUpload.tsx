@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +14,13 @@ const ImageUpload = ({ folder, currentUrl, onUploaded, label = "Imagem" }: Image
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentUrl);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync preview when currentUrl changes (e.g. from prefill)
+  useEffect(() => {
+    if (currentUrl && currentUrl !== preview) {
+      setPreview(currentUrl);
+    }
+  }, [currentUrl]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
