@@ -145,7 +145,7 @@ const EventosList = () => {
         <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
-            {e.category}
+            {getCategoryLabel(e.category, e.sub_category)}
           </span>
           <span className="text-[10px] text-muted-foreground">
             {new Date(e.date_time).toLocaleDateString("pt-BR")}
