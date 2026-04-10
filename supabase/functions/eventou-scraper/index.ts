@@ -28,6 +28,15 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // Check for enrich mode
+  let body: Record<string, any> = {};
+  try { body = await req.json(); } catch { /* empty body = normal scan */ }
+
+  if (body.mode === "enrich") {
+    return await handleEnrich(firecrawlKey, supabase);
+  }
+
   const stats = {
     pagesScraped: 0,
     eventsFound: 0,
