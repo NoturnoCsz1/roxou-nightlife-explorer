@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     console.log(`Phase 3: Scraping ${newUrls.length} pages (concurrency=${CONCURRENCY})`);
 
     // Pre-load partner names for matching
-    const { data: allPartners } = await supabase.from("partners").select("id, name");
+    const { data: allPartners } = await supabase.from("partners").select("id, name, address");
     const partners = allPartners || [];
 
     // Pass dedup sets to scrapeAndInsert
@@ -433,12 +433,31 @@ async function scrapeAndInsert(
   if (slug) dedupCtx.existingExtIds.add(slug);
   if (dedupKey) dedupCtx.existingTitleVenueDate.add(dedupKey);
 
-  // Match partner by venue name (in-memory)
+  // Match partner by venue name, address, organizer, or title
   let partnerId: string | null = null;
-  if (venue) {
-    const venueLower = venue.toLowerCase();
-    const match = partners.find((p) => venueLower.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(venueLower));
-    if (match) partnerId = match.id;
+  const matchNorm = (s: string | null) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim() : "";
+  const streetKey = (s: string | null) => {
+    if (!s) return "";
+    const n = matchNorm(s);
+    const m = n.match(/(?:rua|r|av|avenida|alameda|travessa|rod)?\s*(.+?)\s*(\d{1,5})/);
+    return m ? `${m[1].trim()} ${m[2]}` : n.slice(0, 40);
+  };
+
+  const titleNorm = matchNorm(title);
+  const venueNorm = matchNorm(venue);
+  const addrKey = streetKey(address);
+  const orgNorm = matchNorm(organizer);
+
+  let bestScore = 0;
+  for (const p of partners) {
+    const pn = matchNorm(p.name);
+    const pk = streetKey(p.address);
+    let score = 0;
+    if (venueNorm && pn && (venueNorm === pn || (venueNorm.length >= 4 && (venueNorm.includes(pn) || pn.includes(venueNorm))))) score += 10;
+    if (orgNorm && pn && orgNorm.length >= 4 && (orgNorm.includes(pn) || pn.includes(orgNorm))) score += 7;
+    if (titleNorm && pn && pn.length >= 4 && titleNorm.includes(pn)) score += 6;
+    if (addrKey && pk && addrKey.length >= 6 && (addrKey.includes(pk) || pk.includes(addrKey))) score += 9;
+    if (score > bestScore) { bestScore = score; partnerId = p.id; }
   }
 
   console.log(`Inserting: "${title}" | venue="${venue}" | organizer="${organizer}" | address="${address}" | image=${!!imageUrl}`);
