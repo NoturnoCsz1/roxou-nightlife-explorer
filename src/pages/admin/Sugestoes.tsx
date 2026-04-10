@@ -118,6 +118,7 @@ const Captacao = () => {
   const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<"link" | "manual">("link");
   const [saving, setSaving] = useState(false);
+  const [scraping, setScraping] = useState(false);
   const [form, setForm] = useState({
     url: "",
     title: "",
@@ -127,6 +128,38 @@ const Captacao = () => {
     observation: "",
     image_url: "",
   });
+
+  async function autoDetectFromUrl(url: string) {
+    const source = detectSourceType(url);
+    if (source !== "instagram" && source !== "link") return;
+    setScraping(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-instagram", {
+        body: { url: url.trim() },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        setForm(f => ({
+          ...f,
+          image_url: f.image_url || data.image_url || data.screenshot || "",
+          title: f.title || data.title || "",
+          observation: f.observation || (data.caption || data.description || "").slice(0, 500),
+        }));
+        toast.success("Dados detectados automaticamente");
+      }
+    } catch (err) {
+      console.error("Auto-detect failed:", err);
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  function handleUrlPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (pasted && (pasted.startsWith("http://") || pasted.startsWith("https://"))) {
+      setTimeout(() => autoDetectFromUrl(pasted), 150);
+    }
+  }
 
   // partners for selector
   const [partners, setPartners] = useState<{ id: string; name: string }[]>([]);
