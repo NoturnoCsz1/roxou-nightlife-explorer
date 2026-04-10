@@ -24,7 +24,6 @@ interface TopPageItem {
   views: number;
 }
 
-);
 
 const ChartCard = ({ children, title }: { children: React.ReactNode; title: string }) => (
   <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-5 transition-all hover:border-border/50">
