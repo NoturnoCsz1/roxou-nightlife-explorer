@@ -4,6 +4,7 @@ import { ChevronDown, Copy, Layers, MousePointerClick, Plus, Search, Star, StarO
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { getCategoryLabel } from "@/lib/categoryConfig";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,7 @@ interface EventRow {
   venue_name: string | null;
   date_time: string;
   category: string;
+  sub_category: string | null;
   status: string;
   featured: boolean;
 }
