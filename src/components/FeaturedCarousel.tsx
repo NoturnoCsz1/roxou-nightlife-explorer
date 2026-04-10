@@ -72,7 +72,7 @@ const FeaturedCarousel = ({ onFeaturedLoad }: FeaturedCarouselProps = {}) => {
     <div className="relative overflow-hidden rounded-3xl card-shadow-lg">
       <button
         onClick={() => navigate(`/evento/${event.slug}`)}
-        className="relative block w-full aspect-[4/5] sm:aspect-[16/10] text-left"
+        className="relative block w-full aspect-[9/12] sm:aspect-[16/10] text-left"
       >
         <img src={image} alt={event.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000" key={event.id} />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />

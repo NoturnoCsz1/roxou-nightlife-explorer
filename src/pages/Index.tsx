@@ -293,7 +293,7 @@ const Index = () => {
               </section>
             )}
 
-            <AdBanner adSlot="1234567890" className="my-1 min-h-0" />
+            <AdBanner adSlot="1234567890" className="my-1 min-h-0 empty:hidden [&:has(ins[data-ad-status='unfilled'])]:hidden" />
 
             {tomorrowEvents.length > 0 && (
               <section id="section-amanha" ref={el => { sectionRefs.current.amanha = el; }} className="scroll-mt-36">
