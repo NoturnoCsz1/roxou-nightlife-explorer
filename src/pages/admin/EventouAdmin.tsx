@@ -202,6 +202,8 @@ const EventouAdmin = () => {
       loadItems();
     }
   }
+
+  function handleApprove(row: EventouRow) {
     const slug = (row.title || "")
       .toLowerCase()
       .normalize("NFD")
