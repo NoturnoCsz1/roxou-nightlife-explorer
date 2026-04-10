@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban, Filter, ImageIcon, Users, Clock } from "lucide-react";
+import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban, Filter, ImageIcon, Users, Clock, User, ClipboardCopy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
@@ -30,6 +30,8 @@ interface EventouRow {
   import_status: string;
   event_id: string | null;
   created_at: string;
+  organizer: string | null;
+  address: string | null;
   partner_name?: string;
   priority_score?: number;
   priority_tier?: "high" | "normal" | "low";
@@ -62,6 +64,8 @@ function calcPriority(row: EventouRow): { score: number; tier: "high" | "normal"
   if (row.description && row.description.length > 30) score += 1;
   if (row.venue_name) score += 1;
   if (row.city) score += 1;
+  if (row.organizer) score += 1;
+  if (row.address) score += 1;
 
   const tier = score >= 7 ? "high" : score >= 4 ? "normal" : "low";
   return { score, tier };
@@ -195,7 +199,7 @@ const EventouAdmin = () => {
           description: row.description || "",
           category: "",
           venue_name: row.venue_name || "",
-          address: "",
+          address: row.address || "",
           instagram: "",
           image_url: row.image_url || "",
           partner_id: row.partner_id || "",
@@ -573,7 +577,7 @@ function EventouCard({
             )}
           </div>
 
-          {row.venue_name && (
+          {row.venue_name ? (
             <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
               <MapPin className="h-2.5 w-2.5 shrink-0" /> {row.venue_name}
               {!row.partner_id && onCreatePartner && (
@@ -584,6 +588,33 @@ function EventouCard({
                   <Plus className="h-2.5 w-2.5" /> Criar parceiro
                 </button>
               )}
+            </p>
+          ) : (
+            <p className="text-[11px] text-muted-foreground/50 flex items-center gap-1 mt-0.5">
+              <MapPin className="h-2.5 w-2.5 shrink-0" /> Local não identificado
+            </p>
+          )}
+
+          {row.address && (
+            <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1 mt-0.5">
+              📍 {row.address}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(row.address!);
+                  toast.success("Endereço copiado!");
+                }}
+                className="text-primary hover:text-primary/80 transition ml-0.5"
+                title="Copiar endereço"
+              >
+                <ClipboardCopy className="h-2.5 w-2.5" />
+              </button>
+            </p>
+          )}
+
+          {row.organizer && (
+            <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1 mt-0.5">
+              <User className="h-2.5 w-2.5 shrink-0" /> {row.organizer}
             </p>
           )}
 
