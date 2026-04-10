@@ -220,7 +220,7 @@ const Index = () => {
         </div>
       </div>
 
-      <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-5 md:mt-8 space-y-8 md:space-y-12">
+      <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-4 md:mt-8 space-y-5 md:space-y-10">
         {/* Featured hero */}
         <section className="md:max-w-4xl md:mx-auto">
           <FeaturedCarousel onFeaturedLoad={setFeaturedIds} />
@@ -293,7 +293,7 @@ const Index = () => {
               </section>
             )}
 
-            <AdBanner adSlot="1234567890" className="my-2" />
+            <AdBanner adSlot="1234567890" className="my-1 min-h-0" />
 
             {tomorrowEvents.length > 0 && (
               <section id="section-amanha" ref={el => { sectionRefs.current.amanha = el; }} className="scroll-mt-36">
