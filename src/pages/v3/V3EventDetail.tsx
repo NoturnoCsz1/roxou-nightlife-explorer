@@ -12,6 +12,8 @@ import { useSavedEvents } from "@/hooks/useSavedEvents";
 
 export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  const { isSaved, toggleSave } = useSavedEvents();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["v3-event", slug],
@@ -45,6 +47,7 @@ export default function V3EventDetail() {
   }
 
   const date = new Date(event.date_time);
+  const saved = isSaved(event.id);
 
   return (
     <div className="pb-8">
@@ -56,9 +59,14 @@ export default function V3EventDetail() {
           <Link to="/v3" className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
             <ArrowLeft className="w-4 h-4 text-white" />
           </Link>
-          <button className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-            <Share2 className="w-4 h-4 text-white" />
-          </button>
+          {user && (
+            <button
+              onClick={() => toggleSave(event.id)}
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+            >
+              <Bookmark className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-white"}`} />
+            </button>
+          )}
         </div>
       </div>
 
