@@ -208,8 +208,19 @@ const EventDetail = () => {
                 },
               }
             : {}),
+          ...((event as any).ticket_url ? { offers: { "@type": "Offer", url: (event as any).ticket_url, availability: "https://schema.org/InStock" } } : {}),
         }}
       />
+      {/* BreadcrumbList */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "ROXOU", item: "https://roxou.com.br" },
+          ...(partner ? [{ "@type": "ListItem", position: 2, name: partner.name, item: `https://roxou.com.br/local/${partner.slug}` }] : []),
+          { "@type": "ListItem", position: partner ? 3 : 2, name: event.title, item: `https://roxou.com.br/evento/${event.slug}` },
+        ],
+      }) }} />
       {/* Hero image */}
       <div className="relative">
         <img
