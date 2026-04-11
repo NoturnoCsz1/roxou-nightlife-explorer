@@ -69,6 +69,16 @@ Deno.serve(async (req) => {
 `;
   }
 
+  for (const page of seoLandings) {
+    xml += `  <url>
+    <loc>${BASE_URL}${page.loc}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>
+`;
+  }
+
   // Event pages
   for (const event of events || []) {
     const lastmod = (event.created_at || today).split("T")[0];
