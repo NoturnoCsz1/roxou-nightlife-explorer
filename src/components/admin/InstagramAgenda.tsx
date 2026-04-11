@@ -697,6 +697,16 @@ const InstagramAgenda = () => {
                   <Pause className="h-3 w-3" /> Parar
                 </button>
               )}
+              {hasDownloadableMedia && !batchRunning && (
+                <button
+                  onClick={downloadAllAsZip}
+                  disabled={zipping}
+                  className="flex items-center gap-1 rounded-lg bg-secondary/60 px-3 py-2 text-[10px] font-semibold text-foreground hover:bg-secondary transition disabled:opacity-50"
+                >
+                  {zipping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                  {zipping ? "Gerando ZIP…" : "Baixar tudo (.zip)"}
+                </button>
+              )}
             </div>
 
             {/* Progress tracker */}
