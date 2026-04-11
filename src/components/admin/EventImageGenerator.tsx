@@ -1,6 +1,12 @@
 import { useCallback, useRef, useState } from "react";
-import { Loader2, Download, Image as ImageIcon, Send } from "lucide-react";
+import { Loader2, Download, Image as ImageIcon, Send, Smartphone, Square } from "lucide-react";
 import { toast } from "sonner";
+
+export type ImageFormat = "feed" | "story";
+const FORMAT_SIZES: Record<ImageFormat, { w: number; h: number; label: string }> = {
+  feed: { w: 1080, h: 1350, label: "Feed 4:5" },
+  story: { w: 1080, h: 1920, label: "Story 9:16" },
+};
 
 interface EventData {
   title: string;
