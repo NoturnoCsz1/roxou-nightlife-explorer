@@ -519,7 +519,7 @@ const InstagramAgenda = () => {
                         <ReelGenerator
                           event={eventForImage}
                           badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
-                          onSendToDraft={(videoUrl) => {
+                          onSendToDraft={() => {
                             toast.info("Vídeo pronto para publicação manual");
                           }}
                         />
