@@ -29,6 +29,9 @@ import Editores from "./pages/admin/Editores";
 // V3
 import V3Layout from "./components/v3/V3Layout";
 import V3Home from "./pages/v3/V3Home";
+import V3Discover from "./pages/v3/V3Discover";
+import V3Agenda from "./pages/v3/V3Agenda";
+import V3Profile from "./pages/v3/V3Profile";
 import V3EventDetail from "./pages/v3/V3EventDetail";
 import V3LocalDetail from "./pages/v3/V3LocalDetail";
 import V3Transport from "./pages/v3/V3Transport";
@@ -82,6 +85,9 @@ const App = () => (
           {/* V3 */}
           <Route path="/v3" element={<V3Layout />}>
             <Route index element={<V3Home />} />
+            <Route path="descobrir" element={<V3Discover />} />
+            <Route path="agenda" element={<V3Agenda />} />
+            <Route path="perfil" element={<V3Profile />} />
             <Route path="evento/:slug" element={<V3EventDetail />} />
             <Route path="local/:slug" element={<V3LocalDetail />} />
             <Route path="transporte" element={<V3Transport />} />
