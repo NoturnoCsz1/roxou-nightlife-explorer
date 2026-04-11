@@ -2,6 +2,12 @@ import { useCallback, useRef, useState } from "react";
 import { Loader2, Download, Image as ImageIcon, Send } from "lucide-react";
 import { toast } from "sonner";
 
+export type ImageFormat = "feed" | "story";
+const FORMAT_SIZES: Record<ImageFormat, { w: number; h: number; label: string }> = {
+  feed: { w: 1080, h: 1350, label: "Feed 4:5" },
+  story: { w: 1080, h: 1920, label: "Story 9:16" },
+};
+
 interface EventData {
   title: string;
   date_time: string;
@@ -19,8 +25,7 @@ interface Props {
   onSendToDraft?: (imageDataUrl: string) => void;
 }
 
-const CANVAS_W = 1080;
-const CANVAS_H = 1350;
+// (dimensions now come from FORMAT_SIZES)
 
 // Roxou brand colors
 const BRAND_BG = "#0f0a1a";
@@ -84,8 +89,10 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 async function renderEventCard(
   canvas: HTMLCanvasElement,
   event: EventData,
-  badge: string
+  badge: string,
+  fmt: ImageFormat = "feed"
 ) {
+  const { w: CANVAS_W, h: CANVAS_H } = FORMAT_SIZES[fmt];
   const ctx = canvas.getContext("2d")!;
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
@@ -94,7 +101,7 @@ async function renderEventCard(
   ctx.fillStyle = BRAND_BG;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  let flyerLoaded = false;
+  let _flyerLoaded = false;
   if (event.image_url) {
     try {
       const img = await loadImage(event.image_url);
@@ -110,7 +117,7 @@ async function renderEventCard(
         sy = (img.height - sh) / 2;
       }
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CANVAS_W, CANVAS_H);
-      flyerLoaded = true;
+      _flyerLoaded = true;
     } catch {
       // fallback to solid bg
     }
@@ -254,12 +261,13 @@ export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", in
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [generating, setGenerating] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(initialImage || null);
+  const [fmt, setFmt] = useState<ImageFormat>("feed");
 
   const generate = useCallback(async () => {
     if (!canvasRef.current) return;
     setGenerating(true);
     try {
-      const dataUrl = await renderEventCard(canvasRef.current, event, badge);
+      const dataUrl = await renderEventCard(canvasRef.current, event, badge, fmt);
       setImageDataUrl(dataUrl);
       onImageGenerated?.(dataUrl);
       toast.success("Imagem gerada!");
@@ -268,20 +276,34 @@ export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", in
     } finally {
       setGenerating(false);
     }
-  }, [event, badge, onImageGenerated]);
+  }, [event, badge, fmt, onImageGenerated]);
 
   const download = useCallback(() => {
     if (!imageDataUrl) return;
     const a = document.createElement("a");
     a.href = imageDataUrl;
-    a.download = `roxou-${event.title.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}.jpg`;
+    const suffix = fmt === "story" ? "_story" : "";
+    a.download = `roxou-${event.title.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}${suffix}.jpg`;
     a.click();
     toast.success("Download iniciado!");
-  }, [imageDataUrl, event.title]);
+  }, [imageDataUrl, event.title, fmt]);
 
   return (
     <div className="space-y-2">
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* Format toggle */}
+      <div className="flex gap-1">
+        {(Object.entries(FORMAT_SIZES) as [ImageFormat, typeof FORMAT_SIZES["feed"]][]).map(([key, val]) => (
+          <button
+            key={key}
+            onClick={() => { setFmt(key); setImageDataUrl(null); }}
+            className={`text-[9px] px-2 py-1 rounded-full font-semibold transition ${fmt === key ? "bg-primary/20 text-primary" : "bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+          >
+            {val.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex gap-1.5 flex-wrap">
         <button
