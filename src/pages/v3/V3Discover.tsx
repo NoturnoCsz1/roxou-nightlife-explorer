@@ -6,7 +6,7 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   Search, MapPin, Clock, Flame, Music, Mic2, Beer, Zap, PartyPopper,
-  ChevronRight, Utensils, Dribbble,
+  ChevronRight, Dribbble,
   TrendingUp, BadgeCheck, X, Bookmark,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
