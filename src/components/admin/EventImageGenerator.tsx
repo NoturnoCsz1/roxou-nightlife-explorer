@@ -25,8 +25,7 @@ interface Props {
   onSendToDraft?: (imageDataUrl: string) => void;
 }
 
-const CANVAS_W = 1080;
-const CANVAS_H = 1350;
+// (dimensions now come from FORMAT_SIZES)
 
 // Roxou brand colors
 const BRAND_BG = "#0f0a1a";
@@ -102,7 +101,7 @@ async function renderEventCard(
   ctx.fillStyle = BRAND_BG;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  let flyerLoaded = false;
+  let _flyerLoaded = false;
   if (event.image_url) {
     try {
       const img = await loadImage(event.image_url);
@@ -118,7 +117,7 @@ async function renderEventCard(
         sy = (img.height - sh) / 2;
       }
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CANVAS_W, CANVAS_H);
-      flyerLoaded = true;
+      _flyerLoaded = true;
     } catch {
       // fallback to solid bg
     }
