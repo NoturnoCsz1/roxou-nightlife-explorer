@@ -42,6 +42,19 @@ Deno.serve(async (req) => {
     { loc: "/categorias", priority: "0.7", changefreq: "weekly" },
   ];
 
+  // SEO landing pages
+  const seoLandings = [
+    { loc: "/eventos-hoje-em-presidente-prudente", priority: "0.9", changefreq: "daily" },
+    { loc: "/eventos-amanha-em-presidente-prudente", priority: "0.9", changefreq: "daily" },
+    { loc: "/eventos-fim-de-semana-em-presidente-prudente", priority: "0.9", changefreq: "daily" },
+    { loc: "/baladas-em-presidente-prudente", priority: "0.8", changefreq: "daily" },
+    { loc: "/bares-em-presidente-prudente", priority: "0.8", changefreq: "daily" },
+    { loc: "/shows-em-presidente-prudente", priority: "0.8", changefreq: "daily" },
+    { loc: "/pagode-em-presidente-prudente", priority: "0.7", changefreq: "daily" },
+    { loc: "/funk-em-presidente-prudente", priority: "0.7", changefreq: "daily" },
+    { loc: "/sertanejo-em-presidente-prudente", priority: "0.7", changefreq: "daily" },
+  ];
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 `;
