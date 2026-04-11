@@ -99,7 +99,7 @@ export default function V3Profile() {
   };
 
   return (
-    <div className="pb-8 px-4 pt-4 space-y-5">
+    <div className="pb-8 px-4 pt-4 space-y-4">
       {/* ── Header ── */}
       <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/40">
         <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center overflow-hidden">
@@ -126,27 +126,27 @@ export default function V3Profile() {
         </div>
       </div>
 
-      {/* ── Quick stats ── */}
+      {/* ── Quick stats — refined visual weight ── */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="p-3 rounded-xl bg-card border border-border/30 text-center">
-          <Bookmark className="w-4 h-4 text-primary mx-auto mb-1" />
-          <p className="text-base font-bold text-foreground">{savedIds.length}</p>
-          <p className="text-[9px] text-muted-foreground">Salvos</p>
+        <div className="p-3 rounded-xl bg-card border border-border/20 text-center">
+          <Bookmark className="w-4 h-4 text-primary mx-auto mb-1.5" />
+          <p className="text-lg font-bold text-foreground leading-none">{savedIds.length}</p>
+          <p className="text-[9px] text-muted-foreground mt-1">Salvos</p>
         </div>
-        <div className="p-3 rounded-xl bg-card border border-border/30 text-center">
-          <Heart className="w-4 h-4 text-primary mx-auto mb-1" />
-          <p className="text-base font-bold text-foreground">{followedIds.length}</p>
-          <p className="text-[9px] text-muted-foreground">Seguindo</p>
+        <div className="p-3 rounded-xl bg-card border border-border/20 text-center">
+          <Heart className="w-4 h-4 text-primary mx-auto mb-1.5" />
+          <p className="text-lg font-bold text-foreground leading-none">{followedIds.length}</p>
+          <p className="text-[9px] text-muted-foreground mt-1">Seguindo</p>
         </div>
-        <div className="p-3 rounded-xl bg-card border border-border/30 text-center">
-          <Car className="w-4 h-4 text-primary mx-auto mb-1" />
-          <p className="text-base font-bold text-foreground">{rides.length}</p>
-          <p className="text-[9px] text-muted-foreground">Caronas</p>
+        <div className="p-3 rounded-xl bg-card border border-border/20 text-center">
+          <Car className="w-4 h-4 text-primary mx-auto mb-1.5" />
+          <p className="text-lg font-bold text-foreground leading-none">{rides.length}</p>
+          <p className="text-[9px] text-muted-foreground mt-1">Caronas</p>
         </div>
       </div>
 
-      {/* ── Info ── */}
-      <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/30">
+      {/* ── Info — subtle ── */}
+      <div className="rounded-xl bg-card border border-border/20 divide-y divide-border/15">
         <InfoRow icon={Mail} label="Email" value={user.email || "—"} />
         <InfoRow icon={Phone} label="Telefone" value={profile?.phone || "Não informado"} />
         {isDriver && <InfoRow icon={Shield} label="Motorista" value="Verificado ✓" />}
