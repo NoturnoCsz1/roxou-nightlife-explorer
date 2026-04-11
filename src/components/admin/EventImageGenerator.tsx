@@ -90,8 +90,10 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 async function renderEventCard(
   canvas: HTMLCanvasElement,
   event: EventData,
-  badge: string
+  badge: string,
+  fmt: ImageFormat = "feed"
 ) {
+  const { w: CANVAS_W, h: CANVAS_H } = FORMAT_SIZES[fmt];
   const ctx = canvas.getContext("2d")!;
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
