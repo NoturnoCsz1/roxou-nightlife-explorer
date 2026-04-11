@@ -13,7 +13,9 @@ interface EventData {
 
 interface Props {
   event: EventData;
-  badge?: string; // e.g. "HOJE NA ROXOU", "AGENDA DE HOJE", "TOP 1"
+  badge?: string;
+  initialImage?: string;
+  onImageGenerated?: (dataUrl: string) => void;
   onSendToDraft?: (imageDataUrl: string) => void;
 }
 
