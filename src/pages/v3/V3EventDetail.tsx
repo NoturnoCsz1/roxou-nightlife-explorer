@@ -1,12 +1,14 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, MapPin, ExternalLink, ArrowLeft, Share2 } from "lucide-react";
+import { CalendarDays, MapPin, ExternalLink, ArrowLeft, Bookmark } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import TransportCTA from "@/components/v3/TransportCTA";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useSavedEvents } from "@/hooks/useSavedEvents";
 
 export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
