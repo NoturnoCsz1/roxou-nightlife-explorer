@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { Loader2, Download, Image as ImageIcon, Send, Smartphone, Square } from "lucide-react";
+import { Loader2, Download, Image as ImageIcon, Send } from "lucide-react";
 import { toast } from "sonner";
 
 export type ImageFormat = "feed" | "story";
