@@ -101,11 +101,9 @@ async function renderEventCard(
   ctx.fillStyle = BRAND_BG;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  let _flyerLoaded = false;
   if (event.image_url) {
     try {
       const img = await loadImage(event.image_url);
-      // Cover fill
       const imgRatio = img.width / img.height;
       const canvasRatio = CANVAS_W / CANVAS_H;
       let sw = img.width, sh = img.height, sx = 0, sy = 0;
@@ -117,135 +115,161 @@ async function renderEventCard(
         sy = (img.height - sh) / 2;
       }
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CANVAS_W, CANVAS_H);
-      _flyerLoaded = true;
-    } catch {
-      // fallback to solid bg
-    }
+    } catch { /* fallback solid bg */ }
   }
 
-  // Layer 2: Dark overlay gradients
-  // Bottom gradient (stronger)
-  const bottomGrad = ctx.createLinearGradient(0, CANVAS_H * 0.35, 0, CANVAS_H);
+  // Layer 2: Dark overlay gradients — refined for premium feel
+  const bottomGrad = ctx.createLinearGradient(0, CANVAS_H * 0.3, 0, CANVAS_H);
   bottomGrad.addColorStop(0, "rgba(15,10,26,0)");
-  bottomGrad.addColorStop(0.4, "rgba(15,10,26,0.6)");
-  bottomGrad.addColorStop(0.7, "rgba(15,10,26,0.85)");
-  bottomGrad.addColorStop(1, "rgba(15,10,26,0.97)");
+  bottomGrad.addColorStop(0.35, "rgba(15,10,26,0.55)");
+  bottomGrad.addColorStop(0.65, "rgba(15,10,26,0.82)");
+  bottomGrad.addColorStop(1, "rgba(15,10,26,0.96)");
   ctx.fillStyle = bottomGrad;
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  // Top gradient (subtle)
-  const topGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H * 0.25);
-  topGrad.addColorStop(0, "rgba(15,10,26,0.8)");
+  const topGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_H * 0.22);
+  topGrad.addColorStop(0, "rgba(15,10,26,0.7)");
   topGrad.addColorStop(1, "rgba(15,10,26,0)");
   ctx.fillStyle = topGrad;
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H * 0.3);
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H * 0.28);
 
-  // Subtle purple tint over everything
-  ctx.fillStyle = "rgba(147,51,234,0.06)";
+  // Subtle purple tint
+  ctx.fillStyle = "rgba(147,51,234,0.05)";
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
+  // Subtle grain texture
+  ctx.save();
+  ctx.globalAlpha = 0.03;
+  for (let i = 0; i < 3000; i++) {
+    const gx = Math.random() * CANVAS_W;
+    const gy = Math.random() * CANVAS_H;
+    const gs = Math.random() * 2;
+    ctx.fillStyle = Math.random() > 0.5 ? "#fff" : "#000";
+    ctx.fillRect(gx, gy, gs, gs);
+  }
+  ctx.restore();
+
   // Layer 3: Top badge
-  const PAD = 60;
+  const PAD = 64;
   ctx.save();
   const badgeText = badge.toUpperCase();
-  ctx.font = "bold 28px sans-serif";
-  const badgeW = ctx.measureText(badgeText).width + 48;
-  const badgeH = 52;
+  ctx.font = "bold 26px sans-serif";
+  const badgeW = ctx.measureText(badgeText).width + 44;
+  const badgeH = 48;
   const badgeX = PAD;
   const badgeY = PAD;
 
-  // Badge pill background
   const badgeGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeW, badgeY);
   badgeGrad.addColorStop(0, BRAND_ACCENT);
   badgeGrad.addColorStop(1, BRAND_ACCENT_ALT);
   ctx.fillStyle = badgeGrad;
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 26);
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 24);
   ctx.fill();
+
+  // Badge shadow
+  ctx.shadowColor = "rgba(233,30,140,0.3)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 4;
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 
   ctx.fillStyle = BRAND_WHITE;
   ctx.textBaseline = "middle";
-  ctx.fillText(badgeText, badgeX + 24, badgeY + badgeH / 2 + 1);
+  ctx.fillText(badgeText, badgeX + 22, badgeY + badgeH / 2 + 1);
   ctx.restore();
 
-  // Layer 4: Lower info block
-  const infoY = CANVAS_H - 340;
+  // Layer 4: Lower info block — better spacing
+  const infoY = CANVAS_H - 360;
 
   // Category chip
   if (event.category) {
     ctx.save();
-    ctx.font = "bold 24px sans-serif";
+    ctx.font = "bold 22px sans-serif";
     const catText = event.category.toUpperCase();
-    const catW = ctx.measureText(catText).width + 32;
-    ctx.fillStyle = "rgba(233,30,140,0.25)";
-    roundRect(ctx, PAD, infoY, catW, 40, 20);
+    const catW = ctx.measureText(catText).width + 30;
+    ctx.fillStyle = "rgba(233,30,140,0.2)";
+    roundRect(ctx, PAD, infoY, catW, 38, 19);
     ctx.fill();
     ctx.fillStyle = BRAND_ACCENT;
     ctx.textBaseline = "middle";
-    ctx.fillText(catText, PAD + 16, infoY + 21);
+    ctx.fillText(catText, PAD + 15, infoY + 20);
     ctx.restore();
   }
 
-  // Event title
+  // Event title with text shadow for readability
   ctx.save();
-  ctx.font = "bold 56px sans-serif";
-  ctx.fillStyle = BRAND_WHITE;
+  ctx.font = "bold 54px sans-serif";
   ctx.textBaseline = "top";
   const titleLines = wrapText(ctx, event.title, CANVAS_W - PAD * 2);
-  const titleStartY = infoY + 56;
+  const titleStartY = infoY + 54;
+  // Shadow pass
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
   titleLines.slice(0, 3).forEach((line, i) => {
-    ctx.fillText(line, PAD, titleStartY + i * 66);
+    ctx.fillText(line, PAD + 2, titleStartY + i * 64 + 2);
+  });
+  // Main pass
+  ctx.fillStyle = BRAND_WHITE;
+  titleLines.slice(0, 3).forEach((line, i) => {
+    ctx.fillText(line, PAD, titleStartY + i * 64);
   });
   ctx.restore();
 
-  // Time + venue
-  const metaY = titleStartY + Math.min(titleLines.length, 3) * 66 + 16;
+  // Time + date — with glow
+  const metaY = titleStartY + Math.min(titleLines.length, 3) * 64 + 20;
   ctx.save();
-  ctx.font = "bold 32px sans-serif";
+  ctx.font = "bold 30px sans-serif";
   ctx.fillStyle = BRAND_ACCENT;
   ctx.textBaseline = "top";
+  ctx.shadowColor = "rgba(233,30,140,0.25)";
+  ctx.shadowBlur = 8;
   const timeStr = formatTime(event.date_time);
   const dateStr = formatDateShort(event.date_time);
-  ctx.fillText(`🕐  ${timeStr}  ·  ${dateStr}`, PAD, metaY);
+  ctx.fillText(`${timeStr}  ·  ${dateStr}`, PAD, metaY);
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
   ctx.restore();
 
+  // Venue
   if (event.venue_name) {
     ctx.save();
-    ctx.font = "400 28px sans-serif";
+    ctx.font = "400 26px sans-serif";
     ctx.fillStyle = BRAND_MUTED;
     ctx.textBaseline = "top";
-    ctx.fillText(`📍  ${event.venue_name}`, PAD, metaY + 46);
+    ctx.fillText(`📍  ${event.venue_name}`, PAD, metaY + 42);
     ctx.restore();
   }
 
-  // Layer 5: Footer
-  const footerY = CANVAS_H - 80;
+  // Layer 5: Footer — refined
+  const footerY = CANVAS_H - 76;
 
-  // Divider line
+  // Divider line — subtle
   ctx.save();
   const divGrad = ctx.createLinearGradient(PAD, 0, CANVAS_W - PAD, 0);
-  divGrad.addColorStop(0, "rgba(233,30,140,0.5)");
-  divGrad.addColorStop(0.5, "rgba(147,51,234,0.3)");
-  divGrad.addColorStop(1, "rgba(233,30,140,0.0)");
+  divGrad.addColorStop(0, "rgba(233,30,140,0.4)");
+  divGrad.addColorStop(0.5, "rgba(147,51,234,0.2)");
+  divGrad.addColorStop(1, "rgba(233,30,140,0)");
   ctx.strokeStyle = divGrad;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(PAD, footerY - 20);
-  ctx.lineTo(CANVAS_W - PAD, footerY - 20);
+  ctx.moveTo(PAD, footerY - 18);
+  ctx.lineTo(CANVAS_W - PAD, footerY - 18);
   ctx.stroke();
   ctx.restore();
 
-  // roxou.com.br text
+  // roxou.com.br
   ctx.save();
-  ctx.font = "bold 26px sans-serif";
-  ctx.fillStyle = BRAND_MUTED;
+  ctx.font = "500 24px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.45)";
   ctx.textBaseline = "top";
   ctx.fillText("roxou.com.br", PAD, footerY);
   ctx.restore();
 
-  // ROXOU brand mark right side
+  // ROXOU brand — right side gradient
   ctx.save();
-  ctx.font = "bold 30px sans-serif";
-  const roxouGrad = ctx.createLinearGradient(CANVAS_W - 200, footerY, CANVAS_W - PAD, footerY);
+  ctx.font = "bold 28px sans-serif";
+  const roxouGrad = ctx.createLinearGradient(CANVAS_W - 180, footerY, CANVAS_W - PAD, footerY);
   roxouGrad.addColorStop(0, BRAND_ACCENT);
   roxouGrad.addColorStop(1, BRAND_ACCENT_ALT);
   ctx.fillStyle = roxouGrad;
