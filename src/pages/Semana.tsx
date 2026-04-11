@@ -41,8 +41,8 @@ const Semana = () => {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
-        title="Eventos da Semana em Presidente Prudente | ROXOU"
-        description="Confira todos os eventos dos próximos 7 dias em Presidente Prudente. Festas, shows e baladas."
+        title="Agenda de Eventos da Semana em Presidente Prudente | ROXOU"
+        description="Agenda completa dos próximos 7 dias em Presidente Prudente. Festas, shows, baladas, bares e eventos ao vivo."
         canonical="https://roxou.com.br/semana"
       />
       <DesktopNav />

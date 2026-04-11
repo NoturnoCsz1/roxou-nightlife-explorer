@@ -174,8 +174,8 @@ const EventDetail = () => {
     <div className="min-h-screen bg-background">
       <DesktopNav />
       <SEO
-        title={`${event.title} – ${dateFormatted} | Roxou Eventos em Presidente Prudente`}
-        description={`${event.title} acontece ${dateFormatted} às ${time} em ${event.venue_name || "Presidente Prudente"}. Confira informações, local e ingressos.`}
+        title={`${event.title} — ${dateFormatted} em ${event.venue_name || "Presidente Prudente"} | ROXOU`}
+        description={`${event.title} acontece ${dateFormatted} às ${time} em ${event.venue_name || "Presidente Prudente"}. Veja local, horário, como chegar e ingressos.`}
         canonical={`https://roxou.com.br/evento/${event.slug}`}
         ogImage={event.image_url || "https://roxou.com.br/og-image.png"}
         ogType="article"
@@ -208,8 +208,19 @@ const EventDetail = () => {
                 },
               }
             : {}),
+          ...((event as any).ticket_url ? { offers: { "@type": "Offer", url: (event as any).ticket_url, availability: "https://schema.org/InStock" } } : {}),
         }}
       />
+      {/* BreadcrumbList */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "ROXOU", item: "https://roxou.com.br" },
+          ...(partner ? [{ "@type": "ListItem", position: 2, name: partner.name, item: `https://roxou.com.br/local/${partner.slug}` }] : []),
+          { "@type": "ListItem", position: partner ? 3 : 2, name: event.title, item: `https://roxou.com.br/evento/${event.slug}` },
+        ],
+      }) }} />
       {/* Hero image */}
       <div className="relative">
         <img

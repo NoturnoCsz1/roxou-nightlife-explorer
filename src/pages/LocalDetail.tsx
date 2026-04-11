@@ -107,15 +107,15 @@ const LocalDetail = () => {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
-        title={`${partner.name} — Eventos e festas em Presidente Prudente`}
-        description={`Veja eventos e festas que acontecem no ${partner.name} em Presidente Prudente.`}
+        title={`${partner.name} — Eventos, Festas e Programação em Presidente Prudente | ROXOU`}
+        description={partner.short_description || `Confira a programação completa do ${partner.name} em Presidente Prudente. Próximos eventos, endereço, Instagram e mais.`}
         canonical={`https://roxou.com.br/local/${partner.slug}`}
         ogImage={partner.logo_url || "https://roxou.com.br/og-image.png"}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "LocalBusiness",
           name: partner.name,
-          description: partner.full_description || partner.short_description || `${partner.name} em Presidente Prudente.`,
+          description: partner.full_description || partner.short_description || `${partner.name} em Presidente Prudente — ${partner.type}.`,
           address: {
             "@type": "PostalAddress",
             streetAddress: partner.address || "",
@@ -123,11 +123,13 @@ const LocalDetail = () => {
             addressRegion: "SP",
             addressCountry: "BR",
           },
+          ...(partner.neighborhood ? { areaServed: partner.neighborhood } : {}),
           ...(partner.whatsapp ? { telephone: partner.whatsapp } : {}),
           ...(partner.instagram
             ? { sameAs: [`https://instagram.com/${partner.instagram.replace("@", "")}`] }
             : {}),
           ...(partner.logo_url ? { image: partner.logo_url } : {}),
+          url: `https://roxou.com.br/local/${partner.slug}`,
         }}
       />
       <DesktopNav />
