@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams, Navigate } from "react-router-dom";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
@@ -218,11 +218,7 @@ const SEOLanding = () => {
   }, []);
 
   if (!config) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Página não encontrada.</p>
-      </div>
-    );
+    return <Navigate to="/404" replace />;
   }
 
   const filtered = events.filter(config.filter);
