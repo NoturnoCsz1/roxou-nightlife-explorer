@@ -6,7 +6,7 @@ import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
   Clock, Filter, Send, FileText, ChevronDown, ChevronUp, Download,
-  Video, Zap, Pause, Archive
+  Video, Zap, Pause
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
