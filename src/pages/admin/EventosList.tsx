@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Copy, Layers, MousePointerClick, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
+import { CheckSquare, ChevronDown, Copy, Download, Layers, Loader2, MousePointerClick, Plus, Search, Square, Star, StarOff, Trash2, X } from "lucide-react";
+import { downloadEventsZip } from "@/lib/downloadEventsZip";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
