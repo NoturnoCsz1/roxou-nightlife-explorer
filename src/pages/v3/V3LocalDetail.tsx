@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image } from "lucide-react";
 import EventCardV3 from "@/components/v3/EventCardV3";
 
 export default function V3LocalDetail() {
@@ -61,7 +61,10 @@ export default function V3LocalDetail() {
             </div>
           )}
           <div>
-            <h1 className="font-display font-bold text-xl text-foreground">{partner.name}</h1>
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-display font-bold text-xl text-foreground">{partner.name}</h1>
+              {partner.verified_partner && <BadgeCheck className="w-4 h-4 text-accent shrink-0" />}
+            </div>
             <span className="text-xs text-primary font-medium capitalize">{partner.type}</span>
           </div>
         </div>
@@ -112,6 +115,46 @@ export default function V3LocalDetail() {
             </div>
           </div>
         )}
+
+        {/* ── Instagram Feed (placeholder) ── */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Instagram className="w-4 h-4 text-primary" />
+            <h2 className="font-display font-bold text-base text-foreground">Últimos posts</h2>
+          </div>
+          {partner.instagram ? (
+            <div className="grid grid-cols-3 gap-1.5">
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <a
+                  key={i}
+                  href={`https://instagram.com/${partner.instagram?.replace("@", "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="aspect-square rounded-lg bg-card border border-border/30 flex items-center justify-center overflow-hidden hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground/30">
+                    <Image className="w-5 h-5" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 rounded-xl bg-card border border-border/30 text-center">
+              <Instagram className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">Instagram não conectado</p>
+            </div>
+          )}
+          {partner.instagram && (
+            <a
+              href={`https://instagram.com/${partner.instagram.replace("@", "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mt-2 text-center text-[11px] text-primary font-medium hover:underline"
+            >
+              Ver mais no Instagram →
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );
