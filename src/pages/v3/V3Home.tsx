@@ -199,14 +199,24 @@ export default function V3Home() {
 
   return (
     <div className="space-y-0">
-      {/* ══════ 1. HERO ══════ */}
+      {/* ══════ 1. HERO CAROUSEL ══════ */}
       {isLoading ? <HeroSkeleton /> : hero ? (
-        <HeroSection
-          ev={hero}
-          isToday={!!heroIsToday}
-          todayCount={todayCount}
-          venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
-        />
+        <div className="relative">
+          <HeroSection
+            ev={hero}
+            isToday={!!heroIsToday}
+            todayCount={todayCount}
+            venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+          />
+          {heroEvents.length > 1 && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {heroEvents.map((_, i) => (
+                <button key={i} onClick={() => setHeroIdx(i)}
+                  className={`w-2 h-2 rounded-full transition-all ${i === heroIdx ? "bg-primary w-5" : "bg-foreground/30"}`} />
+              ))}
+            </div>
+          )}
+        </div>
       ) : <EmptyHero />}
 
       {/* ══════ 2. CATEGORIES ══════ */}
@@ -288,8 +298,8 @@ export default function V3Home() {
             <Car className="w-5 h-5 text-primary" />
           </div>
           <div className="relative flex-1 min-w-0">
-            <p className="font-display font-bold text-sm text-foreground">🚗 Saindo hoje?</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Garanta sua carona pro rolê</p>
+            <p className="font-display font-bold text-sm text-foreground">🚗 COMO VOCÊ VAI?</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Encontre uma carona pro rolê</p>
           </div>
           <span className="relative shrink-0 px-3 py-1.5 rounded-full gradient-primary text-[10px] font-bold text-primary-foreground uppercase tracking-wide">
             Ver caronas
