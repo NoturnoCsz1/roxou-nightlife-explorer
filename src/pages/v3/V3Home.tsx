@@ -193,7 +193,7 @@ export default function V3Home() {
   const trendingIdSet = useMemo(() => new Set(trendingIds.map(t => t.id)), [trendingIds]);
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-1">
       {/* ══════ 1. HERO CAROUSEL ══════ */}
       {isLoading ? <HeroSkeleton /> : hero ? (
         <div className="relative">
@@ -303,22 +303,22 @@ export default function V3Home() {
         </section>
       )}
 
-      {/* ══════ 7. TRANSPORT ACTION ══════ */}
-      <div className="px-4 py-3">
+      {/* ══════ 7. TRANSPORT ACTION — refined as clean action card ══════ */}
+      <div className="px-4 py-2">
         <Link
           to="/v3/transporte"
-          className="relative flex items-center gap-4 p-4 rounded-2xl overflow-hidden border border-primary/20 group active:scale-[0.98] transition-transform"
+          className="relative flex items-center gap-3.5 p-3.5 rounded-2xl overflow-hidden border border-primary/15 group active:scale-[0.98] transition-transform"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/5" />
-          <div className="relative w-11 h-11 rounded-xl bg-primary/20 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-transparent to-accent/4" />
+          <div className="relative w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
             <Car className="w-5 h-5 text-primary" />
           </div>
           <div className="relative flex-1 min-w-0">
-            <p className="font-display font-bold text-sm text-foreground">🚗 COMO VOCÊ VAI?</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Encontre uma carona pro rolê</p>
+            <p className="font-display font-bold text-[13px] text-foreground">🚗 COMO VOCÊ VAI?</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Encontre carona pro rolê</p>
           </div>
-          <span className="relative shrink-0 px-3 py-1.5 rounded-full gradient-primary text-[10px] font-bold text-primary-foreground uppercase tracking-wide">
-            Ver caronas
+          <span className="relative shrink-0 px-3 py-1.5 rounded-full gradient-primary text-[9px] font-bold text-primary-foreground uppercase tracking-wide">
+            Ver
           </span>
         </Link>
       </div>
@@ -641,13 +641,13 @@ function VenueRankSkeleton() {
   );
 }
 
-/* ─── CONTENT RAIL ─── */
+/* ─── CONTENT RAIL — refined spacing ─── */
 function Rail({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section className="py-3">
+    <section className="py-2.5">
       <div className="flex items-end justify-between px-4 mb-2">
         <div>
-          <h2 className="font-display font-bold text-base text-foreground">{title}</h2>
+          <h2 className="font-display font-bold text-[15px] text-foreground">{title}</h2>
           {subtitle && <p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
       </div>

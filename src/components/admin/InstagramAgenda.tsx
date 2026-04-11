@@ -428,7 +428,7 @@ const InstagramAgenda = () => {
 
       {/* Outputs */}
       {outputs.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -458,7 +458,7 @@ const InstagramAgenda = () => {
               className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
             >
               {bulkGeneratingImages ? <Loader2 className="h-3 w-3 animate-spin" /> : <Image className="h-3 w-3" />}
-              Gerar imagens de todos
+              Gerar imagens
             </button>
           </div>
 
@@ -471,110 +471,35 @@ const InstagramAgenda = () => {
             const eventForImage = output.eventId ? events.find(e => e.id === output.eventId) : (output.events?.[0] || null);
 
             return (
-              <div key={idx} className="rounded-xl border border-border/40 bg-card overflow-hidden">
+              <div key={idx} className="rounded-xl border border-border/30 bg-card overflow-hidden">
+                {/* Collapsed header */}
                 <button
                   onClick={() => setExpandedOutput(isExpanded ? null : idx)}
-                  className="w-full flex items-center justify-between p-3 hover:bg-secondary/20 transition"
+                  className="w-full flex items-center justify-between px-3.5 py-3 hover:bg-secondary/10 transition"
                 >
-                  <div className="flex items-center gap-2">
-                    <ModeIcon className={`h-3.5 w-3.5 ${modeCls}`} />
-                    <span className="text-xs font-semibold text-foreground">{output.title}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-secondary/40 text-muted-foreground">{modeLabel}</span>
-                    {output.generatedImageUrl && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-green-400/15 text-green-500">📷</span>}
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${output.mode === "agenda" ? "bg-primary/15" : output.mode === "top" ? "bg-yellow-400/15" : "bg-accent/15"}`}>
+                      <ModeIcon className={`h-3.5 w-3.5 ${modeCls}`} />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs font-semibold text-foreground block leading-tight">{output.title}</span>
+                      <span className="text-[9px] text-muted-foreground">{modeLabel}</span>
+                    </div>
+                    {output.generatedImageUrl && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-400/10 text-green-500 font-medium">📷</span>}
                   </div>
                   {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
                 </button>
 
                 {isExpanded && (
-                  <div className="p-3 pt-0 space-y-3 border-t border-border/20">
-                    {/* Image generation */}
-                    <div className="space-y-2">
-                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Imagem promocional</span>
-                      {eventForImage ? (
-                        <EventImageGenerator
-                          event={eventForImage}
-                          badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
-                          initialImage={output.generatedImageUrl}
-                          onImageGenerated={(dataUrl) => {
-                            const updated = [...outputs];
-                            updated[idx] = { ...output, generatedImageUrl: dataUrl };
-                            setOutputs(updated);
-                          }}
-                          onSendToDraft={(imageDataUrl) => {
-                            const params = new URLSearchParams();
-                            params.set("caption", output.captionFull);
-                            params.set("image", imageDataUrl);
-                            navigate(`/admin/instagram?tab=publicacao&${params.toString()}`);
-                          }}
-                        />
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground">Nenhum evento com imagem disponível.</p>
-                      )}
-                    </div>
+                  <div className="px-3.5 pb-4 space-y-4 border-t border-border/15">
 
-                    {/* Reel generation */}
-                    <div className="space-y-2">
-                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Reels promocional</span>
-                      {eventForImage ? (
-                        <ReelGenerator
-                          event={eventForImage}
-                          badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
-                          onSendToDraft={() => {
-                            toast.info("Vídeo pronto para publicação manual");
-                          }}
-                        />
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground">Nenhum evento com imagem para gerar reel.</p>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Legenda completa</span>
-                      <pre className="whitespace-pre-wrap text-[11px] text-foreground bg-background/50 rounded-lg p-3 font-sans leading-relaxed mt-1 max-h-60 overflow-y-auto border border-border/20">
-                        {output.captionFull}
-                      </pre>
-                      <button
-                        onClick={() => copyText(output.captionFull, "Legenda copiada!")}
-                        className="flex items-center gap-1 mt-1.5 rounded-md bg-primary/15 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25 transition"
-                      >
-                        <Copy className="h-3 w-3" /> Copiar legenda
-                      </button>
-                    </div>
-
-                    {/* Short caption */}
-                    <div>
-                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Legenda curta</span>
-                      <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground bg-background/50 rounded-lg p-2 font-sans leading-relaxed mt-1 border border-border/20">
-                        {output.captionShort}
-                      </pre>
-                      <button
-                        onClick={() => copyText(output.captionShort, "Legenda curta copiada!")}
-                        className="flex items-center gap-1 mt-1.5 rounded-md bg-secondary/50 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition"
-                      >
-                        <Copy className="h-3 w-3" /> Copiar curta
-                      </button>
-                    </div>
-
-                    {/* Image prompt */}
-                    <div>
-                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Prompt de imagem</span>
-                      <pre className="whitespace-pre-wrap text-[10px] text-muted-foreground bg-background/50 rounded-lg p-2 font-sans leading-relaxed mt-1 border border-border/20">
-                        {output.imagePrompt}
-                      </pre>
-                      <button
-                        onClick={() => copyText(output.imagePrompt, "Prompt copiado!")}
-                        className="flex items-center gap-1 mt-1.5 rounded-md bg-secondary/50 px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition"
-                      >
-                        <Copy className="h-3 w-3" /> Copiar prompt
-                      </button>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 flex-wrap pt-1">
+                    {/* ── Primary action — always visible at top ── */}
+                    <div className="flex gap-2 pt-3">
                       <button
                         onClick={() => sendToInstagramDraft(output)}
-                        className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:opacity-90 transition"
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-[11px] font-bold text-white hover:opacity-90 transition"
                       >
-                        <Send className="h-3 w-3" /> Enviar p/ publicação
+                        <Send className="h-3.5 w-3.5" /> Enviar p/ publicação
                       </button>
                       <button
                         onClick={async () => {
@@ -587,12 +512,100 @@ const InstagramAgenda = () => {
                             image_url: output.generatedImageUrl || null,
                             favorited: true,
                           } as any);
-                          toast.success("Salvo como rascunho favorito!");
+                          toast.success("Rascunho salvo!");
                         }}
-                        className="flex items-center gap-1.5 rounded-lg bg-secondary/50 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition"
+                        className="flex items-center justify-center gap-1.5 rounded-xl bg-secondary/40 px-3 py-2.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition"
                       >
-                        <FileText className="h-3 w-3" /> Salvar rascunho
+                        <FileText className="h-3.5 w-3.5" />
                       </button>
+                    </div>
+
+                    {/* ── Visual: Image + Reel side by side ── */}
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="rounded-lg border border-border/20 bg-background/30 p-3 space-y-2">
+                        <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Imagem</span>
+                        {eventForImage ? (
+                          <EventImageGenerator
+                            event={eventForImage}
+                            badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
+                            initialImage={output.generatedImageUrl}
+                            onImageGenerated={(dataUrl) => {
+                              const updated = [...outputs];
+                              updated[idx] = { ...output, generatedImageUrl: dataUrl };
+                              setOutputs(updated);
+                            }}
+                            onSendToDraft={(imageDataUrl) => {
+                              const params = new URLSearchParams();
+                              params.set("caption", output.captionFull);
+                              params.set("image", imageDataUrl);
+                              navigate(`/admin/instagram?tab=publicacao&${params.toString()}`);
+                            }}
+                          />
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground/60">Sem imagem disponível</p>
+                        )}
+                      </div>
+
+                      <div className="rounded-lg border border-border/20 bg-background/30 p-3 space-y-2">
+                        <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎬 Reels</span>
+                        {eventForImage ? (
+                          <ReelGenerator
+                            event={eventForImage}
+                            badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
+                            onSendToDraft={() => toast.info("Vídeo pronto para publicação manual")}
+                          />
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground/60">Sem imagem para reel</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Captions — collapsible group ── */}
+                    <div className="space-y-2">
+                      <div className="rounded-lg border border-border/20 bg-background/30 p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">Legenda completa</span>
+                          <button
+                            onClick={() => copyText(output.captionFull, "Legenda copiada!")}
+                            className="flex items-center gap-1 text-[9px] font-medium text-primary hover:text-primary/80 transition"
+                          >
+                            <Copy className="h-2.5 w-2.5" /> Copiar
+                          </button>
+                        </div>
+                        <pre className="whitespace-pre-wrap text-[11px] text-foreground/90 font-sans leading-relaxed max-h-40 overflow-y-auto">
+                          {output.captionFull}
+                        </pre>
+                      </div>
+
+                      <div className="rounded-lg border border-border/20 bg-background/30 p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">Legenda curta</span>
+                          <button
+                            onClick={() => copyText(output.captionShort, "Copiada!")}
+                            className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-foreground transition"
+                          >
+                            <Copy className="h-2.5 w-2.5" /> Copiar
+                          </button>
+                        </div>
+                        <pre className="whitespace-pre-wrap text-[10px] text-muted-foreground font-sans leading-relaxed max-h-24 overflow-y-auto">
+                          {output.captionShort}
+                        </pre>
+                      </div>
+
+                      <div className="rounded-lg border border-border/20 bg-background/30 p-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">Prompt de imagem</span>
+                          <button
+                            onClick={() => copyText(output.imagePrompt, "Prompt copiado!")}
+                            className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-foreground transition"
+                          >
+                            <Copy className="h-2.5 w-2.5" /> Copiar
+                          </button>
+                        </div>
+                        <pre className="whitespace-pre-wrap text-[9px] text-muted-foreground/70 font-sans leading-relaxed max-h-20 overflow-y-auto">
+                          {output.imagePrompt}
+                        </pre>
+                      </div>
                     </div>
                   </div>
                 )}

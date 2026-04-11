@@ -64,16 +64,16 @@ export default function V3LocalDetail() {
 
   return (
     <div className="pb-8">
-      {/* Header */}
-      <div className="relative h-[200px] bg-gradient-to-br from-primary/20 via-primary/5 to-accent/10 flex items-end">
-        <Link to="/v3" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-10">
+      {/* Header — refined composition */}
+      <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
+        <Link to="/v3" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
           <ArrowLeft className="w-4 h-4 text-white" />
         </Link>
-        <div className="px-4 pb-4 flex items-end gap-3 w-full">
+        <div className="px-4 pb-4 flex items-end gap-3.5 w-full">
           {partner.logo_url ? (
-            <img src={partner.logo_url} alt={partner.name} className="w-18 h-18 rounded-xl object-cover border-2 border-background shadow-lg" style={{ width: 72, height: 72 }} />
+            <img src={partner.logo_url} alt={partner.name} className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg" />
           ) : (
-            <div className="w-18 h-18 rounded-xl bg-primary/20 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background" style={{ width: 72, height: 72 }}>
+            <div className="w-[68px] h-[68px] rounded-xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
               {partner.name[0]}
             </div>
           )}
@@ -82,35 +82,35 @@ export default function V3LocalDetail() {
               <h1 className="font-display font-bold text-xl text-foreground truncate">{partner.name}</h1>
               {partner.verified_partner && <BadgeCheck className="w-5 h-5 text-accent shrink-0" />}
             </div>
-            <span className="text-xs text-primary font-medium capitalize">{partner.type}</span>
-            <div className="flex items-center gap-3 mt-1">
+            <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
+            <div className="flex items-center gap-3 mt-1.5">
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Eye className="w-3 h-3" /> {viewCount} views
+                <Eye className="w-3 h-3" /> {viewCount}
               </span>
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <CalendarDays className="w-3 h-3" /> {events.length} evento{events.length !== 1 ? "s" : ""}
+                <CalendarDays className="w-3 h-3" /> {events.length}
               </span>
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Heart className="w-3 h-3" /> {followerCount} seguidor{followerCount !== 1 ? "es" : ""}
+                <Heart className="w-3 h-3" /> {followerCount}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 space-y-5 mt-4">
+      <div className="px-4 space-y-4 mt-4">
         {partner.short_description && (
           <p className="text-sm text-muted-foreground leading-relaxed">{partner.short_description}</p>
         )}
 
-        {/* Actions */}
+        {/* Actions — follow button prominent */}
         <div className="flex gap-2">
           {user && (
             <button
               onClick={() => toggleFollow(partner.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                 followed
-                  ? "bg-primary/15 text-primary border border-primary/30"
+                  ? "bg-primary/10 text-primary border border-primary/25"
                   : "gradient-primary text-primary-foreground neon-glow"
               }`}
             >
@@ -120,13 +120,13 @@ export default function V3LocalDetail() {
           )}
           {partner.instagram && (
             <a href={`https://instagram.com/${partner.instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-card border border-border/40 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-card border border-border/30 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors">
               <Instagram className="w-3.5 h-3.5" /> Instagram
             </a>
           )}
           {partner.whatsapp && (
             <a href={`https://wa.me/${partner.whatsapp}`} target="_blank" rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-card border border-border/40 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-card border border-border/30 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors">
               <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
             </a>
           )}
