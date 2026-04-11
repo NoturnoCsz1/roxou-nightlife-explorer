@@ -6,12 +6,13 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   Search, MapPin, Clock, Flame, Music, Mic2, Beer, Zap, PartyPopper,
-  ChevronRight, Dribbble,
-  TrendingUp, BadgeCheck, X, Bookmark,
+  ChevronRight, Dribbble, UtensilsCrossed, Building2,
+  TrendingUp, BadgeCheck, X, Bookmark, Heart, Filter as FilterIcon, SlidersHorizontal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
+import { useSavedPartners } from "@/hooks/useSavedPartners";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 const getDayLabel = (d: string) => {
@@ -22,19 +23,25 @@ const getDayLabel = (d: string) => {
   return format(dt, "EEEE", { locale: ptBR }).toUpperCase();
 };
 
-/* ─── CATEGORIES (matching real DB values) ─── */
-const CATEGORIES = [
+/* ─── EVENT CATEGORIES ─── */
+const EVENT_CATEGORIES = [
   { key: "bar", label: "Bar", icon: Beer, color: "bg-emerald-500/15 text-emerald-400" },
   { key: "balada", label: "Balada", icon: Zap, color: "bg-accent/15 text-accent" },
   { key: "festa", label: "Festa", icon: PartyPopper, color: "bg-primary/15 text-primary" },
   { key: "show", label: "Show", icon: Mic2, color: "bg-blue-500/15 text-blue-400" },
-  { key: "eletronica", label: "Eletrônico", icon: Music, color: "bg-violet-500/15 text-violet-400" },
-  { key: "sertanejo", label: "Sertanejo", icon: Music, color: "bg-orange-500/15 text-orange-400" },
-  { key: "funk", label: "Funk", icon: Flame, color: "bg-pink-500/15 text-pink-400" },
   { key: "festival", label: "Futebol", icon: Dribbble, color: "bg-green-500/15 text-green-400" },
 ];
 
-/* matching real DB sub_category values */
+/* ─── VENUE TYPES ─── */
+const VENUE_TYPES = [
+  { key: "bar", label: "Bar" },
+  { key: "balada", label: "Balada" },
+  { key: "restaurante", label: "Restaurante" },
+  { key: "casa de show", label: "Casa de Show" },
+  { key: "pub", label: "Pub" },
+];
+
+/* ─── SUBCATEGORIES ─── */
 const SUBCATEGORIES = [
   { key: "funk", label: "Funk" },
   { key: "mpb", label: "MPB" },
@@ -42,10 +49,7 @@ const SUBCATEGORIES = [
   { key: "pop_rock", label: "Pop Rock" },
   { key: "eletronica", label: "Eletrônico" },
   { key: "sertanejo", label: "Sertanejo" },
-  { key: "balada", label: "Universitário" },
-  { key: "festa", label: "Samba / Pagode" },
-  { key: "festival", label: "Futebol" },
-  { key: "bar", label: "Bar" },
+  { key: "pagode", label: "Pagode" },
 ];
 
 const DATE_FILTERS = [
@@ -65,10 +69,14 @@ export default function V3Discover() {
   const [catFilter, setCatFilter] = useState("");
   const [subFilter, setSubFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [venueTypeFilter, setVenueTypeFilter] = useState("");
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+  const [showMostAccessed, setShowMostAccessed] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const today = startOfDay(new Date());
   const { user } = useAuth();
   const { isSaved, toggleSave } = useSavedEvents();
+  const { isFollowed, toggleFollow } = useSavedPartners();
 
   /* ─── EVENTS ─── */
   const { data: events = [] } = useQuery<Ev[]>({
@@ -95,23 +103,28 @@ export default function V3Discover() {
       if (!data) return [];
       const counts: Record<string, number> = {};
       data.forEach((r: any) => { if (r.event_id) counts[r.event_id] = (counts[r.event_id] || 0) + 1; });
-      return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([id]) => id);
+      return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 20).map(([id]) => id);
     },
   });
 
   /* ─── VERIFIED PARTNERS ─── */
-  const { data: verifiedPartners = [] } = useQuery({
-    queryKey: ["v3-verified-partners"],
+  const { data: allPartners = [] } = useQuery({
+    queryKey: ["v3-all-partners-discover"],
     queryFn: async () => {
       const { data } = await supabase.from("partners")
         .select("id,name,slug,type,logo_url,short_description,verified_partner")
-        .eq("active", true).eq("verified_partner", true).limit(20);
+        .eq("active", true).limit(50);
       return data || [];
     },
   });
 
-  /* ─── ALL PARTNERS (for verified filter) ─── */
-  const verifiedPartnerIds = useMemo(() => new Set((verifiedPartners as any[]).map((p: any) => p.id)), [verifiedPartners]);
+  const verifiedPartnerIds = useMemo(() => new Set((allPartners as any[]).filter((p: any) => p.verified_partner).map((p: any) => p.id)), [allPartners]);
+  const verifiedPartners = useMemo(() => (allPartners as any[]).filter((p: any) => p.verified_partner), [allPartners]);
+  const partnerTypeMap = useMemo(() => {
+    const m = new Map<string, string>();
+    (allPartners as any[]).forEach((p: any) => m.set(p.id, p.type));
+    return m;
+  }, [allPartners]);
 
   /* ─── FILTERING ─── */
   const filtered = useMemo(() => {
@@ -124,41 +137,40 @@ export default function V3Discover() {
         (e.venue_name && e.venue_name.toLowerCase().includes(q))
       );
     }
-
-    if (catFilter) {
-      result = result.filter(e => e.category === catFilter);
-    }
-
-    if (subFilter) {
-      result = result.filter(e => e.sub_category === subFilter);
-    }
+    if (catFilter) result = result.filter(e => e.category === catFilter);
+    if (subFilter) result = result.filter(e => e.sub_category === subFilter || e.category === subFilter);
 
     if (dateFilter === "hoje") {
       result = result.filter(e => isTodayFn(new Date(e.date_time)));
     } else if (dateFilter === "amanha") {
       const tmrw = addDays(today, 1);
-      result = result.filter(e => {
-        const d = startOfDay(new Date(e.date_time));
-        return d.getTime() === tmrw.getTime();
-      });
+      result = result.filter(e => startOfDay(new Date(e.date_time)).getTime() === tmrw.getTime());
     } else if (dateFilter === "semana") {
-      const weekEnd = addDays(today, 7);
-      result = result.filter(e => isAfter(weekEnd, new Date(e.date_time)));
+      result = result.filter(e => isAfter(addDays(today, 7), new Date(e.date_time)));
     }
 
-    if (showVerifiedOnly) {
-      result = result.filter(e => e.partner_id && verifiedPartnerIds.has(e.partner_id));
+    if (showVerifiedOnly) result = result.filter(e => e.partner_id && verifiedPartnerIds.has(e.partner_id));
+    if (showMostAccessed) {
+      const trendSet = new Set(trendingIds);
+      result = result.filter(e => trendSet.has(e.id));
+    }
+    if (venueTypeFilter) {
+      result = result.filter(e => e.partner_id && partnerTypeMap.get(e.partner_id)?.toLowerCase() === venueTypeFilter);
     }
 
     return result;
-  }, [events, search, catFilter, subFilter, dateFilter, today, showVerifiedOnly, verifiedPartnerIds]);
+  }, [events, search, catFilter, subFilter, dateFilter, today, showVerifiedOnly, showMostAccessed, venueTypeFilter, verifiedPartnerIds, trendingIds, partnerTypeMap]);
 
   const trendingSet = useMemo(() => new Set(trendingIds), [trendingIds]);
   const trending = useMemo(() => events.filter(e => trendingSet.has(e.id)).slice(0, 8), [events, trendingSet]);
 
-  const hasActiveFilter = !!search || !!catFilter || !!subFilter || !!dateFilter || showVerifiedOnly;
+  const hasActiveFilter = !!search || !!catFilter || !!subFilter || !!dateFilter || showVerifiedOnly || showMostAccessed || !!venueTypeFilter;
 
-  /* ─── Popular categories by event count ─── */
+  const clearFilters = () => {
+    setCatFilter(""); setSubFilter(""); setDateFilter(""); setSearch("");
+    setShowVerifiedOnly(false); setShowMostAccessed(false); setVenueTypeFilter("");
+  };
+
   const popularCats = useMemo(() => {
     const counts: Record<string, number> = {};
     events.forEach(e => { counts[e.category] = (counts[e.category] || 0) + 1; });
@@ -166,11 +178,13 @@ export default function V3Discover() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
       .map(([key, count]) => {
-        const cat = CATEGORIES.find(c => c.key === key);
+        const cat = EVENT_CATEGORIES.find(c => c.key === key);
         return cat ? { ...cat, count } : null;
       })
-      .filter(Boolean) as (typeof CATEGORIES[0] & { count: number })[];
+      .filter(Boolean) as (typeof EVENT_CATEGORIES[0] & { count: number })[];
   }, [events]);
+
+  const activeFilterCount = [catFilter, subFilter, dateFilter, venueTypeFilter, showVerifiedOnly, showMostAccessed].filter(Boolean).length;
 
   return (
     <div className="pb-4">
@@ -182,77 +196,93 @@ export default function V3Discover() {
             placeholder="Buscar eventos, locais..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-11 rounded-xl bg-card border-border/40 text-sm"
+            className="pl-9 pr-20 h-11 rounded-xl bg-card border-border/40 text-sm"
           />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-muted-foreground" />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {search && (
+              <button onClick={() => setSearch("")} className="p-1">
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${showFilters ? "bg-primary/20 text-primary" : "bg-secondary/50 text-muted-foreground"}`}
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              {activeFilterCount > 0 && (
+                <span className="w-4 h-4 rounded-full gradient-primary text-[8px] font-bold text-primary-foreground flex items-center justify-center">{activeFilterCount}</span>
+              )}
             </button>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* ── Categories ── */}
+      {/* ── Event Categories ── */}
       <div className="flex gap-2 overflow-x-auto px-4 py-2 scrollbar-hide">
-        {CATEGORIES.map(({ key, label, icon: Icon, color }) => (
-          <button
-            key={key}
-            onClick={() => setCatFilter(catFilter === key ? "" : key)}
+        {EVENT_CATEGORIES.map(({ key, label, icon: Icon, color }) => (
+          <button key={key} onClick={() => setCatFilter(catFilter === key ? "" : key)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium shrink-0 transition-all border ${
-              catFilter === key
-                ? "gradient-primary text-primary-foreground border-primary neon-glow"
-                : `${color} border-transparent hover:border-border`
+              catFilter === key ? "gradient-primary text-primary-foreground border-primary neon-glow" : `${color} border-transparent hover:border-border`
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+            <Icon className="w-3.5 h-3.5" /> {label}
           </button>
         ))}
       </div>
 
-      {/* ── Subcategories ── */}
-      <div className="flex gap-1.5 overflow-x-auto px-4 py-1 scrollbar-hide">
-        {SUBCATEGORIES.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setSubFilter(subFilter === key ? "" : key)}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-medium shrink-0 transition-all border ${
-              subFilter === key
-                ? "bg-primary/20 text-primary border-primary/40"
-                : "bg-card text-muted-foreground border-border/30 hover:border-border/60"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* ── Extended Filters Panel ── */}
+      {showFilters && (
+        <div className="px-4 py-2 space-y-2 border-b border-border/20 pb-3">
+          {/* Subcategories */}
+          <div>
+            <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wide">Estilo musical</span>
+            <div className="flex gap-1.5 overflow-x-auto mt-1 scrollbar-hide">
+              {SUBCATEGORIES.map(({ key, label }) => (
+                <button key={key} onClick={() => setSubFilter(subFilter === key ? "" : key)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-medium shrink-0 transition-all border ${
+                    subFilter === key ? "bg-primary/20 text-primary border-primary/40" : "bg-card text-muted-foreground border-border/30"
+                  }`}
+                >{label}</button>
+              ))}
+            </div>
+          </div>
 
-      {/* ── Date + special filters ── */}
-      <div className="flex gap-2 px-4 py-2 overflow-x-auto scrollbar-hide">
-        {DATE_FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setDateFilter(dateFilter === key ? "" : key)}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border shrink-0 ${
-              dateFilter === key
-                ? "bg-accent/20 text-accent border-accent/40"
-                : "bg-card text-muted-foreground border-border/30 hover:border-border/60"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <button
-          onClick={() => setShowVerifiedOnly(!showVerifiedOnly)}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border shrink-0 ${
-            showVerifiedOnly
-              ? "bg-accent/20 text-accent border-accent/40"
-              : "bg-card text-muted-foreground border-border/30 hover:border-border/60"
-          }`}
-        >
-          <BadgeCheck className="w-3 h-3" /> Verificados
-        </button>
-      </div>
+          {/* Venue type */}
+          <div>
+            <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wide">Tipo de local</span>
+            <div className="flex gap-1.5 overflow-x-auto mt-1 scrollbar-hide">
+              {VENUE_TYPES.map(({ key, label }) => (
+                <button key={key} onClick={() => setVenueTypeFilter(venueTypeFilter === key ? "" : key)}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-medium shrink-0 transition-all border ${
+                    venueTypeFilter === key ? "bg-accent/20 text-accent border-accent/40" : "bg-card text-muted-foreground border-border/30"
+                  }`}
+                >{label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Date + special */}
+          <div className="flex gap-1.5 flex-wrap">
+            {DATE_FILTERS.map(({ key, label }) => (
+              <button key={key} onClick={() => setDateFilter(dateFilter === key ? "" : key)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all border ${
+                  dateFilter === key ? "bg-accent/20 text-accent border-accent/40" : "bg-card text-muted-foreground border-border/30"
+                }`}
+              >{label}</button>
+            ))}
+            <button onClick={() => setShowVerifiedOnly(!showVerifiedOnly)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all border ${
+                showVerifiedOnly ? "bg-accent/20 text-accent border-accent/40" : "bg-card text-muted-foreground border-border/30"
+              }`}
+            ><BadgeCheck className="w-3 h-3" /> Verificados</button>
+            <button onClick={() => setShowMostAccessed(!showMostAccessed)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all border ${
+                showMostAccessed ? "bg-primary/20 text-primary border-primary/40" : "bg-card text-muted-foreground border-border/30"
+              }`}
+            ><TrendingUp className="w-3 h-3" /> Mais acessados</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Active filter results ── */}
       {hasActiveFilter ? (
@@ -261,8 +291,7 @@ export default function V3Discover() {
             <p className="text-xs text-muted-foreground">
               {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
             </p>
-            <button onClick={() => { setCatFilter(""); setSubFilter(""); setDateFilter(""); setSearch(""); setShowVerifiedOnly(false); }}
-              className="text-[10px] text-primary font-medium">Limpar filtros</button>
+            <button onClick={clearFilters} className="text-[10px] text-primary font-medium">Limpar filtros</button>
           </div>
           {filtered.length > 0 ? (
             <div className="grid grid-cols-2 gap-2.5">
@@ -319,36 +348,44 @@ export default function V3Discover() {
           )}
 
           {/* ── Parceiros verificados ── */}
-          {(verifiedPartners as any[]).length > 0 && (
+          {verifiedPartners.length > 0 && (
             <section className="py-3">
               <div className="flex items-center gap-2 px-4 mb-2">
                 <BadgeCheck className="w-4 h-4 text-accent" />
                 <h2 className="font-display font-bold text-base text-foreground">Parceiros verificados</h2>
               </div>
               <div className="flex gap-2.5 overflow-x-auto px-4 pb-1 scrollbar-hide snap-x snap-mandatory">
-                {(verifiedPartners as any[]).map((p: any) => (
-                  <Link key={p.id} to={`/v3/local/${p.slug}`}
-                    className="shrink-0 snap-start w-[160px] rounded-xl bg-card border border-border/40 hover:border-accent/30 transition-all overflow-hidden group active:scale-[0.97]">
-                    <div className="relative h-[70px] bg-secondary overflow-hidden">
-                      {p.logo_url ? (
-                        <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/10">
-                          <span className="font-display font-bold text-xl text-primary/60">{p.name[0]}</span>
+                {verifiedPartners.map((p: any) => (
+                  <div key={p.id} className="shrink-0 snap-start w-[160px] rounded-xl bg-card border border-border/40 hover:border-accent/30 transition-all overflow-hidden">
+                    <Link to={`/v3/local/${p.slug}`}>
+                      <div className="relative h-[70px] bg-secondary overflow-hidden">
+                        {p.logo_url ? (
+                          <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/10">
+                            <span className="font-display font-bold text-xl text-primary/60">{p.name[0]}</span>
+                          </div>
+                        )}
+                        <div className="absolute top-1.5 right-1.5">
+                          <BadgeCheck className="w-4 h-4 text-accent drop-shadow-md" />
                         </div>
-                      )}
-                      <div className="absolute top-1.5 right-1.5">
-                        <BadgeCheck className="w-4 h-4 text-accent drop-shadow-md" />
                       </div>
-                    </div>
-                    <div className="p-2.5">
-                      <p className="font-display font-bold text-[12px] text-foreground truncate">{p.name}</p>
-                      <p className="text-[9px] text-muted-foreground capitalize">{p.type}</p>
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary mt-1">
+                      <div className="p-2.5 pb-1">
+                        <p className="font-display font-bold text-[12px] text-foreground truncate">{p.name}</p>
+                        <p className="text-[9px] text-muted-foreground capitalize">{p.type}</p>
+                      </div>
+                    </Link>
+                    <div className="px-2.5 pb-2.5 flex items-center justify-between">
+                      <Link to={`/v3/local/${p.slug}`} className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary">
                         Ver agenda <ChevronRight className="w-3 h-3" />
-                      </span>
+                      </Link>
+                      {user && (
+                        <button onClick={() => toggleFollow(p.id)} className="p-1">
+                          <Heart className={`w-3.5 h-3.5 transition-colors ${isFollowed(p.id) ? "text-primary fill-primary" : "text-muted-foreground/40 hover:text-primary"}`} />
+                        </button>
+                      )}
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             </section>
@@ -360,9 +397,7 @@ export default function V3Discover() {
               <h2 className="font-display font-bold text-base text-foreground mb-3">Categorias populares</h2>
               <div className="grid grid-cols-2 gap-2">
                 {popularCats.map(c => (
-                  <button
-                    key={c.key}
-                    onClick={() => setCatFilter(c.key)}
+                  <button key={c.key} onClick={() => setCatFilter(c.key)}
                     className={`flex items-center gap-3 p-3 rounded-xl border border-border/40 hover:border-primary/30 transition-all ${c.color} bg-opacity-50`}
                   >
                     <c.icon className="w-5 h-5 shrink-0" />
