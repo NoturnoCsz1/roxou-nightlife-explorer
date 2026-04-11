@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import JSZip from "jszip";
 import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
@@ -399,6 +400,68 @@ const InstagramAgenda = () => {
     toast.info("Geração interrompida");
   }
 
+  // ========== ZIP DOWNLOAD ==========
+  const [zipping, setZipping] = useState(false);
+
+  const hasDownloadableMedia = useMemo(() =>
+    outputs.some(o => o.generatedImageUrl || o.generatedReelUrl),
+    [outputs]
+  );
+
+  async function downloadAllAsZip() {
+    if (!hasDownloadableMedia) {
+      toast.error("Nenhuma mídia gerada para baixar");
+      return;
+    }
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      let fileCount = 0;
+
+      for (const [idx, output] of outputs.entries()) {
+        const safeName = output.title.slice(0, 30).replace(/[^a-zA-Z0-9À-ú ]/g, "").replace(/\s+/g, "_");
+
+        if (output.generatedImageUrl) {
+          try {
+            const res = await fetch(output.generatedImageUrl);
+            const blob = await res.blob();
+            zip.file(`imagens/${idx + 1}_${safeName}.png`, blob);
+            fileCount++;
+          } catch { /* skip failed */ }
+        }
+
+        if (output.generatedReelUrl) {
+          try {
+            const res = await fetch(output.generatedReelUrl);
+            const blob = await res.blob();
+            zip.file(`reels/${idx + 1}_${safeName}.webm`, blob);
+            fileCount++;
+          } catch { /* skip failed */ }
+        }
+      }
+
+      if (fileCount === 0) {
+        toast.error("Nenhum arquivo válido encontrado");
+        setZipping(false);
+        return;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `roxou-media-${dateStr}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`ZIP baixado com ${fileCount} arquivo(s)!`);
+    } catch (err: any) {
+      toast.error("Erro ao gerar ZIP", { description: err.message });
+    } finally {
+      setZipping(false);
+    }
+  }
+
   // Batch stats
   const batchStats = useMemo(() => {
     const total = batchJobs.length;
@@ -632,6 +695,16 @@ const InstagramAgenda = () => {
                   className="flex items-center gap-1 rounded-lg bg-destructive/15 px-3 py-2 text-[10px] font-semibold text-destructive hover:bg-destructive/25 transition"
                 >
                   <Pause className="h-3 w-3" /> Parar
+                </button>
+              )}
+              {hasDownloadableMedia && !batchRunning && (
+                <button
+                  onClick={downloadAllAsZip}
+                  disabled={zipping}
+                  className="flex items-center gap-1 rounded-lg bg-secondary/60 px-3 py-2 text-[10px] font-semibold text-foreground hover:bg-secondary transition disabled:opacity-50"
+                >
+                  {zipping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                  {zipping ? "Gerando ZIP…" : "Baixar tudo (.zip)"}
                 </button>
               )}
             </div>
