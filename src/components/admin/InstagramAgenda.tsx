@@ -1,13 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
-  Clock, Filter, Send, FileText, ChevronDown, ChevronUp
+  Clock, Filter, Send, FileText, ChevronDown, ChevronUp, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import EventImageGenerator from "./EventImageGenerator";
+import { renderEventCard, type EventData } from "./EventImageGenerator";
 import { ptBR } from "date-fns/locale";
 
 interface AgendaEvent {
