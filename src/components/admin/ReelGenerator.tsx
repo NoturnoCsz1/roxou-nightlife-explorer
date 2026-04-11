@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { Loader2, Download, Play, Video, Send } from "lucide-react";
+import { Loader2, Download, Video, Send } from "lucide-react";
 import { toast } from "sonner";
 
 interface EventData {
