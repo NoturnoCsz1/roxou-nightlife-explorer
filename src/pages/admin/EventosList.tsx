@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Copy, Layers, MousePointerClick, Plus, Search, Star, StarOff, Trash2, X } from "lucide-react";
+import { CheckSquare, ChevronDown, Copy, Download, Layers, Loader2, MousePointerClick, Plus, Search, Square, Star, StarOff, Trash2, X } from "lucide-react";
+import { downloadEventsZip } from "@/lib/downloadEventsZip";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
@@ -24,12 +26,14 @@ import {
 interface EventRow {
   id: string;
   title: string;
+  slug: string;
   venue_name: string | null;
   date_time: string;
   category: string;
   sub_category: string | null;
   status: string;
   featured: boolean;
+  image_url: string | null;
 }
 
 const EventosList = () => {
@@ -43,6 +47,9 @@ const EventosList = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [zipping, setZipping] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -74,7 +81,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, venue_name, date_time, category, sub_category, status, featured")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url")
       .order("date_time", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -90,6 +97,48 @@ const EventosList = () => {
       if (row.event_id) counts[row.event_id] = (counts[row.event_id] || 0) + 1;
     });
     setClickCounts(counts);
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const visibleIds = filtered.filter(e => e.image_url).map(e => e.id);
+    if (visibleIds.every(id => selectedIds.has(id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleIds));
+    }
+  }
+
+  async function handleDownloadZip() {
+    const eventsToDownload = selectedIds.size > 0
+      ? filtered.filter(e => selectedIds.has(e.id) && e.image_url)
+      : filtered.filter(e => e.image_url);
+
+    if (eventsToDownload.length === 0) {
+      toast.error("Nenhum evento com imagem para baixar.");
+      return;
+    }
+
+    setZipping(true);
+    setZipProgress({ current: 0, total: eventsToDownload.length });
+
+    try {
+      await downloadEventsZip(eventsToDownload, (current, total) => {
+        setZipProgress({ current, total });
+      });
+      toast.success(`ZIP com ${eventsToDownload.length} imagens baixado!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao gerar ZIP.");
+    } finally {
+      setZipping(false);
+    }
   }
 
   async function toggleFeatured(id: string, current: boolean) {
@@ -140,8 +189,19 @@ const EventosList = () => {
     festa: "badge-balada",
   };
 
+  const withImages = filtered.filter(e => e.image_url).length;
+  const selectedCount = selectedIds.size;
+  const zipPercent = zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0;
+
   const renderEventRow = (e: EventRow) => (
-    <div key={e.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3">
+    <div key={e.id} className="flex items-center gap-2 rounded-xl border border-border/40 bg-card p-3">
+      {e.image_url && (
+        <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
+          {selectedIds.has(e.id)
+            ? <CheckSquare className="h-4 w-4 text-primary" />
+            : <Square className="h-4 w-4 text-muted-foreground" />}
+        </button>
+      )}
       <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
         <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -164,25 +224,13 @@ const EventosList = () => {
         </div>
       </Link>
       <div className="flex items-center shrink-0 ml-2 gap-0.5">
-        <button
-          onClick={() => handleDuplicate(e.id)}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
-          title="Duplicar evento"
-        >
+        <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
           <Copy className="h-4 w-4 text-muted-foreground" />
         </button>
-        <button
-          onClick={() => toggleFeatured(e.id, e.featured)}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
-          title={e.featured ? "Remover destaque" : "Destacar"}
-        >
+        <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
           {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
         </button>
-        <button
-          onClick={() => setDeleteTarget(e)}
-          className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
-          title="Excluir evento"
-        >
+        <button onClick={() => setDeleteTarget(e)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition" title="Excluir evento">
           <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
         </button>
       </div>
@@ -220,6 +268,28 @@ const EventosList = () => {
           </Link>
         </div>
       </div>
+
+      {/* Bulk download bar */}
+      {withImages > 0 && (
+        <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/40 bg-card px-3 py-2">
+          <button onClick={toggleSelectAll} className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase hover:text-foreground transition">
+            {selectedCount === withImages ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
+            {selectedCount > 0 ? `${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}` : "Selecionar"}
+          </button>
+          <span className="w-px h-4 bg-border/40" />
+          <button
+            onClick={handleDownloadZip}
+            disabled={zipping}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60 transition"
+          >
+            {zipping ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            {zipping ? `Baixando... ${zipPercent}%` : "📦 Baixar Tudo"}
+          </button>
+          {zipping && (
+            <Progress value={zipPercent} className="h-1.5 flex-1 min-w-[80px]" />
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-card px-3 py-2">
         <Search className="h-4 w-4 text-muted-foreground" />
