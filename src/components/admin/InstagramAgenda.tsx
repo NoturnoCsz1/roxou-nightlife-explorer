@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
-  Sparkles, Trophy, ListOrdered, Image, Star, BadgeCheck, TrendingUp,
+  Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
   Clock, Filter, Send, FileText, ChevronDown, ChevronUp
 } from "lucide-react";
 import { toast } from "sonner";
