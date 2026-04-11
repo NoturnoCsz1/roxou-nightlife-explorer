@@ -400,6 +400,68 @@ const InstagramAgenda = () => {
     toast.info("Geração interrompida");
   }
 
+  // ========== ZIP DOWNLOAD ==========
+  const [zipping, setZipping] = useState(false);
+
+  const hasDownloadableMedia = useMemo(() =>
+    outputs.some(o => o.generatedImageUrl || o.generatedReelUrl),
+    [outputs]
+  );
+
+  async function downloadAllAsZip() {
+    if (!hasDownloadableMedia) {
+      toast.error("Nenhuma mídia gerada para baixar");
+      return;
+    }
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      const dateStr = format(new Date(), "yyyy-MM-dd");
+      let fileCount = 0;
+
+      for (const [idx, output] of outputs.entries()) {
+        const safeName = output.title.slice(0, 30).replace(/[^a-zA-Z0-9À-ú ]/g, "").replace(/\s+/g, "_");
+
+        if (output.generatedImageUrl) {
+          try {
+            const res = await fetch(output.generatedImageUrl);
+            const blob = await res.blob();
+            zip.file(`imagens/${idx + 1}_${safeName}.png`, blob);
+            fileCount++;
+          } catch { /* skip failed */ }
+        }
+
+        if (output.generatedReelUrl) {
+          try {
+            const res = await fetch(output.generatedReelUrl);
+            const blob = await res.blob();
+            zip.file(`reels/${idx + 1}_${safeName}.webm`, blob);
+            fileCount++;
+          } catch { /* skip failed */ }
+        }
+      }
+
+      if (fileCount === 0) {
+        toast.error("Nenhum arquivo válido encontrado");
+        setZipping(false);
+        return;
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `roxou-media-${dateStr}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`ZIP baixado com ${fileCount} arquivo(s)!`);
+    } catch (err: any) {
+      toast.error("Erro ao gerar ZIP", { description: err.message });
+    } finally {
+      setZipping(false);
+    }
+  }
+
   // Batch stats
   const batchStats = useMemo(() => {
     const total = batchJobs.length;
