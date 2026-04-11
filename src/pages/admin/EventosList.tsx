@@ -26,12 +26,14 @@ import {
 interface EventRow {
   id: string;
   title: string;
+  slug: string;
   venue_name: string | null;
   date_time: string;
   category: string;
   sub_category: string | null;
   status: string;
   featured: boolean;
+  image_url: string | null;
 }
 
 const EventosList = () => {
@@ -45,6 +47,9 @@ const EventosList = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [zipping, setZipping] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
