@@ -99,6 +99,48 @@ const EventosList = () => {
     setClickCounts(counts);
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const visibleIds = filtered.filter(e => e.image_url).map(e => e.id);
+    if (visibleIds.every(id => selectedIds.has(id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(visibleIds));
+    }
+  }
+
+  async function handleDownloadZip() {
+    const eventsToDownload = selectedIds.size > 0
+      ? filtered.filter(e => selectedIds.has(e.id) && e.image_url)
+      : filtered.filter(e => e.image_url);
+
+    if (eventsToDownload.length === 0) {
+      toast.error("Nenhum evento com imagem para baixar.");
+      return;
+    }
+
+    setZipping(true);
+    setZipProgress({ current: 0, total: eventsToDownload.length });
+
+    try {
+      await downloadEventsZip(eventsToDownload, (current, total) => {
+        setZipProgress({ current, total });
+      });
+      toast.success(`ZIP com ${eventsToDownload.length} imagens baixado!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao gerar ZIP.");
+    } finally {
+      setZipping(false);
+    }
+  }
+
   async function toggleFeatured(id: string, current: boolean) {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
