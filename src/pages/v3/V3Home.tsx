@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -236,7 +237,7 @@ export default function V3Home() {
 
       {/* ══════ 4. 🔥 LOCAIS EM ALTA — PREMIUM RANKING ══════ */}
       {loadingVenues ? <VenueRankSkeleton /> : venueRanks.length > 0 ? (
-        <section className="px-4 pt-6 pb-3">
+        <FadeSection className="px-4 pt-6 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center neon-glow">
               <Crown className="w-4 h-4 text-primary-foreground" />
@@ -275,7 +276,7 @@ export default function V3Home() {
               ))}
             </div>
           )}
-        </section>
+        </FadeSection>
       ) : null}
 
       {/* ══════ 5. HOJE ══════ */}
@@ -289,7 +290,7 @@ export default function V3Home() {
 
       {/* ══════ 6. 💎 PARCEIROS EM DESTAQUE ══════ */}
       {(featuredPartners as any[]).length > 0 && (
-        <section className="px-4 pt-5 pb-3">
+        <FadeSection className="px-4 pt-5 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <Gem className="w-5 h-5 text-accent" />
             <h2 className="font-display font-bold text-lg text-foreground uppercase tracking-wide">Parceiros em destaque</h2>
@@ -300,11 +301,11 @@ export default function V3Home() {
               <FeaturedPartnerCard key={p.id} p={p} />
             ))}
           </div>
-        </section>
+        </FadeSection>
       )}
 
       {/* ══════ 7. TRANSPORT ACTION — refined as clean action card ══════ */}
-      <div className="px-4 py-2">
+      <FadeSection className="px-4 py-2">
         <Link
           to="/v3/transporte"
           className="relative flex items-center gap-3.5 p-3.5 rounded-2xl overflow-hidden border border-primary/15 group active:scale-[0.98] transition-transform"
@@ -321,7 +322,7 @@ export default function V3Home() {
             Ver
           </span>
         </Link>
-      </div>
+      </FadeSection>
 
       {/* ══════ 8. EVENTOS PREMIUM ══════ */}
       {featured.length > 0 && (
@@ -643,8 +644,9 @@ function VenueRankSkeleton() {
 
 /* ─── CONTENT RAIL — refined spacing ─── */
 function Rail({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  const { ref, visible } = useScrollFadeIn();
   return (
-    <section className="py-2.5">
+    <section ref={ref} className={`py-2.5 transition-all duration-500 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
       <div className="flex items-end justify-between px-4 mb-2">
         <div>
           <h2 className="font-display font-bold text-[15px] text-foreground">{title}</h2>
