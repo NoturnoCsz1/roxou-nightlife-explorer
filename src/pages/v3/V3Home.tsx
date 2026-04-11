@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, ReactNode } from "react";
 import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -350,6 +350,16 @@ export default function V3Home() {
 /* ═══════════════════════════════════════════════════════════════
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════ */
+
+/* ─── FADE SECTION WRAPPER ─── */
+function FadeSection({ className, children }: { className?: string; children: ReactNode }) {
+  const { ref, visible } = useScrollFadeIn();
+  return (
+    <section ref={ref} className={`transition-all duration-500 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} ${className || ""}`}>
+      {children}
+    </section>
+  );
+}
 
 function HeroSection({ ev, isToday, todayCount, venueRank }: {
   ev: Ev; isToday: boolean; todayCount: number; venueRank?: number;
