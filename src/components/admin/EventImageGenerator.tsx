@@ -250,10 +250,10 @@ async function renderEventCard(
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", onSendToDraft }: Props) {
+export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", initialImage, onImageGenerated, onSendToDraft }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [generating, setGenerating] = useState(false);
-  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(initialImage || null);
 
   const generate = useCallback(async () => {
     if (!canvasRef.current) return;
