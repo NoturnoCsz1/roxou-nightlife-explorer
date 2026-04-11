@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
-  Clock, Filter, Send, FileText, ChevronDown, ChevronUp, Download
+  Clock, Filter, Send, FileText, ChevronDown, ChevronUp, Download,
+  Video, Zap, Pause
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import EventImageGenerator from "./EventImageGenerator";
 import { renderEventCard } from "./EventImageGenerator";
 import ReelGenerator from "./ReelGenerator";
+import { generateReel } from "./ReelGenerator";
 import { ptBR } from "date-fns/locale";
 
 interface AgendaEvent {
@@ -25,6 +27,7 @@ interface AgendaEvent {
   featured: boolean;
   partner_id: string | null;
   description: string | null;
+  ticket_url?: string | null;
   // computed
   score: number;
   views: number;
@@ -41,6 +44,16 @@ interface GeneratedOutput {
   imagePrompt: string;
   events?: AgendaEvent[];
   generatedImageUrl?: string;
+  generatedReelUrl?: string;
+}
+
+interface BatchJob {
+  id: string;
+  type: "image" | "reel";
+  outputIdx: number;
+  eventTitle: string;
+  status: "pending" | "processing" | "done" | "error";
+  error?: string;
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -48,6 +61,8 @@ const CATEGORY_EMOJI: Record<string, string> = {
   restaurante: "🍽️", "casa de show": "🎤", futebol: "⚽",
   show: "🎤", festival: "🏟️",
 };
+
+const MAX_CONCURRENCY = 2;
 
 const InstagramAgenda = () => {
   const navigate = useNavigate();
@@ -57,7 +72,11 @@ const InstagramAgenda = () => {
   const [generating, setGenerating] = useState(false);
   const [outputs, setOutputs] = useState<GeneratedOutput[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
-  const [bulkGeneratingImages, setBulkGeneratingImages] = useState(false);
+
+  // Batch queue state
+  const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const batchAbortRef = useRef(false);
 
   // Filters
   const [onlyFeatured, setOnlyFeatured] = useState(false);
@@ -74,7 +93,7 @@ const InstagramAgenda = () => {
 
     const [eventsRes, viewsRes, savesRes, partnersRes] = await Promise.all([
       supabase.from("events")
-        .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description")
+        .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
         .eq("status", "published")
         .gte("date_time", startOfDay)
         .lt("date_time", endOfDay)
@@ -91,7 +110,6 @@ const InstagramAgenda = () => {
     (savesRes.data || []).forEach((s: any) => { if (s.event_id) saveMap[s.event_id] = (saveMap[s.event_id] || 0) + 1; });
     const verifiedMap = new Set((partnersRes.data || []).filter((p: any) => p.verified_partner).map((p: any) => p.id));
 
-    // Top views threshold (top 30%)
     const allViews = Object.values(viewMap).sort((a, b) => b - a);
     const topThreshold = allViews[Math.floor(allViews.length * 0.3)] || 1;
 
@@ -158,7 +176,7 @@ const InstagramAgenda = () => {
 
   function generateAgenda(): GeneratedOutput {
     const top = selectedEvents.slice(0, 10);
-    const lines = top.map((e, i) => {
+    const lines = top.map((e) => {
       const h = format(new Date(e.date_time), "HH'h'mm");
       const emoji = CATEGORY_EMOJI[e.category] || "📌";
       return `${emoji} ${e.title}\n🕐 ${h}${e.venue_name ? ` · 📍 ${e.venue_name}` : ""}`;
@@ -214,6 +232,7 @@ const InstagramAgenda = () => {
     }
     setGenerating(true);
     setOutputs([]);
+    setBatchJobs([]);
 
     const results: GeneratedOutput[] = [];
 
@@ -227,7 +246,6 @@ const InstagramAgenda = () => {
       selectedEvents.forEach(e => results.push(generateIndividual(e)));
     }
 
-    // Save to content_generations
     for (const r of results) {
       await supabase.from("content_generations" as any).insert({
         type: "post",
@@ -243,6 +261,153 @@ const InstagramAgenda = () => {
     setGenerating(false);
     toast.success(`${results.length} conteúdo(s) gerado(s)!`);
   }
+
+  // ========== BATCH QUEUE ==========
+
+  const runBatchQueue = useCallback(async (jobs: BatchJob[], currentOutputs: GeneratedOutput[]) => {
+    setBatchRunning(true);
+    batchAbortRef.current = false;
+    const updatedOutputs = [...currentOutputs];
+    const updatedJobs = [...jobs];
+
+    // Process with controlled concurrency
+    let nextIdx = 0;
+    const processing = new Set<number>();
+
+    async function processJob(jobIdx: number) {
+      const job = updatedJobs[jobIdx];
+      if (!job || job.status !== "pending") return;
+
+      job.status = "processing";
+      setBatchJobs([...updatedJobs]);
+
+      const output = updatedOutputs[job.outputIdx];
+      const ev = output.eventId
+        ? events.find(e => e.id === output.eventId)
+        : (output.events?.[0] || null);
+
+      if (!ev) {
+        job.status = "error";
+        job.error = "Evento não encontrado";
+        setBatchJobs([...updatedJobs]);
+        return;
+      }
+
+      const badge = output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU";
+
+      try {
+        if (job.type === "image") {
+          const canvas = document.createElement("canvas");
+          const dataUrl = await renderEventCard(canvas, ev, badge);
+          updatedOutputs[job.outputIdx] = { ...updatedOutputs[job.outputIdx], generatedImageUrl: dataUrl };
+          setOutputs([...updatedOutputs]);
+        } else {
+          const canvas = document.createElement("canvas");
+          const blob = await generateReel(canvas, ev, badge);
+          const url = URL.createObjectURL(blob);
+          updatedOutputs[job.outputIdx] = { ...updatedOutputs[job.outputIdx], generatedReelUrl: url };
+          setOutputs([...updatedOutputs]);
+        }
+        job.status = "done";
+      } catch (err: any) {
+        job.status = "error";
+        job.error = err.message;
+      }
+
+      setBatchJobs([...updatedJobs]);
+    }
+
+    // Run with concurrency limit
+    while (nextIdx < updatedJobs.length && !batchAbortRef.current) {
+      while (processing.size < MAX_CONCURRENCY && nextIdx < updatedJobs.length) {
+        if (batchAbortRef.current) break;
+        const idx = nextIdx++;
+        processing.add(idx);
+        processJob(idx).then(() => processing.delete(idx));
+      }
+      // Wait for at least one to finish
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Wait for remaining
+    while (processing.size > 0) {
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    setBatchRunning(false);
+    if (!batchAbortRef.current) {
+      toast.success("Batch completo!");
+    }
+  }, [events]);
+
+  function startBatchImages() {
+    const jobs: BatchJob[] = outputs.map((o, idx) => ({
+      id: `img-${idx}`,
+      type: "image" as const,
+      outputIdx: idx,
+      eventTitle: o.title,
+      status: "pending" as const,
+    }));
+    setBatchJobs(jobs);
+    runBatchQueue(jobs, outputs);
+  }
+
+  function startBatchReels() {
+    const jobs: BatchJob[] = outputs
+      .filter((o) => {
+        const ev = o.eventId ? events.find(e => e.id === o.eventId) : (o.events?.[0] || null);
+        return ev?.image_url;
+      })
+      .map((o, idx) => ({
+        id: `reel-${idx}`,
+        type: "reel" as const,
+        outputIdx: outputs.indexOf(o),
+        eventTitle: o.title,
+        status: "pending" as const,
+      }));
+    setBatchJobs(jobs);
+    runBatchQueue(jobs, outputs);
+  }
+
+  function startBatchAll() {
+    const imageJobs: BatchJob[] = outputs.map((o, idx) => ({
+      id: `img-${idx}`,
+      type: "image" as const,
+      outputIdx: idx,
+      eventTitle: o.title,
+      status: "pending" as const,
+    }));
+    const reelJobs: BatchJob[] = outputs
+      .filter((o) => {
+        const ev = o.eventId ? events.find(e => e.id === o.eventId) : (o.events?.[0] || null);
+        return ev?.image_url;
+      })
+      .map((o, idx) => ({
+        id: `reel-${idx}`,
+        type: "reel" as const,
+        outputIdx: outputs.indexOf(o),
+        eventTitle: o.title,
+        status: "pending" as const,
+      }));
+    const allJobs = [...imageJobs, ...reelJobs];
+    setBatchJobs(allJobs);
+    runBatchQueue(allJobs, outputs);
+  }
+
+  function abortBatch() {
+    batchAbortRef.current = true;
+    toast.info("Geração interrompida");
+  }
+
+  // Batch stats
+  const batchStats = useMemo(() => {
+    const total = batchJobs.length;
+    const done = batchJobs.filter(j => j.status === "done").length;
+    const errors = batchJobs.filter(j => j.status === "error").length;
+    const processing = batchJobs.filter(j => j.status === "processing").length;
+    const pct = total > 0 ? Math.round(((done + errors) / total) * 100) : 0;
+    return { total, done, errors, processing, pct };
+  }, [batchJobs]);
 
   function copyText(text: string, label = "Copiado!") {
     navigator.clipboard.writeText(text);
@@ -335,7 +500,7 @@ const InstagramAgenda = () => {
           <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento publicado para hoje.</p>
         ) : (
           <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-            {filteredEvents.map((e, i) => {
+            {filteredEvents.map((e) => {
               const isSelected = selected.has(e.id);
               const h = format(new Date(e.date_time), "HH:mm");
               return (
@@ -429,37 +594,92 @@ const InstagramAgenda = () => {
       {/* Outputs */}
       {outputs.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              Conteúdo Gerado ({outputs.length})
-            </h3>
-            <button
-              onClick={async () => {
-                setBulkGeneratingImages(true);
-                const canvas = document.createElement("canvas");
-                const updated = [...outputs];
-                for (let i = 0; i < updated.length; i++) {
-                  const o = updated[i];
-                  const ev = o.eventId ? events.find(e => e.id === o.eventId) : (o.events?.[0] || null);
-                  if (ev) {
-                    try {
-                      const badge = o.mode === "top" ? "TOP ROLÊS DE HOJE" : o.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU";
-                      const dataUrl = await renderEventCard(canvas, ev, badge);
-                      updated[i] = { ...o, generatedImageUrl: dataUrl };
-                    } catch { /* skip */ }
-                  }
-                }
-                setOutputs(updated);
-                setBulkGeneratingImages(false);
-                toast.success("Imagens geradas!");
-              }}
-              disabled={bulkGeneratingImages}
-              className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
-            >
-              {bulkGeneratingImages ? <Loader2 className="h-3 w-3 animate-spin" /> : <Image className="h-3 w-3" />}
-              Gerar imagens
-            </button>
+          {/* Batch actions header */}
+          <div className="rounded-xl border border-border/30 bg-card p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Conteúdo Gerado ({outputs.length})
+              </h3>
+            </div>
+
+            {/* Bulk generation buttons */}
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={startBatchImages}
+                disabled={batchRunning}
+                className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
+              >
+                <Image className="h-3 w-3" /> Gerar todas imagens
+              </button>
+              <button
+                onClick={startBatchReels}
+                disabled={batchRunning}
+                className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
+              >
+                <Video className="h-3 w-3" /> Gerar todos reels
+              </button>
+              <button
+                onClick={startBatchAll}
+                disabled={batchRunning}
+                className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-pink-600 to-orange-500 px-3 py-2 text-[10px] font-bold text-white hover:opacity-90 disabled:opacity-50 transition"
+              >
+                <Zap className="h-3 w-3" /> Gerar tudo
+              </button>
+              {batchRunning && (
+                <button
+                  onClick={abortBatch}
+                  className="flex items-center gap-1 rounded-lg bg-destructive/15 px-3 py-2 text-[10px] font-semibold text-destructive hover:bg-destructive/25 transition"
+                >
+                  <Pause className="h-3 w-3" /> Parar
+                </button>
+              )}
+            </div>
+
+            {/* Progress tracker */}
+            {batchJobs.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-muted-foreground">
+                    {batchRunning ? (
+                      <span className="flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Processando {batchStats.done + batchStats.errors}/{batchStats.total}
+                      </span>
+                    ) : (
+                      `Concluído: ${batchStats.done}/${batchStats.total}`
+                    )}
+                  </span>
+                  <span className="font-bold text-primary">{batchStats.pct}%</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-secondary/30 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
+                    style={{ width: `${batchStats.pct}%` }}
+                  />
+                </div>
+                {batchStats.errors > 0 && (
+                  <span className="text-[9px] text-destructive">{batchStats.errors} erro(s)</span>
+                )}
+
+                {/* Job list (compact) */}
+                <div className="max-h-32 overflow-y-auto space-y-0.5">
+                  {batchJobs.map(job => (
+                    <div key={job.id} className="flex items-center gap-2 text-[9px] py-0.5">
+                      {job.status === "pending" && <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />}
+                      {job.status === "processing" && <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" />}
+                      {job.status === "done" && <div className="h-2 w-2 rounded-full bg-green-500" />}
+                      {job.status === "error" && <div className="h-2 w-2 rounded-full bg-destructive" />}
+                      <span className="text-muted-foreground truncate flex-1">
+                        {job.type === "image" ? "📷" : "🎬"} {job.eventTitle}
+                      </span>
+                      {job.status === "done" && <span className="text-green-500">✓</span>}
+                      {job.status === "error" && <span className="text-destructive">✗</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {outputs.map((output, idx) => {
@@ -472,7 +692,6 @@ const InstagramAgenda = () => {
 
             return (
               <div key={idx} className="rounded-xl border border-border/30 bg-card overflow-hidden">
-                {/* Collapsed header */}
                 <button
                   onClick={() => setExpandedOutput(isExpanded ? null : idx)}
                   className="w-full flex items-center justify-between px-3.5 py-3 hover:bg-secondary/10 transition"
@@ -486,14 +705,14 @@ const InstagramAgenda = () => {
                       <span className="text-[9px] text-muted-foreground">{modeLabel}</span>
                     </div>
                     {output.generatedImageUrl && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-400/10 text-green-500 font-medium">📷</span>}
+                    {output.generatedReelUrl && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-400/10 text-blue-500 font-medium">🎬</span>}
                   </div>
                   {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
                 </button>
 
                 {isExpanded && (
                   <div className="px-3.5 pb-4 space-y-4 border-t border-border/15">
-
-                    {/* ── Primary action — always visible at top ── */}
+                    {/* Primary action */}
                     <div className="flex gap-2 pt-3">
                       <button
                         onClick={() => sendToInstagramDraft(output)}
@@ -520,7 +739,7 @@ const InstagramAgenda = () => {
                       </button>
                     </div>
 
-                    {/* ── Visual: Image + Reel side by side ── */}
+                    {/* Visual: Image + Reel */}
                     <div className="grid grid-cols-1 gap-3">
                       <div className="rounded-lg border border-border/20 bg-background/30 p-3 space-y-2">
                         <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Imagem</span>
@@ -547,8 +766,23 @@ const InstagramAgenda = () => {
                       </div>
 
                       <div className="rounded-lg border border-border/20 bg-background/30 p-3 space-y-2">
-                        <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎬 Reels</span>
-                        {eventForImage ? (
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎬 Reels</span>
+                          {output.generatedReelUrl && (
+                            <a
+                              href={output.generatedReelUrl}
+                              download={`roxou-reel-${output.title.slice(0, 20).replace(/[^a-zA-Z0-9]/g, "_")}.webm`}
+                              className="flex items-center gap-1 text-[9px] text-primary font-medium"
+                            >
+                              <Download className="h-2.5 w-2.5" /> Baixar
+                            </a>
+                          )}
+                        </div>
+                        {output.generatedReelUrl ? (
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[200px]">
+                            <video src={output.generatedReelUrl} controls autoPlay muted loop playsInline className="w-full" style={{ aspectRatio: "9/16" }} />
+                          </div>
+                        ) : eventForImage ? (
                           <ReelGenerator
                             event={eventForImage}
                             badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
@@ -560,7 +794,7 @@ const InstagramAgenda = () => {
                       </div>
                     </div>
 
-                    {/* ── Captions — collapsible group ── */}
+                    {/* Captions */}
                     <div className="space-y-2">
                       <div className="rounded-lg border border-border/20 bg-background/30 p-3">
                         <div className="flex items-center justify-between mb-1.5">
