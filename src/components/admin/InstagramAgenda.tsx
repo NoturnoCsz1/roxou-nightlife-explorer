@@ -39,6 +39,7 @@ interface GeneratedOutput {
   captionShort: string;
   imagePrompt: string;
   events?: AgendaEvent[];
+  generatedImageUrl?: string;
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
