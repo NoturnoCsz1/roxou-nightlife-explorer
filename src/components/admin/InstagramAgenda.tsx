@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
-  Clock, Filter, Send, FileText, ChevronDown, ChevronUp
+  Clock, Filter, Send, FileText, ChevronDown, ChevronUp, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import EventImageGenerator from "./EventImageGenerator";
+import { renderEventCard } from "./EventImageGenerator";
 import { ptBR } from "date-fns/locale";
 
 interface AgendaEvent {
@@ -37,6 +39,7 @@ interface GeneratedOutput {
   captionShort: string;
   imagePrompt: string;
   events?: AgendaEvent[];
+  generatedImageUrl?: string;
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -53,6 +56,7 @@ const InstagramAgenda = () => {
   const [generating, setGenerating] = useState(false);
   const [outputs, setOutputs] = useState<GeneratedOutput[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
+  const [bulkGeneratingImages, setBulkGeneratingImages] = useState(false);
 
   // Filters
   const [onlyFeatured, setOnlyFeatured] = useState(false);
@@ -424,10 +428,38 @@ const InstagramAgenda = () => {
       {/* Outputs */}
       {outputs.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Conteúdo Gerado ({outputs.length})
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              Conteúdo Gerado ({outputs.length})
+            </h3>
+            <button
+              onClick={async () => {
+                setBulkGeneratingImages(true);
+                const canvas = document.createElement("canvas");
+                const updated = [...outputs];
+                for (let i = 0; i < updated.length; i++) {
+                  const o = updated[i];
+                  const ev = o.eventId ? events.find(e => e.id === o.eventId) : (o.events?.[0] || null);
+                  if (ev) {
+                    try {
+                      const badge = o.mode === "top" ? "TOP ROLÊS DE HOJE" : o.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU";
+                      const dataUrl = await renderEventCard(canvas, ev, badge);
+                      updated[i] = { ...o, generatedImageUrl: dataUrl };
+                    } catch { /* skip */ }
+                  }
+                }
+                setOutputs(updated);
+                setBulkGeneratingImages(false);
+                toast.success("Imagens geradas!");
+              }}
+              disabled={bulkGeneratingImages}
+              className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
+            >
+              {bulkGeneratingImages ? <Loader2 className="h-3 w-3 animate-spin" /> : <Image className="h-3 w-3" />}
+              Gerar imagens de todos
+            </button>
+          </div>
 
           {outputs.map((output, idx) => {
             const isExpanded = expandedOutput === idx;
@@ -435,6 +467,7 @@ const InstagramAgenda = () => {
             const ModeIcon = modeIcon;
             const modeLabel = output.mode === "agenda" ? "Agenda" : output.mode === "top" ? "Top Rolês" : "Individual";
             const modeCls = output.mode === "agenda" ? "text-primary" : output.mode === "top" ? "text-yellow-500" : "text-accent";
+            const eventForImage = output.eventId ? events.find(e => e.id === output.eventId) : (output.events?.[0] || null);
 
             return (
               <div key={idx} className="rounded-xl border border-border/40 bg-card overflow-hidden">
@@ -445,13 +478,39 @@ const InstagramAgenda = () => {
                   <div className="flex items-center gap-2">
                     <ModeIcon className={`h-3.5 w-3.5 ${modeCls}`} />
                     <span className="text-xs font-semibold text-foreground">{output.title}</span>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-secondary/40 text-muted-foreground`}>{modeLabel}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-secondary/40 text-muted-foreground">{modeLabel}</span>
+                    {output.generatedImageUrl && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium bg-green-400/15 text-green-500">📷</span>}
                   </div>
                   {isExpanded ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
                 </button>
 
                 {isExpanded && (
                   <div className="p-3 pt-0 space-y-3 border-t border-border/20">
+                    {/* Image generation */}
+                    <div className="space-y-2">
+                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Imagem promocional</span>
+                      {eventForImage ? (
+                        <EventImageGenerator
+                          event={eventForImage}
+                          badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
+                          initialImage={output.generatedImageUrl}
+                          onImageGenerated={(dataUrl) => {
+                            const updated = [...outputs];
+                            updated[idx] = { ...output, generatedImageUrl: dataUrl };
+                            setOutputs(updated);
+                          }}
+                          onSendToDraft={(imageDataUrl) => {
+                            const params = new URLSearchParams();
+                            params.set("caption", output.captionFull);
+                            params.set("image", imageDataUrl);
+                            navigate(`/admin/instagram?tab=publicacao&${params.toString()}`);
+                          }}
+                        />
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground">Nenhum evento com imagem disponível.</p>
+                      )}
+                    </div>
+
                     {/* Full caption */}
                     <div>
                       <span className="text-[9px] text-muted-foreground font-medium uppercase">Legenda completa</span>
@@ -510,6 +569,7 @@ const InstagramAgenda = () => {
                             source_id: output.eventId || null,
                             title: output.title,
                             generated_text: output.captionFull,
+                            image_url: output.generatedImageUrl || null,
                             favorited: true,
                           } as any);
                           toast.success("Salvo como rascunho favorito!");
