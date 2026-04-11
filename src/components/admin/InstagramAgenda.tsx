@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import EventImageGenerator from "./EventImageGenerator";
 import { renderEventCard } from "./EventImageGenerator";
+import ReelGenerator from "./ReelGenerator";
 import { ptBR } from "date-fns/locale";
 
 interface AgendaEvent {
@@ -511,7 +512,21 @@ const InstagramAgenda = () => {
                       )}
                     </div>
 
-                    {/* Full caption */}
+                    {/* Reel generation */}
+                    <div className="space-y-2">
+                      <span className="text-[9px] text-muted-foreground font-medium uppercase">Reels promocional</span>
+                      {eventForImage ? (
+                        <ReelGenerator
+                          event={eventForImage}
+                          badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
+                          onSendToDraft={() => {
+                            toast.info("Vídeo pronto para publicação manual");
+                          }}
+                        />
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground">Nenhum evento com imagem para gerar reel.</p>
+                      )}
+                    </div>
                     <div>
                       <span className="text-[9px] text-muted-foreground font-medium uppercase">Legenda completa</span>
                       <pre className="whitespace-pre-wrap text-[11px] text-foreground bg-background/50 rounded-lg p-3 font-sans leading-relaxed mt-1 max-h-60 overflow-y-auto border border-border/20">
