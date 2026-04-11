@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,7 +9,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import EventImageGenerator from "./EventImageGenerator";
-import { renderEventCard, type EventData } from "./EventImageGenerator";
+import { renderEventCard } from "./EventImageGenerator";
 import { ptBR } from "date-fns/locale";
 
 interface AgendaEvent {
