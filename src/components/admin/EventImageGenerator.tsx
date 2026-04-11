@@ -261,13 +261,14 @@ export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", in
     try {
       const dataUrl = await renderEventCard(canvasRef.current, event, badge);
       setImageDataUrl(dataUrl);
+      onImageGenerated?.(dataUrl);
       toast.success("Imagem gerada!");
     } catch (err: any) {
       toast.error("Erro ao gerar imagem", { description: err.message });
     } finally {
       setGenerating(false);
     }
-  }, [event, badge]);
+  }, [event, badge, onImageGenerated]);
 
   const download = useCallback(() => {
     if (!imageDataUrl) return;
