@@ -261,12 +261,13 @@ export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", in
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [generating, setGenerating] = useState(false);
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(initialImage || null);
+  const [fmt, setFmt] = useState<ImageFormat>("feed");
 
   const generate = useCallback(async () => {
     if (!canvasRef.current) return;
     setGenerating(true);
     try {
-      const dataUrl = await renderEventCard(canvasRef.current, event, badge);
+      const dataUrl = await renderEventCard(canvasRef.current, event, badge, fmt);
       setImageDataUrl(dataUrl);
       onImageGenerated?.(dataUrl);
       toast.success("Imagem gerada!");
@@ -275,20 +276,34 @@ export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", in
     } finally {
       setGenerating(false);
     }
-  }, [event, badge, onImageGenerated]);
+  }, [event, badge, fmt, onImageGenerated]);
 
   const download = useCallback(() => {
     if (!imageDataUrl) return;
     const a = document.createElement("a");
     a.href = imageDataUrl;
-    a.download = `roxou-${event.title.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}.jpg`;
+    const suffix = fmt === "story" ? "_story" : "";
+    a.download = `roxou-${event.title.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}${suffix}.jpg`;
     a.click();
     toast.success("Download iniciado!");
-  }, [imageDataUrl, event.title]);
+  }, [imageDataUrl, event.title, fmt]);
 
   return (
     <div className="space-y-2">
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* Format toggle */}
+      <div className="flex gap-1">
+        {(Object.entries(FORMAT_SIZES) as [ImageFormat, typeof FORMAT_SIZES["feed"]][]).map(([key, val]) => (
+          <button
+            key={key}
+            onClick={() => { setFmt(key); setImageDataUrl(null); }}
+            className={`text-[9px] px-2 py-1 rounded-full font-semibold transition ${fmt === key ? "bg-primary/20 text-primary" : "bg-secondary/30 text-muted-foreground hover:text-foreground"}`}
+          >
+            {val.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex gap-1.5 flex-wrap">
         <button
