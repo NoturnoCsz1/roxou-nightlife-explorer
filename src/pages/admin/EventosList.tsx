@@ -189,8 +189,19 @@ const EventosList = () => {
     festa: "badge-balada",
   };
 
+  const withImages = filtered.filter(e => e.image_url).length;
+  const selectedCount = selectedIds.size;
+  const zipPercent = zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0;
+
   const renderEventRow = (e: EventRow) => (
-    <div key={e.id} className="flex items-center justify-between rounded-xl border border-border/40 bg-card p-3">
+    <div key={e.id} className="flex items-center gap-2 rounded-xl border border-border/40 bg-card p-3">
+      {e.image_url && (
+        <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
+          {selectedIds.has(e.id)
+            ? <CheckSquare className="h-4 w-4 text-primary" />
+            : <Square className="h-4 w-4 text-muted-foreground" />}
+        </button>
+      )}
       <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
         <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -213,25 +224,13 @@ const EventosList = () => {
         </div>
       </Link>
       <div className="flex items-center shrink-0 ml-2 gap-0.5">
-        <button
-          onClick={() => handleDuplicate(e.id)}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
-          title="Duplicar evento"
-        >
+        <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
           <Copy className="h-4 w-4 text-muted-foreground" />
         </button>
-        <button
-          onClick={() => toggleFeatured(e.id, e.featured)}
-          className="p-1.5 rounded-lg hover:bg-secondary/50 transition"
-          title={e.featured ? "Remover destaque" : "Destacar"}
-        >
+        <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
           {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
         </button>
-        <button
-          onClick={() => setDeleteTarget(e)}
-          className="p-1.5 rounded-lg hover:bg-red-500/10 transition"
-          title="Excluir evento"
-        >
+        <button onClick={() => setDeleteTarget(e)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition" title="Excluir evento">
           <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
         </button>
       </div>
