@@ -4,9 +4,10 @@ import { useV3Profile } from "@/hooks/useV3Profile";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
+import { useSavedPartners } from "@/hooks/useSavedPartners";
 import {
   User, LogOut, Car, Bookmark, ChevronRight, Shield, Mail, Phone,
-  CalendarDays, Clock, MapPin, Sparkles,
+  CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck, Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -17,6 +18,7 @@ export default function V3Profile() {
   const { user, signOut } = useAuth();
   const { profile, roles, loading, isDriver } = useV3Profile();
   const { savedIds } = useSavedEvents();
+  const { savedIds: followedIds } = useSavedPartners();
 
   /* ride requests */
   const { data: rides = [] } = useQuery({
@@ -46,6 +48,19 @@ export default function V3Profile() {
     enabled: savedIds.length > 0,
   });
 
+  /* followed partners details */
+  const { data: followedPartners = [] } = useQuery({
+    queryKey: ["v3-followed-partners-details", followedIds],
+    queryFn: async () => {
+      if (!followedIds.length) return [];
+      const { data } = await supabase.from("partners")
+        .select("id,name,slug,type,logo_url,verified_partner")
+        .in("id", followedIds);
+      return data || [];
+    },
+    enabled: followedIds.length > 0,
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -62,7 +77,7 @@ export default function V3Profile() {
         </div>
         <h1 className="font-display font-bold text-2xl text-foreground mb-2">Acesse sua conta</h1>
         <p className="text-sm text-muted-foreground mb-6 max-w-[280px] leading-relaxed">
-          Entre para salvar eventos, pedir caronas e acompanhar tudo que rola na noite.
+          Entre para salvar eventos, seguir locais e acompanhar tudo que rola na noite.
         </p>
         <Button onClick={() => navigate("/v3/auth")} className="rounded-xl px-10 h-12 text-sm font-bold">
           Entrar ou criar conta
@@ -111,12 +126,73 @@ export default function V3Profile() {
         </div>
       </div>
 
+      {/* ── Quick stats ── */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-3 rounded-xl bg-card border border-border/30 text-center">
+          <Bookmark className="w-4 h-4 text-primary mx-auto mb-1" />
+          <p className="text-base font-bold text-foreground">{savedIds.length}</p>
+          <p className="text-[9px] text-muted-foreground">Salvos</p>
+        </div>
+        <div className="p-3 rounded-xl bg-card border border-border/30 text-center">
+          <Heart className="w-4 h-4 text-primary mx-auto mb-1" />
+          <p className="text-base font-bold text-foreground">{followedIds.length}</p>
+          <p className="text-[9px] text-muted-foreground">Seguindo</p>
+        </div>
+        <div className="p-3 rounded-xl bg-card border border-border/30 text-center">
+          <Car className="w-4 h-4 text-primary mx-auto mb-1" />
+          <p className="text-base font-bold text-foreground">{rides.length}</p>
+          <p className="text-[9px] text-muted-foreground">Caronas</p>
+        </div>
+      </div>
+
       {/* ── Info ── */}
       <div className="rounded-xl bg-card border border-border/40 divide-y divide-border/30">
         <InfoRow icon={Mail} label="Email" value={user.email || "—"} />
         <InfoRow icon={Phone} label="Telefone" value={profile?.phone || "Não informado"} />
         {isDriver && <InfoRow icon={Shield} label="Motorista" value="Verificado ✓" />}
       </div>
+
+      {/* ── Followed Partners ── */}
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-display font-bold text-sm text-foreground">❤️ Locais seguidos</h2>
+          {followedPartners.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">{followedPartners.length}</span>
+          )}
+        </div>
+        {followedPartners.length > 0 ? (
+          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+            {followedPartners.map((p: any) => (
+              <Link key={p.id} to={`/v3/local/${p.slug}`}
+                className="shrink-0 flex items-center gap-2.5 p-2.5 rounded-xl bg-card border border-border/40 hover:border-primary/20 transition-all w-[180px]">
+                <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden shrink-0">
+                  {p.logo_url ? (
+                    <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-primary font-bold text-sm">{p.name[0]}</div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <p className="text-[11px] font-semibold text-foreground truncate">{p.name}</p>
+                    {p.verified_partner && <BadgeCheck className="w-3 h-3 text-accent shrink-0" />}
+                  </div>
+                  <p className="text-[9px] text-muted-foreground capitalize">{p.type}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="py-6 rounded-xl bg-card border border-border/30 text-center">
+            <Heart className="w-7 h-7 text-muted-foreground/20 mx-auto mb-1.5" />
+            <p className="text-xs text-muted-foreground font-medium">Nenhum local seguido</p>
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">Toque no ❤️ nos locais para seguí-los</p>
+            <Link to="/v3/descobrir" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
+              Descobrir locais <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
+        )}
+      </section>
 
       {/* ── Saved Events ── */}
       <section>
@@ -153,13 +229,11 @@ export default function V3Profile() {
             ))}
           </div>
         ) : (
-          <div className="py-8 rounded-xl bg-card border border-border/30 text-center">
-            <Sparkles className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+          <div className="py-6 rounded-xl bg-card border border-border/30 text-center">
+            <Sparkles className="w-7 h-7 text-muted-foreground/20 mx-auto mb-1.5" />
             <p className="text-xs text-muted-foreground font-medium">Nenhum evento salvo</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-1">
-              Toque no 🔖 nos eventos para salvá-los aqui
-            </p>
-            <Link to="/v3/descobrir" className="inline-flex items-center gap-1 mt-3 text-[11px] text-primary font-semibold">
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">Toque no 🔖 nos eventos para salvá-los</p>
+            <Link to="/v3/descobrir" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
               Descobrir eventos <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
@@ -211,13 +285,11 @@ export default function V3Profile() {
             })}
           </div>
         ) : (
-          <div className="py-8 rounded-xl bg-card border border-border/30 text-center">
-            <Car className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+          <div className="py-6 rounded-xl bg-card border border-border/30 text-center">
+            <Car className="w-7 h-7 text-muted-foreground/20 mx-auto mb-1.5" />
             <p className="text-xs text-muted-foreground font-medium">Nenhum pedido de transporte</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-1">
-              Peça uma carona diretamente nos eventos
-            </p>
-            <Link to="/v3/transporte" className="inline-flex items-center gap-1 mt-3 text-[11px] text-primary font-semibold">
+            <p className="text-[10px] text-muted-foreground/60 mt-0.5">Peça uma carona diretamente nos eventos</p>
+            <Link to="/v3/transporte" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
               Ver transporte <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
