@@ -55,6 +55,7 @@ const InstagramAgenda = () => {
   const [generating, setGenerating] = useState(false);
   const [outputs, setOutputs] = useState<GeneratedOutput[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
+  const [bulkGeneratingImages, setBulkGeneratingImages] = useState(false);
 
   // Filters
   const [onlyFeatured, setOnlyFeatured] = useState(false);
