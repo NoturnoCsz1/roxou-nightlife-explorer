@@ -25,6 +25,7 @@ import Sugestoes from "./pages/admin/Sugestoes";
 import EventouAdmin from "./pages/admin/EventouAdmin";
 import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
+import SEOLanding from "./pages/SEOLanding";
 
 // V3
 import V3Layout from "./components/v3/V3Layout";
@@ -63,6 +64,9 @@ const App = () => (
           <Route path="/indica" element={<Indica />} />
           <Route path="/local/:slug" element={<LocalDetail />} />
           <Route path="/local/:slug/eventos" element={<LocalEventos />} />
+
+          {/* SEO Landing Pages */}
+          <Route path="/:landingSlug" element={<SEOLanding />} />
 
           {/* Admin */}
           <Route path="/admin/login" element={<AdminLogin />} />
