@@ -133,15 +133,27 @@ export default function V3Home() {
   });
 
   /* ─── DEDUPLICATION ─── */
-  const hero = useMemo(() => events.find((e) => e.featured) || events[0], [events]);
+  const heroEvents = useMemo(() => {
+    const featured = events.filter(e => e.featured);
+    const rest = events.filter(e => !e.featured);
+    // sort rest by trending views
+    const trendMap = new Map(trendingIds.map(t => [t.id, t.views]));
+    rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
+    const combined = [...featured, ...rest];
+    const unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
+    return unique.slice(0, 4);
+  }, [events, trendingIds]);
+
+  const [heroIdx, setHeroIdx] = useState(0);
+  const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
   const todayCount = useMemo(() => events.filter(e => isTodayFn(new Date(e.date_time))).length, [events]);
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
-    if (hero) s.add(hero.id);
+    heroEvents.forEach(e => s.add(e.id));
     return s;
-  }, [hero]);
+  }, [heroEvents]);
 
   const trending = useMemo(() => {
     const idSet = new Set(trendingIds.map((t) => t.id));
