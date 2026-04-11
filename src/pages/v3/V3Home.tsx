@@ -133,15 +133,27 @@ export default function V3Home() {
   });
 
   /* ─── DEDUPLICATION ─── */
-  const hero = useMemo(() => events.find((e) => e.featured) || events[0], [events]);
+  const heroEvents = useMemo(() => {
+    const featured = events.filter(e => e.featured);
+    const rest = events.filter(e => !e.featured);
+    // sort rest by trending views
+    const trendMap = new Map(trendingIds.map(t => [t.id, t.views]));
+    rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
+    const combined = [...featured, ...rest];
+    const unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
+    return unique.slice(0, 4);
+  }, [events, trendingIds]);
+
+  const [heroIdx, setHeroIdx] = useState(0);
+  const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
   const todayCount = useMemo(() => events.filter(e => isTodayFn(new Date(e.date_time))).length, [events]);
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
-    if (hero) s.add(hero.id);
+    heroEvents.forEach(e => s.add(e.id));
     return s;
-  }, [hero]);
+  }, [heroEvents]);
 
   const trending = useMemo(() => {
     const idSet = new Set(trendingIds.map((t) => t.id));
@@ -187,14 +199,24 @@ export default function V3Home() {
 
   return (
     <div className="space-y-0">
-      {/* ══════ 1. HERO ══════ */}
+      {/* ══════ 1. HERO CAROUSEL ══════ */}
       {isLoading ? <HeroSkeleton /> : hero ? (
-        <HeroSection
-          ev={hero}
-          isToday={!!heroIsToday}
-          todayCount={todayCount}
-          venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
-        />
+        <div className="relative">
+          <HeroSection
+            ev={hero}
+            isToday={!!heroIsToday}
+            todayCount={todayCount}
+            venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+          />
+          {heroEvents.length > 1 && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {heroEvents.map((_, i) => (
+                <button key={i} onClick={() => setHeroIdx(i)}
+                  className={`w-2 h-2 rounded-full transition-all ${i === heroIdx ? "bg-primary w-5" : "bg-foreground/30"}`} />
+              ))}
+            </div>
+          )}
+        </div>
       ) : <EmptyHero />}
 
       {/* ══════ 2. CATEGORIES ══════ */}
@@ -276,8 +298,8 @@ export default function V3Home() {
             <Car className="w-5 h-5 text-primary" />
           </div>
           <div className="relative flex-1 min-w-0">
-            <p className="font-display font-bold text-sm text-foreground">🚗 Saindo hoje?</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Garanta sua carona pro rolê</p>
+            <p className="font-display font-bold text-sm text-foreground">🚗 COMO VOCÊ VAI?</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Encontre uma carona pro rolê</p>
           </div>
           <span className="relative shrink-0 px-3 py-1.5 rounded-full gradient-primary text-[10px] font-bold text-primary-foreground uppercase tracking-wide">
             Ver caronas
