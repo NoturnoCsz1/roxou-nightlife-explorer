@@ -71,8 +71,9 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-// Easing
-function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3); }
+// Easing functions
+function easeOutQuart(t: number) { return 1 - Math.pow(1 - t, 4); }
+function easeInOutCubic(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)); }
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -141,131 +142,149 @@ function renderFrame(
   ctx.fillRect(0, 0, W, H);
 
   // =========== SCENE 1: Badge (frames 0 to ~60 = 0-2s) ===========
-  const badgeProgress = easeOutCubic(clamp01((frame - 10) / 25));
+  const badgeProgress = easeOutQuart(clamp01((frame - 12) / 30));
   if (badgeProgress > 0) {
     ctx.save();
     ctx.globalAlpha = badgeProgress;
     const badgeText = badge.toUpperCase();
-    ctx.font = "bold 32px sans-serif";
-    const bw = ctx.measureText(badgeText).width + 52;
-    const bh = 58;
+    ctx.font = "bold 30px sans-serif";
+    const bw = ctx.measureText(badgeText).width + 48;
+    const bh = 54;
     const bx = PAD;
-    const by = PAD + 30;
+    const by = PAD + 40;
+
+    // Badge shadow
+    ctx.shadowColor = "rgba(233,30,140,0.3)";
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 4;
 
     const bg = ctx.createLinearGradient(bx, by, bx + bw, by);
     bg.addColorStop(0, ACCENT);
     bg.addColorStop(1, ACCENT_ALT);
     ctx.fillStyle = bg;
-    roundRect(ctx, bx, by, bw, bh, 29);
+    roundRect(ctx, bx, by, bw, bh, 27);
     ctx.fill();
+
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = WHITE;
     ctx.textBaseline = "middle";
-    ctx.fillText(badgeText, bx + 26, by + bh / 2 + 1);
+    ctx.fillText(badgeText, bx + 24, by + bh / 2 + 1);
     ctx.restore();
   }
 
-  // =========== SCENE 2: Event info (frames 60 to 150 = 2-5s) ===========
-  const infoY = H - 520;
+  // =========== SCENE 2: Event info (frames 55 to 145 = ~2-5s) ===========
+  const infoY = H - 560;
 
   // Category chip
-  const catProgress = easeOutCubic(clamp01((frame - 65) / 20));
+  const catProgress = easeOutQuart(clamp01((frame - 58) / 22));
   if (catProgress > 0 && event.category) {
     ctx.save();
     ctx.globalAlpha = catProgress;
-    ctx.font = "bold 26px sans-serif";
+    ctx.font = "bold 24px sans-serif";
     const catText = event.category.toUpperCase();
-    const cw = ctx.measureText(catText).width + 36;
-    ctx.fillStyle = "rgba(233,30,140,0.25)";
-    roundRect(ctx, PAD, infoY, cw, 44, 22);
+    const cw = ctx.measureText(catText).width + 34;
+    ctx.fillStyle = "rgba(233,30,140,0.2)";
+    roundRect(ctx, PAD, infoY, cw, 42, 21);
     ctx.fill();
     ctx.fillStyle = ACCENT;
     ctx.textBaseline = "middle";
-    ctx.fillText(catText, PAD + 18, infoY + 23);
+    ctx.fillText(catText, PAD + 17, infoY + 22);
     ctx.restore();
   }
 
-  // Title (slide up + fade)
-  const titleProgress = easeOutCubic(clamp01((frame - 75) / 30));
+  // Title (slide up + fade — smoother)
+  const titleProgress = easeOutQuart(clamp01((frame - 68) / 35));
   if (titleProgress > 0) {
     ctx.save();
     ctx.globalAlpha = titleProgress;
-    const slideY = (1 - titleProgress) * 40;
-    ctx.font = "bold 62px sans-serif";
-    ctx.fillStyle = WHITE;
+    const slideY = (1 - titleProgress) * 50;
+    ctx.font = "bold 58px sans-serif";
     ctx.textBaseline = "top";
     const titleLines = wrapText(ctx, event.title, W - PAD * 2);
-    const titleStartY = infoY + 64 + slideY;
+    const titleStartY = infoY + 60 + slideY;
+    // Shadow for readability
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
     titleLines.slice(0, 3).forEach((line, i) => {
-      ctx.fillText(line, PAD, titleStartY + i * 72);
+      ctx.fillText(line, PAD + 2, titleStartY + i * 68 + 2);
+    });
+    ctx.fillStyle = WHITE;
+    titleLines.slice(0, 3).forEach((line, i) => {
+      ctx.fillText(line, PAD, titleStartY + i * 68);
     });
     ctx.restore();
   }
 
-  // Time + date
-  const timeProgress = easeOutCubic(clamp01((frame - 95) / 20));
+  // Time + date — with glow
+  const timeProgress = easeOutQuart(clamp01((frame - 90) / 22));
   if (timeProgress > 0) {
     ctx.save();
     ctx.globalAlpha = timeProgress;
-    ctx.font = "bold 36px sans-serif";
+    ctx.font = "bold 34px sans-serif";
     ctx.fillStyle = ACCENT;
     ctx.textBaseline = "top";
+    ctx.shadowColor = "rgba(233,30,140,0.2)";
+    ctx.shadowBlur = 8;
     const timeStr = formatTime(event.date_time);
     const dateStr = formatDateShort(event.date_time);
-    ctx.fillText(`🕐  ${timeStr}  ·  ${dateStr}`, PAD, infoY + 290);
+    ctx.fillText(`${timeStr}  ·  ${dateStr}`, PAD, infoY + 300);
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
     ctx.restore();
   }
 
   // Venue
-  const venueProgress = easeOutCubic(clamp01((frame - 105) / 20));
+  const venueProgress = easeOutQuart(clamp01((frame - 100) / 22));
   if (venueProgress > 0 && event.venue_name) {
     ctx.save();
     ctx.globalAlpha = venueProgress;
-    ctx.font = "400 30px sans-serif";
+    ctx.font = "400 28px sans-serif";
     ctx.fillStyle = MUTED;
     ctx.textBaseline = "top";
-    ctx.fillText(`📍  ${event.venue_name}`, PAD, infoY + 340);
+    ctx.fillText(`📍  ${event.venue_name}`, PAD, infoY + 350);
     ctx.restore();
   }
 
-  // =========== SCENE 3: CTA (frames 150 to 210 = 5-7s) ===========
-  const ctaProgress = easeOutCubic(clamp01((frame - 155) / 25));
+  // =========== SCENE 3: CTA (frames 148 to 210 = 5-7s) — cinematic ===========
+  const ctaProgress = easeInOutCubic(clamp01((frame - 148) / 28));
   if (ctaProgress > 0) {
     ctx.save();
     ctx.globalAlpha = ctaProgress;
 
     // Divider
-    const divY = H - 150;
+    const divY = H - 170;
     const dg = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
-    dg.addColorStop(0, "rgba(233,30,140,0.6)");
-    dg.addColorStop(0.5, "rgba(147,51,234,0.3)");
+    dg.addColorStop(0, "rgba(233,30,140,0.5)");
+    dg.addColorStop(0.5, "rgba(147,51,234,0.25)");
     dg.addColorStop(1, "rgba(233,30,140,0)");
     ctx.strokeStyle = dg;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(PAD, divY);
     ctx.lineTo(W - PAD, divY);
     ctx.stroke();
 
     // CTA text
-    ctx.font = "bold 34px sans-serif";
+    ctx.font = "bold 32px sans-serif";
     ctx.fillStyle = WHITE;
     ctx.textBaseline = "top";
-    ctx.fillText("CONFIRA NO SITE", PAD, divY + 20);
+    ctx.fillText("VEJA NA ROXOU", PAD, divY + 22);
 
     // URL
-    ctx.font = "bold 28px sans-serif";
-    ctx.fillStyle = MUTED;
-    ctx.fillText("roxou.com.br", PAD, divY + 66);
+    ctx.font = "500 26px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText("roxou.com.br", PAD, divY + 64);
 
     // ROXOU brand
-    const rg = ctx.createLinearGradient(W - 200, divY + 20, W - PAD, divY + 20);
+    const rg = ctx.createLinearGradient(W - 180, divY + 22, W - PAD, divY + 22);
     rg.addColorStop(0, ACCENT);
     rg.addColorStop(1, ACCENT_ALT);
     ctx.fillStyle = rg;
-    ctx.font = "bold 36px sans-serif";
+    ctx.font = "bold 34px sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText("ROXOU", W - PAD, divY + 30);
+    ctx.fillText("ROXOU", W - PAD, divY + 32);
 
     ctx.restore();
   }
