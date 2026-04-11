@@ -6,13 +6,13 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   Search, MapPin, Clock, Flame, Music, Mic2, Beer, Zap, PartyPopper,
-  ChevronRight, Eye, Crown, CalendarDays, Trophy, Star, Utensils, Dribbble,
+  ChevronRight, Utensils, Dribbble,
   TrendingUp, BadgeCheck, X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
-const fmtDateShort = (d: string) => format(new Date(d), "EEE, d MMM", { locale: ptBR });
+const _fmtDateShort = (d: string) => format(new Date(d), "EEE, d MMM", { locale: ptBR });
 const getDayLabel = (d: string) => {
   const dt = new Date(d);
   if (isTodayFn(dt)) return "HOJE";

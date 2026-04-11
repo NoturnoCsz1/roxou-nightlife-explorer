@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfDay, format, addDays, isToday as isTodayFn } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import { CalendarDays, MapPin, Clock, Car } from "lucide-react";
+import { CalendarDays, MapPin, Clock } from "lucide-react";
 import { useMemo } from "react";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
