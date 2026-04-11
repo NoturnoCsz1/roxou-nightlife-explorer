@@ -63,7 +63,7 @@ export default function V3Discover() {
   const today = startOfDay(now);
 
   /* ─── EVENTS ─── */
-  const { data: events = [], isLoading } = useQuery<Ev[]>({
+  const { data: events = [], isLoading: _loadingEvents } = useQuery<Ev[]>({
     queryKey: ["v3-discover-events"],
     queryFn: async () => {
       const { data } = await supabase
