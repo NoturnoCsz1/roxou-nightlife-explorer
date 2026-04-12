@@ -662,7 +662,7 @@ export async function renderCoverPartners(canvas: HTMLCanvasElement, partners: C
     ctx.fillText(`${p.views} acessos`, PAD + 150, y + (cardH - 48) / 2 + 30);
   }
 
-  drawFooterBar(ctx, W, H, "DESCUBRA MAIS EM ROXOU.COM.BR", PAD);
+  drawPremiumCTA(ctx, W, H, "DESCUBRA MAIS EM ROXOU.COM.BR", PAD);
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
@@ -793,7 +793,7 @@ export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, 
     ctx.restore();
   }
 
-  drawFooterBar(ctx, W, H, "CONFIRA NA ROXOU", PAD);
+  drawPremiumCTA(ctx, W, H, "CONFIRA NA ROXOU.COM.BR", PAD);
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
@@ -807,7 +807,7 @@ export async function renderBannerFestival(canvas: HTMLCanvasElement, events: Co
 
   ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
   const imageUrls = events.map(e => e.image_url).filter(Boolean) as string[];
-  await drawFlyerBg(ctx, W, H, imageUrls, 0.9);
+  await drawHeroBg(ctx, W, H, imageUrls[0] || null);
   drawGrain(ctx, W, H);
   drawGlow(ctx, W * 0.5, H * 0.3, 600, ACCENT, 0.1);
   drawGlow(ctx, W * 0.8, H * 0.7, 400, ACCENT_ALT, 0.06);
