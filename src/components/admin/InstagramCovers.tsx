@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import JSZip from "jszip";
 import {
-  CalendarDays, Loader2, Copy, Sparkles, Trophy, Image as ImageIcon,
-  Star, TrendingUp, Download, Video, Zap, Pause, Send, FileText,
+  CalendarDays, Loader2, Copy, Sparkles, Trophy,
+  Star, Download, Video, Zap, Pause, Send,
   ChevronDown, ChevronUp, Users, Layers, Package
 } from "lucide-react";
 import { toast } from "sonner";
@@ -174,7 +174,7 @@ const InstagramCovers = () => {
   const toggleType = (t: CoverType) => {
     setSelectedTypes(prev => {
       const next = new Set(prev);
-      next.has(t) ? next.delete(t) : next.add(t);
+      if (next.has(t)) next.delete(t); else next.add(t);
       return next;
     });
   };
