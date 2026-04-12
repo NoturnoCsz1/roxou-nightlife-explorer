@@ -23,8 +23,6 @@ import {
   renderCTASlide,
   type CoverEvent,
   type CoverPartner,
-  type ArtFormat,
-  FORMAT_SIZES,
 } from "@/lib/coverRenderer";
 
 // ============ TYPES ============
