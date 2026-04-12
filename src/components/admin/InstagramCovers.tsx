@@ -18,6 +18,8 @@ import {
   renderCoverTopRoles,
   renderCoverWeekend,
   renderCoverPartners,
+  renderBannerFestival,
+  renderFlyer,
   renderCTASlide,
   type CoverEvent,
   type CoverPartner,
@@ -42,8 +44,9 @@ interface ScoredEvent extends CoverEvent {
 interface GeneratedCover {
   type: CoverType;
   label: string;
-  coverDataUrl: string | null;
+  formats: Record<string, string | null>; // feed, story, flyer, banner data URLs
   carouselSlides: string[];
+  flyerImages: string[]; // individual flyers per event
   captionFull: string;
   captionShort: string;
   reelUrl?: string;
@@ -52,7 +55,7 @@ interface GeneratedCover {
 
 interface BatchJob {
   id: string;
-  kind: "cover" | "carousel" | "reel";
+  kind: "cover" | "carousel" | "reel" | "flyers" | "banner";
   coverType: CoverType;
   label: string;
   status: "pending" | "processing" | "done" | "error";
@@ -242,34 +245,59 @@ const InstagramCovers = () => {
       const cover: GeneratedCover = {
         type,
         label: COVER_OPTIONS.find(o => o.key === type)!.label,
-        coverDataUrl: null,
+        formats: { feed: null, story: null, banner: null },
         carouselSlides: [],
+        flyerImages: [],
         captionFull: "",
         captionShort: "",
         generating: true,
       };
 
+      const evts = type === "weekend" ? weekendEvents : events;
+
       try {
+        // Generate Feed format
         if (type === "agenda") {
-          cover.coverDataUrl = await renderCoverAgenda(canvas, events);
+          cover.formats.feed = await renderCoverAgenda(canvas, evts, "feed");
+          cover.formats.story = await renderCoverAgenda(canvas, evts, "story");
           const cap = captionAgenda(events);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "top") {
-          cover.coverDataUrl = await renderCoverTopRoles(canvas, events.slice(0, 5));
+          cover.formats.feed = await renderCoverTopRoles(canvas, evts.slice(0, 5), "feed");
+          cover.formats.story = await renderCoverTopRoles(canvas, evts.slice(0, 5), "story");
           const cap = captionTop(events);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "weekend") {
-          cover.coverDataUrl = await renderCoverWeekend(canvas, weekendEvents);
+          cover.formats.feed = await renderCoverWeekend(canvas, evts, "feed");
+          cover.formats.story = await renderCoverWeekend(canvas, evts, "story");
           const cap = captionWeekend(weekendEvents);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "partners") {
-          cover.coverDataUrl = await renderCoverPartners(canvas, partners);
+          cover.formats.feed = await renderCoverPartners(canvas, partners, "feed");
+          cover.formats.story = await renderCoverPartners(canvas, partners, "story");
           const cap = captionPartners(partners);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
+        }
+
+        // Generate Banner Festival for non-partner types
+        if (type !== "partners" && evts.length > 0) {
+          cover.formats.banner = await renderBannerFestival(canvas, evts);
+        }
+
+        // Generate individual flyers for top events
+        if (type !== "partners") {
+          const topEvts = evts.filter(e => e.image_url).slice(0, 5);
+          for (const ev of topEvts) {
+            try {
+              const badge = type === "top" ? "TOP ROLÊ" : type === "weekend" ? "FIM DE SEMANA" : "HOJE";
+              const flyerUrl = await renderFlyer(canvas, ev, badge);
+              cover.flyerImages.push(flyerUrl);
+            } catch { /* skip */ }
+          }
         }
       } catch (err: any) {
         toast.error(`Erro ao gerar capa ${cover.label}`, { description: err.message });
@@ -298,7 +326,7 @@ const InstagramCovers = () => {
     const slides: string[] = [];
 
     // Slide 1: cover
-    if (cover.coverDataUrl) slides.push(cover.coverDataUrl);
+    if (cover.formats.feed) slides.push(cover.formats.feed);
 
     // Event slides
     const evts = cover.type === "weekend" ? weekendEvents : events;
@@ -423,7 +451,7 @@ const InstagramCovers = () => {
   // ============ ZIP ============
 
   const hasMedia = useMemo(() =>
-    covers.some(c => c.coverDataUrl || c.carouselSlides.length > 0 || c.reelUrl),
+    covers.some(c => c.formats.feed || c.formats.story || c.formats.banner || c.flyerImages.length > 0 || c.carouselSlides.length > 0 || c.reelUrl),
     [covers]
   );
 
@@ -437,9 +465,19 @@ const InstagramCovers = () => {
       for (const cover of covers) {
         const folder = cover.type;
 
-        if (cover.coverDataUrl) {
-          const res = await fetch(cover.coverDataUrl);
-          zip.file(`${folder}/capa.jpg`, await res.blob());
+        // All format variants
+        for (const [fmtKey, dataUrl] of Object.entries(cover.formats)) {
+          if (dataUrl) {
+            const res = await fetch(dataUrl);
+            zip.file(`${folder}/capa_${fmtKey}.jpg`, await res.blob());
+            count++;
+          }
+        }
+
+        // Individual flyers
+        for (let i = 0; i < cover.flyerImages.length; i++) {
+          const res = await fetch(cover.flyerImages[i]);
+          zip.file(`${folder}/flyer_${String(i + 1).padStart(2, "0")}.jpg`, await res.blob());
           count++;
         }
 
@@ -455,15 +493,8 @@ const InstagramCovers = () => {
           count++;
         }
 
-        // Save captions as txt
-        if (cover.captionFull) {
-          zip.file(`${folder}/legenda_completa.txt`, cover.captionFull);
-          count++;
-        }
-        if (cover.captionShort) {
-          zip.file(`${folder}/legenda_curta.txt`, cover.captionShort);
-          count++;
-        }
+        if (cover.captionFull) { zip.file(`${folder}/legenda_completa.txt`, cover.captionFull); count++; }
+        if (cover.captionShort) { zip.file(`${folder}/legenda_curta.txt`, cover.captionShort); count++; }
       }
 
       if (count === 0) { toast.error("Nenhum conteúdo para baixar"); setZipping(false); return; }
@@ -661,7 +692,7 @@ const InstagramCovers = () => {
                     <div className="text-left">
                       <span className="text-xs font-semibold text-foreground block">{cover.label}</span>
                       <span className="text-[9px] text-muted-foreground">
-                        {cover.coverDataUrl ? "✅ Capa" : ""} {cover.carouselSlides.length > 0 ? `· 📸 ${cover.carouselSlides.length} slides` : ""} {cover.reelUrl ? "· 🎬 Reel" : ""}
+                        {cover.formats.feed ? "✅ Feed" : ""}{cover.formats.story ? " · 📱 Story" : ""}{cover.formats.banner ? " · 🎪 Banner" : ""}{cover.flyerImages.length > 0 ? ` · 🎉 ${cover.flyerImages.length} flyers` : ""}{cover.carouselSlides.length > 0 ? ` · 📸 ${cover.carouselSlides.length} slides` : ""}{cover.reelUrl ? " · 🎬 Reel" : ""}
                       </span>
                     </div>
                   </div>
@@ -684,7 +715,7 @@ const InstagramCovers = () => {
                         onClick={() => {
                           const params = new URLSearchParams();
                           params.set("caption", cover.captionFull);
-                          if (cover.coverDataUrl) params.set("image", cover.coverDataUrl);
+                          if (cover.formats.feed) params.set("image", cover.formats.feed);
                           navigate(`/admin/instagram?tab=publicacao&${params.toString()}`);
                         }}
                         className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-[10px] font-bold text-white hover:opacity-90 transition"
@@ -693,15 +724,52 @@ const InstagramCovers = () => {
                       </button>
                     </div>
 
-                    {/* Cover preview */}
-                    {cover.coverDataUrl && (
-                      <div className="space-y-1.5">
-                        <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Capa</span>
-                        <div className="rounded-lg overflow-hidden border border-border/30 max-w-[280px]">
-                          <img src={cover.coverDataUrl} alt="Cover" className="w-full" />
+                    {/* Format previews */}
+                    <div className="space-y-3">
+                      {/* Feed */}
+                      {cover.formats.feed && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Feed (1080×1350)</span>
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[240px]">
+                            <img src={cover.formats.feed} alt="Feed" className="w-full" />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {/* Story */}
+                      {cover.formats.story && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📱 Story (1080×1920)</span>
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[160px]">
+                            <img src={cover.formats.story} alt="Story" className="w-full" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Banner */}
+                      {cover.formats.banner && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎪 Banner Festival (1920×1080)</span>
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[320px]">
+                            <img src={cover.formats.banner} alt="Banner" className="w-full" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Flyers */}
+                      {cover.flyerImages.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎉 Flyers Individuais ({cover.flyerImages.length})</span>
+                          <div className="flex gap-2 overflow-x-auto pb-2">
+                            {cover.flyerImages.map((flyer, fi) => (
+                              <div key={fi} className="shrink-0 rounded-lg overflow-hidden border border-border/30 w-[140px]">
+                                <img src={flyer} alt={`Flyer ${fi + 1}`} className="w-full" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Carousel preview */}
                     {cover.carouselSlides.length > 0 && (
