@@ -694,7 +694,7 @@ const InstagramCovers = () => {
                     <div className="text-left">
                       <span className="text-xs font-semibold text-foreground block">{cover.label}</span>
                       <span className="text-[9px] text-muted-foreground">
-                        {cover.formats.feed ? "✅ Capa" : ""} {cover.carouselSlides.length > 0 ? `· 📸 ${cover.carouselSlides.length} slides` : ""} {cover.reelUrl ? "· 🎬 Reel" : ""}
+                        {cover.formats.feed ? "✅ Feed" : ""}{cover.formats.story ? " · 📱 Story" : ""}{cover.formats.banner ? " · 🎪 Banner" : ""}{cover.flyerImages.length > 0 ? ` · 🎉 ${cover.flyerImages.length} flyers` : ""}{cover.carouselSlides.length > 0 ? ` · 📸 ${cover.carouselSlides.length} slides` : ""}{cover.reelUrl ? " · 🎬 Reel" : ""}
                       </span>
                     </div>
                   </div>
@@ -726,15 +726,52 @@ const InstagramCovers = () => {
                       </button>
                     </div>
 
-                    {/* Cover preview */}
-                    {cover.formats.feed && (
-                      <div className="space-y-1.5">
-                        <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Capa</span>
-                        <div className="rounded-lg overflow-hidden border border-border/30 max-w-[280px]">
-                          <img src={cover.formats.feed} alt="Cover" className="w-full" />
+                    {/* Format previews */}
+                    <div className="space-y-3">
+                      {/* Feed */}
+                      {cover.formats.feed && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Feed (1080×1350)</span>
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[240px]">
+                            <img src={cover.formats.feed} alt="Feed" className="w-full" />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {/* Story */}
+                      {cover.formats.story && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📱 Story (1080×1920)</span>
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[160px]">
+                            <img src={cover.formats.story} alt="Story" className="w-full" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Banner */}
+                      {cover.formats.banner && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎪 Banner Festival (1920×1080)</span>
+                          <div className="rounded-lg overflow-hidden border border-border/30 max-w-[320px]">
+                            <img src={cover.formats.banner} alt="Banner" className="w-full" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Flyers */}
+                      {cover.flyerImages.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">🎉 Flyers Individuais ({cover.flyerImages.length})</span>
+                          <div className="flex gap-2 overflow-x-auto pb-2">
+                            {cover.flyerImages.map((flyer, fi) => (
+                              <div key={fi} className="shrink-0 rounded-lg overflow-hidden border border-border/30 w-[140px]">
+                                <img src={flyer} alt={`Flyer ${fi + 1}`} className="w-full" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Carousel preview */}
                     {cover.carouselSlides.length > 0 && (
