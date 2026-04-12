@@ -30,9 +30,8 @@ async function renderEventCard(
   canvas: HTMLCanvasElement,
   event: EventData,
   badge: string,
-  fmt: ArtFormat = "feed"
+  _fmt: ArtFormat = "feed"
 ): Promise<string> {
-  // Use the premium flyer renderer for all formats
   return renderFlyer(canvas, event, badge);
 }
 
