@@ -257,6 +257,58 @@ function drawSupportItem(ctx: CanvasRenderingContext2D, e: CoverEvent, x: number
   ctx.fillText(tt, x + 92, y + 16);
 }
 
+// ============ LEGACY HELPERS (used by Partners, Flyer, Banner) ============
+
+async function drawFlyerBg(ctx: CanvasRenderingContext2D, w: number, h: number, imageUrls: string[], overlayStrength = 0.85) {
+  const urls = imageUrls.filter(Boolean).slice(0, 3);
+  if (urls.length > 0) {
+    const colW = w / urls.length;
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        const img = await loadImage(urls[i]);
+        const imgRatio = img.width / img.height;
+        const targetRatio = colW / h;
+        let sw = img.width, sh = img.height, sx = 0, sy = 0;
+        if (imgRatio > targetRatio) { sw = img.height * targetRatio; sx = (img.width - sw) / 2; }
+        else { sh = img.width / targetRatio; sy = (img.height - sh) / 2; }
+        ctx.drawImage(img, sx, sy, sw, sh, i * colW, 0, colW, h);
+      } catch { /* skip */ }
+    }
+    ctx.fillStyle = `rgba(15,10,26,${overlayStrength * 0.4})`;
+    ctx.fillRect(0, 0, w, h);
+  }
+  const overlay = ctx.createLinearGradient(0, 0, 0, h);
+  overlay.addColorStop(0, `rgba(15,10,26,${overlayStrength * 0.7})`);
+  overlay.addColorStop(0.3, `rgba(15,10,26,${overlayStrength * 0.85})`);
+  overlay.addColorStop(1, `rgba(15,10,26,${overlayStrength})`);
+  ctx.fillStyle = overlay;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = "rgba(147,51,234,0.04)";
+  ctx.fillRect(0, 0, w, h);
+}
+
+function drawFooterBar(ctx: CanvasRenderingContext2D, w: number, h: number, cta: string, pad: number) {
+  const footerY = h - 80;
+  const divGrad = ctx.createLinearGradient(pad, 0, w - pad, 0);
+  divGrad.addColorStop(0, "rgba(233,30,140,0.4)");
+  divGrad.addColorStop(0.5, "rgba(147,51,234,0.2)");
+  divGrad.addColorStop(1, "rgba(233,30,140,0)");
+  ctx.strokeStyle = divGrad; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, footerY - 20); ctx.lineTo(w - pad, footerY - 20); ctx.stroke();
+  ctx.font = "bold 22px sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.textBaseline = "top"; ctx.textAlign = "left";
+  ctx.fillText(cta, pad, footerY - 4);
+  ctx.font = "400 18px sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillText("roxou.com.br", pad, footerY + 22);
+  ctx.save();
+  ctx.font = "bold 26px sans-serif";
+  const g = ctx.createLinearGradient(w - 180, footerY, w - pad, footerY);
+  g.addColorStop(0, ACCENT); g.addColorStop(1, ACCENT_ALT);
+  ctx.fillStyle = g; ctx.textAlign = "right"; ctx.textBaseline = "top";
+  ctx.fillText("ROXOU", w - pad, footerY + 6);
+  ctx.restore();
+}
+
 // ============ HERO-STYLE COVER RENDERERS ============
 
 export async function renderCoverAgenda(canvas: HTMLCanvasElement, events: CoverEvent[], fmt: ArtFormat = "feed"): Promise<string> {
