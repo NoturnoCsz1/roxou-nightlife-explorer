@@ -453,7 +453,7 @@ const InstagramCovers = () => {
   // ============ ZIP ============
 
   const hasMedia = useMemo(() =>
-    covers.some(c => c.formats.feed || c.carouselSlides.length > 0 || c.reelUrl),
+    covers.some(c => c.formats.feed || c.formats.story || c.formats.banner || c.flyerImages.length > 0 || c.carouselSlides.length > 0 || c.reelUrl),
     [covers]
   );
 
@@ -467,9 +467,19 @@ const InstagramCovers = () => {
       for (const cover of covers) {
         const folder = cover.type;
 
-        if (cover.formats.feed) {
-          const res = await fetch(cover.formats.feed);
-          zip.file(`${folder}/capa.jpg`, await res.blob());
+        // All format variants
+        for (const [fmtKey, dataUrl] of Object.entries(cover.formats)) {
+          if (dataUrl) {
+            const res = await fetch(dataUrl);
+            zip.file(`${folder}/capa_${fmtKey}.jpg`, await res.blob());
+            count++;
+          }
+        }
+
+        // Individual flyers
+        for (let i = 0; i < cover.flyerImages.length; i++) {
+          const res = await fetch(cover.flyerImages[i]);
+          zip.file(`${folder}/flyer_${String(i + 1).padStart(2, "0")}.jpg`, await res.blob());
           count++;
         }
 
@@ -485,15 +495,8 @@ const InstagramCovers = () => {
           count++;
         }
 
-        // Save captions as txt
-        if (cover.captionFull) {
-          zip.file(`${folder}/legenda_completa.txt`, cover.captionFull);
-          count++;
-        }
-        if (cover.captionShort) {
-          zip.file(`${folder}/legenda_curta.txt`, cover.captionShort);
-          count++;
-        }
+        if (cover.captionFull) { zip.file(`${folder}/legenda_completa.txt`, cover.captionFull); count++; }
+        if (cover.captionShort) { zip.file(`${folder}/legenda_curta.txt`, cover.captionShort); count++; }
       }
 
       if (count === 0) { toast.error("Nenhum conteúdo para baixar"); setZipping(false); return; }
