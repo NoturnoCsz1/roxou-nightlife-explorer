@@ -137,10 +137,6 @@ function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 function drawGlow(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, color = ACCENT, alpha = 0.12) {
-  const glow = ctx.createRadialGradient(cx, cy, radius * 0.1, cx, cy, radius);
-  glow.addColorStop(0, color.replace(")", `,${alpha})`).replace("rgb", "rgba").replace("#e91e8c", `rgba(233,30,140,${alpha})`));
-  glow.addColorStop(1, "rgba(15,10,26,0)");
-  // Simplified: just use ACCENT
   const g = ctx.createRadialGradient(cx, cy, radius * 0.1, cx, cy, radius);
   g.addColorStop(0, `rgba(233,30,140,${alpha})`);
   g.addColorStop(0.5, `rgba(147,51,234,${alpha * 0.5})`);
@@ -148,6 +144,120 @@ function drawGlow(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius:
   ctx.fillStyle = g;
   ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
 }
+
+/** Draw a single hero image as full-bleed background with blur-like overlay + gradient */
+async function drawHeroBg(ctx: CanvasRenderingContext2D, w: number, h: number, imageUrl: string | null) {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, w, h);
+  if (imageUrl) {
+    try {
+      const img = await loadImage(imageUrl);
+      const imgR = img.width / img.height;
+      const canR = w / h;
+      let sw = img.width, sh = img.height, sx = 0, sy = 0;
+      if (imgR > canR) { sw = img.height * canR; sx = (img.width - sw) / 2; }
+      else { sh = img.width / canR; sy = (img.height - sh) / 2; }
+      // Draw slightly zoomed (1.08x) for cinematic feel
+      const zoom = 0.08;
+      const zw = sw * (1 - zoom), zh = sh * (1 - zoom);
+      ctx.drawImage(img, sx + (sw - zw) / 2, sy + (sh - zh) / 2, zw, zh, 0, 0, w, h);
+    } catch { /* fallback solid */ }
+  }
+
+  // Heavy dark overlay for readability
+  const ov = ctx.createLinearGradient(0, 0, 0, h);
+  ov.addColorStop(0, "rgba(15,10,26,0.55)");
+  ov.addColorStop(0.35, "rgba(15,10,26,0.7)");
+  ov.addColorStop(0.6, "rgba(15,10,26,0.88)");
+  ov.addColorStop(1, "rgba(15,10,26,0.96)");
+  ctx.fillStyle = ov;
+  ctx.fillRect(0, 0, w, h);
+
+  // Purple/pink tint
+  ctx.fillStyle = "rgba(147,51,234,0.04)";
+  ctx.fillRect(0, 0, w, h);
+}
+
+function drawBadge(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size = 22) {
+  ctx.save();
+  ctx.font = `bold ${size}px sans-serif`;
+  const bw = ctx.measureText(text).width + 36;
+  const bh = size + 18;
+  const grad = ctx.createLinearGradient(x, y, x + bw, y);
+  grad.addColorStop(0, ACCENT);
+  grad.addColorStop(1, ACCENT_ALT);
+  ctx.fillStyle = grad;
+  roundRect(ctx, x, y, bw, bh, bh / 2);
+  ctx.fill();
+  ctx.shadowColor = "rgba(233,30,140,0.3)";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 4;
+  ctx.fill();
+  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.fillStyle = WHITE;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + 18, y + bh / 2 + 1);
+  ctx.restore();
+}
+
+function drawIsolatedCTA(ctx: CanvasRenderingContext2D, w: number, h: number, pad: number) {
+  // Divider
+  const divY = h - 110;
+  const divGrad = ctx.createLinearGradient(pad, 0, w - pad, 0);
+  divGrad.addColorStop(0, "rgba(233,30,140,0.4)");
+  divGrad.addColorStop(0.5, "rgba(147,51,234,0.15)");
+  divGrad.addColorStop(1, "rgba(233,30,140,0)");
+  ctx.strokeStyle = divGrad;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, divY); ctx.lineTo(w - pad, divY); ctx.stroke();
+
+  // CTA text centered
+  ctx.save();
+  ctx.font = "bold 24px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("🔥 VEJA TODOS OS EVENTOS EM ROXOU.COM.BR", w / 2, divY + 20);
+  ctx.restore();
+
+  // Brand
+  ctx.save();
+  ctx.font = "bold 28px sans-serif";
+  const g = ctx.createLinearGradient(w / 2 - 60, 0, w / 2 + 60, 0);
+  g.addColorStop(0, ACCENT); g.addColorStop(1, ACCENT_ALT);
+  ctx.fillStyle = g;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("ROXOU", w / 2, divY + 56);
+  ctx.restore();
+}
+
+/** Draw a small support event row (for the bottom list) */
+function drawSupportItem(ctx: CanvasRenderingContext2D, e: CoverEvent, x: number, y: number, maxW: number) {
+  const time = formatTime(e.date_time);
+
+  // Time in accent
+  ctx.save();
+  ctx.font = "bold 22px sans-serif";
+  ctx.fillStyle = ACCENT;
+  ctx.textBaseline = "middle";
+  ctx.fillText(time, x, y + 16);
+  ctx.restore();
+
+  // Thin separator
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(x + 80, y + 6, 1, 20);
+
+  // Title
+  ctx.font = "500 20px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.textBaseline = "middle";
+  const titleMaxW = maxW - 100;
+  const tt = ctx.measureText(e.title).width > titleMaxW ? e.title.slice(0, 30) + "…" : e.title;
+  ctx.fillText(tt, x + 92, y + 16);
+}
+
+// ============ LEGACY HELPERS (used by Partners, Flyer, Banner) ============
 
 async function drawFlyerBg(ctx: CanvasRenderingContext2D, w: number, h: number, imageUrls: string[], overlayStrength = 0.85) {
   const urls = imageUrls.filter(Boolean).slice(0, 3);
@@ -164,81 +274,42 @@ async function drawFlyerBg(ctx: CanvasRenderingContext2D, w: number, h: number, 
         ctx.drawImage(img, sx, sy, sw, sh, i * colW, 0, colW, h);
       } catch { /* skip */ }
     }
-    // Blur effect via multiple overlays
     ctx.fillStyle = `rgba(15,10,26,${overlayStrength * 0.4})`;
     ctx.fillRect(0, 0, w, h);
   }
-
-  // Gradient overlay
   const overlay = ctx.createLinearGradient(0, 0, 0, h);
   overlay.addColorStop(0, `rgba(15,10,26,${overlayStrength * 0.7})`);
   overlay.addColorStop(0.3, `rgba(15,10,26,${overlayStrength * 0.85})`);
   overlay.addColorStop(1, `rgba(15,10,26,${overlayStrength})`);
   ctx.fillStyle = overlay;
   ctx.fillRect(0, 0, w, h);
-
-  // Purple tint
   ctx.fillStyle = "rgba(147,51,234,0.04)";
   ctx.fillRect(0, 0, w, h);
 }
 
-function drawBadge(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size = 22) {
-  ctx.save();
-  ctx.font = `bold ${size}px sans-serif`;
-  const bw = ctx.measureText(text).width + 36;
-  const bh = size + 18;
-  const grad = ctx.createLinearGradient(x, y, x + bw, y);
-  grad.addColorStop(0, ACCENT);
-  grad.addColorStop(1, ACCENT_ALT);
-  ctx.fillStyle = grad;
-  roundRect(ctx, x, y, bw, bh, bh / 2);
-  ctx.fill();
-  // Glow shadow
-  ctx.shadowColor = "rgba(233,30,140,0.3)";
-  ctx.shadowBlur = 16;
-  ctx.shadowOffsetY = 4;
-  ctx.fill();
-  ctx.shadowColor = "transparent"; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-  ctx.fillStyle = WHITE;
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, x + 18, y + bh / 2 + 1);
-  ctx.restore();
-}
-
 function drawFooterBar(ctx: CanvasRenderingContext2D, w: number, h: number, cta: string, pad: number) {
   const footerY = h - 80;
-  // Divider
   const divGrad = ctx.createLinearGradient(pad, 0, w - pad, 0);
   divGrad.addColorStop(0, "rgba(233,30,140,0.4)");
   divGrad.addColorStop(0.5, "rgba(147,51,234,0.2)");
   divGrad.addColorStop(1, "rgba(233,30,140,0)");
-  ctx.strokeStyle = divGrad;
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = divGrad; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(pad, footerY - 20); ctx.lineTo(w - pad, footerY - 20); ctx.stroke();
-
-  ctx.font = "bold 22px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.textBaseline = "top";
-  ctx.textAlign = "left";
+  ctx.font = "bold 22px sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.textBaseline = "top"; ctx.textAlign = "left";
   ctx.fillText(cta, pad, footerY - 4);
-
-  ctx.font = "400 18px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.font = "400 18px sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.35)";
   ctx.fillText("roxou.com.br", pad, footerY + 22);
-
-  // ROXOU brand right
   ctx.save();
   ctx.font = "bold 26px sans-serif";
   const g = ctx.createLinearGradient(w - 180, footerY, w - pad, footerY);
   g.addColorStop(0, ACCENT); g.addColorStop(1, ACCENT_ALT);
-  ctx.fillStyle = g;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "top";
+  ctx.fillStyle = g; ctx.textAlign = "right"; ctx.textBaseline = "top";
   ctx.fillText("ROXOU", w - pad, footerY + 6);
   ctx.restore();
 }
 
-// ============ FEED COVERS (1080x1350) ============
+// ============ HERO-STYLE COVER RENDERERS ============
 
 export async function renderCoverAgenda(canvas: HTMLCanvasElement, events: CoverEvent[], fmt: ArtFormat = "feed"): Promise<string> {
   const { w: W, h: H } = FORMAT_SIZES[fmt];
@@ -246,117 +317,123 @@ export async function renderCoverAgenda(canvas: HTMLCanvasElement, events: Cover
   const ctx = canvas.getContext("2d")!;
   const PAD = fmt === "banner" ? 80 : 64;
 
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
-  const imageUrls = events.map(e => e.image_url).filter(Boolean) as string[];
-  await drawFlyerBg(ctx, W, H, imageUrls, 0.88);
+  const hero = events[0] || null;
+
+  // Single hero image background
+  await drawHeroBg(ctx, W, H, hero?.image_url || null);
   drawGrain(ctx, W, H);
-  drawGlow(ctx, W * 0.3, H * 0.2, 400, ACCENT, 0.08);
 
-  drawBadge(ctx, "AGENDA DO DIA", PAD, PAD);
+  // Glow behind hero area
+  drawGlow(ctx, W * 0.5, H * 0.45, 500, ACCENT, 0.1);
 
-  // Dynamic title with variation
+  // ---- TOP: Small title ----
   const titleSeed = new Date().getDate();
   const titleText = pickTitle(titleSeed);
-
-  const titleSize = fmt === "banner" ? 64 : fmt === "story" ? 60 : 52;
   ctx.save();
-  ctx.font = `bold ${titleSize}px sans-serif`;
-  ctx.fillStyle = WHITE;
-  ctx.textBaseline = "top";
-  ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 16;
-  const titleY = PAD + 60;
-  const titleLines = wrapText(ctx, titleText, W - PAD * 2);
-  titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * (titleSize + 12)));
-  ctx.shadowBlur = 0; ctx.restore();
-
-  // Subtitle
-  const subY = titleY + titleLines.length * (titleSize + 12) + 8;
   ctx.font = "bold 28px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.textBaseline = "top";
+  ctx.fillText(titleText, PAD, PAD);
+  ctx.restore();
+
+  // Date subtitle
+  ctx.font = "bold 22px sans-serif";
   ctx.fillStyle = ACCENT;
   ctx.textBaseline = "top";
-  ctx.fillText(`${getDayLabel()} · ${getDateShort()}`, PAD, subY);
+  ctx.fillText(`${getDayLabel()} · ${getDateShort()}`, PAD, PAD + 38);
 
-  // Featured event (first one)
-  let listStartY = subY + 50;
-  if (events.length > 0 && events[0].image_url) {
-    const feat = events[0];
-    const featH = fmt === "story" ? 300 : 220;
-    const featW = W - PAD * 2;
-    // Featured card background
+  // ---- CENTER: Hero event (60% of space) ----
+  if (hero) {
+    const heroY = fmt === "story" ? H * 0.25 : H * 0.22;
+
+    // 🔥 DESTAQUE badge
+    drawBadge(ctx, "🔥 DESTAQUE", PAD, heroY, 20);
+
+    // Hero title — HUGE
+    const heroTitleSize = fmt === "story" ? 64 : fmt === "banner" ? 68 : 58;
     ctx.save();
-    ctx.fillStyle = "rgba(233,30,140,0.06)";
-    roundRect(ctx, PAD, listStartY, featW, featH, 20);
-    ctx.fill();
-    // Border
-    ctx.strokeStyle = "rgba(233,30,140,0.2)";
-    ctx.lineWidth = 1;
-    roundRect(ctx, PAD, listStartY, featW, featH, 20);
-    ctx.stroke();
-    ctx.restore();
-
-    // Featured badge
-    drawBadge(ctx, "🔥 DESTAQUE", PAD + 16, listStartY + 16, 18);
-
-    // Featured title
-    ctx.save();
-    ctx.font = "bold 36px sans-serif";
-    ctx.fillStyle = WHITE;
+    ctx.font = `bold ${heroTitleSize}px sans-serif`;
     ctx.textBaseline = "top";
-    const fLines = wrapText(ctx, feat.title, featW - 40);
-    fLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD + 20, listStartY + 60 + i * 44));
+    const heroLines = wrapText(ctx, hero.title, W - PAD * 2);
+    // Strong text shadow
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    heroLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD + 3, heroY + 52 + i * (heroTitleSize + 10) + 3));
+    ctx.fillStyle = WHITE;
+    heroLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD, heroY + 52 + i * (heroTitleSize + 10)));
     ctx.restore();
 
-    // Featured meta
-    const fMetaY = listStartY + 60 + Math.min(fLines.length, 2) * 44 + 8;
-    ctx.font = "bold 24px sans-serif";
+    // Hero meta
+    const heroMetaY = heroY + 52 + Math.min(heroLines.length, 2) * (heroTitleSize + 10) + 12;
+
+    // Time large
+    ctx.save();
+    ctx.font = "bold 34px sans-serif";
     ctx.fillStyle = ACCENT;
     ctx.textBaseline = "top";
-    ctx.fillText(formatTime(feat.date_time), PAD + 20, fMetaY);
-    if (feat.venue_name) {
-      ctx.font = "500 20px sans-serif";
+    ctx.shadowColor = "rgba(233,30,140,0.25)";
+    ctx.shadowBlur = 10;
+    ctx.fillText(formatTime(hero.date_time), PAD, heroMetaY);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Venue
+    if (hero.venue_name) {
+      ctx.font = "500 22px sans-serif";
       ctx.fillStyle = MUTED;
-      ctx.fillText(`📍 ${feat.venue_name}`, PAD + 120, fMetaY + 2);
+      ctx.textBaseline = "top";
+      ctx.fillText(`📍 ${hero.venue_name}`, PAD + 110, heroMetaY + 6);
     }
-    const artist = extractArtist(feat.description);
+
+    // Artist
+    const artist = extractArtist(hero.description);
     if (artist) {
-      ctx.font = "italic 20px sans-serif";
+      ctx.font = "italic 22px sans-serif";
       ctx.fillStyle = "rgba(233,30,140,0.8)";
-      ctx.fillText(`✦ ${artist}`, PAD + 20, fMetaY + 32);
+      ctx.textBaseline = "top";
+      ctx.fillText(`✦ ${artist}`, PAD, heroMetaY + 44);
     }
 
-    listStartY += featH + 20;
+    // Price
+    const price = extractPrice(hero.description, hero.ticket_url);
+    if (price) {
+      const priceY = heroMetaY + (artist ? 78 : 44);
+      ctx.save();
+      ctx.font = "bold 18px sans-serif";
+      const pw = ctx.measureText(price).width + 24;
+      ctx.fillStyle = "rgba(233,30,140,0.12)";
+      roundRect(ctx, PAD, priceY, pw, 30, 15);
+      ctx.fill();
+      ctx.fillStyle = ACCENT;
+      ctx.textBaseline = "middle";
+      ctx.fillText(price, PAD + 12, priceY + 15);
+      ctx.restore();
+    }
   }
 
-  // Event list
-  const itemH = fmt === "story" ? 52 : 46;
-  const maxItems = Math.min(events.length - 1, fmt === "story" ? 6 : fmt === "banner" ? 8 : 5);
-  const remaining = events.slice(1);
-  for (let i = 0; i < maxItems && i < remaining.length; i++) {
-    const e = remaining[i];
-    const y = listStartY + i * itemH;
-    const time = formatTime(e.date_time);
+  // ---- BOTTOM: Support list (max 3-4) ----
+  const supportEvents = events.slice(1, fmt === "story" ? 5 : 4);
+  if (supportEvents.length > 0) {
+    const listH = supportEvents.length * 48;
+    const listStartY = H - 130 - listH;
 
-    // Time pill
-    ctx.save();
-    ctx.fillStyle = "rgba(233,30,140,0.12)";
-    roundRect(ctx, PAD, y, 88, 34, 17);
-    ctx.fill();
-    ctx.fillStyle = ACCENT;
-    ctx.font = "bold 18px sans-serif";
-    ctx.textBaseline = "middle";
-    ctx.fillText(time, PAD + 12, y + 17);
-    ctx.restore();
+    // Subtle label
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.textBaseline = "top";
+    ctx.fillText("TAMBÉM HOJE", PAD, listStartY - 24);
 
-    // Title
-    ctx.fillStyle = WHITE;
-    ctx.font = "500 20px sans-serif";
-    ctx.textBaseline = "middle";
-    const maxTW = W - PAD * 2 - 110;
-    const tt = ctx.measureText(e.title).width > maxTW ? e.title.slice(0, 32) + "…" : e.title;
-    ctx.fillText(tt, PAD + 98, y + 17);
+    // Thin divider
+    ctx.fillStyle = "rgba(233,30,140,0.15)";
+    ctx.fillRect(PAD, listStartY - 6, W - PAD * 2, 1);
+
+    for (let i = 0; i < supportEvents.length; i++) {
+      drawSupportItem(ctx, supportEvents[i], PAD, listStartY + i * 48, W - PAD * 2);
+    }
   }
 
-  drawFooterBar(ctx, W, H, "🔥 CONFIRA TODOS OS EVENTOS EM ROXOU.COM.BR", PAD);
+  // ---- FOOTER: Isolated CTA ----
+  drawIsolatedCTA(ctx, W, H, PAD);
+
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
@@ -366,76 +443,93 @@ export async function renderCoverTopRoles(canvas: HTMLCanvasElement, events: Cov
   const ctx = canvas.getContext("2d")!;
   const PAD = fmt === "banner" ? 80 : 64;
 
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
-  const imageUrls = events.slice(0, 3).map(e => e.image_url).filter(Boolean) as string[];
-  await drawFlyerBg(ctx, W, H, imageUrls, 0.85);
+  const hero = events[0] || null;
+
+  await drawHeroBg(ctx, W, H, hero?.image_url || null);
   drawGrain(ctx, W, H);
-  drawGlow(ctx, W * 0.7, H * 0.3, 500, ACCENT_ALT, 0.1);
+  drawGlow(ctx, W * 0.6, H * 0.4, 500, ACCENT_ALT, 0.1);
 
-  drawBadge(ctx, "TOP ROLÊS", PAD, PAD);
-
-  const titleSize = fmt === "banner" ? 60 : 52;
+  // ---- TOP: Title ----
   ctx.save();
-  ctx.font = `bold ${titleSize}px sans-serif`;
-  ctx.fillStyle = WHITE;
+  ctx.font = "bold 26px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
   ctx.textBaseline = "top";
-  ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 12;
-  ctx.fillText("CONFIRA OS MELHORES", PAD, PAD + 60);
-  ctx.fillText("ROLÊS", PAD, PAD + 60 + titleSize + 8);
-  ctx.shadowBlur = 0; ctx.restore();
+  ctx.fillText("CONFIRA OS MELHORES ROLÊS", PAD, PAD);
+  ctx.restore();
 
-  ctx.font = "400 22px sans-serif";
+  ctx.font = "400 18px sans-serif";
   ctx.fillStyle = MUTED;
   ctx.textBaseline = "top";
-  ctx.fillText("Selecionamos os destaques do dia", PAD, PAD + 60 + (titleSize + 8) * 2 + 8);
+  ctx.fillText("Selecionamos os destaques do dia", PAD, PAD + 34);
 
-  // Ranked cards
-  const medals = ["🥇", "🥈", "🥉", "4º", "5º"];
-  const cardH = fmt === "story" ? 150 : fmt === "banner" ? 120 : 130;
-  const startY = PAD + 60 + (titleSize + 8) * 2 + 50;
-  const maxCards = Math.min(events.length, fmt === "story" ? 5 : 3);
+  // ---- CENTER: Hero #1 ----
+  if (hero) {
+    const heroY = fmt === "story" ? H * 0.22 : H * 0.2;
+    drawBadge(ctx, "🥇 #1 DO DIA", PAD, heroY, 20);
 
-  for (let i = 0; i < maxCards; i++) {
-    const e = events[i];
-    const y = startY + i * (cardH + 12);
-    const time = formatTime(e.date_time);
-
+    const heroTitleSize = fmt === "story" ? 60 : 54;
     ctx.save();
-    ctx.fillStyle = i === 0 ? "rgba(233,30,140,0.1)" : "rgba(255,255,255,0.03)";
-    roundRect(ctx, PAD, y, W - PAD * 2, cardH, 16);
-    ctx.fill();
-    if (i === 0) {
-      ctx.strokeStyle = "rgba(233,30,140,0.2)";
-      ctx.lineWidth = 1;
-      roundRect(ctx, PAD, y, W - PAD * 2, cardH, 16);
-      ctx.stroke();
-    }
+    ctx.font = `bold ${heroTitleSize}px sans-serif`;
+    ctx.textBaseline = "top";
+    const hLines = wrapText(ctx, hero.title, W - PAD * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    hLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD + 3, heroY + 52 + i * (heroTitleSize + 10) + 3));
+    ctx.fillStyle = WHITE;
+    hLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD, heroY + 52 + i * (heroTitleSize + 10)));
     ctx.restore();
 
-    // Medal
-    ctx.font = "44px sans-serif"; ctx.textBaseline = "top";
-    ctx.fillText(medals[i], PAD + 16, y + (cardH - 44) / 2);
+    const metaY = heroY + 52 + Math.min(hLines.length, 2) * (heroTitleSize + 10) + 12;
+    ctx.font = "bold 32px sans-serif"; ctx.fillStyle = ACCENT; ctx.textBaseline = "top";
+    ctx.fillText(formatTime(hero.date_time), PAD, metaY);
 
-    // Title
-    ctx.font = i === 0 ? "bold 28px sans-serif" : "bold 24px sans-serif";
-    ctx.fillStyle = WHITE; ctx.textBaseline = "top";
-    const tLines = wrapText(ctx, e.title, W - PAD * 2 - 120);
-    tLines.slice(0, 2).forEach((l, li) => ctx.fillText(l, PAD + 80, y + 18 + li * 32));
+    if (hero.venue_name) {
+      ctx.font = "500 20px sans-serif"; ctx.fillStyle = MUTED; ctx.textBaseline = "top";
+      ctx.fillText(`📍 ${hero.venue_name}`, PAD + 100, metaY + 6);
+    }
 
-    // Meta
-    ctx.font = "400 18px sans-serif"; ctx.fillStyle = ACCENT; ctx.textBaseline = "top";
-    const metaY = y + 18 + Math.min(tLines.length, 2) * 32 + 4;
-    ctx.fillText(`${time}${e.venue_name ? `  ·  📍 ${e.venue_name}` : ""}`, PAD + 80, metaY);
-
-    const artist = extractArtist(e.description);
+    const artist = extractArtist(hero.description);
     if (artist) {
-      ctx.font = "italic 16px sans-serif";
-      ctx.fillStyle = "rgba(233,30,140,0.7)";
-      ctx.fillText(`✦ ${artist}`, PAD + 80, metaY + 24);
+      ctx.font = "italic 20px sans-serif"; ctx.fillStyle = "rgba(233,30,140,0.8)"; ctx.textBaseline = "top";
+      ctx.fillText(`✦ ${artist}`, PAD, metaY + 44);
     }
   }
 
-  drawFooterBar(ctx, W, H, "VEJA TUDO EM ROXOU.COM.BR", PAD);
+  // ---- BOTTOM: #2, #3 ----
+  const medals = ["🥈 #2", "🥉 #3", "4º"];
+  const supportEvents = events.slice(1, 4);
+  if (supportEvents.length > 0) {
+    const listH = supportEvents.length * 52;
+    const listStartY = H - 130 - listH;
+
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.textBaseline = "top";
+    ctx.fillText("PRÓXIMOS NO RANKING", PAD, listStartY - 24);
+    ctx.fillStyle = "rgba(233,30,140,0.15)";
+    ctx.fillRect(PAD, listStartY - 6, W - PAD * 2, 1);
+
+    for (let i = 0; i < supportEvents.length; i++) {
+      const e = supportEvents[i];
+      const y = listStartY + i * 52;
+      const medal = medals[i] || `${i + 2}º`;
+
+      // Medal
+      ctx.font = "bold 18px sans-serif"; ctx.fillStyle = ACCENT; ctx.textBaseline = "middle";
+      ctx.fillText(medal, PAD, y + 16);
+
+      // Time
+      ctx.font = "bold 20px sans-serif"; ctx.fillStyle = "rgba(233,30,140,0.7)"; ctx.textBaseline = "middle";
+      ctx.fillText(formatTime(e.date_time), PAD + 70, y + 16);
+
+      // Title
+      ctx.font = "500 20px sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.75)"; ctx.textBaseline = "middle";
+      const maxTW = W - PAD * 2 - 160;
+      const tt = ctx.measureText(e.title).width > maxTW ? e.title.slice(0, 28) + "…" : e.title;
+      ctx.fillText(tt, PAD + 152, y + 16);
+    }
+  }
+
+  drawIsolatedCTA(ctx, W, H, PAD);
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
@@ -445,59 +539,92 @@ export async function renderCoverWeekend(canvas: HTMLCanvasElement, events: Cove
   const ctx = canvas.getContext("2d")!;
   const PAD = fmt === "banner" ? 80 : 64;
 
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
-  const imageUrls = events.map(e => e.image_url).filter(Boolean) as string[];
-  await drawFlyerBg(ctx, W, H, imageUrls, 0.82);
+  const hero = events[0] || null;
+
+  await drawHeroBg(ctx, W, H, hero?.image_url || null);
   drawGrain(ctx, W, H);
-  drawGlow(ctx, W * 0.5, H * 0.15, 500, ACCENT_ALT, 0.1);
+  drawGlow(ctx, W * 0.4, H * 0.35, 500, ACCENT, 0.1);
 
-  drawBadge(ctx, "FIM DE SEMANA", PAD, PAD);
-
-  const titleSize = fmt === "banner" ? 58 : 50;
+  // ---- TOP: Title ----
   ctx.save();
-  ctx.font = `bold ${titleSize}px sans-serif`;
-  ctx.fillStyle = WHITE; ctx.textBaseline = "top";
-  ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 12;
-  const tLines = wrapText(ctx, "O QUE ROLA NESTE FIM DE SEMANA", W - PAD * 2);
-  tLines.forEach((l, i) => ctx.fillText(l, PAD, PAD + 60 + i * (titleSize + 10)));
-  ctx.shadowBlur = 0; ctx.restore();
+  ctx.font = "bold 26px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.textBaseline = "top";
+  ctx.fillText("O QUE ROLA NESTE FIM DE SEMANA", PAD, PAD);
+  ctx.restore();
 
-  const subY = PAD + 60 + tLines.length * (titleSize + 10) + 8;
-  ctx.font = "bold 28px sans-serif"; ctx.fillStyle = ACCENT; ctx.textBaseline = "top";
-  ctx.fillText("SEXTA · SÁBADO · DOMINGO", PAD, subY);
+  ctx.font = "bold 22px sans-serif"; ctx.fillStyle = ACCENT; ctx.textBaseline = "top";
+  ctx.fillText("SEXTA · SÁBADO · DOMINGO", PAD, PAD + 36);
 
-  // Event grid
-  const gridY = subY + 50;
-  const maxItems = Math.min(events.length, fmt === "story" ? 8 : fmt === "banner" ? 10 : 6);
-  const itemH = fmt === "story" ? 52 : 44;
+  // ---- CENTER: Hero event ----
+  if (hero) {
+    const heroY = fmt === "story" ? H * 0.22 : H * 0.2;
+    const wd = WEEKDAYS[new Date(hero.date_time).getDay()];
+    drawBadge(ctx, `🔥 ${wd}`, PAD, heroY, 20);
 
-  for (let i = 0; i < maxItems; i++) {
-    const e = events[i];
-    const y = gridY + i * itemH;
-    const d = new Date(e.date_time);
-    const dayName = WEEKDAYS[d.getDay()].slice(0, 3);
-    const time = formatTime(e.date_time);
-
+    const heroTitleSize = fmt === "story" ? 60 : 54;
     ctx.save();
-    ctx.font = "bold 16px sans-serif";
-    ctx.fillStyle = ACCENT; ctx.textBaseline = "middle";
-    // Day+time pill
-    ctx.fillStyle = "rgba(233,30,140,0.1)";
-    roundRect(ctx, PAD, y, 120, 34, 17);
-    ctx.fill();
-    ctx.fillStyle = ACCENT;
-    ctx.font = "bold 15px sans-serif";
-    ctx.fillText(`${dayName} ${time}`, PAD + 10, y + 17);
+    ctx.font = `bold ${heroTitleSize}px sans-serif`;
+    ctx.textBaseline = "top";
+    const hLines = wrapText(ctx, hero.title, W - PAD * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    hLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD + 3, heroY + 52 + i * (heroTitleSize + 10) + 3));
+    ctx.fillStyle = WHITE;
+    hLines.slice(0, 2).forEach((l, i) => ctx.fillText(l, PAD, heroY + 52 + i * (heroTitleSize + 10)));
     ctx.restore();
 
-    ctx.font = "500 20px sans-serif";
-    ctx.fillStyle = WHITE; ctx.textBaseline = "middle";
-    const maxTW = W - PAD * 2 - 140;
-    const tt = ctx.measureText(e.title).width > maxTW ? e.title.slice(0, 28) + "…" : e.title;
-    ctx.fillText(tt, PAD + 130, y + 17);
+    const metaY = heroY + 52 + Math.min(hLines.length, 2) * (heroTitleSize + 10) + 12;
+    ctx.font = "bold 32px sans-serif"; ctx.fillStyle = ACCENT; ctx.textBaseline = "top";
+    ctx.fillText(formatTime(hero.date_time), PAD, metaY);
+
+    if (hero.venue_name) {
+      ctx.font = "500 20px sans-serif"; ctx.fillStyle = MUTED; ctx.textBaseline = "top";
+      ctx.fillText(`📍 ${hero.venue_name}`, PAD + 100, metaY + 6);
+    }
   }
 
-  drawFooterBar(ctx, W, H, "DESCUBRA TUDO NA ROXOU", PAD);
+  // ---- BOTTOM: Support events with day labels ----
+  const supportEvents = events.slice(1, fmt === "story" ? 5 : 4);
+  if (supportEvents.length > 0) {
+    const listH = supportEvents.length * 52;
+    const listStartY = H - 130 - listH;
+
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.textBaseline = "top";
+    ctx.fillText("MAIS NO FIM DE SEMANA", PAD, listStartY - 24);
+    ctx.fillStyle = "rgba(233,30,140,0.15)";
+    ctx.fillRect(PAD, listStartY - 6, W - PAD * 2, 1);
+
+    for (let i = 0; i < supportEvents.length; i++) {
+      const e = supportEvents[i];
+      const y = listStartY + i * 52;
+      const d = new Date(e.date_time);
+      const dayShort = WEEKDAYS[d.getDay()].slice(0, 3);
+
+      // Day label
+      ctx.save();
+      ctx.font = "bold 14px sans-serif";
+      ctx.fillStyle = "rgba(233,30,140,0.12)";
+      roundRect(ctx, PAD, y + 2, 44, 24, 12);
+      ctx.fill();
+      ctx.fillStyle = ACCENT; ctx.textBaseline = "middle";
+      ctx.fillText(dayShort, PAD + 6, y + 14);
+      ctx.restore();
+
+      // Time
+      ctx.font = "bold 20px sans-serif"; ctx.fillStyle = "rgba(233,30,140,0.7)"; ctx.textBaseline = "middle";
+      ctx.fillText(formatTime(e.date_time), PAD + 54, y + 16);
+
+      // Title
+      ctx.font = "500 20px sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.75)"; ctx.textBaseline = "middle";
+      const maxTW = W - PAD * 2 - 160;
+      const tt = ctx.measureText(e.title).width > maxTW ? e.title.slice(0, 28) + "…" : e.title;
+      ctx.fillText(tt, PAD + 140, y + 16);
+    }
+  }
+
+  drawIsolatedCTA(ctx, W, H, PAD);
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
