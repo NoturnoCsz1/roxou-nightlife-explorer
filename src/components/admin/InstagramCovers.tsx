@@ -247,7 +247,7 @@ const InstagramCovers = () => {
       const cover: GeneratedCover = {
         type,
         label: COVER_OPTIONS.find(o => o.key === type)!.label,
-        coverDataUrl: null,
+        formats.feed: null,
         carouselSlides: [],
         captionFull: "",
         captionShort: "",
@@ -256,22 +256,22 @@ const InstagramCovers = () => {
 
       try {
         if (type === "agenda") {
-          cover.coverDataUrl = await renderCoverAgenda(canvas, events);
+          cover.formats.feed = await renderCoverAgenda(canvas, events);
           const cap = captionAgenda(events);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "top") {
-          cover.coverDataUrl = await renderCoverTopRoles(canvas, events.slice(0, 5));
+          cover.formats.feed = await renderCoverTopRoles(canvas, events.slice(0, 5));
           const cap = captionTop(events);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "weekend") {
-          cover.coverDataUrl = await renderCoverWeekend(canvas, weekendEvents);
+          cover.formats.feed = await renderCoverWeekend(canvas, weekendEvents);
           const cap = captionWeekend(weekendEvents);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "partners") {
-          cover.coverDataUrl = await renderCoverPartners(canvas, partners);
+          cover.formats.feed = await renderCoverPartners(canvas, partners);
           const cap = captionPartners(partners);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
@@ -303,7 +303,7 @@ const InstagramCovers = () => {
     const slides: string[] = [];
 
     // Slide 1: cover
-    if (cover.coverDataUrl) slides.push(cover.coverDataUrl);
+    if (cover.formats.feed) slides.push(cover.formats.feed);
 
     // Event slides
     const evts = cover.type === "weekend" ? weekendEvents : events;
@@ -428,7 +428,7 @@ const InstagramCovers = () => {
   // ============ ZIP ============
 
   const hasMedia = useMemo(() =>
-    covers.some(c => c.coverDataUrl || c.carouselSlides.length > 0 || c.reelUrl),
+    covers.some(c => c.formats.feed || c.carouselSlides.length > 0 || c.reelUrl),
     [covers]
   );
 
@@ -442,8 +442,8 @@ const InstagramCovers = () => {
       for (const cover of covers) {
         const folder = cover.type;
 
-        if (cover.coverDataUrl) {
-          const res = await fetch(cover.coverDataUrl);
+        if (cover.formats.feed) {
+          const res = await fetch(cover.formats.feed);
           zip.file(`${folder}/capa.jpg`, await res.blob());
           count++;
         }
@@ -666,7 +666,7 @@ const InstagramCovers = () => {
                     <div className="text-left">
                       <span className="text-xs font-semibold text-foreground block">{cover.label}</span>
                       <span className="text-[9px] text-muted-foreground">
-                        {cover.coverDataUrl ? "✅ Capa" : ""} {cover.carouselSlides.length > 0 ? `· 📸 ${cover.carouselSlides.length} slides` : ""} {cover.reelUrl ? "· 🎬 Reel" : ""}
+                        {cover.formats.feed ? "✅ Capa" : ""} {cover.carouselSlides.length > 0 ? `· 📸 ${cover.carouselSlides.length} slides` : ""} {cover.reelUrl ? "· 🎬 Reel" : ""}
                       </span>
                     </div>
                   </div>
@@ -689,7 +689,7 @@ const InstagramCovers = () => {
                         onClick={() => {
                           const params = new URLSearchParams();
                           params.set("caption", cover.captionFull);
-                          if (cover.coverDataUrl) params.set("image", cover.coverDataUrl);
+                          if (cover.formats.feed) params.set("image", cover.formats.feed);
                           navigate(`/admin/instagram?tab=publicacao&${params.toString()}`);
                         }}
                         className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-[10px] font-bold text-white hover:opacity-90 transition"
@@ -699,11 +699,11 @@ const InstagramCovers = () => {
                     </div>
 
                     {/* Cover preview */}
-                    {cover.coverDataUrl && (
+                    {cover.formats.feed && (
                       <div className="space-y-1.5">
                         <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">📷 Capa</span>
                         <div className="rounded-lg overflow-hidden border border-border/30 max-w-[280px]">
-                          <img src={cover.coverDataUrl} alt="Cover" className="w-full" />
+                          <img src={cover.formats.feed} alt="Cover" className="w-full" />
                         </div>
                       </div>
                     )}
