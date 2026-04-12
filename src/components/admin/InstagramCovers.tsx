@@ -6,7 +6,8 @@ import JSZip from "jszip";
 import {
   CalendarDays, Loader2, Copy, Sparkles, Trophy,
   Star, Download, Video, Zap, Pause, Send,
-  ChevronDown, ChevronUp, Users, Layers, Package
+  ChevronDown, ChevronUp, Users, Layers, Package,
+  Image as ImageIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -18,9 +19,13 @@ import {
   renderCoverTopRoles,
   renderCoverWeekend,
   renderCoverPartners,
+  renderBannerFestival,
+  renderFlyer,
   renderCTASlide,
   type CoverEvent,
   type CoverPartner,
+  type ArtFormat,
+  FORMAT_SIZES,
 } from "@/lib/coverRenderer";
 
 // ============ TYPES ============
