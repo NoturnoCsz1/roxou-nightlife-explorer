@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
 import InstagramAgenda from "@/components/admin/InstagramAgenda";
+import InstagramCovers from "@/components/admin/InstagramCovers";
 
 interface IgAccount {
   id: string;
@@ -33,13 +34,14 @@ const statusBadge: Record<string, { label: string; cls: string }> = {
   scheduled: { label: "Agendado", cls: "bg-primary/10 text-primary" },
 };
 
-type TabKey = "publicacao" | "contas" | "conteudo" | "agenda";
+type TabKey = "publicacao" | "contas" | "conteudo" | "agenda" | "capas";
 
 const TABS: { key: TabKey; label: string; icon: typeof Instagram }[] = [
   { key: "publicacao", label: "Publicação", icon: Send },
   { key: "contas", label: "Contas", icon: Link2 },
   { key: "conteudo", label: "Conteúdo", icon: Sparkles },
   { key: "agenda", label: "Agenda", icon: CalendarDays },
+  { key: "capas", label: "Capas & Lotes", icon: Sparkles },
 ];
 
 const InstagramAdmin = () => {
@@ -350,6 +352,9 @@ const InstagramAdmin = () => {
 
           {/* TAB: Agenda */}
           {activeTab === "agenda" && <InstagramAgenda />}
+
+          {/* TAB: Capas & Lotes */}
+          {activeTab === "capas" && <InstagramCovers />}
         </>
       )}
     </div>
