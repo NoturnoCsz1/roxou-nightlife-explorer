@@ -6,8 +6,7 @@ import JSZip from "jszip";
 import {
   CalendarDays, Loader2, Copy, Sparkles, Trophy,
   Star, Download, Video, Zap, Pause, Send,
-  ChevronDown, ChevronUp, Users, Layers, Package,
-  Image as ImageIcon
+  ChevronDown, ChevronUp, Users, Layers, Package
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
