@@ -46,8 +46,9 @@ interface ScoredEvent extends CoverEvent {
 interface GeneratedCover {
   type: CoverType;
   label: string;
-  coverDataUrl: string | null;
+  formats: Record<string, string | null>; // feed, story, flyer, banner data URLs
   carouselSlides: string[];
+  flyerImages: string[]; // individual flyers per event
   captionFull: string;
   captionShort: string;
   reelUrl?: string;
@@ -56,7 +57,7 @@ interface GeneratedCover {
 
 interface BatchJob {
   id: string;
-  kind: "cover" | "carousel" | "reel";
+  kind: "cover" | "carousel" | "reel" | "flyers" | "banner";
   coverType: CoverType;
   label: string;
   status: "pending" | "processing" | "done" | "error";
