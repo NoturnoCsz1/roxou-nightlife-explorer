@@ -247,34 +247,59 @@ const InstagramCovers = () => {
       const cover: GeneratedCover = {
         type,
         label: COVER_OPTIONS.find(o => o.key === type)!.label,
-        formats.feed: null,
+        formats: { feed: null, story: null, banner: null },
         carouselSlides: [],
+        flyerImages: [],
         captionFull: "",
         captionShort: "",
         generating: true,
       };
 
+      const evts = type === "weekend" ? weekendEvents : events;
+
       try {
+        // Generate Feed format
         if (type === "agenda") {
-          cover.formats.feed = await renderCoverAgenda(canvas, events);
+          cover.formats.feed = await renderCoverAgenda(canvas, evts, "feed");
+          cover.formats.story = await renderCoverAgenda(canvas, evts, "story");
           const cap = captionAgenda(events);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "top") {
-          cover.formats.feed = await renderCoverTopRoles(canvas, events.slice(0, 5));
+          cover.formats.feed = await renderCoverTopRoles(canvas, evts.slice(0, 5), "feed");
+          cover.formats.story = await renderCoverTopRoles(canvas, evts.slice(0, 5), "story");
           const cap = captionTop(events);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "weekend") {
-          cover.formats.feed = await renderCoverWeekend(canvas, weekendEvents);
+          cover.formats.feed = await renderCoverWeekend(canvas, evts, "feed");
+          cover.formats.story = await renderCoverWeekend(canvas, evts, "story");
           const cap = captionWeekend(weekendEvents);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
         } else if (type === "partners") {
-          cover.formats.feed = await renderCoverPartners(canvas, partners);
+          cover.formats.feed = await renderCoverPartners(canvas, partners, "feed");
+          cover.formats.story = await renderCoverPartners(canvas, partners, "story");
           const cap = captionPartners(partners);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
+        }
+
+        // Generate Banner Festival for non-partner types
+        if (type !== "partners" && evts.length > 0) {
+          cover.formats.banner = await renderBannerFestival(canvas, evts);
+        }
+
+        // Generate individual flyers for top events
+        if (type !== "partners") {
+          const topEvts = evts.filter(e => e.image_url).slice(0, 5);
+          for (const ev of topEvts) {
+            try {
+              const badge = type === "top" ? "TOP ROLÊ" : type === "weekend" ? "FIM DE SEMANA" : "HOJE";
+              const flyerUrl = await renderFlyer(canvas, ev, badge);
+              cover.flyerImages.push(flyerUrl);
+            } catch { /* skip */ }
+          }
         }
       } catch (err: any) {
         toast.error(`Erro ao gerar capa ${cover.label}`, { description: err.message });
