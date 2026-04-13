@@ -283,6 +283,15 @@ const InstagramCovers = () => {
           const cap = captionPartners(partners);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
+        } else if (type === "destaque") {
+          const heroEvent = evts[0];
+          if (heroEvent) {
+            cover.formats.story = await renderCoverDestaque(canvas, heroEvent, "story");
+            cover.formats.feed = await renderCoverDestaque(canvas, heroEvent, "feed");
+            const cap = captionDestaque(heroEvent);
+            cover.captionFull = cap.full;
+            cover.captionShort = cap.short;
+          }
         }
 
         // Generate Banner Festival for non-partner types
