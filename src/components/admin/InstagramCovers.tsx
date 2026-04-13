@@ -707,7 +707,8 @@ const InstagramCovers = () => {
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
                       cover.type === "agenda" ? "bg-primary/15" :
                       cover.type === "top" ? "bg-yellow-400/15" :
-                      cover.type === "weekend" ? "bg-purple-400/15" : "bg-green-400/15"
+                      cover.type === "weekend" ? "bg-purple-400/15" :
+                      cover.type === "destaque" ? "bg-pink-400/15" : "bg-green-400/15"
                     }`}>
                       <Icon className={`h-3.5 w-3.5 ${opt.cls}`} />
                     </div>
