@@ -18,6 +18,7 @@ import {
   renderCoverTopRoles,
   renderCoverWeekend,
   renderCoverPartners,
+  renderCoverDestaque,
   renderBannerFestival,
   renderFlyer,
   renderCTASlide,
