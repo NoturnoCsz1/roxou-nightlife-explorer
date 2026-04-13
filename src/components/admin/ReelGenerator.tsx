@@ -31,7 +31,7 @@ const ACCENT_ALT = "#9333ea";
 const WHITE = "#ffffff";
 
 const WEEKDAYS = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
-const WEEKDAYS_SHORT = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+
 const MONTHS = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
 
 function formatTime(dt: string) {
@@ -82,7 +82,7 @@ function easeInOutCubic(t: number) { return t < 0.5 ? 4 * t * t * t : 1 - Math.p
 function easeOutBack(t: number) { const c1 = 1.70158; const c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
 function easeOutElastic(t: number) { if (t === 0 || t === 1) return t; return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * (2 * Math.PI / 3)) + 1; }
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)); }
-function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
