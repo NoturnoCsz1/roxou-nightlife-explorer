@@ -28,7 +28,7 @@ import {
 
 // ============ TYPES ============
 
-type CoverType = "agenda" | "top" | "weekend" | "partners";
+type CoverType = "agenda" | "top" | "weekend" | "partners" | "destaque";
 
 interface ScoredEvent extends CoverEvent {
   id: string;
@@ -70,6 +70,7 @@ const COVER_OPTIONS: { key: CoverType; label: string; icon: typeof CalendarDays;
   { key: "top", label: "Melhores Rolês", icon: Trophy, cls: "text-yellow-500" },
   { key: "weekend", label: "Fim de Semana", icon: Star, cls: "text-purple-400" },
   { key: "partners", label: "Parceiros em Alta", icon: Users, cls: "text-green-400" },
+  { key: "destaque", label: "Evento em Destaque", icon: Zap, cls: "text-pink-400" },
 ];
 
 const CATEGORY_EMOJI: Record<string, string> = {
