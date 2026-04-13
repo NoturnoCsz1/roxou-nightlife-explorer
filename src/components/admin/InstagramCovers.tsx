@@ -18,6 +18,7 @@ import {
   renderCoverTopRoles,
   renderCoverWeekend,
   renderCoverPartners,
+  renderCoverDestaque,
   renderBannerFestival,
   renderFlyer,
   renderCTASlide,
@@ -27,7 +28,7 @@ import {
 
 // ============ TYPES ============
 
-type CoverType = "agenda" | "top" | "weekend" | "partners";
+type CoverType = "agenda" | "top" | "weekend" | "partners" | "destaque";
 
 interface ScoredEvent extends CoverEvent {
   id: string;
@@ -69,6 +70,7 @@ const COVER_OPTIONS: { key: CoverType; label: string; icon: typeof CalendarDays;
   { key: "top", label: "Melhores Rolês", icon: Trophy, cls: "text-yellow-500" },
   { key: "weekend", label: "Fim de Semana", icon: Star, cls: "text-purple-400" },
   { key: "partners", label: "Parceiros em Alta", icon: Users, cls: "text-green-400" },
+  { key: "destaque", label: "Evento em Destaque", icon: Zap, cls: "text-pink-400" },
 ];
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -230,6 +232,17 @@ const InstagramCovers = () => {
     };
   }
 
+  function captionDestaque(ev: ScoredEvent): { full: string; short: string } {
+    const d = new Date(ev.date_time);
+    const dayStr = format(d, "EEEE, d 'de' MMMM", { locale: ptBR });
+    const h = format(d, "HH'h'mm");
+    const venue = ev.venue_name ? `\n📍 ${ev.venue_name}` : "";
+    return {
+      full: `🔥 EVENTO EM DESTAQUE\n\n${ev.title}\n🕐 ${h} · ${dayStr}${venue}\n\n${ev.description ? ev.description.slice(0, 200) + "..." : ""}\n\n👉 Saiba mais em roxou.com.br\n\n#roxou #eventosprudente #roles`,
+      short: `🔥 ${ev.title}\n🕐 ${h}${venue}\n\n👉 roxou.com.br`,
+    };
+  }
+
   // ============ GENERATION ============
 
   async function generateCovers() {
@@ -281,6 +294,15 @@ const InstagramCovers = () => {
           const cap = captionPartners(partners);
           cover.captionFull = cap.full;
           cover.captionShort = cap.short;
+        } else if (type === "destaque") {
+          const heroEvent = evts[0];
+          if (heroEvent) {
+            cover.formats.story = await renderCoverDestaque(canvas, heroEvent, "story");
+            cover.formats.feed = await renderCoverDestaque(canvas, heroEvent, "feed");
+            const cap = captionDestaque(heroEvent);
+            cover.captionFull = cap.full;
+            cover.captionShort = cap.short;
+          }
         }
 
         // Generate Banner Festival for non-partner types
@@ -685,7 +707,8 @@ const InstagramCovers = () => {
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
                       cover.type === "agenda" ? "bg-primary/15" :
                       cover.type === "top" ? "bg-yellow-400/15" :
-                      cover.type === "weekend" ? "bg-purple-400/15" : "bg-green-400/15"
+                      cover.type === "weekend" ? "bg-purple-400/15" :
+                      cover.type === "destaque" ? "bg-pink-400/15" : "bg-green-400/15"
                     }`}>
                       <Icon className={`h-3.5 w-3.5 ${opt.cls}`} />
                     </div>
