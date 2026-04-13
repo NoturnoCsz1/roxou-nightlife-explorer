@@ -232,6 +232,17 @@ const InstagramCovers = () => {
     };
   }
 
+  function captionDestaque(ev: ScoredEvent): { full: string; short: string } {
+    const d = new Date(ev.date_time);
+    const dayStr = format(d, "EEEE, d 'de' MMMM", { locale: ptBR });
+    const h = format(d, "HH'h'mm");
+    const venue = ev.venue_name ? `\n📍 ${ev.venue_name}` : "";
+    return {
+      full: `🔥 EVENTO EM DESTAQUE\n\n${ev.title}\n🕐 ${h} · ${dayStr}${venue}\n\n${ev.description ? ev.description.slice(0, 200) + "..." : ""}\n\n👉 Saiba mais em roxou.com.br\n\n#roxou #eventosprudente #roles`,
+      short: `🔥 ${ev.title}\n🕐 ${h}${venue}\n\n👉 roxou.com.br`,
+    };
+  }
+
   // ============ GENERATION ============
 
   async function generateCovers() {
