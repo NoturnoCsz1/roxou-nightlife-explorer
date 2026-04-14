@@ -408,8 +408,21 @@ const InstagramCovers = () => {
           const evts = job.coverType === "weekend" ? weekendEvents : events;
           const topEv = evts.find(e => e.image_url);
           if (topEv) {
+            const secondary = evts
+              .filter(e => e.id !== topEv.id && e.image_url)
+              .slice(0, 2)
+              .map(e => ({
+                title: e.title,
+                date_time: e.date_time,
+                venue_name: e.venue_name,
+                category: e.category,
+                image_url: e.image_url,
+                description: e.description,
+                sub_category: e.sub_category,
+                ticket_url: e.ticket_url,
+              }));
             const canvas = document.createElement("canvas");
-            const blob = await generateReel(canvas, topEv, updatedCovers[coverIdx].label, []);
+            const blob = await generateReel(canvas, topEv, updatedCovers[coverIdx].label, secondary);
             const url = URL.createObjectURL(blob);
             updatedCovers[coverIdx] = { ...updatedCovers[coverIdx], reelUrl: url };
             setCovers([...updatedCovers]);

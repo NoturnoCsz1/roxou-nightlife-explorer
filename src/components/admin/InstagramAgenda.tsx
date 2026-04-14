@@ -304,7 +304,19 @@ const InstagramAgenda = () => {
           setOutputs([...updatedOutputs]);
         } else {
           const canvas = document.createElement("canvas");
-          const blob = await generateReel(canvas, ev, badge, []);
+          // Pick up to 2 secondary events from same day, excluding the hero
+          const sameDay = events.filter(e => e.id !== ev.id && e.image_url);
+          const secondary = sameDay.slice(0, 2).map(e => ({
+            title: e.title,
+            date_time: e.date_time,
+            venue_name: e.venue_name,
+            category: e.category,
+            image_url: e.image_url,
+            description: e.description,
+            sub_category: e.sub_category,
+            ticket_url: e.ticket_url,
+          }));
+          const blob = await generateReel(canvas, ev, badge, secondary);
           const url = URL.createObjectURL(blob);
           updatedOutputs[job.outputIdx] = { ...updatedOutputs[job.outputIdx], generatedReelUrl: url };
           setOutputs([...updatedOutputs]);
@@ -859,6 +871,11 @@ const InstagramAgenda = () => {
                           <ReelGenerator
                             event={eventForImage}
                             badge={output.mode === "top" ? "TOP ROLÊS DE HOJE" : output.mode === "agenda" ? "AGENDA DE HOJE" : "HOJE NA ROXOU"}
+                            secondaryEvents={
+                              (output.events || events)
+                                .filter(e => e.id !== eventForImage.id && e.image_url)
+                                .slice(0, 2)
+                            }
                             onSendToDraft={() => toast.info("Vídeo pronto para publicação manual")}
                           />
                         ) : (
