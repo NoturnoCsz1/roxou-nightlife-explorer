@@ -30,13 +30,10 @@ const TOTAL_FRAMES = DURATION * FPS;
 
 const PAD = 72;
 const SAFE_TOP = 120;          // status-bar safe area
-const ZONE_TOP_END = 340;      // top zone: 120→340
 const ZONE_CENTER_START = 420;
 const ZONE_CENTER_END = 1260;
 const ZONE_LIST_START = 1300;
-const ZONE_LIST_END = 1560;
 const ZONE_CTA_START = 1620;
-const ZONE_CTA_END = 1840;
 
 const BG = "#1a1a2e";
 const ACCENT = "#e91e8c";
