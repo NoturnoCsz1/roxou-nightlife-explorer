@@ -260,7 +260,6 @@ function drawZoneCenter(ctx: CanvasRenderingContext2D, frame: number, event: Eve
 
   // === Inner content with strict Y tracking ===
   const innerPad = 48;
-  const innerX = cx + innerPad;
   const innerW = cardW - innerPad * 2;
   let curY = cardY + 48;
 
