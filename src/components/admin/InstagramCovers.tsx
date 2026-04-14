@@ -409,7 +409,7 @@ const InstagramCovers = () => {
           const topEv = evts.find(e => e.image_url);
           if (topEv) {
             const canvas = document.createElement("canvas");
-            const blob = await generateReel(canvas, topEv, updatedCovers[coverIdx].label);
+            const blob = await generateReel(canvas, topEv, updatedCovers[coverIdx].label, []);
             const url = URL.createObjectURL(blob);
             updatedCovers[coverIdx] = { ...updatedCovers[coverIdx], reelUrl: url };
             setCovers([...updatedCovers]);

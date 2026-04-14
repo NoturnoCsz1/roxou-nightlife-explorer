@@ -304,7 +304,7 @@ const InstagramAgenda = () => {
           setOutputs([...updatedOutputs]);
         } else {
           const canvas = document.createElement("canvas");
-          const blob = await generateReel(canvas, ev, badge);
+          const blob = await generateReel(canvas, ev, badge, []);
           const url = URL.createObjectURL(blob);
           updatedOutputs[job.outputIdx] = { ...updatedOutputs[job.outputIdx], generatedReelUrl: url };
           setOutputs([...updatedOutputs]);
