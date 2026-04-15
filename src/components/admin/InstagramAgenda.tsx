@@ -151,13 +151,22 @@ const InstagramAgenda = () => {
     let list = [...events];
     if (onlyFeatured) list = list.filter(e => e.featured);
     if (onlyVerified) list = list.filter(e => e.verifiedPartner);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.venue_name && e.venue_name.toLowerCase().includes(q)) ||
+        e.category.toLowerCase().includes(q) ||
+        format(new Date(e.date_time), "dd/MM").includes(q)
+      );
+    }
     list.sort((a, b) => {
       if (sortBy === "score") return b.score - a.score;
       if (sortBy === "views") return b.views - a.views;
       return new Date(a.date_time).getTime() - new Date(b.date_time).getTime();
     });
     return list;
-  }, [events, onlyFeatured, onlyVerified, sortBy]);
+  }, [events, onlyFeatured, onlyVerified, sortBy, searchQuery]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
