@@ -110,12 +110,11 @@ const InstagramCovers = () => {
   async function loadData() {
     setLoading(true);
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+    const { start, end } = getDateRange(dateFilter);
 
     // Weekend range (next fri-sun)
     const dayOfWeek = now.getDay();
-    const daysToFri = dayOfWeek <= 5 ? 5 - dayOfWeek : 6; // days until friday
+    const daysToFri = dayOfWeek <= 5 ? 5 - dayOfWeek : 6;
     const fri = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysToFri);
     const mon = new Date(fri.getFullYear(), fri.getMonth(), fri.getDate() + 3);
     const weekendStart = fri.toISOString();
@@ -123,13 +122,18 @@ const InstagramCovers = () => {
 
     const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
 
+    let todayQuery = supabase.from("events")
+      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
+      .eq("status", "published")
+      .gte("date_time", start.toISOString())
+      .order("date_time");
+
+    if (end) {
+      todayQuery = todayQuery.lt("date_time", end.toISOString());
+    }
+
     const [todayRes, weekendRes, partnersRes, viewsRes] = await Promise.all([
-      supabase.from("events")
-        .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
-        .eq("status", "published")
-        .gte("date_time", todayStart)
-        .lt("date_time", todayEnd)
-        .order("date_time"),
+      todayQuery,
       supabase.from("events")
         .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
         .eq("status", "published")
