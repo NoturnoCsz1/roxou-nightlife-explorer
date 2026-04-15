@@ -15,6 +15,8 @@ import { renderEventCard } from "./EventImageGenerator";
 import ReelGenerator from "./ReelGenerator";
 import { generateReel } from "./ReelGenerator";
 import { ptBR } from "date-fns/locale";
+import EventSearchFilter, { type DateFilter, getDateRange } from "./EventSearchFilter";
+import FormatToggle, { type OutputFormat } from "./FormatToggle";
 
 interface AgendaEvent {
   id: string;
