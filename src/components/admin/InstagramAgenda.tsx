@@ -81,26 +81,34 @@ const InstagramAgenda = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const batchAbortRef = useRef(false);
 
+  // Search & date filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>("feed");
+
   // Filters
   const [onlyFeatured, setOnlyFeatured] = useState(false);
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<"score" | "time" | "views">("score");
 
-  useEffect(() => { loadTodayEvents(); }, []);
+  useEffect(() => { loadEvents(); }, [dateFilter]);
 
-  async function loadTodayEvents() {
+  async function loadEvents() {
     setLoading(true);
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+    const { start, end } = getDateRange(dateFilter);
+
+    let query = supabase.from("events")
+      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
+      .eq("status", "published")
+      .gte("date_time", start.toISOString())
+      .order("date_time");
+
+    if (end) {
+      query = query.lt("date_time", end.toISOString());
+    }
 
     const [eventsRes, viewsRes, savesRes, partnersRes] = await Promise.all([
-      supabase.from("events")
-        .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
-        .eq("status", "published")
-        .gte("date_time", startOfDay)
-        .lt("date_time", endOfDay)
-        .order("date_time"),
+      query,
       supabase.from("page_views").select("event_id").not("event_id", "is", null),
       supabase.from("saved_events").select("event_id"),
       supabase.from("partners").select("id, verified_partner").eq("active", true),
