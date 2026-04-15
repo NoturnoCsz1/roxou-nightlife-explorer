@@ -93,6 +93,10 @@ const InstagramCovers = () => {
   const [covers, setCovers] = useState<GeneratedCover[]>([]);
   const [expandedCover, setExpandedCover] = useState<number | null>(null);
 
+  // Search & date filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
+
   // Batch
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
   const [batchRunning, setBatchRunning] = useState(false);
@@ -101,7 +105,7 @@ const InstagramCovers = () => {
 
   // ============ DATA LOADING ============
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [dateFilter]);
 
   async function loadData() {
     setLoading(true);
