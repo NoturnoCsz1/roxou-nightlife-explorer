@@ -592,15 +592,23 @@ const InstagramCovers = () => {
           Capas & Lotes
         </h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Gere capas, carrosséis e reels automaticamente · {events.length} eventos hoje · {weekendEvents.length} no fim de semana · {partners.length} parceiros
+          Gere capas, carrosséis e reels · {events.length} eventos · {weekendEvents.length} no fim de semana · {partners.length} parceiros
         </p>
       </div>
+
+      {/* Search + Date filter */}
+      <EventSearchFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border/30 bg-card/80 p-3 text-center">
           <p className="text-lg font-bold text-primary">{events.length}</p>
-          <p className="text-[9px] text-muted-foreground">Eventos hoje</p>
+          <p className="text-[9px] text-muted-foreground">Eventos</p>
         </div>
         <div className="rounded-xl border border-border/30 bg-card/80 p-3 text-center">
           <p className="text-lg font-bold text-purple-400">{weekendEvents.length}</p>
