@@ -537,8 +537,22 @@ const InstagramAgenda = () => {
           Instagram Agenda
         </h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Gere posts padronizados da agenda de hoje da Roxou · {todayStr}
+          Gere posts padronizados da agenda · {todayStr}
         </p>
+      </div>
+
+      {/* Search + Date filter */}
+      <EventSearchFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+      />
+
+      {/* Format toggle */}
+      <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Formato de saída</span>
+        <FormatToggle value={outputFormat} onChange={setOutputFormat} />
       </div>
 
       {/* Filters */}
@@ -582,7 +596,7 @@ const InstagramAgenda = () => {
       <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-            Eventos de hoje ({filteredEvents.length})
+            Eventos ({filteredEvents.length})
           </span>
           <button onClick={toggleAll} className="flex items-center gap-1 text-[10px] text-primary font-semibold">
             <CheckCheck className="h-3 w-3" />
@@ -591,7 +605,7 @@ const InstagramAgenda = () => {
         </div>
 
         {filteredEvents.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento publicado para hoje.</p>
+          <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>
         ) : (
           <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
             {filteredEvents.map((e) => {
