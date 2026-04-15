@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import EventSearchFilter, { type DateFilter, getDateRange } from "./EventSearchFilter";
 import { renderEventCard } from "./EventImageGenerator";
 import { generateReel } from "./ReelGenerator";
 import {
