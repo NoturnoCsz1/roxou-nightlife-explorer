@@ -24,15 +24,14 @@ interface Props {
   onSendToDraft?: (imageDataUrl: string) => void;
 }
 
-/** Render an individual event card (delegates to renderFlyer for flyer format,
- *  or renders the legacy card for feed/story) */
+/** Render an individual event card — uses renderFlyer which handles all formats */
 async function renderEventCard(
   canvas: HTMLCanvasElement,
   event: EventData,
   badge: string,
-  _fmt: ArtFormat = "feed"
+  fmt: ArtFormat = "feed"
 ): Promise<string> {
-  return renderFlyer(canvas, event, badge);
+  return renderFlyer(canvas, event, badge, fmt);
 }
 
 export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", initialImage, onImageGenerated, onSendToDraft }: Props) {
