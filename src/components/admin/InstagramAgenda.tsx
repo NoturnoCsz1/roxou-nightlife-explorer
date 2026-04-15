@@ -15,6 +15,8 @@ import { renderEventCard } from "./EventImageGenerator";
 import ReelGenerator from "./ReelGenerator";
 import { generateReel } from "./ReelGenerator";
 import { ptBR } from "date-fns/locale";
+import EventSearchFilter, { type DateFilter, getDateRange } from "./EventSearchFilter";
+import FormatToggle, { type OutputFormat } from "./FormatToggle";
 
 interface AgendaEvent {
   id: string;
@@ -79,26 +81,34 @@ const InstagramAgenda = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const batchAbortRef = useRef(false);
 
+  // Search & date filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
+  const [outputFormat, setOutputFormat] = useState<OutputFormat>("feed");
+
   // Filters
   const [onlyFeatured, setOnlyFeatured] = useState(false);
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<"score" | "time" | "views">("score");
 
-  useEffect(() => { loadTodayEvents(); }, []);
+  useEffect(() => { loadEvents(); }, [dateFilter]);
 
-  async function loadTodayEvents() {
+  async function loadEvents() {
     setLoading(true);
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+    const { start, end } = getDateRange(dateFilter);
+
+    let query = supabase.from("events")
+      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
+      .eq("status", "published")
+      .gte("date_time", start.toISOString())
+      .order("date_time");
+
+    if (end) {
+      query = query.lt("date_time", end.toISOString());
+    }
 
     const [eventsRes, viewsRes, savesRes, partnersRes] = await Promise.all([
-      supabase.from("events")
-        .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
-        .eq("status", "published")
-        .gte("date_time", startOfDay)
-        .lt("date_time", endOfDay)
-        .order("date_time"),
+      query,
       supabase.from("page_views").select("event_id").not("event_id", "is", null),
       supabase.from("saved_events").select("event_id"),
       supabase.from("partners").select("id, verified_partner").eq("active", true),
@@ -141,13 +151,22 @@ const InstagramAgenda = () => {
     let list = [...events];
     if (onlyFeatured) list = list.filter(e => e.featured);
     if (onlyVerified) list = list.filter(e => e.verifiedPartner);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.venue_name && e.venue_name.toLowerCase().includes(q)) ||
+        e.category.toLowerCase().includes(q) ||
+        format(new Date(e.date_time), "dd/MM").includes(q)
+      );
+    }
     list.sort((a, b) => {
       if (sortBy === "score") return b.score - a.score;
       if (sortBy === "views") return b.views - a.views;
       return new Date(a.date_time).getTime() - new Date(b.date_time).getTime();
     });
     return list;
-  }, [events, onlyFeatured, onlyVerified, sortBy]);
+  }, [events, onlyFeatured, onlyVerified, sortBy, searchQuery]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -518,8 +537,22 @@ const InstagramAgenda = () => {
           Instagram Agenda
         </h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Gere posts padronizados da agenda de hoje da Roxou · {todayStr}
+          Gere posts padronizados da agenda · {todayStr}
         </p>
+      </div>
+
+      {/* Search + Date filter */}
+      <EventSearchFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+      />
+
+      {/* Format toggle */}
+      <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Formato de saída</span>
+        <FormatToggle value={outputFormat} onChange={setOutputFormat} />
       </div>
 
       {/* Filters */}
@@ -563,7 +596,7 @@ const InstagramAgenda = () => {
       <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
-            Eventos de hoje ({filteredEvents.length})
+            Eventos ({filteredEvents.length})
           </span>
           <button onClick={toggleAll} className="flex items-center gap-1 text-[10px] text-primary font-semibold">
             <CheckCheck className="h-3 w-3" />
@@ -572,7 +605,7 @@ const InstagramAgenda = () => {
         </div>
 
         {filteredEvents.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento publicado para hoje.</p>
+          <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>
         ) : (
           <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
             {filteredEvents.map((e) => {

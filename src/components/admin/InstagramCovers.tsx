@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import EventSearchFilter, { type DateFilter, getDateRange } from "./EventSearchFilter";
 import { renderEventCard } from "./EventImageGenerator";
 import { generateReel } from "./ReelGenerator";
 import {
@@ -92,6 +93,10 @@ const InstagramCovers = () => {
   const [covers, setCovers] = useState<GeneratedCover[]>([]);
   const [expandedCover, setExpandedCover] = useState<number | null>(null);
 
+  // Search & date filter
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
+
   // Batch
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
   const [batchRunning, setBatchRunning] = useState(false);
@@ -100,17 +105,16 @@ const InstagramCovers = () => {
 
   // ============ DATA LOADING ============
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [dateFilter]);
 
   async function loadData() {
     setLoading(true);
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+    const { start, end } = getDateRange(dateFilter);
 
     // Weekend range (next fri-sun)
     const dayOfWeek = now.getDay();
-    const daysToFri = dayOfWeek <= 5 ? 5 - dayOfWeek : 6; // days until friday
+    const daysToFri = dayOfWeek <= 5 ? 5 - dayOfWeek : 6;
     const fri = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysToFri);
     const mon = new Date(fri.getFullYear(), fri.getMonth(), fri.getDate() + 3);
     const weekendStart = fri.toISOString();
@@ -118,13 +122,18 @@ const InstagramCovers = () => {
 
     const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
 
+    let todayQuery = supabase.from("events")
+      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
+      .eq("status", "published")
+      .gte("date_time", start.toISOString())
+      .order("date_time");
+
+    if (end) {
+      todayQuery = todayQuery.lt("date_time", end.toISOString());
+    }
+
     const [todayRes, weekendRes, partnersRes, viewsRes] = await Promise.all([
-      supabase.from("events")
-        .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
-        .eq("status", "published")
-        .gte("date_time", todayStart)
-        .lt("date_time", todayEnd)
-        .order("date_time"),
+      todayQuery,
       supabase.from("events")
         .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
         .eq("status", "published")
@@ -583,15 +592,23 @@ const InstagramCovers = () => {
           Capas & Lotes
         </h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Gere capas, carrosséis e reels automaticamente · {events.length} eventos hoje · {weekendEvents.length} no fim de semana · {partners.length} parceiros
+          Gere capas, carrosséis e reels · {events.length} eventos · {weekendEvents.length} no fim de semana · {partners.length} parceiros
         </p>
       </div>
+
+      {/* Search + Date filter */}
+      <EventSearchFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border/30 bg-card/80 p-3 text-center">
           <p className="text-lg font-bold text-primary">{events.length}</p>
-          <p className="text-[9px] text-muted-foreground">Eventos hoje</p>
+          <p className="text-[9px] text-muted-foreground">Eventos</p>
         </div>
         <div className="rounded-xl border border-border/30 bg-card/80 p-3 text-center">
           <p className="text-lg font-bold text-purple-400">{weekendEvents.length}</p>

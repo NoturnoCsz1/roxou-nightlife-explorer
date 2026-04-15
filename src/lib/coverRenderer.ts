@@ -668,8 +668,8 @@ export async function renderCoverPartners(canvas: HTMLCanvasElement, partners: C
 
 // ============ FLYER INDIVIDUAL ============
 
-export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, badge = "HOJE"): Promise<string> {
-  const W = 1080, H = 1350;
+export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, badge = "HOJE", fmt: ArtFormat = "feed"): Promise<string> {
+  const { w: W, h: H } = FORMAT_SIZES[fmt === "banner" ? "feed" : fmt];
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
   const PAD = 64;
