@@ -7,7 +7,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import JSZip from "jszip";
 import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
@@ -23,8 +22,8 @@ import EventImageGenerator from "./EventImageGenerator";
 import ReelGenerator from "./ReelGenerator";
 import { generateReel } from "./ReelGenerator";
 import {
-  renderCoverAgenda, renderCoverTopRoles, renderCoverWeekend,
-  renderCoverDestaque, renderFlyer, renderCTASlide,
+  renderCoverAgenda, renderCoverTopRoles,
+  renderCoverDestaque, renderFlyer,
   type CoverEvent,
 } from "@/lib/coverRenderer";
 import { generateStoryCopy, generateFeedCopy } from "@/lib/marketingCopy";
@@ -66,11 +65,7 @@ interface BatchJob {
   error?: string;
 }
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  bar: "🍺", balada: "🪩", festa: "🎉", evento: "📌",
-  restaurante: "🍽️", "casa de show": "🎤", futebol: "⚽",
-  show: "🎤", festival: "🏟️",
-};
+// Category emoji moved to marketingCopy.ts
 
 const MAX_CONCURRENCY = 2;
 
@@ -189,7 +184,7 @@ const InstagramStudio = () => {
   );
 
   const toggleSelect = (id: string) => {
-    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelected(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   };
   const toggleAll = () => {
     setSelected(selected.size === filteredEvents.length ? new Set() : new Set(filteredEvents.map(e => e.id)));
