@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, CalendarDays, Sparkles } from "lucide-react";
+import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
-import InstagramAgenda from "@/components/admin/InstagramAgenda";
-import InstagramCovers from "@/components/admin/InstagramCovers";
+import InstagramStudio from "@/components/admin/InstagramStudio";
 
 interface IgAccount {
   id: string;
@@ -34,14 +33,13 @@ const statusBadge: Record<string, { label: string; cls: string }> = {
   scheduled: { label: "Agendado", cls: "bg-primary/10 text-primary" },
 };
 
-type TabKey = "publicacao" | "contas" | "conteudo" | "agenda" | "capas";
+type TabKey = "publicacao" | "contas" | "estudio" | "conteudo";
 
 const TABS: { key: TabKey; label: string; icon: typeof Instagram }[] = [
   { key: "publicacao", label: "Publicação", icon: Send },
   { key: "contas", label: "Contas", icon: Link2 },
+  { key: "estudio", label: "Estúdio", icon: Sparkles },
   { key: "conteudo", label: "Conteúdo", icon: Sparkles },
-  { key: "agenda", label: "Agenda", icon: CalendarDays },
-  { key: "capas", label: "Capas & Lotes", icon: Sparkles },
 ];
 
 const InstagramAdmin = () => {
@@ -188,7 +186,7 @@ const InstagramAdmin = () => {
         })}
       </div>
 
-      {loading && activeTab !== "conteudo" && activeTab !== "agenda" ? (
+      {loading && activeTab !== "conteudo" && activeTab !== "estudio" ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
@@ -350,11 +348,8 @@ const InstagramAdmin = () => {
           {/* TAB: Conteúdo (existing generator) */}
           {activeTab === "conteudo" && <InstagramContentGenerator />}
 
-          {/* TAB: Agenda */}
-          {activeTab === "agenda" && <InstagramAgenda />}
-
-          {/* TAB: Capas & Lotes */}
-          {activeTab === "capas" && <InstagramCovers />}
+          {/* TAB: Estúdio (unified) */}
+          {activeTab === "estudio" && <InstagramStudio />}
         </>
       )}
     </div>
