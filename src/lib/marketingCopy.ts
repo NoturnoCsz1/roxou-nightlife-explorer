@@ -33,6 +33,15 @@ const HOOKS_STORY = [
   "🔥 QUEM VAI? 👀",
 ];
 
+const HOOKS_VIRAL = [
+  "🔥 HOJE TEM ISSO EM PRUDENTE",
+  "🔥 CORRE QUE VAI LOTAR",
+  "⚡ VOCÊ VAI PERDER ESSA?",
+  "🚨 ROLÊ ZERO ARREPENDIMENTO",
+  "🔥 QUEM TÁ DENTRO? 👀",
+  "⚡ ANTES QUE ENCHA — CORRE",
+];
+
 const CLOSERS_STORY = [
   "Confere tudo na ROXOU 👇",
   "Mais eventos em roxou.com.br 🔥",
@@ -42,11 +51,25 @@ const CLOSERS_STORY = [
   "Cola que hoje vai ser bom! 🎉",
 ];
 
+const CLOSERS_VIRAL = [
+  "SALVA AGORA 🔖",
+  "MANDA PRA GERAL 👥",
+  "CORRE ANTES QUE LOTE ⏳",
+  "MARCA QUEM VAI CONTIGO 🔥",
+  "NÃO PERDE — roxou.com.br 🚨",
+];
+
 function pickRandom<T>(arr: T[], seed = 0): T {
   return arr[(seed + Date.now()) % arr.length];
 }
 
-export function generateStoryCopy(events: CopyEvent[], mode: "agenda" | "top" | "individual" | "destaque" = "agenda"): { hook: string; body: string; cta: string; full: string } {
+export function generateStoryCopy(
+  events: CopyEvent[],
+  mode: "agenda" | "top" | "individual" | "destaque" = "agenda",
+  viral = false,
+): { hook: string; body: string; cta: string; full: string } {
+  const hooks = viral ? HOOKS_VIRAL : HOOKS_STORY;
+  const closers = viral ? CLOSERS_VIRAL : CLOSERS_STORY;
   const seed = new Date().getDate();
 
   if (mode === "individual" || mode === "destaque") {
@@ -54,21 +77,54 @@ export function generateStoryCopy(events: CopyEvent[], mode: "agenda" | "top" | 
     if (!ev) return { hook: "", body: "", cta: "", full: "" };
     const h = format(new Date(ev.date_time), "HH'h'mm");
     const emoji = CATEGORY_EMOJI[ev.category] || "🎉";
-    const hook = pickRandom(HOOKS_STORY, seed);
+    const hook = pickRandom(hooks, seed);
     const body = `${emoji} ${ev.title.toUpperCase()}\n⏰ ${h}${ev.venue_name ? `\n📍 ${ev.venue_name}` : ""}`;
-    const cta = pickRandom(CLOSERS_STORY, seed + 1);
+    const cta = pickRandom(closers, seed + 1);
     return { hook, body, cta, full: `${hook}\n\n${body}\n\n${cta}` };
   }
 
-  const hook = mode === "top" ? "🏆 OS MELHORES ROLÊS DE HOJE" : pickRandom(HOOKS_STORY, seed);
+  const hook = mode === "top" ? "🏆 OS MELHORES ROLÊS DE HOJE" : pickRandom(hooks, seed);
   const top = events.slice(0, 5);
   const body = top.map(ev => {
     const h = format(new Date(ev.date_time), "HH'h'");
     const emoji = CATEGORY_EMOJI[ev.category] || "📌";
     return `${emoji} ${ev.title} · ${h}`;
   }).join("\n");
-  const cta = pickRandom(CLOSERS_STORY, seed + 2);
+  const cta = pickRandom(closers, seed + 2);
   return { hook, body, cta, full: `${hook}\n\n${body}\n\n${cta}` };
+}
+
+// ====== STORY SEQUENCE (3 telas) ======
+
+export interface StorySequence {
+  hook: { title: string; subtitle: string };
+  list: { title: string; items: { time: string; name: string; venue: string | null }[] };
+  cta: { title: string; subtitle: string; url: string };
+}
+
+export function generateStorySequence(events: CopyEvent[], viral = false): StorySequence {
+  const hooks = viral ? HOOKS_VIRAL : HOOKS_STORY;
+  const seed = new Date().getDate();
+  const top = events.slice(0, 4);
+  return {
+    hook: {
+      title: pickRandom(hooks, seed),
+      subtitle: viral ? "VOCÊ NÃO PODE PERDER" : "veja a agenda de hoje",
+    },
+    list: {
+      title: viral ? "🔥 ROLÊS DE HOJE" : "📅 AGENDA DE HOJE",
+      items: top.map(e => ({
+        time: format(new Date(e.date_time), "HH'h'mm"),
+        name: e.title,
+        venue: e.venue_name,
+      })),
+    },
+    cta: {
+      title: viral ? "SALVA AGORA 🔖" : "Confere tudo na ROXOU",
+      subtitle: viral ? "MANDA PRA GERAL 👥" : "Salva e compartilha",
+      url: "roxou.com.br",
+    },
+  };
 }
 
 // ====== FEED COPY (informativo, completo) ======

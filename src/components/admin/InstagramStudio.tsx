@@ -95,10 +95,16 @@ const InstagramStudio = () => {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<"score" | "time" | "views">("score");
 
+  // Marketing modes
+  const [viralMode, setViralMode] = useState(false);
+  const [economyMode, setEconomyMode] = useState(false);
+
   // Generation
   const [generating, setGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState<string>("");
   const [outputs, setOutputs] = useState<GeneratedItem[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
+  const outputsRef = useRef<HTMLDivElement | null>(null);
 
   // Batch
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
@@ -194,12 +200,13 @@ const InstagramStudio = () => {
 
   function generateContent(type: ContentType): GeneratedItem[] {
     if (type === "individual") {
-      return selectedEvents.map(ev => ({
+      const list = economyMode ? selectedEvents.slice(0, 1) : selectedEvents;
+      return list.map(ev => ({
         contentType: "individual" as const,
         eventId: ev.id,
         title: ev.title,
         feedCopy: generateFeedCopy([ev], "individual"),
-        storyCopy: generateStoryCopy([ev], "individual"),
+        storyCopy: generateStoryCopy([ev], "individual", viralMode),
       }));
     }
     if (type === "destaque") {
@@ -210,7 +217,7 @@ const InstagramStudio = () => {
         eventId: hero.id,
         title: `🔥 ${hero.title}`,
         feedCopy: generateFeedCopy([hero], "individual"),
-        storyCopy: generateStoryCopy([hero], "destaque"),
+        storyCopy: generateStoryCopy([hero], "destaque", viralMode),
       }];
     }
     // agenda or top
@@ -218,7 +225,7 @@ const InstagramStudio = () => {
       contentType: type,
       title: type === "top" ? "🏆 Top Rolês" : "📅 Agenda do Dia",
       feedCopy: generateFeedCopy(selectedEvents, type),
-      storyCopy: generateStoryCopy(selectedEvents, type),
+      storyCopy: generateStoryCopy(selectedEvents, type, viralMode),
       events: selectedEvents.slice(0, 10),
     }];
   }
@@ -226,6 +233,7 @@ const InstagramStudio = () => {
   async function handleGenerate(type: ContentType | "all") {
     if (selectedEvents.length === 0) { toast.error("Selecione pelo menos um evento"); return; }
     setGenerating(true);
+    setGenStatus("Gerando conteúdo...");
     setOutputs([]);
     setBatchJobs([]);
 
@@ -239,6 +247,8 @@ const InstagramStudio = () => {
     } else {
       results = generateContent(type);
     }
+
+    setGenStatus("Otimizando copy...");
 
     // Save to history
     for (const r of results) {
@@ -254,7 +264,79 @@ const InstagramStudio = () => {
     setOutputs(results);
     setExpandedOutput(0);
     setGenerating(false);
+    setGenStatus("");
     toast.success(`${results.length} conteúdo(s) gerado(s)!`);
+    // Auto-scroll
+    setTimeout(() => outputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  }
+
+  // ============ IDEAL OF DAY ============
+  // Auto-pick top events, generate agenda + top + destaque in one click
+
+  async function handleIdealOfDay() {
+    if (filteredEvents.length === 0) { toast.error("Sem eventos para gerar ideal"); return; }
+    // Auto-select top 10 by score for the day
+    const ranked = [...filteredEvents].sort((a, b) => b.score - a.score);
+    setSelected(new Set(ranked.slice(0, 10).map(e => e.id)));
+    // Wait one tick for state to settle
+    await new Promise(r => setTimeout(r, 50));
+    setGenerating(true);
+    setGenStatus("Selecionando os melhores...");
+    setOutputs([]);
+    setBatchJobs([]);
+
+    const top10 = ranked.slice(0, 10);
+    const top3 = ranked.slice(0, 3);
+    const hero = ranked[0];
+
+    setGenStatus("Otimizando copy ideal...");
+
+    const results: GeneratedItem[] = [];
+    // Destaque (hero) — Reel + Story
+    if (hero) {
+      results.push({
+        contentType: "destaque",
+        eventId: hero.id,
+        title: `🔥 ${hero.title}`,
+        feedCopy: generateFeedCopy([hero], "individual"),
+        storyCopy: generateStoryCopy([hero], "destaque", viralMode),
+      });
+    }
+    // Top 3 → Story
+    if (top3.length > 0) {
+      results.push({
+        contentType: "top",
+        title: "🏆 Top Rolês",
+        feedCopy: generateFeedCopy(top3, "top"),
+        storyCopy: generateStoryCopy(top3, "top", viralMode),
+        events: top3,
+      });
+    }
+    // Agenda Top 10 → Feed
+    results.push({
+      contentType: "agenda",
+      title: "📅 Agenda do Dia",
+      feedCopy: generateFeedCopy(top10, "agenda"),
+      storyCopy: generateStoryCopy(top10, "agenda", viralMode),
+      events: top10,
+    });
+
+    for (const r of results) {
+      await supabase.from("content_generations" as any).insert({
+        type: "post",
+        source_type: `studio_ideal_${r.contentType}`,
+        source_id: r.eventId || null,
+        title: r.title,
+        generated_text: r.storyCopy.full,
+      } as any);
+    }
+
+    setOutputs(results);
+    setExpandedOutput(0);
+    setGenerating(false);
+    setGenStatus("");
+    toast.success(`✨ Ideal do dia: ${results.length} conteúdos prontos!`);
+    setTimeout(() => outputsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }
 
   // ============ BATCH GENERATION ============
@@ -530,6 +612,9 @@ const InstagramStudio = () => {
                       {e.featured && <span className="text-[9px] bg-yellow-400/15 text-yellow-500 px-1.5 py-0.5 rounded-full font-medium"><Star className="h-2.5 w-2.5 inline" /></span>}
                       {e.verifiedPartner && <span className="text-[9px] bg-green-400/15 text-green-500 px-1.5 py-0.5 rounded-full font-medium"><BadgeCheck className="h-2.5 w-2.5 inline" /></span>}
                       {e.views > 0 && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{e.views}v</span>}
+                      {e.score >= 6 && <span className="text-[9px] bg-pink-500/15 text-pink-400 px-1.5 py-0.5 rounded-full font-bold">🔥 Alto</span>}
+                      {e.score >= 4 && e.score < 6 && <span className="text-[9px] bg-orange-400/15 text-orange-400 px-1.5 py-0.5 rounded-full font-bold">⚡ Médio</span>}
+                      {e.score < 4 && <span className="text-[9px] bg-muted/30 text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">⚠️ Baixo</span>}
                     </div>
                   </div>
                   <div className="text-[10px] font-bold text-primary shrink-0">{e.score}pt</div>
@@ -538,6 +623,45 @@ const InstagramStudio = () => {
             })}
           </div>
         )}
+      </div>
+
+      {/* Marketing toggles + Ideal do Dia */}
+      <div className="rounded-xl border border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-purple-500/5 p-3 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 text-pink-400" /> Marketing IA
+          </span>
+          <div className="flex gap-1.5">
+            <button onClick={() => setViralMode(!viralMode)}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${viralMode ? "bg-pink-500/25 text-pink-400 ring-1 ring-pink-500/40" : "bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
+              ⚡ Viral
+            </button>
+            <button onClick={() => setEconomyMode(!economyMode)}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${economyMode ? "bg-green-500/25 text-green-400 ring-1 ring-green-500/40" : "bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
+              💰 Econômico
+            </button>
+          </div>
+        </div>
+        {filteredEvents.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 text-[9px]">
+            {(() => {
+              const ranked = [...filteredEvents].sort((a, b) => b.score - a.score);
+              const reelHero = ranked.find(e => e.image_url) || ranked[0];
+              const destaqueHero = ranked[0];
+              return (
+                <>
+                  {reelHero && <span className="bg-pink-500/10 text-pink-400 px-2 py-1 rounded-full">🎬 Reels: <b>{reelHero.title.slice(0, 22)}</b></span>}
+                  {destaqueHero && destaqueHero.id !== reelHero?.id && <span className="bg-yellow-400/10 text-yellow-400 px-2 py-1 rounded-full">🔥 Destaque: <b>{destaqueHero.title.slice(0, 22)}</b></span>}
+                </>
+              );
+            })()}
+          </div>
+        )}
+        <button onClick={handleIdealOfDay} disabled={generating || filteredEvents.length === 0}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition disabled:opacity-50 shadow-lg shadow-pink-500/20">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          ✨ GERAR IDEAL DO DIA
+        </button>
       </div>
 
       {/* Action Buttons */}
@@ -565,9 +689,16 @@ const InstagramStudio = () => {
         Gerar Tudo
       </button>
 
+      {/* Generation status */}
+      {generating && genStatus && (
+        <div className="flex items-center justify-center gap-2 text-[11px] text-primary font-medium animate-pulse">
+          <Loader2 className="h-3 w-3 animate-spin" /> {genStatus}
+        </div>
+      )}
+
       {/* Outputs */}
       {outputs.length > 0 && (
-        <div className="space-y-3">
+        <div ref={outputsRef} className="space-y-3">
           {/* Batch actions */}
           <div className="rounded-xl border border-border/30 bg-card p-3 space-y-3">
             <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
