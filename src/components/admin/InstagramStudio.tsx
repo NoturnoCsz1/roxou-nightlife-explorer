@@ -95,10 +95,16 @@ const InstagramStudio = () => {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [sortBy, setSortBy] = useState<"score" | "time" | "views">("score");
 
+  // Marketing modes
+  const [viralMode, setViralMode] = useState(false);
+  const [economyMode, setEconomyMode] = useState(false);
+
   // Generation
   const [generating, setGenerating] = useState(false);
+  const [genStatus, setGenStatus] = useState<string>("");
   const [outputs, setOutputs] = useState<GeneratedItem[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
+  const outputsRef = useRef<HTMLDivElement | null>(null);
 
   // Batch
   const [batchJobs, setBatchJobs] = useState<BatchJob[]>([]);
