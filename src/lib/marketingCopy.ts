@@ -33,6 +33,15 @@ const HOOKS_STORY = [
   "🔥 QUEM VAI? 👀",
 ];
 
+const HOOKS_VIRAL = [
+  "🔥 HOJE TEM ISSO EM PRUDENTE",
+  "🔥 CORRE QUE VAI LOTAR",
+  "⚡ VOCÊ VAI PERDER ESSA?",
+  "🚨 ROLÊ ZERO ARREPENDIMENTO",
+  "🔥 QUEM TÁ DENTRO? 👀",
+  "⚡ ANTES QUE ENCHA — CORRE",
+];
+
 const CLOSERS_STORY = [
   "Confere tudo na ROXOU 👇",
   "Mais eventos em roxou.com.br 🔥",
@@ -42,11 +51,25 @@ const CLOSERS_STORY = [
   "Cola que hoje vai ser bom! 🎉",
 ];
 
+const CLOSERS_VIRAL = [
+  "SALVA AGORA 🔖",
+  "MANDA PRA GERAL 👥",
+  "CORRE ANTES QUE LOTE ⏳",
+  "MARCA QUEM VAI CONTIGO 🔥",
+  "NÃO PERDE — roxou.com.br 🚨",
+];
+
 function pickRandom<T>(arr: T[], seed = 0): T {
   return arr[(seed + Date.now()) % arr.length];
 }
 
-export function generateStoryCopy(events: CopyEvent[], mode: "agenda" | "top" | "individual" | "destaque" = "agenda"): { hook: string; body: string; cta: string; full: string } {
+export function generateStoryCopy(
+  events: CopyEvent[],
+  mode: "agenda" | "top" | "individual" | "destaque" = "agenda",
+  viral = false,
+): { hook: string; body: string; cta: string; full: string } {
+  const hooks = viral ? HOOKS_VIRAL : HOOKS_STORY;
+  const closers = viral ? CLOSERS_VIRAL : CLOSERS_STORY;
   const seed = new Date().getDate();
 
   if (mode === "individual" || mode === "destaque") {
