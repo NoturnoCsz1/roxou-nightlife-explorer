@@ -612,6 +612,9 @@ const InstagramStudio = () => {
                       {e.featured && <span className="text-[9px] bg-yellow-400/15 text-yellow-500 px-1.5 py-0.5 rounded-full font-medium"><Star className="h-2.5 w-2.5 inline" /></span>}
                       {e.verifiedPartner && <span className="text-[9px] bg-green-400/15 text-green-500 px-1.5 py-0.5 rounded-full font-medium"><BadgeCheck className="h-2.5 w-2.5 inline" /></span>}
                       {e.views > 0 && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{e.views}v</span>}
+                      {e.score >= 6 && <span className="text-[9px] bg-pink-500/15 text-pink-400 px-1.5 py-0.5 rounded-full font-bold">🔥 Alto</span>}
+                      {e.score >= 4 && e.score < 6 && <span className="text-[9px] bg-orange-400/15 text-orange-400 px-1.5 py-0.5 rounded-full font-bold">⚡ Médio</span>}
+                      {e.score < 4 && <span className="text-[9px] bg-muted/30 text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">⚠️ Baixo</span>}
                     </div>
                   </div>
                   <div className="text-[10px] font-bold text-primary shrink-0">{e.score}pt</div>
