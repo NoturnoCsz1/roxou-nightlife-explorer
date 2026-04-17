@@ -625,6 +625,45 @@ const InstagramStudio = () => {
         )}
       </div>
 
+      {/* Marketing toggles + Ideal do Dia */}
+      <div className="rounded-xl border border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-purple-500/5 p-3 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 text-pink-400" /> Marketing IA
+          </span>
+          <div className="flex gap-1.5">
+            <button onClick={() => setViralMode(!viralMode)}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${viralMode ? "bg-pink-500/25 text-pink-400 ring-1 ring-pink-500/40" : "bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
+              ⚡ Viral
+            </button>
+            <button onClick={() => setEconomyMode(!economyMode)}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${economyMode ? "bg-green-500/25 text-green-400 ring-1 ring-green-500/40" : "bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
+              💰 Econômico
+            </button>
+          </div>
+        </div>
+        {filteredEvents.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 text-[9px]">
+            {(() => {
+              const ranked = [...filteredEvents].sort((a, b) => b.score - a.score);
+              const reelHero = ranked.find(e => e.image_url) || ranked[0];
+              const destaqueHero = ranked[0];
+              return (
+                <>
+                  {reelHero && <span className="bg-pink-500/10 text-pink-400 px-2 py-1 rounded-full">🎬 Reels: <b>{reelHero.title.slice(0, 22)}</b></span>}
+                  {destaqueHero && destaqueHero.id !== reelHero?.id && <span className="bg-yellow-400/10 text-yellow-400 px-2 py-1 rounded-full">🔥 Destaque: <b>{destaqueHero.title.slice(0, 22)}</b></span>}
+                </>
+              );
+            })()}
+          </div>
+        )}
+        <button onClick={handleIdealOfDay} disabled={generating || filteredEvents.length === 0}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition disabled:opacity-50 shadow-lg shadow-pink-500/20">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          ✨ GERAR IDEAL DO DIA
+        </button>
+      </div>
+
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-2">
         <button onClick={() => handleGenerate("agenda")} disabled={generating || selectedEvents.length === 0}
@@ -650,9 +689,16 @@ const InstagramStudio = () => {
         Gerar Tudo
       </button>
 
+      {/* Generation status */}
+      {generating && genStatus && (
+        <div className="flex items-center justify-center gap-2 text-[11px] text-primary font-medium animate-pulse">
+          <Loader2 className="h-3 w-3 animate-spin" /> {genStatus}
+        </div>
+      )}
+
       {/* Outputs */}
       {outputs.length > 0 && (
-        <div className="space-y-3">
+        <div ref={outputsRef} className="space-y-3">
           {/* Batch actions */}
           <div className="rounded-xl border border-border/30 bg-card p-3 space-y-3">
             <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
