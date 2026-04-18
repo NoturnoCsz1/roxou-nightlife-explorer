@@ -322,7 +322,7 @@ const EventoBulkForm = () => {
           <Upload className="h-5 w-5 text-primary" />
         </div>
         <p className="text-sm font-semibold text-foreground">
-          Arraste os flyers aqui ou clique para escolher
+          Suba seus Flyers aqui (Lote)
         </p>
         <p className="text-[11px] text-muted-foreground mt-0.5">
           A IA lê o flyer e preenche os campos automaticamente · múltiplos arquivos
@@ -441,7 +441,7 @@ const EventoBulkForm = () => {
             className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 flex-1"
           >
             <Send className="h-4 w-4" />
-            {saving ? "Publicando..." : `Confirmar e Criar Lote (${readyCount})`}
+            {saving ? "Publicando..." : `PUBLICAR AGORA (Lote) (${readyCount})`}
           </button>
         </div>
       )}
