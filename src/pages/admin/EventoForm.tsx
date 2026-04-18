@@ -59,9 +59,20 @@ const EventoForm = () => {
         body: info,
       });
       if (error) throw error;
-      if (data?.description) {
-        setForm((prev) => ({ ...prev, description: prev.description || data.description }));
-        toast.success("Descrição gerada automaticamente!");
+      const rich = data?.descricao_rica || data?.description;
+      const chamada = data?.chamada_site as string | undefined;
+      if (rich) {
+        setForm((prev) => ({
+          ...prev,
+          description: prev.description || rich,
+          // Sugere a chamada como título apenas se ainda estiver vazio
+          title: prev.title || chamada || prev.title,
+        }));
+        if (chamada) {
+          toast.success(`Copy gerada! Chamada sugerida: "${chamada}"`);
+        } else {
+          toast.success("Descrição gerada automaticamente!");
+        }
       }
     } catch (err: any) {
       console.error("Erro ao gerar descrição:", err);

@@ -216,9 +216,10 @@ const EventoBulkForm = () => {
         },
       });
       if (error) throw error;
-      if (data?.description) {
-        patchForm(localId, { description: it.form.description || data.description });
-        toast.success("Descrição gerada!");
+      const rich = data?.descricao_rica || data?.description;
+      if (rich) {
+        patchForm(localId, { description: it.form.description || rich });
+        toast.success(data?.chamada_site ? `Copy gerada: "${data.chamada_site}"` : "Descrição gerada!");
       }
     } catch {
       toast.error("Erro ao gerar descrição");
