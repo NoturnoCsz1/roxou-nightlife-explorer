@@ -220,7 +220,7 @@ const EventoBulkForm = () => {
         patchForm(localId, { description: it.form.description || data.description });
         toast.success("Descrição gerada!");
       }
-    } catch (err: any) {
+    } catch {
       toast.error("Erro ao gerar descrição");
     } finally {
       setGeneratingDescIdx(null);
@@ -364,12 +364,12 @@ const EventoBulkForm = () => {
                     </div>
                   )}
                   {it.status === "ready" && (
-                    <div className="flex items-center gap-1 text-[9px] text-green-300">
+                    <div className="flex items-center gap-1 text-[9px] text-emerald-300">
                       <CheckCircle2 className="h-2.5 w-2.5" /> pronto
                     </div>
                   )}
                   {it.status === "error" && (
-                    <div className="flex items-center gap-1 text-[9px] text-red-300">
+                    <div className="flex items-center gap-1 text-[9px] text-destructive">
                       <AlertCircle className="h-2.5 w-2.5" /> erro
                     </div>
                   )}
