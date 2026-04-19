@@ -240,6 +240,7 @@ const Dashboard = () => {
     const recentEvts = evts.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3).map(e => ({ type: "event" as const, title: e.title, date: e.created_at, id: e.id }));
     const recentParts = parts.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 2).map(p => ({ type: "partner" as const, title: p.name, date: p.created_at, id: p.id }));
     setRecentActivity([...recentEvts, ...recentParts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5));
+    setLoading(false);
   }, [cityFilter]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
@@ -256,16 +257,31 @@ const Dashboard = () => {
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo</h2>
         <div className="grid grid-cols-3 gap-3">
-          <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
-          <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
-          <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+          {loading ? (
+            <>
+              <Skeleton className={cn("h-[110px]", GLASS)} />
+              <Skeleton className={cn("h-[110px]", GLASS)} />
+              <Skeleton className={cn("h-[110px]", GLASS)} />
+            </>
+          ) : (
+            <>
+              <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
+              <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
+              <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+            </>
+          )}
         </div>
       </section>
 
-      {/* ── 2. Insights (max 2 cards) ── */}
-      {(trending || topEvent) && (
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Insights</h2>
+      {/* ── 2. Insights ── */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Insights</h2>
+        {loading ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className={cn("h-[88px]", GLASS)} />
+            <Skeleton className={cn("h-[88px]", GLASS)} />
+          </div>
+        ) : trending || topEvent ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {trending && (
               <InsightCard
@@ -286,13 +302,20 @@ const Dashboard = () => {
               />
             )}
           </div>
-        </section>
-      )}
+        ) : (
+          <EmptyState message="Tudo em ordem por aqui!" />
+        )}
+      </section>
 
       {/* ── 3. Ações Pendentes ── */}
-      {(pending.noCover > 0 || pending.noDescription > 0) && (
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações Pendentes</h2>
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações Pendentes</h2>
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className={cn("h-[68px]", GLASS)} />
+            <Skeleton className={cn("h-[68px]", GLASS)} />
+          </div>
+        ) : pending.noCover > 0 || pending.noDescription > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             <PendingChip
               to="/admin/eventos"
@@ -309,8 +332,10 @@ const Dashboard = () => {
               tone="rose"
             />
           </div>
-        </section>
-      )}
+        ) : (
+          <EmptyState message="Nenhuma ação pendente — tudo em ordem!" />
+        )}
+      </section>
 
       {/* ── 4. Ações rápidas ── */}
       <section>
