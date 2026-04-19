@@ -21,7 +21,8 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
   "instagram": string|null,   // @handle do organizador/local se aparecer.
   "category": string,         // Uma de: festa, funk, show, eletronica, sertanejo, balada, festival, bar
   "sub_category": string,     // Mesmo conjunto + rock, pop_rock, mpb. Ex: funk -> funk, samba -> festa.
-  "ticket_url": string|null,  // Site/loja de ingresso se aparecer (ex: sympla, ingresse).
+  "ticket_url": string|null,  // SOMENTE se houver uma URL EXPLÍCITA no flyer (ex: "sympla.com.br/...", "ingresse.com/...", "bit.ly/..."). Se só aparecer um @handle, telefone, ou nada, retorne null. NUNCA invente.
+  "venue_confidence": "high"|"medium"|"low",  // Confiança no nome do local. "high" só se o nome do local estiver claramente legível e destacado. "low" se for apenas suposição.
   "confidence": "high"|"medium"|"low"
 }
 
@@ -30,6 +31,8 @@ Regras:
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente (ou próximo se já passou).
 - Para "category"/"sub_category", use palavras-chave: "funk" -> funk; "samba","pagode" -> festa; "sertanejo" -> sertanejo; "rock" -> show + rock; "mpb" -> show + mpb; "eletro","techno","house" -> eletronica; "universitário","open bar" -> balada; "futebol" -> festival; "rodízio","cerveja","boteco" -> bar.
 - Se não souber, devolva category "festa" e sub_category "festa".
+- "ticket_url": NUNCA invente. Só retorne se aparecer uma URL real e completa (com domínio). Caso contrário, null.
+- "venue_name": só preencha se tiver razoável certeza do nome do local. Se for ambíguo ou incompleto, retorne null.
 - NUNCA invente endereço, parceiro ou link.
 - Resposta DEVE ser JSON puro.`;
 
@@ -111,15 +114,21 @@ serve(async (req) => {
     const cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
     const sub = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
 
+    // sanitize ticket_url: must be a real URL with domain
+    const rawTicket = typeof parsed.ticket_url === "string" ? parsed.ticket_url.trim() : "";
+    const isRealUrl = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+/i.test(rawTicket) && !rawTicket.startsWith("@");
+    const ticketUrl = isRealUrl ? rawTicket : null;
+
     return new Response(JSON.stringify({
       title: parsed.title || "",
       date_iso: parsed.date_iso || null,
       venue_name: parsed.venue_name || null,
+      venue_confidence: parsed.venue_confidence || "low",
       address: parsed.address || null,
       instagram: parsed.instagram || null,
       category: cat,
       sub_category: sub,
-      ticket_url: parsed.ticket_url || null,
+      ticket_url: ticketUrl,
       confidence: parsed.confidence || "medium",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
