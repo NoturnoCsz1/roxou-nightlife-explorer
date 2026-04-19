@@ -412,17 +412,28 @@ const EventoBulkForm = () => {
       {/* Review list */}
       {items.length > 0 && (
         <div className="mt-6 space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Revisão do lote
             </p>
-            <button
-              type="button"
-              onClick={addBlankItem}
-              className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80"
-            >
-              <Plus className="h-3 w-3" /> Adicionar manual
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleGenerateAllCaptions}
+                disabled={bulkGenerating}
+                className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-primary to-primary/80 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-90 transition disabled:opacity-50"
+              >
+                {bulkGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                {bulkGenerating ? "Gerando legendas..." : "✨ Gerar Legendas do Lote"}
+              </button>
+              <button
+                type="button"
+                onClick={addBlankItem}
+                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80"
+              >
+                <Plus className="h-3 w-3" /> Adicionar manual
+              </button>
+            </div>
           </div>
 
           {items.map((it, idx) => (
