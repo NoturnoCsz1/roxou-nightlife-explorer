@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /* Softer glass card base used across the dashboard */
@@ -88,16 +89,32 @@ const PendingChip = ({ to, icon: Icon, count, label, tone }: {
   );
 };
 
-/* ── quick action ── */
+/* ── quick action (purple glow on hover) ── */
 const QuickAction = ({ to, icon: Icon, label, color }: {
   to: string; icon: React.ElementType; label: string; color: string;
 }) => (
-  <Link to={to} className={cn("flex flex-col items-center gap-2 p-4 hover:border-border/50 hover:scale-[1.02] transition-all", GLASS)}>
+  <Link
+    to={to}
+    className={cn(
+      "flex flex-col items-center gap-2 p-4 transition-all duration-300",
+      "hover:border-primary/40 hover:scale-[1.03]",
+      "hover:shadow-[0_0_24px_-4px_hsl(var(--primary)/0.55),0_0_48px_-8px_hsl(var(--primary)/0.3)]",
+      GLASS
+    )}
+  >
     <div className={cn("flex items-center justify-center h-10 w-10 rounded-xl", color)}>
       <Icon className="h-5 w-5" />
     </div>
     <span className="text-[11px] font-semibold text-foreground">{label}</span>
   </Link>
+);
+
+/* ── friendly empty state ── */
+const EmptyState = ({ message = "Tudo em ordem por aqui!" }: { message?: string }) => (
+  <div className={cn("flex items-center justify-center gap-2 p-5", GLASS)}>
+    <span className="text-lg" aria-hidden>🎉</span>
+    <span className="text-xs font-medium text-muted-foreground">{message}</span>
+  </div>
 );
 
 /* ── performance metric (inside collapsible) ── */
