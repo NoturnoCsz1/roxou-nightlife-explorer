@@ -77,7 +77,8 @@ const EventoBulkForm = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [items, setItems] = useState<BulkItem[]>([]);
   const [saving, setSaving] = useState(false);
-  const [generatingDescIdx, setGeneratingDescIdx] = useState<string | null>(null);
+  const [generatingDescIds, setGeneratingDescIds] = useState<Set<string>>(new Set());
+  const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -129,19 +130,20 @@ const EventoBulkForm = () => {
       setItems((prev) =>
         prev.map((it) => {
           if (it.localId !== localId) return it;
+          const upperTitle = (data.title || it.form.title || "").toUpperCase();
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
-            title: data.title || it.form.title,
-            slug: data.title ? slugify(data.title) : it.form.slug,
+            title: upperTitle,
+            slug: upperTitle ? slugify(upperTitle) : it.form.slug,
             date_time: dateInput || it.form.date_time,
             category: data.category || it.form.category,
             venue_name: matched ? matched.name : (data.venue_name || ""),
             address: matched ? (matched.address || "") : (data.address || ""),
             instagram: matched ? (matched.instagram || "") : (data.instagram || ""),
             partner_id: matched ? matched.id : "",
-            ticket_url: data.ticket_url || it.form.ticket_url,
-            verification_source: "Flyer (IA)",
+            ticket_url: "",
+            verification_source: "instagram",
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
           };
           return { ...it, form: next, status: "ready" };
@@ -204,7 +206,7 @@ const EventoBulkForm = () => {
   async function handleGenerateDescription(localId: string) {
     const it = items.find((x) => x.localId === localId);
     if (!it || !it.form.title) return;
-    setGeneratingDescIdx(localId);
+    setGeneratingDescIds((s) => new Set(s).add(localId));
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
         body: {
@@ -218,14 +220,33 @@ const EventoBulkForm = () => {
       if (error) throw error;
       const rich = data?.descricao_rica || data?.description;
       if (rich) {
-        patchForm(localId, { description: it.form.description || rich });
-        toast.success(data?.chamada_site ? `Copy gerada: "${data.chamada_site}"` : "Descrição gerada!");
+        patchForm(localId, { description: rich });
+        if (data?.chamada_site) toast.success(`Copy: "${data.chamada_site}"`);
       }
     } catch {
       toast.error("Erro ao gerar descrição");
     } finally {
-      setGeneratingDescIdx(null);
+      setGeneratingDescIds((s) => {
+        const n = new Set(s);
+        n.delete(localId);
+        return n;
+      });
     }
+  }
+
+  async function handleGenerateAllCaptions() {
+    const targets = items.filter((it) => it.status === "ready" && it.form.title && !it.form.description);
+    if (!targets.length) {
+      toast.info("Todas as legendas já foram geradas");
+      return;
+    }
+    setBulkGenerating(true);
+    toast.info(`Gerando ${targets.length} legenda(s)...`);
+    for (const it of targets) {
+      await handleGenerateDescription(it.localId);
+    }
+    setBulkGenerating(false);
+    toast.success("Legendas do lote geradas!");
   }
 
   function handlePartnerSelect(localId: string, partnerId: string) {
@@ -391,17 +412,28 @@ const EventoBulkForm = () => {
       {/* Review list */}
       {items.length > 0 && (
         <div className="mt-6 space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Revisão do lote
             </p>
-            <button
-              type="button"
-              onClick={addBlankItem}
-              className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80"
-            >
-              <Plus className="h-3 w-3" /> Adicionar manual
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleGenerateAllCaptions}
+                disabled={bulkGenerating}
+                className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-primary to-primary/80 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-90 transition disabled:opacity-50"
+              >
+                {bulkGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                {bulkGenerating ? "Gerando legendas..." : "✨ Gerar Legendas do Lote"}
+              </button>
+              <button
+                type="button"
+                onClick={addBlankItem}
+                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80"
+              >
+                <Plus className="h-3 w-3" /> Adicionar manual
+              </button>
+            </div>
           </div>
 
           {items.map((it, idx) => (
@@ -415,7 +447,7 @@ const EventoBulkForm = () => {
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
               onRemove={() => removeItem(it.localId)}
               onGenerateDesc={() => handleGenerateDescription(it.localId)}
-              generatingDesc={generatingDescIdx === it.localId}
+              generatingDesc={generatingDescIds.has(it.localId)}
               onChangeFormFull={(form) => patchForm(it.localId, form)}
             />
           ))}
