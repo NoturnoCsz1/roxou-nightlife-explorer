@@ -14,7 +14,7 @@ const systemPrompt = `Você é um extrator de metadados de flyers/banners de eve
 Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown, sem comentários) com os seguintes campos:
 
 {
-  "title": string,            // Título CHAMATIVO em CAIXA ALTA (ex: "LUAN SANTANA AO VIVO NO RODEIO"). NÃO use só o nome do artista; transforme em um título de evento atrativo. Máx 60 caracteres.
+  "title": string,            // Título de evento CURTO E IMPACTANTE em CAIXA ALTA (máx 50 caracteres). NÃO copie literalmente o texto do flyer; CRIE um título chamativo combinando atração + tipo de evento (ex: "LUAN SANTANA AO VIVO", "BAILE DO MC IG", "NOITE ELETRÔNICA COM ALOK"). Evite só o nome do artista solto.
   "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. null se não houver.
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
