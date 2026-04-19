@@ -447,7 +447,7 @@ const EventoBulkForm = () => {
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
               onRemove={() => removeItem(it.localId)}
               onGenerateDesc={() => handleGenerateDescription(it.localId)}
-              generatingDesc={generatingDescIdx === it.localId}
+              generatingDesc={generatingDescIds.has(it.localId)}
               onChangeFormFull={(form) => patchForm(it.localId, form)}
             />
           ))}
