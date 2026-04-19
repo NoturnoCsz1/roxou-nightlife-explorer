@@ -14,7 +14,7 @@ const systemPrompt = `Você é um extrator de metadados de flyers/banners de eve
 Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown, sem comentários) com os seguintes campos:
 
 {
-  "title": string,            // Título CHAMATIVO em CAIXA ALTA (ex: "LUAN SANTANA AO VIVO NO RODEIO"). NÃO use só o nome do artista; transforme em um título de evento atrativo. Máx 60 caracteres.
+  "title": string,            // Título de evento CURTO E IMPACTANTE em CAIXA ALTA (máx 50 caracteres). NÃO copie literalmente o texto do flyer; CRIE um título chamativo combinando atração + tipo de evento (ex: "LUAN SANTANA AO VIVO", "BAILE DO MC IG", "NOITE ELETRÔNICA COM ALOK"). Evite só o nome do artista solto.
   "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. null se não houver.
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
@@ -26,7 +26,7 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
 }
 
 Regras:
-- "title" deve ter no máximo 60 caracteres, em CAIXA ALTA, sem aspas decorativas. Crie um título chamativo: combine artista + tipo de evento + local/contexto se possível (ex: "LUAN SANTANA AO VIVO NO RODEIO", "BAILE DO MC IG NO ARAPUCA", "NOITE ELETRÔNICA COM ALOK").
+- "title" deve ter no máximo 50 caracteres, SEMPRE em CAIXA ALTA, sem aspas decorativas. NÃO transcreva o flyer ao pé da letra: SUGIRA um título curto e impactante. Combine atração principal + tipo de evento ou contexto (ex: "LUAN SANTANA AO VIVO", "BAILE DO MC IG", "OPEN BAR DE PAGODE"). Evite títulos genéricos como só o nome do artista.
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente (ou próximo se já passou).
 - Para "category"/"sub_category", use palavras-chave: "funk" -> funk; "samba","pagode" -> festa; "sertanejo" -> sertanejo; "rock" -> show + rock; "mpb" -> show + mpb; "eletro","techno","house" -> eletronica; "universitário","open bar" -> balada; "futebol" -> festival; "rodízio","cerveja","boteco" -> bar.
 - Se não souber, devolva category "festa" e sub_category "festa".
