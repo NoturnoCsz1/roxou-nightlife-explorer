@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 /* Softer glass card base used across the dashboard */
@@ -88,16 +89,32 @@ const PendingChip = ({ to, icon: Icon, count, label, tone }: {
   );
 };
 
-/* ── quick action ── */
+/* ── quick action (purple glow on hover) ── */
 const QuickAction = ({ to, icon: Icon, label, color }: {
   to: string; icon: React.ElementType; label: string; color: string;
 }) => (
-  <Link to={to} className={cn("flex flex-col items-center gap-2 p-4 hover:border-border/50 hover:scale-[1.02] transition-all", GLASS)}>
+  <Link
+    to={to}
+    className={cn(
+      "flex flex-col items-center gap-2 p-4 transition-all duration-300",
+      "hover:border-primary/40 hover:scale-[1.03]",
+      "hover:shadow-[0_0_24px_-4px_hsl(var(--primary)/0.55),0_0_48px_-8px_hsl(var(--primary)/0.3)]",
+      GLASS
+    )}
+  >
     <div className={cn("flex items-center justify-center h-10 w-10 rounded-xl", color)}>
       <Icon className="h-5 w-5" />
     </div>
     <span className="text-[11px] font-semibold text-foreground">{label}</span>
   </Link>
+);
+
+/* ── friendly empty state ── */
+const EmptyState = ({ message = "Tudo em ordem por aqui!" }: { message?: string }) => (
+  <div className={cn("flex items-center justify-center gap-2 p-5", GLASS)}>
+    <span className="text-lg" aria-hidden>🎉</span>
+    <span className="text-xs font-medium text-muted-foreground">{message}</span>
+  </div>
 );
 
 /* ── performance metric (inside collapsible) ── */
@@ -127,8 +144,10 @@ const Dashboard = () => {
   const [opportunities, setOpportunities] = useState<string[]>([]);
   const [recentActivity, setRecentActivity] = useState<{ type: "event" | "partner"; title: string; date: string; id: string }[]>([]);
   const [pending, setPending] = useState({ noCover: 0, noDescription: 0 });
+  const [loading, setLoading] = useState(true);
 
   const loadDashboard = useCallback(async () => {
+    setLoading(true);
     const now = new Date();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
@@ -221,6 +240,7 @@ const Dashboard = () => {
     const recentEvts = evts.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3).map(e => ({ type: "event" as const, title: e.title, date: e.created_at, id: e.id }));
     const recentParts = parts.sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 2).map(p => ({ type: "partner" as const, title: p.name, date: p.created_at, id: p.id }));
     setRecentActivity([...recentEvts, ...recentParts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5));
+    setLoading(false);
   }, [cityFilter]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
@@ -237,16 +257,31 @@ const Dashboard = () => {
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo</h2>
         <div className="grid grid-cols-3 gap-3">
-          <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
-          <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
-          <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+          {loading ? (
+            <>
+              <Skeleton className={cn("h-[110px]", GLASS)} />
+              <Skeleton className={cn("h-[110px]", GLASS)} />
+              <Skeleton className={cn("h-[110px]", GLASS)} />
+            </>
+          ) : (
+            <>
+              <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
+              <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
+              <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+            </>
+          )}
         </div>
       </section>
 
-      {/* ── 2. Insights (max 2 cards) ── */}
-      {(trending || topEvent) && (
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Insights</h2>
+      {/* ── 2. Insights ── */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Insights</h2>
+        {loading ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Skeleton className={cn("h-[88px]", GLASS)} />
+            <Skeleton className={cn("h-[88px]", GLASS)} />
+          </div>
+        ) : trending || topEvent ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {trending && (
               <InsightCard
@@ -267,13 +302,20 @@ const Dashboard = () => {
               />
             )}
           </div>
-        </section>
-      )}
+        ) : (
+          <EmptyState message="Tudo em ordem por aqui!" />
+        )}
+      </section>
 
       {/* ── 3. Ações Pendentes ── */}
-      {(pending.noCover > 0 || pending.noDescription > 0) && (
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações Pendentes</h2>
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações Pendentes</h2>
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3">
+            <Skeleton className={cn("h-[68px]", GLASS)} />
+            <Skeleton className={cn("h-[68px]", GLASS)} />
+          </div>
+        ) : pending.noCover > 0 || pending.noDescription > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             <PendingChip
               to="/admin/eventos"
@@ -290,8 +332,10 @@ const Dashboard = () => {
               tone="rose"
             />
           </div>
-        </section>
-      )}
+        ) : (
+          <EmptyState message="Nenhuma ação pendente — tudo em ordem!" />
+        )}
+      </section>
 
       {/* ── 4. Ações rápidas ── */}
       <section>
