@@ -206,7 +206,7 @@ const EventoBulkForm = () => {
   async function handleGenerateDescription(localId: string) {
     const it = items.find((x) => x.localId === localId);
     if (!it || !it.form.title) return;
-    setGeneratingDescIdx(localId);
+    setGeneratingDescIds((s) => new Set(s).add(localId));
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
         body: {
@@ -220,14 +220,33 @@ const EventoBulkForm = () => {
       if (error) throw error;
       const rich = data?.descricao_rica || data?.description;
       if (rich) {
-        patchForm(localId, { description: it.form.description || rich });
-        toast.success(data?.chamada_site ? `Copy gerada: "${data.chamada_site}"` : "Descrição gerada!");
+        patchForm(localId, { description: rich });
+        if (data?.chamada_site) toast.success(`Copy: "${data.chamada_site}"`);
       }
     } catch {
       toast.error("Erro ao gerar descrição");
     } finally {
-      setGeneratingDescIdx(null);
+      setGeneratingDescIds((s) => {
+        const n = new Set(s);
+        n.delete(localId);
+        return n;
+      });
     }
+  }
+
+  async function handleGenerateAllCaptions() {
+    const targets = items.filter((it) => it.status === "ready" && it.form.title && !it.form.description);
+    if (!targets.length) {
+      toast.info("Todas as legendas já foram geradas");
+      return;
+    }
+    setBulkGenerating(true);
+    toast.info(`Gerando ${targets.length} legenda(s)...`);
+    for (const it of targets) {
+      await handleGenerateDescription(it.localId);
+    }
+    setBulkGenerating(false);
+    toast.success("Legendas do lote geradas!");
   }
 
   function handlePartnerSelect(localId: string, partnerId: string) {
