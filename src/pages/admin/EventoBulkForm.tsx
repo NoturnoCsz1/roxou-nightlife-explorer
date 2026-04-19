@@ -28,23 +28,28 @@ function normalize(s: string) {
   return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-function matchPartner(name: string | null, partners: Partner[]): Partner | null {
+function matchPartner(name: string | null, partners: Partner[], confidence?: string): Partner | null {
   if (!name) return null;
+  // Only auto-match when AI is highly confident on venue name
+  if (confidence && confidence !== "high") return null;
   const n = normalize(name);
-  if (!n) return null;
+  if (!n || n.length < 3) return null;
   let best: Partner | null = null;
-  let bestLen = 0;
+  let bestScore = 0;
   for (const p of partners) {
     const pn = normalize(p.name);
-    if (!pn) continue;
-    if (pn === n || n.includes(pn) || pn.includes(n)) {
-      if (pn.length > bestLen) {
-        best = p;
-        bestLen = pn.length;
-      }
+    if (!pn || pn.length < 3) continue;
+    let score = 0;
+    if (pn === n) score = 100;
+    else if (n.includes(pn) && pn.length >= 4) score = pn.length;
+    else if (pn.includes(n) && n.length >= 4) score = n.length;
+    if (score > bestScore) {
+      best = p;
+      bestScore = score;
     }
   }
-  return best;
+  // Require strong match (exact or substring of meaningful length)
+  return bestScore >= 4 ? best : null;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -124,7 +129,7 @@ const EventoBulkForm = () => {
         return;
       }
 
-      const matched = matchPartner(data.venue_name, partners);
+      const matched = matchPartner(data.venue_name, partners, data.venue_confidence);
       const dateInput = formatDateForInput(data.date_iso);
 
       setItems((prev) =>
