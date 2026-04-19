@@ -1,16 +1,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CalendarCheck, Clock, Eye, Monitor, MousePointerClick, Globe, Instagram, Users, ChevronDown, Flame, Star, AlertTriangle } from "lucide-react";
+import { CalendarDays, CalendarCheck, Clock, Eye, Monitor, MousePointerClick, Globe, Instagram, Users, ChevronDown, Flame, Star, AlertTriangle, ArrowUpRight, ImageOff, FileText, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-/* ── tiny KPI card ── */
-const KpiCard = ({ label, value, icon: Icon, accent = "primary" }: {
+/* Softer glass card base used across the dashboard */
+const GLASS = "rounded-2xl border border-border/20 bg-card/40 backdrop-blur-xl shadow-[0_4px_24px_-12px_hsl(var(--primary)/0.15)]";
+
+/* ── KPI card with growth subtext ── */
+const KpiCard = ({ label, value, icon: Icon, accent = "primary", subtext }: {
   label: string; value: number; icon: React.ElementType;
   accent?: "primary" | "accent" | "green";
+  subtext?: { text: string; positive?: boolean } | null;
 }) => {
   const colors = {
     primary: "text-primary bg-primary/10",
@@ -18,36 +22,77 @@ const KpiCard = ({ label, value, icon: Icon, accent = "primary" }: {
     green: "text-green-400 bg-green-500/10",
   };
   return (
-    <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-4">
-      <div className={cn("flex items-center justify-center h-10 w-10 rounded-xl", colors[accent])}>
-        <Icon className="h-5 w-5" />
+    <div className={cn("flex flex-col items-center gap-1 p-3.5", GLASS)}>
+      <div className={cn("flex items-center justify-center h-9 w-9 rounded-xl", colors[accent])}>
+        <Icon className="h-4.5 w-4.5" />
       </div>
-      <span className="text-2xl font-bold text-foreground tabular-nums">{value}</span>
+      <span className="text-2xl font-bold text-foreground tabular-nums leading-tight">{value}</span>
       <span className="text-[11px] text-muted-foreground font-medium">{label}</span>
+      {subtext && (
+        <span className={cn(
+          "text-[10px] font-semibold tabular-nums leading-none mt-0.5",
+          subtext.positive ? "text-green-400" : "text-muted-foreground"
+        )}>
+          {subtext.text}
+        </span>
+      )}
     </div>
   );
 };
 
-/* ── insight card ── */
-const InsightCard = ({ icon: Icon, title, description, color }: {
-  icon: React.ElementType; title: string; description: string; color: string;
+/* ── insight card with link arrow ── */
+const InsightCard = ({ icon: Icon, title, description, color, href }: {
+  icon: React.ElementType; title: string; description: string; color: string; href?: string;
 }) => (
-  <div className="flex items-start gap-3 rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-4">
+  <div className={cn("relative flex items-start gap-3 p-4 group transition", GLASS, href && "hover:border-border/50")}>
     <div className={cn("flex items-center justify-center h-9 w-9 rounded-xl shrink-0", color)}>
       <Icon className="h-4 w-4" />
     </div>
-    <div className="min-w-0">
+    <div className="min-w-0 flex-1 pr-6">
       <p className="text-xs font-bold text-foreground">{title}</p>
       <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{description}</p>
     </div>
+    {href && (
+      <Link
+        to={href}
+        aria-label={`Abrir ${title}`}
+        className="absolute top-3 right-3 flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10 text-primary opacity-70 group-hover:opacity-100 hover:bg-primary/20 transition"
+      >
+        <ArrowUpRight className="h-3.5 w-3.5" />
+      </Link>
+    )}
   </div>
 );
+
+/* ── pending action chip ── */
+const PendingChip = ({ to, icon: Icon, count, label, tone }: {
+  to: string; icon: React.ElementType; count: number; label: string; tone: "amber" | "rose";
+}) => {
+  const tones = {
+    amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    rose: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+  };
+  return (
+    <Link
+      to={to}
+      className={cn("flex items-center gap-2.5 p-3 transition hover:scale-[1.02]", GLASS)}
+    >
+      <div className={cn("flex items-center justify-center h-9 w-9 rounded-xl border", tones[tone])}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-lg font-bold text-foreground tabular-nums leading-none">{count}</p>
+        <p className="text-[10px] text-muted-foreground font-medium mt-1 leading-none">{label}</p>
+      </div>
+    </Link>
+  );
+};
 
 /* ── quick action ── */
 const QuickAction = ({ to, icon: Icon, label, color }: {
   to: string; icon: React.ElementType; label: string; color: string;
 }) => (
-  <Link to={to} className="flex flex-col items-center gap-2 rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-4 hover:border-border/60 hover:scale-[1.02] transition-all">
+  <Link to={to} className={cn("flex flex-col items-center gap-2 p-4 hover:border-border/50 hover:scale-[1.02] transition-all", GLASS)}>
     <div className={cn("flex items-center justify-center h-10 w-10 rounded-xl", color)}>
       <Icon className="h-5 w-5" />
     </div>
@@ -59,7 +104,7 @@ const QuickAction = ({ to, icon: Icon, label, color }: {
 const PerfMetric = ({ label, value, icon: Icon }: {
   label: string; value: number; icon: React.ElementType;
 }) => (
-  <div className="flex items-center gap-3 rounded-xl border border-border/20 bg-card/60 p-3">
+  <div className="flex items-center gap-3 rounded-xl border border-border/15 bg-card/30 backdrop-blur-md p-3">
     <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 shrink-0">
       <Icon className="h-4 w-4 text-primary" />
     </div>
@@ -75,21 +120,26 @@ const Dashboard = () => {
   const [perfOpen, setPerfOpen] = useState(false);
 
   const [kpis, setKpis] = useState({ today: 0, week: 0, total: 0 });
+  const [kpiGrowth, setKpiGrowth] = useState<{ today: number; week: number }>({ today: 0, week: 0 });
   const [perf, setPerf] = useState({ views: 0, visitors: 0, clicks: 0 });
-  const [trending, setTrending] = useState<{ title: string; views: number; growth: number } | null>(null);
-  const [topEvent, setTopEvent] = useState<{ title: string; views: number } | null>(null);
+  const [trending, setTrending] = useState<{ title: string; views: number; growth: number; slug: string } | null>(null);
+  const [topEvent, setTopEvent] = useState<{ title: string; views: number; slug: string } | null>(null);
   const [opportunities, setOpportunities] = useState<string[]>([]);
   const [recentActivity, setRecentActivity] = useState<{ type: "event" | "partner"; title: string; date: string; id: string }[]>([]);
+  const [pending, setPending] = useState({ noCover: 0, noDescription: 0 });
 
   const loadDashboard = useCallback(async () => {
     const now = new Date();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+    const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
     const weekAhead = new Date(); weekAhead.setDate(weekAhead.getDate() + 7);
+    const lastWeekRefDate = new Date(); lastWeekRefDate.setDate(lastWeekRefDate.getDate() - 1);
+    const lastWeekRefAhead = new Date(lastWeekRefDate); lastWeekRefAhead.setDate(lastWeekRefAhead.getDate() + 7);
     const since7d = new Date(); since7d.setDate(since7d.getDate() - 7);
     const since7dISO = since7d.toISOString();
 
-    let eventsQ = supabase.from("events").select("id, title, slug, status, date_time, created_at");
+    let eventsQ = supabase.from("events").select("id, title, slug, status, date_time, created_at, image_url, description");
     let partnersQ = supabase.from("partners").select("id, name, created_at");
     if (cityFilter) {
       eventsQ = eventsQ.eq("city", cityFilter);
@@ -110,8 +160,21 @@ const Dashboard = () => {
     const todayEvts = published.filter(e => e.date_time >= todayStart.toISOString() && e.date_time <= todayEnd.toISOString());
     const weekEvts = published.filter(e => e.date_time >= now.toISOString() && e.date_time <= weekAhead.toISOString());
 
+    // Growth comparison: yesterday's "today" snapshot & last-week-equivalent 7-day window
+    const yesterdayEvts = published.filter(e => e.date_time >= yesterdayStart.toISOString() && e.date_time < todayStart.toISOString());
+    const lastWeekEvts = published.filter(e => e.date_time >= lastWeekRefDate.toISOString() && e.date_time <= lastWeekRefAhead.toISOString());
+
     setKpis({ today: todayEvts.length, week: weekEvts.length, total: evts.length });
+    setKpiGrowth({
+      today: todayEvts.length - yesterdayEvts.length,
+      week: weekEvts.length - lastWeekEvts.length,
+    });
     setPerf({ views: viewsCountRes.count ?? 0, visitors: sessionsRes.count ?? 0, clicks: clicksCountRes.count ?? 0 });
+
+    // Pending actions: published events missing image or description
+    const noCover = published.filter(e => !e.image_url || e.image_url.trim() === "").length;
+    const noDescription = published.filter(e => !e.description || e.description.trim().length < 20).length;
+    setPending({ noCover, noDescription });
 
     // Insights: trending + most viewed
     const views7d = await fetchAllRows<{ page_path: string; created_at: string }>(
@@ -127,7 +190,7 @@ const Dashboard = () => {
 
     // Top event
     const topEntry = Object.entries(eventViewMap).sort((a, b) => b[1] - a[1])[0];
-    if (topEntry) setTopEvent({ title: slugTitle.get(topEntry[0]) || topEntry[0], views: topEntry[1] });
+    if (topEntry) setTopEvent({ title: slugTitle.get(topEntry[0]) || topEntry[0], views: topEntry[1], slug: topEntry[0] });
 
     // Trending (24h vs prev 24h)
     const since24h = new Date(); since24h.setHours(since24h.getHours() - 24);
@@ -147,7 +210,7 @@ const Dashboard = () => {
       const growth = prev >= 1 ? ((curr - prev) / prev) * 100 : curr >= 5 ? curr * 100 : 0;
       if (curr >= 3 && growth > bestGrowth) { bestGrowth = growth; bestSlug = slug; bestViews = curr; }
     });
-    if (bestSlug) setTrending({ title: slugTitle.get(bestSlug) || bestSlug, views: bestViews, growth: bestGrowth });
+    if (bestSlug) setTrending({ title: slugTitle.get(bestSlug) || bestSlug, views: bestViews, growth: bestGrowth, slug: bestSlug });
 
     // Opportunities
     const nowISO = now.toISOString();
@@ -162,14 +225,20 @@ const Dashboard = () => {
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
+  const formatGrowth = (delta: number, unit: string) => {
+    if (delta === 0) return { text: `Sem variação ${unit}`, positive: false };
+    const sign = delta > 0 ? "+" : "";
+    return { text: `${sign}${delta} ${unit}`, positive: delta > 0 };
+  };
+
   return (
     <div className="space-y-6 md:ml-44 overflow-hidden min-w-0">
       {/* ── 1. KPIs ── */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo</h2>
         <div className="grid grid-cols-3 gap-3">
-          <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" />
-          <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" />
+          <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
+          <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
           <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
         </div>
       </section>
@@ -185,6 +254,7 @@ const Dashboard = () => {
                 title="Evento em alta"
                 description={`"${trending.title}" · ${trending.views} views 24h (+${trending.growth.toFixed(0)}%)`}
                 color="bg-orange-500/10 text-orange-400"
+                href={`/evento/${trending.slug}`}
               />
             )}
             {topEvent && (
@@ -193,13 +263,37 @@ const Dashboard = () => {
                 title="Mais visto (7d)"
                 description={`"${topEvent.title}" com ${topEvent.views} visualizações`}
                 color="bg-primary/10 text-primary"
+                href={`/evento/${topEvent.slug}`}
               />
             )}
           </div>
         </section>
       )}
 
-      {/* ── 3. Ações rápidas ── */}
+      {/* ── 3. Ações Pendentes ── */}
+      {(pending.noCover > 0 || pending.noDescription > 0) && (
+        <section>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações Pendentes</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <PendingChip
+              to="/admin/eventos"
+              icon={ImageOff}
+              count={pending.noCover}
+              label="Eventos sem capa"
+              tone="amber"
+            />
+            <PendingChip
+              to="/admin/eventos"
+              icon={FileText}
+              count={pending.noDescription}
+              label="Descrições pendentes"
+              tone="rose"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ── 4. Ações rápidas ── */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações rápidas</h2>
         <div className="grid grid-cols-4 gap-2">
@@ -210,10 +304,13 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* ── 4. Desempenho (colapsável) ── */}
+      {/* ── 5. Desempenho (colapsável) ── */}
       <Collapsible open={perfOpen} onOpenChange={setPerfOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full group">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desempenho · 7 dias</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <TrendingUp className="h-3.5 w-3.5" />
+            Desempenho · 7 dias
+          </h2>
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", perfOpen && "rotate-180")} />
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-3">
@@ -225,11 +322,11 @@ const Dashboard = () => {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* ── 5. Oportunidades ── */}
+      {/* ── 6. Oportunidades ── */}
       {opportunities.length > 0 && (
         <section>
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Oportunidades</h2>
-          <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-4 space-y-2">
+          <div className={cn("p-4 space-y-2", GLASS)}>
             {opportunities.map((title, i) => (
               <div key={i} className="flex items-center gap-2.5">
                 <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
@@ -241,11 +338,11 @@ const Dashboard = () => {
         </section>
       )}
 
-      {/* ── 6. Atividade recente ── */}
+      {/* ── 7. Atividade recente ── */}
       {recentActivity.length > 0 && (
         <section>
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Atividade recente</h2>
-          <div className="rounded-2xl border border-border/30 bg-card/80 backdrop-blur-sm p-4">
+          <div className={cn("p-4", GLASS)}>
             <ul className="space-y-1">
               {recentActivity.map(item => (
                 <li key={item.id}>
