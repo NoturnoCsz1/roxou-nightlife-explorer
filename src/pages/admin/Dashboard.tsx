@@ -144,8 +144,10 @@ const Dashboard = () => {
   const [opportunities, setOpportunities] = useState<string[]>([]);
   const [recentActivity, setRecentActivity] = useState<{ type: "event" | "partner"; title: string; date: string; id: string }[]>([]);
   const [pending, setPending] = useState({ noCover: 0, noDescription: 0 });
+  const [loading, setLoading] = useState(true);
 
   const loadDashboard = useCallback(async () => {
+    setLoading(true);
     const now = new Date();
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
