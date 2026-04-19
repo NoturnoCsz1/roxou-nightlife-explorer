@@ -77,7 +77,8 @@ const EventoBulkForm = () => {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [items, setItems] = useState<BulkItem[]>([]);
   const [saving, setSaving] = useState(false);
-  const [generatingDescIdx, setGeneratingDescIdx] = useState<string | null>(null);
+  const [generatingDescIds, setGeneratingDescIds] = useState<Set<string>>(new Set());
+  const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
