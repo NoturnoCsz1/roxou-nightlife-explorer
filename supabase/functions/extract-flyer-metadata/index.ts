@@ -26,7 +26,7 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
 }
 
 Regras:
-- "title" deve ter no máximo 60 caracteres, em CAIXA ALTA, sem aspas decorativas. Crie um título chamativo: combine artista + tipo de evento + local/contexto se possível (ex: "LUAN SANTANA AO VIVO NO RODEIO", "BAILE DO MC IG NO ARAPUCA", "NOITE ELETRÔNICA COM ALOK").
+- "title" deve ter no máximo 50 caracteres, SEMPRE em CAIXA ALTA, sem aspas decorativas. NÃO transcreva o flyer ao pé da letra: SUGIRA um título curto e impactante. Combine atração principal + tipo de evento ou contexto (ex: "LUAN SANTANA AO VIVO", "BAILE DO MC IG", "OPEN BAR DE PAGODE"). Evite títulos genéricos como só o nome do artista.
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente (ou próximo se já passou).
 - Para "category"/"sub_category", use palavras-chave: "funk" -> funk; "samba","pagode" -> festa; "sertanejo" -> sertanejo; "rock" -> show + rock; "mpb" -> show + mpb; "eletro","techno","house" -> eletronica; "universitário","open bar" -> balada; "futebol" -> festival; "rodízio","cerveja","boteco" -> bar.
 - Se não souber, devolva category "festa" e sub_category "festa".
