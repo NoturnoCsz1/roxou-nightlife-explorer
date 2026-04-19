@@ -129,19 +129,20 @@ const EventoBulkForm = () => {
       setItems((prev) =>
         prev.map((it) => {
           if (it.localId !== localId) return it;
+          const upperTitle = (data.title || it.form.title || "").toUpperCase();
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
-            title: data.title || it.form.title,
-            slug: data.title ? slugify(data.title) : it.form.slug,
+            title: upperTitle,
+            slug: upperTitle ? slugify(upperTitle) : it.form.slug,
             date_time: dateInput || it.form.date_time,
             category: data.category || it.form.category,
             venue_name: matched ? matched.name : (data.venue_name || ""),
             address: matched ? (matched.address || "") : (data.address || ""),
             instagram: matched ? (matched.instagram || "") : (data.instagram || ""),
             partner_id: matched ? matched.id : "",
-            ticket_url: data.ticket_url || it.form.ticket_url,
-            verification_source: "Flyer (IA)",
+            ticket_url: "",
+            verification_source: "instagram",
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
           };
           return { ...it, form: next, status: "ready" };
