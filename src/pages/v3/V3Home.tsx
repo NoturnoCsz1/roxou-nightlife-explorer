@@ -46,7 +46,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,category,featured,partner_id")
+        .select("id,slug,title,image_url,date_time,venue_name,category,featured,partner_id,ticket_url")
         .eq("status", "published")
         .gte("date_time", today.toISOString())
         .order("date_time", { ascending: true })
