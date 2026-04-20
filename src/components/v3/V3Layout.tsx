@@ -4,10 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 const NAV_ITEMS = [
   { to: "/v3", icon: Home, label: "Início" },
-  { to: "/v3/descobrir", icon: Search, label: "Descobrir" },
+  { to: "/v3/descobrir", icon: Search, label: "Pesquisar" },
   { to: "/v3/transporte", icon: Car, label: "Transporte" },
   { to: "/v3/agenda", icon: CalendarDays, label: "Agenda" },
-  { to: "/v3/perfil", icon: User, label: "Perfil" },
+  { to: "/v3/perfil", icon: User, label: "Minha Conta" },
 ];
 
 export default function V3Layout() {
@@ -20,18 +20,18 @@ export default function V3Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-body flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/40">
+    <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
+      {/* Header — Midnight glass */}
+      <header className="sticky top-0 z-50 v3-glass-strong border-b border-white/5">
         <div className="flex items-center justify-between px-4 h-14">
           <Link to="/v3" className="font-display font-bold text-xl tracking-tight">
-            <span className="text-primary">Roxou</span>
+            <span className="text-primary v3-neon-text">Roxou</span>
           </Link>
           <div className="flex items-center gap-2">
             {user ? (
               <button
                 onClick={() => signOut()}
-                className="p-2 rounded-full hover:bg-card transition-colors"
+                className="p-2 rounded-full hover:bg-white/5 transition-colors"
                 title="Sair"
               >
                 <LogOut className="w-4 h-4 text-muted-foreground" />
@@ -39,7 +39,7 @@ export default function V3Layout() {
             ) : (
               <Link
                 to="/v3/auth"
-                className="p-2 rounded-full hover:bg-card transition-colors"
+                className="p-2 rounded-full hover:bg-white/5 transition-colors"
                 title="Entrar"
               >
                 <LogIn className="w-4 h-4 text-muted-foreground" />
@@ -49,13 +49,13 @@ export default function V3Layout() {
         </div>
       </header>
 
-      {/* Content */}
-      <main className="flex-1 pb-20">
+      {/* Content — fade-in per route */}
+      <main key={pathname} className="flex-1 pb-20 v3-page-fade">
         <Outlet />
       </main>
 
       {/* Footer */}
-      <div className="pb-20 pt-4 text-center border-t border-border/20">
+      <div className="pb-20 pt-4 text-center border-t border-white/5">
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
         </p>
@@ -71,8 +71,8 @@ export default function V3Layout() {
         </p>
       </div>
 
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 backdrop-blur-xl bg-background/90 border-t border-border/40">
+      {/* Bottom Nav — glass premium */}
+      <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5">
         <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
             const isProfile = to === "/v3/perfil";
@@ -87,7 +87,7 @@ export default function V3Layout() {
                   active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? "drop-shadow-[0_0_6px_hsl(var(--primary))]" : ""}`} />
+                <Icon className={`w-5 h-5 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
                 <span className="text-[10px] font-medium">{label}</span>
               </button>
             );
