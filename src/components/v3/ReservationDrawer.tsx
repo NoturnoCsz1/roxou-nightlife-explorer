@@ -1,4 +1,3 @@
-import { ExternalLink as _Unused1 } from "lucide-react";
 import { ExternalLink, Car, Sparkles, ArrowRight, Flame, BadgeCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
