@@ -595,7 +595,12 @@ function EventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
         <div className="px-2.5 pb-2.5">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setDrawerOpen(true); }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("[ROXOU] Reservar clicked", ev.title);
+              setDrawerOpen(true);
+            }}
             className="w-full flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider text-white v3-neon-hover"
             style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.9), hsl(var(--v3-neon-soft) / 0.9))" }}
           >
