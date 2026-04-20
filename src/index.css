@@ -51,6 +51,12 @@
     --surface-glass: 260 20% 8%;
     --neon-glow: 270 100% 65%;
     --neon-pink: 320 90% 58%;
+
+    /* V3 Midnight Premium tokens (scoped via .v3-theme) */
+    --v3-bg: 240 6% 4%;            /* #0A0A0B */
+    --v3-glass: 0 0% 100%;         /* base for rgba glass */
+    --v3-neon: 270 100% 65%;       /* purple neon glow */
+    --v3-neon-soft: 285 90% 62%;
   }
 
   .dark {
@@ -109,6 +115,90 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* ───── V3 MIDNIGHT PREMIUM ─────
+     Scoped utilities — only active inside .v3-theme wrapper. */
+  .v3-theme {
+    background-color: hsl(var(--v3-bg));
+    color: hsl(var(--foreground));
+  }
+  .v3-glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .v3-glass-strong {
+    background: rgba(15, 10, 25, 0.72);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .v3-neon-glow {
+    box-shadow:
+      0 0 0 1px hsl(var(--v3-neon) / 0.35),
+      0 0 18px hsl(var(--v3-neon) / 0.45),
+      0 0 48px hsl(var(--v3-neon) / 0.18);
+  }
+  .v3-neon-text {
+    text-shadow:
+      0 0 10px hsl(var(--v3-neon) / 0.55),
+      0 0 32px hsl(var(--v3-neon) / 0.25);
+  }
+  .v3-neon-hover {
+    transition: box-shadow 220ms ease, transform 220ms ease;
+  }
+  .v3-neon-hover:hover {
+    box-shadow:
+      0 0 0 1px hsl(var(--v3-neon) / 0.4),
+      0 0 22px hsl(var(--v3-neon) / 0.5),
+      0 0 60px hsl(var(--v3-neon) / 0.18);
+  }
+  .v3-pulse-glow {
+    animation: v3PulseGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes v3PulseGlow {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px hsl(var(--v3-neon) / 0.35),
+        0 0 14px hsl(var(--v3-neon) / 0.35),
+        0 0 38px hsl(var(--v3-neon) / 0.12);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px hsl(var(--v3-neon) / 0.5),
+        0 0 26px hsl(var(--v3-neon) / 0.6),
+        0 0 70px hsl(var(--v3-neon) / 0.22);
+    }
+  }
+  .v3-page-fade {
+    animation: v3PageFade 320ms ease-out both;
+  }
+  @keyframes v3PageFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .v3-skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--v3-neon) / 0.05) 0%,
+      hsl(var(--v3-neon) / 0.14) 50%,
+      hsl(var(--v3-neon) / 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Subtle purple glow only on PUBLIC primary CTAs (preserves layout). */
+  .public-cta-glow {
+    transition: box-shadow 220ms ease, transform 220ms ease;
+  }
+  .public-cta-glow:hover {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.35),
+      0 0 18px hsl(var(--primary) / 0.35);
   }
 }
 
