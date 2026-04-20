@@ -94,19 +94,29 @@ export default function V3EventDetail() {
           )}
         </div>
 
-        {/* Ticket */}
-        {event.ticket_url && (
-          <a href={event.ticket_url} target="_blank" rel="noopener noreferrer">
-            <Button className="w-full rounded-xl h-12 text-sm font-semibold gap-2">
-              <ExternalLink className="w-4 h-4" />
-              Comprar ingresso
-            </Button>
-          </a>
-        )}
+        {/* Reserve CTA — opens drawer with both options */}
+        <Button
+          onClick={() => setDrawerOpen(true)}
+          className="w-full rounded-xl h-12 text-sm font-bold uppercase tracking-wider gap-2 border-0 v3-pulse-glow text-white"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
+          }}
+        >
+          <Sparkles className="w-4 h-4" />
+          Reservar agora
+        </Button>
 
-        {/* Transport CTA */}
-        <TransportCTA eventName={event.title} venueName={event.venue_name || undefined} eventDate={event.date_time} />
-
+        <ReservationDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          eventTitle={event.title}
+          eventSlug={event.slug}
+          ticketUrl={event.ticket_url}
+          venueName={event.venue_name}
+          eventDate={event.date_time}
+          imageUrl={event.image_url}
+        />
         {/* Description */}
         {event.description && (
           <div className="space-y-2">
