@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { ExternalLink, Car, Sparkles, ArrowRight, Flame, BadgeCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -164,9 +163,6 @@ function Body({
 
 export default function ReservationDrawer(props: ReservationDrawerProps) {
   const isMobile = useIsMobile();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
 
   if (isMobile) {
     return (
