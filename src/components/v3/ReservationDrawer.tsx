@@ -164,9 +164,6 @@ function Body({
 
 export default function ReservationDrawer(props: ReservationDrawerProps) {
   const isMobile = useIsMobile();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
 
   if (isMobile) {
     return (
