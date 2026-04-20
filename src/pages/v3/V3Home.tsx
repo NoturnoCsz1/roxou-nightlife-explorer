@@ -10,6 +10,7 @@ import {
   Flame, Music, Mic2, Beer, Zap, PartyPopper, Crown, Eye, TrendingUp,
   ChevronRight, Star, Gem, BarChart3, BadgeCheck, Heart,
 } from "lucide-react";
+import ReservationDrawer from "@/components/v3/ReservationDrawer";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
