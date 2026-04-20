@@ -1,11 +1,12 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, MapPin, ExternalLink, ArrowLeft, Bookmark } from "lucide-react";
+import { CalendarDays, MapPin, ArrowLeft, Bookmark, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import TransportCTA from "@/components/v3/TransportCTA";
+import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
@@ -14,6 +15,7 @@ export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { isSaved, toggleSave } = useSavedEvents();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["v3-event", slug],
