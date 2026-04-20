@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, MapPin, ExternalLink, ArrowLeft, Bookmark } from "lucide-react";
+import { CalendarDays, MapPin, ArrowLeft, Bookmark, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import TransportCTA from "@/components/v3/TransportCTA";
+import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
@@ -14,6 +16,7 @@ export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { isSaved, toggleSave } = useSavedEvents();
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["v3-event", slug],
@@ -30,11 +33,7 @@ export default function V3EventDetail() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <V3DetailSkeleton />;
   }
 
   if (!event) {
@@ -92,19 +91,29 @@ export default function V3EventDetail() {
           )}
         </div>
 
-        {/* Ticket */}
-        {event.ticket_url && (
-          <a href={event.ticket_url} target="_blank" rel="noopener noreferrer">
-            <Button className="w-full rounded-xl h-12 text-sm font-semibold gap-2">
-              <ExternalLink className="w-4 h-4" />
-              Comprar ingresso
-            </Button>
-          </a>
-        )}
+        {/* Reserve CTA — opens drawer with both options */}
+        <Button
+          onClick={() => setDrawerOpen(true)}
+          className="w-full rounded-xl h-12 text-sm font-bold uppercase tracking-wider gap-2 border-0 v3-pulse-glow text-white"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
+          }}
+        >
+          <Sparkles className="w-4 h-4" />
+          Reservar agora
+        </Button>
 
-        {/* Transport CTA */}
-        <TransportCTA eventName={event.title} venueName={event.venue_name || undefined} eventDate={event.date_time} />
-
+        <ReservationDrawer
+          open={drawerOpen}
+          onOpenChange={setDrawerOpen}
+          eventTitle={event.title}
+          eventSlug={event.slug}
+          ticketUrl={event.ticket_url}
+          venueName={event.venue_name}
+          eventDate={event.date_time}
+          imageUrl={event.image_url}
+        />
         {/* Description */}
         {event.description && (
           <div className="space-y-2">
