@@ -556,40 +556,65 @@ function EventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
   ev: Ev; size?: "md" | "lg"; premium?: boolean; isTrending?: boolean; partnerRank?: number;
 }) {
   const isLg = size === "lg";
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const badge = premium ? "⭐ Premium"
     : isTrending ? "🔥 Em alta"
     : partnerRank && partnerRank <= 3 ? `📈 #${partnerRank} hoje` : null;
 
   return (
-    <Link
-      to={`/v3/evento/${ev.slug}`}
-      className={`shrink-0 snap-start rounded-xl overflow-hidden bg-card border group transition-all active:scale-[0.97] ${
-        premium ? "border-primary/30 neon-border" : "border-border/40 hover:border-border/60"
-      } ${isLg ? "w-[230px]" : "w-[165px]"}`}
-    >
-      <div className={`relative ${isLg ? "h-[130px]" : "h-[100px]"} overflow-hidden`}>
-        <img src={ev.image_url || "/placeholder.svg"} alt={ev.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm">
-          <Clock className="w-2.5 h-2.5 text-primary" />
-          <span className="text-[9px] font-bold text-foreground">{fmtTime(ev.date_time)}</span>
-        </div>
-        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/90 text-[8px] font-bold text-primary-foreground uppercase tracking-wider">
-          {getDayLabel(ev.date_time)}
-        </span>
-      </div>
-      <div className="p-2.5 space-y-1">
-        <h3 className="font-display font-semibold text-[12px] text-foreground line-clamp-2 leading-snug">{ev.title}</h3>
-        {ev.venue_name && (
-          <div className="flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-primary shrink-0" />
-            <span className="text-[10px] font-semibold text-foreground/80 truncate">{ev.venue_name}</span>
+    <>
+      <div
+        className={`shrink-0 snap-start rounded-xl overflow-hidden v3-glass v3-neon-hover group transition-all active:scale-[0.97] ${
+          premium ? "border-primary/30 neon-border" : ""
+        } ${isLg ? "w-[230px]" : "w-[165px]"}`}
+      >
+        <Link to={`/v3/evento/${ev.slug}`} className="block">
+          <div className={`relative ${isLg ? "h-[130px]" : "h-[100px]"} overflow-hidden`}>
+            <img src={ev.image_url || "/placeholder.svg"} alt={ev.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm">
+              <Clock className="w-2.5 h-2.5 text-primary" />
+              <span className="text-[9px] font-bold text-foreground">{fmtTime(ev.date_time)}</span>
+            </div>
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/90 text-[8px] font-bold text-primary-foreground uppercase tracking-wider">
+              {getDayLabel(ev.date_time)}
+            </span>
           </div>
-        )}
-        {badge && <span className="inline-block text-[9px] font-bold text-accent">{badge}</span>}
+          <div className="p-2.5 space-y-1">
+            <h3 className="font-display font-semibold text-[12px] text-foreground line-clamp-2 leading-snug">{ev.title}</h3>
+            {ev.venue_name && (
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-primary shrink-0" />
+                <span className="text-[10px] font-semibold text-foreground/80 truncate">{ev.venue_name}</span>
+              </div>
+            )}
+            {badge && <span className="inline-block text-[9px] font-bold text-accent">{badge}</span>}
+          </div>
+        </Link>
+        <div className="px-2.5 pb-2.5">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setDrawerOpen(true); }}
+            className="w-full flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider text-white v3-neon-hover"
+            style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.9), hsl(var(--v3-neon-soft) / 0.9))" }}
+          >
+            <Sparkles className="w-3 h-3" />
+            Reservar
+          </button>
+        </div>
       </div>
-    </Link>
+      <ReservationDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        eventTitle={ev.title}
+        eventSlug={ev.slug}
+        ticketUrl={ev.ticket_url}
+        venueName={ev.venue_name}
+        eventDate={ev.date_time}
+        imageUrl={ev.image_url}
+      />
+    </>
   );
 }
 
