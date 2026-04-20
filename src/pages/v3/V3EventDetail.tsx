@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
@@ -32,7 +33,6 @@ export default function V3EventDetail() {
   });
 
   if (isLoading) {
-    const { V3DetailSkeleton } = require("@/components/v3/V3Skeletons");
     return <V3DetailSkeleton />;
   }
 
