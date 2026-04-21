@@ -507,7 +507,7 @@ const EventoBulkForm = () => {
             className="admin-glow flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50 flex-1"
           >
             <Send className="h-4 w-4" />
-            {saving ? "Publicando..." : `PUBLICAR AGORA (Lote) (${readyCount})`}
+            {saving ? "Publicando no Ecossistema..." : `LANÇAR NO ECOSSISTEMA (${readyCount})`}
           </button>
         </div>
       )}
