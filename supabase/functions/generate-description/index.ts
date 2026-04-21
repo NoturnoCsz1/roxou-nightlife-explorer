@@ -161,6 +161,21 @@ serve(async (req) => {
       }
     }
 
+    // Strip any markdown fences and keep only allowed tags
+    const cleanHtml = (html: string) => {
+      let out = html
+        .replace(/^```(?:html)?\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .replace(/^<html[^>]*>|<\/html>$/gi, "")
+        .replace(/^<body[^>]*>|<\/body>$/gi, "")
+        .trim();
+      // Drop disallowed tags (keep p, strong, em, ul, ol, li, br)
+      out = out.replace(/<(?!\/?(?:p|strong|em|ul|ol|li|br)\b)[^>]+>/gi, "");
+      return out.trim();
+    };
+    descricao_rica = cleanHtml(descricao_rica);
+    chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").trim();
+
     // Fallback for legacy callers: keep `description` field populated.
     return new Response(
       JSON.stringify({
