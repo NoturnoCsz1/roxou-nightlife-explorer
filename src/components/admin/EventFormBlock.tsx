@@ -190,7 +190,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
                       className="admin-glow flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
                     >
                       {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      {generatingDesc ? "Gerando..." : "Gerar com IA"}
+                      {generatingDesc ? "Injetando hype..." : "✨ Gerar Hype"}
                     </button>
                   )}
                 </div>
@@ -208,7 +208,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
                   title="Clique para editar HTML"
                 />
               ) : (
-                <textarea className={`${inputClass} min-h-[60px] font-mono text-[11px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Gerando descrição com IA..." : "<p>HTML simples: p, strong, ul, li</p>"} />
+                <textarea className={`${inputClass} min-h-[60px] font-mono text-[11px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Injetando hype..." : "Aguardando o toque da IA..."} />
               )}
             </div>
             <div>

@@ -387,10 +387,10 @@ const EventoForm = () => {
                     className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
                   >
                     {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                    {generatingDesc ? "Gerando..." : "Gerar com IA"}
+                    {generatingDesc ? "Injetando hype..." : "✨ Gerar Hype"}
                   </button>
                 </div>
-                <textarea className={`${inputClass} min-h-[60px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Gerando descrição com IA..." : ""} />
+                <textarea className={`${inputClass} min-h-[60px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Injetando hype..." : "Aguardando o toque da IA..."} />
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Status</label>
