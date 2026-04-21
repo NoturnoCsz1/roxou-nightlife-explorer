@@ -339,7 +339,7 @@ const EventoBulkForm = () => {
   const errorCount = items.filter((it) => it.status === "error").length;
 
   return (
-    <div className="max-w-3xl pb-12">
+    <div className="md:ml-44 max-w-3xl pb-12">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3"
