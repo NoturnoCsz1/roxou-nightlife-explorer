@@ -27,7 +27,7 @@ export type EventFormData = {
 export const emptyEventForm = (): EventFormData => ({
   title: "", slug: "", date_time: "", category: "festa", partner_id: "",
   venue_name: "", address: "", instagram: "", description: "",
-  status: "draft", verification_source: "Instagram", featured: false, image_url: "",
+  status: "draft", verification_source: "instagram", featured: false, image_url: "",
   ticket_url: "",
 });
 
@@ -83,7 +83,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-foreground">Evento {index + 1}{form.title ? ` — ${form.title}` : ""}</p>
         {showRemove && (
-          <button type="button" onClick={() => onRemove?.(index)} className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 transition">
+          <button type="button" onClick={() => onRemove?.(index)} className="admin-glow-destructive flex items-center gap-1 rounded-md border border-destructive/30 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 transition">
             <Trash2 className="h-3.5 w-3.5" /> Remover
           </button>
         )}
@@ -186,7 +186,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
                       type="button"
                       disabled={generatingDesc || !form.title}
                       onClick={() => onGenerateDescription(index)}
-                      className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
+                      className="admin-glow flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
                     >
                       {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                       {generatingDesc ? "Gerando..." : "Gerar com IA"}

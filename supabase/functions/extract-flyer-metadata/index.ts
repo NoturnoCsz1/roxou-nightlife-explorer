@@ -6,7 +6,16 @@ const corsHeaders = {
 };
 
 const ALLOWED_CATEGORIES = [
-  "festa", "funk", "show", "eletronica", "sertanejo", "balada", "festival", "bar",
+  "show", "festival", "bar", "universitario", "restaurante",
+  "balada", "festa", "futebol", "cultural",
+  // legados aceitos para retrocompatibilidade
+  "funk", "eletronica", "sertanejo",
+];
+
+const ALLOWED_SUBS = [
+  "funk", "pagode_samba", "rock", "pop_rock", "eletronica", "sertanejo", "mpb",
+  "show", "festival", "bar", "universitario", "restaurante",
+  "balada", "festa", "futebol", "cultural",
 ];
 
 const systemPrompt = `Você é um extrator de metadados de flyers/banners de eventos da noite brasileira.
@@ -19,20 +28,36 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
   "instagram": string|null,   // @handle do organizador/local se aparecer.
-  "category": string,         // Uma de: festa, funk, show, eletronica, sertanejo, balada, festival, bar
-  "sub_category": string,     // Mesmo conjunto + rock, pop_rock, mpb. Ex: funk -> funk, samba -> festa.
-  "ticket_url": string|null,  // SOMENTE se houver uma URL EXPLÍCITA no flyer (ex: "sympla.com.br/...", "ingresse.com/...", "bit.ly/..."). Se só aparecer um @handle, telefone, ou nada, retorne null. NUNCA invente.
-  "venue_confidence": "high"|"medium"|"low",  // Confiança no nome do local. "high" só se o nome do local estiver claramente legível e destacado. "low" se for apenas suposição.
+  "category": string,         // OBRIGATÓRIO uma de: show, festival, bar, universitario, restaurante, balada, festa, futebol, cultural
+  "sub_category": string,     // OBRIGATÓRIO uma de: funk, pagode_samba, rock, pop_rock, eletronica, sertanejo, mpb (ou repita a category se não houver gênero musical)
+  "ticket_url": null,         // SEMPRE retorne null. Não extraia link de ingresso.
+  "venue_confidence": "high"|"medium"|"low",
   "confidence": "high"|"medium"|"low"
 }
 
-Regras:
-- "title" deve ter no máximo 50 caracteres, SEMPRE em CAIXA ALTA, sem aspas decorativas. NÃO transcreva o flyer ao pé da letra: SUGIRA um título curto e impactante. Combine atração principal + tipo de evento ou contexto (ex: "LUAN SANTANA AO VIVO", "BAILE DO MC IG", "OPEN BAR DE PAGODE"). Evite títulos genéricos como só o nome do artista.
-- Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente (ou próximo se já passou).
-- Para "category"/"sub_category", use palavras-chave: "funk" -> funk; "samba","pagode" -> festa; "sertanejo" -> sertanejo; "rock" -> show + rock; "mpb" -> show + mpb; "eletro","techno","house" -> eletronica; "universitário","open bar" -> balada; "futebol" -> festival; "rodízio","cerveja","boteco" -> bar.
-- Se não souber, devolva category "festa" e sub_category "festa".
-- "ticket_url": NUNCA invente. Só retorne se aparecer uma URL real e completa (com domínio). Caso contrário, null.
-- "venue_name": só preencha se tiver razoável certeza do nome do local. Se for ambíguo ou incompleto, retorne null.
+REGRAS DE TAXONOMIA (mapeamento direto do flyer → category/sub_category):
+- "samba", "pagode", "roda de samba" → category="festa", sub_category="pagode_samba"
+- "funk", "baile funk", "MC ", "DJ funk" → category="festa", sub_category="funk"
+- "sertanejo", "modão" → category="festa", sub_category="sertanejo"
+- "rock", "metal" → category="show", sub_category="rock"
+- "pop rock", "indie", "alternativo" → category="show", sub_category="pop_rock"
+- "MPB", "bossa", "samba-canção" → category="show", sub_category="mpb"
+- "eletrônica", "techno", "house", "trance", "rave" → category="festa", sub_category="eletronica"
+- "festival", "edição", "open air", line-ups com 3+ atrações → category="festival"
+- "universitário", "open bar", "calourada", "atlética" → category="universitario"
+- "futebol", "jogo", "transmissão", "copa", "brasileirão" → category="futebol"
+- "cultural", "exposição", "teatro", "literário", "cineclube", "sarau" → category="cultural"
+- "rodízio", "happy hour", "boteco", "chopp" sem música destacada → category="bar"
+- "rodízio gastronômico", "jantar harmonizado", "menu degustação" → category="restaurante"
+- "balada", "club", "night" sem gênero específico → category="balada"
+- Show de artista sem rótulo de gênero claro → category="show", sub_category="show"
+- Festa genérica → category="festa", sub_category="festa"
+
+OUTRAS REGRAS:
+- "title": máximo 50 caracteres, SEMPRE em CAIXA ALTA, sem aspas decorativas.
+- Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente.
+- "ticket_url": SEMPRE null. Nunca extraia link de ingresso.
+- "venue_name": só preencha se tiver razoável certeza do nome do local.
 - NUNCA invente endereço, parceiro ou link.
 - Resposta DEVE ser JSON puro.`;
 
@@ -112,12 +137,11 @@ serve(async (req) => {
 
     // sanitize
     const cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
-    const sub = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
+    const subRaw = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
+    const sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
 
-    // sanitize ticket_url: must be a real URL with domain
-    const rawTicket = typeof parsed.ticket_url === "string" ? parsed.ticket_url.trim() : "";
-    const isRealUrl = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+/i.test(rawTicket) && !rawTicket.startsWith("@");
-    const ticketUrl = isRealUrl ? rawTicket : null;
+    // ticket_url: forçado null (regra de negócio: lote nunca extrai link)
+    const ticketUrl = null;
 
     return new Response(JSON.stringify({
       title: parsed.title || "",

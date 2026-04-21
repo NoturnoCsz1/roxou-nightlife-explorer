@@ -200,6 +200,27 @@
       0 0 0 1px hsl(var(--primary) / 0.35),
       0 0 18px hsl(var(--primary) / 0.35);
   }
+
+  /* Admin Midnight Premium — neon purple buttons */
+  .admin-glow {
+    transition: box-shadow 220ms ease, transform 180ms ease, background-color 180ms ease;
+  }
+  .admin-glow:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.015);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.55),
+      0 0 18px hsl(var(--primary) / 0.45),
+      0 0 38px hsl(var(--primary) / 0.18);
+  }
+  .admin-glow-destructive {
+    transition: box-shadow 220ms ease, transform 180ms ease, background-color 180ms ease;
+  }
+  .admin-glow-destructive:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      0 0 0 1px hsl(var(--destructive) / 0.55),
+      0 0 14px hsl(var(--destructive) / 0.4);
+  }
 }
 
 @layer components {

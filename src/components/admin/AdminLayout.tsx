@@ -83,8 +83,8 @@ const AdminLayout = () => {
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-card/90 backdrop-blur-md md:hidden">
-        <div className="mx-auto flex max-w-5xl justify-around py-1.5">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/40 bg-card/90 backdrop-blur-md md:hidden">
+        <div className="mx-auto flex max-w-5xl justify-around py-1.5 overflow-x-auto">
           {navItems.map((item) => {
             const active = pathname.startsWith(item.to);
             return (
@@ -92,7 +92,7 @@ const AdminLayout = () => {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium transition",
+                  "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium transition shrink-0",
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >
@@ -105,7 +105,7 @@ const AdminLayout = () => {
       </nav>
 
       {/* Desktop sidebar */}
-      <div className="hidden md:block fixed left-0 top-12 bottom-0 w-44 border-r border-border/40 bg-card/50 backdrop-blur-sm">
+      <aside className="hidden md:block fixed left-0 top-12 bottom-0 w-44 z-40 border-r border-border/40 bg-card/50 backdrop-blur-sm overflow-y-auto">
         <nav className="flex flex-col gap-0.5 p-2 mt-2">
           {navItems.map((item) => {
             const active = pathname.startsWith(item.to);
@@ -114,9 +114,9 @@ const AdminLayout = () => {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
+                  "admin-glow flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
                   active
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-primary/15 text-primary border border-primary/30"
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
               >
@@ -126,7 +126,7 @@ const AdminLayout = () => {
             );
           })}
         </nav>
-      </div>
+      </aside>
     </div>
   );
 };

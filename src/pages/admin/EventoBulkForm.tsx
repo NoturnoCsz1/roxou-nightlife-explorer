@@ -455,7 +455,7 @@ const EventoBulkForm = () => {
                 type="button"
                 onClick={handleGenerateAllCaptions}
                 disabled={bulkGenerating}
-                className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-primary to-primary/80 px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-90 transition disabled:opacity-50"
+                className="admin-glow flex items-center gap-1 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50"
               >
                 {bulkGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                 {bulkGenerating ? "Gerando legendas..." : "✨ Gerar Legendas do Lote"}
@@ -463,7 +463,7 @@ const EventoBulkForm = () => {
               <button
                 type="button"
                 onClick={addBlankItem}
-                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80"
+                className="admin-glow flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/10 transition"
               >
                 <Plus className="h-3 w-3" /> Adicionar manual
               </button>
@@ -495,7 +495,7 @@ const EventoBulkForm = () => {
             type="button"
             disabled={saving || readyCount === 0}
             onClick={() => handleBulkSave("draft")}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition disabled:opacity-50 flex-1"
+            className="admin-glow flex items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition disabled:opacity-50 flex-1"
           >
             <Save className="h-4 w-4" />
             {saving ? "Salvando..." : "Salvar rascunhos"}
@@ -504,7 +504,7 @@ const EventoBulkForm = () => {
             type="button"
             disabled={saving || readyCount === 0}
             onClick={() => handleBulkSave("published")}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 flex-1"
+            className="admin-glow flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50 flex-1"
           >
             <Send className="h-4 w-4" />
             {saving ? "Publicando..." : `PUBLICAR AGORA (Lote) (${readyCount})`}
@@ -601,7 +601,7 @@ function ReviewRow({
           <button
             type="button"
             onClick={onRemove}
-            className="rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+            className="admin-glow-destructive rounded-md border border-destructive/30 p-1 text-destructive hover:bg-destructive/10 transition"
             title="Remover"
           >
             <X className="h-3.5 w-3.5" />
@@ -610,7 +610,7 @@ function ReviewRow({
             type="button"
             onClick={onToggleExpand}
             disabled={isProcessing}
-            className="flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-[10px] font-semibold text-secondary-foreground hover:bg-secondary/80 transition disabled:opacity-50"
+            className="admin-glow flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
           >
             {item.expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             Detalhes
