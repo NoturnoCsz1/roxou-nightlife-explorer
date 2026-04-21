@@ -27,7 +27,7 @@ export type EventFormData = {
 export const emptyEventForm = (): EventFormData => ({
   title: "", slug: "", date_time: "", category: "festa", partner_id: "",
   venue_name: "", address: "", instagram: "", description: "",
-  status: "draft", verification_source: "Instagram", featured: false, image_url: "",
+  status: "draft", verification_source: "instagram", featured: false, image_url: "",
   ticket_url: "",
 });
 
