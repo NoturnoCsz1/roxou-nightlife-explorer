@@ -566,7 +566,7 @@ function ReviewRow({
           <div className="col-span-2">
             <input
               className={inputCls}
-              placeholder={isProcessing ? "Lendo flyer..." : "Título do evento"}
+              placeholder={isProcessing ? "Analisando a noite..." : "Qual o nome da fera?"}
               value={item.form.title}
               onChange={(e) => onChangeForm({ title: e.target.value, slug: e.target.value ? (item.form.slug || "") : "" })}
               disabled={isProcessing}
