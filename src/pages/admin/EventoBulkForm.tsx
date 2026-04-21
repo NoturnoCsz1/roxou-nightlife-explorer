@@ -132,6 +132,7 @@ const EventoBulkForm = () => {
       const matched = matchPartner(data.venue_name, partners, data.venue_confidence);
       const dateInput = formatDateForInput(data.date_iso);
 
+      let readyForm: EventFormData | null = null;
       setItems((prev) =>
         prev.map((it) => {
           if (it.localId !== localId) return it;
@@ -151,9 +152,37 @@ const EventoBulkForm = () => {
             verification_source: "instagram",
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
           };
+          readyForm = next;
           return { ...it, form: next, status: "ready" };
         }),
       );
+
+      // Auto-generate rich description (Persona V2) if we have a title
+      if (readyForm && (readyForm as EventFormData).title) {
+        const f = readyForm as EventFormData;
+        try {
+          const { data: descData, error: descError } = await supabase.functions.invoke(
+            "generate-description",
+            {
+              body: {
+                title: f.title,
+                venue_name: f.venue_name,
+                date_time: f.date_time,
+                category: f.category,
+                image_url: f.image_url,
+              },
+            },
+          );
+          if (!descError) {
+            const rich = descData?.descricao_rica || descData?.description;
+            if (rich) {
+              patchForm(localId, { description: rich });
+            }
+          }
+        } catch (descErr) {
+          console.warn("[bulk] auto description failed", descErr);
+        }
+      }
     } catch (err: any) {
       console.error("[bulk] process error", err);
       patchItem(localId, { status: "error", errorMsg: err?.message || "Falha ao processar" });
