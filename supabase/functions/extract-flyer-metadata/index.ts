@@ -137,12 +137,11 @@ serve(async (req) => {
 
     // sanitize
     const cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
-    const sub = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
+    const subRaw = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
+    const sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
 
-    // sanitize ticket_url: must be a real URL with domain
-    const rawTicket = typeof parsed.ticket_url === "string" ? parsed.ticket_url.trim() : "";
-    const isRealUrl = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+/i.test(rawTicket) && !rawTicket.startsWith("@");
-    const ticketUrl = isRealUrl ? rawTicket : null;
+    // ticket_url: forçado null (regra de negócio: lote nunca extrai link)
+    const ticketUrl = null;
 
     return new Response(JSON.stringify({
       title: parsed.title || "",
