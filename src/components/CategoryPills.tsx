@@ -1,7 +1,5 @@
-import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper, GraduationCap, UtensilsCrossed, Palette, Tag } from "lucide-react";
+import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper, GraduationCap, UtensilsCrossed, Palette } from "lucide-react";
 import { categoryConfig } from "@/lib/categoryConfig";
-
-type EventCategory = string;
 
 const categoryIcons: Record<string, React.ElementType> = {
   balada: Music,
@@ -19,8 +17,8 @@ const categoryIcons: Record<string, React.ElementType> = {
 };
 
 interface Props {
-  selected?: EventCategory | null;
-  onSelect: (cat: EventCategory | null) => void;
+  selected?: any;
+  onSelect: (cat: any) => void;
 }
 
 const CategoryPills = ({ selected, onSelect }: Props) => {
