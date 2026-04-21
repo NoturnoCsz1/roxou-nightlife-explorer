@@ -160,21 +160,55 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
         {sections.content && (
           <div className="grid grid-cols-2 gap-2.5">
             <div className="col-span-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <label className="text-[11px] font-medium text-muted-foreground">Descrição</label>
-                {onGenerateDescription && (
-                  <button
-                    type="button"
-                    disabled={generatingDesc || !form.title}
-                    onClick={() => onGenerateDescription(index)}
-                    className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
-                  >
-                    {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                    {generatingDesc ? "Gerando..." : "Gerar com IA"}
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {form.description && (
+                    <div className="flex items-center rounded-md border border-border/50 overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setDescMode("preview")}
+                        className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium transition ${descMode === "preview" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        <Eye className="h-2.5 w-2.5" /> Preview
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDescMode("html")}
+                        className={`flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium transition ${descMode === "html" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        <Code2 className="h-2.5 w-2.5" /> HTML
+                      </button>
+                    </div>
+                  )}
+                  {onGenerateDescription && (
+                    <button
+                      type="button"
+                      disabled={generatingDesc || !form.title}
+                      onClick={() => onGenerateDescription(index)}
+                      className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
+                    >
+                      {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                      {generatingDesc ? "Gerando..." : "Gerar com IA"}
+                    </button>
+                  )}
+                </div>
               </div>
-              <textarea className={`${inputClass} min-h-[60px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Gerando descrição com IA..." : ""} />
+              {form.description && descMode === "preview" ? (
+                <div
+                  onClick={() => setDescMode("html")}
+                  className="prose prose-sm prose-invert max-w-none min-h-[60px] cursor-text rounded-lg border border-border/50 bg-background px-3 py-2 text-sm [&_p]:my-1 [&_ul]:my-1 [&_ul]:pl-4 [&_ul]:list-disc [&_strong]:text-foreground [&_strong]:font-semibold"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(form.description, {
+                      ALLOWED_TAGS: ["p", "strong", "em", "ul", "ol", "li", "br"],
+                      ALLOWED_ATTR: [],
+                    }),
+                  }}
+                  title="Clique para editar HTML"
+                />
+              ) : (
+                <textarea className={`${inputClass} min-h-[60px] font-mono text-[11px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Gerando descrição com IA..." : "<p>HTML simples: p, strong, ul, li</p>"} />
+              )}
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Fonte de verificação</label>
