@@ -32,8 +32,8 @@ const CategoryPills = ({ selected, onSelect }: Props) => {
       >
         Todos
       </button>
-      {(Object.keys(categoryConfig) as EventCategory[]).map((cat) => {
-        const Icon = categoryIcons[cat];
+      {Object.keys(categoryConfig).map((cat) => {
+        const Icon = categoryIcons[cat] ?? PartyPopper;
         const active = selected === cat;
         const config = categoryConfig[cat];
         return (
