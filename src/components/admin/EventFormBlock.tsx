@@ -190,7 +190,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
                       className="admin-glow flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
                     >
                       {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      {generatingDesc ? "Gerando..." : "Gerar com IA"}
+                      {generatingDesc ? "Injetando hype..." : "✨ Gerar Hype"}
                     </button>
                   )}
                 </div>
