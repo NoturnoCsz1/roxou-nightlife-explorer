@@ -49,6 +49,7 @@ interface EventFormBlockProps {
 const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove, onGenerateDescription, generatingDesc }: EventFormBlockProps) => {
   const [manualVenue, setManualVenue] = useState(!form.partner_id && (!!form.venue_name || !!form.address || !form.partner_id));
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
+  const [descMode, setDescMode] = useState<"preview" | "html">("preview");
 
   function handleChange(key: string, value: string | boolean) {
     const next = { ...form, [key]: value };
