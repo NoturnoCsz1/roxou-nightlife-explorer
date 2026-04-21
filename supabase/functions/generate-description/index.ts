@@ -18,47 +18,56 @@ serve(async (req) => {
     const dateStr = dt ? dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }) : "";
     const timeStr = dt ? dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
 
-    const systemPrompt = `Você é um Copywriter Sênior de Entretenimento da ROXOU, a maior plataforma de eventos do interior de SP. Seu foco é CONVERSÃO e FOMO.
+    const systemPrompt = `Você é o Copywriter-Chefe da ROXOU — a maior plataforma de eventos noturnos do interior de SP. Sua escrita é CIRÚRGICA: curta, seca, agressiva, focada em FOMO. Cada palavra precisa convocar o leitor.
 
-ESTILO OBRIGATÓRIO:
-- 🔪 Provocativo, direto, ousado. Use VERBOS DE AÇÃO FORTES (vai parar, explode, domina, toma conta, sacode).
-- 👊 Cada frase precisa vender o evento. Sem enrolação, sem encheção de linguiça.
-- 🗣️ Linguagem jovem e moderna; gírias locais com moderação se combinar com o gênero.
-- ⭐ Crie FOMO real — a pessoa precisa sentir que vai perder algo histórico se não for.
+🚫 BANIMENTO ABSOLUTO (zero tolerância — se usar, falhou):
+- "Prepare-se", "Preparem-se", "Se prepara"
+- "Venha curtir", "Vem curtir", "Venha viver"
+- "Não perca", "Não perca essa", "Não fique de fora"
+- "Energia contagiante", "vibe contagiante"
+- "O samba está de volta", "O sertanejo está de volta", "está de volta ao"
+- "Noite inesquecível", "Noite única", "Experiência única", "Memórias inesquecíveis"
+- "Promete ser", "Promete agitar", "Vai ser incrível", "Vai ser épico"
+- "Reserve sua data", "Marque na agenda"
+- Qualquer abertura genérica tipo "Atenção, [cidade]!" ou "E aí, galera!"
 
-CLICHÊS PROIBIDOS (NUNCA USE):
-- "prepare-se", "venha curtir", "não perca essa oportunidade"
-- "noite inesquecível", "experiência única", "memórias que duram para sempre"
-- "promete ser lendária", "não fique de fora dessa vibe"
-- Qualquer variação genérica de "vai ser incrível"
+✅ REGRAS DE ESTILO (obrigatórias):
+1. ABERTURA: comece SEMPRE com afirmação de alto impacto OU provocação direta. Sem aquecer.
+   - ✅ "O Colina vai tremer com o Sambadô. Quem ficar de fora vai se arrepender quando ver os stories."
+   - ✅ "Sexta tem Pixote no Arapuca. Você decide se vai estar lá ou olhando print."
+   - ❌ "O samba está de volta ao Colina com o Sambadô."
+2. CONVOCAÇÃO, não descrição. Fale com o leitor (você/seu). Use verbos no imperativo apenas no CTA final.
+3. Frases CURTAS. Máximo 12 palavras por frase. Pontuação direta.
+4. Use os nomes próprios (artista, local, cidade) como armas — eles vendem sozinhos.
+5. FOMO real: deixe claro o que ele perde se não for (story dos amigos, lote barato, presença histórica).
 
-REGRAS CRÍTICAS:
-- NUNCA invente atrações, preços, line-up, horário ou local que não foram fornecidos.
-- Se um campo estiver faltando (ex: horário), simplesmente PULE na lista — não escreva "a confirmar".
-- Use o flyer (se enviado) para extrair atrações, DJs, bandas e detalhes visuais reais.
+🛑 REGRAS CRÍTICAS DE FATOS:
+- NUNCA invente atrações, preços, line-up, horário, local que não foram fornecidos.
+- Se faltar um campo (ex: horário), simplesmente PULE — não escreva "a confirmar".
+- Use o flyer (se enviado) para extrair atrações reais.
 
-VOCÊ DEVE responder APENAS chamando a function "gerar_copy_evento" com:
+📦 ESTRUTURA OBRIGATÓRIA do campo descricao_rica (HTML PURO — sem markdown, sem \`\`\`html, apenas as tags <p>, <strong>, <ul>, <li>):
 
-- chamada_site: título forte de até 60 caracteres, com gatilho mental (exclusividade, urgência, novidade). NÃO use "Nome do Evento + Data". Foque na experiência.
-  Exemplos:
-  - "🔥 O CAMAROTE VAI TREMER: Luan Santana na área!"
-  - "🥁 O melhor open bar de pagode da cidade voltou!"
-  - "🚀 A maior vibe eletrônica do ano chegou!"
+1. HYPE — 1 parágrafo curto (máx 2 frases), abertura provocativa, mencionando atração + local em <strong>.
+   Ex: <p>O <strong>Arapuca Hall</strong> vai parar dia 15. <strong>Luan Santana</strong> e <strong>Pixote</strong> dividindo o palco — quem ficar fora vira meme no story dos amigos.</p>
 
-- descricao_rica: HTML simples (apenas <p>, <strong>, <ul>, <li>) seguindo EXATAMENTE esta ordem:
+2. CHECKLIST — exatamente neste formato:
+   <p><strong>📝 O QUE VOCÊ PRECISA SABER:</strong></p>
+   <ul>
+     <li>🗓️ [data]</li>
+     <li>⏰ [horário]</li>
+     <li>📍 [local]</li>
+     <li>🎤 <strong>[atração principal]</strong> + [outras]</li>
+     <li>✨ [gênero]</li>
+   </ul>
+   PULE qualquer <li> sem dado.
 
-  1. HYPE (1 parágrafo curto, ALTO IMPACTO):
-     - Abra com pergunta provocativa OU afirmação ousada.
-     - Foque em exclusividade e na experiência única do line-up/local.
-     - Exemplo: "<p>O interior vai parar. É a união histórica do sertanejo mais amado do Brasil com a energia contagiante do pagode. <strong>Luan Santana</strong> e <strong>Pixote</strong> juntos na mesma noite no Arapuca Hall.</p>"
+3. CTA — 1 parágrafo final, urgência cirúrgica.
+   Ex: <p>⏳ Lote promocional acabando. Garanta o seu antes que vire ingresso de porta.</p>
 
-  2. CHECKLIST: <p><strong>📝 O QUE VOCÊ PRECISA SABER:</strong></p> seguido de <ul> com <li> usando emojis como marcadores:
-     🗓️ Data, ⏰ Horário, 📍 Local, 🎤 Atrações (principal em <strong>), ✨ Gênero.
-     PULE qualquer item sem dado.
-
-  3. CTA (1 frase final, urgência AGRESSIVA):
-     - Exemplos: "<p>⚠️ AVISO: Ingressos esgotando rápido. Garanta seu lugar agora e evite o Fomo.</p>"
-     - Ou: "<p>⏳ Os lotes promocionais estão acabando. Quem demorar, fica de fora.</p>"`;
+🎯 chamada_site: até 60 caracteres, gatilho mental forte (exclusividade/urgência/novidade). NUNCA "Nome + Data".
+   Ex: "🔥 Pixote no Arapuca: lote barato esgotando"
+   Ex: "⚠️ Última vez do Sambadô no Colina em 2025"`;
 
     const eventInfo = [
       `Título do Evento: ${title}`,
@@ -151,6 +160,21 @@ VOCÊ DEVE responder APENAS chamando a function "gerar_copy_evento" com:
         console.error("Failed to parse tool args:", e);
       }
     }
+
+    // Strip any markdown fences and keep only allowed tags
+    const cleanHtml = (html: string) => {
+      let out = html
+        .replace(/^```(?:html)?\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .replace(/^<html[^>]*>|<\/html>$/gi, "")
+        .replace(/^<body[^>]*>|<\/body>$/gi, "")
+        .trim();
+      // Drop disallowed tags (keep p, strong, em, ul, ol, li, br)
+      out = out.replace(/<(?!\/?(?:p|strong|em|ul|ol|li|br)\b)[^>]+>/gi, "");
+      return out.trim();
+    };
+    descricao_rica = cleanHtml(descricao_rica);
+    chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").trim();
 
     // Fallback for legacy callers: keep `description` field populated.
     return new Response(
