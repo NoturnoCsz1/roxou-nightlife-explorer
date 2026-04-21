@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Trash2, Sparkles, Loader2, Eye, Code2 } from "lucide-react";
-import DOMPurify from "dompurify";
+import * as DOMPurifyNS from "dompurify";
+const DOMPurify: any = (DOMPurifyNS as any).default ?? DOMPurifyNS;
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { ADMIN_CATEGORY_OPTIONS, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
