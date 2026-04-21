@@ -208,7 +208,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
                   title="Clique para editar HTML"
                 />
               ) : (
-                <textarea className={`${inputClass} min-h-[60px] font-mono text-[11px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Gerando descrição com IA..." : "<p>HTML simples: p, strong, ul, li</p>"} />
+                <textarea className={`${inputClass} min-h-[60px] font-mono text-[11px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Injetando hype..." : "Aguardando o toque da IA..."} />
               )}
             </div>
             <div>
