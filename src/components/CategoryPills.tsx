@@ -1,17 +1,21 @@
-import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper } from "lucide-react";
+import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper, GraduationCap, UtensilsCrossed, Palette, Tag } from "lucide-react";
 import { categoryConfig } from "@/lib/categoryConfig";
 
-type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica" | "festa";
+type EventCategory = string;
 
-const categoryIcons: Record<EventCategory, React.ElementType> = {
+const categoryIcons: Record<string, React.ElementType> = {
   balada: Music,
   show: Mic2,
   bar: Beer,
   festival: Goal,
+  futebol: Goal,
   sertanejo: Guitar,
   funk: Disc3,
   eletronica: Headphones,
   festa: PartyPopper,
+  universitario: GraduationCap,
+  restaurante: UtensilsCrossed,
+  cultural: Palette,
 };
 
 interface Props {
