@@ -498,7 +498,7 @@ const EventoBulkForm = () => {
             className="admin-glow flex items-center justify-center gap-1.5 rounded-lg border border-border/60 bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary/80 transition disabled:opacity-50 flex-1"
           >
             <Save className="h-4 w-4" />
-            {saving ? "Salvando..." : "Salvar rascunhos"}
+            {saving ? "Publicando no Ecossistema..." : "Guardar na Base"}
           </button>
           <button
             type="button"
