@@ -117,12 +117,11 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
             <select
-              className={inputClass}
+              className={`${inputClass} border-primary/40 bg-background/60 focus:border-primary/70 focus:ring-1 focus:ring-primary/30`}
               value={form.category}
               onChange={(e) => {
                 const value = e.target.value;
                 const next: any = { ...form, category: value };
-                // clear musical sub when category no longer supports it
                 if (!supportsGenre(value)) next._sub = null;
                 onChange(index, next);
               }}
