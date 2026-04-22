@@ -25,6 +25,7 @@ import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
 import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
+import SafeHtml from "@/components/SafeHtml";
 
 const EventDetail = () => {
   const { slug } = useParams();

@@ -11,6 +11,7 @@ import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
+import SafeHtml from "@/components/SafeHtml";
 
 export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -118,7 +119,10 @@ export default function V3EventDetail() {
         {event.description && (
           <div className="space-y-2">
             <h2 className="font-display font-semibold text-base text-foreground">Sobre</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{event.description}</p>
+            <SafeHtml
+              html={event.description}
+              className="text-sm text-muted-foreground leading-relaxed [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_strong]:text-foreground"
+            />
           </div>
         )}
 
