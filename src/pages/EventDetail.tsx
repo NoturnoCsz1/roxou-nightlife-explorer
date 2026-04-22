@@ -489,9 +489,10 @@ const EventDetail = () => {
             <h2 className="mb-3 text-base font-black font-display text-foreground">
               Sobre o evento
             </h2>
-            <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-line space-y-2">
-              {event.description}
-            </p>
+            <SafeHtml
+              html={event.description}
+              className="text-sm leading-relaxed text-foreground/90 space-y-2 [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_strong]:text-foreground"
+            />
           </div>
         )}
 
