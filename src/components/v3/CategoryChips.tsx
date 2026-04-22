@@ -1,4 +1,17 @@
-import { Flame, Music, Mic2, Beer, Zap, PartyPopper } from "lucide-react";
+import {
+  Flame,
+  Music,
+  Mic2,
+  Beer,
+  Zap,
+  PartyPopper,
+  Trophy,
+  GraduationCap,
+  Utensils,
+  Palette,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
 
 const CATEGORIES = [
   { key: "festa", label: "Festas", icon: PartyPopper, color: "bg-primary/15 text-primary" },
@@ -7,7 +20,32 @@ const CATEGORIES = [
   { key: "bar", label: "Bares", icon: Beer, color: "bg-emerald-500/15 text-emerald-400" },
   { key: "sertanejo", label: "Sertanejo", icon: Music, color: "bg-orange-500/15 text-orange-400" },
   { key: "funk", label: "Funk", icon: Flame, color: "bg-pink-500/15 text-pink-400" },
+  { key: "futebol", label: "Futebol", icon: Trophy, color: "bg-yellow-500/15 text-yellow-400" },
+  { key: "universitario", label: "Universitário", icon: GraduationCap, color: "bg-indigo-500/15 text-indigo-400" },
+  { key: "restaurante", label: "Restaurantes", icon: Utensils, color: "bg-rose-500/15 text-rose-400" },
+  { key: "cultural", label: "Cultural", icon: Palette, color: "bg-fuchsia-500/15 text-fuchsia-400" },
 ];
+
+/** Icon resolver — guarantees every category renders an icon (Tag as fallback). */
+export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+  festa: PartyPopper,
+  show: Mic2,
+  balada: Zap,
+  bar: Beer,
+  sertanejo: Music,
+  funk: Flame,
+  futebol: Trophy,
+  universitario: GraduationCap,
+  restaurante: Utensils,
+  cultural: Palette,
+  festival: Music,
+  eletronica: Zap,
+};
+
+export function getCategoryIcon(key?: string | null): LucideIcon {
+  if (!key) return Tag;
+  return CATEGORY_ICON_MAP[key] ?? Tag;
+}
 
 interface CategoryChipsProps {
   selected?: string;

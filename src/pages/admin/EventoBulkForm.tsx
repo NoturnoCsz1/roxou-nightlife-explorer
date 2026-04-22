@@ -504,7 +504,11 @@ const EventoBulkForm = () => {
             type="button"
             disabled={saving || readyCount === 0}
             onClick={() => handleBulkSave("published")}
-            className="admin-glow flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50 flex-1"
+            className={`admin-glow flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50 flex-1 ${
+              !saving && readyCount > 0
+                ? "animate-pulse shadow-[0_0_18px_hsl(var(--primary)/0.55),0_0_36px_hsl(var(--primary)/0.3)]"
+                : ""
+            }`}
           >
             <Send className="h-4 w-4" />
             {saving ? "Publicando no Ecossistema..." : `LANÇAR NO ECOSSISTEMA (${readyCount})`}
