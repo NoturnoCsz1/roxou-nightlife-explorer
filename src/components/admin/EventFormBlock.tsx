@@ -4,7 +4,7 @@ import * as DOMPurifyNS from "dompurify";
 const DOMPurify: any = (DOMPurifyNS as any).default ?? DOMPurifyNS;
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { ADMIN_CATEGORY_OPTIONS, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
+import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
 
@@ -53,8 +53,11 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
   const [descMode, setDescMode] = useState<"preview" | "html">("preview");
 
   function handleChange(key: string, value: string | boolean) {
-    const next = { ...form, [key]: value };
-    if (key === "title") next.slug = slugify(value as string);
+    const next: any = { ...form, [key]: value };
+    if (key === "title" && typeof value === "string") {
+      next.title = value.toUpperCase();
+      next.slug = slugify(value);
+    }
     onChange(index, next);
   }
 
@@ -96,7 +99,12 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
         <div className="grid grid-cols-2 gap-2.5">
           <div className="col-span-2">
             <label className="text-[11px] font-medium text-muted-foreground">Título *</label>
-            <input className={inputClass} value={form.title} onChange={(e) => handleChange("title", e.target.value)} />
+            <input
+              className={`${inputClass} uppercase`}
+              value={form.title}
+              onChange={(e) => handleChange("title", e.target.value)}
+              placeholder="Qual o nome da fera?"
+            />
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Slug</label>
@@ -108,14 +116,38 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
-            <select className={inputClass} value={categoryKey(form.category, (form as any)._sub || form.category)} onChange={(e) => {
-              const { value, sub } = parseCategoryKey(e.target.value);
-              onChange(index, { ...form, category: value, _sub: sub } as any);
-            }}>
-              {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={categoryKey(c.value, c.sub)} value={categoryKey(c.value, c.sub)}>{c.label}</option>)}
+            <select
+              className={inputClass}
+              value={form.category}
+              onChange={(e) => {
+                const value = e.target.value;
+                const next: any = { ...form, category: value };
+                // clear musical sub when category no longer supports it
+                if (!supportsGenre(value)) next._sub = null;
+                onChange(index, next);
+              }}
+            >
+              {ADMIN_MAIN_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
             </select>
           </div>
-          <div>
+          {supportsGenre(form.category) && (
+            <div>
+              <label className="text-[11px] font-medium text-muted-foreground">Gênero musical</label>
+              <select
+                className={inputClass}
+                value={(form as any)._sub || ""}
+                onChange={(e) => onChange(index, { ...form, _sub: e.target.value || null } as any)}
+              >
+                <option value="">— Sem gênero —</option>
+                {ADMIN_MUSICAL_SUBS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div className={supportsGenre(form.category) ? "col-span-2" : ""}>
             <label className="text-[11px] font-medium text-muted-foreground">Parceiro</label>
             <select className={inputClass} value={form.partner_id} onChange={(e) => handlePartnerSelect(e.target.value)}>
               <option value="">— Sem parceiro —</option>
