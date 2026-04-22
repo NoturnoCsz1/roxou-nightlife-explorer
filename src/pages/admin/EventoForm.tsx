@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
-import { ADMIN_CATEGORY_OPTIONS, getCategoryLabel, categoryKey, parseCategoryKey } from "@/lib/categoryConfig";
+import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre, getCategoryLabel } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 
@@ -176,8 +176,11 @@ const EventoForm = () => {
 
   function handleChange(key: string, value: string | boolean) {
     setForm((prev) => {
-      const next = { ...prev, [key]: value };
-      if (key === "title" && !isEdit) next.slug = slugify(value as string);
+      const next: any = { ...prev, [key]: value };
+      if (key === "title" && typeof value === "string") {
+        next.title = value.toUpperCase();
+        if (!isEdit) next.slug = slugify(value);
+      }
       return next;
     });
   }
@@ -282,7 +285,12 @@ const EventoForm = () => {
           <div className="grid grid-cols-2 gap-2.5">
             <div className="col-span-2">
               <label className="text-[11px] font-medium text-muted-foreground">Título *</label>
-              <input className={inputClass} value={form.title} onChange={(e) => handleChange("title", e.target.value)} />
+              <input
+                className={`${inputClass} uppercase`}
+                value={form.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="Qual o nome da fera?"
+              />
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Slug</label>
@@ -294,14 +302,39 @@ const EventoForm = () => {
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
-              <select className={inputClass} value={categoryKey(form.category, (form as any)._sub || form.category)} onChange={(e) => {
-                const { value, sub } = parseCategoryKey(e.target.value);
-                setForm((prev) => ({ ...prev, category: value, _sub: sub } as any));
-              }}>
-                {ADMIN_CATEGORY_OPTIONS.map((c) => <option key={categoryKey(c.value, c.sub)} value={categoryKey(c.value, c.sub)}>{c.label}</option>)}
+              <select
+                className={inputClass}
+                value={form.category}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setForm((prev) => {
+                    const next: any = { ...prev, category: value };
+                    if (!supportsGenre(value)) next._sub = null;
+                    return next;
+                  });
+                }}
+              >
+                {ADMIN_MAIN_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
               </select>
             </div>
-            <div>
+            {supportsGenre(form.category) && (
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Gênero musical</label>
+                <select
+                  className={inputClass}
+                  value={(form as any)._sub || ""}
+                  onChange={(e) => setForm((prev) => ({ ...prev, _sub: e.target.value || null } as any))}
+                >
+                  <option value="">— Sem gênero —</option>
+                  {ADMIN_MUSICAL_SUBS.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className={supportsGenre(form.category) ? "col-span-2" : ""}>
               <label className="text-[11px] font-medium text-muted-foreground">Parceiro</label>
               <select className={inputClass} value={form.partner_id} onChange={(e) => handlePartnerSelect(e.target.value)}>
                 <option value="">— Sem parceiro —</option>
