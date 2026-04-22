@@ -303,7 +303,7 @@ const EventoForm = () => {
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
               <select
-                className={inputClass}
+                className={`${inputClass} border-primary/40 bg-background/60 focus:border-primary/70 focus:ring-1 focus:ring-primary/30`}
                 value={form.category}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -320,10 +320,10 @@ const EventoForm = () => {
               </select>
             </div>
             {supportsGenre(form.category) && (
-              <div>
+              <div className="animate-fade-in">
                 <label className="text-[11px] font-medium text-muted-foreground">Gênero musical</label>
                 <select
-                  className={inputClass}
+                  className={`${inputClass} border-primary/40 bg-background/60 focus:border-primary/70 focus:ring-1 focus:ring-primary/30`}
                   value={(form as any)._sub || ""}
                   onChange={(e) => setForm((prev) => ({ ...prev, _sub: e.target.value || null } as any))}
                 >
