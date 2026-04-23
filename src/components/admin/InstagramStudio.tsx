@@ -625,69 +625,102 @@ const InstagramStudio = () => {
         )}
       </div>
 
-      {/* Marketing toggles + Ideal do Dia */}
-      <div className="rounded-xl border border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-purple-500/5 p-3 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-foreground flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 text-pink-400" /> Marketing IA
-          </span>
-          <div className="flex gap-1.5">
-            <button onClick={() => setViralMode(!viralMode)}
-              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${viralMode ? "bg-pink-500/25 text-pink-400 ring-1 ring-pink-500/40" : "bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
-              ⚡ Viral
-            </button>
-            <button onClick={() => setEconomyMode(!economyMode)}
-              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${economyMode ? "bg-green-500/25 text-green-400 ring-1 ring-green-500/40" : "bg-secondary/40 text-muted-foreground hover:text-foreground"}`}>
-              💰 Econômico
-            </button>
-          </div>
-        </div>
-        {filteredEvents.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 text-[9px]">
-            {(() => {
-              const ranked = [...filteredEvents].sort((a, b) => b.score - a.score);
-              const reelHero = ranked.find(e => e.image_url) || ranked[0];
-              const destaqueHero = ranked[0];
-              return (
-                <>
-                  {reelHero && <span className="bg-pink-500/10 text-pink-400 px-2 py-1 rounded-full">🎬 Reels: <b>{reelHero.title.slice(0, 22)}</b></span>}
-                  {destaqueHero && destaqueHero.id !== reelHero?.id && <span className="bg-yellow-400/10 text-yellow-400 px-2 py-1 rounded-full">🔥 Destaque: <b>{destaqueHero.title.slice(0, 22)}</b></span>}
-                </>
-              );
-            })()}
-          </div>
-        )}
-        <button onClick={handleIdealOfDay} disabled={generating || filteredEvents.length === 0}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition disabled:opacity-50 shadow-lg shadow-pink-500/20">
-          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          ✨ GERAR IDEAL DO DIA
-        </button>
-      </div>
+      {/* ═══════════ SEÇÃO 1 · IA MASTER (HERO) ═══════════ */}
+      <section className="space-y-2">
+        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <Sparkles className="h-3 w-3 text-pink-400" /> IA Master
+        </h3>
+        <div className="relative rounded-2xl border border-pink-500/40 bg-gradient-to-br from-purple-600/20 via-pink-500/15 to-orange-500/10 backdrop-blur-xl p-4 space-y-3 overflow-hidden shadow-[0_0_32px_-8px_hsl(var(--primary)/0.4)]">
+          <div className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-pink-500/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-purple-500/30 blur-3xl" />
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => handleGenerate("agenda")} disabled={generating || selectedEvents.length === 0}
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-primary/15 px-3 py-2.5 text-[11px] font-semibold text-primary hover:bg-primary/25 transition disabled:opacity-50">
-          <CalendarDays className="h-3.5 w-3.5" /> Agenda
+          <div className="relative flex items-center justify-between">
+            <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-pink-400" /> Modo IA
+            </span>
+            <div className="flex gap-1.5">
+              <button onClick={() => setViralMode(!viralMode)}
+                className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${viralMode ? "bg-pink-500/30 text-pink-300 ring-1 ring-pink-500/50" : "bg-white/5 text-muted-foreground hover:text-foreground"}`}>
+                ⚡ Viral
+              </button>
+              <button onClick={() => setEconomyMode(!economyMode)}
+                className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-full font-bold transition ${economyMode ? "bg-green-500/25 text-green-400 ring-1 ring-green-500/40" : "bg-white/5 text-muted-foreground hover:text-foreground"}`}>
+                💰 Econ.
+              </button>
+            </div>
+          </div>
+
+          {filteredEvents.length > 0 && (
+            <div className="relative flex flex-wrap gap-1.5 text-[9px]">
+              {(() => {
+                const ranked = [...filteredEvents].sort((a, b) => b.score - a.score);
+                const reelHero = ranked.find(e => e.image_url) || ranked[0];
+                const destaqueHero = ranked[0];
+                return (
+                  <>
+                    {reelHero && <span className="bg-white/10 text-pink-300 px-2 py-1 rounded-full">🎬 Reels: <b>{reelHero.title.slice(0, 22)}</b></span>}
+                    {destaqueHero && destaqueHero.id !== reelHero?.id && <span className="bg-white/10 text-yellow-300 px-2 py-1 rounded-full">🔥 Destaque: <b>{destaqueHero.title.slice(0, 22)}</b></span>}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          <button onClick={handleIdealOfDay} disabled={generating || filteredEvents.length === 0}
+            className="relative w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 px-4 py-4 text-base font-black text-white hover:opacity-95 transition disabled:opacity-50 shadow-[0_0_24px_hsl(var(--primary)/0.55),0_0_48px_hsl(var(--primary)/0.3)] animate-pulse">
+            {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+            ✨ GERAR IDEAL DO DIA
+          </button>
+        </div>
+      </section>
+
+      {/* ═══════════ SEÇÃO 2 · FERRAMENTAS (GRID) ═══════════ */}
+      <section className="space-y-2">
+        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-1.5">
+          <Zap className="h-3 w-3 text-primary" /> Ferramentas
+        </h3>
+        <div className="grid grid-cols-2 gap-2.5">
+          {[
+            { type: "agenda" as const, icon: CalendarDays, label: "Agenda", desc: "Lista do dia", tint: "text-primary bg-primary/10 border-primary/20" },
+            { type: "top" as const, icon: Trophy, label: "Top Rolês", desc: "Ranking quente", tint: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" },
+            { type: "destaque" as const, icon: Zap, label: "Destaque", desc: "Hero do dia", tint: "text-pink-400 bg-pink-500/10 border-pink-500/20" },
+            { type: "individual" as const, icon: Image, label: "Marketing IA", desc: "Posts em série", tint: "text-accent bg-accent/10 border-accent/20" },
+          ].map(t => (
+            <button key={t.type} onClick={() => handleGenerate(t.type)} disabled={generating || selectedEvents.length === 0}
+              className={`group flex flex-col items-start gap-2 rounded-2xl border bg-white/5 backdrop-blur-md p-3.5 text-left transition hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)] disabled:opacity-50 disabled:hover:scale-100 ${t.tint}`}>
+              <t.icon className="h-6 w-6" />
+              <div>
+                <div className="text-[12px] font-bold text-foreground leading-tight">{t.label}</div>
+                <div className="text-[9px] text-muted-foreground mt-0.5">{t.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        <button onClick={() => handleGenerate("all")} disabled={generating || selectedEvents.length === 0}
+          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition disabled:opacity-50 shadow-[0_0_18px_hsl(var(--primary)/0.4)]">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          LANÇAR TUDO NO ECOSSISTEMA
         </button>
-        <button onClick={() => handleGenerate("top")} disabled={generating || selectedEvents.length === 0}
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-yellow-400/15 px-3 py-2.5 text-[11px] font-semibold text-yellow-500 hover:bg-yellow-400/25 transition disabled:opacity-50">
-          <Trophy className="h-3.5 w-3.5" /> Top Rolês
-        </button>
-        <button onClick={() => handleGenerate("destaque")} disabled={generating || selectedEvents.length === 0}
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-pink-500/15 px-3 py-2.5 text-[11px] font-semibold text-pink-400 hover:bg-pink-500/25 transition disabled:opacity-50">
-          <Zap className="h-3.5 w-3.5" /> Destaque
-        </button>
-        <button onClick={() => handleGenerate("individual")} disabled={generating || selectedEvents.length === 0}
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-accent/15 px-3 py-2.5 text-[11px] font-semibold text-accent hover:bg-accent/25 transition disabled:opacity-50">
-          <Image className="h-3.5 w-3.5" /> Individuais
-        </button>
-      </div>
-      <button onClick={() => handleGenerate("all")} disabled={generating || selectedEvents.length === 0}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition disabled:opacity-50">
-        {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        Gerar Tudo
-      </button>
+      </section>
+
+      {/* ═══════════ SEÇÃO 3 · GERENCIAMENTO (GHOST) ═══════════ */}
+      <section className="space-y-2">
+        <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Gerenciamento</h3>
+        <div className="grid grid-cols-3 gap-1.5">
+          <button onClick={() => navigate("/admin/instagram?tab=publicacao")}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-border/30 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition">
+            <Send className="h-3 w-3" /> Publicação
+          </button>
+          <button onClick={() => navigate("/admin/parceiros")}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-border/30 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition">
+            Parceiros
+          </button>
+          <button onClick={() => navigate("/admin/eventos")}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-border/30 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition">
+            Eventos
+          </button>
+        </div>
+      </section>
 
       {/* Generation status */}
       {generating && genStatus && (
