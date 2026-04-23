@@ -44,6 +44,8 @@ import V3Terms from "./pages/v3/V3Terms";
 import V3Privacy from "./pages/v3/V3Privacy";
 import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
 import V3Auth from "./pages/v3/V3Auth";
+import V3Sobre from "./pages/v3/V3Sobre";
+import V3Contato from "./pages/v3/V3Contato";
 
 const queryClient = new QueryClient();
 
@@ -101,8 +103,11 @@ const App = () => (
             <Route path="meus-pedidos" element={<V3MyRides />} />
             <Route path="terms" element={<V3Terms />} />
             <Route path="privacy" element={<V3Privacy />} />
+            <Route path="privacidade" element={<V3Privacy />} />
             <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
             <Route path="auth" element={<V3Auth />} />
+            <Route path="sobre" element={<V3Sobre />} />
+            <Route path="contato" element={<V3Contato />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
