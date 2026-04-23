@@ -89,7 +89,13 @@ export function generateStoryCopy(
   mode: "agenda" | "top" | "individual" | "destaque" = "agenda",
   viral = false,
 ): { hook: string; body: string; cta: string; full: string } {
-  const hooks = viral ? HOOKS_VIRAL : HOOKS_STORY;
+  // Tone-adapted hooks: prioritize the hero event's genre when individual/destaque,
+  // otherwise blend default with viral pool.
+  const hero = events[0];
+  const tone = detectTone(hero);
+  const tonedHooks = HOOKS_BY_TONE[tone];
+  const baseHooks = viral ? HOOKS_VIRAL : HOOKS_STORY;
+  const hooks = tone !== "padrao" ? [...tonedHooks, ...baseHooks] : baseHooks;
   const closers = viral ? CLOSERS_VIRAL : CLOSERS_STORY;
   const seed = new Date().getDate();
 
