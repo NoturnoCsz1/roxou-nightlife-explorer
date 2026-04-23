@@ -195,48 +195,57 @@ export default function V3Home() {
   const trendingIdSet = useMemo(() => new Set(trendingIds.map(t => t.id)), [trendingIds]);
 
   return (
-    <div className="space-y-1">
-      {/* ══════ 1. HERO CAROUSEL ══════ */}
+    <div className="space-y-1 -mt-14">
+      {/* ══════ 1. IMMERSIVE HERO — viewport tall ══════ */}
       {isLoading ? <HeroSkeleton /> : hero ? (
         <div className="relative">
-          <HeroSection
+          <ImmersiveHero
             ev={hero}
             isToday={!!heroIsToday}
             todayCount={todayCount}
             venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
           />
           {heroEvents.length > 1 && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+            <div className="absolute bottom-28 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
               {heroEvents.map((_, i) => (
-                <button key={i} onClick={() => setHeroIdx(i)}
-                  className={`w-2 h-2 rounded-full transition-all ${i === heroIdx ? "bg-primary w-5" : "bg-foreground/30"}`} />
+                <button
+                  key={i}
+                  aria-label={`Slide ${i + 1}`}
+                  onClick={() => setHeroIdx(i)}
+                  className={`h-2 rounded-full transition-all ${
+                    i === heroIdx ? "bg-primary w-7 shadow-[0_0_10px_hsl(var(--primary)/0.7)]" : "bg-foreground/30 w-2"
+                  }`}
+                />
               ))}
             </div>
           )}
         </div>
       ) : <EmptyHero />}
 
-      {/* ══════ 2. CATEGORIES ══════ */}
+      {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
+      <BentoGrid />
+
+      {/* ══════ 3. CATEGORIES (filtro fino) ══════ */}
       <CategoryChips selected={catFilter} onSelect={setCatFilter} />
 
       {catFilter && filtered.length > 0 && (
         <Rail title={catFilter}>
           {filtered.slice(0, 12).map(e => (
-            <EventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
+            <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
           ))}
         </Rail>
       )}
 
-      {/* ══════ 3. EM ALTA AGORA (events) ══════ */}
+      {/* ══════ 4. EM ALTA AGORA ══════ */}
       {loadingTrending ? <RailSkeleton count={3} /> : trending.length > 0 ? (
         <Rail title="🔥 Em alta agora" subtitle="Mais acessados nas últimas 24h">
           {trending.map(e => (
-            <EventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
+            <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
       ) : null}
 
-      {/* ══════ 4. 🔥 LOCAIS EM ALTA — PREMIUM RANKING ══════ */}
+      {/* ══════ 5. LOCAIS EM ALTA ══════ */}
       {loadingVenues ? <VenueRankSkeleton /> : venueRanks.length > 0 ? (
         <FadeSection className="px-4 pt-6 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
@@ -244,15 +253,13 @@ export default function V3Home() {
               <Crown className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-display font-bold text-lg text-foreground uppercase tracking-wide">Locais em alta</h2>
+              <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">Locais em alta</h2>
               <p className="text-[10px] text-muted-foreground -mt-0.5">Ranking semanal · Os mais acessados no Roxou</p>
             </div>
           </div>
 
-          {/* #1 SPOTLIGHT — dominant */}
           {venueRanks[0] && <VenueSpotlight v={venueRanks[0]} maxViews={maxViews} />}
 
-          {/* #2-#5 compact grid */}
           {venueRanks.length > 1 && (
             <div className="grid grid-cols-2 gap-2 mt-3">
               {venueRanks.slice(1, 5).map((v, i) => (
@@ -261,7 +268,6 @@ export default function V3Home() {
             </div>
           )}
 
-          {/* #6+ as mini pills */}
           {venueRanks.length > 5 && (
             <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
               {venueRanks.slice(5).map((v, i) => (
@@ -280,21 +286,21 @@ export default function V3Home() {
         </FadeSection>
       ) : null}
 
-      {/* ══════ 5. HOJE ══════ */}
+      {/* ══════ 6. HOJE ══════ */}
       {isLoading ? <RailSkeleton count={3} /> : todayEvents.length > 0 ? (
         <Rail title="⚡ Hoje" subtitle="Rolando agora em Prudente">
           {todayEvents.map(e => (
-            <EventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
+            <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
           ))}
         </Rail>
       ) : null}
 
-      {/* ══════ 6. 💎 PARCEIROS EM DESTAQUE ══════ */}
+      {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
       {(featuredPartners as any[]).length > 0 && (
         <FadeSection className="px-4 pt-5 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <Gem className="w-5 h-5 text-accent" />
-            <h2 className="font-display font-bold text-lg text-foreground uppercase tracking-wide">Parceiros em destaque</h2>
+            <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">Parceiros em destaque</h2>
           </div>
           <p className="text-[11px] text-muted-foreground mb-3">Quem está movimentando a cena</p>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
@@ -305,43 +311,34 @@ export default function V3Home() {
         </FadeSection>
       )}
 
-      {/* ══════ 7. TRANSPORT ACTION — refined as clean action card ══════ */}
-      <FadeSection className="px-4 py-2">
-        <Link
-          to="/v3/transporte"
-          className="relative flex items-center gap-3.5 p-3.5 rounded-2xl overflow-hidden border border-primary/15 group active:scale-[0.98] transition-transform"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-transparent to-accent/4" />
-          <div className="relative w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            <Car className="w-5 h-5 text-primary" />
-          </div>
-          <div className="relative flex-1 min-w-0">
-            <p className="font-display font-bold text-[13px] text-foreground">🚗 COMO VOCÊ VAI?</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Encontre carona pro rolê</p>
-          </div>
-          <span className="relative shrink-0 px-3 py-1.5 rounded-full gradient-primary text-[9px] font-bold text-primary-foreground uppercase tracking-wide">
-            Ver
-          </span>
-        </Link>
-      </FadeSection>
-
       {/* ══════ 8. EVENTOS PREMIUM ══════ */}
       {featured.length > 0 && (
         <Rail title="⭐ Eventos premium" subtitle="Destaque">
           {featured.map(e => (
-            <EventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
+            <PremiumEventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
       )}
 
-      {/* ══════ 9. ESTA SEMANA ══════ */}
+      {/* ══════ 9. ESTA SEMANA — fluid carousel ══════ */}
       {isLoading ? <RailSkeleton count={4} /> : weekEvents.length > 0 ? (
         <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
           {weekEvents.map(e => (
-            <EventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
+            <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
       ) : null}
+
+      {/* Footer institucional V3 */}
+      <FadeSection className="px-4 pt-8 pb-4">
+        <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
+          <Link to="/v3/sobre" className="hover:text-primary transition-colors">Sobre</Link>
+          <span className="opacity-30">·</span>
+          <Link to="/v3/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
+          <span className="opacity-30">·</span>
+          <Link to="/v3/contato" className="hover:text-primary transition-colors">Contato</Link>
+        </div>
+      </FadeSection>
 
       <div className="h-6" />
     </div>
