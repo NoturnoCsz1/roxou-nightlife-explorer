@@ -361,7 +361,8 @@ function FadeSection({ className, children }: { className?: string; children: Re
   );
 }
 
-function HeroSection({ ev, isToday, todayCount, venueRank }: {
+/* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
+function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
   ev: Ev; isToday: boolean; todayCount: number; venueRank?: number;
 }) {
   const dayLabel = getDayLabel(ev.date_time);
@@ -370,53 +371,140 @@ function HeroSection({ ev, isToday, todayCount, venueRank }: {
     : venueRank && venueRank <= 3 ? "Top venue da semana" : null;
 
   return (
-    <div className="relative">
-      <div className="relative h-[380px] overflow-hidden">
-        <img src={ev.image_url || "/placeholder.svg"} alt={ev.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/20" />
-        <div className="absolute top-4 left-4 flex items-center gap-2">
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/90 backdrop-blur-sm neon-glow">
-            {isToday ? <Flame className="w-3.5 h-3.5 text-primary-foreground" /> : <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />}
-            <span className="text-[10px] font-bold text-primary-foreground uppercase tracking-wider">{dayLabel}</span>
+    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] overflow-hidden">
+      {/* Background image with Ken Burns */}
+      <img
+        src={ev.image_url || "/placeholder.svg"}
+        alt={ev.title}
+        className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
+      />
+      {/* Cinematic overlays */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent" />
+      <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
+
+      {/* Top badges */}
+      <div className="absolute top-20 left-4 right-4 flex items-center gap-2 z-10">
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
+          {isToday ? <Flame className="w-3.5 h-3.5 text-primary-foreground" /> : <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />}
+          <span className="text-[10px] font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
+        </span>
+        {momentumText && (
+          <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-full v3-glass-strong">
+            <TrendingUp className="w-3 h-3 text-accent" />
+            <span className="text-[9px] font-bold text-accent uppercase tracking-wide">{momentumText}</span>
           </span>
-          {momentumText && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-card/80 backdrop-blur-sm border border-border/40">
-              <TrendingUp className="w-3 h-3 text-accent" />
-              <span className="text-[9px] font-semibold text-accent">{momentumText}</span>
-            </span>
-          )}
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
-          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{ev.category}</span>
-          <h1 className="font-display font-bold text-[26px] text-foreground leading-[1.15] line-clamp-2 neon-text">{ev.title}</h1>
+        )}
+      </div>
+
+      {/* Bottom content — extra-bold gigantic title */}
+      <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 space-y-3 z-10">
+        <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em]">{ev.category}</span>
+        <h1 className="font-display font-black text-[42px] leading-[0.95] text-foreground line-clamp-3 neon-text">
+          {ev.title.toUpperCase()}
+        </h1>
+
+        {/* Info row with neon icons */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
           {ev.venue_name && (
             <div className="flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-              <span className="text-sm font-semibold text-foreground/90">{ev.venue_name}</span>
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                <MapPin className="w-3 h-3 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.8)]" />
+              </div>
+              <span className="text-sm font-bold text-foreground/95 truncate max-w-[180px]">{ev.venue_name}</span>
               {venueRank && venueRank <= 3 && (
-                <span className="ml-1 px-1.5 py-0.5 rounded bg-primary/20 text-[8px] font-bold text-primary">#{venueRank}</span>
+                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-[8px] font-bold text-primary">#{venueRank}</span>
               )}
             </div>
           )}
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium capitalize">{fmtDateFull(ev.date_time)}</span>
-          </div>
-          <div className="flex gap-2 pt-1">
-            <Link to={`/v3/evento/${ev.slug}`} className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full gradient-primary text-primary-foreground text-xs font-bold neon-glow active:scale-95 transition-transform">
-              Ver evento <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-            <Link
-              to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 text-foreground text-xs font-semibold hover:border-primary/40 transition-colors active:scale-95"
-            >
-              <Car className="w-3.5 h-3.5 text-primary" /> Como você vai?
-            </Link>
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
+              <Clock className="w-3 h-3 text-accent drop-shadow-[0_0_6px_hsl(var(--accent)/0.8)]" />
+            </div>
+            <span className="text-xs font-semibold text-foreground/85 capitalize">{fmtDateFull(ev.date_time)}</span>
           </div>
         </div>
+
+        {/* CTAs */}
+        <div className="flex gap-2 pt-3">
+          <Link
+            to={`/v3/evento/${ev.slug}`}
+            className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full gradient-primary text-primary-foreground text-[12px] font-extrabold uppercase tracking-wider neon-glow active:scale-95 transition-transform"
+          >
+            Ver evento <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
+            className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full v3-glass-strong text-foreground text-[11px] font-bold uppercase tracking-wider hover:border-primary/50 transition-colors active:scale-95"
+          >
+            <Car className="w-3.5 h-3.5 text-primary" /> Como vou?
+          </Link>
+        </div>
       </div>
-      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-6 bg-primary/12 blur-2xl rounded-full" />
     </div>
+  );
+}
+
+/* ─── BENTO GRID — Transport hero + category quick-actions ─── */
+function BentoGrid() {
+  const quickCats = [
+    { key: "festa", label: "Festas", icon: PartyPopper, tint: "from-primary/30 to-primary/5" },
+    { key: "show", label: "Shows", icon: Mic2, tint: "from-blue-500/30 to-blue-500/5" },
+    { key: "balada", label: "Baladas", icon: Zap, tint: "from-accent/30 to-accent/5" },
+    { key: "bar", label: "Bares", icon: Beer, tint: "from-emerald-500/30 to-emerald-500/5" },
+  ];
+
+  return (
+    <FadeSection className="px-4 pt-5 pb-3">
+      <div className="grid grid-cols-3 gap-2.5 auto-rows-[88px]">
+        {/* Transport — large featured tile (2 cols, 2 rows) */}
+        <Link
+          to="/v3/transporte"
+          className="col-span-2 row-span-2 relative rounded-2xl overflow-hidden p-4 flex flex-col justify-between active:scale-[0.98] transition-transform group"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(var(--v3-neon)) 0%, hsl(var(--v3-neon-soft)) 60%, hsl(270 80% 35%) 100%)",
+          }}
+        >
+          {/* Animated glow */}
+          <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/20 blur-3xl group-hover:scale-110 transition-transform duration-500" />
+          <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full bg-black/20 blur-3xl" />
+
+          <div className="relative flex items-center justify-between">
+            <span className="px-2.5 py-1 rounded-full bg-black/30 backdrop-blur-sm text-[9px] font-extrabold text-white uppercase tracking-widest">
+              Transporte
+            </span>
+            <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:rotate-[-8deg] transition-transform duration-500">
+              <Car className="w-7 h-7 text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
+            </div>
+          </div>
+
+          <div className="relative space-y-1">
+            <h3 className="font-display font-black text-2xl text-white leading-none">
+              COMO VOCÊ<br />VAI?
+            </h3>
+            <p className="text-[11px] font-medium text-white/80">
+              Encontre carona pro próximo rolê
+            </p>
+            <div className="flex items-center gap-1 pt-1.5 text-[10px] font-bold text-white uppercase tracking-wider">
+              Pedir agora <ArrowRight className="w-3 h-3" />
+            </div>
+          </div>
+        </Link>
+
+        {/* Category tiles (1x1 each) */}
+        {quickCats.map(({ key, label, icon: Icon, tint }) => (
+          <Link
+            key={key}
+            to={`/v3/descobrir?cat=${key}`}
+            className={`relative rounded-2xl overflow-hidden v3-glass flex flex-col items-center justify-center gap-1 active:scale-[0.95] transition-transform group bg-gradient-to-br ${tint}`}
+          >
+            <Icon className="w-5 h-5 text-foreground group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] font-bold text-foreground uppercase tracking-wide">{label}</span>
+          </Link>
+        ))}
+      </div>
+    </FadeSection>
   );
 }
 
@@ -550,8 +638,8 @@ function FeaturedPartnerCard({ p }: { p: any }) {
   );
 }
 
-/* ─── EVENT CARD ─── */
-function EventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
+/* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
+function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
   ev: Ev; size?: "md" | "lg"; premium?: boolean; isTrending?: boolean; partnerRank?: number;
 }) {
   const isLg = size === "lg";
@@ -563,25 +651,35 @@ function EventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
   return (
     <>
       <div
-        className={`shrink-0 snap-start rounded-xl overflow-hidden v3-glass v3-neon-hover group transition-all active:scale-[0.97] ${
-          premium ? "border-primary/30 neon-border" : ""
-        } ${isLg ? "w-[230px]" : "w-[165px]"}`}
+        className={`shrink-0 snap-start rounded-2xl overflow-hidden v3-glass v3-neon-hover group transition-all active:scale-[0.97] ${
+          premium ? "border-primary/40 neon-border" : ""
+        } ${isLg ? "w-[240px]" : "w-[170px]"}`}
+        style={{
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 28px rgba(0,0,0,0.45)",
+        }}
       >
         <Link to={`/v3/evento/${ev.slug}`} className="block">
-          <div className={`relative ${isLg ? "h-[130px]" : "h-[100px]"} overflow-hidden`}>
-            <img src={ev.image_url || "/placeholder.svg"} alt={ev.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className={`relative ${isLg ? "h-[150px]" : "h-[115px]"} overflow-hidden`}>
+            <img
+              src={ev.image_url || "/placeholder.svg"}
+              alt={ev.title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+            {/* Inner ring shadow */}
+            <div className="absolute inset-0 ring-1 ring-inset ring-white/5 rounded-2xl pointer-events-none" />
             <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm">
               <Clock className="w-2.5 h-2.5 text-primary" />
               <span className="text-[9px] font-bold text-foreground">{fmtTime(ev.date_time)}</span>
             </div>
-            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/90 text-[8px] font-bold text-primary-foreground uppercase tracking-wider">
+            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/95 text-[8px] font-extrabold text-primary-foreground uppercase tracking-[0.12em]">
               {getDayLabel(ev.date_time)}
             </span>
           </div>
-          <div className="p-2.5 space-y-1">
-            <h3 className="font-display font-semibold text-[12px] text-foreground line-clamp-2 leading-snug">{ev.title}</h3>
+          <div className="p-3 space-y-1.5">
+            <h3 className="font-display font-bold text-[12.5px] text-foreground line-clamp-2 leading-tight">{ev.title}</h3>
             {ev.venue_name && (
               <div className="flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-primary shrink-0" />
@@ -591,7 +689,7 @@ function EventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
             {badge && <span className="inline-block text-[9px] font-bold text-accent">{badge}</span>}
           </div>
         </Link>
-        <div className="px-2.5 pb-2.5">
+        <div className="px-3 pb-3">
           <button
             type="button"
             onClick={(e) => {
@@ -599,8 +697,8 @@ function EventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
               e.stopPropagation();
               setDrawerOpen(true);
             }}
-            className="w-full flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-bold uppercase tracking-wider text-white v3-neon-hover"
-            style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.9), hsl(var(--v3-neon-soft) / 0.9))" }}
+            className="w-full flex items-center justify-center gap-1 rounded-xl py-2 text-[10px] font-extrabold uppercase tracking-wider text-white v3-neon-hover"
+            style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.95), hsl(var(--v3-neon-soft) / 0.95))" }}
           >
             <Sparkles className="w-3 h-3" />
             Reservar
@@ -699,28 +797,4 @@ function Rail({ title, subtitle, children }: { title: string; subtitle?: string;
   );
 }
 
-/* ─── CATEGORY CHIPS ─── */
-const CATS = [
-  { key: "festa", label: "Festas", icon: PartyPopper, color: "bg-primary/15 text-primary" },
-  { key: "show", label: "Shows", icon: Mic2, color: "bg-blue-500/15 text-blue-400" },
-  { key: "balada", label: "Baladas", icon: Zap, color: "bg-accent/15 text-accent" },
-  { key: "bar", label: "Bares", icon: Beer, color: "bg-emerald-500/15 text-emerald-400" },
-  { key: "sertanejo", label: "Sertanejo", icon: Music, color: "bg-orange-500/15 text-orange-400" },
-  { key: "funk", label: "Funk", icon: Flame, color: "bg-pink-500/15 text-pink-400" },
-];
-
-function CategoryChips({ selected, onSelect }: { selected: string; onSelect: (c: string) => void }) {
-  return (
-    <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
-      {CATS.map(({ key, label, icon: Icon, color }) => (
-        <button key={key} onClick={() => onSelect(selected === key ? "" : key)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium shrink-0 transition-all border ${
-            selected === key ? "gradient-primary text-primary-foreground border-primary neon-glow" : `${color} border-transparent hover:border-border`
-          }`}
-        >
-          <Icon className="w-3.5 h-3.5" /> {label}
-        </button>
-      ))}
-    </div>
-  );
-}
+/* (CategoryChips is imported from shared component) */
