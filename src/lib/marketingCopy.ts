@@ -11,13 +11,27 @@ interface CopyEvent {
   date_time: string;
   venue_name: string | null;
   category: string;
+  sub_category?: string | null;
 }
 
 const CATEGORY_EMOJI: Record<string, string> = {
   bar: "🍺", balada: "🪩", festa: "🎉", evento: "📌",
   restaurante: "🍽️", "casa de show": "🎤", futebol: "⚽",
-  show: "🎤", festival: "🏟️",
+  show: "🎤", festival: "🏟️", universitario: "🎓", cultural: "🎭",
 };
+
+// ====== TONE DETECTION BY GENRE / CATEGORY ======
+type Tone = "festivo" | "energetico" | "descontraido" | "padrao";
+
+function detectTone(ev?: CopyEvent | null): Tone {
+  if (!ev) return "padrao";
+  const sub = (ev.sub_category || "").toLowerCase();
+  const cat = (ev.category || "").toLowerCase();
+  if (sub === "sertanejo" || sub === "pagode_samba" || sub === "festa" || sub === "mpb") return "festivo";
+  if (sub === "eletronica" || sub === "funk" || cat === "balada") return "energetico";
+  if (cat === "universitario") return "descontraido";
+  return "padrao";
+}
 
 // ====== STORY / REELS COPY (curto, viral, gatilho) ======
 
@@ -41,6 +55,13 @@ const HOOKS_VIRAL = [
   "🔥 QUEM TÁ DENTRO? 👀",
   "⚡ ANTES QUE ENCHA — CORRE",
 ];
+
+const HOOKS_BY_TONE: Record<Tone, string[]> = {
+  festivo: ["🎉 HOJE TEM FESTA BOA", "🍻 BORA CAIR NA ROÇA HOJE", "🥁 PRUDENTE EM RITMO DE ALEGRIA", "❤️ HOJE A NOITE É QUENTE"],
+  energetico: ["🔥 SOM ALTO HOJE EM PRUDENTE", "⚡ AS LUZES VÃO PISCAR HOJE", "🪩 NOITE LIGADA NO MÁXIMO", "🚨 PISTA CHEIA — BORA?"],
+  descontraido: ["🎓 RESENHA UNIVERSITÁRIA HOJE", "😎 HOJE OS UNIVERSIDADES TÃO ON", "🍻 ROLÊ DE FACUL HOJE — COLA", "🤙 SEM MIMIMI, BORA SAIR"],
+  padrao: HOOKS_STORY,
+};
 
 const CLOSERS_STORY = [
   "Confere tudo na ROXOU 👇",
