@@ -7,10 +7,12 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
-  Flame, Music, Mic2, Beer, Zap, PartyPopper, Crown, Eye, TrendingUp,
-  ChevronRight, Star, Gem, BarChart3, BadgeCheck, Heart,
+  Crown, Eye, TrendingUp,
+  ChevronRight, Gem, BadgeCheck, Heart, Flame,
+  PartyPopper, Mic2, Zap, Beer, Music,
 } from "lucide-react";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import CategoryChips from "@/components/v3/CategoryChips";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
