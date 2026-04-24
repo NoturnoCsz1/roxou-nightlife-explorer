@@ -555,6 +555,7 @@ interface ReviewRowProps {
   index: number;
   item: BulkItem;
   partners: Partner[];
+  isDuplicate?: boolean;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
@@ -565,14 +566,24 @@ interface ReviewRowProps {
 }
 
 function ReviewRow({
-  index, item, partners, onPartnerChange, onChangeForm,
+  index, item, partners, isDuplicate, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
+    <div className={`rounded-xl border bg-card overflow-hidden transition ${
+      isDuplicate
+        ? "border-destructive/80 ring-2 ring-destructive/40 animate-pulse shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
+        : "border-border/40"
+    }`}>
+      {isDuplicate && (
+        <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-1.5 text-[10px] font-semibold text-destructive flex items-center gap-1.5">
+          <AlertCircle className="h-3 w-3" />
+          ⚠️ CONTEÚDO DUPLICADO: Verifique se este evento já foi cadastrado.
+        </div>
+      )}
       <div className="flex items-stretch gap-2 p-2">
         {/* thumb */}
         <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-secondary/40">
