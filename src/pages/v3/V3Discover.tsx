@@ -118,6 +118,29 @@ export default function V3Discover() {
     },
   });
 
+  /* ─── DEBOUNCED SEARCH ─── */
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  /* ─── PARTNER SEARCH (fallback layer) ─── */
+  const { data: partnerMatches = [] } = useQuery({
+    queryKey: ["v3-partner-search", debouncedSearch],
+    enabled: debouncedSearch.length >= 2,
+    queryFn: async () => {
+      const term = `%${debouncedSearch}%`;
+      const { data } = await supabase
+        .from("partners")
+        .select("id,name,slug,type,logo_url,short_description,verified_partner,city")
+        .eq("active", true)
+        .or(`name.ilike.${term},short_description.ilike.${term},neighborhood.ilike.${term}`)
+        .limit(8);
+      return data || [];
+    },
+  });
+
   const verifiedPartnerIds = useMemo(() => new Set((allPartners as any[]).filter((p: any) => p.verified_partner).map((p: any) => p.id)), [allPartners]);
   const verifiedPartners = useMemo(() => (allPartners as any[]).filter((p: any) => p.verified_partner), [allPartners]);
   const partnerTypeMap = useMemo(() => {
