@@ -23,7 +23,7 @@ const systemPrompt = `Você é um extrator de metadados de flyers/banners de eve
 Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown, sem comentários) com os seguintes campos:
 
 {
-  "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] — [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] — [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. Exemplos de Frases de Impacto: "NOITE HISTÓRICA", "O MELHOR DA REGIÃO", "SÁBADO IMPERDÍVEL", "ROLÊ DO MÊS", "VIBE INSANA", "NOITE PREMIUM", "SE PREPARA", "ESPERA NÃO", "ENERGIA PURA", "PISTA EXPLOSIVA", "EXPERIÊNCIA ÚNICA". Exemplos completos: "LUAN SANTANA NO ARENA — NOITE HISTÓRICA", "BAILE DO MC IG NO GALPÃO 51 — VIBE INSANA", "SAMBA DA QUINTA NO BEAR LOUNGE — ROLÊ DO MÊS".
+  "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. Exemplos: "JOÃO MARKOS NO ARAPUCA BAR NOITE HISTÓRICA", "LUAN SANTANA NO ARENA NOITE HISTÓRICA", "BAILE DO MC IG NO GALPÃO 51 VIBE INSANA", "SAMBA DA QUINTA NO BEAR LOUNGE ROLÊ DO MÊS". Frases de impacto possíveis: "NOITE HISTÓRICA", "O MELHOR DA REGIÃO", "SÁBADO IMPERDÍVEL", "ROLÊ DO MÊS", "VIBE INSANA", "NOITE PREMIUM", "SE PREPARA", "ENERGIA PURA", "PISTA EXPLOSIVA", "EXPERIÊNCIA ÚNICA".
   "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. null se não houver.
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
@@ -35,28 +35,34 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
   "confidence": "high"|"medium"|"low"
 }
 
-REGRAS DE TAXONOMIA (mapeamento direto do flyer → category/sub_category):
-- "samba", "pagode", "roda de samba" → category="festa", sub_category="pagode_samba"
-- "funk", "baile funk", "MC ", "DJ funk" → category="festa", sub_category="funk"
-- "sertanejo", "modão" → category="festa", sub_category="sertanejo"
-- "rock", "metal" → category="show", sub_category="rock"
-- "pop rock", "indie", "alternativo" → category="show", sub_category="pop_rock"
-- "MPB", "bossa", "samba-canção" → category="show", sub_category="mpb"
-- "eletrônica", "techno", "house", "trance", "rave" → category="festa", sub_category="eletronica"
-- "festival", "edição", "open air", line-ups com 3+ atrações → category="festival"
+🟣 REGRA DE OURO — NATUREZA DO ESTABELECIMENTO PREVALECE SOBRE O EVENTO:
+A category PRINCIPAL deve refletir o TIPO DO LOCAL, não o gênero musical do flyer. O gênero/atração vai sempre para sub_category.
+- Se o nome do local contiver "Gastrobar", "Bar", "Boteco", "Pub", "Choperia" → category="bar" (sub_category = gênero musical, ex: eletronica, pagode_samba, sertanejo)
+- Se o nome do local contiver "Restaurante", "Espetaria", "Espetinho", "Churrascaria" → category="restaurante" ou "espetinho" (sub_category = gênero musical se houver)
+- Se o nome do local contiver "Lounge", "Rooftop" → category="lounge" (sub_category = gênero musical)
+- Se o nome do local contiver "Club", "Balada", "Disco", "Night" → category="balada" (sub_category = gênero musical)
+- Se o nome do local contiver "Arena", "Estádio", "Teatro", "Casa de Show" → category="show" (sub_category = gênero musical)
+EXEMPLOS APLICANDO A REGRA DE OURO:
+- "Fábrica Gastrobar" com DJ de eletrônica → category="bar", sub_category="eletronica" (NUNCA "balada")
+- "Arapuca Bar" com show de pagode → category="bar", sub_category="pagode_samba" (NUNCA "festa")
+- "Bear Lounge" com samba → category="lounge", sub_category="pagode_samba"
+- "Galpão 51" (sem palavra-chave de tipo) com baile funk → category="festa", sub_category="funk"
+
+REGRAS DE TAXONOMIA POR GÊNERO (use APENAS se o nome do local NÃO indicar tipo claro):
+- "samba", "pagode", "roda de samba" → sub_category="pagode_samba" (category default = "festa")
+- "funk", "baile funk", "MC ", "DJ funk" → sub_category="funk"
+- "sertanejo", "modão" → sub_category="sertanejo"
+- "rock", "metal" → sub_category="rock"
+- "pop rock", "indie", "alternativo" → sub_category="pop_rock"
+- "MPB", "bossa", "samba-canção" → sub_category="mpb"
+- "eletrônica", "techno", "house", "trance", "rave" → sub_category="eletronica"
+- "festival", "open air", line-ups com 3+ atrações → category="festival"
 - "universitário", "open bar", "calourada", "atlética" → category="universitario"
 - "futebol", "jogo", "transmissão", "copa", "brasileirão" → category="futebol"
 - "cultural", "exposição", "teatro", "literário", "cineclube", "sarau" → category="cultural"
-- "lounge", "rooftop", "drinks autorais", "ambiente intimista", nome do local contém "Lounge" → category="lounge"
-- "espetinho", "espeto", "espetaria", "churrasquinho", nome do local contém "Espetinho/Espetaria" → category="espetinho"
-- "rodízio", "happy hour", "boteco", "chopp" sem música destacada → category="bar"
-- "rodízio gastronômico", "jantar harmonizado", "menu degustação" → category="restaurante"
-- "balada", "club", "night" sem gênero específico → category="balada"
-- Show de artista sem rótulo de gênero claro → category="show", sub_category="show"
-- Festa genérica → category="festa", sub_category="festa"
 
 OUTRAS REGRAS:
-- "title": SEMPRE em CAIXA ALTA, formato "ATRAÇÃO NO LOCAL — FRASE DE IMPACTO" (use travessão "—" como separador), máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto.
+- "title": SEMPRE em CAIXA ALTA. PROIBIDO usar hífens (-), travessões (—, –), dois pontos (:), barras (/) ou QUALQUER símbolo de separação. Use apenas ESPAÇOS entre as partes. Formato: "ATRAÇÃO NO LOCAL FRASE DE IMPACTO". Máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto.
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente.
 - "ticket_url": SEMPRE null. Nunca extraia link de ingresso.
 - "venue_name": só preencha se tiver razoável certeza do nome do local.
@@ -138,15 +144,62 @@ serve(async (req) => {
     }
 
     // sanitize
-    const cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
+    let cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
     const subRaw = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
-    const sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
+    let sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
+
+    // 🟣 REGRA DE OURO server-side: nome do local prevalece sobre gênero do flyer
+    let category_override_reason: string | null = null;
+    const venueRaw: string = (parsed.venue_name || "").toString();
+    const venueLower = venueRaw.toLowerCase();
+    const venueMap: Array<{ keys: string[]; cat: string; label: string }> = [
+      { keys: ["gastrobar", "boteco", "choperia", "pub", " bar ", "bar "], cat: "bar", label: "Bar / Gastrobar" },
+      { keys: ["restaurante", "churrascaria"], cat: "restaurante", label: "Restaurante" },
+      { keys: ["espetaria", "espetinho"], cat: "espetinho", label: "Espetaria / Espetinho" },
+      { keys: ["lounge", "rooftop"], cat: "lounge", label: "Lounge" },
+      { keys: ["arena", "estádio", "estadio", "teatro", "casa de show"], cat: "show", label: "Casa de show / Arena" },
+      { keys: ["club", "balada", "disco", "night"], cat: "balada", label: "Club / Balada" },
+    ];
+    if (venueLower) {
+      // pad with spaces to make " bar " match correctly
+      const padded = ` ${venueLower} `;
+      for (const rule of venueMap) {
+        if (rule.keys.some(k => padded.includes(k))) {
+          if (cat !== rule.cat) {
+            // se IA disse "balada/festa/show" mas o local é bar/restaurante/lounge → override
+            const musicCats = new Set(["balada", "festa", "show"]);
+            if (musicCats.has(cat) || cat === "festa") {
+              // mover gênero para sub_category se ainda não estiver
+              const genreSubs = new Set(["funk", "pagode_samba", "rock", "pop_rock", "eletronica", "sertanejo", "mpb"]);
+              if (!genreSubs.has(sub)) {
+                // tentar inferir gênero do sub atual ou da categoria original
+                if (cat === "balada") sub = "eletronica";
+                else if (cat === "festa") sub = sub === "festa" ? "eletronica" : sub;
+                else if (cat === "show") sub = sub === "show" ? "mpb" : sub;
+              }
+              category_override_reason = `Local identificado como ${rule.label}`;
+              cat = rule.cat;
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    // título: remover hífens, travessões, dois pontos, barras (regra "sem traços")
+    let title: string = (parsed.title || "").toString();
+    title = title
+      .replace(/\s*[—–-]\s*/g, " ")  // hifens e travessões
+      .replace(/\s*[:\/|]\s*/g, " ") // dois pontos, barras, pipes
+      .replace(/\s+/g, " ")
+      .trim()
+      .toUpperCase();
 
     // ticket_url: forçado null (regra de negócio: lote nunca extrai link)
     const ticketUrl = null;
 
     return new Response(JSON.stringify({
-      title: parsed.title || "",
+      title,
       date_iso: parsed.date_iso || null,
       venue_name: parsed.venue_name || null,
       venue_confidence: parsed.venue_confidence || "low",
@@ -156,6 +209,7 @@ serve(async (req) => {
       sub_category: sub,
       ticket_url: ticketUrl,
       confidence: parsed.confidence || "medium",
+      category_override_reason,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

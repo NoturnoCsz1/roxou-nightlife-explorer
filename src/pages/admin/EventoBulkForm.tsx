@@ -22,6 +22,7 @@ interface BulkItem {
   errorMsg?: string;
   expanded: boolean;
   form: EventFormData;
+  categoryWarning?: string | null;
 }
 
 function normalize(s: string) {
@@ -146,12 +147,17 @@ const EventoBulkForm = () => {
       patchItem(localId, { status: "extracting" });
       patchForm(localId, { image_url: publicUrl });
 
-      // 2. AI extract
-      const { data, error } = await supabase.functions.invoke("extract-flyer-metadata", {
+      // 2. AI extract — wait fully and validate before downstream calls
+      const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
         body: { image_url: publicUrl, current_year: new Date().getFullYear() },
       });
-      if (error) throw error;
-      if (data?.error && !data.title) {
+      if (extractResp.error) throw extractResp.error;
+      const data = extractResp.data;
+      if (!data || typeof data !== "object") {
+        patchItem(localId, { status: "ready" });
+        return;
+      }
+      if (data.error && !data.title) {
         // graceful: keep image, ask user to fill manually
         patchItem(localId, { status: "ready" });
         return;
@@ -159,6 +165,7 @@ const EventoBulkForm = () => {
 
       const matched = matchPartner(data.venue_name, partners, data.venue_confidence);
       const dateInput = formatDateForInput(data.date_iso);
+      const categoryWarning: string | null = data.category_override_reason || null;
 
       let readyForm: EventFormData | null = null;
       setItems((prev) =>
@@ -181,29 +188,26 @@ const EventoBulkForm = () => {
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
           };
           readyForm = next;
-          return { ...it, form: next, status: "ready" };
+          return { ...it, form: next, status: "ready", categoryWarning };
         }),
       );
 
-      // Auto-generate rich description (Persona V2) if we have a title
-      if (readyForm && (readyForm as EventFormData).title) {
-        const f = readyForm as EventFormData;
+      // Auto-generate rich description (Persona V2) — only after metadata is confirmed valid
+      const f = readyForm as EventFormData | null;
+      if (f && f.title && f.title.length > 3) {
         try {
-          const { data: descData, error: descError } = await supabase.functions.invoke(
-            "generate-description",
-            {
-              body: {
-                title: f.title,
-                venue_name: f.venue_name,
-                date_time: f.date_time,
-                category: f.category,
-                image_url: f.image_url,
-              },
+          const descResp = await supabase.functions.invoke("generate-description", {
+            body: {
+              title: f.title,
+              venue_name: f.venue_name || "",
+              date_time: f.date_time || "",
+              category: f.category || "festa",
+              image_url: f.image_url || "",
             },
-          );
-          if (!descError) {
-            const rich = descData?.descricao_rica || descData?.description;
-            if (rich) {
+          });
+          if (!descResp.error && descResp.data) {
+            const rich = descResp.data?.descricao_rica || descResp.data?.description;
+            if (rich && typeof rich === "string") {
               patchForm(localId, { description: rich });
             }
           }
@@ -582,6 +586,12 @@ function ReviewRow({
         <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-1.5 text-[10px] font-semibold text-destructive flex items-center gap-1.5">
           <AlertCircle className="h-3 w-3" />
           ⚠️ CONTEÚDO DUPLICADO: Verifique se este evento já foi cadastrado.
+        </div>
+      )}
+      {item.categoryWarning && !isDuplicate && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
+          <AlertCircle className="h-3 w-3" />
+          ⚠️ Verifique a categoria: {item.categoryWarning}
         </div>
       )}
       <div className="flex items-stretch gap-2 p-2">
