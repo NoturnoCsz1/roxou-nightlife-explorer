@@ -85,6 +85,7 @@ const EventoBulkForm = () => {
   const [generatingDescIds, setGeneratingDescIds] = useState<Set<string>>(new Set());
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -92,6 +93,33 @@ const EventoBulkForm = () => {
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => setPartners(data || []));
   }, [cityFilter]);
+
+  // Load existing slugs from DB for duplicate detection
+  useEffect(() => {
+    let q = supabase.from("events").select("slug");
+    if (cityFilter) q = q.eq("city", cityFilter);
+    q.then(({ data }) => {
+      if (data) setDbSlugs(new Set(data.map((r: any) => r.slug).filter(Boolean)));
+    });
+  }, [cityFilter]);
+
+  // Detect duplicates: slug exists in DB or appears more than once in current items
+  function getDuplicateSet(): Set<string> {
+    const dup = new Set<string>();
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const s = (it.form.slug || "").trim();
+      if (!s) continue;
+      counts.set(s, (counts.get(s) || 0) + 1);
+    }
+    for (const it of items) {
+      const s = (it.form.slug || "").trim();
+      if (!s) continue;
+      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1) dup.add(it.localId);
+    }
+    return dup;
+  }
+  const duplicateIds = getDuplicateSet();
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
     setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
