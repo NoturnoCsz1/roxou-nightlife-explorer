@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CheckSquare, ChevronDown, Copy, Download, Layers, Loader2, MousePointerClick, Plus, Search, Square, Star, StarOff, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, CheckSquare, ChevronDown, Copy, Download, Layers, Loader2, MousePointerClick, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,30 @@ interface EventRow {
   status: string;
   featured: boolean;
   image_url: string | null;
+  description: string | null;
+}
+
+type ChecklistKey = "title" | "date" | "description" | "flyer";
+interface Checklist {
+  title: boolean;
+  date: boolean;
+  description: boolean;
+  flyer: boolean;
+  complete: boolean;
+}
+
+function getChecklist(e: EventRow): Checklist {
+  const title = !!e.title && e.title.trim().length >= 5;
+  const date = !!e.date_time && new Date(e.date_time).getTime() > Date.now();
+  const desc = (e.description || "").trim();
+  // Persona V2 = HTML rica com checklist (📝 O QUE VOCÊ PRECISA SABER) ou ao menos <ul> + <strong> + 80+ chars
+  const description =
+    desc.length >= 80 &&
+    /<(p|ul|li|strong)\b/i.test(desc) &&
+    (/O QUE VOC[ÊE] PRECISA SABER/i.test(desc) || /<ul[\s>]/i.test(desc));
+  const flyer = !!e.image_url;
+  const complete = title && date && description && flyer;
+  return { title, date, description, flyer, complete };
 }
 
 const EventosList = () => {
@@ -46,10 +70,13 @@ const EventosList = () => {
   const [pastOpen, setPastOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [onlyIncomplete, setOnlyIncomplete] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [zipping, setZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
+  const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
+  const [publishing, setPublishing] = useState(false);
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -81,11 +108,11 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description")
       .order("date_time", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
-    setEvents(data || []);
+    setEvents((data as any) || []);
     setLoading(false);
   }
 
@@ -108,8 +135,8 @@ const EventosList = () => {
   }
 
   function toggleSelectAll() {
-    const visibleIds = filtered.filter(e => e.image_url).map(e => e.id);
-    if (visibleIds.every(id => selectedIds.has(id))) {
+    const visibleIds = filtered.map(e => e.id);
+    if (visibleIds.every(id => selectedIds.has(id)) && visibleIds.length > 0) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(visibleIds));
@@ -159,10 +186,86 @@ const EventosList = () => {
     }
   }
 
+  async function regenerateTitle(e: EventRow) {
+    if (!e.image_url) {
+      toast.error("Sem flyer para gerar título.");
+      return;
+    }
+    setAiBusy(p => ({ ...p, [e.id]: "title" }));
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-flyer-metadata", {
+        body: { image_url: e.image_url, current_year: new Date().getFullYear() },
+      });
+      if (error) throw error;
+      const newTitle = (data as any)?.title;
+      if (!newTitle) throw new Error("IA não retornou título");
+      await supabase.from("events").update({ title: newTitle }).eq("id", e.id);
+      setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: newTitle } : x));
+      toast.success("Título atualizado pela IA");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao gerar título");
+    } finally {
+      setAiBusy(p => ({ ...p, [e.id]: null }));
+    }
+  }
+
+  async function regenerateDescription(e: EventRow) {
+    setAiBusy(p => ({ ...p, [e.id]: "desc" }));
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-description", {
+        body: {
+          title: e.title,
+          venue_name: e.venue_name,
+          date_time: e.date_time,
+          category: e.sub_category || e.category,
+          image_url: e.image_url,
+        },
+      });
+      if (error) throw error;
+      const html = (data as any)?.descricao_rica || (data as any)?.description;
+      if (!html) throw new Error("IA não retornou descrição");
+      await supabase.from("events").update({ description: html }).eq("id", e.id);
+      setEvents(prev => prev.map(x => x.id === e.id ? { ...x, description: html } : x));
+      toast.success("Descrição rica gerada");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao gerar descrição");
+    } finally {
+      setAiBusy(p => ({ ...p, [e.id]: null }));
+    }
+  }
+
+  async function handleBulkPublish() {
+    const selected = events.filter(e => selectedIds.has(e.id));
+    const ready = selected.filter(e => getChecklist(e).complete && e.status !== "published");
+    const blocked = selected.length - ready.length - selected.filter(e => e.status === "published").length;
+
+    if (ready.length === 0) {
+      toast.error(`Nenhum evento pronto. ${blocked} bloqueado(s) por falta de informação.`);
+      return;
+    }
+    setPublishing(true);
+    try {
+      const ids = ready.map(e => e.id);
+      const { error } = await supabase.from("events").update({ status: "published" }).in("id", ids);
+      if (error) throw error;
+      setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "published" } : e));
+      setSelectedIds(new Set());
+      toast.success(`${ready.length} evento(s) publicado(s)!`);
+      if (blocked > 0) {
+        toast.warning(`${blocked} evento(s) não puderam ser postados por falta de informações.`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao publicar em lote");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   const filtered = events
     .filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
     .filter((e) => !activeCategory || e.category === activeCategory)
-    .filter((e) => !activeStatus || e.status === activeStatus);
+    .filter((e) => !activeStatus || e.status === activeStatus)
+    .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
 
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -193,49 +296,99 @@ const EventosList = () => {
   const selectedCount = selectedIds.size;
   const zipPercent = zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0;
 
-  const renderEventRow = (e: EventRow) => (
-    <div key={e.id} className="flex items-center gap-2 rounded-xl border border-border/40 bg-card p-3">
-      {e.image_url && (
+  // Counters for drafts
+  const draftEvents = events.filter(e => e.status === "draft");
+  const draftsReady = draftEvents.filter(e => getChecklist(e).complete).length;
+  const draftsAttention = draftEvents.length - draftsReady;
+  const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status !== "published").length;
+
+  const ChecklistDot = ({ ok, label }: { ok: boolean; label: string }) => (
+    <span
+      title={`${label}: ${ok ? "OK" : "Faltando"}`}
+      className={`inline-flex items-center justify-center h-4 w-4 rounded-full ${ok ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}
+    >
+      {ok ? <Check className="h-2.5 w-2.5" /> : <X className="h-2.5 w-2.5" />}
+    </span>
+  );
+
+  const renderEventRow = (e: EventRow) => {
+    const cl = getChecklist(e);
+    const busy = aiBusy[e.id];
+    const isDraft = e.status === "draft";
+    return (
+      <div key={e.id} className={`flex items-center gap-2 rounded-xl border p-3 ${isDraft && !cl.complete ? "border-red-500/30 bg-card" : "border-border/40 bg-card"}`}>
         <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
           {selectedIds.has(e.id)
             ? <CheckSquare className="h-4 w-4 text-primary" />
             : <Square className="h-4 w-4 text-muted-foreground" />}
         </button>
-      )}
-      <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
-        <span className="text-sm font-semibold text-foreground truncate block">{e.title}</span>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
-            {getCategoryLabel(e.category, e.sub_category)}
-          </span>
-          <span className="text-[10px] text-muted-foreground">
-            {new Date(e.date_time).toLocaleDateString("pt-BR")}
-          </span>
-          {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
-          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
-            {e.status === "published" ? "Publicado" : "Rascunho"}
-          </span>
-          {clickCounts[e.id] > 0 && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
-              <MousePointerClick className="h-2.5 w-2.5" />
-              {clickCounts[e.id]}
+        <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
+          <span className="text-sm font-semibold text-foreground truncate block">{e.title || <span className="text-red-400">(sem título)</span>}</span>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
+              {getCategoryLabel(e.category, e.sub_category)}
             </span>
+            <span className="text-[10px] text-muted-foreground">
+              {new Date(e.date_time).toLocaleDateString("pt-BR")}
+            </span>
+            {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
+              {e.status === "published" ? "Publicado" : "Rascunho"}
+            </span>
+            {clickCounts[e.id] > 0 && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
+                <MousePointerClick className="h-2.5 w-2.5" />
+                {clickCounts[e.id]}
+              </span>
+            )}
+          </div>
+          {/* Checklist row */}
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <ChecklistDot ok={cl.title} label="Título" />
+            <ChecklistDot ok={cl.date} label="Data futura" />
+            <ChecklistDot ok={cl.description} label="Descrição rica" />
+            <ChecklistDot ok={cl.flyer} label="Flyer" />
+            {!cl.complete && isDraft && (
+              <span className="text-[9px] font-bold uppercase text-red-400 ml-1 inline-flex items-center gap-1">
+                <AlertTriangle className="h-2.5 w-2.5" /> Incompleto
+              </span>
+            )}
+          </div>
+        </Link>
+        <div className="flex items-center shrink-0 ml-2 gap-0.5">
+          {isDraft && (
+            <>
+              <button
+                onClick={() => regenerateTitle(e)}
+                disabled={!!busy}
+                className="p-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
+                title="✨ Gerar título com IA"
+              >
+                {busy === "title" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
+              </button>
+              <button
+                onClick={() => regenerateDescription(e)}
+                disabled={!!busy}
+                className="p-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
+                title="📝 Gerar legenda rica"
+              >
+                {busy === "desc" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Wand2 className="h-4 w-4 text-primary" />}
+              </button>
+            </>
           )}
+          <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
+            <Copy className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
+            {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          <button onClick={() => setDeleteTarget(e)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition" title="Excluir evento">
+            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
+          </button>
         </div>
-      </Link>
-      <div className="flex items-center shrink-0 ml-2 gap-0.5">
-        <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
-          <Copy className="h-4 w-4 text-muted-foreground" />
-        </button>
-        <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
-          {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
-        </button>
-        <button onClick={() => setDeleteTarget(e)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition" title="Excluir evento">
-          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
-        </button>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSection = (title: string, items: EventRow[], emoji: string) => {
     if (items.length === 0) return null;
@@ -269,21 +422,50 @@ const EventosList = () => {
         </div>
       </div>
 
-      {/* Bulk download bar */}
-      {withImages > 0 && (
+      {/* Drafts Counter */}
+      {draftEvents.length > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-card px-3 py-2 text-[11px] flex-wrap">
+          <span className="font-bold text-green-400 inline-flex items-center gap-1">
+            <Check className="h-3 w-3" /> {draftsReady} prontos para publicação
+          </span>
+          <span className="w-px h-4 bg-border/40" />
+          <span className="font-bold text-red-400 inline-flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" /> {draftsAttention} precisando de atenção
+          </span>
+          <span className="w-px h-4 bg-border/40" />
+          <button
+            onClick={() => { setActiveStatus("draft"); setOnlyIncomplete(!onlyIncomplete); }}
+            className={`text-[10px] font-bold uppercase px-2 py-1 rounded transition ${onlyIncomplete ? "bg-primary text-primary-foreground" : "bg-secondary/50 hover:bg-secondary text-muted-foreground"}`}
+          >
+            {onlyIncomplete ? "Mostrando incompletos" : "Mostrar só incompletos"}
+          </button>
+        </div>
+      )}
+
+      {/* Bulk action bar */}
+      {(withImages > 0 || selectedCount > 0) && (
         <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/40 bg-card px-3 py-2">
           <button onClick={toggleSelectAll} className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase hover:text-foreground transition">
-            {selectedCount === withImages ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
-            {selectedCount > 0 ? `${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}` : "Selecionar"}
+            {selectedCount > 0 && selectedCount >= filtered.length ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
+            {selectedCount > 0 ? `${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}` : "Selecionar todos"}
           </button>
           <span className="w-px h-4 bg-border/40" />
+          <button
+            onClick={handleBulkPublish}
+            disabled={publishing || selectedReadyToPublish === 0}
+            className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition hover:bg-green-700"
+            title="Publicar selecionados (apenas válidos)"
+          >
+            {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            Postar Selecionados {selectedReadyToPublish > 0 && `(${selectedReadyToPublish})`}
+          </button>
           <button
             onClick={handleDownloadZip}
             disabled={zipping}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60 transition"
           >
             {zipping ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            {zipping ? `Baixando... ${zipPercent}%` : "📦 Baixar Tudo"}
+            {zipping ? `Baixando... ${zipPercent}%` : "📦 Baixar ZIP"}
           </button>
           {zipping && (
             <Progress value={zipPercent} className="h-1.5 flex-1 min-w-[80px]" />
@@ -333,11 +515,11 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
-        {(search || activeCategory || activeStatus) && (
+        {(search || activeCategory || activeStatus || onlyIncomplete) && (
           <>
             <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
             <button
-              onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); }}
+              onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setOnlyIncomplete(false); }}
               className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
             >
               <X className="h-3 w-3" /> Limpar
