@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -6,7 +6,7 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   Search, MapPin, Clock, Flame, Music, Mic2, Beer, Zap, PartyPopper,
-  ChevronRight, Dribbble, UtensilsCrossed, Building2,
+  ChevronRight, Dribbble, UtensilsCrossed, Building2, Sparkles,
   TrendingUp, BadgeCheck, X, Bookmark, Heart, Filter as FilterIcon, SlidersHorizontal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
