@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const ALLOWED_CATEGORIES = [
   "show", "festival", "bar", "universitario", "restaurante",
-  "balada", "festa", "futebol", "cultural",
+  "balada", "festa", "futebol", "cultural", "lounge", "espetinho",
   // legados aceitos para retrocompatibilidade
   "funk", "eletronica", "sertanejo",
 ];
@@ -15,7 +15,7 @@ const ALLOWED_CATEGORIES = [
 const ALLOWED_SUBS = [
   "funk", "pagode_samba", "rock", "pop_rock", "eletronica", "sertanejo", "mpb",
   "show", "festival", "bar", "universitario", "restaurante",
-  "balada", "festa", "futebol", "cultural",
+  "balada", "festa", "futebol", "cultural", "lounge", "espetinho",
 ];
 
 const systemPrompt = `Você é um extrator de metadados de flyers/banners de eventos da noite brasileira.
