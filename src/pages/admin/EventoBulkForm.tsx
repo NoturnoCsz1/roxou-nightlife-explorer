@@ -504,6 +504,7 @@ const EventoBulkForm = () => {
               index={idx}
               item={it}
               partners={partners}
+              isDuplicate={duplicateIds.has(it.localId)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
