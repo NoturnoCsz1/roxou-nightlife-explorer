@@ -58,6 +58,8 @@ export const ADMIN_MAIN_CATEGORIES = [
   { value: "show", label: "Show" },
   { value: "festival", label: "Festival" },
   { value: "bar", label: "Bar" },
+  { value: "lounge", label: "Lounge" },
+  { value: "espetinho", label: "Espetinho" },
   { value: "universitario", label: "Universitário" },
   { value: "restaurante", label: "Restaurante" },
   { value: "balada", label: "Balada" },
