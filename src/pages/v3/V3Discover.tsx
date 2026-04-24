@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -6,7 +6,7 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   Search, MapPin, Clock, Flame, Music, Mic2, Beer, Zap, PartyPopper,
-  ChevronRight, Dribbble, UtensilsCrossed, Building2,
+  ChevronRight, Dribbble, UtensilsCrossed, Building2, Sparkles,
   TrendingUp, BadgeCheck, X, Bookmark, Heart, Filter as FilterIcon, SlidersHorizontal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -118,6 +118,29 @@ export default function V3Discover() {
     },
   });
 
+  /* ─── DEBOUNCED SEARCH ─── */
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  /* ─── PARTNER SEARCH (fallback layer) ─── */
+  const { data: partnerMatches = [] } = useQuery({
+    queryKey: ["v3-partner-search", debouncedSearch],
+    enabled: debouncedSearch.length >= 2,
+    queryFn: async () => {
+      const term = `%${debouncedSearch}%`;
+      const { data } = await supabase
+        .from("partners")
+        .select("id,name,slug,type,logo_url,short_description,verified_partner,city")
+        .eq("active", true)
+        .or(`name.ilike.${term},short_description.ilike.${term},neighborhood.ilike.${term}`)
+        .limit(8);
+      return data || [];
+    },
+  });
+
   const verifiedPartnerIds = useMemo(() => new Set((allPartners as any[]).filter((p: any) => p.verified_partner).map((p: any) => p.id)), [allPartners]);
   const verifiedPartners = useMemo(() => (allPartners as any[]).filter((p: any) => p.verified_partner), [allPartners]);
   const partnerTypeMap = useMemo(() => {
@@ -126,15 +149,18 @@ export default function V3Discover() {
     return m;
   }, [allPartners]);
 
+  /* ─── NORMALIZE (case + accent insensitive) ─── */
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   /* ─── FILTERING ─── */
   const filtered = useMemo(() => {
     let result = events;
 
     if (search) {
-      const q = search.toLowerCase();
+      const q = norm(search);
       result = result.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        (e.venue_name && e.venue_name.toLowerCase().includes(q))
+        norm(e.title).includes(q) ||
+        (e.venue_name && norm(e.venue_name).includes(q))
       );
     }
     if (catFilter) result = result.filter(e => e.category === catFilter);
@@ -160,6 +186,29 @@ export default function V3Discover() {
 
     return result;
   }, [events, search, catFilter, subFilter, dateFilter, today, showVerifiedOnly, showMostAccessed, venueTypeFilter, verifiedPartnerIds, trendingIds, partnerTypeMap]);
+
+  /* ─── CATEGORY GUESS (fallback when nothing matches) ─── */
+  const guessedCategory = useMemo(() => {
+    if (!debouncedSearch) return null;
+    const q = norm(debouncedSearch);
+    const map: Record<string, string[]> = {
+      balada: ["balada", "club", "night", "noite", "pista"],
+      festa: ["festa", "open", "rave", "baile"],
+      show: ["show", "banda", "ao vivo", "acustico", "voz"],
+      bar: ["bar", "boteco", "chopp", "happy"],
+      festival: ["festival", "futebol", "jogo", "copa", "brasileir"],
+      restaurante: ["restaurante", "jantar", "rodizio", "gastro"],
+    };
+    for (const [cat, keys] of Object.entries(map)) {
+      if (keys.some(k => q.includes(k))) return cat;
+    }
+    return null;
+  }, [debouncedSearch]);
+
+  const suggestedByCategory = useMemo(() => {
+    if (!guessedCategory) return [];
+    return events.filter(e => e.category === guessedCategory).slice(0, 6);
+  }, [events, guessedCategory]);
 
   const trendingSet = useMemo(() => new Set(trendingIds), [trendingIds]);
   const trending = useMemo(() => events.filter(e => trendingSet.has(e.id)).slice(0, 8), [events, trendingSet]);
@@ -286,24 +335,118 @@ export default function V3Discover() {
 
       {/* ── Active filter results ── */}
       {hasActiveFilter ? (
-        <section className="px-4 pt-3">
-          <div className="flex items-center justify-between mb-3">
+        <section className="px-4 pt-3 space-y-5">
+          <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+              {filtered.length + (search ? partnerMatches.length : 0)} resultado{filtered.length + (search ? partnerMatches.length : 0) !== 1 ? "s" : ""}
             </p>
             <button onClick={clearFilters} className="text-[10px] text-primary font-medium">Limpar filtros</button>
           </div>
-          {filtered.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2.5">
-              {filtered.slice(0, 20).map(e => (
-                <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
-              ))}
+
+          {/* Eventos encontrados */}
+          {filtered.length > 0 && (
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Flame className="w-3 h-3 text-primary" /> Eventos encontrados
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {filtered.slice(0, 20).map(e => (
+                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
+                ))}
+              </div>
             </div>
-          ) : (
-            <div className="py-12 text-center">
-              <Search className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Nenhum evento encontrado</p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">Tente ajustar os filtros</p>
+          )}
+
+          {/* Locais e Parceiros */}
+          {search && partnerMatches.length > 0 && (
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Building2 className="w-3 h-3 text-accent" /> Locais e parceiros
+              </h3>
+              <div className="space-y-2">
+                {partnerMatches.map((p: any) => (
+                  <Link key={p.id} to={`/v3/local/${p.slug}`}
+                    className="flex items-center gap-3 p-2.5 rounded-xl bg-card border border-border/40 hover:border-primary/40 transition-all active:scale-[0.98]">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary shrink-0">
+                      {p.logo_url ? (
+                        <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/10">
+                          <span className="font-display font-bold text-base text-primary/60">{p.name[0]}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <p className="font-display font-bold text-sm text-foreground truncate">{p.name}</p>
+                        {p.verified_partner && <BadgeCheck className="w-3.5 h-3.5 text-accent shrink-0" />}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground capitalize truncate">
+                        {p.type}{p.city ? ` · ${p.city}` : ""}
+                      </p>
+                      <p className="text-[10px] text-primary font-semibold mt-0.5">Local encontrado · ver agenda</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sugestões por categoria (quando nada bateu nos eventos) */}
+          {filtered.length === 0 && suggestedByCategory.length > 0 && (
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-primary" /> Sugestões para você
+              </h3>
+              <p className="text-[11px] text-muted-foreground/70 mb-2">
+                Eventos da categoria mais próxima do que você buscou:
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {suggestedByCategory.map(e => (
+                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* UX "Nada encontrado" → trending fallback */}
+          {filtered.length === 0 && partnerMatches.length === 0 && suggestedByCategory.length === 0 && (
+            <div>
+              <div className="py-6 text-center">
+                <Search className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                <p className="text-sm text-foreground font-semibold">
+                  {search
+                    ? `Não encontramos resultados para "${search}" hoje`
+                    : "Nenhum evento com esses filtros"}
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 mt-1">
+                  Mas confira o que está bombando em Prudente:
+                </p>
+              </div>
+              {trending.length > 0 && (
+                <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+                  {trending.map(e => (
+                    <Link key={e.id} to={`/v3/evento/${e.slug}`}
+                      className="shrink-0 snap-start w-[180px] rounded-xl overflow-hidden bg-card border border-border/40">
+                      <div className="relative h-[100px] overflow-hidden">
+                        <img src={e.image_url || "/placeholder.svg"} alt={e.title}
+                          className="w-full h-full object-cover" loading="lazy" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <span className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/90 text-[8px] font-bold text-primary-foreground">
+                          <TrendingUp className="w-2.5 h-2.5" /> EM ALTA
+                        </span>
+                      </div>
+                      <div className="p-2">
+                        <h3 className="font-display font-semibold text-[11px] text-foreground line-clamp-2 leading-snug">{e.title}</h3>
+                        {e.venue_name && (
+                          <p className="text-[9px] text-muted-foreground truncate mt-0.5">{e.venue_name}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </section>
