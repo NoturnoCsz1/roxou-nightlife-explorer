@@ -24,6 +24,8 @@ export const categoryConfig: Record<string, { label: string; badge: string }> = 
   universitario: { label: "Universitário", badge: "badge-balada" },
   restaurante: { label: "Restaurante", badge: "badge-bar" },
   cultural: { label: "Cultural", badge: "badge-show" },
+  lounge: { label: "Lounge", badge: "badge-bar" },
+  espetinho: { label: "Espetinho", badge: "badge-bar" },
 };
 
 /** Maps sub_category values to their display labels */
