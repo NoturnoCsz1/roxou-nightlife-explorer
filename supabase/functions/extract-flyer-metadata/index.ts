@@ -23,12 +23,12 @@ const systemPrompt = `Você é um extrator de metadados de flyers/banners de eve
 Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown, sem comentários) com os seguintes campos:
 
 {
-  "title": string,            // Título de evento CURTO E IMPACTANTE em CAIXA ALTA (máx 50 caracteres). NÃO copie literalmente o texto do flyer; CRIE um título chamativo combinando atração + tipo de evento (ex: "LUAN SANTANA AO VIVO", "BAILE DO MC IG", "NOITE ELETRÔNICA COM ALOK"). Evite só o nome do artista solto.
+  "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] — [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] — [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. Exemplos de Frases de Impacto: "NOITE HISTÓRICA", "O MELHOR DA REGIÃO", "SÁBADO IMPERDÍVEL", "ROLÊ DO MÊS", "VIBE INSANA", "NOITE PREMIUM", "SE PREPARA", "ESPERA NÃO", "ENERGIA PURA", "PISTA EXPLOSIVA", "EXPERIÊNCIA ÚNICA". Exemplos completos: "LUAN SANTANA NO ARENA — NOITE HISTÓRICA", "BAILE DO MC IG NO GALPÃO 51 — VIBE INSANA", "SAMBA DA QUINTA NO BEAR LOUNGE — ROLÊ DO MÊS".
   "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. null se não houver.
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
   "instagram": string|null,   // @handle do organizador/local se aparecer.
-  "category": string,         // OBRIGATÓRIO uma de: show, festival, bar, universitario, restaurante, balada, festa, futebol, cultural
+  "category": string,         // OBRIGATÓRIO uma de: show, festival, bar, universitario, restaurante, balada, festa, futebol, cultural, lounge, espetinho
   "sub_category": string,     // OBRIGATÓRIO uma de: funk, pagode_samba, rock, pop_rock, eletronica, sertanejo, mpb (ou repita a category se não houver gênero musical)
   "ticket_url": null,         // SEMPRE retorne null. Não extraia link de ingresso.
   "venue_confidence": "high"|"medium"|"low",
@@ -47,6 +47,8 @@ REGRAS DE TAXONOMIA (mapeamento direto do flyer → category/sub_category):
 - "universitário", "open bar", "calourada", "atlética" → category="universitario"
 - "futebol", "jogo", "transmissão", "copa", "brasileirão" → category="futebol"
 - "cultural", "exposição", "teatro", "literário", "cineclube", "sarau" → category="cultural"
+- "lounge", "rooftop", "drinks autorais", "ambiente intimista", nome do local contém "Lounge" → category="lounge"
+- "espetinho", "espeto", "espetaria", "churrasquinho", nome do local contém "Espetinho/Espetaria" → category="espetinho"
 - "rodízio", "happy hour", "boteco", "chopp" sem música destacada → category="bar"
 - "rodízio gastronômico", "jantar harmonizado", "menu degustação" → category="restaurante"
 - "balada", "club", "night" sem gênero específico → category="balada"
@@ -54,7 +56,7 @@ REGRAS DE TAXONOMIA (mapeamento direto do flyer → category/sub_category):
 - Festa genérica → category="festa", sub_category="festa"
 
 OUTRAS REGRAS:
-- "title": máximo 50 caracteres, SEMPRE em CAIXA ALTA, sem aspas decorativas.
+- "title": SEMPRE em CAIXA ALTA, formato "ATRAÇÃO NO LOCAL — FRASE DE IMPACTO" (use travessão "—" como separador), máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto.
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente.
 - "ticket_url": SEMPRE null. Nunca extraia link de ingresso.
 - "venue_name": só preencha se tiver razoável certeza do nome do local.
