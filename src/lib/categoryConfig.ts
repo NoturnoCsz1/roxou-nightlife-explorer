@@ -46,6 +46,8 @@ export const subCategoryLabels: Record<string, string> = {
   bar: "Bar",
   show: "Show",
   restaurante: "Restaurante",
+  lounge: "Lounge",
+  espetinho: "Espetinho",
 };
 
 /**
