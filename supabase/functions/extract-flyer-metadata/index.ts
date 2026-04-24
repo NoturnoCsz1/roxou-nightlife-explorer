@@ -144,15 +144,62 @@ serve(async (req) => {
     }
 
     // sanitize
-    const cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
+    let cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
     const subRaw = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
-    const sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
+    let sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
+
+    // 🟣 REGRA DE OURO server-side: nome do local prevalece sobre gênero do flyer
+    let category_override_reason: string | null = null;
+    const venueRaw: string = (parsed.venue_name || "").toString();
+    const venueLower = venueRaw.toLowerCase();
+    const venueMap: Array<{ keys: string[]; cat: string; label: string }> = [
+      { keys: ["gastrobar", "boteco", "choperia", "pub", " bar ", "bar "], cat: "bar", label: "Bar / Gastrobar" },
+      { keys: ["restaurante", "churrascaria"], cat: "restaurante", label: "Restaurante" },
+      { keys: ["espetaria", "espetinho"], cat: "espetinho", label: "Espetaria / Espetinho" },
+      { keys: ["lounge", "rooftop"], cat: "lounge", label: "Lounge" },
+      { keys: ["arena", "estádio", "estadio", "teatro", "casa de show"], cat: "show", label: "Casa de show / Arena" },
+      { keys: ["club", "balada", "disco", "night"], cat: "balada", label: "Club / Balada" },
+    ];
+    if (venueLower) {
+      // pad with spaces to make " bar " match correctly
+      const padded = ` ${venueLower} `;
+      for (const rule of venueMap) {
+        if (rule.keys.some(k => padded.includes(k))) {
+          if (cat !== rule.cat) {
+            // se IA disse "balada/festa/show" mas o local é bar/restaurante/lounge → override
+            const musicCats = new Set(["balada", "festa", "show"]);
+            if (musicCats.has(cat) || cat === "festa") {
+              // mover gênero para sub_category se ainda não estiver
+              const genreSubs = new Set(["funk", "pagode_samba", "rock", "pop_rock", "eletronica", "sertanejo", "mpb"]);
+              if (!genreSubs.has(sub)) {
+                // tentar inferir gênero do sub atual ou da categoria original
+                if (cat === "balada") sub = "eletronica";
+                else if (cat === "festa") sub = sub === "festa" ? "eletronica" : sub;
+                else if (cat === "show") sub = sub === "show" ? "mpb" : sub;
+              }
+              category_override_reason = `Local identificado como ${rule.label}`;
+              cat = rule.cat;
+            }
+          }
+          break;
+        }
+      }
+    }
+
+    // título: remover hífens, travessões, dois pontos, barras (regra "sem traços")
+    let title: string = (parsed.title || "").toString();
+    title = title
+      .replace(/\s*[—–-]\s*/g, " ")  // hifens e travessões
+      .replace(/\s*[:\/|]\s*/g, " ") // dois pontos, barras, pipes
+      .replace(/\s+/g, " ")
+      .trim()
+      .toUpperCase();
 
     // ticket_url: forçado null (regra de negócio: lote nunca extrai link)
     const ticketUrl = null;
 
     return new Response(JSON.stringify({
-      title: parsed.title || "",
+      title,
       date_iso: parsed.date_iso || null,
       venue_name: parsed.venue_name || null,
       venue_confidence: parsed.venue_confidence || "low",
@@ -162,6 +209,7 @@ serve(async (req) => {
       sub_category: sub,
       ticket_url: ticketUrl,
       confidence: parsed.confidence || "medium",
+      category_override_reason,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
