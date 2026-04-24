@@ -149,15 +149,18 @@ export default function V3Discover() {
     return m;
   }, [allPartners]);
 
+  /* ─── NORMALIZE (case + accent insensitive) ─── */
+  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   /* ─── FILTERING ─── */
   const filtered = useMemo(() => {
     let result = events;
 
     if (search) {
-      const q = search.toLowerCase();
+      const q = norm(search);
       result = result.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        (e.venue_name && e.venue_name.toLowerCase().includes(q))
+        norm(e.title).includes(q) ||
+        (e.venue_name && norm(e.venue_name).includes(q))
       );
     }
     if (catFilter) result = result.filter(e => e.category === catFilter);
@@ -183,6 +186,29 @@ export default function V3Discover() {
 
     return result;
   }, [events, search, catFilter, subFilter, dateFilter, today, showVerifiedOnly, showMostAccessed, venueTypeFilter, verifiedPartnerIds, trendingIds, partnerTypeMap]);
+
+  /* ─── CATEGORY GUESS (fallback when nothing matches) ─── */
+  const guessedCategory = useMemo(() => {
+    if (!debouncedSearch) return null;
+    const q = norm(debouncedSearch);
+    const map: Record<string, string[]> = {
+      balada: ["balada", "club", "night", "noite", "pista"],
+      festa: ["festa", "open", "rave", "baile"],
+      show: ["show", "banda", "ao vivo", "acustico", "voz"],
+      bar: ["bar", "boteco", "chopp", "happy"],
+      festival: ["festival", "futebol", "jogo", "copa", "brasileir"],
+      restaurante: ["restaurante", "jantar", "rodizio", "gastro"],
+    };
+    for (const [cat, keys] of Object.entries(map)) {
+      if (keys.some(k => q.includes(k))) return cat;
+    }
+    return null;
+  }, [debouncedSearch]);
+
+  const suggestedByCategory = useMemo(() => {
+    if (!guessedCategory) return [];
+    return events.filter(e => e.category === guessedCategory).slice(0, 6);
+  }, [events, guessedCategory]);
 
   const trendingSet = useMemo(() => new Set(trendingIds), [trendingIds]);
   const trending = useMemo(() => events.filter(e => trendingSet.has(e.id)).slice(0, 8), [events, trendingSet]);
