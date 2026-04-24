@@ -588,6 +588,12 @@ function ReviewRow({
           ⚠️ CONTEÚDO DUPLICADO: Verifique se este evento já foi cadastrado.
         </div>
       )}
+      {item.categoryWarning && !isDuplicate && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
+          <AlertCircle className="h-3 w-3" />
+          ⚠️ Verifique a categoria: {item.categoryWarning}
+        </div>
+      )}
       <div className="flex items-stretch gap-2 p-2">
         {/* thumb */}
         <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-secondary/40">
