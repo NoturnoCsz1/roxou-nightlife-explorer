@@ -22,6 +22,7 @@ interface BulkItem {
   errorMsg?: string;
   expanded: boolean;
   form: EventFormData;
+  categoryWarning?: string | null;
 }
 
 function normalize(s: string) {
