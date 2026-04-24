@@ -1,4 +1,4 @@
-import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper, GraduationCap, UtensilsCrossed, Palette } from "lucide-react";
+import { Music, Mic2, Beer, Goal, Guitar, Disc3, Headphones, PartyPopper, GraduationCap, UtensilsCrossed, Palette, Sofa, Flame } from "lucide-react";
 import { categoryConfig } from "@/lib/categoryConfig";
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -14,6 +14,8 @@ const categoryIcons: Record<string, React.ElementType> = {
   universitario: GraduationCap,
   restaurante: UtensilsCrossed,
   cultural: Palette,
+  lounge: Sofa,
+  espetinho: Flame,
 };
 
 interface Props {

@@ -85,6 +85,7 @@ const EventoBulkForm = () => {
   const [generatingDescIds, setGeneratingDescIds] = useState<Set<string>>(new Set());
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -92,6 +93,33 @@ const EventoBulkForm = () => {
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => setPartners(data || []));
   }, [cityFilter]);
+
+  // Load existing slugs from DB for duplicate detection
+  useEffect(() => {
+    let q = supabase.from("events").select("slug");
+    if (cityFilter) q = q.eq("city", cityFilter);
+    q.then(({ data }) => {
+      if (data) setDbSlugs(new Set(data.map((r: any) => r.slug).filter(Boolean)));
+    });
+  }, [cityFilter]);
+
+  // Detect duplicates: slug exists in DB or appears more than once in current items
+  function getDuplicateSet(): Set<string> {
+    const dup = new Set<string>();
+    const counts = new Map<string, number>();
+    for (const it of items) {
+      const s = (it.form.slug || "").trim();
+      if (!s) continue;
+      counts.set(s, (counts.get(s) || 0) + 1);
+    }
+    for (const it of items) {
+      const s = (it.form.slug || "").trim();
+      if (!s) continue;
+      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1) dup.add(it.localId);
+    }
+    return dup;
+  }
+  const duplicateIds = getDuplicateSet();
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
     setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
@@ -476,6 +504,7 @@ const EventoBulkForm = () => {
               index={idx}
               item={it}
               partners={partners}
+              isDuplicate={duplicateIds.has(it.localId)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
@@ -526,6 +555,7 @@ interface ReviewRowProps {
   index: number;
   item: BulkItem;
   partners: Partner[];
+  isDuplicate?: boolean;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
@@ -536,14 +566,24 @@ interface ReviewRowProps {
 }
 
 function ReviewRow({
-  index, item, partners, onPartnerChange, onChangeForm,
+  index, item, partners, isDuplicate, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card overflow-hidden">
+    <div className={`rounded-xl border bg-card overflow-hidden transition ${
+      isDuplicate
+        ? "border-destructive/80 ring-2 ring-destructive/40 animate-pulse shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
+        : "border-border/40"
+    }`}>
+      {isDuplicate && (
+        <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-1.5 text-[10px] font-semibold text-destructive flex items-center gap-1.5">
+          <AlertCircle className="h-3 w-3" />
+          ⚠️ CONTEÚDO DUPLICADO: Verifique se este evento já foi cadastrado.
+        </div>
+      )}
       <div className="flex items-stretch gap-2 p-2">
         {/* thumb */}
         <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-secondary/40">
@@ -572,7 +612,10 @@ function ReviewRow({
               className={inputCls}
               placeholder={isProcessing ? "Analisando a noite..." : "Qual o nome da fera?"}
               value={item.form.title}
-              onChange={(e) => onChangeForm({ title: e.target.value, slug: e.target.value ? (item.form.slug || "") : "" })}
+              onChange={(e) => {
+                const t = e.target.value.toUpperCase();
+                onChangeForm({ title: t, slug: t ? slugify(t) : "" });
+              }}
               disabled={isProcessing}
             />
           </div>

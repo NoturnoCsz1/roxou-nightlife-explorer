@@ -24,6 +24,8 @@ export const categoryConfig: Record<string, { label: string; badge: string }> = 
   universitario: { label: "Universitário", badge: "badge-balada" },
   restaurante: { label: "Restaurante", badge: "badge-bar" },
   cultural: { label: "Cultural", badge: "badge-show" },
+  lounge: { label: "Lounge", badge: "badge-bar" },
+  espetinho: { label: "Espetinho", badge: "badge-bar" },
 };
 
 /** Maps sub_category values to their display labels */
@@ -44,6 +46,8 @@ export const subCategoryLabels: Record<string, string> = {
   bar: "Bar",
   show: "Show",
   restaurante: "Restaurante",
+  lounge: "Lounge",
+  espetinho: "Espetinho",
 };
 
 /**
@@ -54,6 +58,8 @@ export const ADMIN_MAIN_CATEGORIES = [
   { value: "show", label: "Show" },
   { value: "festival", label: "Festival" },
   { value: "bar", label: "Bar" },
+  { value: "lounge", label: "Lounge" },
+  { value: "espetinho", label: "Espetinho" },
   { value: "universitario", label: "Universitário" },
   { value: "restaurante", label: "Restaurante" },
   { value: "balada", label: "Balada" },
