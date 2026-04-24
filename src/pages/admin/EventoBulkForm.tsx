@@ -612,7 +612,10 @@ function ReviewRow({
               className={inputCls}
               placeholder={isProcessing ? "Analisando a noite..." : "Qual o nome da fera?"}
               value={item.form.title}
-              onChange={(e) => onChangeForm({ title: e.target.value, slug: e.target.value ? (item.form.slug || "") : "" })}
+              onChange={(e) => {
+                const t = e.target.value.toUpperCase();
+                onChangeForm({ title: t, slug: t ? slugify(t) : "" });
+              }}
               disabled={isProcessing}
             />
           </div>
