@@ -423,7 +423,7 @@ export async function renderCoverAgenda(canvas: HTMLCanvasElement, events: Cover
   // ---- CTA ----
   drawPremiumCTA(ctx, W, H, "CONFIRA A AGENDA COMPLETA EM ROXOU.COM.BR", PAD);
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 export async function renderCoverTopRoles(canvas: HTMLCanvasElement, events: CoverEvent[], fmt: ArtFormat = "feed"): Promise<string> {
@@ -514,7 +514,7 @@ export async function renderCoverTopRoles(canvas: HTMLCanvasElement, events: Cov
   }
 
   drawPremiumCTA(ctx, W, H, "VEJA O RANKING COMPLETO EM ROXOU.COM.BR", PAD);
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 export async function renderCoverWeekend(canvas: HTMLCanvasElement, events: CoverEvent[], fmt: ArtFormat = "feed"): Promise<string> {
@@ -599,7 +599,7 @@ export async function renderCoverWeekend(canvas: HTMLCanvasElement, events: Cove
   }
 
   drawPremiumCTA(ctx, W, H, "DESCUBRA TUDO NA ROXOU.COM.BR", PAD);
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 export async function renderCoverPartners(canvas: HTMLCanvasElement, partners: CoverPartner[], fmt: ArtFormat = "feed"): Promise<string> {
@@ -663,7 +663,7 @@ export async function renderCoverPartners(canvas: HTMLCanvasElement, partners: C
   }
 
   drawPremiumCTA(ctx, W, H, "DESCUBRA MAIS EM ROXOU.COM.BR", PAD);
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 // ============ FLYER INDIVIDUAL ============
@@ -794,7 +794,7 @@ export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, 
   }
 
   drawPremiumCTA(ctx, W, H, "CONFIRA NA ROXOU.COM.BR", PAD);
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 // ============ BANNER FESTIVAL (1920x1080) ============
@@ -897,7 +897,7 @@ export async function renderBannerFestival(canvas: HTMLCanvasElement, events: Co
   ctx.fillText("ROXOU", W / 2, H - 60);
   ctx.restore();
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 // ============ EVENTO EM DESTAQUE (Story-optimized single event) ============
@@ -1056,7 +1056,7 @@ export async function renderCoverDestaque(canvas: HTMLCanvasElement, event: Cove
   // ---- CTA bottom ----
   drawPremiumCTA(ctx, W, H, "SAIBA MAIS EM ROXOU.COM.BR", PAD);
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
 
 // ============ CTA SLIDE ============
@@ -1094,5 +1094,5 @@ export async function renderCTASlide(canvas: HTMLCanvasElement, fmt: ArtFormat =
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText("roxou.com.br", W / 2, H - 100);
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/png");
 }
