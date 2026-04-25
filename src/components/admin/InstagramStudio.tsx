@@ -12,7 +12,7 @@ import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
   Clock, Filter, Send, Download, Video, Zap, Pause, ChevronDown, ChevronUp,
-  Eye,
+  Eye, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -114,6 +114,7 @@ const InstagramStudio = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const batchAbortRef = useRef(false);
   const [zipping, setZipping] = useState(false);
+  const [downloadCelebration, setDownloadCelebration] = useState(false);
 
   // ============ DATA LOADING ============
 
@@ -453,28 +454,42 @@ const InstagramStudio = () => {
     outputs.some(o => o.feedImageUrl || o.storyImageUrl || o.reelUrl), [outputs]
   );
 
+  function buildDownloadName(title: string, kind: "FEED" | "STORY" | "REEL" | "LEGENDA", ext: string, idx?: number) {
+    const date = format(new Date(), "dd-MM");
+    const safeTitle = title
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .toUpperCase()
+      .slice(0, 48) || "EVENTO";
+    const prefix = idx ? `${String(idx).padStart(2, "0")}_` : "";
+    return `${prefix}ROXOU_${date}_${safeTitle}_${kind}.${ext}`;
+  }
+
   async function downloadZip() {
     if (!hasMedia) { toast.error("Nenhuma mídia gerada"); return; }
     setZipping(true);
     try {
       const zip = new JSZip();
-      const dateStr = format(new Date(), "yyyy-MM-dd");
+      const dateStr = format(new Date(), "dd-MM");
       let count = 0;
 
       for (const [idx, o] of outputs.entries()) {
-        const name = o.title.slice(0, 30).replace(/[^a-zA-Z0-9À-ú ]/g, "").replace(/\s+/g, "_");
-        if (o.feedImageUrl) { zip.file(`feed/${idx + 1}_${name}.jpg`, await (await fetch(o.feedImageUrl)).blob()); count++; }
-        if (o.storyImageUrl) { zip.file(`story/${idx + 1}_${name}.jpg`, await (await fetch(o.storyImageUrl)).blob()); count++; }
-        if (o.reelUrl) { zip.file(`reels/${idx + 1}_${name}.webm`, await (await fetch(o.reelUrl)).blob()); count++; }
-        zip.file(`legendas/${idx + 1}_${name}_feed.txt`, o.feedCopy.full);
-        zip.file(`legendas/${idx + 1}_${name}_story.txt`, o.storyCopy.full);
+        if (o.feedImageUrl) { zip.file(`feed/${buildDownloadName(o.title, "FEED", "png", idx + 1)}`, await (await fetch(o.feedImageUrl)).blob()); count++; }
+        if (o.storyImageUrl) { zip.file(`story/${buildDownloadName(o.title, "STORY", "png", idx + 1)}`, await (await fetch(o.storyImageUrl)).blob()); count++; }
+        if (o.reelUrl) { zip.file(`reels/${buildDownloadName(o.title, "REEL", "webm", idx + 1)}`, await (await fetch(o.reelUrl)).blob()); count++; }
+        zip.file(`legendas/${buildDownloadName(o.title, "LEGENDA", "txt", idx + 1).replace(".txt", "_FEED.txt")}`, o.feedCopy.full);
+        zip.file(`legendas/${buildDownloadName(o.title, "LEGENDA", "txt", idx + 1).replace(".txt", "_STORY.txt")}`, o.storyCopy.full);
         count += 2;
       }
 
       const blob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `roxou-studio-${dateStr}.zip`; a.click();
+      const a = document.createElement("a"); a.href = url; a.download = `ROXOU_${dateStr}_STUDIO.zip`; a.click();
       URL.revokeObjectURL(url);
+      setDownloadCelebration(true);
+      window.setTimeout(() => setDownloadCelebration(false), 2200);
       toast.success(`ZIP com ${count} arquivo(s)!`);
     } catch (err: any) { toast.error("Erro ao gerar ZIP", { description: err.message }); }
     finally { setZipping(false); }
@@ -514,6 +529,18 @@ const InstagramStudio = () => {
 
   return (
     <div className="space-y-4">
+      {downloadCelebration && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/30 backdrop-blur-sm animate-fade-in pointer-events-none">
+          <div className="relative rounded-2xl border border-primary/30 bg-background/90 px-8 py-7 text-center shadow-2xl animate-scale-in">
+            <div className="absolute -top-3 left-6 text-xl animate-bounce">🎉</div>
+            <div className="absolute -top-4 right-8 text-lg animate-bounce">✨</div>
+            <div className="absolute -bottom-3 left-10 text-lg animate-bounce">🎊</div>
+            <CheckCircle2 className="mx-auto h-16 w-16 text-primary" />
+            <p className="mt-3 text-sm font-black text-foreground">Download concluído!</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Arquivos ROXOU organizados e prontos.</p>
+          </div>
+        </div>
+      )}
       <Dialog open={!!storyPreview} onOpenChange={(open) => !open && setStoryPreview(null)}>
         <DialogContent className="max-w-[360px] rounded-2xl border-border/40 bg-background/95 p-4 backdrop-blur-xl">
           <DialogHeader>
@@ -529,6 +556,12 @@ const InstagramStudio = () => {
                   ) : null;
                 })()}
                 <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background/85" />
+                <div className="pointer-events-none absolute inset-x-0 top-[7%] border-t border-dashed border-primary/45" />
+                <div className="pointer-events-none absolute inset-x-0 top-[15%] border-t border-dashed border-primary/25" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-[12%] border-t border-dashed border-primary/45" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-[20%] border-t border-dashed border-primary/25" />
+                <div className="pointer-events-none absolute left-4 top-[7%] -translate-y-1/2 rounded-full bg-background/75 px-2 py-0.5 text-[8px] font-bold uppercase text-primary">Avatar / topo</div>
+                <div className="pointer-events-none absolute bottom-[12%] left-4 translate-y-1/2 rounded-full bg-background/75 px-2 py-0.5 text-[8px] font-bold uppercase text-primary">Barra de mensagem</div>
                 <div className="relative flex h-full flex-col justify-end gap-3">
                   <span className="w-fit rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-black uppercase text-primary">ROXOU STORY</span>
                   <h3 className="text-2xl font-black leading-tight text-foreground">{storyPreview.title}</h3>
