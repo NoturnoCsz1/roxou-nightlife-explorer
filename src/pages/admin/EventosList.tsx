@@ -439,7 +439,7 @@ const EventosList = () => {
 
       {/* Drafts Counter */}
       {draftEvents.length > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-card px-3 py-2 text-[11px] flex-wrap">
+        <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-white/5 px-3 py-2 text-[11px] backdrop-blur-xl flex-wrap">
           <span className="font-bold text-green-400 inline-flex items-center gap-1">
             <Check className="h-3 w-3" /> {draftsReady} prontos para publicação
           </span>
@@ -449,17 +449,17 @@ const EventosList = () => {
           </span>
           <span className="w-px h-4 bg-border/40" />
           <button
-            onClick={() => { setActiveStatus("draft"); setOnlyIncomplete(!onlyIncomplete); }}
+             onClick={() => { setActiveStatus("draft"); setOnlyIncomplete(!onlyIncomplete); }}
             className={`text-[10px] font-bold uppercase px-2 py-1 rounded transition ${onlyIncomplete ? "bg-primary text-primary-foreground" : "bg-secondary/50 hover:bg-secondary text-muted-foreground"}`}
           >
-            {onlyIncomplete ? "Mostrando incompletos" : "Mostrar só incompletos"}
+             {onlyIncomplete ? "Mostrando incompletos" : "Mostrar apenas rascunhos incompletos"}
           </button>
         </div>
       )}
 
       {/* Bulk action bar */}
       {(withImages > 0 || selectedCount > 0) && (
-        <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/40 bg-card px-3 py-2">
+        <div className="flex items-center gap-2 flex-wrap rounded-2xl border border-border/40 bg-white/5 px-3 py-2 backdrop-blur-xl">
           <button onClick={toggleSelectAll} className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase hover:text-foreground transition">
             {selectedCount > 0 && selectedCount >= filtered.length ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
             {selectedCount > 0 ? `${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}` : "Selecionar todos"}
@@ -468,7 +468,7 @@ const EventosList = () => {
           <button
             onClick={handleBulkPublish}
             disabled={publishing || selectedReadyToPublish === 0}
-            className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition hover:bg-green-700"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50 transition hover:bg-primary/90"
             title="Publicar selecionados (apenas válidos)"
           >
             {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
