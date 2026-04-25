@@ -86,6 +86,7 @@ const EventosList = () => {
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
   const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
   const [publishing, setPublishing] = useState(false);
+  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string }>>({});
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -181,6 +182,19 @@ const EventosList = () => {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
     toast.success(!current ? "Marcado como destaque" : "Removido do destaque");
+  }
+
+  async function saveQuickEdit(e: EventRow) {
+    const draft = quickEdits[e.id];
+    if (!draft) return;
+    const nextTitle = normalizeAiTitle(draft.title);
+    const nextDate = draft.date_time ? new Date(draft.date_time).toISOString() : e.date_time;
+    if (nextTitle === e.title && nextDate === e.date_time) return;
+    if (nextTitle.length < 5) { toast.error("Título precisa ter pelo menos 5 caracteres."); return; }
+    const { error } = await supabase.from("events").update({ title: nextTitle, date_time: nextDate }).eq("id", e.id);
+    if (error) { toast.error("Erro ao salvar edição rápida."); return; }
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: nextTitle, date_time: nextDate } : x));
+    toast.success("Edição rápida salva");
   }
 
   async function handleDelete() {
