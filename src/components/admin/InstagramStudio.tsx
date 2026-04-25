@@ -12,7 +12,7 @@ import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
   Clock, Filter, Send, Download, Video, Zap, Pause, ChevronDown, ChevronUp,
-  Eye,
+  Eye, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -114,6 +114,7 @@ const InstagramStudio = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const batchAbortRef = useRef(false);
   const [zipping, setZipping] = useState(false);
+  const [downloadCelebration, setDownloadCelebration] = useState(false);
 
   // ============ DATA LOADING ============
 
