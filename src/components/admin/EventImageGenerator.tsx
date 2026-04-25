@@ -12,7 +12,7 @@ function buildDownloadName(title: string, dateTime: string, fmt: ArtFormat) {
     .replace(/^-+|-+$/g, "")
     .toUpperCase()
     .slice(0, 48) || "EVENTO";
-  return `ROXOU_${date}_${safeTitle}_${fmt.toUpperCase()}.jpg`;
+  return `ROXOU_${date}_${safeTitle}_${fmt.toUpperCase()}.png`;
 }
 
 export type ImageFormat = ArtFormat;
