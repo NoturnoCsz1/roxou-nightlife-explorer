@@ -514,6 +514,31 @@ const InstagramStudio = () => {
 
   return (
     <div className="space-y-4">
+      <Dialog open={!!storyPreview} onOpenChange={(open) => !open && setStoryPreview(null)}>
+        <DialogContent className="max-w-[360px] rounded-2xl border-border/40 bg-background/95 p-4 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Preview do Story</DialogTitle>
+          </DialogHeader>
+          {storyPreview && (
+            <div className="mx-auto aspect-[9/16] w-full max-w-[260px] overflow-hidden rounded-[2rem] border-4 border-border bg-card shadow-2xl">
+              <div className="relative h-full w-full bg-gradient-to-b from-background via-card to-secondary/60 p-4">
+                {(() => {
+                  const ev = storyPreview.eventId ? events.find(e => e.id === storyPreview.eventId) : storyPreview.events?.[0];
+                  return ev?.image_url ? (
+                    <img src={ev.image_url} alt="Preview do flyer" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+                  ) : null;
+                })()}
+                <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background/85" />
+                <div className="relative flex h-full flex-col justify-end gap-3">
+                  <span className="w-fit rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-black uppercase text-primary">ROXOU STORY</span>
+                  <h3 className="text-2xl font-black leading-tight text-foreground">{storyPreview.title}</h3>
+                  <p className="text-xs leading-relaxed text-muted-foreground line-clamp-4">{storyPreview.storyCopy.hook || storyPreview.storyCopy.full}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       {/* Header */}
       <div>
         <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
