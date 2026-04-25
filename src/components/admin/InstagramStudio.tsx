@@ -556,6 +556,12 @@ const InstagramStudio = () => {
                   ) : null;
                 })()}
                 <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background/85" />
+                <div className="pointer-events-none absolute inset-x-0 top-[7%] border-t border-dashed border-primary/45" />
+                <div className="pointer-events-none absolute inset-x-0 top-[15%] border-t border-dashed border-primary/25" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-[12%] border-t border-dashed border-primary/45" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-[20%] border-t border-dashed border-primary/25" />
+                <div className="pointer-events-none absolute left-4 top-[7%] -translate-y-1/2 rounded-full bg-background/75 px-2 py-0.5 text-[8px] font-bold uppercase text-primary">Avatar / topo</div>
+                <div className="pointer-events-none absolute bottom-[12%] left-4 translate-y-1/2 rounded-full bg-background/75 px-2 py-0.5 text-[8px] font-bold uppercase text-primary">Barra de mensagem</div>
                 <div className="relative flex h-full flex-col justify-end gap-3">
                   <span className="w-fit rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-black uppercase text-primary">ROXOU STORY</span>
                   <h3 className="text-2xl font-black leading-tight text-foreground">{storyPreview.title}</h3>
