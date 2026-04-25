@@ -476,8 +476,8 @@ const InstagramStudio = () => {
       let count = 0;
 
       for (const [idx, o] of outputs.entries()) {
-        if (o.feedImageUrl) { zip.file(`feed/${buildDownloadName(o.title, "FEED", "jpg", idx + 1)}`, await (await fetch(o.feedImageUrl)).blob()); count++; }
-        if (o.storyImageUrl) { zip.file(`story/${buildDownloadName(o.title, "STORY", "jpg", idx + 1)}`, await (await fetch(o.storyImageUrl)).blob()); count++; }
+        if (o.feedImageUrl) { zip.file(`feed/${buildDownloadName(o.title, "FEED", "png", idx + 1)}`, await (await fetch(o.feedImageUrl)).blob()); count++; }
+        if (o.storyImageUrl) { zip.file(`story/${buildDownloadName(o.title, "STORY", "png", idx + 1)}`, await (await fetch(o.storyImageUrl)).blob()); count++; }
         if (o.reelUrl) { zip.file(`reels/${buildDownloadName(o.title, "REEL", "webm", idx + 1)}`, await (await fetch(o.reelUrl)).blob()); count++; }
         zip.file(`legendas/${buildDownloadName(o.title, "LEGENDA", "txt", idx + 1).replace(".txt", "_FEED.txt")}`, o.feedCopy.full);
         zip.file(`legendas/${buildDownloadName(o.title, "LEGENDA", "txt", idx + 1).replace(".txt", "_STORY.txt")}`, o.storyCopy.full);
