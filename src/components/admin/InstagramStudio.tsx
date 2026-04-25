@@ -529,6 +529,18 @@ const InstagramStudio = () => {
 
   return (
     <div className="space-y-4">
+      {downloadCelebration && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-background/30 backdrop-blur-sm animate-fade-in pointer-events-none">
+          <div className="relative rounded-2xl border border-primary/30 bg-background/90 px-8 py-7 text-center shadow-2xl animate-scale-in">
+            <div className="absolute -top-3 left-6 text-xl animate-bounce">🎉</div>
+            <div className="absolute -top-4 right-8 text-lg animate-bounce">✨</div>
+            <div className="absolute -bottom-3 left-10 text-lg animate-bounce">🎊</div>
+            <CheckCircle2 className="mx-auto h-16 w-16 text-primary" />
+            <p className="mt-3 text-sm font-black text-foreground">Download concluído!</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Arquivos ROXOU organizados e prontos.</p>
+          </div>
+        </div>
+      )}
       <Dialog open={!!storyPreview} onOpenChange={(open) => !open && setStoryPreview(null)}>
         <DialogContent className="max-w-[360px] rounded-2xl border-border/40 bg-background/95 p-4 backdrop-blur-xl">
           <DialogHeader>
