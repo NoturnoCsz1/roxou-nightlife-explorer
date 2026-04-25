@@ -329,7 +329,7 @@ const EventosList = () => {
     const busy = aiBusy[e.id];
     const isDraft = e.status === "draft";
     return (
-      <div key={e.id} className={`flex items-center gap-2 rounded-xl border p-3 ${isDraft && !cl.complete ? "border-red-500/30 bg-card" : "border-border/40 bg-card"}`}>
+      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl ${isDraft && !cl.complete ? "border-destructive/40 bg-white/5" : "border-border/40 bg-white/5"}`}>
         <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
           {selectedIds.has(e.id)
             ? <CheckSquare className="h-4 w-4 text-primary" />
@@ -357,10 +357,10 @@ const EventosList = () => {
           </div>
           {/* Checklist row */}
           <div className="flex items-center gap-1.5 mt-1.5">
-            <ChecklistDot ok={cl.title} label="Título" />
+            <ChecklistDot ok={cl.title} label="Título mínimo e sem traços" />
             <ChecklistDot ok={cl.date} label="Data futura" />
             <ChecklistDot ok={cl.description} label="Descrição rica" />
-            <ChecklistDot ok={cl.flyer} label="Flyer" />
+            <ChecklistDot ok={cl.flyer} label="Flyer funcional" />
             {!cl.complete && isDraft && (
               <span className="text-[9px] font-bold uppercase text-red-400 ml-1 inline-flex items-center gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" /> Incompleto
@@ -374,18 +374,20 @@ const EventosList = () => {
               <button
                 onClick={() => regenerateTitle(e)}
                 disabled={!!busy}
-                className="p-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
-                title="✨ Gerar título com IA"
+                className="inline-flex items-center gap-1 rounded-xl bg-primary/10 px-2 py-1.5 text-[10px] font-bold text-primary hover:bg-primary/20 transition disabled:opacity-50"
+                title="Gerar título com IA"
               >
                 {busy === "title" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                <span className="hidden sm:inline">Gerar Título</span>
               </button>
               <button
                 onClick={() => regenerateDescription(e)}
                 disabled={!!busy}
-                className="p-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
-                title="📝 Gerar legenda rica"
+                className="inline-flex items-center gap-1 rounded-xl bg-secondary/60 px-2 py-1.5 text-[10px] font-bold text-secondary-foreground hover:bg-secondary transition disabled:opacity-50"
+                title="Gerar legenda rica"
               >
                 {busy === "desc" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Wand2 className="h-4 w-4 text-primary" />}
+                <span className="hidden sm:inline">Gerar Legenda</span>
               </button>
             </>
           )}
