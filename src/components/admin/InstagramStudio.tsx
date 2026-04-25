@@ -12,10 +12,12 @@ import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
   Clock, Filter, Send, Download, Video, Zap, Pause, ChevronDown, ChevronUp,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import EventSearchFilter, { type DateFilter, getDateRange } from "./EventSearchFilter";
 import { renderEventCard } from "./EventImageGenerator";
 import EventImageGenerator from "./EventImageGenerator";
@@ -104,6 +106,7 @@ const InstagramStudio = () => {
   const [genStatus, setGenStatus] = useState<string>("");
   const [outputs, setOutputs] = useState<GeneratedItem[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
+  const [storyPreview, setStoryPreview] = useState<GeneratedItem | null>(null);
   const outputsRef = useRef<HTMLDivElement | null>(null);
 
   // Batch
