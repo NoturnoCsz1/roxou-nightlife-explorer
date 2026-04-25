@@ -86,6 +86,7 @@ const EventosList = () => {
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
   const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
   const [publishing, setPublishing] = useState(false);
+  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string }>>({});
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -181,6 +182,19 @@ const EventosList = () => {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
     toast.success(!current ? "Marcado como destaque" : "Removido do destaque");
+  }
+
+  async function saveQuickEdit(e: EventRow) {
+    const draft = quickEdits[e.id];
+    if (!draft) return;
+    const nextTitle = normalizeAiTitle(draft.title);
+    const nextDate = draft.date_time ? new Date(draft.date_time).toISOString() : e.date_time;
+    if (nextTitle === e.title && nextDate === e.date_time) return;
+    if (nextTitle.length < 5) { toast.error("Título precisa ter pelo menos 5 caracteres."); return; }
+    const { error } = await supabase.from("events").update({ title: nextTitle, date_time: nextDate }).eq("id", e.id);
+    if (error) { toast.error("Erro ao salvar edição rápida."); return; }
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: nextTitle, date_time: nextDate } : x));
+    toast.success("Edição rápida salva");
   }
 
   async function handleDelete() {
@@ -335,15 +349,25 @@ const EventosList = () => {
             ? <CheckSquare className="h-4 w-4 text-primary" />
             : <Square className="h-4 w-4 text-muted-foreground" />}
         </button>
-        <Link to={`/admin/eventos/${e.id}/editar`} className="min-w-0 flex-1">
-          <span className="text-sm font-semibold text-foreground truncate block">{e.title || <span className="text-red-400">(sem título)</span>}</span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <input
+            value={quickEdits[e.id]?.title ?? e.title ?? ""}
+            onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: ev.target.value, date_time: prev[e.id]?.date_time ?? e.date_time.slice(0, 16) } }))}
+            onBlur={() => saveQuickEdit(e)}
+            placeholder="Título do evento"
+            className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
+          />
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
               {getCategoryLabel(e.category, e.sub_category)}
             </span>
-            <span className="text-[10px] text-muted-foreground">
-              {new Date(e.date_time).toLocaleDateString("pt-BR")}
-            </span>
+            <input
+              type="datetime-local"
+              value={quickEdits[e.id]?.date_time ?? e.date_time.slice(0, 16)}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: ev.target.value } }))}
+              onBlur={() => saveQuickEdit(e)}
+              className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground"
+            />
             {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
               {e.status === "published" ? "Publicado" : "Rascunho"}
@@ -367,7 +391,7 @@ const EventosList = () => {
               </span>
             )}
           </div>
-        </Link>
+        </div>
         <div className="flex items-center shrink-0 ml-2 gap-0.5">
           {isDraft && (
             <>

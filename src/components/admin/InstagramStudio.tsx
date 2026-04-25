@@ -12,10 +12,12 @@ import {
   CalendarDays, CheckSquare, Square, CheckCheck, Loader2, Copy,
   Sparkles, Trophy, Image, Star, BadgeCheck, TrendingUp,
   Clock, Filter, Send, Download, Video, Zap, Pause, ChevronDown, ChevronUp,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import EventSearchFilter, { type DateFilter, getDateRange } from "./EventSearchFilter";
 import { renderEventCard } from "./EventImageGenerator";
 import EventImageGenerator from "./EventImageGenerator";
@@ -104,6 +106,7 @@ const InstagramStudio = () => {
   const [genStatus, setGenStatus] = useState<string>("");
   const [outputs, setOutputs] = useState<GeneratedItem[]>([]);
   const [expandedOutput, setExpandedOutput] = useState<number | null>(null);
+  const [storyPreview, setStoryPreview] = useState<GeneratedItem | null>(null);
   const outputsRef = useRef<HTMLDivElement | null>(null);
 
   // Batch
@@ -511,6 +514,31 @@ const InstagramStudio = () => {
 
   return (
     <div className="space-y-4">
+      <Dialog open={!!storyPreview} onOpenChange={(open) => !open && setStoryPreview(null)}>
+        <DialogContent className="max-w-[360px] rounded-2xl border-border/40 bg-background/95 p-4 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Preview do Story</DialogTitle>
+          </DialogHeader>
+          {storyPreview && (
+            <div className="mx-auto aspect-[9/16] w-full max-w-[260px] overflow-hidden rounded-[2rem] border-4 border-border bg-card shadow-2xl">
+              <div className="relative h-full w-full bg-gradient-to-b from-background via-card to-secondary/60 p-4">
+                {(() => {
+                  const ev = storyPreview.eventId ? events.find(e => e.id === storyPreview.eventId) : storyPreview.events?.[0];
+                  return ev?.image_url ? (
+                    <img src={ev.image_url} alt="Preview do flyer" className="absolute inset-0 h-full w-full object-cover opacity-55" />
+                  ) : null;
+                })()}
+                <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/10 to-background/85" />
+                <div className="relative flex h-full flex-col justify-end gap-3">
+                  <span className="w-fit rounded-full bg-primary/20 px-2.5 py-1 text-[10px] font-black uppercase text-primary">ROXOU STORY</span>
+                  <h3 className="text-2xl font-black leading-tight text-foreground">{storyPreview.title}</h3>
+                  <p className="text-xs leading-relaxed text-muted-foreground line-clamp-4">{storyPreview.storyCopy.hook || storyPreview.storyCopy.full}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       {/* Header */}
       <div>
         <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -670,22 +698,33 @@ const InstagramStudio = () => {
         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-1.5">
           <Zap className="h-3 w-3 text-primary" /> Ferramentas
         </h3>
-        <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
           {[
             { type: "agenda" as const, icon: CalendarDays, label: "Gerar Story Agenda", desc: "Tudo do dia", primary: true, tint: "text-primary bg-primary/15 border-primary/35" },
             { type: "top" as const, icon: Trophy, label: "Gerar Story Top Rolês", desc: "Ranking quente", primary: true, tint: "text-yellow-500 bg-yellow-400/15 border-yellow-400/35" },
             { type: "destaque" as const, icon: Zap, label: "Gerar Story Destaque", desc: "Hero do dia", primary: false, tint: "text-pink-400 bg-white/5 border-pink-500/20" },
             { type: "individual" as const, icon: Image, label: "Gerar Story Individual", desc: "Um por evento", primary: false, tint: "text-accent bg-white/5 border-accent/20" },
-          ].map(t => (
-            <button key={t.type} onClick={() => { setActiveMode("story"); handleGenerate(t.type, "story"); }} disabled={generating || selectedEvents.length === 0}
-              className={`group flex flex-col items-start gap-2 rounded-2xl border backdrop-blur-md text-left transition hover:scale-[1.02] hover:border-primary/40 disabled:opacity-50 disabled:hover:scale-100 ${t.primary ? "min-h-[112px] p-4 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.55)]" : "min-h-[86px] p-3"} ${t.tint}`}>
-              <t.icon className={t.primary ? "h-7 w-7" : "h-5 w-5"} />
-              <div>
-                <div className={`${t.primary ? "text-[13px]" : "text-[11px]"} font-bold text-foreground leading-tight`}>{t.label}</div>
-                <div className="text-[9px] text-muted-foreground mt-0.5">{t.desc}</div>
+            ].map(t => (
+              <div key={t.type} className="relative">
+                <button onClick={() => { setActiveMode("story"); handleGenerate(t.type, "story"); }} disabled={generating || selectedEvents.length === 0}
+                  className={`group flex w-full flex-col items-start gap-2 rounded-2xl border backdrop-blur-md text-left transition hover:scale-[1.02] hover:border-primary/40 disabled:opacity-50 disabled:hover:scale-100 ${t.primary ? "min-h-[112px] p-4 pr-10 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.55)]" : "min-h-[86px] p-3 pr-9"} ${t.tint}`}>
+                  <t.icon className={t.primary ? "h-7 w-7" : "h-5 w-5"} />
+                  <div>
+                    <div className={`${t.primary ? "text-[13px]" : "text-[11px]"} font-bold text-foreground leading-tight`}>{t.label}</div>
+                    <div className="text-[9px] text-muted-foreground mt-0.5">{t.desc}</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStoryPreview(generateContent(t.type)[0] || null)}
+                  disabled={selectedEvents.length === 0}
+                  className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/30 bg-background/60 text-muted-foreground backdrop-blur transition hover:bg-primary/15 hover:text-primary disabled:opacity-40"
+                  title="Pré-visualizar Story"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </button>
               </div>
-            </button>
-          ))}
+            ))}
         </div>
         <div className="grid grid-cols-3 gap-1.5 pt-1">
           {MODE_TABS.filter(t => t.key !== "story").map(t => {

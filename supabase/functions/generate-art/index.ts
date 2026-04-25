@@ -15,16 +15,20 @@ serve(async (req) => {
 
     const messages: any[] = [];
 
+    const cleanStoryPrompt = format === "story"
+      ? `${prompt}\n\nREGRA CRÍTICA PARA STORY ROXOU: gere uma arte vertical 9:16 limpa, premium e sem poluição visual. NÃO adicione textos genéricos, frases motivacionais, chamadas como imperdível/hoje/agenda/top rolês, balões, labels, banners, tarjas ou qualquer tipografia sobreposta além de texto já existente no flyer de referência. Preserve o flyer como elemento principal e complemente apenas com atmosfera visual da vibe/gênero musical, iluminação, textura e composição. O texto rico fica exclusivamente para a legenda do Instagram, não dentro da imagem.`
+      : prompt;
+
     if (referenceImage) {
       messages.push({
         role: "user",
         content: [
-          { type: "text", text: prompt },
+          { type: "text", text: cleanStoryPrompt },
           { type: "image_url", image_url: { url: referenceImage } },
         ],
       });
     } else {
-      messages.push({ role: "user", content: prompt });
+      messages.push({ role: "user", content: cleanStoryPrompt });
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
