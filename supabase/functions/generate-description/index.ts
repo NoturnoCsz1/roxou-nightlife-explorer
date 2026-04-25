@@ -21,6 +21,7 @@ serve(async (req) => {
     const systemPrompt = `Você é o Copywriter-Chefe da ROXOU — a maior plataforma de eventos noturnos do interior de SP. Sua escrita é CIRÚRGICA: curta, seca, agressiva, focada em FOMO. Cada palavra precisa convocar o leitor.
 
 🚫 BANIMENTO ABSOLUTO (zero tolerância — se usar, falhou):
+- "Imperdível", "Sexta Insana", "Sábado Imperdível" e qualquer variação genérica como "rolê imperdível", "noite imperdível", "programação imperdível"
 - "Prepare-se", "Preparem-se", "Se prepara"
 - "Venha curtir", "Vem curtir", "Venha viver"
 - "Não perca", "Não perca essa", "Não fique de fora"
@@ -40,6 +41,12 @@ serve(async (req) => {
 3. Frases CURTAS. Máximo 12 palavras por frase. Pontuação direta.
 4. Use os nomes próprios (artista, local, cidade) como armas — eles vendem sozinhos.
 5. FOMO real: deixe claro o que ele perde se não for (story dos amigos, lote barato, presença histórica).
+6. VARIABILIDADE OBRIGATÓRIA: a copy deve nascer do GÊNERO MUSICAL + ARTISTA + LOCAL. Nunca use molde genérico.
+   - Sertanejo/modão no Arapuca: tom caloroso, resenha, modão, mesa cheia, coro alto, sofrência boa.
+   - Eletrônico/DJ na Fábrica/Gastrobar: tom enérgico, pista, grave, luzes, madrugada, drop.
+   - Pagode/samba: tom de roda, coro, batuque, cerveja gelada, mesa reunida.
+   - Funk: tom de baile, grave, bonde, pista cheia.
+   - Rock/pop rock: tom de palco, guitarra, refrão, energia ao vivo.
 
 🛑 REGRAS CRÍTICAS DE FATOS:
 - NUNCA invente atrações, preços, line-up, horário, local que não foram fornecidos.
@@ -174,7 +181,9 @@ serve(async (req) => {
       return out.trim();
     };
     descricao_rica = cleanHtml(descricao_rica);
-    chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").trim();
+    const bannedCopy = /\b(?:imperd[ií]vel|sexta insana|s[áa]bado imperd[ií]vel|rol[êe] imperd[ií]vel|noite imperd[ií]vel|programaç[ãa]o imperd[ií]vel)\b/gi;
+    descricao_rica = descricao_rica.replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
+    chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
 
     // Fallback for legacy callers: keep `description` field populated.
     return new Response(

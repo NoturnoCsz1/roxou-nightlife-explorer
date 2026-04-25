@@ -81,7 +81,7 @@ const InstagramStudio = () => {
   const navigate = useNavigate();
 
   // Mode
-  const [activeMode, setActiveMode] = useState<OutputMode>("feed");
+  const [activeMode, setActiveMode] = useState<OutputMode>("story");
 
   // Data
   const [events, setEvents] = useState<ScoredEvent[]>([]);
@@ -230,7 +230,7 @@ const InstagramStudio = () => {
     }];
   }
 
-  async function handleGenerate(type: ContentType | "all") {
+  async function handleGenerate(type: ContentType | "all", modeOverride: OutputMode = activeMode) {
     if (selectedEvents.length === 0) { toast.error("Selecione pelo menos um evento"); return; }
     setGenerating(true);
     setGenStatus("Gerando conteúdo...");
@@ -257,7 +257,7 @@ const InstagramStudio = () => {
         source_type: `studio_${r.contentType}`,
         source_id: r.eventId || null,
         title: r.title,
-        generated_text: activeMode === "feed" ? r.feedCopy.full : r.storyCopy.full,
+        generated_text: modeOverride === "feed" ? r.feedCopy.full : r.storyCopy.full,
       } as any);
     }
 
@@ -518,38 +518,29 @@ const InstagramStudio = () => {
           Estúdio de Conteúdo
         </h2>
         <p className="text-[10px] text-muted-foreground mt-0.5">
-          Gere artes e copies para Feed, Story e Reels · {todayStr}
+          Stories em primeiro lugar · Feed e Reels no rodapé · {todayStr}
         </p>
       </div>
 
-      {/* Mode tabs */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {MODE_TABS.map(t => {
-          const Icon = t.icon;
-          const isActive = activeMode === t.key;
-          return (
-            <button
-              key={t.key}
-              onClick={() => setActiveMode(t.key)}
-              className={`flex flex-col items-center gap-1 rounded-xl p-3 transition border ${
-                isActive
-                  ? "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10"
-                  : "border-border/30 bg-card/50 hover:bg-secondary/30"
-              }`}
-            >
-              <Icon className={`h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-              <span className={`text-[11px] font-bold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{t.label}</span>
-              <span className="text-[8px] text-muted-foreground/60">{t.desc}</span>
-            </button>
-          );
-        })}
+      {/* Story-first mode */}
+      <div className="rounded-2xl border border-border/30 bg-white/5 p-2.5 backdrop-blur-xl">
+        <button
+          onClick={() => setActiveMode("story")}
+          className={`w-full flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black transition ${
+            activeMode === "story"
+              ? "bg-primary/20 text-primary shadow-sm shadow-primary/20"
+              : "bg-white/5 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <CalendarDays className="h-4 w-4" /> Modo Story 9:16
+        </button>
       </div>
 
       {/* Search + Date filter */}
       <EventSearchFilter searchQuery={searchQuery} onSearchChange={setSearchQuery} dateFilter={dateFilter} onDateFilterChange={setDateFilter} />
 
       {/* Filters */}
-      <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
+      <div className="rounded-2xl border border-border/40 bg-white/5 p-3 space-y-2">
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
           <Filter className="h-3 w-3" /> Filtros
         </div>
@@ -579,7 +570,7 @@ const InstagramStudio = () => {
       </div>
 
       {/* Event Selection */}
-      <div className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
+      <div className="rounded-2xl border border-border/40 bg-white/5 p-3 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
             Eventos ({filteredEvents.length})
@@ -599,7 +590,7 @@ const InstagramStudio = () => {
               const h = format(new Date(e.date_time), "HH:mm");
               return (
                 <div key={e.id} onClick={() => toggleSelect(e.id)}
-                  className={`flex items-start gap-2 rounded-lg p-2 cursor-pointer transition border ${isSelected ? "border-primary/30 bg-primary/5" : "border-transparent bg-card/50 hover:bg-secondary/30"}`}>
+                  className={`flex items-start gap-2 rounded-2xl p-2 cursor-pointer transition border ${isSelected ? "border-primary/30 bg-primary/5" : "border-transparent bg-white/5 hover:bg-secondary/30"}`}>
                   {isSelected ? <CheckSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" /> : <Square className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />}
                   {e.image_url && <img src={e.image_url} alt="" className="h-9 w-9 rounded-md object-cover shrink-0" />}
                   <div className="flex-1 min-w-0">
@@ -681,26 +672,37 @@ const InstagramStudio = () => {
         </h3>
         <div className="grid grid-cols-2 gap-2.5">
           {[
-            { type: "agenda" as const, icon: CalendarDays, label: "Agenda", desc: "Lista do dia", tint: "text-primary bg-primary/10 border-primary/20" },
-            { type: "top" as const, icon: Trophy, label: "Top Rolês", desc: "Ranking quente", tint: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" },
-            { type: "destaque" as const, icon: Zap, label: "Destaque", desc: "Hero do dia", tint: "text-pink-400 bg-pink-500/10 border-pink-500/20" },
-            { type: "individual" as const, icon: Image, label: "Marketing IA", desc: "Posts em série", tint: "text-accent bg-accent/10 border-accent/20" },
+            { type: "agenda" as const, icon: CalendarDays, label: "Gerar Story Agenda", desc: "Tudo do dia", primary: true, tint: "text-primary bg-primary/15 border-primary/35" },
+            { type: "top" as const, icon: Trophy, label: "Gerar Story Top Rolês", desc: "Ranking quente", primary: true, tint: "text-yellow-500 bg-yellow-400/15 border-yellow-400/35" },
+            { type: "destaque" as const, icon: Zap, label: "Gerar Story Destaque", desc: "Hero do dia", primary: false, tint: "text-pink-400 bg-white/5 border-pink-500/20" },
+            { type: "individual" as const, icon: Image, label: "Gerar Story Individual", desc: "Um por evento", primary: false, tint: "text-accent bg-white/5 border-accent/20" },
           ].map(t => (
-            <button key={t.type} onClick={() => handleGenerate(t.type)} disabled={generating || selectedEvents.length === 0}
-              className={`group flex flex-col items-start gap-2 rounded-2xl border bg-white/5 backdrop-blur-md p-3.5 text-left transition hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_0_20px_-4px_hsl(var(--primary)/0.4)] disabled:opacity-50 disabled:hover:scale-100 ${t.tint}`}>
-              <t.icon className="h-6 w-6" />
+            <button key={t.type} onClick={() => { setActiveMode("story"); handleGenerate(t.type, "story"); }} disabled={generating || selectedEvents.length === 0}
+              className={`group flex flex-col items-start gap-2 rounded-2xl border backdrop-blur-md text-left transition hover:scale-[1.02] hover:border-primary/40 disabled:opacity-50 disabled:hover:scale-100 ${t.primary ? "min-h-[112px] p-4 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.55)]" : "min-h-[86px] p-3"} ${t.tint}`}>
+              <t.icon className={t.primary ? "h-7 w-7" : "h-5 w-5"} />
               <div>
-                <div className="text-[12px] font-bold text-foreground leading-tight">{t.label}</div>
+                <div className={`${t.primary ? "text-[13px]" : "text-[11px]"} font-bold text-foreground leading-tight`}>{t.label}</div>
                 <div className="text-[9px] text-muted-foreground mt-0.5">{t.desc}</div>
               </div>
             </button>
           ))}
         </div>
-        <button onClick={() => handleGenerate("all")} disabled={generating || selectedEvents.length === 0}
-          className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-sm font-bold text-white hover:opacity-90 transition disabled:opacity-50 shadow-[0_0_18px_hsl(var(--primary)/0.4)]">
-          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          LANÇAR TUDO NO ECOSSISTEMA
-        </button>
+        <div className="grid grid-cols-3 gap-1.5 pt-1">
+          {MODE_TABS.filter(t => t.key !== "story").map(t => {
+            const Icon = t.icon;
+            const isActive = activeMode === t.key;
+            return (
+              <button key={t.key} onClick={() => setActiveMode(t.key)}
+                className={`flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium transition ${isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
+                <Icon className="h-3 w-3" /> {t.label}
+              </button>
+            );
+          })}
+          <button onClick={() => handleGenerate("all", activeMode)} disabled={generating || selectedEvents.length === 0}
+            className="flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition disabled:opacity-50">
+            <Sparkles className="h-3 w-3" /> Tudo
+          </button>
+        </div>
       </section>
 
       {/* ═══════════ SEÇÃO 3 · GERENCIAMENTO (GHOST) ═══════════ */}
@@ -733,7 +735,7 @@ const InstagramStudio = () => {
       {outputs.length > 0 && (
         <div ref={outputsRef} className="space-y-3">
           {/* Batch actions */}
-          <div className="rounded-xl border border-border/30 bg-card p-3 space-y-3">
+          <div className="rounded-2xl border border-border/30 bg-white/5 p-3 space-y-3">
             <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               Conteúdo ({outputs.length}) · {activeMode.toUpperCase()}

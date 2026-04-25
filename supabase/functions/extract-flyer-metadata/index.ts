@@ -23,7 +23,7 @@ const systemPrompt = `Você é um extrator de metadados de flyers/banners de eve
 Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown, sem comentários) com os seguintes campos:
 
 {
-  "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. Exemplos: "JOÃO MARKOS NO ARAPUCA BAR NOITE HISTÓRICA", "LUAN SANTANA NO ARENA NOITE HISTÓRICA", "BAILE DO MC IG NO GALPÃO 51 VIBE INSANA", "SAMBA DA QUINTA NO BEAR LOUNGE ROLÊ DO MÊS". Frases de impacto possíveis: "NOITE HISTÓRICA", "O MELHOR DA REGIÃO", "SÁBADO IMPERDÍVEL", "ROLÊ DO MÊS", "VIBE INSANA", "NOITE PREMIUM", "SE PREPARA", "ENERGIA PURA", "PISTA EXPLOSIVA", "EXPERIÊNCIA ÚNICA".
+  "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. A frase DEVE nascer do GÊNERO MUSICAL + ARTISTA + LOCAL: sertanejo/modão = resenha, sofrência, modão, violão; eletrônico/DJ = pista, grave, luzes, madrugada; pagode/samba = roda, coro, mesa cheia; funk = baile, grave, bonde; rock = palco, guitarra, energia. Exemplos: "JOÃO MARKOS NO ARAPUCA BAR O MELHOR SERTANEJO DE PRUDENTE COLA COM A GENTE", "DJ VICTOR NA FÁBRICA GASTROBAR PISTA ACESA ATÉ TARDE", "SAMBA DA QUINTA NO BEAR LOUNGE RODA CHEIA E CORO ALTO".
   "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. null se não houver.
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
@@ -62,7 +62,8 @@ REGRAS DE TAXONOMIA POR GÊNERO (use APENAS se o nome do local NÃO indicar tipo
 - "cultural", "exposição", "teatro", "literário", "cineclube", "sarau" → category="cultural"
 
 OUTRAS REGRAS:
-- "title": SEMPRE em CAIXA ALTA. PROIBIDO usar hífens (-), travessões (—, –), dois pontos (:), barras (/) ou QUALQUER símbolo de separação. Use apenas ESPAÇOS entre as partes. Formato: "ATRAÇÃO NO LOCAL FRASE DE IMPACTO". Máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto.
+- BANIMENTO ABSOLUTO NO TITLE: nunca use "IMPERDÍVEL", "SEXTA INSANA", "SÁBADO IMPERDÍVEL" nem variações genéricas como "NOITE IMPERDÍVEL", "ROLÊ IMPERDÍVEL", "VIBE INSANA", "NOITE INESQUECÍVEL", "EXPERIÊNCIA ÚNICA", "SE PREPARA".
+- "title": SEMPRE em CAIXA ALTA. PROIBIDO usar hífens (-), travessões (—, –), dois pontos (:), barras (/) ou QUALQUER símbolo de separação. Use apenas ESPAÇOS entre as partes. Formato: "ATRAÇÃO NO LOCAL FRASE DE IMPACTO". Máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto usando artista, gênero e local.
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente.
 - "ticket_url": SEMPRE null. Nunca extraia link de ingresso.
 - "venue_name": só preencha se tiver razoável certeza do nome do local.
@@ -191,6 +192,7 @@ serve(async (req) => {
     title = title
       .replace(/\s*[—–-]\s*/g, " ")  // hifens e travessões
       .replace(/\s*[:\/|]\s*/g, " ") // dois pontos, barras, pipes
+      .replace(/\b(?:IMPERD[IÍ]VEL|SEXTA INSANA|S[ÁA]BADO IMPERD[IÍ]VEL|NOITE IMPERD[IÍ]VEL|ROL[ÊE] IMPERD[IÍ]VEL|VIBE INSANA|NOITE INESQUEC[IÍ]VEL|EXPERI[ÊE]NCIA [ÚU]NICA|SE PREPARA)\b/gi, "")
       .replace(/\s+/g, " ")
       .trim()
       .toUpperCase();
