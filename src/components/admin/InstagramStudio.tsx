@@ -230,7 +230,7 @@ const InstagramStudio = () => {
     }];
   }
 
-  async function handleGenerate(type: ContentType | "all") {
+  async function handleGenerate(type: ContentType | "all", modeOverride: OutputMode = activeMode) {
     if (selectedEvents.length === 0) { toast.error("Selecione pelo menos um evento"); return; }
     setGenerating(true);
     setGenStatus("Gerando conteúdo...");
@@ -257,7 +257,7 @@ const InstagramStudio = () => {
         source_type: `studio_${r.contentType}`,
         source_id: r.eventId || null,
         title: r.title,
-        generated_text: activeMode === "feed" ? r.feedCopy.full : r.storyCopy.full,
+        generated_text: modeOverride === "feed" ? r.feedCopy.full : r.storyCopy.full,
       } as any);
     }
 
