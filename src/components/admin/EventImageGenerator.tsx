@@ -3,6 +3,18 @@ import { Loader2, Download, Image as ImageIcon, Send } from "lucide-react";
 import { toast } from "sonner";
 import { renderFlyer, loadImage, type ArtFormat, FORMAT_SIZES } from "@/lib/coverRenderer";
 
+function buildDownloadName(title: string, dateTime: string, fmt: ArtFormat) {
+  const date = new Date(dateTime).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }).replace("/", "-");
+  const safeTitle = title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase()
+    .slice(0, 48) || "EVENTO";
+  return `ROXOU_${date}_${safeTitle}_${fmt.toUpperCase()}.jpg`;
+}
+
 export type ImageFormat = ArtFormat;
 
 interface EventData {
@@ -59,11 +71,10 @@ export default function EventImageGenerator({ event, badge = "HOJE NA ROXOU", in
     if (!imageDataUrl) return;
     const a = document.createElement("a");
     a.href = imageDataUrl;
-    const suffix = fmt !== "feed" ? `_${fmt}` : "";
-    a.download = `roxou-${event.title.slice(0, 30).replace(/[^a-zA-Z0-9]/g, "_")}${suffix}.jpg`;
+    a.download = buildDownloadName(event.title, event.date_time, fmt);
     a.click();
     toast.success("Download iniciado!");
-  }, [imageDataUrl, event.title, fmt]);
+  }, [imageDataUrl, event.title, event.date_time, fmt]);
 
   const availableFormats: ArtFormat[] = ["feed", "story", "flyer"];
 
