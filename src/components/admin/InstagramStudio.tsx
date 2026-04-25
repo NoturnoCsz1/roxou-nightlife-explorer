@@ -677,7 +677,7 @@ const InstagramStudio = () => {
             { type: "destaque" as const, icon: Zap, label: "Gerar Story Destaque", desc: "Hero do dia", primary: false, tint: "text-pink-400 bg-white/5 border-pink-500/20" },
             { type: "individual" as const, icon: Image, label: "Gerar Story Individual", desc: "Um por evento", primary: false, tint: "text-accent bg-white/5 border-accent/20" },
           ].map(t => (
-            <button key={t.type} onClick={() => { setActiveMode("story"); handleGenerate(t.type); }} disabled={generating || selectedEvents.length === 0}
+            <button key={t.type} onClick={() => { setActiveMode("story"); handleGenerate(t.type, "story"); }} disabled={generating || selectedEvents.length === 0}
               className={`group flex flex-col items-start gap-2 rounded-2xl border backdrop-blur-md text-left transition hover:scale-[1.02] hover:border-primary/40 disabled:opacity-50 disabled:hover:scale-100 ${t.primary ? "min-h-[112px] p-4 shadow-[0_0_24px_-8px_hsl(var(--primary)/0.55)]" : "min-h-[86px] p-3"} ${t.tint}`}>
               <t.icon className={t.primary ? "h-7 w-7" : "h-5 w-5"} />
               <div>
@@ -698,7 +698,7 @@ const InstagramStudio = () => {
               </button>
             );
           })}
-          <button onClick={() => handleGenerate("all")} disabled={generating || selectedEvents.length === 0}
+          <button onClick={() => handleGenerate("all", activeMode)} disabled={generating || selectedEvents.length === 0}
             className="flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition disabled:opacity-50">
             <Sparkles className="h-3 w-3" /> Tudo
           </button>
