@@ -47,7 +47,8 @@ interface Checklist {
 }
 
 function getChecklist(e: EventRow): Checklist {
-  const title = !!e.title && e.title.trim().length >= 5;
+  const titleText = (e.title || "").trim();
+  const title = titleText.length >= 5 && !/[—–\-:|/]/.test(titleText);
   const date = !!e.date_time && new Date(e.date_time).getTime() > Date.now();
   const desc = (e.description || "").trim();
   // Persona V2 = HTML rica com checklist (📝 O QUE VOCÊ PRECISA SABER) ou ao menos <ul> + <strong> + 80+ chars
@@ -55,9 +56,17 @@ function getChecklist(e: EventRow): Checklist {
     desc.length >= 80 &&
     /<(p|ul|li|strong)\b/i.test(desc) &&
     (/O QUE VOC[ÊE] PRECISA SABER/i.test(desc) || /<ul[\s>]/i.test(desc));
-  const flyer = !!e.image_url;
+  const flyer = !!e.image_url && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(e.image_url.trim());
   const complete = title && date && description && flyer;
   return { title, date, description, flyer, complete };
+}
+
+function normalizeAiTitle(title: string) {
+  return title
+    .replace(/\s*[—–\-:|/]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
 }
 
 const EventosList = () => {
@@ -197,7 +206,7 @@ const EventosList = () => {
         body: { image_url: e.image_url, current_year: new Date().getFullYear() },
       });
       if (error) throw error;
-      const newTitle = (data as any)?.title;
+      const newTitle = normalizeAiTitle((data as any)?.title || "");
       if (!newTitle) throw new Error("IA não retornou título");
       await supabase.from("events").update({ title: newTitle }).eq("id", e.id);
       setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: newTitle } : x));
@@ -210,6 +219,10 @@ const EventosList = () => {
   }
 
   async function regenerateDescription(e: EventRow) {
+    if ((e.description || "").trim()) {
+      toast.info("A descrição já existe. Edite manualmente ou apague para gerar outra.");
+      return;
+    }
     setAiBusy(p => ({ ...p, [e.id]: "desc" }));
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
@@ -300,7 +313,7 @@ const EventosList = () => {
   const draftEvents = events.filter(e => e.status === "draft");
   const draftsReady = draftEvents.filter(e => getChecklist(e).complete).length;
   const draftsAttention = draftEvents.length - draftsReady;
-  const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status !== "published").length;
+  const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status === "draft").length;
 
   const ChecklistDot = ({ ok, label }: { ok: boolean; label: string }) => (
     <span
@@ -316,7 +329,7 @@ const EventosList = () => {
     const busy = aiBusy[e.id];
     const isDraft = e.status === "draft";
     return (
-      <div key={e.id} className={`flex items-center gap-2 rounded-xl border p-3 ${isDraft && !cl.complete ? "border-red-500/30 bg-card" : "border-border/40 bg-card"}`}>
+      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl ${isDraft && !cl.complete ? "border-destructive/40 bg-white/5" : "border-border/40 bg-white/5"}`}>
         <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
           {selectedIds.has(e.id)
             ? <CheckSquare className="h-4 w-4 text-primary" />
@@ -344,10 +357,10 @@ const EventosList = () => {
           </div>
           {/* Checklist row */}
           <div className="flex items-center gap-1.5 mt-1.5">
-            <ChecklistDot ok={cl.title} label="Título" />
+            <ChecklistDot ok={cl.title} label="Título mínimo e sem traços" />
             <ChecklistDot ok={cl.date} label="Data futura" />
             <ChecklistDot ok={cl.description} label="Descrição rica" />
-            <ChecklistDot ok={cl.flyer} label="Flyer" />
+            <ChecklistDot ok={cl.flyer} label="Flyer funcional" />
             {!cl.complete && isDraft && (
               <span className="text-[9px] font-bold uppercase text-red-400 ml-1 inline-flex items-center gap-1">
                 <AlertTriangle className="h-2.5 w-2.5" /> Incompleto
@@ -361,18 +374,20 @@ const EventosList = () => {
               <button
                 onClick={() => regenerateTitle(e)}
                 disabled={!!busy}
-                className="p-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
-                title="✨ Gerar título com IA"
+                className="inline-flex items-center gap-1 rounded-xl bg-primary/10 px-2 py-1.5 text-[10px] font-bold text-primary hover:bg-primary/20 transition disabled:opacity-50"
+                title="Gerar título com IA"
               >
                 {busy === "title" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                <span className="hidden sm:inline">Gerar Título</span>
               </button>
               <button
                 onClick={() => regenerateDescription(e)}
                 disabled={!!busy}
-                className="p-1.5 rounded-lg hover:bg-primary/10 transition disabled:opacity-50"
-                title="📝 Gerar legenda rica"
+                className="inline-flex items-center gap-1 rounded-xl bg-secondary/60 px-2 py-1.5 text-[10px] font-bold text-secondary-foreground hover:bg-secondary transition disabled:opacity-50"
+                title="Gerar legenda rica"
               >
                 {busy === "desc" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Wand2 className="h-4 w-4 text-primary" />}
+                <span className="hidden sm:inline">Gerar Legenda</span>
               </button>
             </>
           )}
@@ -424,7 +439,7 @@ const EventosList = () => {
 
       {/* Drafts Counter */}
       {draftEvents.length > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-card px-3 py-2 text-[11px] flex-wrap">
+        <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-white/5 px-3 py-2 text-[11px] backdrop-blur-xl flex-wrap">
           <span className="font-bold text-green-400 inline-flex items-center gap-1">
             <Check className="h-3 w-3" /> {draftsReady} prontos para publicação
           </span>
@@ -434,17 +449,17 @@ const EventosList = () => {
           </span>
           <span className="w-px h-4 bg-border/40" />
           <button
-            onClick={() => { setActiveStatus("draft"); setOnlyIncomplete(!onlyIncomplete); }}
+             onClick={() => { setActiveStatus("draft"); setOnlyIncomplete(!onlyIncomplete); }}
             className={`text-[10px] font-bold uppercase px-2 py-1 rounded transition ${onlyIncomplete ? "bg-primary text-primary-foreground" : "bg-secondary/50 hover:bg-secondary text-muted-foreground"}`}
           >
-            {onlyIncomplete ? "Mostrando incompletos" : "Mostrar só incompletos"}
+             {onlyIncomplete ? "Mostrando incompletos" : "Mostrar apenas rascunhos incompletos"}
           </button>
         </div>
       )}
 
       {/* Bulk action bar */}
       {(withImages > 0 || selectedCount > 0) && (
-        <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/40 bg-card px-3 py-2">
+        <div className="flex items-center gap-2 flex-wrap rounded-2xl border border-border/40 bg-white/5 px-3 py-2 backdrop-blur-xl">
           <button onClick={toggleSelectAll} className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase hover:text-foreground transition">
             {selectedCount > 0 && selectedCount >= filtered.length ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
             {selectedCount > 0 ? `${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}` : "Selecionar todos"}
@@ -453,7 +468,7 @@ const EventosList = () => {
           <button
             onClick={handleBulkPublish}
             disabled={publishing || selectedReadyToPublish === 0}
-            className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition hover:bg-green-700"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50 transition hover:bg-primary/90"
             title="Publicar selecionados (apenas válidos)"
           >
             {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
