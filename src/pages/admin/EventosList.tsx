@@ -47,7 +47,8 @@ interface Checklist {
 }
 
 function getChecklist(e: EventRow): Checklist {
-  const title = !!e.title && e.title.trim().length >= 5;
+  const titleText = (e.title || "").trim();
+  const title = titleText.length >= 5 && !/[—–\-:|/]/.test(titleText);
   const date = !!e.date_time && new Date(e.date_time).getTime() > Date.now();
   const desc = (e.description || "").trim();
   // Persona V2 = HTML rica com checklist (📝 O QUE VOCÊ PRECISA SABER) ou ao menos <ul> + <strong> + 80+ chars
@@ -55,9 +56,17 @@ function getChecklist(e: EventRow): Checklist {
     desc.length >= 80 &&
     /<(p|ul|li|strong)\b/i.test(desc) &&
     (/O QUE VOC[ÊE] PRECISA SABER/i.test(desc) || /<ul[\s>]/i.test(desc));
-  const flyer = !!e.image_url;
+  const flyer = !!e.image_url && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(e.image_url.trim());
   const complete = title && date && description && flyer;
   return { title, date, description, flyer, complete };
+}
+
+function normalizeAiTitle(title: string) {
+  return title
+    .replace(/\s*[—–\-:|/]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
 }
 
 const EventosList = () => {
@@ -197,7 +206,7 @@ const EventosList = () => {
         body: { image_url: e.image_url, current_year: new Date().getFullYear() },
       });
       if (error) throw error;
-      const newTitle = (data as any)?.title;
+      const newTitle = normalizeAiTitle((data as any)?.title || "");
       if (!newTitle) throw new Error("IA não retornou título");
       await supabase.from("events").update({ title: newTitle }).eq("id", e.id);
       setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: newTitle } : x));
@@ -210,6 +219,10 @@ const EventosList = () => {
   }
 
   async function regenerateDescription(e: EventRow) {
+    if ((e.description || "").trim()) {
+      toast.info("A descrição já existe. Edite manualmente ou apague para gerar outra.");
+      return;
+    }
     setAiBusy(p => ({ ...p, [e.id]: "desc" }));
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
