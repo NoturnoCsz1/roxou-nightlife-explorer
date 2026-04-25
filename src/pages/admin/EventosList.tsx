@@ -313,7 +313,7 @@ const EventosList = () => {
   const draftEvents = events.filter(e => e.status === "draft");
   const draftsReady = draftEvents.filter(e => getChecklist(e).complete).length;
   const draftsAttention = draftEvents.length - draftsReady;
-  const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status !== "published").length;
+  const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status === "draft").length;
 
   const ChecklistDot = ({ ok, label }: { ok: boolean; label: string }) => (
     <span
