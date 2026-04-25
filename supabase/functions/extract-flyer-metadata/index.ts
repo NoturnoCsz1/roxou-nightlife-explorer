@@ -192,6 +192,7 @@ serve(async (req) => {
     title = title
       .replace(/\s*[—–-]\s*/g, " ")  // hifens e travessões
       .replace(/\s*[:\/|]\s*/g, " ") // dois pontos, barras, pipes
+      .replace(/\b(?:IMPERD[IÍ]VEL|SEXTA INSANA|S[ÁA]BADO IMPERD[IÍ]VEL|NOITE IMPERD[IÍ]VEL|ROL[ÊE] IMPERD[IÍ]VEL|VIBE INSANA|NOITE INESQUEC[IÍ]VEL|EXPERI[ÊE]NCIA [ÚU]NICA|SE PREPARA)\b/gi, "")
       .replace(/\s+/g, " ")
       .trim()
       .toUpperCase();
