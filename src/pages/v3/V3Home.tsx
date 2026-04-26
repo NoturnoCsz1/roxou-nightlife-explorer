@@ -537,6 +537,32 @@ function BentoGrid() {
   );
 }
 
+function VibeSelector({ selected, onSelect }: { selected: string; onSelect: (key: string) => void }) {
+  return (
+    <FadeSection className="px-4 py-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
+        {VIBE_FILTERS.map((vibe) => {
+          const active = selected === vibe.key;
+          return (
+            <button
+              key={vibe.key}
+              type="button"
+              onClick={() => onSelect(active ? "" : vibe.key)}
+              className={`shrink-0 snap-start rounded-2xl px-4 py-2.5 text-[11px] font-extrabold border transition-all active:scale-95 ${
+                active
+                  ? "gradient-primary text-primary-foreground border-primary/50 neon-glow"
+                  : "v3-glass text-foreground border-border/40 hover:border-primary/40"
+              }`}
+            >
+              {vibe.label}
+            </button>
+          );
+        })}
+      </div>
+    </FadeSection>
+  );
+}
+
 /* ─── VENUE SPOTLIGHT (#1) — dominant card ─── */
 function VenueSpotlight({ v, maxViews }: { v: VenueRank; maxViews: number }) {
   return (
