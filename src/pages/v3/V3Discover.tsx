@@ -351,7 +351,7 @@ export default function V3Discover() {
               </h3>
               <div className="grid grid-cols-2 gap-2.5">
                 {filtered.slice(0, 20).map(e => (
-                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
+                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={() => toggleSave(e.id)} />
                 ))}
               </div>
             </div>
@@ -404,7 +404,7 @@ export default function V3Discover() {
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 {suggestedByCategory.map(e => (
-                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
+                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={() => toggleSave(e.id)} />
                 ))}
               </div>
             </div>
@@ -598,7 +598,7 @@ function DiscoverEventCard({ ev, isTrending, saved, onToggleSave }: {
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSave(); }}
           className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center z-10"
         >
-          <Bookmark className={`w-3 h-3 ${saved ? "text-primary fill-primary" : "text-white"}`} />
+          <Heart className={`w-3 h-3 ${saved ? "text-primary fill-primary" : "text-white"}`} />
         </button>
       )}
     </div>

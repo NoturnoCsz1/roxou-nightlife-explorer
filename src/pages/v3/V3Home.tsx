@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import CategoryChips from "@/components/v3/CategoryChips";
+import { useSavedEvents } from "@/hooks/useSavedEvents";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -28,8 +29,15 @@ const getDayLabel = (d: string) => {
 interface Ev {
   id: string; slug: string; title: string; image_url: string | null;
   date_time: string; venue_name: string | null; category: string;
-  featured: boolean; partner_id: string | null; ticket_url: string | null;
+  sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
 }
+
+const VIBE_FILTERS = [
+  { key: "bombando", label: "🔥 Bombando" },
+  { key: "musica", label: "🎸 Música ao Vivo" },
+  { key: "happy", label: "🍹 Happy Hour" },
+  { key: "grandes", label: "🏟️ Grandes Eventos" },
+];
 
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
@@ -40,6 +48,7 @@ interface VenueRank {
 
 export default function V3Home() {
   const [catFilter, setCatFilter] = useState("");
+  const [vibeFilter, setVibeFilter] = useState("");
   const now = new Date();
   const today = startOfDay(now);
 
@@ -49,7 +58,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,category,featured,partner_id,ticket_url")
+          .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url")
         .eq("status", "published")
         .gte("date_time", today.toISOString())
         .order("date_time", { ascending: true })
@@ -185,6 +194,16 @@ export default function V3Home() {
     [events, catFilter],
   );
 
+  const vibeFiltered = useMemo(() => {
+    const trendSet = new Set(trendingIds.map(t => t.id));
+    const musicSubs = new Set(["show", "sertanejo", "rock", "pagode", "mpb", "pop_rock", "samba"]);
+    if (vibeFilter === "bombando") return events.filter(e => trendSet.has(e.id));
+    if (vibeFilter === "musica") return events.filter(e => e.category === "show" || musicSubs.has(e.sub_category || ""));
+    if (vibeFilter === "happy") return events.filter(e => ["bar", "gastrobar", "restaurante"].includes(e.category));
+    if (vibeFilter === "grandes") return events.filter(e => ["festival", "festa"].includes(e.category));
+    return [];
+  }, [events, trendingIds, vibeFilter]);
+
   const maxViews = venueRanks[0]?.views || 1;
   const isLoading = loadingEvents;
 
@@ -226,6 +245,16 @@ export default function V3Home() {
 
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
       <BentoGrid />
+
+      <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
+
+      {vibeFilter && vibeFiltered.length > 0 && (
+        <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
+          {vibeFiltered.slice(0, 12).map(e => (
+            <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
+          ))}
+        </Rail>
+      )}
 
       {/* ══════ 3. CATEGORIES (filtro fino) ══════ */}
       <CategoryChips selected={catFilter} onSelect={setCatFilter} />
@@ -508,6 +537,32 @@ function BentoGrid() {
   );
 }
 
+function VibeSelector({ selected, onSelect }: { selected: string; onSelect: (key: string) => void }) {
+  return (
+    <FadeSection className="px-4 py-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
+        {VIBE_FILTERS.map((vibe) => {
+          const active = selected === vibe.key;
+          return (
+            <button
+              key={vibe.key}
+              type="button"
+              onClick={() => onSelect(active ? "" : vibe.key)}
+              className={`shrink-0 snap-start rounded-2xl px-4 py-2.5 text-[11px] font-extrabold border transition-all active:scale-95 ${
+                active
+                  ? "gradient-primary text-primary-foreground border-primary/50 neon-glow"
+                  : "v3-glass text-foreground border-border/40 hover:border-primary/40"
+              }`}
+            >
+              {vibe.label}
+            </button>
+          );
+        })}
+      </div>
+    </FadeSection>
+  );
+}
+
 /* ─── VENUE SPOTLIGHT (#1) — dominant card ─── */
 function VenueSpotlight({ v, maxViews }: { v: VenueRank; maxViews: number }) {
   return (
@@ -644,6 +699,8 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
 }) {
   const isLg = size === "lg";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isSaved, toggleSave } = useSavedEvents();
+  const saved = isSaved(ev.id);
   const badge = premium ? "⭐ Premium"
     : isTrending ? "🔥 Em alta"
     : partnerRank && partnerRank <= 3 ? `📈 #${partnerRank} hoje` : null;
@@ -677,6 +734,18 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
             <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/95 text-[8px] font-extrabold text-primary-foreground uppercase tracking-[0.12em]">
               {getDayLabel(ev.date_time)}
             </span>
+            <button
+              type="button"
+              aria-label={saved ? "Remover dos favoritos" : "Favoritar evento"}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSave(ev.id);
+              }}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/65 backdrop-blur-md border border-border/40 flex items-center justify-center transition-all active:scale-90"
+            >
+              <Heart className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-foreground"}`} />
+            </button>
           </div>
           <div className="p-3 space-y-1.5">
             <h3 className="font-display font-bold text-[12.5px] text-foreground line-clamp-2 leading-tight">{ev.title}</h3>

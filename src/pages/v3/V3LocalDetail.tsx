@@ -1,10 +1,24 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
+
+function getOperatingStatus(type?: string | null) {
+  const hour = new Date().getHours();
+  const normalized = (type || "").toLowerCase();
+  const openHour = normalized.includes("bar") || normalized.includes("pub") || normalized.includes("balada") ? 18 : 10;
+  const closeHour = normalized.includes("balada") ? 3 : normalized.includes("bar") || normalized.includes("pub") ? 2 : 22;
+  const isOvernight = closeHour < openHour;
+  const open = isOvernight ? hour >= openHour || hour < closeHour : hour >= openHour && hour < closeHour;
+  return open
+    ? { label: "🟢 Aberto Agora", tone: "text-primary" }
+    : { label: `🔴 Abre às ${String(openHour).padStart(2, "0")}:00`, tone: "text-muted-foreground" };
+}
+
+const cleanPhone = (phone: string) => phone.replace(/\D/g, "");
 
 export default function V3LocalDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -61,6 +75,12 @@ export default function V3LocalDetail() {
   }
 
   const followed = partner ? isFollowed(partner.id) : false;
+  const operatingStatus = getOperatingStatus(partner.type);
+  const mapsUrl = partner.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${partner.address}, ${partner.city || ""}`)}`
+    : null;
+  const instagramUrl = partner.instagram ? `https://instagram.com/${partner.instagram.replace("@", "")}` : null;
+  const whatsappUrl = partner.whatsapp ? `https://wa.me/55${cleanPhone(partner.whatsapp)}` : null;
 
   return (
     <div className="pb-8">
@@ -103,7 +123,38 @@ export default function V3LocalDetail() {
           <p className="text-sm text-muted-foreground leading-relaxed">{partner.short_description}</p>
         )}
 
-        {/* Actions — follow button prominent */}
+        <div className="rounded-2xl v3-glass p-3 flex items-center gap-2 border border-border/40">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Clock className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <p className={`text-xs font-extrabold ${operatingStatus.tone}`}>{operatingStatus.label}</p>
+            <p className="text-[10px] text-muted-foreground">Horário estimado do local</p>
+          </div>
+        </div>
+
+        {/* Actions — quick utility buttons */}
+        <div className="grid grid-cols-3 gap-2">
+          {mapsUrl && (
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
+              <Navigation className="w-4 h-4 text-primary" /> Como Chegar
+            </a>
+          )}
+          {instagramUrl && (
+            <a href={instagramUrl} target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
+              <Instagram className="w-4 h-4 text-primary" /> Instagram
+            </a>
+          )}
+          {whatsappUrl && (
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
+              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
+              <MessageCircle className="w-4 h-4 text-primary" /> Reservar
+            </a>
+          )}
+        </div>
+
         <div className="flex gap-2">
           {user && (
             <button
@@ -118,22 +169,10 @@ export default function V3LocalDetail() {
               {followed ? "Seguindo" : "Seguir"}
             </button>
           )}
-          {partner.instagram && (
-            <a href={`https://instagram.com/${partner.instagram.replace("@", "")}`} target="_blank" rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-card border border-border/30 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors">
-              <Instagram className="w-3.5 h-3.5" /> Instagram
-            </a>
-          )}
-          {partner.whatsapp && (
-            <a href={`https://wa.me/${partner.whatsapp}`} target="_blank" rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-card border border-border/30 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary/25 transition-colors">
-              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
-            </a>
-          )}
         </div>
 
         {partner.address && (
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partner.address)}`}
+          <a href={mapsUrl || "#"}
             target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 p-3.5 rounded-xl bg-card border border-border/40 text-sm text-muted-foreground hover:border-primary/30 transition-colors">
             <MapPin className="w-4 h-4 text-primary shrink-0" />
@@ -147,7 +186,7 @@ export default function V3LocalDetail() {
             <h2 className="font-display font-bold text-base text-foreground mb-3">📅 Próximos eventos</h2>
             <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
               {events.map((e) => (
-                <EventCardV3 key={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
+                <EventCardV3 key={e.id} id={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
                   dateTime={e.date_time} venueName={e.venue_name} category={e.category} />
               ))}
             </div>
