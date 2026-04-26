@@ -699,6 +699,8 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
 }) {
   const isLg = size === "lg";
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isSaved, toggleSave } = useSavedEvents();
+  const saved = isSaved(ev.id);
   const badge = premium ? "⭐ Premium"
     : isTrending ? "🔥 Em alta"
     : partnerRank && partnerRank <= 3 ? `📈 #${partnerRank} hoje` : null;
@@ -732,6 +734,18 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
             <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/95 text-[8px] font-extrabold text-primary-foreground uppercase tracking-[0.12em]">
               {getDayLabel(ev.date_time)}
             </span>
+            <button
+              type="button"
+              aria-label={saved ? "Remover dos favoritos" : "Favoritar evento"}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSave(ev.id);
+              }}
+              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/65 backdrop-blur-md border border-border/40 flex items-center justify-center transition-all active:scale-90"
+            >
+              <Heart className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-foreground"}`} />
+            </button>
           </div>
           <div className="p-3 space-y-1.5">
             <h3 className="font-display font-bold text-[12.5px] text-foreground line-clamp-2 leading-tight">{ev.title}</h3>
