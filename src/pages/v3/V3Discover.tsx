@@ -351,7 +351,7 @@ export default function V3Discover() {
               </h3>
               <div className="grid grid-cols-2 gap-2.5">
                 {filtered.slice(0, 20).map(e => (
-                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
+                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={() => toggleSave(e.id)} />
                 ))}
               </div>
             </div>
@@ -404,7 +404,7 @@ export default function V3Discover() {
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 {suggestedByCategory.map(e => (
-                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={user ? () => toggleSave(e.id) : undefined} />
+                  <DiscoverEventCard key={e.id} ev={e} isTrending={trendingSet.has(e.id)} saved={isSaved(e.id)} onToggleSave={() => toggleSave(e.id)} />
                 ))}
               </div>
             </div>
