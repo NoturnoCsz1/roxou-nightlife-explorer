@@ -186,7 +186,7 @@ export default function V3LocalDetail() {
             <h2 className="font-display font-bold text-base text-foreground mb-3">📅 Próximos eventos</h2>
             <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
               {events.map((e) => (
-                <EventCardV3 key={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
+                <EventCardV3 key={e.id} id={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
                   dateTime={e.date_time} venueName={e.venue_name} category={e.category} />
               ))}
             </div>
