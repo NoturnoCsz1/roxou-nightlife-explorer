@@ -1,10 +1,24 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, ExternalLink } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
+
+function getOperatingStatus(type?: string | null) {
+  const hour = new Date().getHours();
+  const normalized = (type || "").toLowerCase();
+  const openHour = normalized.includes("bar") || normalized.includes("pub") || normalized.includes("balada") ? 18 : 10;
+  const closeHour = normalized.includes("balada") ? 3 : normalized.includes("bar") || normalized.includes("pub") ? 2 : 22;
+  const isOvernight = closeHour < openHour;
+  const open = isOvernight ? hour >= openHour || hour < closeHour : hour >= openHour && hour < closeHour;
+  return open
+    ? { label: "🟢 Aberto Agora", tone: "text-primary" }
+    : { label: `🔴 Abre às ${String(openHour).padStart(2, "0")}:00`, tone: "text-muted-foreground" };
+}
+
+const cleanPhone = (phone: string) => phone.replace(/\D/g, "");
 
 export default function V3LocalDetail() {
   const { slug } = useParams<{ slug: string }>();
