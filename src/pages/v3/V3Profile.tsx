@@ -321,7 +321,44 @@ export default function V3Profile() {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function StatBentoCard({
+  to,
+  icon: Icon,
+  label,
+  value,
+  tone,
+  className = "",
+}: {
+  to: string;
+  icon: any;
+  label: string;
+  value: number;
+  tone: "primary" | "accent" | "show";
+  className?: string;
+}) {
+  const toneClass = {
+    primary: "text-primary bg-primary/15 shadow-[0_0_28px_hsl(var(--primary)/0.18)]",
+    accent: "text-accent bg-accent/15 shadow-[0_0_28px_hsl(var(--accent)/0.18)]",
+    show: "text-[hsl(var(--badge-show))] bg-[hsl(var(--badge-show)/0.14)] shadow-[0_0_28px_hsl(var(--badge-show)/0.16)]",
+  }[tone];
+
+  return (
+    <Link to={to} className={`group relative overflow-hidden rounded-3xl v3-glass p-4 transition-all active:scale-[0.98] ${className}`}>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/5 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="relative flex h-full items-center justify-between gap-3">
+        <div>
+          <p className="text-3xl font-black leading-none text-foreground">{value}</p>
+          <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${toneClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function SecurityRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 px-3.5 py-3">
       <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
