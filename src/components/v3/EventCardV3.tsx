@@ -7,6 +7,7 @@ import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 
 interface EventCardV3Props {
+  id: string;
   slug: string;
   title: string;
   imageUrl?: string | null;
@@ -18,6 +19,7 @@ interface EventCardV3Props {
 }
 
 export default function EventCardV3({
+  id,
   slug,
   title,
   imageUrl,
@@ -60,14 +62,14 @@ export default function EventCardV3({
           </span>
           <button
             type="button"
-            aria-label={isSaved(slug) ? "Remover dos favoritos" : "Favoritar evento"}
+            aria-label={isSaved(id) ? "Remover dos favoritos" : "Favoritar evento"}
             onClick={(e) => {
               e.stopPropagation();
-              toggleSave(slug);
+              toggleSave(id);
             }}
             className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/65 backdrop-blur-md border border-border/40 flex items-center justify-center transition-all active:scale-90"
           >
-            <Heart className={`w-4 h-4 ${isSaved(slug) ? "text-primary fill-primary" : "text-foreground"}`} />
+            <Heart className={`w-4 h-4 ${isSaved(id) ? "text-primary fill-primary" : "text-foreground"}`} />
           </button>
         </button>
 
