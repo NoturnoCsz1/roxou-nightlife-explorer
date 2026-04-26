@@ -8,6 +8,7 @@ import { useSavedPartners } from "@/hooks/useSavedPartners";
 import {
   User, LogOut, Car, Bookmark, ChevronRight, Shield, Mail, Phone,
   CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck, Building2,
+  Pencil, LockKeyhole,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -100,60 +101,75 @@ export default function V3Profile() {
 
   return (
     <div className="pb-8 px-4 pt-4 space-y-4">
-      {/* ── Header ── */}
-      <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/40">
-        <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center overflow-hidden">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <User className="w-7 h-7 text-primary" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-display font-bold text-lg text-foreground truncate">
-            {profile?.display_name || user.email?.split("@")[0]}
-          </h1>
-          <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-          {roles.length > 0 && (
-            <div className="flex gap-1 mt-1.5">
-              {roles.map(r => (
-                <span key={r} className="px-2 py-0.5 rounded-full bg-primary/10 text-[9px] font-bold text-primary uppercase">
-                  {r === "passenger" ? "Passageiro" : r === "driver" ? "Motorista" : r}
-                </span>
-              ))}
+      {/* ── Profile Hero ── */}
+      <div className="relative overflow-hidden rounded-3xl v3-glass-strong p-5 min-h-[190px]">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/35 via-accent/10 to-background" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/75 to-transparent" />
+        <button
+          type="button"
+          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/20 px-3 py-1.5 text-[11px] font-bold text-foreground/85 backdrop-blur-xl transition-all hover:border-primary/40 hover:bg-primary/10"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Editar Perfil
+        </button>
+
+        <div className="relative z-10 flex h-full flex-col justify-end pt-12">
+          <div className="relative mb-3 w-fit">
+            <div className="h-24 w-24 rounded-3xl border border-primary/50 bg-primary/20 p-1 v3-neon-glow">
+              <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-background/60 flex items-center justify-center">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-10 w-10 text-primary" />
+                )}
+              </div>
             </div>
-          )}
+            {roles.length > 0 && (
+              <div className="absolute -bottom-2 left-3 flex flex-wrap gap-1.5">
+                {roles.map(r => (
+                  <span key={r} className="rounded-full border border-primary/30 bg-background/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-primary backdrop-blur-xl">
+                    {r === "passenger" ? "Passageiro" : r === "driver" ? "Motorista" : r}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 pt-2">
+            <h1 className="font-display text-2xl font-black text-foreground truncate">
+              {profile?.display_name || user.email?.split("@")[0]}
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
         </div>
       </div>
 
-      {/* ── Quick stats — refined visual weight ── */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="p-3 rounded-xl bg-card border border-border/20 text-center">
-          <Bookmark className="w-4 h-4 text-primary mx-auto mb-1.5" />
-          <p className="text-lg font-bold text-foreground leading-none">{savedIds.length}</p>
-          <p className="text-[9px] text-muted-foreground mt-1">Salvos</p>
-        </div>
-        <div className="p-3 rounded-xl bg-card border border-border/20 text-center">
-          <Heart className="w-4 h-4 text-primary mx-auto mb-1.5" />
-          <p className="text-lg font-bold text-foreground leading-none">{followedIds.length}</p>
-          <p className="text-[9px] text-muted-foreground mt-1">Seguindo</p>
-        </div>
-        <div className="p-3 rounded-xl bg-card border border-border/20 text-center">
-          <Car className="w-4 h-4 text-primary mx-auto mb-1.5" />
-          <p className="text-lg font-bold text-foreground leading-none">{rides.length}</p>
-          <p className="text-[9px] text-muted-foreground mt-1">Caronas</p>
-        </div>
+      {/* ── Bento Stats ── */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatBentoCard to="#eventos-salvos" icon={Bookmark} label="Salvos" value={savedIds.length} tone="primary" className="min-h-[118px]" />
+        <StatBentoCard to="#locais-seguidos" icon={Heart} label="Seguindo" value={followedIds.length} tone="accent" className="min-h-[118px]" />
+        <StatBentoCard to="/v3/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 min-h-[92px]" />
       </div>
 
-      {/* ── Info — subtle ── */}
-      <div className="rounded-xl bg-card border border-border/20 divide-y divide-border/15">
-        <InfoRow icon={Mail} label="Email" value={user.email || "—"} />
-        <InfoRow icon={Phone} label="Telefone" value={profile?.phone || "Não informado"} />
-        {isDriver && <InfoRow icon={Shield} label="Motorista" value="Verificado ✓" />}
+      {/* ── Security & Contact ── */}
+      <div className="rounded-3xl v3-glass p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+            <LockKeyhole className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display text-sm font-black text-foreground">Segurança e Contato</h2>
+            <p className="text-[10px] text-muted-foreground">Dados essenciais da sua conta</p>
+          </div>
+        </div>
+        <div className="divide-y divide-border/20 overflow-hidden rounded-2xl border border-border/20 bg-background/20">
+          <SecurityRow icon={Mail} label="Email" value={user.email || "—"} />
+          <SecurityRow icon={Phone} label="Telefone" value={profile?.phone || "Não informado"} />
+          <SecurityRow icon={isDriver ? Shield : BadgeCheck} label="Verificação" value={isDriver ? "Motorista verificado" : "Conta de passageiro"} />
+        </div>
       </div>
 
       {/* ── Followed Partners ── */}
-      <section>
+      <section id="locais-seguidos" className="scroll-mt-6">
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-display font-bold text-sm text-foreground">❤️ Locais seguidos</h2>
           {followedPartners.length > 0 && (
@@ -161,41 +177,38 @@ export default function V3Profile() {
           )}
         </div>
         {followedPartners.length > 0 ? (
-          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
             {followedPartners.map((p: any) => (
               <Link key={p.id} to={`/v3/local/${p.slug}`}
-                className="shrink-0 flex items-center gap-2.5 p-2.5 rounded-xl bg-card border border-border/40 hover:border-primary/20 transition-all w-[180px]">
-                <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden shrink-0">
+                className="group w-[78px] shrink-0 text-center">
+                <div className="mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full border border-border/50 bg-secondary transition-all group-hover:border-primary/50 group-hover:shadow-[0_0_22px_hsl(var(--primary)/0.25)]">
                   {p.logo_url ? (
                     <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-primary font-bold text-sm">{p.name[0]}</div>
+                    <div className="w-full h-full flex items-center justify-center text-primary font-bold text-lg">{p.name[0]}</div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <p className="text-[11px] font-semibold text-foreground truncate">{p.name}</p>
-                    {p.verified_partner && <BadgeCheck className="w-3 h-3 text-accent shrink-0" />}
-                  </div>
-                  <p className="text-[9px] text-muted-foreground capitalize">{p.type}</p>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="max-w-full truncate text-[10px] font-bold text-foreground">{p.name}</p>
+                  {p.verified_partner && <BadgeCheck className="h-3 w-3 shrink-0 text-accent" />}
                 </div>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="py-6 rounded-xl bg-card border border-border/30 text-center">
-            <Heart className="w-7 h-7 text-muted-foreground/20 mx-auto mb-1.5" />
-            <p className="text-xs text-muted-foreground font-medium">Nenhum local seguido</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-0.5">Toque no ❤️ nos locais para seguí-los</p>
-            <Link to="/v3/descobrir" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
-              Descobrir locais <ChevronRight className="w-3 h-3" />
+          <div className="rounded-3xl v3-glass px-5 py-7 text-center">
+            <Heart className="mx-auto mb-3 h-14 w-14 text-muted-foreground/20" />
+            <p className="text-sm font-bold text-foreground">Nenhum local seguido ainda</p>
+            <p className="mx-auto mt-1 max-w-[220px] text-[11px] leading-relaxed text-muted-foreground">Siga seus parceiros favoritos para acessar tudo por aqui.</p>
+            <Link to="/v3/descobrir" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-black text-primary-foreground transition-transform active:scale-95">
+              Explorar Locais <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         )}
       </section>
 
       {/* ── Saved Events ── */}
-      <section>
+      <section id="eventos-salvos" className="scroll-mt-6">
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-display font-bold text-sm text-foreground">🔖 Eventos salvos</h2>
           {savedEvents.length > 0 && (
@@ -308,7 +321,44 @@ export default function V3Profile() {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function StatBentoCard({
+  to,
+  icon: Icon,
+  label,
+  value,
+  tone,
+  className = "",
+}: {
+  to: string;
+  icon: any;
+  label: string;
+  value: number;
+  tone: "primary" | "accent" | "show";
+  className?: string;
+}) {
+  const toneClass = {
+    primary: "text-primary bg-primary/15 shadow-[0_0_28px_hsl(var(--primary)/0.18)]",
+    accent: "text-accent bg-accent/15 shadow-[0_0_28px_hsl(var(--accent)/0.18)]",
+    show: "text-[hsl(var(--badge-show))] bg-[hsl(var(--badge-show)/0.14)] shadow-[0_0_28px_hsl(var(--badge-show)/0.16)]",
+  }[tone];
+
+  return (
+    <Link to={to} className={`group relative overflow-hidden rounded-3xl v3-glass p-4 transition-all active:scale-[0.98] ${className}`}>
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/5 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="relative flex h-full items-center justify-between gap-3">
+        <div>
+          <p className="text-3xl font-black leading-none text-foreground">{value}</p>
+          <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+        </div>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${toneClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function SecurityRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 px-3.5 py-3">
       <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
