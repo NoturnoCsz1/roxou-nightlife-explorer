@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, CalendarDays, Sparkles } from "lucide-react";
+import { MapPin, CalendarDays, Sparkles, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import { useSavedEvents } from "@/hooks/useSavedEvents";
 
 interface EventCardV3Props {
   slug: string;
@@ -30,6 +31,7 @@ export default function EventCardV3({
   const isWide = featured;
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isSaved, toggleSave } = useSavedEvents();
 
   const goDetail = () => navigate(`/v3/evento/${slug}`);
 
@@ -56,6 +58,17 @@ export default function EventCardV3({
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/90 text-[10px] font-semibold text-primary-foreground uppercase tracking-wide">
             {category}
           </span>
+          <button
+            type="button"
+            aria-label={isSaved(slug) ? "Remover dos favoritos" : "Favoritar evento"}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSave(slug);
+            }}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/65 backdrop-blur-md border border-border/40 flex items-center justify-center transition-all active:scale-90"
+          >
+            <Heart className={`w-4 h-4 ${isSaved(slug) ? "text-primary fill-primary" : "text-foreground"}`} />
+          </button>
         </button>
 
         <div className="p-3 space-y-1.5">
