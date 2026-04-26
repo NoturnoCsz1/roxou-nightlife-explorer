@@ -598,7 +598,7 @@ function DiscoverEventCard({ ev, isTrending, saved, onToggleSave }: {
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSave(); }}
           className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center z-10"
         >
-          <Bookmark className={`w-3 h-3 ${saved ? "text-primary fill-primary" : "text-white"}`} />
+          <Heart className={`w-3 h-3 ${saved ? "text-primary fill-primary" : "text-white"}`} />
         </button>
       )}
     </div>
