@@ -477,19 +477,47 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
 /* ─── BENTO GRID — Transport hero + category quick-actions ─── */
 function BentoGrid() {
   const quickCats = [
-    { key: "festa", label: "Festas", icon: PartyPopper, tint: "from-primary/30 to-primary/5" },
-    { key: "show", label: "Shows", icon: Mic2, tint: "from-blue-500/30 to-blue-500/5" },
-    { key: "balada", label: "Baladas", icon: Zap, tint: "from-accent/30 to-accent/5" },
-    { key: "bar", label: "Bares", icon: Beer, tint: "from-emerald-500/30 to-emerald-500/5" },
+    {
+      key: "festa",
+      label: "Festas",
+      icon: PartyPopper,
+      background:
+        "radial-gradient(circle at 20% 18%, hsl(var(--accent) / 0.42), transparent 28%), radial-gradient(circle at 78% 22%, hsl(var(--primary) / 0.35), transparent 24%), linear-gradient(135deg, hsl(var(--primary) / 0.32), hsl(var(--card) / 0.78))",
+      texture: "confetti",
+    },
+    {
+      key: "show",
+      label: "Shows",
+      icon: Mic2,
+      background:
+        "linear-gradient(115deg, transparent 0 30%, hsl(var(--primary) / 0.30) 31% 35%, transparent 36% 100%), linear-gradient(245deg, transparent 0 26%, hsl(var(--accent) / 0.26) 27% 31%, transparent 32% 100%), linear-gradient(135deg, hsl(var(--secondary) / 0.95), hsl(var(--card) / 0.82))",
+      texture: "stage",
+    },
+    {
+      key: "balada",
+      label: "Baladas",
+      icon: Zap,
+      background:
+        "repeating-linear-gradient(118deg, hsl(var(--foreground) / 0.10) 0 2px, transparent 2px 18px), radial-gradient(circle at 76% 28%, hsl(var(--accent) / 0.36), transparent 30%), linear-gradient(135deg, hsl(var(--accent) / 0.30), hsl(var(--card) / 0.84))",
+      texture: "strobo",
+    },
+    {
+      key: "bar",
+      label: "Bares",
+      icon: Beer,
+      background:
+        "radial-gradient(circle at 28% 26%, hsl(var(--badge-bar) / 0.38), transparent 26%), radial-gradient(circle at 86% 70%, hsl(var(--badge-hoje) / 0.24), transparent 24%), linear-gradient(135deg, hsl(var(--secondary) / 0.92), hsl(var(--card) / 0.78))",
+      texture: "bar",
+    },
   ];
 
   return (
     <FadeSection className="px-4 pt-5 pb-3">
-      <div className="grid grid-cols-3 gap-2.5 auto-rows-[88px]">
+      <div className="grid grid-cols-2 gap-3 auto-rows-[136px]">
         {/* Transport — large featured tile (2 cols, 2 rows) */}
         <Link
           to="/v3/transporte"
-          className="col-span-2 row-span-2 relative rounded-2xl overflow-hidden p-4 flex flex-col justify-between active:scale-[0.98] transition-transform group"
+          className="col-span-2 relative rounded-3xl overflow-hidden p-4 flex flex-col justify-between active:scale-[0.98] hover:scale-[1.02] transition-transform duration-300 group v3-neon-hover"
           style={{
             background:
               "linear-gradient(135deg, hsl(var(--v3-neon)) 0%, hsl(var(--v3-neon-soft)) 60%, hsl(270 80% 35%) 100%)",
@@ -521,19 +549,49 @@ function BentoGrid() {
           </div>
         </Link>
 
-        {/* Category tiles (1x1 each) */}
-        {quickCats.map(({ key, label, icon: Icon, tint }) => (
-          <Link
-            key={key}
-            to={`/v3/descobrir?cat=${key}`}
-            className={`relative rounded-2xl overflow-hidden v3-glass flex flex-col items-center justify-center gap-1 active:scale-[0.95] transition-transform group bg-gradient-to-br ${tint}`}
-          >
-            <Icon className="w-5 h-5 text-foreground group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-bold text-foreground uppercase tracking-wide">{label}</span>
-          </Link>
-        ))}
+        {/* Category visual cards */}
+        {quickCats.map((cat) => <CategoryBentoCard key={cat.key} {...cat} />)}
       </div>
     </FadeSection>
+  );
+}
+
+function CategoryBentoCard({
+  key: categoryKey,
+  label,
+  icon: Icon,
+  background,
+  texture,
+}: {
+  key: string;
+  label: string;
+  icon: typeof PartyPopper;
+  background: string;
+  texture: "confetti" | "stage" | "strobo" | "bar";
+}) {
+  return (
+    <Link
+      to={`/v3/descobrir?cat=${categoryKey}`}
+      className="relative rounded-3xl overflow-hidden v3-glass v3-neon-hover active:scale-[0.96] hover:scale-105 transition-transform duration-300 group"
+      style={{ background }}
+    >
+      <div className="absolute inset-0 bg-white/5 backdrop-blur-[1px]" />
+      {texture === "confetti" && (
+        <div className="absolute inset-0 opacity-60" style={{ backgroundImage: "radial-gradient(circle at 30% 30%, hsl(var(--foreground) / 0.25) 0 2px, transparent 3px), radial-gradient(circle at 62% 42%, hsl(var(--accent) / 0.28) 0 2px, transparent 3px), radial-gradient(circle at 78% 68%, hsl(var(--primary) / 0.24) 0 2px, transparent 3px)" }} />
+      )}
+      {texture === "stage" && <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background/85 to-transparent" />}
+      {texture === "bar" && <div className="absolute inset-x-6 bottom-5 h-8 rounded-full border border-foreground/12 bg-foreground/5 blur-[1px]" />}
+
+      <div className="absolute top-3 right-3 w-9 h-9 rounded-2xl v3-glass-strong flex items-center justify-center group-hover:rotate-6 transition-transform duration-300">
+        <Icon className="w-4.5 h-4.5 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.8)]" />
+      </div>
+      <div className="absolute bottom-4 left-4 right-4">
+        <span className="font-display text-xl font-black uppercase tracking-wide text-foreground v3-neon-text leading-none">
+          {label}
+        </span>
+      </div>
+      <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-foreground/10 group-hover:ring-primary/55 transition-colors" />
+    </Link>
   );
 }
 
