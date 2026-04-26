@@ -478,7 +478,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
 function BentoGrid() {
   const quickCats = [
     {
-      key: "festa",
+      categoryKey: "festa",
       label: "Festas",
       icon: PartyPopper,
       background:
@@ -486,7 +486,7 @@ function BentoGrid() {
       texture: "confetti",
     },
     {
-      key: "show",
+      categoryKey: "show",
       label: "Shows",
       icon: Mic2,
       background:
@@ -494,7 +494,7 @@ function BentoGrid() {
       texture: "stage",
     },
     {
-      key: "balada",
+      categoryKey: "balada",
       label: "Baladas",
       icon: Zap,
       background:
@@ -502,14 +502,14 @@ function BentoGrid() {
       texture: "strobo",
     },
     {
-      key: "bar",
+      categoryKey: "bar",
       label: "Bares",
       icon: Beer,
       background:
         "radial-gradient(circle at 28% 26%, hsl(var(--badge-bar) / 0.38), transparent 26%), radial-gradient(circle at 86% 70%, hsl(var(--badge-hoje) / 0.24), transparent 24%), linear-gradient(135deg, hsl(var(--secondary) / 0.92), hsl(var(--card) / 0.78))",
       texture: "bar",
     },
-  ];
+  ] as const;
 
   return (
     <FadeSection className="px-4 pt-5 pb-3">
@@ -550,20 +550,20 @@ function BentoGrid() {
         </Link>
 
         {/* Category visual cards */}
-        {quickCats.map((cat) => <CategoryBentoCard key={cat.key} {...cat} />)}
+        {quickCats.map((cat) => <CategoryBentoCard key={cat.categoryKey} {...cat} />)}
       </div>
     </FadeSection>
   );
 }
 
 function CategoryBentoCard({
-  key: categoryKey,
+  categoryKey,
   label,
   icon: Icon,
   background,
   texture,
 }: {
-  key: string;
+  categoryKey: string;
   label: string;
   icon: typeof PartyPopper;
   background: string;
