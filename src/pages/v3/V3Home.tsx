@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import CategoryChips from "@/components/v3/CategoryChips";
+import { useSavedEvents } from "@/hooks/useSavedEvents";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -28,8 +29,15 @@ const getDayLabel = (d: string) => {
 interface Ev {
   id: string; slug: string; title: string; image_url: string | null;
   date_time: string; venue_name: string | null; category: string;
-  featured: boolean; partner_id: string | null; ticket_url: string | null;
+  sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
 }
+
+const VIBE_FILTERS = [
+  { key: "bombando", label: "🔥 Bombando" },
+  { key: "musica", label: "🎸 Música ao Vivo" },
+  { key: "happy", label: "🍹 Happy Hour" },
+  { key: "grandes", label: "🏟️ Grandes Eventos" },
+];
 
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
@@ -40,6 +48,7 @@ interface VenueRank {
 
 export default function V3Home() {
   const [catFilter, setCatFilter] = useState("");
+  const [vibeFilter, setVibeFilter] = useState("");
   const now = new Date();
   const today = startOfDay(now);
 
@@ -49,7 +58,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,category,featured,partner_id,ticket_url")
+          .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url")
         .eq("status", "published")
         .gte("date_time", today.toISOString())
         .order("date_time", { ascending: true })
@@ -185,6 +194,16 @@ export default function V3Home() {
     [events, catFilter],
   );
 
+  const vibeFiltered = useMemo(() => {
+    const trendSet = new Set(trendingIds.map(t => t.id));
+    const musicSubs = new Set(["show", "sertanejo", "rock", "pagode", "mpb", "pop_rock", "samba"]);
+    if (vibeFilter === "bombando") return events.filter(e => trendSet.has(e.id));
+    if (vibeFilter === "musica") return events.filter(e => e.category === "show" || musicSubs.has(e.sub_category || ""));
+    if (vibeFilter === "happy") return events.filter(e => ["bar", "gastrobar", "restaurante"].includes(e.category));
+    if (vibeFilter === "grandes") return events.filter(e => ["festival", "festa"].includes(e.category));
+    return [];
+  }, [events, trendingIds, vibeFilter]);
+
   const maxViews = venueRanks[0]?.views || 1;
   const isLoading = loadingEvents;
 
@@ -226,6 +245,16 @@ export default function V3Home() {
 
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
       <BentoGrid />
+
+      <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
+
+      {vibeFilter && vibeFiltered.length > 0 && (
+        <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
+          {vibeFiltered.slice(0, 12).map(e => (
+            <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
+          ))}
+        </Rail>
+      )}
 
       {/* ══════ 3. CATEGORIES (filtro fino) ══════ */}
       <CategoryChips selected={catFilter} onSelect={setCatFilter} />
