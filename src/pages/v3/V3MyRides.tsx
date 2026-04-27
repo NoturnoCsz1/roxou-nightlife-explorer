@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageCircle, X, Clock, Check, Loader2, Car } from "lucide-react";
+import { ArrowLeft, MessageCircle, X, Clock, Check, Loader2, Car, Send } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -15,6 +15,11 @@ const statusLabels: Record<string, { label: string; color: string }> = {
   accepted: { label: "Aceito", color: "bg-green-500/20 text-green-400" },
   cancelled: { label: "Cancelado", color: "bg-muted text-muted-foreground" },
   completed: { label: "Concluído", color: "bg-green-500/20 text-green-400" },
+};
+
+const buildWhatsAppUrl = (eventName?: string | null) => {
+  const text = `Olá, vi sua carona na ROXOU para o evento ${eventName || "combinado"} e gostaria de confirmar!`;
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
 };
 
 export default function V3MyRides() {
@@ -165,11 +170,19 @@ export default function V3MyRides() {
                             {new Date(offer.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                           </p>
                         </div>
-                        <Link to={`/v3/chat/${req.id}`}>
-                          <Button size="sm" variant="ghost" className="h-7 px-2 rounded-lg text-xs gap-1">
-                            <MessageCircle className="w-3.5 h-3.5" /> Chat
-                          </Button>
-                        </Link>
+                        {offer.status === "accepted" ? (
+                          <a href={buildWhatsAppUrl(req.event_name)} target="_blank" rel="noopener noreferrer">
+                            <Button size="sm" className="h-7 px-2 rounded-lg text-xs gap-1">
+                              <Send className="w-3.5 h-3.5" /> WhatsApp
+                            </Button>
+                          </a>
+                        ) : (
+                          <Link to={`/v3/chat/${req.id}`}>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 rounded-lg text-xs gap-1">
+                              <MessageCircle className="w-3.5 h-3.5" /> Chat
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     ))}
                   </div>
