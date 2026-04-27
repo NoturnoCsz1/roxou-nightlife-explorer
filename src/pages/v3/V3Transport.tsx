@@ -128,6 +128,7 @@ export default function V3Transport() {
   const venueName = searchParams.get("venue") || "";
   const eventDate = searchParams.get("date") || "";
   const { user, loading, hasAcceptedTerms } = useV3Profile();
+  const caronaClosed = isRideWindowClosed(eventDate);
 
   const driverBlocked = !user;
   const termsBlocked = user && !hasAcceptedTerms;
@@ -174,7 +175,16 @@ export default function V3Transport() {
           </p>
 
           <div className="flex items-center gap-2 pt-2">
-            <Link to={rideUrl} className="flex-1">
+            <Link
+              to={caronaClosed ? "#" : rideUrl}
+              onClick={(e) => {
+                if (caronaClosed) {
+                  e.preventDefault();
+                  toast.error(RIDE_EXPIRED_MESSAGE);
+                }
+              }}
+              className="flex-1"
+            >
               <Button
                 className="w-full h-11 rounded-xl border-0 text-[12px] font-bold uppercase tracking-wider text-white v3-pulse-glow"
                 style={{
@@ -209,6 +219,11 @@ export default function V3Transport() {
             </div>
             <p className="font-display font-semibold text-sm text-foreground">{eventName}</p>
             {venueName && <p className="text-xs text-muted-foreground">📍 {venueName}</p>}
+            {caronaClosed && (
+              <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
+                Sistema de carona encerrado para este evento
+              </p>
+            )}
           </div>
         )}
 
@@ -224,7 +239,7 @@ export default function V3Transport() {
           </div>
           <div className="grid grid-cols-1 gap-3">
             {MOCK_ROUTES.map((r) => (
-              <RouteCard key={r.label} route={r} />
+              <RouteCard key={r.label} route={r} eventDate={eventDate} rideUrl={rideUrl} />
             ))}
           </div>
         </div>
@@ -237,7 +252,15 @@ export default function V3Transport() {
             </div>
             <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
             <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
-            <Link to={rideUrl}>
+            <Link
+              to={caronaClosed ? "#" : rideUrl}
+              onClick={(e) => {
+                if (caronaClosed) {
+                  e.preventDefault();
+                  toast.error(RIDE_EXPIRED_MESSAGE);
+                }
+              }}
+            >
               <Button size="sm" className="w-full mt-1 rounded-lg text-xs h-8">
                 Pedir carona
               </Button>
