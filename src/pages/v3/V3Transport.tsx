@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Car, Users, Clock, Info, ClipboardList, Snowflake, Wifi, Headphones, ShieldCheck, Sparkles } from "lucide-react";
+import { Car, Users, Clock, Info, ClipboardList, MapPin, WalletCards, ShieldCheck, Sparkles } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
 import { useV3Profile } from "@/hooks/useV3Profile";
@@ -52,6 +53,7 @@ function OccupancyBar({ value }: { value: number }) {
 }
 
 function RouteCard({ route }: { route: MockRoute }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   return (
     <div className="relative overflow-hidden rounded-2xl p-4 v3-glass v3-neon-hover">
       {/* Black Membership shine */}
@@ -73,16 +75,35 @@ function RouteCard({ route }: { route: MockRoute }) {
           </span>
         </div>
 
-        {/* Perks */}
-        <div className="flex items-center gap-3 text-muted-foreground/80">
-          <div className="flex items-center gap-1 text-[10px]"><Snowflake className="w-3 h-3 text-primary/80" /> Ar</div>
-          <div className="flex items-center gap-1 text-[10px]"><Wifi className="w-3 h-3 text-primary/80" /> Wi-Fi</div>
-          <div className="flex items-center gap-1 text-[10px]"><Headphones className="w-3 h-3 text-primary/80" /> Playlist</div>
-          <div className="flex items-center gap-1 text-[10px] ml-auto"><Clock className="w-3 h-3" /> {route.time}</div>
+        <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground/90">
+          <div className="flex items-center gap-1.5 min-w-0"><MapPin className="w-3 h-3 text-primary" /><span className="truncate">{route.from}</span></div>
+          <div className="flex items-center gap-1.5 min-w-0"><MapPin className="w-3 h-3 text-accent" /><span className="truncate">{route.to}</span></div>
+          <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {route.time}</div>
+          <div className="flex items-center gap-1.5"><Users className="w-3 h-3" /> {Math.max(1, Math.round((100 - route.occupancy) / 25))} vagas</div>
+          <div className="col-span-2 flex items-center gap-1.5"><WalletCards className="w-3 h-3" /> {route.price} · rachada por pessoa</div>
         </div>
 
         <OccupancyBar value={route.occupancy} />
+        <Button onClick={() => setConfirmOpen(true)} className="w-full h-9 rounded-xl text-xs font-bold">
+          Solicitar Carona
+        </Button>
       </div>
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-[340px] rounded-2xl border-white/10 bg-background/95">
+          <DialogHeader>
+            <DialogTitle className="text-base">Confirmar solicitação</DialogTitle>
+            <DialogDescription>Combine o ponto de encontro, horário final e rachada diretamente com o motorista.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-muted-foreground">
+            <p>• Use o WhatsApp apenas após o motorista aceitar.</p>
+            <p>• A ROXOU conecta pessoas, mas não realiza o transporte.</p>
+            <p>• Confirme placa, veículo e ponto seguro antes de sair.</p>
+          </div>
+          <Link to="/v3/pedir-carona" onClick={() => setConfirmOpen(false)}>
+            <Button className="w-full rounded-xl">Continuar pedido</Button>
+          </Link>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
