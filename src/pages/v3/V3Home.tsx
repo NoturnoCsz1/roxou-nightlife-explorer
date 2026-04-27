@@ -766,8 +766,71 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 }
 
 /* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
+function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingIdSet, partnerRankMap }: {
+  todayEvents: Ev[]; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
+  trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
+}) {
+  const sideEvents = [...trending, ...featured, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 6);
+  if (!todayEvents.length && !sideEvents.length) return null;
+
+  return (
+    <FadeSection className="hidden lg:block max-w-7xl mx-auto px-6 py-8">
+      <div className="mb-4 flex items-end justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">The Command Center</p>
+          <h2 className="font-display text-3xl font-black uppercase text-foreground">Painel da noite</h2>
+        </div>
+        <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)]">
+          {todayEvents.length} eventos hoje
+        </span>
+      </div>
+      <div className="grid grid-cols-12 grid-rows-[220px_220px] gap-4">
+        <div className="col-span-7 row-span-2 rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)]">
+          <TodayTimeline events={todayEvents.slice(0, 5)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} compact />
+        </div>
+        {sideEvents.slice(0, 4).map((ev, i) => (
+          <PremiumEventCard
+            key={ev.id}
+            ev={ev}
+            size={i === 0 ? "lg" : "md"}
+            isTrending={trendingIdSet.has(ev.id)}
+            partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined}
+            className={i === 0 ? "col-span-5" : "col-span-2"}
+          />
+        ))}
+      </div>
+    </FadeSection>
+  );
+}
+
+function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false }: {
+  events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>; compact?: boolean;
+}) {
+  return (
+    <FadeSection className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
+      <div className="mb-3 flex items-end justify-between">
+        <div>
+          <h2 className="font-display font-black text-lg text-foreground uppercase tracking-wide">⚡ Hoje</h2>
+          <p className="text-[10px] text-muted-foreground">Timeline da noite em sequência</p>
+        </div>
+      </div>
+      <div className="relative space-y-3 pl-12">
+        <div className="absolute left-5 top-3 bottom-3 w-px bg-gradient-to-b from-primary/10 via-primary/75 to-accent/10 shadow-[0_0_15px_hsl(var(--primary)/0.45)]" />
+        {events.map((ev) => (
+          <div key={ev.id} className="relative">
+            <div className="absolute -left-12 top-5 z-10 rounded-full border border-primary/35 bg-background px-2 py-1 text-[10px] font-black text-primary shadow-[0_0_15px_hsl(var(--primary)/0.35)]">
+              {fmtTime(ev.date_time)}
+            </div>
+            <PremiumEventCard ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} timeline />
+          </div>
+        ))}
+      </div>
+    </FadeSection>
+  );
+}
+
 function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
-  ev: Ev; size?: "md" | "lg"; premium?: boolean; isTrending?: boolean; partnerRank?: number;
+  ev: Ev; size?: "md" | "lg"; premium?: boolean; isTrending?: boolean; partnerRank?: number; timeline?: boolean; className?: string;
 }) {
   const isLg = size === "lg";
   const [drawerOpen, setDrawerOpen] = useState(false);
