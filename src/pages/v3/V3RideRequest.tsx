@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Clock, Users, Send } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import PlacesAutocomplete from "@/components/v3/PlacesAutocomplete";
+import { getRideEstimatedEnd, getRideRequestDeadline, isRideWindowClosed, isSameSaoPauloDate, RIDE_EXPIRED_MESSAGE, toSaoPauloTimestamp } from "@/lib/rideTimeRules";
 
 function toLocalDatetime(iso: string): string {
   if (!iso) return "";
@@ -32,11 +33,28 @@ export default function V3RideRequest() {
   const [priceNote, setPriceNote] = useState("Rachada combinada no chat");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const originalEventDate = searchParams.get("date") || "";
+  const windowClosed = isRideWindowClosed(originalEventDate || eventDate);
+  const deadline = getRideRequestDeadline(originalEventDate || eventDate);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!destination.trim()) {
       toast.error("Informe o destino");
+      return;
+    }
+    const rideTimestamp = toSaoPauloTimestamp(eventDate);
+    if (isRideWindowClosed(originalEventDate || rideTimestamp)) {
+      toast.error(RIDE_EXPIRED_MESSAGE);
+      return;
+    }
+    if (originalEventDate && rideTimestamp && !isSameSaoPauloDate(originalEventDate, rideTimestamp)) {
+      toast.error("A data da carona deve ser a mesma data do evento selecionado.");
+      return;
+    }
+    const estimatedEnd = getRideEstimatedEnd(originalEventDate || rideTimestamp);
+    if (estimatedEnd && rideTimestamp && new Date(rideTimestamp) > estimatedEnd) {
+      toast.error("O horário da carona não pode ser posterior ao término estimado do evento.");
       return;
     }
     setLoading(true);
@@ -45,7 +63,7 @@ export default function V3RideRequest() {
       const { error } = await supabase.from("ride_requests").insert({
         event_name: eventName || null,
         venue_name: venueName || null,
-        event_date: eventDate || null,
+        event_date: rideTimestamp,
         pickup_address: pickup || null,
         destination_address: destination,
         passengers_count: passengersCount,
@@ -77,6 +95,16 @@ export default function V3RideRequest() {
       </div>
 
       <LegalDisclaimer />
+
+      {windowClosed ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          Sistema de carona encerrado para este evento
+        </div>
+      ) : deadline ? (
+        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
+          Solicitações abertas até {deadline.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+        </div>
+      ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Event info */}
@@ -171,7 +199,14 @@ export default function V3RideRequest() {
         <Button
           type="submit"
           disabled={loading}
+          aria-disabled={windowClosed}
           className="w-full h-12 rounded-xl font-semibold text-sm gap-2"
+          onClick={(e) => {
+            if (windowClosed) {
+              e.preventDefault();
+              toast.error(RIDE_EXPIRED_MESSAGE);
+            }
+          }}
         >
           <Send className="w-4 h-4" />
           {loading ? "Enviando..." : "Publicar pedido"}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, ShieldCheck, WalletCards } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
+import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 import type { Tables } from "@/integrations/supabase/types";
 
 type RideRequest = Tables<"ride_requests">;
@@ -28,7 +29,7 @@ export default function V3DriverBoard() {
   const loadData = async () => {
     setLoading(true);
     const [reqRes, offersRes] = await Promise.all([
-      supabase.from("ride_requests").select("*").eq("status", "open").order("created_at", { ascending: false }),
+      supabase.from("ride_requests").select("*").eq("status", "open").gte("event_date", new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()).order("created_at", { ascending: false }),
       supabase.from("ride_offers").select("*").eq("driver_id", user!.id),
     ]);
     setRequests(reqRes.data || []);
@@ -48,6 +49,7 @@ export default function V3DriverBoard() {
     try {
       if (!isDriver) throw new Error("Apenas motoristas validados podem oferecer carona.");
       const request = requests.find((r) => r.id === requestId);
+      if (isRideWindowClosed(request?.event_date)) throw new Error(RIDE_EXPIRED_MESSAGE);
       if ((request as any)?.seats_available > 4) throw new Error("Limite máximo de 4 vagas por carro.");
       const { error } = await supabase.from("ride_offers").insert({
         ride_request_id: requestId,
@@ -155,12 +157,16 @@ export default function V3DriverBoard() {
         <div className="space-y-3">
           {requests.map((req) => {
             const alreadyOffered = myOfferIds.has(req.id);
+            const closed = isRideWindowClosed(req.event_date);
             return (
               <div key={req.id} className="relative overflow-hidden p-4 rounded-2xl v3-glass border border-primary/15 space-y-3 shadow-[0_0_32px_hsl(var(--primary)/0.08)]">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
                 {req.event_name && (
                   <p className="font-display font-semibold text-sm text-foreground">{req.event_name}</p>
                 )}
+                <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
+                  <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
+                </div>
                 <div className="space-y-1.5">
                   {req.pickup_address && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -231,7 +237,7 @@ export default function V3DriverBoard() {
                     <Button
                       size="sm"
                       onClick={() => sendOffer(req.id)}
-                      disabled={sendingOffer === req.id}
+                      disabled={sendingOffer === req.id || closed}
                       className="flex-1 rounded-lg text-xs h-9 gap-1.5"
                     >
                       {sendingOffer === req.id ? (
@@ -239,7 +245,7 @@ export default function V3DriverBoard() {
                       ) : (
                         <Check className="w-3.5 h-3.5" />
                       )}
-                      Aceitar corrida
+                      {closed ? "Encerrado" : "Aceitar corrida"}
                     </Button>
                   )}
                 </div>

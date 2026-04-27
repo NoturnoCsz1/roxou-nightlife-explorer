@@ -6,6 +6,8 @@ import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { V3PageSkeleton } from "@/components/v3/V3Skeletons";
+import { toast } from "sonner";
+import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 
 interface MockRoute {
   label: string;
@@ -52,8 +54,17 @@ function OccupancyBar({ value }: { value: number }) {
   );
 }
 
-function RouteCard({ route }: { route: MockRoute }) {
+function RouteCard({ route, eventDate, rideUrl }: { route: MockRoute; eventDate?: string; rideUrl: string }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const closed = isRideWindowClosed(eventDate);
+  const availabilityText = getRideAvailabilityText(eventDate);
+  const handleRequest = () => {
+    if (closed) {
+      toast.error(RIDE_EXPIRED_MESSAGE);
+      return;
+    }
+    setConfirmOpen(true);
+  };
   return (
     <div className="relative overflow-hidden rounded-2xl p-4 v3-glass v3-neon-hover">
       {/* Black Membership shine */}
@@ -74,6 +85,9 @@ function RouteCard({ route }: { route: MockRoute }) {
             {route.price}
           </span>
         </div>
+        <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
+          <Clock className="w-3 h-3" /> {availabilityText}
+        </div>
 
         <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground/90">
           <div className="flex items-center gap-1.5 min-w-0"><MapPin className="w-3 h-3 text-primary" /><span className="truncate">{route.from}</span></div>
@@ -84,8 +98,8 @@ function RouteCard({ route }: { route: MockRoute }) {
         </div>
 
         <OccupancyBar value={route.occupancy} />
-        <Button onClick={() => setConfirmOpen(true)} className="w-full h-9 rounded-xl text-xs font-bold">
-          Solicitar Carona
+        <Button onClick={handleRequest} variant={closed ? "secondary" : "default"} className="w-full h-9 rounded-xl text-xs font-bold">
+          {closed ? "Sistema encerrado" : "Solicitar Carona"}
         </Button>
       </div>
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -99,7 +113,7 @@ function RouteCard({ route }: { route: MockRoute }) {
             <p>• A ROXOU conecta pessoas, mas não realiza o transporte.</p>
             <p>• Confirme placa, veículo e ponto seguro antes de sair.</p>
           </div>
-          <Link to="/v3/pedir-carona" onClick={() => setConfirmOpen(false)}>
+          <Link to={rideUrl} onClick={() => setConfirmOpen(false)}>
             <Button className="w-full rounded-xl">Continuar pedido</Button>
           </Link>
         </DialogContent>
@@ -114,6 +128,7 @@ export default function V3Transport() {
   const venueName = searchParams.get("venue") || "";
   const eventDate = searchParams.get("date") || "";
   const { user, loading, hasAcceptedTerms } = useV3Profile();
+  const caronaClosed = isRideWindowClosed(eventDate);
 
   const driverBlocked = !user;
   const termsBlocked = user && !hasAcceptedTerms;
@@ -160,7 +175,16 @@ export default function V3Transport() {
           </p>
 
           <div className="flex items-center gap-2 pt-2">
-            <Link to={rideUrl} className="flex-1">
+            <Link
+              to={caronaClosed ? "#" : rideUrl}
+              onClick={(e) => {
+                if (caronaClosed) {
+                  e.preventDefault();
+                  toast.error(RIDE_EXPIRED_MESSAGE);
+                }
+              }}
+              className="flex-1"
+            >
               <Button
                 className="w-full h-11 rounded-xl border-0 text-[12px] font-bold uppercase tracking-wider text-white v3-pulse-glow"
                 style={{
@@ -195,6 +219,11 @@ export default function V3Transport() {
             </div>
             <p className="font-display font-semibold text-sm text-foreground">{eventName}</p>
             {venueName && <p className="text-xs text-muted-foreground">📍 {venueName}</p>}
+            {caronaClosed && (
+              <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
+                Sistema de carona encerrado para este evento
+              </p>
+            )}
           </div>
         )}
 
@@ -210,7 +239,7 @@ export default function V3Transport() {
           </div>
           <div className="grid grid-cols-1 gap-3">
             {MOCK_ROUTES.map((r) => (
-              <RouteCard key={r.label} route={r} />
+              <RouteCard key={r.label} route={r} eventDate={eventDate} rideUrl={rideUrl} />
             ))}
           </div>
         </div>
@@ -223,7 +252,15 @@ export default function V3Transport() {
             </div>
             <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
             <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
-            <Link to={rideUrl}>
+            <Link
+              to={caronaClosed ? "#" : rideUrl}
+              onClick={(e) => {
+                if (caronaClosed) {
+                  e.preventDefault();
+                  toast.error(RIDE_EXPIRED_MESSAGE);
+                }
+              }}
+            >
               <Button size="sm" className="w-full mt-1 rounded-lg text-xs h-8">
                 Pedir carona
               </Button>
