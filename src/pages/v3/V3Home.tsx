@@ -18,6 +18,11 @@ import { useSavedEvents } from "@/hooks/useSavedEvents";
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 const fmtDateFull = (d: string) => format(new Date(d), "EEE, d MMM · HH'h'mm", { locale: ptBR });
+const isEventLive = (d: string) => {
+  const start = new Date(d).getTime();
+  const now = Date.now();
+  return now >= start && now <= start + 4 * 60 * 60 * 1000;
+};
 const getDayLabel = (d: string) => {
   const dt = new Date(d);
   if (isTodayFn(dt)) return "HOJE";
@@ -246,6 +251,17 @@ export default function V3Home() {
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
       <BentoGrid />
 
+      <CommandCenter
+        todayEvents={todayEvents}
+        trending={trending}
+        featured={featured}
+        weekEvents={weekEvents}
+        trendingIdSet={trendingIdSet}
+        partnerRankMap={partnerRankMap}
+      />
+
+      <div className="lg:hidden">
+
       <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
 
       {vibeFilter && vibeFiltered.length > 0 && (
@@ -319,11 +335,7 @@ export default function V3Home() {
 
       {/* ══════ 6. HOJE ══════ */}
       {isLoading ? <RailSkeleton count={3} /> : todayEvents.length > 0 ? (
-        <Rail title="⚡ Hoje" subtitle="Rolando agora em Prudente">
-          {todayEvents.map(e => (
-            <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
-          ))}
-        </Rail>
+        <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
@@ -359,6 +371,8 @@ export default function V3Home() {
           ))}
         </Rail>
       ) : null}
+
+      </div>
 
       {/* Footer institucional V3 */}
       <FadeSection className="px-4 pt-8 pb-4">
@@ -752,8 +766,71 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 }
 
 /* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
-function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }: {
-  ev: Ev; size?: "md" | "lg"; premium?: boolean; isTrending?: boolean; partnerRank?: number;
+function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingIdSet, partnerRankMap }: {
+  todayEvents: Ev[]; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
+  trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
+}) {
+  const sideEvents = [...trending, ...featured, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 6);
+  if (!todayEvents.length && !sideEvents.length) return null;
+
+  return (
+    <FadeSection className="hidden lg:block max-w-7xl mx-auto px-6 py-8">
+      <div className="mb-4 flex items-end justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">The Command Center</p>
+          <h2 className="font-display text-3xl font-black uppercase text-foreground">Painel da noite</h2>
+        </div>
+        <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)]">
+          {todayEvents.length} eventos hoje
+        </span>
+      </div>
+      <div className="grid grid-cols-12 grid-rows-[220px_220px] gap-4">
+        <div className="col-span-7 row-span-2 rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)]">
+          <TodayTimeline events={todayEvents.slice(0, 5)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} compact />
+        </div>
+        {sideEvents.slice(0, 4).map((ev, i) => (
+          <PremiumEventCard
+            key={ev.id}
+            ev={ev}
+            size={i === 0 ? "lg" : "md"}
+            isTrending={trendingIdSet.has(ev.id)}
+            partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined}
+            className={i === 0 ? "col-span-5 !w-full h-full" : "col-span-2 !w-full h-full"}
+          />
+        ))}
+      </div>
+    </FadeSection>
+  );
+}
+
+function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false }: {
+  events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>; compact?: boolean;
+}) {
+  return (
+    <FadeSection className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
+      <div className="mb-3 flex items-end justify-between">
+        <div>
+          <h2 className="font-display font-black text-lg text-foreground uppercase tracking-wide">⚡ Hoje</h2>
+          <p className="text-[10px] text-muted-foreground">Timeline da noite em sequência</p>
+        </div>
+      </div>
+      <div className="relative space-y-3 pl-12">
+        <div className="absolute left-5 top-3 bottom-3 w-px bg-gradient-to-b from-primary/10 via-primary/75 to-accent/10 shadow-[0_0_15px_hsl(var(--primary)/0.45)]" />
+        {events.map((ev) => (
+          <div key={ev.id} className="relative">
+            <div className="absolute -left-12 top-5 z-10 rounded-full border border-primary/35 bg-background px-2 py-1 text-[10px] font-black text-primary shadow-[0_0_15px_hsl(var(--primary)/0.35)]">
+              {fmtTime(ev.date_time)}
+            </div>
+            <PremiumEventCard ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} timeline />
+          </div>
+        ))}
+      </div>
+    </FadeSection>
+  );
+}
+
+function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, timeline, className }: {
+  ev: Ev; size?: "md" | "lg"; premium?: boolean; isTrending?: boolean; partnerRank?: number; timeline?: boolean; className?: string;
 }) {
   const isLg = size === "lg";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -762,36 +839,39 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
   const badge = premium ? "⭐ Premium"
     : isTrending ? "🔥 Em alta"
     : partnerRank && partnerRank <= 3 ? `📈 #${partnerRank} hoje` : null;
+  const live = isEventLive(ev.date_time);
 
   return (
     <>
       <div
-        className={`shrink-0 snap-start rounded-2xl overflow-hidden v3-glass v3-neon-hover group transition-all active:scale-[0.97] ${
+        className={`${className || ""} ${timeline ? "w-full" : "shrink-0 snap-start"} relative rounded-3xl overflow-hidden v3-glass v3-neon-hover group transition-all duration-300 hover:scale-105 active:scale-[0.97] ${
           premium ? "border-primary/40 neon-border" : ""
-        } ${isLg ? "w-[240px]" : "w-[170px]"}`}
+        } ${timeline ? "min-h-[178px]" : isLg ? "w-[260px] min-h-[320px]" : "w-[190px] min-h-[260px]"}`}
         style={{
           boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 28px rgba(0,0,0,0.45)",
+            "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 15px hsl(var(--primary) / 0.18), 0 14px 36px rgba(0,0,0,0.5)",
         }}
       >
-        <Link to={`/v3/evento/${ev.slug}`} className="block">
-          <div className={`relative ${isLg ? "h-[150px]" : "h-[115px]"} overflow-hidden`}>
+        <Link to={`/v3/evento/${ev.slug}`} className="absolute inset-0 block">
+          <div className="absolute inset-0 overflow-hidden">
             <img
               src={ev.image_url || "/placeholder.svg"}
               alt={ev.title}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/10" />
             {/* Inner ring shadow */}
-            <div className="absolute inset-0 ring-1 ring-inset ring-white/5 rounded-2xl pointer-events-none" />
-            <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm">
-              <Clock className="w-2.5 h-2.5 text-primary" />
-              <span className="text-[9px] font-bold text-foreground">{fmtTime(ev.date_time)}</span>
-            </div>
+            <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none group-hover:ring-primary/60 transition-colors" />
             <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/95 text-[8px] font-extrabold text-primary-foreground uppercase tracking-[0.12em]">
               {getDayLabel(ev.date_time)}
             </span>
+            {live && (
+              <span className="absolute top-10 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_hsl(142_71%_45%)]" /> A rolar
+              </span>
+            )}
             <button
               type="button"
               aria-label={saved ? "Remover dos favoritos" : "Favoritar evento"}
@@ -805,18 +885,22 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
               <Heart className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-foreground"}`} />
             </button>
           </div>
-          <div className="p-3 space-y-1.5">
-            <h3 className="font-display font-bold text-[12.5px] text-foreground line-clamp-2 leading-tight">{ev.title}</h3>
+          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+            <h3 className={`font-display font-black text-foreground line-clamp-2 leading-tight ${isLg || timeline ? "text-xl" : "text-base"}`}>{ev.title}</h3>
+            <div className="flex items-center gap-2 text-[11px] font-bold text-foreground/90">
+              <Clock className="w-3.5 h-3.5 text-accent drop-shadow-[0_0_8px_hsl(var(--accent)/0.8)]" />
+              <span className="capitalize">{fmtDateFull(ev.date_time)}</span>
+            </div>
             {ev.venue_name && (
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-primary shrink-0" />
-                <span className="text-[10px] font-semibold text-foreground/80 truncate">{ev.venue_name}</span>
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-primary shrink-0 drop-shadow-[0_0_8px_hsl(var(--primary)/0.8)]" />
+                <span className="text-[11px] font-semibold text-foreground/85 truncate">{ev.venue_name}</span>
               </div>
             )}
             {badge && <span className="inline-block text-[9px] font-bold text-accent">{badge}</span>}
           </div>
         </Link>
-        <div className="px-3 pb-3">
+        <div className="absolute bottom-3 right-3 z-10">
           <button
             type="button"
             onClick={(e) => {
@@ -824,7 +908,7 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank }:
               e.stopPropagation();
               setDrawerOpen(true);
             }}
-            className="w-full flex items-center justify-center gap-1 rounded-xl py-2 text-[10px] font-extrabold uppercase tracking-wider text-white v3-neon-hover"
+            className="flex items-center justify-center gap-1 rounded-full px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-white v3-neon-hover"
             style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.95), hsl(var(--v3-neon-soft) / 0.95))" }}
           >
             <Sparkles className="w-3 h-3" />
