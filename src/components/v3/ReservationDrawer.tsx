@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
+import { isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 
 interface ReservationDrawerProps {
   open: boolean;
@@ -61,8 +63,13 @@ function Body({
   onClose,
 }: ReservationDrawerProps & { onClose: () => void }) {
   const navigate = useNavigate();
+  const rideClosed = isRideWindowClosed(eventDate);
 
   const goTransport = () => {
+    if (rideClosed) {
+      toast.error(RIDE_EXPIRED_MESSAGE);
+      return;
+    }
     const params = new URLSearchParams();
     params.set("event", eventTitle);
     if (venueName) params.set("venue", venueName);
@@ -109,7 +116,7 @@ function Body({
               🚗 Transporte ROXOU
             </p>
             <p className="text-[11px] text-white/85 mt-0.5">
-              Carona segura, ar, Wi-Fi e playlist. Vai sem stress.
+              {rideClosed ? "Sistema de carona encerrado para este evento" : "Carona segura, ar, Wi-Fi e playlist. Vai sem stress."}
             </p>
           </div>
           <ArrowRight className="w-4 h-4 text-white shrink-0 group-hover:translate-x-0.5 transition-transform" />
