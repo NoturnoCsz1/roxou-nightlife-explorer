@@ -5,6 +5,7 @@ import { useV3Profile } from "@/hooks/useV3Profile";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageCircle, X, Clock, Check, Loader2, Car, Send } from "lucide-react";
 import { toast } from "sonner";
+import { getRideAvailabilityText, isRideWindowClosed } from "@/lib/rideTimeRules";
 import type { Tables } from "@/integrations/supabase/types";
 
 type RideRequest = Tables<"ride_requests">;
@@ -130,6 +131,7 @@ export default function V3MyRides() {
           {requests.map((req) => {
             const reqOffers = offers[req.id] || [];
             const status = statusLabels[req.status] || statusLabels.open;
+            const closed = isRideWindowClosed(req.event_date);
 
             return (
               <div key={req.id} className="p-4 rounded-xl bg-card border border-border/40 space-y-3">
@@ -141,6 +143,9 @@ export default function V3MyRides() {
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${status.color}`}>
                     {status.label}
                   </span>
+                </div>
+                <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
+                  <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
                 </div>
 
                 {/* Details */}
