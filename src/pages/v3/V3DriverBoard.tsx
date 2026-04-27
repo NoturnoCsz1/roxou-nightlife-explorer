@@ -206,7 +206,7 @@ export default function V3DriverBoard() {
                 {req.notes && (
                   <p className="text-xs text-muted-foreground italic">"{req.notes}"</p>
                 )}
-                {(offersByRequest[req.id] || []).filter((offer) => offer.passenger_id).map((offer) => (
+                {(offersByRequest[req.id] || []).filter((offer) => (offer as any).passenger_id).map((offer) => (
                   <div key={offer.id} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-foreground truncate">Passageiro solicitou a vaga</p>
