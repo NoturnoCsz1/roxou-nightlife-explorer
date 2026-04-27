@@ -795,7 +795,7 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
             size={i === 0 ? "lg" : "md"}
             isTrending={trendingIdSet.has(ev.id)}
             partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined}
-            className={i === 0 ? "col-span-5" : "col-span-2"}
+            className={i === 0 ? "col-span-5 !w-full h-full" : "col-span-2 !w-full h-full"}
           />
         ))}
       </div>
