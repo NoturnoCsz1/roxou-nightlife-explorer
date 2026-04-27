@@ -29,6 +29,7 @@ export default function V3RideRequest() {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState(searchParams.get("venue") || "");
   const [passengersCount, setPassengersCount] = useState(1);
+  const [priceNote, setPriceNote] = useState("Rachada combinada no chat");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -48,9 +49,11 @@ export default function V3RideRequest() {
         pickup_address: pickup || null,
         destination_address: destination,
         passengers_count: passengersCount,
+        seats_available: Math.min(4, Math.max(1, passengersCount)),
+        price_note: priceNote || "Rachada combinada no chat",
         notes: notes || null,
         passenger_id: user?.id || null,
-      });
+      } as any);
       if (error) throw error;
       toast.success("Pedido criado com sucesso!");
       navigate("/v3/transporte");
@@ -142,6 +145,16 @@ export default function V3RideRequest() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Valor / rachada</Label>
+          <Input
+            value={priceNote}
+            onChange={(e) => setPriceNote(e.target.value.slice(0, 80))}
+            placeholder="Ex: R$ 20 por pessoa ou combinar"
+            className="h-11 rounded-xl bg-card border-border/40 text-sm"
+          />
         </div>
 
         {/* Notes */}
