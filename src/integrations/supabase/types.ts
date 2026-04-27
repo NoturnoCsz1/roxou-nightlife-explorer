@@ -516,6 +516,8 @@ export type Database = {
           driver_id: string
           id: string
           message: string | null
+          passenger_id: string | null
+          passenger_whatsapp: string | null
           ride_request_id: string
           status: string
           updated_at: string
@@ -525,6 +527,8 @@ export type Database = {
           driver_id: string
           id?: string
           message?: string | null
+          passenger_id?: string | null
+          passenger_whatsapp?: string | null
           ride_request_id: string
           status?: string
           updated_at?: string
@@ -534,6 +538,8 @@ export type Database = {
           driver_id?: string
           id?: string
           message?: string | null
+          passenger_id?: string | null
+          passenger_whatsapp?: string | null
           ride_request_id?: string
           status?: string
           updated_at?: string
@@ -550,6 +556,7 @@ export type Database = {
       }
       ride_requests: {
         Row: {
+          accepted_offer_id: string | null
           created_at: string
           destination_address: string | null
           event_date: string | null
@@ -560,11 +567,15 @@ export type Database = {
           passenger_id: string | null
           passengers_count: number
           pickup_address: string | null
+          price_note: string | null
+          seats_available: number
           status: string
           updated_at: string
           venue_name: string | null
+          whatsapp_released: boolean
         }
         Insert: {
+          accepted_offer_id?: string | null
           created_at?: string
           destination_address?: string | null
           event_date?: string | null
@@ -575,11 +586,15 @@ export type Database = {
           passenger_id?: string | null
           passengers_count?: number
           pickup_address?: string | null
+          price_note?: string | null
+          seats_available?: number
           status?: string
           updated_at?: string
           venue_name?: string | null
+          whatsapp_released?: boolean
         }
         Update: {
+          accepted_offer_id?: string | null
           created_at?: string
           destination_address?: string | null
           event_date?: string | null
@@ -590,9 +605,12 @@ export type Database = {
           passenger_id?: string | null
           passengers_count?: number
           pickup_address?: string | null
+          price_note?: string | null
+          seats_available?: number
           status?: string
           updated_at?: string
           venue_name?: string | null
+          whatsapp_released?: boolean
         }
         Relationships: [
           {
