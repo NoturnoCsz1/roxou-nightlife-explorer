@@ -18,6 +18,11 @@ import { useSavedEvents } from "@/hooks/useSavedEvents";
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 const fmtDateFull = (d: string) => format(new Date(d), "EEE, d MMM · HH'h'mm", { locale: ptBR });
+const isEventLive = (d: string) => {
+  const start = new Date(d).getTime();
+  const now = Date.now();
+  return now >= start && now <= start + 4 * 60 * 60 * 1000;
+};
 const getDayLabel = (d: string) => {
   const dt = new Date(d);
   if (isTodayFn(dt)) return "HOJE";
@@ -246,6 +251,17 @@ export default function V3Home() {
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
       <BentoGrid />
 
+      <CommandCenter
+        todayEvents={todayEvents}
+        trending={trending}
+        featured={featured}
+        weekEvents={weekEvents}
+        trendingIdSet={trendingIdSet}
+        partnerRankMap={partnerRankMap}
+      />
+
+      <div className="lg:hidden">
+
       <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
 
       {vibeFilter && vibeFiltered.length > 0 && (
@@ -319,11 +335,7 @@ export default function V3Home() {
 
       {/* ══════ 6. HOJE ══════ */}
       {isLoading ? <RailSkeleton count={3} /> : todayEvents.length > 0 ? (
-        <Rail title="⚡ Hoje" subtitle="Rolando agora em Prudente">
-          {todayEvents.map(e => (
-            <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
-          ))}
-        </Rail>
+        <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
@@ -359,6 +371,8 @@ export default function V3Home() {
           ))}
         </Rail>
       ) : null}
+
+      </div>
 
       {/* Footer institucional V3 */}
       <FadeSection className="px-4 pt-8 pb-4">
