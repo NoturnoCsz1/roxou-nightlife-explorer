@@ -99,7 +99,7 @@ export default function V3Profile() {
     cancelled: { label: "Cancelado", cls: "bg-secondary text-muted-foreground" },
     completed: { label: "Concluído", cls: "bg-emerald-500/20 text-emerald-400" },
   };
-  const affiliateCode = profile?.affiliate_code || user.id.replace(/-/g, "").slice(0, 10).toLowerCase();
+  const affiliateCode = (profile as any)?.affiliate_code || user.id.replace(/-/g, "").slice(0, 10).toLowerCase();
   const affiliateLink = `${window.location.origin}/v3/auth?ref=${affiliateCode}`;
   const copyAffiliate = () => {
     navigator.clipboard.writeText(affiliateLink);
