@@ -362,6 +362,10 @@ const EventoBulkForm = () => {
       toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
       return;
     }
+    if (duplicateIds.size > 0) {
+      toast.warning("⚠️ Este evento já foi postado. Revise os cards marcados antes de salvar.");
+      return;
+    }
     // dedupe by slug/title
     const seen = new Set<string>();
     for (const it of ready) {
