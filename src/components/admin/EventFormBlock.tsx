@@ -268,7 +268,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
           <ImageUpload
             folder="events"
             currentUrl={form.image_url}
-            onUploaded={(url) => handleChange("image_url", url)}
+              onUploaded={(url, imageHash) => onChange(index, { ...form, image_url: url, image_hash: imageHash || form.image_hash })}
             label="Flyer do Evento"
           />
         )}
