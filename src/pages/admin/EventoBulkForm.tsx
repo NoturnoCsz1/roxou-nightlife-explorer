@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EventFormBlock, { emptyEventForm, slugify, type EventFormData } from "@/components/admin/EventFormBlock";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
+import { sha256File } from "@/lib/imageHash";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
@@ -87,6 +88,7 @@ const EventoBulkForm = () => {
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
+  const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -97,10 +99,13 @@ const EventoBulkForm = () => {
 
   // Load existing slugs from DB for duplicate detection
   useEffect(() => {
-    let q = supabase.from("events").select("slug");
+    let q = supabase.from("events").select("id, slug, title, date_time, venue_name, image_hash");
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => {
-      if (data) setDbSlugs(new Set(data.map((r: any) => r.slug).filter(Boolean)));
+      if (data) {
+        setDbEvents(data as any);
+        setDbSlugs(new Set(data.map((r: any) => r.slug).filter(Boolean)));
+      }
     });
   }, [cityFilter]);
 
@@ -133,6 +138,7 @@ const EventoBulkForm = () => {
 
   async function uploadAndProcess(file: File, localId: string) {
     try {
+      const imageHash = await sha256File(file);
       // 1. upload to storage
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `events/${crypto.randomUUID()}.${ext}`;
@@ -149,7 +155,13 @@ const EventoBulkForm = () => {
 
       // 2. AI extract — wait fully and validate before downstream calls
       const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
-        body: { image_url: publicUrl, current_year: new Date().getFullYear() },
+        body: {
+          image_url: publicUrl,
+          current_year: new Date().getFullYear(),
+          verified_partners: partners
+            .filter((p: any) => p.verified_partner)
+            .map((p) => ({ name: p.name, address: p.address, instagram: p.instagram })),
+        },
       });
       if (extractResp.error) throw extractResp.error;
       const data = extractResp.data;
@@ -175,6 +187,7 @@ const EventoBulkForm = () => {
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
+            image_hash: imageHash,
             title: upperTitle,
             slug: upperTitle ? slugify(upperTitle) : it.form.slug,
             date_time: dateInput || it.form.date_time,
