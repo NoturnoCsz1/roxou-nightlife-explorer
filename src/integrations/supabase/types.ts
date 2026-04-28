@@ -38,6 +38,90 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_days: number
+          rewarded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_days?: number
+          rewarded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_days?: number
+          rewarded_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      ai_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_message_usage: {
+        Row: {
+          created_at: string
+          id: string
+          message_count: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_generations: {
         Row: {
           created_at: string
@@ -483,6 +567,7 @@ export type Database = {
       profiles: {
         Row: {
           accepted_terms_at: string | null
+          affiliate_code: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -493,6 +578,7 @@ export type Database = {
         }
         Insert: {
           accepted_terms_at?: string | null
+          affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -503,6 +589,7 @@ export type Database = {
         }
         Update: {
           accepted_terms_at?: string | null
+          affiliate_code?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -510,6 +597,54 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      promotion_opportunities: {
+        Row: {
+          affiliate_url: string | null
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          featured: boolean
+          id: string
+          image_url: string | null
+          offer_text: string | null
+          partner_id: string | null
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affiliate_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          featured?: boolean
+          id?: string
+          image_url?: string | null
+          offer_text?: string | null
+          partner_id?: string | null
+          starts_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affiliate_url?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          featured?: boolean
+          id?: string
+          image_url?: string | null
+          offer_text?: string | null
+          partner_id?: string | null
+          starts_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -758,6 +893,36 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vip_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          source?: string
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
