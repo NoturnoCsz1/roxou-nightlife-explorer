@@ -24,7 +24,7 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
 
 {
   "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. A frase DEVE nascer do GÊNERO MUSICAL + ARTISTA + LOCAL: sertanejo/modão = resenha, sofrência, modão, violão; eletrônico/DJ = pista, grave, luzes, madrugada; pagode/samba = roda, coro, mesa cheia; funk = baile, grave, bonde; rock = palco, guitarra, energia. Exemplos: "JOÃO MARKOS NO ARAPUCA BAR O MELHOR SERTANEJO DE PRUDENTE COLA COM A GENTE", "DJ VICTOR NA FÁBRICA GASTROBAR PISTA ACESA ATÉ TARDE", "SAMBA DA QUINTA NO BEAR LOUNGE RODA CHEIA E CORO ALTO".
-  "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. null se não houver.
+  "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. Se não houver horário claro, use 20:00.
   "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
   "address": string|null,     // Endereço se aparecer no flyer.
   "instagram": string|null,   // @handle do organizador/local se aparecer.
@@ -63,6 +63,9 @@ REGRAS DE TAXONOMIA POR GÊNERO (use APENAS se o nome do local NÃO indicar tipo
 
 OUTRAS REGRAS:
 - BANIMENTO ABSOLUTO NO TITLE: nunca use "IMPERDÍVEL", "SEXTA INSANA", "SÁBADO IMPERDÍVEL" nem variações genéricas como "NOITE IMPERDÍVEL", "ROLÊ IMPERDÍVEL", "VIBE INSANA", "NOITE INESQUECÍVEL", "EXPERIÊNCIA ÚNICA", "SE PREPARA".
+- PARCEIROS VERIFICADOS: compare o nome do local lido no flyer com a lista de parceiros verificados enviada pelo sistema. Se houver dúvida entre criar um local novo e usar um parceiro cadastrado, priorize o parceiro verificado mais parecido.
+- REGRA DE HORÁRIO: se o flyer trouxer data mas não mostrar horário claro, defina automaticamente 20:00 no date_iso.
+- PRECISÃO DE DATA: se o flyer disser dia da semana + número do dia e houver conflito (ex: "Sábado, 25" mas 25 cai em domingo), priorize o número 25 e ajuste o dia da semana mentalmente; nunca troque o número do dia para satisfazer o texto do weekday.
 - "title": SEMPRE em CAIXA ALTA. PROIBIDO usar hífens (-), travessões (—, –), dois pontos (:), barras (/) ou QUALQUER símbolo de separação. Use apenas ESPAÇOS entre as partes. Formato: "ATRAÇÃO NO LOCAL FRASE DE IMPACTO". Máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto usando artista, gênero e local.
 - Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente.
 - "ticket_url": SEMPRE null. Nunca extraia link de ingresso.
