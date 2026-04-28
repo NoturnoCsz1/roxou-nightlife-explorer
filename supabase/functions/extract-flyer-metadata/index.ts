@@ -96,6 +96,10 @@ function ensureDefaultTime(dateIso: unknown): string | null {
   return trimmed;
 }
 
+function normText(value: unknown): string {
+  return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -205,6 +209,19 @@ serve(async (req) => {
           break;
         }
       }
+    }
+
+    const venueNorm = normText(parsed.venue_name);
+    const verifiedMatch = Array.isArray(verified_partners)
+      ? verified_partners.find((p: any) => {
+          const name = normText(p?.name);
+          return name.length >= 4 && venueNorm && (venueNorm.includes(name) || name.includes(venueNorm));
+        })
+      : null;
+    if (verifiedMatch?.name) {
+      parsed.venue_name = verifiedMatch.name;
+      parsed.address = verifiedMatch.address || parsed.address || null;
+      parsed.instagram = verifiedMatch.instagram || parsed.instagram || null;
     }
 
     // título: remover hífens, travessões, dois pontos, barras (regra "sem traços")
