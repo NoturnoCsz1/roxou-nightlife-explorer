@@ -29,6 +29,7 @@ import {
   type CoverEvent,
 } from "@/lib/coverRenderer";
 import { generateStoryCopy, generateFeedCopy } from "@/lib/marketingCopy";
+import AdminAIStrategy from "@/components/admin/AdminAIStrategy";
 
 // ============ TYPES ============
 
@@ -676,6 +677,8 @@ const InstagramStudio = () => {
           </div>
         )}
       </div>
+
+      <AdminAIStrategy />
 
       {/* ═══════════ SEÇÃO 1 · IA MASTER (HERO) ═══════════ */}
       <section className="space-y-2">
