@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -85,12 +85,14 @@ const EventoForm = () => {
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
   const [igModalOpen, setIgModalOpen] = useState(false);
   const [suggestedPartner, setSuggestedPartner] = useState<Partner | null>(null);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<{ id: string; title: string; slug: string; date_time: string; venue_name: string | null } | null>(null);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
 
   const [form, setForm] = useState({
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
     venue_name: "", address: "", instagram: "", description: "",
     status: "draft", verification_source: "Instagram", featured: false, image_url: "",
-    ticket_url: "",
+    ticket_url: "", image_hash: "",
   });
 
   useEffect(() => {
@@ -169,6 +171,7 @@ const EventoForm = () => {
       status: data.status, verification_source: data.verification_source || "",
       featured: data.featured, image_url: data.image_url || "",
       ticket_url: (data as any).ticket_url || "",
+      image_hash: (data as any).image_hash || "",
       _sub: (data as any).sub_category || data.category,
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
