@@ -537,14 +537,34 @@ const EventosList = () => {
         </div>
       )}
 
-      <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-card px-3 py-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar evento..."
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
+      <div className="rounded-2xl border border-border/40 bg-card/80 p-3 space-y-2 backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título, slug, ID ou local..."
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          <span className="hidden sm:inline text-[10px] font-bold text-muted-foreground whitespace-nowrap">Criados recentemente primeiro</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
+            <option value="todos">Todas as datas</option>
+            <option value="hoje">Hoje</option>
+            <option value="semana">Próximos 7 dias</option>
+            <option value="futuros">Futuros</option>
+            <option value="passados">Passados</option>
+          </select>
+          <select value={activePartner} onChange={(e) => setActivePartner(e.target.value)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
+            <option value="todos">Todos os parceiros</option>
+            <option value="sem-parceiro">Sem parceiro</option>
+            {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          <button type="button" className="hidden sm:flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-[10px] font-bold uppercase text-primary">
+            <CalendarDays className="h-3.5 w-3.5" /> Ordenação fixa
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
@@ -579,11 +599,11 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
-        {(search || activeCategory || activeStatus || onlyIncomplete) && (
+        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete) && (
           <>
             <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
             <button
-              onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setOnlyIncomplete(false); }}
+                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); }}
               className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
             >
               <X className="h-3 w-3" /> Limpar
