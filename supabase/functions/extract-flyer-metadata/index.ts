@@ -86,6 +86,16 @@ function safeJson(text: string): any {
   return null;
 }
 
+function ensureDefaultTime(dateIso: unknown): string | null {
+  if (typeof dateIso !== "string" || !dateIso.trim()) return null;
+  const trimmed = dateIso.trim();
+  const dateOnly = trimmed.match(/^(\d{4}-\d{2}-\d{2})$/);
+  if (dateOnly) return `${dateOnly[1]}T20:00`;
+  const dateHour = trimmed.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2})(?::(\d{2}))?/);
+  if (dateHour) return `${dateHour[1]}T${dateHour[2].padStart(2, "0")}:${dateHour[3] || "00"}`;
+  return trimmed;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -212,7 +222,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       title,
-      date_iso: parsed.date_iso || null,
+      date_iso: ensureDefaultTime(parsed.date_iso),
       venue_name: parsed.venue_name || null,
       venue_confidence: parsed.venue_confidence || "low",
       address: parsed.address || null,
