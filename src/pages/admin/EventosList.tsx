@@ -83,6 +83,8 @@ const EventosList = () => {
   const [pastOpen, setPastOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [activePartner, setActivePartner] = useState<string>("todos");
+  const [activeDateFilter, setActiveDateFilter] = useState<DateQuickFilter>("todos");
   const [onlyIncomplete, setOnlyIncomplete] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -122,8 +124,8 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description")
-      .order("date_time", { ascending: false });
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at")
+      .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
     setEvents((data as any) || []);
