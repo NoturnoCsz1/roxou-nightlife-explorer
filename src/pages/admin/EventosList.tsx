@@ -294,6 +294,9 @@ const EventosList = () => {
     }
   }
 
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
   const filtered = events
     .filter((e) => {
       const q = search.trim().toLowerCase();
@@ -314,9 +317,6 @@ const EventosList = () => {
       return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
-
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
 
   const todayEvents = filtered.filter((e) => e.date_time.slice(0, 10) === todayStr);
   const upcomingEvents = filtered.filter((e) => e.date_time.slice(0, 10) > todayStr);
