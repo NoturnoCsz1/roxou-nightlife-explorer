@@ -8,11 +8,12 @@ import { useSavedPartners } from "@/hooks/useSavedPartners";
 import {
   User, LogOut, Car, Bookmark, ChevronRight, Shield, Mail, Phone,
   CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck, Building2,
-  Pencil, LockKeyhole,
+  Pencil, LockKeyhole, Gift, Copy, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 export default function V3Profile() {
   const navigate = useNavigate();
@@ -98,6 +99,12 @@ export default function V3Profile() {
     cancelled: { label: "Cancelado", cls: "bg-secondary text-muted-foreground" },
     completed: { label: "Concluído", cls: "bg-emerald-500/20 text-emerald-400" },
   };
+  const affiliateCode = (profile as any)?.affiliate_code || user.id.replace(/-/g, "").slice(0, 10).toLowerCase();
+  const affiliateLink = `${window.location.origin}/v3/auth?ref=${affiliateCode}`;
+  const copyAffiliate = () => {
+    navigator.clipboard.writeText(affiliateLink);
+    toast.success("Link de afiliado copiado!");
+  };
 
   return (
     <div className="pb-8 px-4 pt-4 space-y-4">
@@ -148,6 +155,29 @@ export default function V3Profile() {
         <StatBentoCard to="#eventos-salvos" icon={Bookmark} label="Salvos" value={savedIds.length} tone="primary" className="min-h-[118px]" />
         <StatBentoCard to="#locais-seguidos" icon={Heart} label="Seguindo" value={followedIds.length} tone="accent" className="min-h-[118px]" />
         <StatBentoCard to="/v3/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 min-h-[92px]" />
+      </div>
+
+      {/* ── VIP Affiliate ── */}
+      <div className="relative overflow-hidden rounded-3xl v3-glass-strong p-4 v3-pulse-glow">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent" />
+        <div className="relative flex items-start gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl gradient-primary neon-glow">
+            <Gift className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <Crown className="h-3.5 w-3.5 text-accent" />
+              <h2 className="font-display text-sm font-black text-foreground">Link de Afiliado ROXOU VIP</h2>
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Indique um amigo e ganhe 15 dias de VIP quando ele entrar.</p>
+            <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border/30 bg-background/35 p-2">
+              <code className="flex-1 truncate text-[10px] text-muted-foreground">{affiliateLink}</code>
+              <button onClick={copyAffiliate} className="rounded-xl bg-primary/15 p-2 text-primary active:scale-95">
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Security & Contact ── */}

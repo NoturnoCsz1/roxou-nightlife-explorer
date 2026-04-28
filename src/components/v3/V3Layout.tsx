@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Car, CalendarDays, User, LogIn, LogOut } from "lucide-react";
+import { Home, Search, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const NAV_ITEMS = [
@@ -28,6 +28,20 @@ export default function V3Layout() {
             <span className="text-primary v3-neon-text">Roxou</span>
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              to="/v3/economize"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              title="Economize"
+            >
+              <PiggyBank className="w-4 h-4 text-muted-foreground" />
+            </Link>
+            <Link
+              to="/v3/ia"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              title="Prudente IA"
+            >
+              <Bot className="w-4 h-4 text-primary" />
+            </Link>
             {user ? (
               <button
                 onClick={() => signOut()}

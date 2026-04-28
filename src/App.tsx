@@ -46,6 +46,8 @@ import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
 import V3Auth from "./pages/v3/V3Auth";
 import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
+import V3AIChat from "./pages/v3/V3AIChat";
+import V3Economize from "./pages/v3/V3Economize";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +110,8 @@ const App = () => (
             <Route path="auth" element={<V3Auth />} />
             <Route path="sobre" element={<V3Sobre />} />
             <Route path="contato" element={<V3Contato />} />
+            <Route path="ia" element={<V3AIChat />} />
+            <Route path="economize" element={<V3Economize />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
