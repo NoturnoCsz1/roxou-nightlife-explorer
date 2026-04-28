@@ -144,6 +144,7 @@ export type Database = {
           description: string | null
           featured: boolean
           id: string
+          image_hash: string | null
           image_url: string | null
           instagram: string | null
           partner_id: string | null
@@ -164,6 +165,7 @@ export type Database = {
           description?: string | null
           featured?: boolean
           id?: string
+          image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
           partner_id?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           description?: string | null
           featured?: boolean
           id?: string
+          image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
           partner_id?: string | null
