@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EventFormBlock, { emptyEventForm, slugify, type EventFormData } from "@/components/admin/EventFormBlock";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
+import { sha256File } from "@/lib/imageHash";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
@@ -87,6 +88,7 @@ const EventoBulkForm = () => {
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
+  const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -97,10 +99,13 @@ const EventoBulkForm = () => {
 
   // Load existing slugs from DB for duplicate detection
   useEffect(() => {
-    let q = supabase.from("events").select("slug");
+    let q = supabase.from("events").select("id, slug, title, date_time, venue_name, image_hash");
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => {
-      if (data) setDbSlugs(new Set(data.map((r: any) => r.slug).filter(Boolean)));
+      if (data) {
+        setDbEvents(data as any);
+        setDbSlugs(new Set(data.map((r: any) => r.slug).filter(Boolean)));
+      }
     });
   }, [cityFilter]);
 
@@ -108,6 +113,7 @@ const EventoBulkForm = () => {
   function getDuplicateSet(): Set<string> {
     const dup = new Set<string>();
     const counts = new Map<string, number>();
+    const imageHashes = new Set(dbEvents.map((e) => e.image_hash).filter(Boolean));
     for (const it of items) {
       const s = (it.form.slug || "").trim();
       if (!s) continue;
@@ -116,7 +122,14 @@ const EventoBulkForm = () => {
     for (const it of items) {
       const s = (it.form.slug || "").trim();
       if (!s) continue;
-      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1) dup.add(it.localId);
+      const sameSignature = dbEvents.some((e) =>
+        normalize(e.title) === normalize(it.form.title) &&
+        normalize(e.venue_name || "") === normalize(it.form.venue_name || "") &&
+        e.date_time?.slice(0, 10) === it.form.date_time?.slice(0, 10),
+      );
+      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1 || (!!it.form.image_hash && imageHashes.has(it.form.image_hash)) || sameSignature) {
+        dup.add(it.localId);
+      }
     }
     return dup;
   }
@@ -133,6 +146,7 @@ const EventoBulkForm = () => {
 
   async function uploadAndProcess(file: File, localId: string) {
     try {
+      const imageHash = await sha256File(file);
       // 1. upload to storage
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `events/${crypto.randomUUID()}.${ext}`;
@@ -149,7 +163,13 @@ const EventoBulkForm = () => {
 
       // 2. AI extract — wait fully and validate before downstream calls
       const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
-        body: { image_url: publicUrl, current_year: new Date().getFullYear() },
+        body: {
+          image_url: publicUrl,
+          current_year: new Date().getFullYear(),
+          verified_partners: partners
+            .filter((p: any) => p.verified_partner)
+            .map((p) => ({ name: p.name, address: p.address, instagram: p.instagram })),
+        },
       });
       if (extractResp.error) throw extractResp.error;
       const data = extractResp.data;
@@ -175,6 +195,7 @@ const EventoBulkForm = () => {
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
+            image_hash: imageHash,
             title: upperTitle,
             slug: upperTitle ? slugify(upperTitle) : it.form.slug,
             date_time: dateInput || it.form.date_time,
@@ -339,6 +360,10 @@ const EventoBulkForm = () => {
     const invalid = ready.findIndex((it) => !it.form.title || !it.form.slug || !it.form.date_time);
     if (invalid !== -1) {
       toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
+      return;
+    }
+    if (duplicateIds.size > 0) {
+      toast.warning("⚠️ Este evento já foi postado. Revise os cards marcados antes de salvar.");
       return;
     }
     // dedupe by slug/title

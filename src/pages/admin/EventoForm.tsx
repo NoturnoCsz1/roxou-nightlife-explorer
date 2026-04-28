@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -85,12 +85,14 @@ const EventoForm = () => {
   const [sections, setSections] = useState({ venue: true, content: true, media: true });
   const [igModalOpen, setIgModalOpen] = useState(false);
   const [suggestedPartner, setSuggestedPartner] = useState<Partner | null>(null);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<{ id: string; title: string; slug: string; date_time: string; venue_name: string | null } | null>(null);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
 
   const [form, setForm] = useState({
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
     venue_name: "", address: "", instagram: "", description: "",
     status: "draft", verification_source: "Instagram", featured: false, image_url: "",
-    ticket_url: "",
+    ticket_url: "", image_hash: "",
   });
 
   useEffect(() => {
@@ -169,6 +171,7 @@ const EventoForm = () => {
       status: data.status, verification_source: data.verification_source || "",
       featured: data.featured, image_url: data.image_url || "",
       ticket_url: (data as any).ticket_url || "",
+      image_hash: (data as any).image_hash || "",
       _sub: (data as any).sub_category || data.category,
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
@@ -198,11 +201,54 @@ const EventoForm = () => {
     }
   }
 
+  async function checkDuplicateEvent(next: Partial<typeof form>) {
+    const draft = { ...form, ...next };
+    const select = "id, title, slug, date_time, venue_name";
+    let found: any = null;
+
+    if (draft.image_hash) {
+      const q = supabase.from("events").select(select).eq("image_hash", draft.image_hash).limit(1);
+      const { data } = isEdit ? await q.neq("id", id!) : await q;
+      found = data?.[0] || null;
+    }
+
+    if (!found && draft.title && draft.date_time && draft.venue_name) {
+      const dayStart = `${draft.date_time.slice(0, 10)}T00:00:00-03:00`;
+      const dayEnd = `${draft.date_time.slice(0, 10)}T23:59:59-03:00`;
+      const q = supabase
+        .from("events")
+        .select(select)
+        .ilike("title", draft.title.trim())
+        .ilike("venue_name", draft.venue_name.trim())
+        .gte("date_time", dayStart)
+        .lte("date_time", dayEnd)
+        .limit(1);
+      const { data } = isEdit ? await q.neq("id", id!) : await q;
+      found = data?.[0] || null;
+    }
+
+    setDuplicateCandidate(found);
+    setAllowDuplicate(false);
+    if (found) toast.warning("⚠️ Este evento já foi postado. Deseja editar o existente ou criar um duplicado?");
+    return found;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title || !form.slug || !form.date_time) {
       toast.error("Título, slug e data são obrigatórios");
       return;
+    }
+    if (duplicateCandidate && !allowDuplicate) {
+      toast.warning("Escolha editar o existente ou confirme criar um duplicado.");
+      return;
+    }
+    if (!allowDuplicate) {
+      const found = await checkDuplicateEvent({});
+      if (found) {
+        toast.warning("⚠️ Este evento já foi postado. Deseja editar o existente ou criar um duplicado?");
+        return;
+      }
     }
 
     setSaving(true);
@@ -453,12 +499,27 @@ const EventoForm = () => {
         <div className="space-y-2.5">
           {sectionHeader("media", "Mídia")}
           {sections.media && (
-            <ImageUpload
-              folder="events"
-              currentUrl={form.image_url}
-              onUploaded={(url) => handleChange("image_url", url)}
-              label="Flyer do Evento"
-            />
+            <div className="space-y-2.5">
+              <ImageUpload
+                folder="events"
+                currentUrl={form.image_url}
+                onUploaded={(url, imageHash) => {
+                  setForm((prev) => ({ ...prev, image_url: url, image_hash: imageHash || prev.image_hash }));
+                  if (imageHash) checkDuplicateEvent({ image_url: url, image_hash: imageHash });
+                }}
+                label="Flyer do Evento"
+              />
+              {duplicateCandidate && (
+                <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 p-3 text-xs text-yellow-100 space-y-2">
+                  <p className="font-bold flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5" /> ⚠️ Este evento já foi postado.</p>
+                  <p className="text-muted-foreground">{duplicateCandidate.title} • {duplicateCandidate.venue_name || "Sem local"}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => navigate(`/admin/eventos/${duplicateCandidate.id}`)} className="rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground">Editar existente</button>
+                    <button type="button" onClick={() => setAllowDuplicate(true)} className="rounded-lg bg-secondary px-3 py-1.5 text-[10px] font-bold text-secondary-foreground">Criar duplicado</button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

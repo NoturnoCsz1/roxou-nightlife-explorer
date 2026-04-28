@@ -22,6 +22,7 @@ export type EventFormData = {
   verification_source: string;
   featured: boolean;
   image_url: string;
+  image_hash?: string;
   ticket_url: string;
 };
 
@@ -29,7 +30,7 @@ export const emptyEventForm = (): EventFormData => ({
   title: "", slug: "", date_time: "", category: "festa", partner_id: "",
   venue_name: "", address: "", instagram: "", description: "",
   status: "draft", verification_source: "instagram", featured: false, image_url: "",
-  ticket_url: "",
+  ticket_url: "", image_hash: "",
 });
 
 export function slugify(str: string) {
@@ -267,7 +268,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
           <ImageUpload
             folder="events"
             currentUrl={form.image_url}
-            onUploaded={(url) => handleChange("image_url", url)}
+              onUploaded={(url, imageHash) => onChange(index, { ...form, image_url: url, image_hash: imageHash || form.image_hash })}
             label="Flyer do Evento"
           />
         )}

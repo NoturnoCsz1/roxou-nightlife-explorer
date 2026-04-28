@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, Check, CheckSquare, ChevronDown, Copy, Download, Layers, Loader2, MousePointerClick, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Layers, Loader2, MousePointerClick, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,11 @@ interface EventRow {
   featured: boolean;
   image_url: string | null;
   description: string | null;
+  partner_id: string | null;
+  created_at: string;
 }
+
+type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
 type ChecklistKey = "title" | "date" | "description" | "flyer";
 interface Checklist {
@@ -79,6 +83,8 @@ const EventosList = () => {
   const [pastOpen, setPastOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [activePartner, setActivePartner] = useState<string>("todos");
+  const [activeDateFilter, setActiveDateFilter] = useState<DateQuickFilter>("todos");
   const [onlyIncomplete, setOnlyIncomplete] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -118,8 +124,8 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description")
-      .order("date_time", { ascending: false });
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at")
+      .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
     setEvents((data as any) || []);
@@ -288,14 +294,29 @@ const EventosList = () => {
     }
   }
 
-  const filtered = events
-    .filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
-    .filter((e) => !activeCategory || e.category === activeCategory)
-    .filter((e) => !activeStatus || e.status === activeStatus)
-    .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
-
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
+
+  const filtered = events
+    .filter((e) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return [e.title, e.slug, e.id, e.venue_name || ""].some((value) => value.toLowerCase().includes(q));
+    })
+    .filter((e) => !activeCategory || e.category === activeCategory)
+    .filter((e) => !activeStatus || e.status === activeStatus)
+    .filter((e) => activePartner === "todos" || (activePartner === "sem-parceiro" ? !e.partner_id : e.partner_id === activePartner))
+    .filter((e) => {
+      if (activeDateFilter === "todos") return true;
+      const eventDay = e.date_time.slice(0, 10);
+      if (activeDateFilter === "hoje") return eventDay === todayStr;
+      if (activeDateFilter === "futuros") return eventDay > todayStr;
+      if (activeDateFilter === "passados") return eventDay < todayStr;
+      const weekEnd = new Date(now);
+      weekEnd.setDate(now.getDate() + 7);
+      return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
+    })
+    .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
 
   const todayEvents = filtered.filter((e) => e.date_time.slice(0, 10) === todayStr);
   const upcomingEvents = filtered.filter((e) => e.date_time.slice(0, 10) > todayStr);
@@ -322,6 +343,7 @@ const EventosList = () => {
   const withImages = filtered.filter(e => e.image_url).length;
   const selectedCount = selectedIds.size;
   const zipPercent = zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0;
+  const partnerOptions = Array.from(new Map(events.filter(e => e.partner_id && e.venue_name).map(e => [e.partner_id!, e.venue_name!])).entries());
 
   // Counters for drafts
   const draftEvents = events.filter(e => e.status === "draft");
@@ -418,6 +440,9 @@ const EventosList = () => {
           <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
             <Copy className="h-4 w-4 text-muted-foreground" />
           </button>
+          <Link to={`/v3/evento/${e.slug}`} target="_blank" className="p-1.5 rounded-lg hover:bg-primary/10 transition" title="Acesso rápido V3">
+            <ExternalLink className="h-4 w-4 text-primary" />
+          </Link>
           <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
             {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
           </button>
@@ -512,14 +537,34 @@ const EventosList = () => {
         </div>
       )}
 
-      <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-card px-3 py-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar evento..."
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
+      <div className="rounded-2xl border border-border/40 bg-card/80 p-3 space-y-2 backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título, slug, ID ou local..."
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          <span className="hidden sm:inline text-[10px] font-bold text-muted-foreground whitespace-nowrap">Criados recentemente primeiro</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
+            <option value="todos">Todas as datas</option>
+            <option value="hoje">Hoje</option>
+            <option value="semana">Próximos 7 dias</option>
+            <option value="futuros">Futuros</option>
+            <option value="passados">Passados</option>
+          </select>
+          <select value={activePartner} onChange={(e) => setActivePartner(e.target.value)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
+            <option value="todos">Todos os parceiros</option>
+            <option value="sem-parceiro">Sem parceiro</option>
+            {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </select>
+          <button type="button" className="hidden sm:flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-[10px] font-bold uppercase text-primary">
+            <CalendarDays className="h-3.5 w-3.5" /> Ordenação fixa
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
@@ -554,11 +599,11 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
-        {(search || activeCategory || activeStatus || onlyIncomplete) && (
+        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete) && (
           <>
             <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
             <button
-              onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setOnlyIncomplete(false); }}
+                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); }}
               className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
             >
               <X className="h-3 w-3" /> Limpar

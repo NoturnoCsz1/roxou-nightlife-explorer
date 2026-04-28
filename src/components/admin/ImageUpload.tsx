@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sha256File } from "@/lib/imageHash";
 
 interface ImageUploadProps {
   folder: string;
   currentUrl: string;
-  onUploaded: (url: string) => void;
+  onUploaded: (url: string, imageHash?: string) => void;
   label?: string;
 }
 
@@ -32,6 +33,7 @@ const ImageUpload = ({ folder, currentUrl, onUploaded, label = "Imagem" }: Image
     reader.readAsDataURL(file);
 
     setUploading(true);
+    const imageHash = await sha256File(file);
     const ext = file.name.split(".").pop();
     const path = `${folder}/${crypto.randomUUID()}.${ext}`;
 
@@ -47,7 +49,7 @@ const ImageUpload = ({ folder, currentUrl, onUploaded, label = "Imagem" }: Image
     }
 
     const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-    onUploaded(urlData.publicUrl);
+    onUploaded(urlData.publicUrl, imageHash);
     toast.success("Upload concluído!");
     setUploading(false);
   }
