@@ -230,6 +230,7 @@ const EventoForm = () => {
     setDuplicateCandidate(found);
     setAllowDuplicate(false);
     if (found) toast.warning("⚠️ Este evento já foi postado. Deseja editar o existente ou criar um duplicado?");
+    return found;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -241,6 +242,13 @@ const EventoForm = () => {
     if (duplicateCandidate && !allowDuplicate) {
       toast.warning("Escolha editar o existente ou confirme criar um duplicado.");
       return;
+    }
+    if (!allowDuplicate) {
+      const found = await checkDuplicateEvent({});
+      if (found) {
+        toast.warning("⚠️ Este evento já foi postado. Deseja editar o existente ou criar um duplicado?");
+        return;
+      }
     }
 
     setSaving(true);
