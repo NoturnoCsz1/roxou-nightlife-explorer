@@ -15,6 +15,7 @@ export type AdminEventFormInput = {
   featured?: boolean;
   image_url?: string;
   ticket_url?: string;
+  image_hash?: string;
   _sub?: string;
 };
 
@@ -41,6 +42,7 @@ export function buildEventPayload(
     verification_source: form.verification_source || null,
     featured: Boolean(form.featured),
     image_url: form.image_url || null,
+    image_hash: form.image_hash || null,
     ticket_url: form.ticket_url || null,
     sub_category: form._sub || null,
   };
