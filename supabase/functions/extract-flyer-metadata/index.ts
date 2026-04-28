@@ -90,7 +90,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { image_url, current_year } = await req.json();
+    const { image_url, current_year, verified_partners = [] } = await req.json();
     if (!image_url) {
       return new Response(JSON.stringify({ error: "image_url required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -100,6 +100,13 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const year = current_year || new Date().getFullYear();
+
+    const verifiedPartnersText = Array.isArray(verified_partners) && verified_partners.length
+      ? verified_partners
+          .slice(0, 80)
+          .map((p: any) => `- ${p?.name || ""}${p?.instagram ? ` (${p.instagram})` : ""}${p?.address ? ` — ${p.address}` : ""}`)
+          .join("\n")
+      : "Nenhum parceiro verificado enviado.";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -114,7 +121,7 @@ serve(async (req) => {
           {
             role: "user",
             content: [
-              { type: "text", text: `Extraia os metadados deste flyer. Ano corrente: ${year}. Responda apenas o JSON.` },
+              { type: "text", text: `Extraia os metadados deste flyer. Ano corrente: ${year}. Parceiros verificados para comparação:\n${verifiedPartnersText}\nResponda apenas o JSON.` },
               { type: "image_url", image_url: { url: image_url } },
             ],
           },
