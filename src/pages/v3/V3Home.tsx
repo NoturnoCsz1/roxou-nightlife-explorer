@@ -14,6 +14,7 @@ import {
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import CategoryChips from "@/components/v3/CategoryChips";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
+import AIHomeWidget from "@/components/v3/AIHomeWidget";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -247,6 +248,8 @@ export default function V3Home() {
           )}
         </div>
       ) : <EmptyHero />}
+
+      <AIHomeWidget />
 
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
       <BentoGrid />
