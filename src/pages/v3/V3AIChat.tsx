@@ -27,7 +27,7 @@ export default function V3AIChat() {
   useEffect(() => {
     if (!user) return;
     supabase.from("ai_chat_messages" as any).select("id,role,content,created_at").eq("user_id", user.id).order("created_at", { ascending: true }).limit(40)
-      .then(({ data }) => setMessages((data as Msg[]) || []));
+      .then(({ data }) => setMessages(((data || []) as unknown as Msg[])));
     const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
     supabase.from("ai_message_usage" as any).select("message_count").eq("user_id", user.id).eq("usage_date", today).maybeSingle()
       .then(({ data }: any) => setUsed(data?.message_count || 0));
