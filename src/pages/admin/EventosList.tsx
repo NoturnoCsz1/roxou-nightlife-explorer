@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, Check, CheckSquare, ChevronDown, Copy, Download, Layers, Loader2, MousePointerClick, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Layers, Loader2, MousePointerClick, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,11 @@ interface EventRow {
   featured: boolean;
   image_url: string | null;
   description: string | null;
+  partner_id: string | null;
+  created_at: string;
 }
+
+type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
 type ChecklistKey = "title" | "date" | "description" | "flyer";
 interface Checklist {
