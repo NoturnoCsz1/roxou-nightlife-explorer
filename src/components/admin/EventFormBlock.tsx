@@ -22,6 +22,7 @@ export type EventFormData = {
   verification_source: string;
   featured: boolean;
   image_url: string;
+  image_hash?: string;
   ticket_url: string;
 };
 
@@ -29,7 +30,7 @@ export const emptyEventForm = (): EventFormData => ({
   title: "", slug: "", date_time: "", category: "festa", partner_id: "",
   venue_name: "", address: "", instagram: "", description: "",
   status: "draft", verification_source: "instagram", featured: false, image_url: "",
-  ticket_url: "",
+  ticket_url: "", image_hash: "",
 });
 
 export function slugify(str: string) {
