@@ -295,9 +295,24 @@ const EventosList = () => {
   }
 
   const filtered = events
-    .filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((e) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return [e.title, e.slug, e.id, e.venue_name || ""].some((value) => value.toLowerCase().includes(q));
+    })
     .filter((e) => !activeCategory || e.category === activeCategory)
     .filter((e) => !activeStatus || e.status === activeStatus)
+    .filter((e) => activePartner === "todos" || (activePartner === "sem-parceiro" ? !e.partner_id : e.partner_id === activePartner))
+    .filter((e) => {
+      if (activeDateFilter === "todos") return true;
+      const eventDay = e.date_time.slice(0, 10);
+      if (activeDateFilter === "hoje") return eventDay === todayStr;
+      if (activeDateFilter === "futuros") return eventDay > todayStr;
+      if (activeDateFilter === "passados") return eventDay < todayStr;
+      const weekEnd = new Date(now);
+      weekEnd.setDate(now.getDate() + 7);
+      return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
+    })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
 
   const now = new Date();
@@ -328,6 +343,7 @@ const EventosList = () => {
   const withImages = filtered.filter(e => e.image_url).length;
   const selectedCount = selectedIds.size;
   const zipPercent = zipProgress.total > 0 ? Math.round((zipProgress.current / zipProgress.total) * 100) : 0;
+  const partnerOptions = Array.from(new Map(events.filter(e => e.partner_id && e.venue_name).map(e => [e.partner_id!, e.venue_name!])).entries());
 
   // Counters for drafts
   const draftEvents = events.filter(e => e.status === "draft");
