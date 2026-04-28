@@ -113,6 +113,7 @@ const EventoBulkForm = () => {
   function getDuplicateSet(): Set<string> {
     const dup = new Set<string>();
     const counts = new Map<string, number>();
+    const imageHashes = new Set(dbEvents.map((e) => e.image_hash).filter(Boolean));
     for (const it of items) {
       const s = (it.form.slug || "").trim();
       if (!s) continue;
@@ -121,7 +122,14 @@ const EventoBulkForm = () => {
     for (const it of items) {
       const s = (it.form.slug || "").trim();
       if (!s) continue;
-      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1) dup.add(it.localId);
+      const sameSignature = dbEvents.some((e) =>
+        normalize(e.title) === normalize(it.form.title) &&
+        normalize(e.venue_name || "") === normalize(it.form.venue_name || "") &&
+        e.date_time?.slice(0, 10) === it.form.date_time?.slice(0, 10),
+      );
+      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1 || (!!it.form.image_hash && imageHashes.has(it.form.image_hash)) || sameSignature) {
+        dup.add(it.localId);
+      }
     }
     return dup;
   }
