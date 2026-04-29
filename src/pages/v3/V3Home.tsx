@@ -772,36 +772,83 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
   todayEvents: Ev[]; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
 }) {
-  const sideEvents = [...trending, ...featured, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 6);
-  if (!todayEvents.length && !sideEvents.length) return null;
+  const mainEvents = [...trending, ...featured, ...todayEvents, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 10);
+  const nowEvents = mainEvents.filter(e => isEventLive(e.date_time)).slice(0, 3);
+  if (!todayEvents.length && !mainEvents.length) return null;
 
   return (
-    <FadeSection className="hidden lg:block max-w-7xl mx-auto px-6 py-8">
-      <div className="mb-4 flex items-end justify-between">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">The Command Center</p>
-          <h2 className="font-display text-3xl font-black uppercase text-foreground">Painel da noite</h2>
+    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[260px_minmax(0,1fr)_300px] gap-5 px-6 py-6">
+      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide">
+        <DesktopNavPanel todayCount={todayEvents.length} />
+        <AIHomeWidget />
+      </aside>
+      <section className="min-w-0 space-y-5">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Dashboard de entretenimento</p>
+            <h1 className="font-display text-4xl font-black uppercase text-foreground">Painel da noite</h1>
+          </div>
+          <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)]">
+            {todayEvents.length} eventos hoje
+          </span>
         </div>
-        <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)]">
-          {todayEvents.length} eventos hoje
-        </span>
-      </div>
-      <div className="grid grid-cols-12 grid-rows-[220px_220px] gap-4">
-        <div className="col-span-7 row-span-2 rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)]">
+        <div className="grid auto-rows-[260px] grid-cols-6 gap-4">
+          {mainEvents.slice(0, 7).map((ev, i) => (
+            <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full`} />
+          ))}
+        </div>
+      </section>
+      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide">
+        <NowPanel events={nowEvents.length ? nowEvents : mainEvents.slice(0, 3)} />
+        <div className="rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)]">
           <TodayTimeline events={todayEvents.slice(0, 5)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} compact />
         </div>
-        {sideEvents.slice(0, 4).map((ev, i) => (
-          <PremiumEventCard
-            key={ev.id}
-            ev={ev}
-            size={i === 0 ? "lg" : "md"}
-            isTrending={trendingIdSet.has(ev.id)}
-            partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined}
-            className={i === 0 ? "col-span-5 !w-full h-full" : "col-span-2 !w-full h-full"}
-          />
+      </aside>
+    </FadeSection>
+  );
+}
+
+function DesktopNavPanel({ todayCount }: { todayCount: number }) {
+  const items = [
+    { to: "/v3", label: "Início", icon: Sparkles },
+    { to: "/v3/ia", label: "Prudente IA", icon: Sparkles },
+    { to: "/v3/transporte", label: "Caronas", icon: Car },
+    { to: "/v3/descobrir", label: "Descobrir", icon: Eye },
+  ];
+  return (
+    <div className="rounded-3xl v3-glass-strong p-4">
+      <p className="font-display text-2xl font-black text-primary v3-neon-text">ROXOU</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{todayCount} eventos para decidir a noite.</p>
+      <div className="mt-4 space-y-2">
+        {items.map(({ to, label, icon: Icon }) => (
+          <Link key={to} to={to} className="flex items-center gap-3 rounded-2xl border border-border/20 bg-background/25 px-3 py-3 text-sm font-bold text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary">
+            <Icon className="h-4 w-4" /> {label}
+          </Link>
         ))}
       </div>
-    </FadeSection>
+    </div>
+  );
+}
+
+function NowPanel({ events }: { events: Ev[] }) {
+  return (
+    <div className="rounded-3xl v3-glass-strong p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_14px_hsl(142_71%_45%)]" />
+        <h2 className="font-display text-base font-black text-foreground">O que está rolando agora</h2>
+      </div>
+      <div className="space-y-3">
+        {events.map(ev => (
+          <Link key={ev.id} to={`/v3/evento/${ev.slug}`} className="group flex gap-3 rounded-2xl border border-border/25 bg-background/25 p-2 transition-all hover:border-primary/40 hover:bg-primary/10">
+            <img src={ev.image_url || "/placeholder.svg"} alt={ev.title} className="h-14 w-14 rounded-xl object-cover" loading="lazy" />
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-xs font-black text-foreground group-hover:text-primary">{ev.title}</p>
+              <p className="mt-1 truncate text-[10px] text-muted-foreground">{fmtTime(ev.date_time)} · {ev.venue_name || "Local a confirmar"}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 
