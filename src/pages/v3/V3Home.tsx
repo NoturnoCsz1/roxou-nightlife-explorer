@@ -222,7 +222,19 @@ export default function V3Home() {
   const trendingIdSet = useMemo(() => new Set(trendingIds.map(t => t.id)), [trendingIds]);
 
   return (
-    <div className="space-y-1 -mt-14">
+    <div>
+      <div className="hidden lg:block">
+        <CommandCenter
+          todayEvents={todayEvents}
+          trending={trending}
+          featured={featured}
+          weekEvents={weekEvents}
+          trendingIdSet={trendingIdSet}
+          partnerRankMap={partnerRankMap}
+        />
+      </div>
+
+      <div className="space-y-1 -mt-14 lg:hidden">
       {/* ══════ 1. IMMERSIVE HERO — viewport tall ══════ */}
       {isLoading ? <HeroSkeleton /> : hero ? (
         <div className="relative">
@@ -253,17 +265,6 @@ export default function V3Home() {
 
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
       <BentoGrid />
-
-      <CommandCenter
-        todayEvents={todayEvents}
-        trending={trending}
-        featured={featured}
-        weekEvents={weekEvents}
-        trendingIdSet={trendingIdSet}
-        partnerRankMap={partnerRankMap}
-      />
-
-      <div className="lg:hidden">
 
       <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
 
@@ -374,9 +375,6 @@ export default function V3Home() {
           ))}
         </Rail>
       ) : null}
-
-      </div>
-
       {/* Footer institucional V3 */}
       <FadeSection className="px-4 pt-8 pb-4">
         <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
@@ -389,6 +387,7 @@ export default function V3Home() {
       </FadeSection>
 
       <div className="h-6" />
+      </div>
     </div>
   );
 }
