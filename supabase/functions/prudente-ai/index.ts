@@ -69,7 +69,7 @@ serve(async (req) => {
     const nowIso = new Date().toISOString();
     const { data: events } = await supabase
       .from("events")
-      .select("title,venue_name,date_time,category,sub_category,description")
+      .select("id,slug,title,venue_name,date_time,category,sub_category,description,image_url")
       .eq("status", "published")
       .gte("date_time", nowIso)
       .order("date_time", { ascending: true })
@@ -77,7 +77,7 @@ serve(async (req) => {
 
     const { data: partners } = await supabase
       .from("partners")
-      .select("id,name,type,short_description,verified_partner,city")
+      .select("id,name,slug,type,short_description,verified_partner,city,logo_url")
       .eq("active", true)
       .limit(30);
 
@@ -186,14 +186,20 @@ serve(async (req) => {
     if (ai.error) return json({ error: ai.error }, ai.status);
     const answer = ai.data?.choices?.[0]?.message?.content || "Não consegui responder agora. Tente de novo em instantes.";
 
-    const mentioned = (partners || []).filter((p: any) => answer.toLowerCase().includes(String(p.name).toLowerCase())).slice(0, 4);
+    const answerLower = answer.toLowerCase();
+    const mentionedPartners = (partners || []).filter((p: any) => answerLower.includes(String(p.name).toLowerCase())).slice(0, 4);
+    const mentionedEvents = (events || []).filter((e: any) => answerLower.includes(String(e.title).toLowerCase())).slice(0, 4);
+    const cards = [
+      ...mentionedEvents.map((e: any) => ({ type: "event", id: e.id, title: e.title, subtitle: e.venue_name || "Evento ROXOU", image_url: e.image_url, href: `/v3/evento/${e.slug}` })),
+      ...mentionedPartners.map((p: any) => ({ type: "partner", id: p.id, title: p.name, subtitle: p.type || "Parceiro ROXOU", image_url: p.logo_url, href: `/v3/local/${p.slug}` })),
+    ].slice(0, 4);
 
     await supabase.from("ai_chat_messages").insert([
       { user_id: user.id, role: "user", content: message },
       { user_id: user.id, role: "assistant", content: answer },
     ]);
-    if (mentioned.length) {
-      await supabase.from("ai_partner_recommendations").insert(mentioned.map((p: any) => ({
+    if (mentionedPartners.length) {
+      await supabase.from("ai_partner_recommendations").insert(mentionedPartners.map((p: any) => ({
         partner_id: p.id,
         user_id: user.id,
         source: "prudente_ai_chat",
@@ -203,7 +209,7 @@ serve(async (req) => {
     if (usage?.id) await supabase.from("ai_message_usage").update({ message_count: count + 1 }).eq("id", usage.id);
     else await supabase.from("ai_message_usage").insert({ user_id: user.id, usage_date: usageDate, message_count: 1 });
 
-    return json({ answer, used: isVip ? 0 : count + 1, limit: 3, is_vip: isVip });
+    return json({ answer, cards, used: isVip ? 0 : count + 1, limit: 3, is_vip: isVip });
   } catch (err: any) {
     console.error("prudente-ai error", err);
     return json({ error: err.message || "Erro inesperado" }, 500);
