@@ -11,6 +11,7 @@ import {
   Pencil, LockKeyhole, Gift, Copy, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -63,6 +64,15 @@ export default function V3Profile() {
     enabled: followedIds.length > 0,
   });
 
+  const { data: referralCount = 0 } = useQuery({
+    queryKey: ["v3-referral-progress", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase.from("affiliate_referrals").select("id", { count: "exact", head: true }).eq("referrer_user_id", user!.id);
+      return count || 0;
+    },
+    enabled: !!user?.id,
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -101,6 +111,8 @@ export default function V3Profile() {
   };
   const affiliateCode = (profile as any)?.affiliate_code || user.id.replace(/-/g, "").slice(0, 10).toLowerCase();
   const affiliateLink = `${window.location.origin}/v3/auth?ref=${affiliateCode}`;
+  const referralsRemaining = Math.max(0, 2 - referralCount);
+  const vipProgress = Math.min(100, (referralCount / 2) * 100);
   const copyAffiliate = () => {
     navigator.clipboard.writeText(affiliateLink);
     toast.success("Link de afiliado copiado!");
@@ -170,6 +182,15 @@ export default function V3Profile() {
               <h2 className="font-display text-sm font-black text-foreground">Link de Afiliado ROXOU VIP</h2>
             </div>
             <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Indique um amigo e ganhe 15 dias de VIP quando ele entrar.</p>
+            <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/10 p-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-[11px] font-black text-foreground">
+                  {referralsRemaining > 0 ? `Indique mais ${referralsRemaining} amigo${referralsRemaining > 1 ? "s" : ""} para liberar +15 dias de VIP` : "Bônus VIP pronto para liberar"}
+                </p>
+                <span className="text-[10px] font-black text-primary">{Math.min(referralCount, 2)}/2</span>
+              </div>
+              <Progress value={vipProgress} className="h-2 bg-background/50" />
+            </div>
             <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border/30 bg-background/35 p-2">
               <code className="flex-1 truncate text-[10px] text-muted-foreground">{affiliateLink}</code>
               <button onClick={copyAffiliate} className="rounded-xl bg-primary/15 p-2 text-primary active:scale-95">
