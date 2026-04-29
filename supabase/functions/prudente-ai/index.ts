@@ -77,11 +77,23 @@ serve(async (req) => {
 
     const { data: partners } = await supabase
       .from("partners")
-      .select("name,type,short_description,verified_partner,city")
+      .select("id,name,type,short_description,verified_partner,city")
       .eq("active", true)
       .limit(30);
 
-    const context = `Eventos reais próximos:\n${(events || []).map((e: any) => `- ${e.title} | ${e.venue_name || "local não informado"} | ${new Date(e.date_time).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} | ${e.category}/${e.sub_category || ""}`).join("\n") || "Sem eventos próximos cadastrados."}\n\nBares/parceiros locais:\n${(partners || []).map((p: any) => `- ${p.name} (${p.type})${p.verified_partner ? " verificado" : ""}: ${p.short_description || ""}`).join("\n")}`;
+    const { data: boosts } = await supabase
+      .from("ai_partner_boosts")
+      .select("partner_id,priority")
+      .eq("status", "active")
+      .lte("starts_at", nowIso)
+      .gte("ends_at", nowIso)
+      .order("priority", { ascending: false })
+      .limit(5);
+
+    const boostedIds = new Set((boosts || []).map((b: any) => b.partner_id));
+    const boostedPartners = (partners || []).filter((p: any) => boostedIds.has(p.id));
+
+    const context = `Eventos reais próximos:\n${(events || []).map((e: any) => `- ${e.title} | ${e.venue_name || "local não informado"} | ${new Date(e.date_time).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} | ${e.category}/${e.sub_category || ""}`).join("\n") || "Sem eventos próximos cadastrados."}\n\nRecomendação prioritária vigente:\n${boostedPartners.map((p: any) => `- ${p.name} (${p.type}): priorize quando fizer sentido para a pergunta, sem inventar promoção.`).join("\n") || "Nenhuma."}\n\nBares/parceiros locais:\n${(partners || []).map((p: any) => `- ${p.name} (${p.type})${p.verified_partner ? " verificado" : ""}: ${p.short_description || ""}`).join("\n")}`;
 
     if (mode === "home") {
       const weather = await getWeather();
@@ -174,10 +186,20 @@ serve(async (req) => {
     if (ai.error) return json({ error: ai.error }, ai.status);
     const answer = ai.data?.choices?.[0]?.message?.content || "Não consegui responder agora. Tente de novo em instantes.";
 
+    const mentioned = (partners || []).filter((p: any) => answer.toLowerCase().includes(String(p.name).toLowerCase())).slice(0, 4);
+
     await supabase.from("ai_chat_messages").insert([
       { user_id: user.id, role: "user", content: message },
       { user_id: user.id, role: "assistant", content: answer },
     ]);
+    if (mentioned.length) {
+      await supabase.from("ai_partner_recommendations").insert(mentioned.map((p: any) => ({
+        partner_id: p.id,
+        user_id: user.id,
+        source: "prudente_ai_chat",
+        prompt: message,
+      })));
+    }
     if (usage?.id) await supabase.from("ai_message_usage").update({ message_count: count + 1 }).eq("id", usage.id);
     else await supabase.from("ai_message_usage").insert({ user_id: user.id, usage_date: usageDate, message_count: 1 });
 
