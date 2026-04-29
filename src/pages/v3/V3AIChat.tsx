@@ -10,6 +10,8 @@ import { toast } from "sonner";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; created_at?: string };
 
+const FOLLOW_UPS = ["Pedir Carona", "Ver bares perto de mim", "Onde economizar hoje?", "Qual rolê combina comigo?"];
+
 export default function V3AIChat() {
   const navigate = useNavigate();
   const { user, loading } = useV3Profile();
@@ -86,7 +88,20 @@ export default function V3AIChat() {
             <p className="text-xs leading-relaxed text-muted-foreground">Pergunte sobre happy hour, bares, eventos, carona, economia ou onde ir em Presidente Prudente.</p>
           </div>
         )}
-        {messages.map(msg => <Bubble key={msg.id} msg={msg} />)}
+        {messages.map((msg, index) => (
+          <div key={msg.id} className="space-y-2">
+            <Bubble msg={msg} />
+            {msg.role === "assistant" && index === messages.length - 1 && !sending && (
+              <div className="ml-9 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {FOLLOW_UPS.map((suggestion) => (
+                  <button key={suggestion} onClick={() => setInput(suggestion)} className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black text-primary transition hover:bg-primary/20">
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
         {sending && <Bubble msg={{ id: "typing", role: "assistant", content: "Pensando com dados reais da ROXOU..." }} muted />}
         <div ref={bottomRef} />
       </div>
