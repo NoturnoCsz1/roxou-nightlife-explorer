@@ -964,6 +964,14 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             Reservar
           </button>
         </div>
+        <div className="pointer-events-none absolute inset-x-3 top-14 z-10 hidden translate-y-2 rounded-2xl border border-primary/30 bg-background/80 p-3 opacity-0 backdrop-blur-xl transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:block">
+          <p className="line-clamp-3 text-[11px] font-medium leading-relaxed text-foreground/90">
+            {ev.venue_name ? `${ev.venue_name} · ` : ""}{ev.category} marcado para {fmtTime(ev.date_time)}. Veja detalhes, ingresso e opções de carona sem perder o ritmo.
+          </p>
+          <Link to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`} className="pointer-events-auto mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-[10px] font-black uppercase text-primary hover:bg-primary/25">
+            <Car className="h-3 w-3" /> Pedir carona
+          </Link>
+        </div>
       </div>
       <ReservationDrawer
         open={drawerOpen}
