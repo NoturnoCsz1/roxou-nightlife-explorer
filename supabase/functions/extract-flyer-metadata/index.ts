@@ -30,6 +30,7 @@ Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown,
   "instagram": string|null,   // @handle do organizador/local se aparecer.
   "category": string,         // OBRIGATÓRIO uma de: show, festival, bar, universitario, restaurante, balada, festa, futebol, cultural, lounge, espetinho
   "sub_category": string,     // OBRIGATÓRIO uma de: funk, pagode_samba, rock, pop_rock, eletronica, sertanejo, mpb (ou repita a category se não houver gênero musical)
+  "opportunity_tags": string[],// Tags comerciais quando aparecerem: open_bar, double_drink, entrada_free, promocao
   "ticket_url": null,         // SEMPRE retorne null. Não extraia link de ingresso.
   "venue_confidence": "high"|"medium"|"low",
   "confidence": "high"|"medium"|"low"
@@ -60,6 +61,12 @@ REGRAS DE TAXONOMIA POR GÊNERO (use APENAS se o nome do local NÃO indicar tipo
 - "universitário", "open bar", "calourada", "atlética" → category="universitario"
 - "futebol", "jogo", "transmissão", "copa", "brasileirão" → category="futebol"
 - "cultural", "exposição", "teatro", "literário", "cineclube", "sarau" → category="cultural"
+
+REGRAS DE OPORTUNIDADE:
+- Se aparecer "Open Bar", "open", "bebida liberada" → inclua "open_bar" em opportunity_tags.
+- Se aparecer "Double Drink", "drink em dobro", "dobrado" → inclua "double_drink".
+- Se aparecer "entrada free", "free até", "entrada gratuita" → inclua "entrada_free".
+- Se aparecer preço promocional, combo, cupom ou desconto claro → inclua "promocao".
 
 OUTRAS REGRAS:
 - BANIMENTO ABSOLUTO NO TITLE: nunca use "IMPERDÍVEL", "SEXTA INSANA", "SÁBADO IMPERDÍVEL" nem variações genéricas como "NOITE IMPERDÍVEL", "ROLÊ IMPERDÍVEL", "VIBE INSANA", "NOITE INESQUECÍVEL", "EXPERIÊNCIA ÚNICA", "SE PREPARA".
@@ -172,6 +179,13 @@ serve(async (req) => {
     let cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
     const subRaw = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
     let sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
+    const textForTags = normText(`${raw} ${parsed.title || ""} ${parsed.description || ""}`);
+    const aiTags = Array.isArray(parsed.opportunity_tags) ? parsed.opportunity_tags : [];
+    const tags = new Set<string>(aiTags.filter((t: unknown) => typeof t === "string"));
+    if (/open bar|bebida liberada|\bopen\b/.test(textForTags)) tags.add("open_bar");
+    if (/double drink|drink em dobro|dobrado/.test(textForTags)) tags.add("double_drink");
+    if (/entrada free|free ate|entrada gratuita/.test(textForTags)) tags.add("entrada_free");
+    if (/promocao|combo|cupom|desconto/.test(textForTags)) tags.add("promocao");
 
     // 🟣 REGRA DE OURO server-side: nome do local prevalece sobre gênero do flyer
     let category_override_reason: string | null = null;
@@ -246,6 +260,7 @@ serve(async (req) => {
       instagram: parsed.instagram || null,
       category: cat,
       sub_category: sub,
+      opportunity_tags: Array.from(tags).filter((t) => ["open_bar", "double_drink", "entrada_free", "promocao"].includes(t)),
       ticket_url: ticketUrl,
       confidence: parsed.confidence || "medium",
       category_override_reason,
