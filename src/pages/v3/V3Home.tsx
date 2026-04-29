@@ -792,15 +792,15 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
             {todayEvents.length} eventos hoje
           </span>
         </div>
-        <div className="grid auto-rows-[260px] grid-cols-6 gap-4">
+        <div className="grid auto-rows-[260px] grid-cols-6 gap-4 transition-opacity duration-500">
           {mainEvents.slice(0, 7).map((ev, i) => (
-            <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full`} />
+            <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full animate-fade-up`} />
           ))}
         </div>
       </section>
       <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide">
-        <NowPanel events={nowEvents.length ? nowEvents : mainEvents.slice(0, 3)} />
-        <div className="rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)]">
+        <div className="backdrop-blur-2xl transition-all duration-300 hover:backdrop-blur-md"><NowPanel events={nowEvents.length ? nowEvents : mainEvents.slice(0, 3)} /></div>
+        <div className="rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)] backdrop-blur-2xl transition-all duration-300 hover:backdrop-blur-md">
           <TodayTimeline events={todayEvents.slice(0, 5)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} compact />
         </div>
       </aside>

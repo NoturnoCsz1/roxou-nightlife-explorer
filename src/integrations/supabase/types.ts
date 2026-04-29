@@ -303,6 +303,7 @@ export type Database = {
           image_hash: string | null
           image_url: string | null
           instagram: string | null
+          opportunity_tags: string[]
           partner_id: string | null
           slug: string
           status: string
@@ -324,6 +325,7 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          opportunity_tags?: string[]
           partner_id?: string | null
           slug: string
           status?: string
@@ -345,6 +347,7 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          opportunity_tags?: string[]
           partner_id?: string | null
           slug?: string
           status?: string

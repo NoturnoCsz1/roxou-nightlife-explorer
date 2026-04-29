@@ -17,6 +17,7 @@ export type AdminEventFormInput = {
   ticket_url?: string;
   image_hash?: string;
   _sub?: string;
+  opportunity_tags?: string[];
 };
 
 interface BuildEventPayloadOptions {
@@ -45,6 +46,7 @@ export function buildEventPayload(
     image_hash: form.image_hash || null,
     ticket_url: form.ticket_url || null,
     sub_category: form._sub || null,
+    opportunity_tags: form.opportunity_tags || [],
   };
 
   if (options.city) {

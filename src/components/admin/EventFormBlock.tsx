@@ -24,6 +24,7 @@ export type EventFormData = {
   image_url: string;
   image_hash?: string;
   ticket_url: string;
+  opportunity_tags?: string[];
 };
 
 export const emptyEventForm = (): EventFormData => ({
@@ -31,6 +32,7 @@ export const emptyEventForm = (): EventFormData => ({
   venue_name: "", address: "", instagram: "", description: "",
   status: "draft", verification_source: "instagram", featured: false, image_url: "",
   ticket_url: "", image_hash: "",
+  opportunity_tags: [],
 });
 
 export function slugify(str: string) {
@@ -93,6 +95,17 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
           </button>
         )}
       </div>
+
+      {/* Main info */}
+      {(form.opportunity_tags || []).length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {(form.opportunity_tags || []).map((tag) => (
+            <span key={tag} className="rounded-full border border-accent/30 bg-accent/10 px-2 py-1 text-[10px] font-black uppercase text-accent">
+              Oportunidade · {tag.replace("_", " ")}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Main info */}
       <div className="space-y-2.5">
