@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Bot, Crown, Loader2, Send, Sparkles, User } from "lucide-react";
+import { ArrowLeft, Bot, Crown, Loader2, Send, Sparkles, User, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import VIPPaywallModal from "@/components/v3/VIPPaywallModal";
 import { toast } from "sonner";
 
-type Msg = { id: string; role: "user" | "assistant"; content: string; created_at?: string };
+type ActionCard = { type: "event" | "partner"; id: string; title: string; subtitle?: string | null; image_url?: string | null; href: string };
+type Msg = { id: string; role: "user" | "assistant"; content: string; created_at?: string; cards?: ActionCard[] };
 
 const FOLLOW_UPS = ["Pedir Carona", "Ver bares perto de mim", "Onde economizar hoje?", "Qual rolê combina comigo?"];
 
@@ -53,7 +54,7 @@ export default function V3AIChat() {
         setUsed(data.used || 3);
         return;
       }
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", content: data.answer }]);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", content: data.answer, cards: data.cards || [] }]);
       setUsed(data.used ?? used + 1);
     } catch (err: any) {
       const context = err?.context?.json ? await err.context.json().catch(() => null) : null;
@@ -91,6 +92,11 @@ export default function V3AIChat() {
         {messages.map((msg, index) => (
           <div key={msg.id} className="space-y-2">
             <Bubble msg={msg} />
+            {msg.role === "assistant" && msg.cards && msg.cards.length > 0 && (
+              <div className="ml-9 grid gap-2 sm:grid-cols-2">
+                {msg.cards.map((card) => <MiniActionCard key={`${card.type}-${card.id}`} card={card} />)}
+              </div>
+            )}
             {msg.role === "assistant" && index === messages.length - 1 && !sending && (
               <div className="ml-9 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {FOLLOW_UPS.map((suggestion) => (
@@ -114,6 +120,19 @@ export default function V3AIChat() {
       </form>
       <VIPPaywallModal open={paywall} onOpenChange={setPaywall} />
     </div>
+  );
+}
+
+function MiniActionCard({ card }: { card: ActionCard }) {
+  return (
+    <Link to={card.href} className="group flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/10 p-2 transition-all hover:border-primary/50 hover:bg-primary/15">
+      <img src={card.image_url || "/placeholder.svg"} alt={card.title} className="h-14 w-14 rounded-xl object-cover" loading="lazy" />
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-xs font-black text-foreground group-hover:text-primary">{card.title}</p>
+        <p className="mt-0.5 flex items-center gap-1 truncate text-[10px] text-muted-foreground"><MapPin className="h-3 w-3" /> {card.subtitle || "ROXOU"}</p>
+        <span className="mt-1 inline-flex rounded-full bg-primary px-2.5 py-1 text-[9px] font-black uppercase text-primary-foreground">Ver detalhes</span>
+      </div>
+    </Link>
   );
 }
 
