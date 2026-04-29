@@ -206,6 +206,7 @@ const EventoBulkForm = () => {
             partner_id: matched ? matched.id : "",
             ticket_url: "",
             verification_source: "instagram",
+            opportunity_tags: data.opportunity_tags || [],
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
           };
           readyForm = next;
