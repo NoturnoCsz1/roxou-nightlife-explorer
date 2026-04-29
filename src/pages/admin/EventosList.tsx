@@ -93,6 +93,7 @@ const EventosList = () => {
   const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
   const [publishing, setPublishing] = useState(false);
   const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string }>>({});
+  const [visibleCount, setVisibleCount] = useState(80);
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -318,9 +319,15 @@ const EventosList = () => {
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
 
-  const todayEvents = filtered.filter((e) => e.date_time.slice(0, 10) === todayStr);
-  const upcomingEvents = filtered.filter((e) => e.date_time.slice(0, 10) > todayStr);
-  const pastEvents = filtered.filter((e) => e.date_time.slice(0, 10) < todayStr);
+  useEffect(() => {
+    setVisibleCount(80);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete]);
+
+  const visibleFiltered = filtered.slice(0, visibleCount);
+
+  const todayEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) === todayStr);
+  const upcomingEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) > todayStr);
+  const pastEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) < todayStr);
 
   const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"] as const;
   const categoryCounts = CATEGORIES.map((c) => ({
@@ -633,6 +640,11 @@ const EventosList = () => {
                 <div className="space-y-2">{pastEvents.map(renderEventRow)}</div>
               </CollapsibleContent>
             </Collapsible>
+          )}
+          {visibleCount < filtered.length && (
+            <button onClick={() => setVisibleCount((v) => v + 80)} className="mx-auto flex rounded-2xl border border-primary/30 bg-primary/10 px-5 py-2 text-xs font-black uppercase text-primary hover:bg-primary/20">
+              Carregar mais {Math.min(80, filtered.length - visibleCount)} eventos
+            </button>
           )}
         </div>
       )}
