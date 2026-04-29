@@ -1,13 +1,19 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Search, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import PullToRefresh from "@/components/v3/PullToRefresh";
 
 const NAV_ITEMS = [
   { to: "/v3", icon: Home, label: "Início" },
+  { to: "/v3/ia", icon: Bot, label: "IA" },
+  { to: "/v3/transporte", icon: Car, label: "Caronas" },
+  { to: "/v3/perfil", icon: User, label: "Perfil" },
+];
+
+const DESKTOP_ITEMS = [
   { to: "/v3/descobrir", icon: Search, label: "Pesquisar" },
-  { to: "/v3/transporte", icon: Car, label: "Transporte" },
   { to: "/v3/agenda", icon: CalendarDays, label: "Agenda" },
-  { to: "/v3/perfil", icon: User, label: "Minha Conta" },
+  { to: "/v3/economize", icon: PiggyBank, label: "Economize" },
 ];
 
 export default function V3Layout() {
@@ -64,9 +70,11 @@ export default function V3Layout() {
       </header>
 
       {/* Content — fade-in per route */}
-      <main key={pathname} className="flex-1 pb-20 v3-page-fade">
-        <Outlet />
-      </main>
+      <PullToRefresh>
+        <main key={pathname} className="flex-1 pb-20 v3-page-fade">
+          <Outlet />
+        </main>
+      </PullToRefresh>
 
       {/* Footer */}
       <div className="pb-20 pt-4 text-center border-t border-white/5">
@@ -87,7 +95,7 @@ export default function V3Layout() {
 
       {/* Bottom Nav — glass premium */}
       <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5">
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto lg:hidden">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
             const isProfile = to === "/v3/perfil";
             const active = to === "/v3"
@@ -103,6 +111,16 @@ export default function V3Layout() {
               >
                 <Icon className={`w-5 h-5 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
                 <span className="text-[10px] font-medium">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="hidden lg:flex h-14 max-w-3xl mx-auto items-center justify-center gap-2">
+          {[...NAV_ITEMS, ...DESKTOP_ITEMS].map(({ to, icon: Icon, label }) => {
+            const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
+            return (
+              <button key={to} onClick={() => navigate(to)} className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors ${active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`}>
+                <Icon className="h-4 w-4" /> {label}
               </button>
             );
           })}
