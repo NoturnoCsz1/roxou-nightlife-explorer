@@ -168,7 +168,13 @@ const EventoBulkForm = () => {
           current_year: new Date().getFullYear(),
           verified_partners: partners
             .filter((p: any) => p.verified_partner)
-            .map((p) => ({ name: p.name, address: p.address, instagram: p.instagram })),
+            .map((p: any) => ({
+              name: p.name,
+              address: p.address,
+              instagram: p.instagram,
+              type: p.type,
+              sub_category: p.sub_category,
+            })),
         },
       });
       if (extractResp.error) throw extractResp.error;
