@@ -98,7 +98,7 @@ const EventosList = () => {
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
   const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
   const [publishing, setPublishing] = useState(false);
-  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name: string }>>({});
+  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name?: string }>>({});
   const [visibleCount, setVisibleCount] = useState(80);
 
   const isAiOrigin = (e: EventRow) => {
