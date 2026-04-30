@@ -52,6 +52,41 @@ const EventoForm = () => {
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
+
+  async function reprocessFlyerWithAi() {
+    if (!form.image_url) {
+      toast.error("Adicione um flyer antes de re-processar com IA.");
+      return;
+    }
+    setReprocessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-flyer-metadata", {
+        body: { image_url: form.image_url, current_year: new Date().getFullYear() },
+      });
+      if (error) throw error;
+      const meta: any = data || {};
+      // Date fallback: keep existing if AI uncertain; default time to 20:00
+      let nextDateTime = form.date_time;
+      if (meta.date) {
+        const time = meta.time && /^\d{2}:\d{2}$/.test(meta.time) ? meta.time : "20:00";
+        nextDateTime = `${meta.date}T${time}`;
+      }
+      setForm((prev) => ({
+        ...prev,
+        title: meta.title ? String(meta.title).toUpperCase() : prev.title,
+        date_time: nextDateTime,
+        venue_name: meta.venue_name || prev.venue_name,
+        category: meta.category || prev.category,
+        ...(meta.sub_category ? { _sub: meta.sub_category } : {}),
+      } as any));
+      toast.success("Flyer re-processado pela IA. Revise os campos antes de salvar.");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao re-processar com IA");
+    } finally {
+      setReprocessing(false);
+    }
+  }
 
   async function generateDescription(info: { title: string; venue_name?: string; date_time?: string; category?: string; image_url?: string }) {
     setGeneratingDesc(true);
