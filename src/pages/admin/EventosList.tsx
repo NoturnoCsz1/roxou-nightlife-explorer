@@ -38,7 +38,10 @@ interface EventRow {
   description: string | null;
   partner_id: string | null;
   created_at: string;
+  verification_source: string | null;
 }
+
+type OriginFilter = "todos" | "ai" | "manual";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
@@ -87,14 +90,30 @@ const EventosList = () => {
   const [activePartner, setActivePartner] = useState<string>("todos");
   const [activeDateFilter, setActiveDateFilter] = useState<DateQuickFilter>("todos");
   const [onlyIncomplete, setOnlyIncomplete] = useState(false);
+  const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
+  const [originFilter, setOriginFilter] = useState<OriginFilter>("todos");
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [zipping, setZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
   const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
   const [publishing, setPublishing] = useState(false);
-  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string }>>({});
+  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name: string }>>({});
   const [visibleCount, setVisibleCount] = useState(80);
+
+  const isAiOrigin = (e: EventRow) => {
+    const src = (e.verification_source || "").toLowerCase();
+    return src.includes("instagram") || src.includes("ia") || src.includes("ai") || src.includes("eventou") || src.includes("flyer");
+  };
+  const needsReview = (e: EventRow) => {
+    if (!e.date_time) return true;
+    const d = new Date(e.date_time);
+    const hh = d.toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo", hour12: false });
+    // Default fallback 00:00 = AI couldn't read time
+    if (hh === "00:00") return true;
+    if (/\[REVISAR\]/i.test(e.title || "")) return true;
+    return false;
+  };
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
