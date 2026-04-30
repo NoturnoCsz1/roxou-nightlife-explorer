@@ -343,11 +343,13 @@ const EventosList = () => {
       weekEnd.setDate(now.getDate() + 7);
       return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
     })
-    .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
+    .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
+    .filter((e) => !onlyNeedsReview || needsReview(e))
+    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)));
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete]);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter]);
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
