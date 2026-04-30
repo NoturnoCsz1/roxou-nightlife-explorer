@@ -222,7 +222,7 @@ const EventosList = () => {
     const venueChanged = nextVenue !== (e.venue_name || "").trim();
     if (nextTitle === e.title && nextDate === e.date_time && !venueChanged) return;
     if (nextTitle.length < 5) { toast.error("Título precisa ter pelo menos 5 caracteres."); return; }
-    const patch: Record<string, unknown> = { title: nextTitle, date_time: nextDate };
+    const patch: { title: string; date_time: string; venue_name?: string | null } = { title: nextTitle, date_time: nextDate };
     if (venueChanged) patch.venue_name = nextVenue || null;
     const { error } = await supabase.from("events").update(patch).eq("id", e.id);
     if (error) { toast.error("Erro ao salvar edição rápida."); return; }
