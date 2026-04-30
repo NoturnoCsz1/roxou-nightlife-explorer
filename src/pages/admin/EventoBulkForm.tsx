@@ -191,7 +191,12 @@ const EventoBulkForm = () => {
 
       const matched = matchPartner(data.venue_name, partners, data.venue_confidence);
       const dateInput = formatDateForInput(data.date_iso);
-      const categoryWarning: string | null = data.category_override_reason || null;
+      const warnings: string[] = [];
+      if (data.category_override_reason) warnings.push(data.category_override_reason);
+      if (data.date_needs_review) warnings.push(`📅 Data precisa revisão${data.date_validation_note ? `: ${data.date_validation_note}` : ""}`);
+      if (data.date_validation_note && !data.date_needs_review) warnings.push(`📅 ${data.date_validation_note}`);
+      if (data.genre_needs_review) warnings.push("🎵 Gênero musical com baixa certeza — confira");
+      const categoryWarning: string | null = warnings.length ? warnings.join(" • ") : null;
 
       let readyForm: EventFormData | null = null;
       setItems((prev) =>
