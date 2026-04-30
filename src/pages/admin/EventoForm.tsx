@@ -9,6 +9,7 @@ import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre, getCategoryLabel } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
+import { isoToSpLocal } from "@/lib/dateUtils";
 
 type Partner = Tables<"partners">;
 
@@ -51,6 +52,41 @@ const EventoForm = () => {
   const isEdit = !!id;
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
+
+  async function reprocessFlyerWithAi() {
+    if (!form.image_url) {
+      toast.error("Adicione um flyer antes de re-processar com IA.");
+      return;
+    }
+    setReprocessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-flyer-metadata", {
+        body: { image_url: form.image_url, current_year: new Date().getFullYear() },
+      });
+      if (error) throw error;
+      const meta: any = data || {};
+      // Date fallback: keep existing if AI uncertain; default time to 20:00
+      let nextDateTime = form.date_time;
+      if (meta.date) {
+        const time = meta.time && /^\d{2}:\d{2}$/.test(meta.time) ? meta.time : "20:00";
+        nextDateTime = `${meta.date}T${time}`;
+      }
+      setForm((prev) => ({
+        ...prev,
+        title: meta.title ? String(meta.title).toUpperCase() : prev.title,
+        date_time: nextDateTime,
+        venue_name: meta.venue_name || prev.venue_name,
+        category: meta.category || prev.category,
+        ...(meta.sub_category ? { _sub: meta.sub_category } : {}),
+      } as any));
+      toast.success("Flyer re-processado pela IA. Revise os campos antes de salvar.");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao re-processar com IA");
+    } finally {
+      setReprocessing(false);
+    }
+  }
 
   async function generateDescription(info: { title: string; venue_name?: string; date_time?: string; category?: string; image_url?: string }) {
     setGeneratingDesc(true);
@@ -150,17 +186,7 @@ const EventoForm = () => {
       return;
     }
 
-    let localDateTime = "";
-    if (data.date_time) {
-      const d = new Date(data.date_time);
-      const parts = new Intl.DateTimeFormat("sv-SE", {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit",
-        timeZone: "America/Sao_Paulo", hour12: false,
-      }).formatToParts(d);
-      const get = (type: string) => parts.find(p => p.type === type)?.value || "";
-      localDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
-    }
+    const localDateTime = isoToSpLocal(data.date_time);
 
     setForm({
       title: data.title, slug: data.slug,
@@ -322,6 +348,18 @@ const EventoForm = () => {
           >
             <Instagram className="h-3.5 w-3.5" />
             Importar do Instagram
+          </button>
+        )}
+        {isEdit && form.image_url && (
+          <button
+            type="button"
+            onClick={reprocessFlyerWithAi}
+            disabled={reprocessing}
+            className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
+            title="Pedir para a IA reler o flyer (mantém 20:00 como fallback)"
+          >
+            {reprocessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            {reprocessing ? "Re-processando..." : "Re-processar com IA"}
           </button>
         )}
       </div>

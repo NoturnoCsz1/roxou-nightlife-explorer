@@ -1,5 +1,33 @@
 const TZ = "America/Sao_Paulo";
 
+/**
+ * Convert a "datetime-local" string (e.g. "2026-05-15T22:00") into an
+ * ISO timestamp anchored to São Paulo (-03:00), regardless of the browser TZ.
+ * This is the ONLY safe way to persist admin-entered local times.
+ */
+export const spLocalToISO = (localDateTime: string): string => {
+  if (!localDateTime) return "";
+  const trimmed = localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime;
+  return `${trimmed}-03:00`;
+};
+
+/**
+ * Convert a stored ISO timestamp into the "datetime-local" string that
+ * represents the same wall-clock time in São Paulo.
+ */
+export const isoToSpLocal = (iso: string | null | undefined): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: TZ, hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+};
+
 /** Format time as HH:mm in São Paulo timezone */
 export const formatTime = (date: Date) =>
   date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: TZ });

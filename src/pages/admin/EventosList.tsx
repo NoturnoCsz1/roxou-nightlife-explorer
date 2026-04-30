@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { getCategoryLabel } from "@/lib/categoryConfig";
+import { spLocalToISO, isoToSpLocal } from "@/lib/dateUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +38,10 @@ interface EventRow {
   description: string | null;
   partner_id: string | null;
   created_at: string;
+  verification_source: string | null;
 }
+
+type OriginFilter = "todos" | "ai" | "manual";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
@@ -86,14 +90,30 @@ const EventosList = () => {
   const [activePartner, setActivePartner] = useState<string>("todos");
   const [activeDateFilter, setActiveDateFilter] = useState<DateQuickFilter>("todos");
   const [onlyIncomplete, setOnlyIncomplete] = useState(false);
+  const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
+  const [originFilter, setOriginFilter] = useState<OriginFilter>("todos");
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [zipping, setZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState({ current: 0, total: 0 });
   const [aiBusy, setAiBusy] = useState<Record<string, "title" | "desc" | null>>({});
   const [publishing, setPublishing] = useState(false);
-  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string }>>({});
+  const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name?: string }>>({});
   const [visibleCount, setVisibleCount] = useState(80);
+
+  const isAiOrigin = (e: EventRow) => {
+    const src = (e.verification_source || "").toLowerCase();
+    return src.includes("instagram") || src.includes("ia") || src.includes("ai") || src.includes("eventou") || src.includes("flyer");
+  };
+  const needsReview = (e: EventRow) => {
+    if (!e.date_time) return true;
+    const d = new Date(e.date_time);
+    const hh = d.toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo", hour12: false });
+    // Default fallback 00:00 = AI couldn't read time
+    if (hh === "00:00") return true;
+    if (/\[REVISAR\]/i.test(e.title || "")) return true;
+    return false;
+  };
 
   async function handleDuplicate(eventId: string) {
     const { data } = await supabase.from("events").select("*").eq("id", eventId).single();
@@ -125,7 +145,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at, verification_source")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -195,12 +215,18 @@ const EventosList = () => {
     const draft = quickEdits[e.id];
     if (!draft) return;
     const nextTitle = normalizeAiTitle(draft.title);
-    const nextDate = draft.date_time ? new Date(draft.date_time).toISOString() : e.date_time;
-    if (nextTitle === e.title && nextDate === e.date_time) return;
+    // Persist datetime-local as São Paulo wall-clock — never use new Date().toISOString()
+    // because it would shift by the browser's UTC offset.
+    const nextDate = draft.date_time ? spLocalToISO(draft.date_time) : e.date_time;
+    const nextVenue = (draft.venue_name ?? e.venue_name ?? "").trim();
+    const venueChanged = nextVenue !== (e.venue_name || "").trim();
+    if (nextTitle === e.title && nextDate === e.date_time && !venueChanged) return;
     if (nextTitle.length < 5) { toast.error("Título precisa ter pelo menos 5 caracteres."); return; }
-    const { error } = await supabase.from("events").update({ title: nextTitle, date_time: nextDate }).eq("id", e.id);
+    const patch: { title: string; date_time: string; venue_name?: string | null } = { title: nextTitle, date_time: nextDate };
+    if (venueChanged) patch.venue_name = nextVenue || null;
+    const { error } = await supabase.from("events").update(patch).eq("id", e.id);
     if (error) { toast.error("Erro ao salvar edição rápida."); return; }
-    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: nextTitle, date_time: nextDate } : x));
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: nextTitle, date_time: nextDate, venue_name: venueChanged ? (nextVenue || null) : x.venue_name } : x));
     toast.success("Edição rápida salva");
   }
 
@@ -317,11 +343,13 @@ const EventosList = () => {
       weekEnd.setDate(now.getDate() + 7);
       return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
     })
-    .filter((e) => !onlyIncomplete || !getChecklist(e).complete);
+    .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
+    .filter((e) => !onlyNeedsReview || needsReview(e))
+    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)));
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete]);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter]);
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
@@ -379,28 +407,49 @@ const EventosList = () => {
             : <Square className="h-4 w-4 text-muted-foreground" />}
         </button>
         <div className="min-w-0 flex-1 space-y-1">
-          <input
-            value={quickEdits[e.id]?.title ?? e.title ?? ""}
-            onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: ev.target.value, date_time: prev[e.id]?.date_time ?? e.date_time.slice(0, 16) } }))}
-            onBlur={() => saveQuickEdit(e)}
-            placeholder="Título do evento"
-            className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
-          />
+          <div className="flex items-center gap-1">
+            <input
+              value={quickEdits[e.id]?.title ?? e.title ?? ""}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: ev.target.value, date_time: prev[e.id]?.date_time ?? isoToSpLocal(e.date_time), venue_name: prev[e.id]?.venue_name ?? (e.venue_name ?? "") } }))}
+              onBlur={() => saveQuickEdit(e)}
+              placeholder="Título do evento"
+              className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
+            />
+            <Link to={`/admin/eventos/${e.id}`} className="shrink-0 p-1 rounded hover:bg-primary/10 text-primary" title="Abrir edição completa">
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
               {getCategoryLabel(e.category, e.sub_category)}
             </span>
             <input
               type="datetime-local"
-              value={quickEdits[e.id]?.date_time ?? e.date_time.slice(0, 16)}
-              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: ev.target.value } }))}
+              value={quickEdits[e.id]?.date_time ?? isoToSpLocal(e.date_time)}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: ev.target.value, venue_name: prev[e.id]?.venue_name ?? (e.venue_name ?? "") } }))}
               onBlur={() => saveQuickEdit(e)}
               className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground"
             />
-            {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
+            <input
+              value={quickEdits[e.id]?.venue_name ?? (e.venue_name ?? "")}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: prev[e.id]?.date_time ?? isoToSpLocal(e.date_time), venue_name: ev.target.value } }))}
+              onBlur={() => saveQuickEdit(e)}
+              placeholder="Local"
+              className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground min-w-[100px]"
+            />
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
               {e.status === "published" ? "Publicado" : "Rascunho"}
             </span>
+            {isAiOrigin(e) && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-0.5">
+                <Sparkles className="h-2.5 w-2.5" /> IA
+              </span>
+            )}
+            {needsReview(e) && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5">
+                <AlertTriangle className="h-2.5 w-2.5" /> Revisar
+              </span>
+            )}
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
@@ -568,8 +617,19 @@ const EventosList = () => {
             <option value="sem-parceiro">Sem parceiro</option>
             {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
-          <button type="button" className="hidden sm:flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-[10px] font-bold uppercase text-primary">
-            <CalendarDays className="h-3.5 w-3.5" /> Ordenação fixa
+          <select value={originFilter} onChange={(e) => setOriginFilter(e.target.value as OriginFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
+            <option value="todos">Origem: Todas</option>
+            <option value="ai">Criados por IA</option>
+            <option value="manual">Criados Manualmente</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setOnlyNeedsReview(!onlyNeedsReview)}
+            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${onlyNeedsReview ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/40" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
+          >
+            <AlertTriangle className="h-3 w-3" /> Eventos com erro de IA
           </button>
         </div>
       </div>
@@ -606,11 +666,11 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
-        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete) && (
+        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete || onlyNeedsReview || originFilter !== "todos") && (
           <>
             <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
             <button
-                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); }}
+                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); setOnlyNeedsReview(false); setOriginFilter("todos"); }}
               className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
             >
               <X className="h-3 w-3" /> Limpar
