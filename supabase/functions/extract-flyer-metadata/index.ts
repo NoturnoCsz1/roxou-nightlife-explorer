@@ -8,7 +8,6 @@ const corsHeaders = {
 const ALLOWED_CATEGORIES = [
   "show", "festival", "bar", "universitario", "restaurante",
   "balada", "festa", "futebol", "cultural", "lounge", "espetinho",
-  // legados aceitos para retrocompatibilidade
   "funk", "eletronica", "sertanejo",
 ];
 
@@ -18,78 +17,114 @@ const ALLOWED_SUBS = [
   "balada", "festa", "futebol", "cultural", "lounge", "espetinho",
 ];
 
-const systemPrompt = `Você é um extrator de metadados de flyers/banners de eventos da noite brasileira.
+const GENRE_SUBS = new Set(["funk", "pagode_samba", "rock", "pop_rock", "eletronica", "sertanejo", "mpb"]);
 
-Receba a imagem de um flyer e responda APENAS com um JSON válido (sem markdown, sem comentários) com os seguintes campos:
+// 📅 Base year for calendar validation (V4 — janela de operação 2026)
+const BASE_YEAR = 2026;
+
+// 🎵 Dicionário de gêneros — palavras-chave fortes da cena de Prudente
+const GENRE_KEYWORDS: Record<string, string[]> = {
+  sertanejo: ["sertanejo", "modao", "modão", "boteco", "violada", "viola", "agro", "moda de viola", "raiz"],
+  funk: ["funk", "baile", "fluxo", "mandela", "revoada", "mc ", "dj funk", "tropa", "favela", "150bpm", "automotivo"],
+  pagode_samba: ["pagode", "samba", "roda", "pagodinho", "pagodão", "pagodao", "samba de raiz", "partido alto"],
+  eletronica: ["eletronica", "eletrônica", "techno", "house", "trance", "rave", "set ", "open air", "psy"],
+  rock: ["rock", "metal", "hardcore", "punk"],
+  pop_rock: ["pop rock", "indie", "alternativo", "cover"],
+  mpb: ["mpb", "bossa", "samba-canção", "voz e violão"],
+};
+
+const NATIONAL_VENUE_KEYWORDS = ["recinto de exposição", "recinto de exposicoes", "parque de exposições", "parque de exposicoes", "arena", "estádio", "estadio", "ginasio", "ginásio", "anfiteatro"];
+
+const WEEKDAY_NAMES = [
+  ["domingo", "dom"],
+  ["segunda", "seg", "segunda-feira"],
+  ["terca", "ter", "terça", "terca-feira", "terça-feira"],
+  ["quarta", "qua", "quarta-feira"],
+  ["quinta", "qui", "quinta-feira"],
+  ["sexta", "sex", "sexta-feira"],
+  ["sabado", "sab", "sábado"],
+];
+
+const MONTH_NAMES: Record<string, number> = {
+  janeiro: 1, jan: 1,
+  fevereiro: 2, fev: 2,
+  marco: 3, março: 3, mar: 3,
+  abril: 4, abr: 4,
+  maio: 5, mai: 5,
+  junho: 6, jun: 6,
+  julho: 7, jul: 7,
+  agosto: 8, ago: 8,
+  setembro: 9, set: 9,
+  outubro: 10, out: 10,
+  novembro: 11, nov: 11,
+  dezembro: 12, dez: 12,
+};
+
+const systemPrompt = `Você é um extrator de metadados de flyers/banners de eventos da noite brasileira (Presidente Prudente / SP — interior).
+
+Receba a imagem de um flyer e responda APENAS com JSON válido (sem markdown, sem comentários):
 
 {
-  "title": string,            // Título RICO E CONVINCENTE no formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]" SEMPRE EM CAIXA ALTA (máx 80 caracteres). NÃO copie literalmente o texto do flyer; CONSTRUA combinando atração principal + local + frase de desejo. Se não houver local claro, use só "[ATRAÇÃO] [FRASE DE IMPACTO]". VARIE a frase de impacto a cada chamada para que múltiplos flyers do mesmo evento gerem títulos únicos. A frase DEVE nascer do GÊNERO MUSICAL + ARTISTA + LOCAL: sertanejo/modão = resenha, sofrência, modão, violão; eletrônico/DJ = pista, grave, luzes, madrugada; pagode/samba = roda, coro, mesa cheia; funk = baile, grave, bonde; rock = palco, guitarra, energia. Exemplos: "JOÃO MARKOS NO ARAPUCA BAR O MELHOR SERTANEJO DE PRUDENTE COLA COM A GENTE", "DJ VICTOR NA FÁBRICA GASTROBAR PISTA ACESA ATÉ TARDE", "SAMBA DA QUINTA NO BEAR LOUNGE RODA CHEIA E CORO ALTO".
-  "date_iso": string|null,    // Data e hora no formato "YYYY-MM-DDTHH:MM" no fuso de São Paulo. Se não houver horário claro, use 20:00.
-  "venue_name": string|null,  // Nome do local (bar, casa, club). null se não souber.
-  "address": string|null,     // Endereço se aparecer no flyer.
-  "instagram": string|null,   // @handle do organizador/local se aparecer.
-  "category": string,         // OBRIGATÓRIO uma de: show, festival, bar, universitario, restaurante, balada, festa, futebol, cultural, lounge, espetinho
-  "sub_category": string,     // OBRIGATÓRIO uma de: funk, pagode_samba, rock, pop_rock, eletronica, sertanejo, mpb (ou repita a category se não houver gênero musical)
-  "opportunity_tags": string[],// Tags comerciais quando aparecerem: open_bar, double_drink, entrada_free, promocao
-  "ticket_url": null,         // SEMPRE retorne null. Não extraia link de ingresso.
+  "title": string,            // Título RICO em CAIXA ALTA (máx 80). Formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]". NÃO copie literalmente. Sem hífens, dois pontos ou barras. Frase nasce do gênero+artista+local.
+  "date_iso": string|null,    // "YYYY-MM-DDTHH:MM" fuso SP. SEMPRE assuma o ano ${BASE_YEAR} como base. Se não houver horário, use 20:00. Se você tiver MENOS de 80% de certeza sobre a data, retorne null.
+  "date_day": number|null,    // Dia do mês lido no flyer (1-31), independente do ano.
+  "date_month": number|null,  // Mês lido no flyer (1-12).
+  "date_weekday": string|null,// Dia da semana escrito no flyer (sabado, sexta, domingo...). null se não aparecer.
+  "venue_name": string|null,
+  "address": string|null,
+  "instagram": string|null,
+  "category": string,         // show, festival, bar, universitario, restaurante, balada, festa, futebol, cultural, lounge, espetinho
+  "sub_category": string,     // funk, pagode_samba, rock, pop_rock, eletronica, sertanejo, mpb (ou repita category se sem gênero)
+  "opportunity_tags": string[],// open_bar, double_drink, entrada_free, promocao
+  "ticket_url": null,
   "venue_confidence": "high"|"medium"|"low",
+  "genre_confidence": "high"|"medium"|"low", // sua certeza sobre o gênero musical
+  "date_confidence": "high"|"medium"|"low",  // sua certeza sobre a data lida
   "confidence": "high"|"medium"|"low"
 }
 
-🟣 REGRA DE OURO — NATUREZA DO ESTABELECIMENTO PREVALECE SOBRE O EVENTO:
-A category PRINCIPAL deve refletir o TIPO DO LOCAL, não o gênero musical do flyer. O gênero/atração vai sempre para sub_category.
-- Se o nome do local contiver "Gastrobar", "Bar", "Boteco", "Pub", "Choperia" → category="bar" (sub_category = gênero musical, ex: eletronica, pagode_samba, sertanejo)
-- Se o nome do local contiver "Restaurante", "Espetaria", "Espetinho", "Churrascaria" → category="restaurante" ou "espetinho" (sub_category = gênero musical se houver)
-- Se o nome do local contiver "Lounge", "Rooftop" → category="lounge" (sub_category = gênero musical)
-- Se o nome do local contiver "Club", "Balada", "Disco", "Night" → category="balada" (sub_category = gênero musical)
-- Se o nome do local contiver "Arena", "Estádio", "Teatro", "Casa de Show" → category="show" (sub_category = gênero musical)
-EXEMPLOS APLICANDO A REGRA DE OURO:
-- "Fábrica Gastrobar" com DJ de eletrônica → category="bar", sub_category="eletronica" (NUNCA "balada")
-- "Arapuca Bar" com show de pagode → category="bar", sub_category="pagode_samba" (NUNCA "festa")
-- "Bear Lounge" com samba → category="lounge", sub_category="pagode_samba"
-- "Galpão 51" (sem palavra-chave de tipo) com baile funk → category="festa", sub_category="funk"
+📅 REGRA DE CALENDÁRIO REAL (CRÍTICO):
+- Ano padrão: ${BASE_YEAR}.
+- Se o flyer trouxer "Sábado, 15 de Maio", você DEVE conferir mentalmente se 15/05/${BASE_YEAR} cai realmente em Sábado.
+- Se NÃO coincidir, prefira preencher date_day/date_month/date_weekday separadamente e marque date_confidence="low" — o servidor vai recalcular o mês correto onde o dia bate com o weekday.
+- NUNCA "ajuste" a data forçando um mês qualquer só pra fechar — confiança baixa é melhor que data errada.
 
-REGRAS DE TAXONOMIA POR GÊNERO (use APENAS se o nome do local NÃO indicar tipo claro):
-- "samba", "pagode", "roda de samba" → sub_category="pagode_samba" (category default = "festa")
-- "funk", "baile funk", "MC ", "DJ funk" → sub_category="funk"
-- "sertanejo", "modão" → sub_category="sertanejo"
-- "rock", "metal" → sub_category="rock"
-- "pop rock", "indie", "alternativo" → sub_category="pop_rock"
-- "MPB", "bossa", "samba-canção" → sub_category="mpb"
-- "eletrônica", "techno", "house", "trance", "rave" → sub_category="eletronica"
-- "festival", "open air", line-ups com 3+ atrações → category="festival"
-- "universitário", "open bar", "calourada", "atlética" → category="universitario"
-- "futebol", "jogo", "transmissão", "copa", "brasileirão" → category="futebol"
-- "cultural", "exposição", "teatro", "literário", "cineclube", "sarau" → category="cultural"
+🟣 REGRA DE OURO — TIPO DO LOCAL PREVALECE SOBRE GÊNERO:
+A category reflete o TIPO DO ESTABELECIMENTO. Gênero/atração vai em sub_category.
+- "Gastrobar", "Bar", "Boteco", "Pub", "Choperia" → category="bar"
+- "Restaurante", "Espetaria", "Espetinho", "Churrascaria" → "restaurante" ou "espetinho"
+- "Lounge", "Rooftop" → "lounge"
+- "Club", "Balada", "Disco", "Night" → "balada"
+- "Arena", "Estádio", "Teatro", "Casa de Show", "Recinto de Exposições" → "show"
 
-REGRAS DE OPORTUNIDADE:
-- Se aparecer "Open Bar", "open", "bebida liberada" → inclua "open_bar" em opportunity_tags.
-- Se aparecer "Double Drink", "drink em dobro", "dobrado" → inclua "double_drink".
-- Se aparecer "entrada free", "free até", "entrada gratuita" → inclua "entrada_free".
-- Se aparecer preço promocional, combo, cupom ou desconto claro → inclua "promocao".
+🧬 DNA DO PARCEIRO:
+Você receberá uma lista de parceiros verificados com TIPO e GÊNERO BASE. Se o local do flyer bater com um parceiro, use a categoria/gênero DELE como padrão. Só altere se houver palavra MUITO forte do gênero contrário no flyer (ex: "Noite do Rock" em bar de sertanejo).
 
-OUTRAS REGRAS:
-- BANIMENTO ABSOLUTO NO TITLE: nunca use "IMPERDÍVEL", "SEXTA INSANA", "SÁBADO IMPERDÍVEL" nem variações genéricas como "NOITE IMPERDÍVEL", "ROLÊ IMPERDÍVEL", "VIBE INSANA", "NOITE INESQUECÍVEL", "EXPERIÊNCIA ÚNICA", "SE PREPARA".
-- PARCEIROS VERIFICADOS: compare o nome do local lido no flyer com a lista de parceiros verificados enviada pelo sistema. Se houver dúvida entre criar um local novo e usar um parceiro cadastrado, priorize o parceiro verificado mais parecido.
-- REGRA DE HORÁRIO: se o flyer trouxer data mas não mostrar horário claro, defina automaticamente 20:00 no date_iso.
-- PRECISÃO DE DATA: se o flyer disser dia da semana + número do dia e houver conflito (ex: "Sábado, 25" mas 25 cai em domingo), priorize o número 25 e ajuste o dia da semana mentalmente; nunca troque o número do dia para satisfazer o texto do weekday.
-- "title": SEMPRE em CAIXA ALTA. PROIBIDO usar hífens (-), travessões (—, –), dois pontos (:), barras (/) ou QUALQUER símbolo de separação. Use apenas ESPAÇOS entre as partes. Formato: "ATRAÇÃO NO LOCAL FRASE DE IMPACTO". Máx 80 caracteres, sem aspas decorativas. VARIE a frase de impacto usando artista, gênero e local.
-- Se o flyer disser "SÁBADO 22/11 23H", devolva date_iso baseado no ano corrente.
-- "ticket_url": SEMPRE null. Nunca extraia link de ingresso.
-- "venue_name": só preencha se tiver razoável certeza do nome do local.
-- NUNCA invente endereço, parceiro ou link.
-- Resposta DEVE ser JSON puro.`;
+🎵 DICIONÁRIO DE GÊNEROS (Prudente):
+- Sertanejo: modão, boteco, violada, viola, agro, raiz, sofrência
+- Funk/Mega: baile, fluxo, mandela, revoada, automotivo, tropa, MC
+- Pagode/Samba: samba, roda, pagodinho, pagodão, partido alto
+- Eletrônico: techno, house, set, rave, open air, psy
+- Rock: rock, metal, hardcore
+- MPB: bossa, voz e violão
+
+🎤 BAR vs SHOW:
+- BAR: atração local, dupla pequena, nome regional, formato resenha.
+- SHOW: artista de relevância nacional/regional GRANDE, OU recinto de exposições / arena / parque / casa de show.
+
+⛔ PROIBIDO no title: IMPERDÍVEL, INSANA, NOITE INESQUECÍVEL, EXPERIÊNCIA ÚNICA, SE PREPARA, VIBE INSANA.
+⛔ Sem hífens (-), travessões (—, –), dois pontos (:), barras (/) ou pipes (|) no title — só ESPAÇOS.
+⛔ ticket_url: SEMPRE null.
+⛔ NUNCA invente endereço/parceiro/link.
+
+🔒 SEGURANÇA: se a sua certeza for menor que 80% sobre data ou gênero, prefira null/medium-low. Marcação humana é melhor que dado falso.`;
 
 function safeJson(text: string): any {
   let t = text.trim();
-  // strip code fences if model added them
   t = t.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
   try { return JSON.parse(t); } catch {}
-  // try to find first {...}
   const m = t.match(/\{[\s\S]*\}/);
-  if (m) {
-    try { return JSON.parse(m[0]); } catch {}
-  }
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
   return null;
 }
 
@@ -107,6 +142,77 @@ function normText(value: unknown): string {
   return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
+function parseWeekday(value: unknown): number | null {
+  const v = normText(value);
+  if (!v) return null;
+  for (let i = 0; i < WEEKDAY_NAMES.length; i++) {
+    if (WEEKDAY_NAMES[i].some((w) => v.startsWith(w) || v === w)) return i; // 0=dom..6=sab
+  }
+  return null;
+}
+
+/**
+ * 📅 V4 — Calendário Real
+ * Dada day/month (lidos do flyer) + weekday declarado, encontra a data real mais próxima
+ * em BASE_YEAR onde dia+mês+weekday batem. Se não bater no mês declarado, varre os próximos
+ * 12 meses procurando o primeiro mês onde o dia X cai no weekday Y.
+ */
+function resolveCalendarDate(opts: {
+  day: number | null;
+  month: number | null;
+  weekday: number | null;
+  baseYear: number;
+}): { date: string | null; reason: string | null } {
+  const { day, month, weekday, baseYear } = opts;
+  if (!day || day < 1 || day > 31) return { date: null, reason: null };
+
+  // Sem weekday → confia no mês declarado
+  if (weekday === null) {
+    if (!month) return { date: null, reason: null };
+    const d = new Date(Date.UTC(baseYear, month - 1, day));
+    if (d.getUTCMonth() + 1 !== month) return { date: null, reason: "dia inválido para o mês" };
+    return { date: `${baseYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`, reason: null };
+  }
+
+  // Com weekday → valida ou procura próximo mês onde bate
+  const candidates: Array<{ y: number; m: number }> = [];
+  if (month) candidates.push({ y: baseYear, m: month });
+  // varrer próximos 14 meses a partir de hoje
+  const now = new Date();
+  const startMonth = now.getUTCFullYear() === baseYear ? now.getUTCMonth() + 1 : 1;
+  for (let i = 0; i < 14; i++) {
+    const m = ((startMonth - 1 + i) % 12) + 1;
+    const y = baseYear + Math.floor((startMonth - 1 + i) / 12);
+    if (!candidates.some((c) => c.y === y && c.m === m)) candidates.push({ y, m });
+  }
+
+  for (const { y, m } of candidates) {
+    const d = new Date(Date.UTC(y, m - 1, day));
+    if (d.getUTCMonth() + 1 !== m) continue; // dia inválido (31 de fev etc)
+    if (d.getUTCDay() === weekday) {
+      const reason = month && m !== month
+        ? `Mês ajustado: ${day}/${String(month).padStart(2, "0")} não cai em ${WEEKDAY_NAMES[weekday][0]} em ${baseYear}; usado ${day}/${String(m).padStart(2, "0")}/${y}.`
+        : null;
+      return { date: `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`, reason };
+    }
+  }
+
+  return { date: null, reason: "Nenhum mês compatível encontrado para dia+weekday" };
+}
+
+function detectGenreFromText(text: string): { sub: string | null; confidence: "high" | "medium" | "low" } {
+  const t = normText(text);
+  let bestSub: string | null = null;
+  let bestHits = 0;
+  for (const [sub, kws] of Object.entries(GENRE_KEYWORDS)) {
+    const hits = kws.reduce((acc, k) => acc + (t.includes(k) ? 1 : 0), 0);
+    if (hits > bestHits) { bestHits = hits; bestSub = sub; }
+  }
+  if (bestHits === 0) return { sub: null, confidence: "low" };
+  if (bestHits >= 2) return { sub: bestSub, confidence: "high" };
+  return { sub: bestSub, confidence: "medium" };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -120,12 +226,16 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const year = current_year || new Date().getFullYear();
+    const year = current_year || BASE_YEAR;
 
     const verifiedPartnersText = Array.isArray(verified_partners) && verified_partners.length
       ? verified_partners
           .slice(0, 80)
-          .map((p: any) => `- ${p?.name || ""}${p?.instagram ? ` (${p.instagram})` : ""}${p?.address ? ` — ${p.address}` : ""}`)
+          .map((p: any) => {
+            const dna = [p?.type ? `tipo=${p.type}` : null, p?.sub_category ? `gênero base=${p.sub_category}` : null]
+              .filter(Boolean).join(", ");
+            return `- ${p?.name || ""}${p?.instagram ? ` (${p.instagram})` : ""}${p?.address ? ` — ${p.address}` : ""}${dna ? `  [DNA: ${dna}]` : ""}`;
+          })
           .join("\n")
       : "Nenhum parceiro verificado enviado.";
 
@@ -142,12 +252,12 @@ serve(async (req) => {
           {
             role: "user",
             content: [
-              { type: "text", text: `Extraia os metadados deste flyer. Ano corrente: ${year}. Parceiros verificados para comparação:\n${verifiedPartnersText}\nResponda apenas o JSON.` },
+              { type: "text", text: `Extraia metadados deste flyer. Ano base: ${year}. Use o DNA dos parceiros para definir categoria/gênero quando o local bater. Parceiros verificados:\n${verifiedPartnersText}\n\nResponda apenas JSON.` },
               { type: "image_url", image_url: { url: image_url } },
             ],
           },
         ],
-        temperature: 0.7,
+        temperature: 0.6,
       }),
     });
 
@@ -175,56 +285,22 @@ serve(async (req) => {
       });
     }
 
-    // sanitize
+    // ============== Sanitização base ==============
     let cat = ALLOWED_CATEGORIES.includes(parsed.category) ? parsed.category : "festa";
     const subRaw = typeof parsed.sub_category === "string" && parsed.sub_category ? parsed.sub_category : cat;
     let sub = ALLOWED_SUBS.includes(subRaw) ? subRaw : cat;
-    const textForTags = normText(`${raw} ${parsed.title || ""} ${parsed.description || ""}`);
+
+    const fullText = normText(`${raw} ${parsed.title || ""} ${parsed.description || ""} ${parsed.venue_name || ""}`);
+
+    // ============== Tags comerciais ==============
     const aiTags = Array.isArray(parsed.opportunity_tags) ? parsed.opportunity_tags : [];
     const tags = new Set<string>(aiTags.filter((t: unknown) => typeof t === "string"));
-    if (/open bar|bebida liberada|\bopen\b/.test(textForTags)) tags.add("open_bar");
-    if (/double drink|drink em dobro|dobrado/.test(textForTags)) tags.add("double_drink");
-    if (/entrada free|free ate|entrada gratuita/.test(textForTags)) tags.add("entrada_free");
-    if (/promocao|combo|cupom|desconto/.test(textForTags)) tags.add("promocao");
+    if (/open bar|bebida liberada|\bopen\b/.test(fullText)) tags.add("open_bar");
+    if (/double drink|drink em dobro|dobrado/.test(fullText)) tags.add("double_drink");
+    if (/entrada free|free ate|entrada gratuita/.test(fullText)) tags.add("entrada_free");
+    if (/promocao|combo|cupom|desconto/.test(fullText)) tags.add("promocao");
 
-    // 🟣 REGRA DE OURO server-side: nome do local prevalece sobre gênero do flyer
-    let category_override_reason: string | null = null;
-    const venueRaw: string = (parsed.venue_name || "").toString();
-    const venueLower = venueRaw.toLowerCase();
-    const venueMap: Array<{ keys: string[]; cat: string; label: string }> = [
-      { keys: ["gastrobar", "boteco", "choperia", "pub", " bar ", "bar "], cat: "bar", label: "Bar / Gastrobar" },
-      { keys: ["restaurante", "churrascaria"], cat: "restaurante", label: "Restaurante" },
-      { keys: ["espetaria", "espetinho"], cat: "espetinho", label: "Espetaria / Espetinho" },
-      { keys: ["lounge", "rooftop"], cat: "lounge", label: "Lounge" },
-      { keys: ["arena", "estádio", "estadio", "teatro", "casa de show"], cat: "show", label: "Casa de show / Arena" },
-      { keys: ["club", "balada", "disco", "night"], cat: "balada", label: "Club / Balada" },
-    ];
-    if (venueLower) {
-      // pad with spaces to make " bar " match correctly
-      const padded = ` ${venueLower} `;
-      for (const rule of venueMap) {
-        if (rule.keys.some(k => padded.includes(k))) {
-          if (cat !== rule.cat) {
-            // se IA disse "balada/festa/show" mas o local é bar/restaurante/lounge → override
-            const musicCats = new Set(["balada", "festa", "show"]);
-            if (musicCats.has(cat) || cat === "festa") {
-              // mover gênero para sub_category se ainda não estiver
-              const genreSubs = new Set(["funk", "pagode_samba", "rock", "pop_rock", "eletronica", "sertanejo", "mpb"]);
-              if (!genreSubs.has(sub)) {
-                // tentar inferir gênero do sub atual ou da categoria original
-                if (cat === "balada") sub = "eletronica";
-                else if (cat === "festa") sub = sub === "festa" ? "eletronica" : sub;
-                else if (cat === "show") sub = sub === "show" ? "mpb" : sub;
-              }
-              category_override_reason = `Local identificado como ${rule.label}`;
-              cat = rule.cat;
-            }
-          }
-          break;
-        }
-      }
-    }
-
+    // ============== 🧬 DNA do parceiro ==============
     const venueNorm = normText(parsed.venue_name);
     const verifiedMatch = Array.isArray(verified_partners)
       ? verified_partners.find((p: any) => {
@@ -232,38 +308,162 @@ serve(async (req) => {
           return name.length >= 4 && venueNorm && (venueNorm.includes(name) || name.includes(venueNorm));
         })
       : null;
-    if (verifiedMatch?.name) {
-      parsed.venue_name = verifiedMatch.name;
+
+    let dna_applied: string | null = null;
+    if (verifiedMatch) {
+      parsed.venue_name = verifiedMatch.name || parsed.venue_name;
       parsed.address = verifiedMatch.address || parsed.address || null;
       parsed.instagram = verifiedMatch.instagram || parsed.instagram || null;
+
+      // Aplica DNA: tipo do parceiro vira category, sub_category vira gênero base
+      const partnerType: string = normText(verifiedMatch.type);
+      const partnerSub: string = normText(verifiedMatch.sub_category);
+
+      // Mapa tipo do parceiro -> category
+      const typeToCat: Record<string, string> = {
+        "bar": "bar", "pub": "bar", "boteco": "bar", "choperia": "bar", "gastrobar": "bar",
+        "balada": "balada", "club": "balada",
+        "lounge": "lounge",
+        "restaurante": "restaurante", "churrascaria": "restaurante",
+        "espetinho": "espetinho", "espetaria": "espetinho",
+        "casa de shows": "show", "casa de show": "show", "arena": "show", "teatro": "show",
+        "universitario": "universitario",
+        "cultural": "cultural",
+      };
+      const dnaCat = typeToCat[partnerType] || null;
+
+      // Detecta gênero forte do flyer pra ver se a IA pode override do DNA
+      const detected = detectGenreFromText(fullText);
+      const strongGenreOverride = detected.confidence === "high" && detected.sub && detected.sub !== partnerSub;
+
+      if (dnaCat) {
+        cat = dnaCat;
+        dna_applied = `Categoria do parceiro (${verifiedMatch.name})`;
+      }
+      if (partnerSub && GENRE_SUBS.has(partnerSub) && !strongGenreOverride) {
+        sub = partnerSub;
+        dna_applied = `${dna_applied || "DNA"} + gênero base ${partnerSub}`;
+      } else if (strongGenreOverride && detected.sub) {
+        sub = detected.sub;
+        dna_applied = `${dna_applied || "DNA"} sobreposto por gênero forte do flyer (${detected.sub})`;
+      }
     }
 
-    // título: remover hífens, travessões, dois pontos, barras (regra "sem traços")
+    // ============== 🟣 Override por palavra-chave do venue (fallback se sem DNA) ==============
+    let category_override_reason: string | null = dna_applied;
+    if (!verifiedMatch) {
+      const venueLower = (parsed.venue_name || "").toString().toLowerCase();
+      const venueMap: Array<{ keys: string[]; cat: string; label: string }> = [
+        { keys: ["gastrobar", "boteco", "choperia", "pub", " bar ", "bar "], cat: "bar", label: "Bar / Gastrobar" },
+        { keys: ["restaurante", "churrascaria"], cat: "restaurante", label: "Restaurante" },
+        { keys: ["espetaria", "espetinho"], cat: "espetinho", label: "Espetaria / Espetinho" },
+        { keys: ["lounge", "rooftop"], cat: "lounge", label: "Lounge" },
+        { keys: ["arena", "estádio", "estadio", "teatro", "casa de show", "recinto"], cat: "show", label: "Casa de show / Arena / Recinto" },
+        { keys: ["club", "balada", "disco", "night"], cat: "balada", label: "Club / Balada" },
+      ];
+      if (venueLower) {
+        const padded = ` ${venueLower} `;
+        for (const rule of venueMap) {
+          if (rule.keys.some((k) => padded.includes(k))) {
+            if (cat !== rule.cat) {
+              const musicCats = new Set(["balada", "festa", "show"]);
+              if (musicCats.has(cat)) {
+                if (!GENRE_SUBS.has(sub)) {
+                  if (cat === "balada") sub = "eletronica";
+                  else if (cat === "show") sub = "mpb";
+                }
+                category_override_reason = `Local identificado como ${rule.label}`;
+                cat = rule.cat;
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // ============== 🎤 BAR vs SHOW (recinto / nacional) ==============
+    if (cat === "bar" || cat === "festa") {
+      if (NATIONAL_VENUE_KEYWORDS.some((k) => fullText.includes(k))) {
+        cat = "show";
+        category_override_reason = `${category_override_reason || ""} | Recinto de exposições/arena detectado → SHOW`.trim();
+      }
+    }
+
+    // ============== 📅 Calendário Real V4 ==============
+    let dateIso: string | null = ensureDefaultTime(parsed.date_iso);
+    let date_validation_note: string | null = null;
+    let date_needs_review = false;
+
+    const aiDay = Number(parsed.date_day) || null;
+    const aiMonth = Number(parsed.date_month) || null;
+    const weekdayIdx = parseWeekday(parsed.date_weekday);
+
+    if (aiDay) {
+      const resolved = resolveCalendarDate({ day: aiDay, month: aiMonth, weekday: weekdayIdx, baseYear: BASE_YEAR });
+      if (resolved.date) {
+        // preserva hora declarada pela IA (se houver) ou 20:00
+        const hourMatch = (parsed.date_iso || "").toString().match(/T(\d{1,2}):?(\d{2})?/);
+        const hh = hourMatch ? hourMatch[1].padStart(2, "0") : "20";
+        const mm = hourMatch && hourMatch[2] ? hourMatch[2] : "00";
+        dateIso = `${resolved.date}T${hh}:${mm}`;
+        if (resolved.reason) {
+          date_validation_note = resolved.reason;
+        }
+      } else if (resolved.reason) {
+        date_validation_note = resolved.reason;
+        date_needs_review = true;
+        dateIso = null;
+      }
+    }
+
+    // Confiança baixa da IA → marcar para revisão
+    const dateConf = String(parsed.date_confidence || parsed.confidence || "medium").toLowerCase();
+    if (dateConf === "low") {
+      date_needs_review = true;
+    }
+
+    // ============== 🔒 Gênero com confiança baixa → REVISAR ==============
+    const genreConf = String(parsed.genre_confidence || "medium").toLowerCase();
+    let genre_needs_review = false;
+    if (genreConf === "low" && !verifiedMatch) {
+      // sem DNA E sem certeza do flyer → pedir revisão (mantém sub mas sinaliza)
+      const detected = detectGenreFromText(fullText);
+      if (detected.confidence === "low") {
+        genre_needs_review = true;
+      } else if (detected.sub) {
+        sub = detected.sub;
+      }
+    }
+
+    // ============== Título: limpeza ==============
     let title: string = (parsed.title || "").toString();
     title = title
-      .replace(/\s*[—–-]\s*/g, " ")  // hifens e travessões
-      .replace(/\s*[:\/|]\s*/g, " ") // dois pontos, barras, pipes
+      .replace(/\s*[—–-]\s*/g, " ")
+      .replace(/\s*[:\/|]\s*/g, " ")
       .replace(/\b(?:IMPERD[IÍ]VEL|SEXTA INSANA|S[ÁA]BADO IMPERD[IÍ]VEL|NOITE IMPERD[IÍ]VEL|ROL[ÊE] IMPERD[IÍ]VEL|VIBE INSANA|NOITE INESQUEC[IÍ]VEL|EXPERI[ÊE]NCIA [ÚU]NICA|SE PREPARA)\b/gi, "")
       .replace(/\s+/g, " ")
       .trim()
       .toUpperCase();
 
-    // ticket_url: forçado null (regra de negócio: lote nunca extrai link)
-    const ticketUrl = null;
-
     return new Response(JSON.stringify({
       title,
-      date_iso: ensureDefaultTime(parsed.date_iso),
+      date_iso: dateIso,
+      date_needs_review,
+      date_validation_note,
       venue_name: parsed.venue_name || null,
       venue_confidence: parsed.venue_confidence || "low",
       address: parsed.address || null,
       instagram: parsed.instagram || null,
       category: cat,
       sub_category: sub,
+      genre_needs_review,
+      genre_confidence: genreConf,
       opportunity_tags: Array.from(tags).filter((t) => ["open_bar", "double_drink", "entrada_free", "promocao"].includes(t)),
-      ticket_url: ticketUrl,
+      ticket_url: null,
       confidence: parsed.confidence || "medium",
       category_override_reason,
+      dna_applied,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
