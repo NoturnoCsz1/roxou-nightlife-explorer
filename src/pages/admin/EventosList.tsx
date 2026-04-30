@@ -407,28 +407,49 @@ const EventosList = () => {
             : <Square className="h-4 w-4 text-muted-foreground" />}
         </button>
         <div className="min-w-0 flex-1 space-y-1">
-          <input
-            value={quickEdits[e.id]?.title ?? e.title ?? ""}
-            onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: ev.target.value, date_time: prev[e.id]?.date_time ?? e.date_time.slice(0, 16) } }))}
-            onBlur={() => saveQuickEdit(e)}
-            placeholder="Título do evento"
-            className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
-          />
+          <div className="flex items-center gap-1">
+            <input
+              value={quickEdits[e.id]?.title ?? e.title ?? ""}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: ev.target.value, date_time: prev[e.id]?.date_time ?? isoToSpLocal(e.date_time), venue_name: prev[e.id]?.venue_name ?? (e.venue_name ?? "") } }))}
+              onBlur={() => saveQuickEdit(e)}
+              placeholder="Título do evento"
+              className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
+            />
+            <Link to={`/admin/eventos/${e.id}`} className="shrink-0 p-1 rounded hover:bg-primary/10 text-primary" title="Abrir edição completa">
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className={`${categoryBadge[e.category] || "bg-secondary"} rounded px-1.5 py-0.5 text-[9px] font-bold uppercase`}>
               {getCategoryLabel(e.category, e.sub_category)}
             </span>
             <input
               type="datetime-local"
-              value={quickEdits[e.id]?.date_time ?? e.date_time.slice(0, 16)}
-              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: ev.target.value } }))}
+              value={quickEdits[e.id]?.date_time ?? isoToSpLocal(e.date_time)}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: ev.target.value, venue_name: prev[e.id]?.venue_name ?? (e.venue_name ?? "") } }))}
               onBlur={() => saveQuickEdit(e)}
               className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground"
             />
-            {e.venue_name && <span className="text-[10px] text-muted-foreground">• {e.venue_name}</span>}
+            <input
+              value={quickEdits[e.id]?.venue_name ?? (e.venue_name ?? "")}
+              onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: prev[e.id]?.title ?? e.title, date_time: prev[e.id]?.date_time ?? isoToSpLocal(e.date_time), venue_name: ev.target.value } }))}
+              onBlur={() => saveQuickEdit(e)}
+              placeholder="Local"
+              className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground min-w-[100px]"
+            />
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
               {e.status === "published" ? "Publicado" : "Rascunho"}
             </span>
+            {isAiOrigin(e) && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-0.5">
+                <Sparkles className="h-2.5 w-2.5" /> IA
+              </span>
+            )}
+            {needsReview(e) && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5">
+                <AlertTriangle className="h-2.5 w-2.5" /> Revisar
+              </span>
+            )}
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
