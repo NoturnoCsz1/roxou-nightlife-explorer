@@ -9,6 +9,7 @@ import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre, getCategoryLabel } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
+import { isoToSpLocal } from "@/lib/dateUtils";
 
 type Partner = Tables<"partners">;
 
@@ -150,17 +151,7 @@ const EventoForm = () => {
       return;
     }
 
-    let localDateTime = "";
-    if (data.date_time) {
-      const d = new Date(data.date_time);
-      const parts = new Intl.DateTimeFormat("sv-SE", {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit",
-        timeZone: "America/Sao_Paulo", hour12: false,
-      }).formatToParts(d);
-      const get = (type: string) => parts.find(p => p.type === type)?.value || "";
-      localDateTime = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
-    }
+    const localDateTime = isoToSpLocal(data.date_time);
 
     setForm({
       title: data.title, slug: data.slug,
