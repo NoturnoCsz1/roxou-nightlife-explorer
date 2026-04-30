@@ -145,7 +145,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at, verification_source")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -215,12 +215,18 @@ const EventosList = () => {
     const draft = quickEdits[e.id];
     if (!draft) return;
     const nextTitle = normalizeAiTitle(draft.title);
-    const nextDate = draft.date_time ? new Date(draft.date_time).toISOString() : e.date_time;
-    if (nextTitle === e.title && nextDate === e.date_time) return;
+    // Persist datetime-local as São Paulo wall-clock — never use new Date().toISOString()
+    // because it would shift by the browser's UTC offset.
+    const nextDate = draft.date_time ? spLocalToISO(draft.date_time) : e.date_time;
+    const nextVenue = (draft.venue_name ?? e.venue_name ?? "").trim();
+    const venueChanged = nextVenue !== (e.venue_name || "").trim();
+    if (nextTitle === e.title && nextDate === e.date_time && !venueChanged) return;
     if (nextTitle.length < 5) { toast.error("Título precisa ter pelo menos 5 caracteres."); return; }
-    const { error } = await supabase.from("events").update({ title: nextTitle, date_time: nextDate }).eq("id", e.id);
+    const patch: Record<string, unknown> = { title: nextTitle, date_time: nextDate };
+    if (venueChanged) patch.venue_name = nextVenue || null;
+    const { error } = await supabase.from("events").update(patch).eq("id", e.id);
     if (error) { toast.error("Erro ao salvar edição rápida."); return; }
-    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: nextTitle, date_time: nextDate } : x));
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, title: nextTitle, date_time: nextDate, venue_name: venueChanged ? (nextVenue || null) : x.venue_name } : x));
     toast.success("Edição rápida salva");
   }
 
