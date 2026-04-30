@@ -617,8 +617,19 @@ const EventosList = () => {
             <option value="sem-parceiro">Sem parceiro</option>
             {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
-          <button type="button" className="hidden sm:flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-[10px] font-bold uppercase text-primary">
-            <CalendarDays className="h-3.5 w-3.5" /> Ordenação fixa
+          <select value={originFilter} onChange={(e) => setOriginFilter(e.target.value as OriginFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
+            <option value="todos">Origem: Todas</option>
+            <option value="ai">Criados por IA</option>
+            <option value="manual">Criados Manualmente</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setOnlyNeedsReview(!onlyNeedsReview)}
+            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${onlyNeedsReview ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/40" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
+          >
+            <AlertTriangle className="h-3 w-3" /> Eventos com erro de IA
           </button>
         </div>
       </div>
