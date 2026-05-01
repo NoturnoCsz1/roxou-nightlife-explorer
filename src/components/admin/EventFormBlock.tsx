@@ -127,7 +127,7 @@ const EventFormBlock = ({ index, form, partners, onChange, onRemove, showRemove,
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Data e Hora *</label>
-            <input type="datetime-local" className={inputClass} value={form.date_time} onChange={(e) => handleChange("date_time", e.target.value)} />
+            <DateTimePickerSP value={form.date_time} onChange={(v) => handleChange("date_time", v)} />
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
