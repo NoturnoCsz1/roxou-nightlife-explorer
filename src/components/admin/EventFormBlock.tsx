@@ -4,6 +4,7 @@ import * as DOMPurifyNS from "dompurify";
 const DOMPurify: any = (DOMPurifyNS as any).default ?? DOMPurifyNS;
 import type { Tables } from "@/integrations/supabase/types";
 import ImageUpload from "@/components/admin/ImageUpload";
+import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
