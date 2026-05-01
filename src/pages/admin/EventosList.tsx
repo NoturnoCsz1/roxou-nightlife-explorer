@@ -615,6 +615,7 @@ const EventosList = () => {
         </div>
       )}
 
+      <div className="sticky top-0 z-30 -mx-2 px-2 pt-2 pb-2 space-y-2 bg-background/85 backdrop-blur-xl border-b border-border/40">
       <div className="rounded-2xl border border-border/40 bg-card/80 p-3 space-y-2 backdrop-blur-xl">
         <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/70 px-3 py-2">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -624,7 +625,9 @@ const EventosList = () => {
             placeholder="Buscar por título, slug, ID ou local..."
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
-          <span className="hidden sm:inline text-[10px] font-bold text-muted-foreground whitespace-nowrap">Criados recentemente primeiro</span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase whitespace-nowrap rounded-md bg-primary/15 text-primary px-2 py-1">
+            <CalendarDays className="h-3 w-3" /> Hoje: {totalTodayCount}
+          </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
