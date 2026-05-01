@@ -321,8 +321,14 @@ const EventosList = () => {
     }
   }
 
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  // 🕒 Trava de timezone — sempre comparamos via São Paulo, nunca via toISOString puro.
+  const todayStr = getTodayStrSP();
+  const weekEndStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return getDateStrSP(d);
+  })();
+  const eventDayStr = (e: EventRow) => (e.date_time ? getDateStrSP(new Date(e.date_time)) : "");
 
   const filtered = events
     .filter((e) => {
@@ -335,13 +341,11 @@ const EventosList = () => {
     .filter((e) => activePartner === "todos" || (activePartner === "sem-parceiro" ? !e.partner_id : e.partner_id === activePartner))
     .filter((e) => {
       if (activeDateFilter === "todos") return true;
-      const eventDay = e.date_time.slice(0, 10);
+      const eventDay = eventDayStr(e);
       if (activeDateFilter === "hoje") return eventDay === todayStr;
       if (activeDateFilter === "futuros") return eventDay > todayStr;
       if (activeDateFilter === "passados") return eventDay < todayStr;
-      const weekEnd = new Date(now);
-      weekEnd.setDate(now.getDate() + 7);
-      return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
+      return eventDay >= todayStr && eventDay <= weekEndStr;
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
     .filter((e) => !onlyNeedsReview || needsReview(e))
@@ -353,9 +357,12 @@ const EventosList = () => {
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
-  const todayEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) === todayStr);
-  const upcomingEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) > todayStr);
-  const pastEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) < todayStr);
+  const todayEvents = visibleFiltered.filter((e) => eventDayStr(e) === todayStr);
+  const upcomingEvents = visibleFiltered.filter((e) => eventDayStr(e) > todayStr);
+  const pastEvents = visibleFiltered.filter((e) => eventDayStr(e) < todayStr);
+
+  // Counter for header (sobre todos os eventos, não só os filtrados)
+  const totalTodayCount = events.filter((e) => eventDayStr(e) === todayStr).length;
 
   const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"] as const;
   const categoryCounts = CATEGORIES.map((c) => ({
