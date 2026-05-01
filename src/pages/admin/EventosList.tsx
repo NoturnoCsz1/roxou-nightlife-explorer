@@ -512,7 +512,7 @@ const EventosList = () => {
             </>
           )}
           <Link
-            to={`/admin/eventos/${e.id}/editar`}
+            to={getEventEditPath(e.id)}
             className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition"
             title="Editar tudo (formulário completo)"
           >
