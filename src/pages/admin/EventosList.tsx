@@ -321,14 +321,16 @@ const EventosList = () => {
     }
   }
 
-  // 🕒 Trava de timezone — sempre comparamos via São Paulo, nunca via toISOString puro.
-  const todayStr = getTodayStrSP();
+  // 🕒 Trava de timezone — sempre comparamos via São Paulo (sv-SE → YYYY-MM-DD), nunca via toISOString puro.
+  const spDateStr = (d: Date) =>
+    new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Sao_Paulo" }).format(d);
+  const todayStr = spDateStr(new Date());
   const weekEndStr = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return getDateStrSP(d);
+    return spDateStr(d);
   })();
-  const eventDayStr = (e: EventRow) => (e.date_time ? getDateStrSP(new Date(e.date_time)) : "");
+  const eventDayStr = (e: EventRow) => (e.date_time ? spDateStr(new Date(e.date_time)) : "");
 
   const filtered = events
     .filter((e) => {
