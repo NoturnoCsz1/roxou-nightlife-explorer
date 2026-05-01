@@ -10,6 +10,7 @@ import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre, getCategoryLa
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { isoToSpLocal } from "@/lib/dateUtils";
+import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
 
 type Partner = Tables<"partners">;
 
