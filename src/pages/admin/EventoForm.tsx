@@ -10,6 +10,7 @@ import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre, getCategoryLa
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { isoToSpLocal } from "@/lib/dateUtils";
+import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
 
 type Partner = Tables<"partners">;
 
@@ -391,7 +392,7 @@ const EventoForm = () => {
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Data e Hora *</label>
-              <input type="datetime-local" className={inputClass} value={form.date_time} onChange={(e) => handleChange("date_time", e.target.value)} />
+              <DateTimePickerSP value={form.date_time} onChange={(v) => handleChange("date_time", v)} />
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
