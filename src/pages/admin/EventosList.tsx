@@ -507,6 +507,14 @@ const EventosList = () => {
               </button>
             </>
           )}
+          <Link
+            to={`/admin/eventos/${e.id}`}
+            className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition"
+            title="Editar tudo (formulário completo)"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">Editar Tudo</span>
+          </Link>
           <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
             <Copy className="h-4 w-4 text-muted-foreground" />
           </button>
