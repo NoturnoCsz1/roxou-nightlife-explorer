@@ -41,6 +41,10 @@ interface EventRow {
   verification_source: string | null;
 }
 
+// Centralized route builder for the full event edit form.
+// Use this everywhere instead of hardcoding paths to avoid divergences.
+export const getEventEditPath = (id: string) => `/admin/eventos/${id}/editar`;
+
 type OriginFilter = "todos" | "ai" | "manual";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
