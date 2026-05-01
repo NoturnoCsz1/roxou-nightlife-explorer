@@ -429,7 +429,7 @@ const EventosList = () => {
               className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
             />
             <Link
-              to={`/admin/eventos/${e.id}/editar`}
+              to={getEventEditPath(e.id)}
               className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/25 transition"
               title="Abrir edição completa do evento"
             >
