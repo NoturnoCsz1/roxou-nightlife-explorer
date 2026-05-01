@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Layers, Loader2, MousePointerClick, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Layers, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -321,8 +321,16 @@ const EventosList = () => {
     }
   }
 
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  // 🕒 Trava de timezone — sempre comparamos via São Paulo (sv-SE → YYYY-MM-DD), nunca via toISOString puro.
+  const spDateStr = (d: Date) =>
+    new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Sao_Paulo" }).format(d);
+  const todayStr = spDateStr(new Date());
+  const weekEndStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return spDateStr(d);
+  })();
+  const eventDayStr = (e: EventRow) => (e.date_time ? spDateStr(new Date(e.date_time)) : "");
 
   const filtered = events
     .filter((e) => {
@@ -335,13 +343,11 @@ const EventosList = () => {
     .filter((e) => activePartner === "todos" || (activePartner === "sem-parceiro" ? !e.partner_id : e.partner_id === activePartner))
     .filter((e) => {
       if (activeDateFilter === "todos") return true;
-      const eventDay = e.date_time.slice(0, 10);
+      const eventDay = eventDayStr(e);
       if (activeDateFilter === "hoje") return eventDay === todayStr;
       if (activeDateFilter === "futuros") return eventDay > todayStr;
       if (activeDateFilter === "passados") return eventDay < todayStr;
-      const weekEnd = new Date(now);
-      weekEnd.setDate(now.getDate() + 7);
-      return eventDay >= todayStr && eventDay <= weekEnd.toISOString().slice(0, 10);
+      return eventDay >= todayStr && eventDay <= weekEndStr;
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
     .filter((e) => !onlyNeedsReview || needsReview(e))
@@ -353,9 +359,12 @@ const EventosList = () => {
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
-  const todayEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) === todayStr);
-  const upcomingEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) > todayStr);
-  const pastEvents = visibleFiltered.filter((e) => e.date_time.slice(0, 10) < todayStr);
+  const todayEvents = visibleFiltered.filter((e) => eventDayStr(e) === todayStr);
+  const upcomingEvents = visibleFiltered.filter((e) => eventDayStr(e) > todayStr);
+  const pastEvents = visibleFiltered.filter((e) => eventDayStr(e) < todayStr);
+
+  // Counter for header (sobre todos os eventos, não só os filtrados)
+  const totalTodayCount = events.filter((e) => eventDayStr(e) === todayStr).length;
 
   const CATEGORIES = ["balada", "show", "bar", "festival", "sertanejo", "funk", "eletronica", "festa"] as const;
   const categoryCounts = CATEGORIES.map((c) => ({
@@ -415,8 +424,13 @@ const EventosList = () => {
               placeholder="Título do evento"
               className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
             />
-            <Link to={`/admin/eventos/${e.id}`} className="shrink-0 p-1 rounded hover:bg-primary/10 text-primary" title="Abrir edição completa">
-              <ExternalLink className="h-3 w-3" />
+            <Link
+              to={`/admin/eventos/${e.id}`}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/25 transition"
+              title="Abrir edição completa do evento"
+            >
+              <Pencil className="h-3 w-3" />
+              <span className="hidden sm:inline">Editar</span>
             </Link>
           </div>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -493,6 +507,14 @@ const EventosList = () => {
               </button>
             </>
           )}
+          <Link
+            to={`/admin/eventos/${e.id}`}
+            className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition"
+            title="Editar tudo (formulário completo)"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">Editar Tudo</span>
+          </Link>
           <button onClick={() => handleDuplicate(e.id)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="Duplicar evento">
             <Copy className="h-4 w-4 text-muted-foreground" />
           </button>
@@ -593,6 +615,7 @@ const EventosList = () => {
         </div>
       )}
 
+      <div className="sticky top-0 z-30 -mx-2 px-2 pt-2 pb-2 space-y-2 bg-background/85 backdrop-blur-xl border-b border-border/40">
       <div className="rounded-2xl border border-border/40 bg-card/80 p-3 space-y-2 backdrop-blur-xl">
         <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/70 px-3 py-2">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -602,7 +625,9 @@ const EventosList = () => {
             placeholder="Buscar por título, slug, ID ou local..."
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
-          <span className="hidden sm:inline text-[10px] font-bold text-muted-foreground whitespace-nowrap">Criados recentemente primeiro</span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase whitespace-nowrap rounded-md bg-primary/15 text-primary px-2 py-1">
+            <CalendarDays className="h-3 w-3" /> Hoje: {totalTodayCount}
+          </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
@@ -677,6 +702,7 @@ const EventosList = () => {
             </button>
           </>
         )}
+      </div>
       </div>
 
       {loading ? (

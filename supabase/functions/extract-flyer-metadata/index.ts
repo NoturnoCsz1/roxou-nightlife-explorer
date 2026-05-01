@@ -417,6 +417,35 @@ serve(async (req) => {
       }
     }
 
+    // ============== 📅 Trava de data retroativa ==============
+    // Se a data resolvida (ou retornada direto pela IA) já passou, marcamos como REVISAR
+    // e tentamos sugerir o próximo mês onde dia+weekday batem (caso tenhamos esses dados).
+    if (dateIso) {
+      const eventDate = new Date(`${dateIso}-03:00`);
+      const now = new Date();
+      const todayBrasilia = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      todayBrasilia.setHours(0, 0, 0, 0);
+      if (!isNaN(eventDate.getTime()) && eventDate < todayBrasilia) {
+        // tenta corrigir buscando próximo mês válido a partir de HOJE
+        if (aiDay && weekdayIdx !== null) {
+          const future = resolveCalendarDate({ day: aiDay, month: null, weekday: weekdayIdx, baseYear: BASE_YEAR });
+          if (future.date) {
+            const hourMatch = dateIso.match(/T(\d{1,2}):?(\d{2})?/);
+            const hh = hourMatch ? hourMatch[1].padStart(2, "0") : "20";
+            const mm = hourMatch && hourMatch[2] ? hourMatch[2] : "00";
+            dateIso = `${future.date}T${hh}:${mm}`;
+            date_validation_note = `[REVISAR DATA RETROATIVA] Data lida já passou; sugerido próximo ${WEEKDAY_NAMES[weekdayIdx][0]} ${future.date}.`;
+          } else {
+            date_validation_note = `[REVISAR DATA RETROATIVA] Data lida (${dateIso.slice(0,10)}) já passou e nenhum mês futuro compatível encontrado.`;
+            dateIso = null;
+          }
+        } else {
+          date_validation_note = `[REVISAR DATA RETROATIVA] Data lida (${dateIso.slice(0,10)}) já passou. Confirme manualmente.`;
+        }
+        date_needs_review = true;
+      }
+    }
+
     // Confiança baixa da IA → marcar para revisão
     const dateConf = String(parsed.date_confidence || parsed.confidence || "medium").toLowerCase();
     if (dateConf === "low") {
