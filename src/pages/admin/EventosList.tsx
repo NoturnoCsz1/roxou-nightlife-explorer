@@ -703,6 +703,7 @@ const EventosList = () => {
           </>
         )}
       </div>
+      </div>
 
       {loading ? (
         <p className="text-xs text-muted-foreground text-center py-8">Carregando...</p>
