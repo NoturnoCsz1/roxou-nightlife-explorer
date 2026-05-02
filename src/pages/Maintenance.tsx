@@ -2,22 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Mail, Phone, Loader2 } from "lucide-react";
+import SEO from "@/components/SEO";
 
-/** Próxima segunda-feira às 09:00 (America/Sao_Paulo) */
-function nextMondayMorning(): Date {
-  // calcula em SP — usamos new Date com offset -03:00
-  const now = new Date();
-  // converte "agora" para SP
-  const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const day = spNow.getDay(); // 0=dom .. 1=seg
-  let daysUntilMon = (1 - day + 7) % 7;
-  if (daysUntilMon === 0 && spNow.getHours() >= 9) daysUntilMon = 7;
-  const target = new Date(spNow);
-  target.setDate(spNow.getDate() + daysUntilMon);
-  target.setHours(9, 0, 0, 0);
-  // converte de volta para Date "real" (UTC) ancorando -03:00
-  const iso = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}T09:00:00-03:00`;
-  return new Date(iso);
+/** Lançamento oficial: Segunda-feira, 04 de Maio de 2026, 18:00 (America/Sao_Paulo) */
+function launchTarget(): Date {
+  return new Date("2026-05-04T18:00:00-03:00");
 }
 
 function useCountdown(target: Date) {
@@ -46,7 +35,7 @@ const TimeBlock = ({ value, label }: { value: number; label: string }) => (
 );
 
 export default function Maintenance() {
-  const target = useMemo(() => nextMondayMorning(), []);
+  const target = useMemo(() => launchTarget(), []);
   const { days, hours, minutes, seconds } = useCountdown(target);
   const [contact, setContact] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,6 +64,11 @@ export default function Maintenance() {
 
   return (
     <div className="v3-theme min-h-screen relative overflow-hidden flex flex-col items-center justify-center px-5 py-10">
+      <SEO
+        title="ROXOU V3 - O Rolê está sendo reescrito"
+        description="O guia inteligente de Presidente Prudente volta ao ar com o Prudente IA. Aguarde o lançamento oficial na segunda às 18h."
+        canonical="https://roxou.com.br"
+      />
       {/* Animated gradient + particles background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,hsl(270_100%_55%/0.25),transparent_55%),radial-gradient(circle_at_80%_70%,hsl(285_90%_55%/0.22),transparent_55%),radial-gradient(circle_at_50%_100%,hsl(320_90%_50%/0.18),transparent_60%)] animate-[v3PulseGlow_6s_ease-in-out_infinite]" />
