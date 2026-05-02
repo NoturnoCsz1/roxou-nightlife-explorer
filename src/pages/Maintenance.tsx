@@ -2,22 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Mail, Phone, Loader2 } from "lucide-react";
+import SEO from "@/components/SEO";
 
-/** Próxima segunda-feira às 09:00 (America/Sao_Paulo) */
-function nextMondayMorning(): Date {
-  // calcula em SP — usamos new Date com offset -03:00
-  const now = new Date();
-  // converte "agora" para SP
-  const spNow = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  const day = spNow.getDay(); // 0=dom .. 1=seg
-  let daysUntilMon = (1 - day + 7) % 7;
-  if (daysUntilMon === 0 && spNow.getHours() >= 9) daysUntilMon = 7;
-  const target = new Date(spNow);
-  target.setDate(spNow.getDate() + daysUntilMon);
-  target.setHours(9, 0, 0, 0);
-  // converte de volta para Date "real" (UTC) ancorando -03:00
-  const iso = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, "0")}-${String(target.getDate()).padStart(2, "0")}T09:00:00-03:00`;
-  return new Date(iso);
+/** Lançamento oficial: Segunda-feira, 04 de Maio de 2026, 18:00 (America/Sao_Paulo) */
+function launchTarget(): Date {
+  return new Date("2026-05-04T18:00:00-03:00");
 }
 
 function useCountdown(target: Date) {
