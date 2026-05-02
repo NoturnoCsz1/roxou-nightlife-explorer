@@ -167,9 +167,10 @@ const NoticiaForm = () => {
         <div>
           <Label>Imagem de capa</Label>
           <ImageUpload
-            value={form.cover_image_url}
-            onChange={(url) => setForm((f) => ({ ...f, cover_image_url: url }))}
             folder="expo-news"
+            currentUrl={form.cover_image_url}
+            onUploaded={(url) => setForm((f) => ({ ...f, cover_image_url: url }))}
+            label=""
           />
         </div>
 
