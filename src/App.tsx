@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Maintenance from "./pages/Maintenance";
+import Expo2026 from "./pages/Expo2026";
+import ExpoNoticia from "./pages/ExpoNoticia";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
@@ -16,6 +18,8 @@ import Sugestoes from "./pages/admin/Sugestoes";
 import EventouAdmin from "./pages/admin/EventouAdmin";
 import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
+import NoticiasList from "./pages/admin/NoticiasList";
+import NoticiaForm from "./pages/admin/NoticiaForm";
 import V3Auth from "./pages/v3/V3Auth";
 
 const queryClient = new QueryClient();
@@ -43,11 +47,18 @@ const App = () => (
             <Route path="eventou" element={<EventouAdmin />} />
             <Route path="instagram" element={<InstagramAdminPage />} />
             <Route path="editores" element={<Editores />} />
+            <Route path="noticias" element={<NoticiasList />} />
+            <Route path="noticias/novo" element={<NoticiaForm />} />
+            <Route path="noticias/:id/editar" element={<NoticiaForm />} />
           </Route>
 
           {/* Auth — segue funcionando para login */}
           <Route path="/auth" element={<V3Auth />} />
           <Route path="/auth/*" element={<V3Auth />} />
+
+          {/* Hot site Expo Prudente 2026 — exceção da manutenção */}
+          <Route path="/expo2026" element={<Expo2026 />} />
+          <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
           {/* Tudo o mais cai na tela de manutenção */}
           <Route path="*" element={<Maintenance />} />
