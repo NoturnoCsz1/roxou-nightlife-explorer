@@ -531,6 +531,30 @@ export type Database = {
           },
         ]
       }
+      launch_signups: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          source: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          source?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          source?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           city: string | null
