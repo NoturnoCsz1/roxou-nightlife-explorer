@@ -64,6 +64,11 @@ export default function Maintenance() {
 
   return (
     <div className="v3-theme min-h-screen relative overflow-hidden flex flex-col items-center justify-center px-5 py-10">
+      <SEO
+        title="ROXOU V3 - O Rolê está sendo reescrito"
+        description="O guia inteligente de Presidente Prudente volta ao ar com o Prudente IA. Aguarde o lançamento oficial na segunda às 18h."
+        canonical="https://roxou.com.br"
+      />
       {/* Animated gradient + particles background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,hsl(270_100%_55%/0.25),transparent_55%),radial-gradient(circle_at_80%_70%,hsl(285_90%_55%/0.22),transparent_55%),radial-gradient(circle_at_50%_100%,hsl(320_90%_50%/0.18),transparent_60%)] animate-[v3PulseGlow_6s_ease-in-out_infinite]" />
