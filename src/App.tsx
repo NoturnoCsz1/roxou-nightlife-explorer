@@ -3,16 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
-import EventDetail from "./pages/EventDetail";
-import Hoje from "./pages/Hoje";
-import Semana from "./pages/Semana";
-import Categorias from "./pages/Categorias";
-import Salvos from "./pages/Salvos";
-import Indica from "./pages/Indica";
-import LocalDetail from "./pages/LocalDetail";
-import LocalEventos from "./pages/LocalEventos";
-import NotFound from "./pages/NotFound";
+import Maintenance from "./pages/Maintenance";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
@@ -25,29 +16,7 @@ import Sugestoes from "./pages/admin/Sugestoes";
 import EventouAdmin from "./pages/admin/EventouAdmin";
 import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
-import SEOLanding from "./pages/SEOLanding";
-
-// V3
-import V3Layout from "./components/v3/V3Layout";
-import V3Home from "./pages/v3/V3Home";
-import V3Discover from "./pages/v3/V3Discover";
-import V3Agenda from "./pages/v3/V3Agenda";
-import V3Profile from "./pages/v3/V3Profile";
-import V3EventDetail from "./pages/v3/V3EventDetail";
-import V3LocalDetail from "./pages/v3/V3LocalDetail";
-import V3Transport from "./pages/v3/V3Transport";
-import V3RideRequest from "./pages/v3/V3RideRequest";
-import V3DriverBoard from "./pages/v3/V3DriverBoard";
-import V3Chat from "./pages/v3/V3Chat";
-import V3MyRides from "./pages/v3/V3MyRides";
-import V3Terms from "./pages/v3/V3Terms";
-import V3Privacy from "./pages/v3/V3Privacy";
-import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
 import V3Auth from "./pages/v3/V3Auth";
-import V3Sobre from "./pages/v3/V3Sobre";
-import V3Contato from "./pages/v3/V3Contato";
-import V3AIChat from "./pages/v3/V3AIChat";
-import V3Economize from "./pages/v3/V3Economize";
 
 const queryClient = new QueryClient();
 
@@ -58,21 +27,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public */}
-          <Route path="/" element={<Index />} />
-          <Route path="/evento/:slug" element={<EventDetail />} />
-          <Route path="/hoje" element={<Hoje />} />
-          <Route path="/semana" element={<Semana />} />
-          <Route path="/categorias" element={<Categorias />} />
-          <Route path="/salvos" element={<Salvos />} />
-          <Route path="/indica" element={<Indica />} />
-          <Route path="/local/:slug" element={<LocalDetail />} />
-          <Route path="/local/:slug/eventos" element={<LocalEventos />} />
-
-          {/* SEO Landing Pages */}
-          <Route path="/:landingSlug" element={<SEOLanding />} />
-
-          {/* Admin */}
+          {/* Admin — segue funcionando normalmente */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
@@ -90,31 +45,12 @@ const App = () => (
             <Route path="editores" element={<Editores />} />
           </Route>
 
-          {/* V3 */}
-          <Route path="/v3" element={<V3Layout />}>
-            <Route index element={<V3Home />} />
-            <Route path="descobrir" element={<V3Discover />} />
-            <Route path="agenda" element={<V3Agenda />} />
-            <Route path="perfil" element={<V3Profile />} />
-            <Route path="evento/:slug" element={<V3EventDetail />} />
-            <Route path="local/:slug" element={<V3LocalDetail />} />
-            <Route path="transporte" element={<V3Transport />} />
-            <Route path="pedir-carona" element={<V3RideRequest />} />
-            <Route path="motorista" element={<V3DriverBoard />} />
-            <Route path="chat/:requestId" element={<V3Chat />} />
-            <Route path="meus-pedidos" element={<V3MyRides />} />
-            <Route path="terms" element={<V3Terms />} />
-            <Route path="privacy" element={<V3Privacy />} />
-            <Route path="privacidade" element={<V3Privacy />} />
-            <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
-            <Route path="auth" element={<V3Auth />} />
-            <Route path="sobre" element={<V3Sobre />} />
-            <Route path="contato" element={<V3Contato />} />
-            <Route path="ia" element={<V3AIChat />} />
-            <Route path="economize" element={<V3Economize />} />
-          </Route>
+          {/* Auth — segue funcionando para login */}
+          <Route path="/auth" element={<V3Auth />} />
+          <Route path="/auth/*" element={<V3Auth />} />
 
-          <Route path="*" element={<NotFound />} />
+          {/* Tudo o mais cai na tela de manutenção */}
+          <Route path="*" element={<Maintenance />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
