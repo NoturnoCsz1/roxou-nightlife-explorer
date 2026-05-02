@@ -35,7 +35,7 @@ const TimeBlock = ({ value, label }: { value: number; label: string }) => (
 );
 
 export default function Maintenance() {
-  const target = useMemo(() => nextMondayMorning(), []);
+  const target = useMemo(() => launchTarget(), []);
   const { days, hours, minutes, seconds } = useCountdown(target);
   const [contact, setContact] = useState("");
   const [loading, setLoading] = useState(false);
