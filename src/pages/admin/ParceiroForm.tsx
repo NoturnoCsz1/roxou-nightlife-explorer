@@ -21,7 +21,7 @@ const ParceiroForm = () => {
     name: "", slug: "", type: "bar", address: "",
     city: cityFilter || "Presidente Prudente", instagram: "", whatsapp: "",
     short_description: "", full_description: "", logo_url: "",
-    verified_partner: false, active: true,
+    verified_partner: false, active: true, featured_home: false,
   });
 
   useEffect(() => { if (isEdit) loadPartner(); }, [id]);
@@ -41,6 +41,7 @@ const ParceiroForm = () => {
       city: data.city, instagram: data.instagram || "", whatsapp: data.whatsapp || "",
       short_description: data.short_description || "", full_description: data.full_description || "",
       logo_url: data.logo_url || "", verified_partner: data.verified_partner, active: data.active,
+      featured_home: (data as any).featured_home ?? false,
     });
   }
 
@@ -140,6 +141,10 @@ const ParceiroForm = () => {
           <label className="flex items-center gap-1.5 text-xs">
             <input type="checkbox" checked={form.active} onChange={(e) => handleChange("active", e.target.checked)} className="accent-primary" />
             Ativo
+          </label>
+          <label className="flex items-center gap-1.5 text-xs">
+            <input type="checkbox" checked={form.featured_home} onChange={(e) => handleChange("featured_home", e.target.checked)} className="accent-primary" />
+            ⭐ Destaque na Home
           </label>
         </div>
 
