@@ -256,6 +256,42 @@ const Dashboard = () => {
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
+  // Realtime polling: active users (last 5min) + pageviews (last 30min)
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      const fiveMin = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const thirtyMin = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const [activeRes, pvRes] = await Promise.all([
+        supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("last_seen_at", fiveMin),
+        supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", thirtyMin),
+      ]);
+      if (!cancelled) {
+        setRealtime({ activeUsers: activeRes.count ?? 0, pageViews: pvRes.count ?? 0 });
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 30000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  // Instagram stats — graceful: shows "—" while OAuth is not fully connected
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("instagram_accounts")
+        .select("status")
+        .eq("username", "roxou.pp")
+        .maybeSingle();
+      if (cancelled) return;
+      // Until official OAuth /insights is wired, keep null → UI shows "—"
+      // (avoids showing zeros that would mislead the dashboard)
+      if (data?.status === "active") setIgStats({ followers: null, reach: null });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const formatGrowth = (delta: number, unit: string) => {
     if (delta === 0) return { text: `Sem variação ${unit}`, positive: false };
     const sign = delta > 0 ? "+" : "";
