@@ -291,6 +291,7 @@ const InstagramAdmin = () => {
                 </div>
               )}
             </div>
+            </div>
           )}
 
           {/* TAB: Publicação */}
