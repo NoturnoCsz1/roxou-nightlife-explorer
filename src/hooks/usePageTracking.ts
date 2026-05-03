@@ -26,6 +26,9 @@ export function usePageTracking(extra?: { event_id?: string; partner_id?: string
     const sessionId = getSessionId();
     const deviceType = getDeviceType();
 
+    // GA4 page view
+    trackPageView(location.pathname);
+
     // Insert page view
     supabase.from("page_views").insert({
       page_path: location.pathname,
