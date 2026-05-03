@@ -35,18 +35,41 @@ Deno.serve(async (req) => {
     if (post.status === "published") throw new Error("Post já publicado");
     if (!post.image_url) throw new Error("Post sem imagem");
 
-    // Get account
+    // Get account (oauth) — fallback para instagram_config (token manual)
     const { data: account } = await supabase
       .from("instagram_accounts")
       .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
-    if (!account) throw new Error("Nenhuma conta Instagram conectada");
+      .maybeSingle();
 
-    const igAccountId = account.ig_account_id;
-    const accessToken = account.access_token;
+    let igAccountId = account?.ig_account_id;
+    let accessToken = account?.access_token;
+
+    if (!accessToken) {
+      const { data: cfg } = await supabase
+        .from("instagram_config")
+        .select("access_token, ig_user_id")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cfg?.access_token) {
+        accessToken = cfg.access_token;
+        if (!igAccountId && cfg.ig_user_id) igAccountId = cfg.ig_user_id;
+      }
+    }
+
+    if (!accessToken) throw new Error("Nenhum token Instagram disponível");
+
+    // Resolve ig user id automaticamente se ausente
+    if (!igAccountId) {
+      const meRes = await fetch(`https://graph.instagram.com/v21.0/me?fields=id&access_token=${accessToken}`);
+      const meData = await meRes.json();
+      if (meData?.id) igAccountId = meData.id;
+      else throw new Error("Não foi possível identificar a conta Instagram");
+    }
 
     // Step 1: Create media container
     const containerParams = new URLSearchParams({
