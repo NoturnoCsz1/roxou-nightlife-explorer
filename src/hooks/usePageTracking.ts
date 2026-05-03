@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { trackPageView } from "@/lib/ga";
 
 function getDeviceType(): string {
   const ua = navigator.userAgent;
@@ -24,6 +25,9 @@ export function usePageTracking(extra?: { event_id?: string; partner_id?: string
   useEffect(() => {
     const sessionId = getSessionId();
     const deviceType = getDeviceType();
+
+    // GA4 page view
+    trackPageView(location.pathname);
 
     // Insert page view
     supabase.from("page_views").insert({
