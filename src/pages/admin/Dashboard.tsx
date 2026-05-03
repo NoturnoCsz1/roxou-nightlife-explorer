@@ -324,8 +324,17 @@ const Dashboard = () => {
             <Skeleton className={cn("h-[68px]", GLASS)} />
             <Skeleton className={cn("h-[68px]", GLASS)} />
           </div>
-        ) : pending.noCover > 0 || pending.noDescription > 0 ? (
+        ) : pending.noCover > 0 || pending.noDescription > 0 || autoDrafts > 0 ? (
           <div className="grid grid-cols-2 gap-3">
+            {autoDrafts > 0 && (
+              <PendingChip
+                to="/admin/eventos?source=auto-discovery"
+                icon={TrendingUp}
+                count={autoDrafts}
+                label="Novos rascunhos do Radar IA"
+                tone="amber"
+              />
+            )}
             <PendingChip
               to="/admin/eventos"
               icon={ImageOff}
