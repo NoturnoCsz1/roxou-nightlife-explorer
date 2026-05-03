@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Maintenance from "./pages/Maintenance";
+import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import Expo2026 from "./pages/Expo2026";
 import ExpoNoticia from "./pages/ExpoNoticia";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -65,8 +66,8 @@ const App = () => (
           <Route path="/v3/parceiros" element={<V3Parceiros />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
-          {/* Tudo o mais cai na tela de manutenção */}
-          <Route path="*" element={<Maintenance />} />
+          {/* Tudo o mais: manutenção para usuários comuns, app completo para admins logados */}
+          <Route path="*" element={<AdminMaintenanceGate />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
