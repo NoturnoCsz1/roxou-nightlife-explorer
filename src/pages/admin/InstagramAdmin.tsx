@@ -234,6 +234,23 @@ const InstagramAdmin = () => {
         <>
           {/* TAB: Contas */}
           {activeTab === "contas" && (
+            <div className="space-y-3">
+            {/* Pré-requisito Meta */}
+            <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">Antes de conectar: vincule o Instagram a uma Página do Facebook</h3>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                A API da Meta exige que <strong className="text-foreground">@roxou.pp</strong> esteja vinculado a uma <strong className="text-foreground">Página do Facebook</strong> e configurado como conta <strong className="text-foreground">Business/Creator</strong>. Sem esse vínculo, o Radar IA não consegue baixar flyers nem usar Business Discovery (erro Meta nº 100/10).
+              </p>
+              <ol className="text-[11px] text-muted-foreground space-y-1 pl-4 list-decimal">
+                <li>No app Instagram → Configurações → Conta → <strong>Mudar para Profissional</strong> (Business).</li>
+                <li>No Facebook, crie ou abra uma <strong>Página</strong> (ex: "Roxou PP").</li>
+                <li>Na Página → Configurações → <strong>Instagram vinculado</strong> → conecte @roxou.pp.</li>
+                <li>Volte aqui e clique em <strong>Conectar Instagram</strong> com o login do Facebook dono da Página.</li>
+              </ol>
+            </div>
             <div className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                 <Link2 className="h-3.5 w-3.5" /> Conta Conectada
@@ -273,6 +290,7 @@ const InstagramAdmin = () => {
                   </button>
                 </div>
               )}
+            </div>
             </div>
           )}
 
