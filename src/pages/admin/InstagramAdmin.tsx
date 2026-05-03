@@ -280,21 +280,49 @@ const InstagramAdmin = () => {
                 </div>
                 {showForm && (
                   <div className="space-y-3">
+                    <ImageUpload
+                      folder="instagram"
+                      currentUrl={newImageUrl}
+                      onUploaded={(url) => setNewImageUrl(url)}
+                      label="Imagem do post (1:1 recomendado)"
+                    />
                     <div>
-                      <label className="text-[10px] text-muted-foreground font-medium">URL da Imagem *</label>
+                      <label className="text-[10px] text-muted-foreground font-medium">Ou cole uma URL</label>
                       <input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://..."
                         className="mt-1 w-full rounded-lg border border-border/30 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary" />
                     </div>
                     <div>
-                      <label className="text-[10px] text-muted-foreground font-medium">Legenda</label>
-                      <textarea value={newCaption} onChange={(e) => setNewCaption(e.target.value)} rows={4} placeholder="Escreva a legenda..."
+                      <label className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                        <FileText className="h-3 w-3" /> Legenda
+                      </label>
+                      <textarea value={newCaption} onChange={(e) => setNewCaption(e.target.value)} rows={5} placeholder="Escreva a legenda com hashtags..."
                         className="mt-1 w-full rounded-lg border border-border/30 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+                      <div className="text-right text-[9px] text-muted-foreground/60 mt-0.5">{newCaption.length} / 2200</div>
                     </div>
-                    {newImageUrl && <img src={newImageUrl} alt="Preview" className="rounded-lg max-h-40 mx-auto border border-border/20" />}
-                    <button onClick={handleSaveDraft} disabled={saving}
-                      className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary/80 disabled:opacity-50 transition">
-                      {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />} Salvar Rascunho
-                    </button>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                        <Calendar className="h-3 w-3" /> Agendar (opcional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={scheduleAt}
+                        onChange={(e) => setScheduleAt(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-border/30 bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    {newImageUrl && (
+                      <div className="rounded-lg border border-border/20 bg-background/40 p-2">
+                        <p className="text-[10px] text-muted-foreground mb-1.5">Preview</p>
+                        <img src={newImageUrl} alt="Preview" className="rounded-md max-h-56 mx-auto object-contain" />
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveDraft} disabled={saving}
+                        className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary/80 disabled:opacity-50 transition">
+                        {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : scheduleAt ? <Calendar className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                        {scheduleAt ? "Agendar Post" : "Salvar Rascunho"}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -305,7 +333,27 @@ const InstagramAdmin = () => {
                   <FileText className="h-3.5 w-3.5" /> Posts ({posts.length})
                 </h2>
                 {posts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-6">Nenhum post criado ainda.</p>
+                  <div>
+                    <p className="text-[11px] text-muted-foreground text-center py-3">
+                      Nenhum post ainda. Seu feed vai aparecer aqui.
+                    </p>
+                    <div className="grid grid-cols-3 gap-1">
+                      {Array.from({ length: 9 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="aspect-square rounded-sm bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/5 flex items-center justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4 text-muted-foreground/20" />
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="mt-3 w-full flex items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-xs font-semibold text-white hover:opacity-90 transition"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Criar primeiro post
+                    </button>
+                  </div>
                 ) : (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto">
                     {posts.map((post) => {
