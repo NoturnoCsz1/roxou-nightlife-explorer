@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/admin/ImageUpload";
 
@@ -48,6 +49,7 @@ const NoticiaForm = () => {
     published_at: "",
   });
   const [slugTouched, setSlugTouched] = useState(false);
+  const [autoPublishIG, setAutoPublishIG] = useState(false);
 
   useEffect(() => {
     if (!editing) return;
@@ -100,13 +102,34 @@ const NoticiaForm = () => {
     };
 
     const op = editing
-      ? supabase.from("expo_news").update(payload).eq("id", id!)
-      : supabase.from("expo_news").insert(payload);
+      ? supabase.from("expo_news").update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author").single()
+      : supabase.from("expo_news").insert(payload).select("id, cover_image_url, title, excerpt, author").single();
 
-    const { error } = await op;
+    const { data: saved, error } = await op;
+    if (error) { setSaving(false); return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); }
+
+    // Publicação direta no Instagram
+    if (autoPublishIG && payload.status === "published" && saved?.cover_image_url) {
+      const caption = `📰 ${saved.title}\n\n${saved.excerpt || ""}\n\nLeia em roxou.com.br/expo2026/noticia/${payload.slug}\n\nPor ${saved.author} · ROXOU`;
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: postRow, error: postErr } = await supabase.from("instagram_posts").insert({
+        caption,
+        image_url: saved.cover_image_url,
+        status: "draft",
+        created_by: userData.user?.id,
+      }).select("id").single();
+      if (!postErr && postRow?.id) {
+        const { data: pub, error: pubErr } = await supabase.functions.invoke("instagram-publish", { body: { post_id: postRow.id } });
+        if (pubErr || !pub?.success) {
+          toast({ title: "Notícia salva, mas Instagram falhou", description: pub?.error || pubErr?.message, variant: "destructive" });
+        } else {
+          toast({ title: "Notícia + Instagram publicados!" });
+        }
+      }
+    } else {
+      toast({ title: editing ? "Notícia atualizada" : "Notícia criada" });
+    }
     setSaving(false);
-    if (error) return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    toast({ title: editing ? "Notícia atualizada" : "Notícia criada" });
     navigate("/admin/noticias");
   };
 
@@ -193,6 +216,22 @@ const NoticiaForm = () => {
             placeholder="Escreva a matéria. Pode usar HTML básico para formatar."
             className="font-mono text-sm"
           />
+        </div>
+
+        <div className="flex items-start gap-2 rounded-lg border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5 p-3">
+          <Checkbox
+            id="autoIG"
+            checked={autoPublishIG}
+            onCheckedChange={(v) => setAutoPublishIG(Boolean(v))}
+          />
+          <Label htmlFor="autoIG" className="cursor-pointer text-sm leading-tight">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <Instagram className="h-3.5 w-3.5 text-pink-400" /> Publicar também no Instagram @roxou.pp
+            </span>
+            <span className="text-[11px] text-muted-foreground font-normal">
+              Requer status "Publicado" e imagem de capa. O card vai direto para o feed.
+            </span>
+          </Label>
         </div>
 
         <Button type="submit" disabled={saving} className="gap-2">

@@ -339,7 +339,19 @@ const Dashboard = () => {
 
       {/* ── 4. Ações rápidas ── */}
       <section>
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ações rápidas</h2>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center justify-between">
+          <span>Ações rápidas</span>
+          <Link
+            to="/admin/instagram"
+            className="flex items-center gap-1.5 rounded-full bg-green-500/10 px-2.5 py-0.5 text-[10px] font-bold text-green-400 normal-case tracking-normal hover:bg-green-500/20 transition"
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-400"></span>
+            </span>
+            Instagram ONLINE & AUTOMATIZADO
+          </Link>
+        </h2>
         <div className="grid grid-cols-4 gap-2">
           <QuickAction to="/admin/eventou" icon={Globe} label="Eventou" color="bg-blue-500/10 text-blue-400" />
           <QuickAction to="/admin/instagram" icon={Instagram} label="Instagram" color="bg-pink-500/10 text-pink-400" />
