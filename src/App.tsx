@@ -21,6 +21,7 @@ import Editores from "./pages/admin/Editores";
 import NoticiasList from "./pages/admin/NoticiasList";
 import NoticiaForm from "./pages/admin/NoticiaForm";
 import V3Auth from "./pages/v3/V3Auth";
+import V3Parceiros from "./pages/v3/V3Parceiros";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,10 @@ const App = () => (
           {/* Hot site Expo Prudente 2026 — exceção da manutenção */}
           <Route path="/expo2026" element={<Expo2026 />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
+
+          {/* Parceiros V3 — exceção da manutenção */}
+          <Route path="/v3/parceiros" element={<V3Parceiros />} />
+          <Route path="/parceiros" element={<V3Parceiros />} />
 
           {/* Tudo o mais cai na tela de manutenção */}
           <Route path="*" element={<Maintenance />} />

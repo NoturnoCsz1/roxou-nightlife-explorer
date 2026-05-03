@@ -693,6 +693,7 @@ export type Database = {
           address: string | null
           city: string
           created_at: string
+          featured_home: boolean
           full_description: string | null
           id: string
           instagram: string | null
@@ -710,6 +711,7 @@ export type Database = {
           address?: string | null
           city?: string
           created_at?: string
+          featured_home?: boolean
           full_description?: string | null
           id?: string
           instagram?: string | null
@@ -727,6 +729,7 @@ export type Database = {
           address?: string | null
           city?: string
           created_at?: string
+          featured_home?: boolean
           full_description?: string | null
           id?: string
           instagram?: string | null
