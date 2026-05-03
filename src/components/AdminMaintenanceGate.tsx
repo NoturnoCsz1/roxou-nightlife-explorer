@@ -2,17 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import Maintenance from "@/pages/Maintenance";
 
-// Páginas públicas legadas
-import Index from "@/pages/Index";
-import EventDetail from "@/pages/EventDetail";
-import Hoje from "@/pages/Hoje";
-import Semana from "@/pages/Semana";
-import Categorias from "@/pages/Categorias";
-import Salvos from "@/pages/Salvos";
-import Indica from "@/pages/Indica";
-import LocalDetail from "@/pages/LocalDetail";
-import LocalEventos from "@/pages/LocalEventos";
-import NotFound from "@/pages/NotFound";
+// Páginas legadas removidas do gate — agora vivem em /archive/legacy-v2/* (ver App.tsx).
 
 // V3
 import V3Layout from "@/components/v3/V3Layout";
