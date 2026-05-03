@@ -144,6 +144,7 @@ const Dashboard = () => {
   const [opportunities, setOpportunities] = useState<string[]>([]);
   const [recentActivity, setRecentActivity] = useState<{ type: "event" | "partner"; title: string; date: string; id: string }[]>([]);
   const [pending, setPending] = useState({ noCover: 0, noDescription: 0 });
+  const [autoDrafts, setAutoDrafts] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const loadDashboard = useCallback(async () => {
@@ -194,6 +195,14 @@ const Dashboard = () => {
     const noCover = published.filter(e => !e.image_url || e.image_url.trim() === "").length;
     const noDescription = published.filter(e => !e.description || e.description.trim().length < 20).length;
     setPending({ noCover, noDescription });
+
+    // Rascunhos do Radar IA aguardando revisão
+    const { count: autoCount } = await supabase
+      .from("events")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "draft")
+      .eq("verification_source", "auto-discovery");
+    setAutoDrafts(autoCount || 0);
 
     // Insights: trending + most viewed
     const views7d = await fetchAllRows<{ page_path: string; created_at: string }>(
@@ -315,8 +324,17 @@ const Dashboard = () => {
             <Skeleton className={cn("h-[68px]", GLASS)} />
             <Skeleton className={cn("h-[68px]", GLASS)} />
           </div>
-        ) : pending.noCover > 0 || pending.noDescription > 0 ? (
+        ) : pending.noCover > 0 || pending.noDescription > 0 || autoDrafts > 0 ? (
           <div className="grid grid-cols-2 gap-3">
+            {autoDrafts > 0 && (
+              <PendingChip
+                to="/admin/eventos?source=auto-discovery"
+                icon={TrendingUp}
+                count={autoDrafts}
+                label="Novos rascunhos do Radar IA"
+                tone="amber"
+              />
+            )}
             <PendingChip
               to="/admin/eventos"
               icon={ImageOff}

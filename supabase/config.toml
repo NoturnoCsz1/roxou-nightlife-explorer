@@ -11,3 +11,5 @@ verify_jwt = false
 
 [functions.instagram-webhook]
 verify_jwt = false
+[functions.automatic-event-hunter]
+verify_jwt = false

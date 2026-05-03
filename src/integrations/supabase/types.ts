@@ -194,6 +194,39 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          drafts_created: number
+          id: string
+          job_name: string
+          partners_scanned: number
+          status: string
+          validation_failures: number
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          drafts_created?: number
+          id?: string
+          job_name: string
+          partners_scanned?: number
+          status: string
+          validation_failures?: number
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          drafts_created?: number
+          id?: string
+          job_name?: string
+          partners_scanned?: number
+          status?: string
+          validation_failures?: number
+        }
+        Relationships: []
+      }
       content_generations: {
         Row: {
           created_at: string
@@ -997,6 +1030,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      system_alerts: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          resolved: boolean
+          source: string
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          resolved?: boolean
+          source?: string
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          resolved?: boolean
+          source?: string
+        }
+        Relationships: []
       }
       ticket_clicks: {
         Row: {
