@@ -157,7 +157,23 @@ Deno.serve(async (req) => {
         const d = await r.json();
         const bd = d?.business_discovery;
         if (!bd) {
-          stats.errors.push(`${handle}: ${d?.error?.message || "sem business_discovery"}`);
+          const metaErr = d?.error || {};
+          const errInfo = {
+            handle,
+            partner_id: p.id,
+            http_status: r.status,
+            meta_code: metaErr.code ?? null,
+            meta_subcode: metaErr.error_subcode ?? null,
+            meta_type: metaErr.type ?? null,
+            meta_message: metaErr.message ?? "sem business_discovery",
+            fbtrace_id: metaErr.fbtrace_id ?? null,
+          };
+          stats.errors.push(`${handle}: [${errInfo.meta_code}] ${errInfo.meta_message}`);
+          await supabase.from("automation_logs").insert({
+            job_name: "automatic-event-hunter",
+            status: "Falha de Validação",
+            details: { stage: "business_discovery", ...errInfo },
+          });
           continue;
         }
 
