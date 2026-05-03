@@ -63,6 +63,17 @@ const InstagramAdmin = () => {
   useEffect(() => {
     if (searchParams.get("connected") === "true") {
       toast.success("Conta Instagram conectada com sucesso!");
+      (async () => {
+        const t = toast.loading("Disparando varredura do Radar IA...");
+        const { data, error } = await supabase.functions.invoke("automatic-event-hunter");
+        toast.dismiss(t);
+        if (error) {
+          toast.error(`Falha no Radar IA: ${error.message}`);
+        } else {
+          const created = (data as any)?.drafts_created ?? 0;
+          toast.success(`Radar IA: ${created} novo(s) rascunho(s) criado(s).`);
+        }
+      })();
     }
     const paramCaption = searchParams.get("caption");
     const paramImage = searchParams.get("image");

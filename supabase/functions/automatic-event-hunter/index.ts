@@ -114,55 +114,25 @@ Deno.serve(async (req) => {
   };
 
   try {
-    // 1. Token Meta da conta roxou.pp
-    const { data: cfg } = await supabase
-      .from("instagram_config")
-      .select("access_token,handle,status")
+    // 1. Credenciais OAuth de instagram_accounts (handle roxou.pp)
+    const { data: acct } = await supabase
+      .from("instagram_accounts")
+      .select("access_token,ig_account_id,username,status")
       .eq("status", "active")
-      .ilike("handle", "roxou.pp")
+      .ilike("username", "roxou.pp")
+      .order("updated_at", { ascending: false })
       .maybeSingle();
 
-    if (!cfg?.access_token) {
+    if (!acct?.access_token || !acct?.ig_account_id) {
       await supabase.from("automation_logs").insert({
         job_name: "automatic-event-hunter",
         status: "Falha de Validação",
-        details: { error: "Token roxou.pp não configurado em instagram_config" },
+        details: { error: "Conta roxou.pp não conectada via OAuth em instagram_accounts" },
       });
-      return json({ error: "Token Instagram não configurado" }, 400);
+      return json({ error: "Conta Instagram não conectada via OAuth. Acesse /admin/instagram." }, 400);
     }
-    const token = cfg.access_token;
-
-    // Pega ig_user_id (precisa para business_discovery)
-    let igUserId: string | null = null;
-    const { data: cfgFull } = await supabase
-      .from("instagram_config")
-      .select("ig_user_id")
-      .ilike("handle", "roxou.pp")
-      .maybeSingle();
-    igUserId = cfgFull?.ig_user_id || null;
-
-    if (!igUserId) {
-      // tenta descobrir via /me/accounts
-      const meRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${token}`);
-      const meData = await meRes.json();
-      const page = meData?.data?.[0];
-      if (page?.id) {
-        const igRes = await fetch(
-          `https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${token}`,
-        );
-        const igData = await igRes.json();
-        igUserId = igData?.instagram_business_account?.id || null;
-      }
-    }
-
-    if (!igUserId) {
-      await supabase.from("automation_logs").insert({
-        job_name: "automatic-event-hunter",
-        status: "Falha de Validação",
-        details: { error: "ig_user_id de roxou.pp não encontrado" },
-      });
-      return json({ error: "ig_user_id ausente" }, 400);
-    }
+    const token = acct.access_token;
+    const igUserId = acct.ig_account_id;
 
     // 2. Lista de partners com instagram preenchido
     const { data: partners } = await supabase
