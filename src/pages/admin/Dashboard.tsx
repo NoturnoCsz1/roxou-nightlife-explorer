@@ -256,18 +256,24 @@ const Dashboard = () => {
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
-  // Realtime polling: active users (last 5min) + pageviews (last 30min)
+  // Realtime polling: active users (5min), pageviews (30min), sessions (24h)
   useEffect(() => {
     let cancelled = false;
     const poll = async () => {
       const fiveMin = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const thirtyMin = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const [activeRes, pvRes] = await Promise.all([
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const [activeRes, pvRes, sessionsRes] = await Promise.all([
         supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("last_seen_at", fiveMin),
         supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", thirtyMin),
+        supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("started_at", since24h),
       ]);
       if (!cancelled) {
-        setRealtime({ activeUsers: activeRes.count ?? 0, pageViews: pvRes.count ?? 0 });
+        setRealtime({
+          activeUsers: activeRes.count ?? 0,
+          pageViews: pvRes.count ?? 0,
+          sessions: sessionsRes.count ?? 0,
+        });
       }
     };
     poll();
@@ -275,7 +281,7 @@ const Dashboard = () => {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
-  // Instagram stats — graceful: shows "—" while OAuth is not fully connected
+  // Instagram stats — null until OAuth /insights is wired (avoids misleading zeros)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -285,9 +291,7 @@ const Dashboard = () => {
         .eq("username", "roxou.pp")
         .maybeSingle();
       if (cancelled) return;
-      // Until official OAuth /insights is wired, keep null → UI shows "—"
-      // (avoids showing zeros that would mislead the dashboard)
-      if (data?.status === "active") setIgStats({ followers: null, reach: null });
+      if (data?.status === "active") setIgStats({ followers: null, reach: null, impressions: null });
     })();
     return () => { cancelled = true; };
   }, []);
