@@ -114,7 +114,7 @@ export default function V3Parceiros() {
                 key={p.id}
                 to={`/local/${p.slug}`}
                 onClick={() => import("@/lib/ga").then(m => m.trackPartnerClick(p.id, p.name))}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 transition hover:border-primary/40 hover:-translate-y.5 hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.6)]"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 transition hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.6)]"
               >
                 <div className="aspect-square w-full rounded-xl overflow-hidden bg-background/50 ring-1 ring-white/5 mb-2 flex items-center justify-center">
                   {p.logo_url ? (
