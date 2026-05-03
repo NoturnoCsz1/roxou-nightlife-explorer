@@ -433,4 +433,17 @@ const InstagramAdmin = () => {
   );
 };
 
+function MetricCard({ icon: Icon, label, value, hint }: { icon: typeof Users; label: string; value: string; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-border/40 bg-card p-3">
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <Icon className="h-3 w-3" />
+        <span className="text-[9px] font-bold uppercase tracking-wider">{label}</span>
+      </div>
+      <div className="mt-1 text-lg font-black text-foreground leading-none">{value}</div>
+      {hint && <div className="text-[9px] text-muted-foreground mt-1 truncate">{hint}</div>}
+    </div>
+  );
+}
+
 export default InstagramAdmin;
