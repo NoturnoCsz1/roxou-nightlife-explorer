@@ -49,6 +49,7 @@ const NoticiaForm = () => {
     published_at: "",
   });
   const [slugTouched, setSlugTouched] = useState(false);
+  const [autoPublishIG, setAutoPublishIG] = useState(false);
 
   useEffect(() => {
     if (!editing) return;
