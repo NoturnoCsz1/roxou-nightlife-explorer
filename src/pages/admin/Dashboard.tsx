@@ -337,69 +337,96 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* ── Performance em Tempo Real (GA4 + Instagram) ── */}
+      {/* ── Audiência (Site GA4 + Instagram) ── */}
       <section>
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400"></span>
-          </span>
-          Performance em Tempo Real
-          <span className="ml-auto text-[9px] font-normal text-muted-foreground/70 normal-case tracking-normal">
-            GA4 · G-MLN9W59D9J
-          </span>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Audiência em Tempo Real
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* GA4: Active users */}
-          <div className={cn("p-4", GLASS)}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-green-500/15 text-green-400">
-                <Users className="h-4 w-4" />
+        <div className="grid gap-3 lg:grid-cols-2">
+          {/* Card Site (GA4) */}
+          <div className={cn("relative overflow-hidden p-5", GLASS, "border-primary/25")}>
+            <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+            <div className="flex items-center justify-between mb-4 relative">
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/15 text-primary">
+                  <Globe className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Site Roxou</p>
+                  <p className="text-[10px] text-muted-foreground">Google Analytics 4</p>
+                </div>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-green-400">Ativos agora</span>
+              <span className="flex items-center gap-1 rounded-full bg-green-500/10 border border-green-500/20 px-2 py-0.5 text-[9px] font-bold text-green-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> AO VIVO
+              </span>
             </div>
-            <p className="text-2xl font-bold tabular-nums">{realtime.activeUsers}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Últimos 5 minutos</p>
+            <div className="grid grid-cols-3 gap-3 relative">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Ativos</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">{realtime.activeUsers}</p>
+                <p className="text-[9px] text-muted-foreground">5 min</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Sessões</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">{realtime.sessions}</p>
+                <p className="text-[9px] text-muted-foreground">24 h</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Views</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">{realtime.pageViews}</p>
+                <p className="text-[9px] text-muted-foreground">30 min</p>
+              </div>
+            </div>
           </div>
 
-          {/* GA4: Page views */}
-          <div className={cn("p-4", GLASS)}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 text-primary">
-                <Eye className="h-4 w-4" />
+          {/* Card Instagram */}
+          <div className={cn("relative overflow-hidden p-5", GLASS, "border-pink-500/25")}>
+            <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-pink-500/15 blur-3xl pointer-events-none" />
+            <div className="flex items-center justify-between mb-4 relative">
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-pink-500/15 text-pink-400">
+                  <Instagram className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">@roxou.pp</p>
+                  <p className="text-[10px] text-muted-foreground">Instagram Business</p>
+                </div>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Page Views</span>
+              <span className={cn(
+                "flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border",
+                igStats.followers !== null
+                  ? "bg-green-500/10 border-green-500/20 text-green-400"
+                  : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+              )}>
+                <span className={cn("h-1.5 w-1.5 rounded-full",
+                  igStats.followers !== null ? "bg-green-400 animate-pulse" : "bg-amber-400"
+                )} />
+                {igStats.followers !== null ? "CONECTADO" : "AGUARDANDO TOKEN"}
+              </span>
             </div>
-            <p className="text-2xl font-bold tabular-nums">{realtime.pageViews}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Últimos 30 minutos</p>
-          </div>
-
-          {/* Instagram: Followers */}
-          <div className={cn("p-4", GLASS)}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-pink-500/15 text-pink-400">
-                <Instagram className="h-4 w-4" />
+            <div className="grid grid-cols-3 gap-3 relative">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Seguidores</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">
+                  {igStats.followers !== null ? igStats.followers.toLocaleString("pt-BR") : "—"}
+                </p>
+                <p className="text-[9px] text-muted-foreground">total</p>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-pink-400">Seguidores</span>
-            </div>
-            <p className="text-2xl font-bold tabular-nums">
-              {igStats.followers !== null ? igStats.followers.toLocaleString("pt-BR") : "—"}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">@roxou.pp</p>
-          </div>
-
-          {/* Instagram: Reach */}
-          <div className={cn("p-4", GLASS)}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-accent/15 text-accent">
-                <TrendingUp className="h-4 w-4" />
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Alcance</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">
+                  {igStats.reach !== null ? igStats.reach.toLocaleString("pt-BR") : "—"}
+                </p>
+                <p className="text-[9px] text-muted-foreground">7 dias</p>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-accent">Alcance</span>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Impressões</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">
+                  {igStats.impressions !== null ? igStats.impressions.toLocaleString("pt-BR") : "—"}
+                </p>
+                <p className="text-[9px] text-muted-foreground">7 dias</p>
+              </div>
             </div>
-            <p className="text-2xl font-bold tabular-nums">
-              {igStats.reach !== null ? igStats.reach.toLocaleString("pt-BR") : "—"}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Últimos 7 dias</p>
           </div>
         </div>
       </section>
