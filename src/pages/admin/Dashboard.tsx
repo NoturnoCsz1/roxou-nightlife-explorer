@@ -304,6 +304,19 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 md:ml-44 overflow-hidden min-w-0">
+      {/* ── Selo Monitoramento Ativo ── */}
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent backdrop-blur-xl px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-400"></span>
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">Monitoramento Ativo</span>
+          <span className="text-[10px] text-muted-foreground hidden sm:inline">GA4 + Instagram + Radar IA</span>
+        </div>
+        <span className="text-[9px] font-mono text-muted-foreground/70">G-MLN9W59D9J</span>
+      </div>
+
       {/* ── 1. KPIs ── */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo</h2>
