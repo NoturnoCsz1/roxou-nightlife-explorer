@@ -231,6 +231,8 @@ export default function V3Home() {
           weekEvents={weekEvents}
           trendingIdSet={trendingIdSet}
           partnerRankMap={partnerRankMap}
+          venueRanks={venueRanks}
+          featuredPartners={featuredPartners as any[]}
         />
       </div>
 
@@ -768,21 +770,40 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 }
 
 /* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
-function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingIdSet, partnerRankMap }: {
+function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingIdSet, partnerRankMap, venueRanks, featuredPartners }: {
   todayEvents: Ev[]; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
+  venueRanks: VenueRank[]; featuredPartners: any[];
 }) {
   const mainEvents = [...trending, ...featured, ...todayEvents, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 10);
   const nowEvents = mainEvents.filter(e => isEventLive(e.date_time)).slice(0, 3);
+
+  const { data: news = [] } = useQuery({
+    queryKey: ["v3-expo-news-home"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("expo_news" as any)
+        .select("id,slug,title,excerpt,cover_image_url,author,category,published_at")
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(4);
+      return (data as any[]) || [];
+    },
+  });
+
   if (!todayEvents.length && !mainEvents.length) return null;
 
   return (
-    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[260px_minmax(0,1fr)_300px] gap-5 px-6 py-6">
+    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[240px_minmax(0,1fr)_320px] gap-5 px-6 py-6">
+      {/* LEFT: Navigation + Categories */}
       <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide">
         <DesktopNavPanel todayCount={todayEvents.length} />
+        <DesktopCategoriesPanel />
         <AIHomeWidget />
       </aside>
-      <section className="min-w-0 space-y-5">
+
+      {/* CENTER: Events feed + News */}
+      <section className="min-w-0 space-y-6">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Dashboard de entretenimento</p>
@@ -792,17 +813,65 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
             {todayEvents.length} eventos hoje
           </span>
         </div>
+
         <div className="grid auto-rows-[260px] grid-cols-6 gap-4 transition-opacity duration-500">
           {mainEvents.slice(0, 7).map((ev, i) => (
             <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full animate-fade-up`} />
           ))}
         </div>
+
+        {/* News from Expo Prudente 2026 */}
+        {news.length > 0 && (
+          <div className="rounded-3xl v3-glass p-5">
+            <div className="flex items-end justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Newspaper className="h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="font-display text-xl font-black uppercase text-foreground">Notícias da Expo</h2>
+                  <p className="text-[10px] text-muted-foreground">Cobertura ao vivo · Expo Prudente 2026</p>
+                </div>
+              </div>
+              <Link to="/expo2026" className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1">
+                Ver tudo <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {news.map((n: any) => (
+                <Link key={n.id} to={`/expo2026/noticia/${n.slug}`} className="group rounded-2xl overflow-hidden border border-border/30 bg-background/30 hover:border-primary/40 transition-all">
+                  <div className="aspect-[16/9] overflow-hidden bg-secondary/30">
+                    {n.cover_image_url ? (
+                      <img
+                        src={n.cover_image_url}
+                        alt={n.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        style={{ imageRendering: "auto" }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><Newspaper className="h-8 w-8 text-muted-foreground/30" /></div>
+                    )}
+                  </div>
+                  <div className="p-3 space-y-1.5">
+                    <span className="inline-block text-[9px] font-black uppercase tracking-wider text-primary">{n.category}</span>
+                    <h3 className="font-display text-sm font-bold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{n.title}</h3>
+                    {n.excerpt && <p className="text-[11px] text-muted-foreground line-clamp-2">{n.excerpt}</p>}
+                    <p className="text-[10px] text-muted-foreground/70">por {n.author}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
+
+      {/* RIGHT: Now + Week + Featured Partners */}
       <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide">
-        <div className="backdrop-blur-2xl transition-all duration-300 hover:backdrop-blur-md"><NowPanel events={nowEvents.length ? nowEvents : mainEvents.slice(0, 3)} /></div>
-        <div className="rounded-3xl v3-glass p-4 shadow-[0_0_15px_hsl(var(--primary)/0.16)] backdrop-blur-2xl transition-all duration-300 hover:backdrop-blur-md">
-          <TodayTimeline events={todayEvents.slice(0, 5)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} compact />
+        <div className="backdrop-blur-2xl transition-all duration-300 hover:backdrop-blur-md">
+          <NowPanel events={nowEvents.length ? nowEvents : mainEvents.slice(0, 3)} />
         </div>
+        <DesktopWeekPanel events={weekEvents} />
+        <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
       </aside>
     </FadeSection>
   );
@@ -811,18 +880,106 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
 function DesktopNavPanel({ todayCount }: { todayCount: number }) {
   const items = [
     { to: "/v3", label: "Início", icon: Sparkles },
-    { to: "/v3/ia", label: "Prudente IA", icon: Sparkles },
+    { to: "/v3/ia", label: "Prudente IA", icon: Bot },
+    { to: "/v3/descobrir", label: "Descobrir", icon: Search },
     { to: "/v3/transporte", label: "Caronas", icon: Car },
-    { to: "/v3/descobrir", label: "Descobrir", icon: Eye },
+    { to: "/v3/parceiros", label: "Parceiros", icon: Users },
+    { to: "/v3/agenda", label: "Agenda", icon: CalendarDays },
+    { to: "/v3/economize", label: "Economize", icon: PiggyBank },
+    { to: "/expo2026", label: "Expo Prudente", icon: Newspaper },
   ];
   return (
     <div className="rounded-3xl v3-glass-strong p-4">
       <p className="font-display text-2xl font-black text-primary v3-neon-text">ROXOU</p>
       <p className="mt-1 text-[11px] text-muted-foreground">{todayCount} eventos para decidir a noite.</p>
-      <div className="mt-4 space-y-2">
+      <div className="mt-4 space-y-1.5">
         {items.map(({ to, label, icon: Icon }) => (
-          <Link key={to} to={to} className="flex items-center gap-3 rounded-2xl border border-border/20 bg-background/25 px-3 py-3 text-sm font-bold text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary">
+          <Link key={to} to={to} className="flex items-center gap-3 rounded-xl border border-border/15 bg-background/25 px-3 py-2.5 text-[13px] font-bold text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary">
             <Icon className="h-4 w-4" /> {label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const DESKTOP_CATEGORIES = [
+  { key: "festa", label: "Festas", icon: PartyPopper },
+  { key: "show", label: "Shows", icon: Mic2 },
+  { key: "bar", label: "Bares", icon: Beer },
+  { key: "festival", label: "Festivais", icon: Music },
+  { key: "gastrobar", label: "Gastrobar", icon: Zap },
+];
+
+function DesktopCategoriesPanel() {
+  return (
+    <div className="rounded-3xl v3-glass p-4">
+      <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-3">Categorias</p>
+      <div className="grid grid-cols-2 gap-2">
+        {DESKTOP_CATEGORIES.map(({ key, label, icon: Icon }) => (
+          <Link key={key} to={`/v3/descobrir?cat=${key}`} className="flex flex-col items-center gap-1 rounded-xl border border-border/20 bg-background/25 px-2 py-3 text-[11px] font-bold text-foreground hover:border-primary/40 hover:text-primary transition-all">
+            <Icon className="h-4 w-4" /> {label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DesktopWeekPanel({ events }: { events: Ev[] }) {
+  if (!events.length) return null;
+  return (
+    <div className="rounded-3xl v3-glass p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-primary" />
+          <h2 className="font-display text-base font-black text-foreground">Agenda da semana</h2>
+        </div>
+        <Link to="/v3/agenda" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
+      </div>
+      <div className="space-y-2">
+        {events.slice(0, 5).map(ev => (
+          <Link key={ev.id} to={`/v3/evento/${ev.slug}`} className="group flex gap-2.5 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
+            <div className="flex flex-col items-center justify-center rounded-lg bg-primary/10 px-2 py-1 min-w-[42px]">
+              <span className="text-[8px] font-black uppercase text-primary">{format(new Date(ev.date_time), "MMM", { locale: ptBR })}</span>
+              <span className="text-base font-black text-foreground leading-none">{format(new Date(ev.date_time), "dd")}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{ev.title}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{fmtTime(ev.date_time)} · {ev.venue_name || "—"}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ranks: VenueRank[] }) {
+  const list = (partners?.length ? partners : ranks).slice(0, 5);
+  if (!list.length) return null;
+  return (
+    <div className="rounded-3xl v3-glass p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Gem className="h-4 w-4 text-accent" />
+          <h2 className="font-display text-base font-black text-foreground">Parceiros destaque</h2>
+        </div>
+        <Link to="/v3/parceiros" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
+      </div>
+      <div className="space-y-2">
+        {list.map((p: any) => (
+          <Link key={p.id} to={`/v3/local/${p.slug}`} className="group flex items-center gap-3 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
+            <div className="h-10 w-10 rounded-lg overflow-hidden bg-secondary/40 flex items-center justify-center shrink-0">
+              {p.logo_url ? <img src={p.logo_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" /> : <span className="text-sm font-black text-primary">{p.name?.[0]}</span>}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[12px] font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                {p.name} {p.verified_partner && <BadgeCheck className="inline h-3 w-3 text-primary" />}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate capitalize">{p.type}</p>
+            </div>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           </Link>
         ))}
       </div>
