@@ -320,7 +320,73 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* ── 2. Insights ── */}
+      {/* ── Performance em Tempo Real (GA4 + Instagram) ── */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400"></span>
+          </span>
+          Performance em Tempo Real
+          <span className="ml-auto text-[9px] font-normal text-muted-foreground/70 normal-case tracking-normal">
+            GA4 · G-MLN9W59D9J
+          </span>
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* GA4: Active users */}
+          <div className={cn("p-4", GLASS)}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-green-500/15 text-green-400">
+                <Users className="h-4 w-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-green-400">Ativos agora</span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{realtime.activeUsers}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Últimos 5 minutos</p>
+          </div>
+
+          {/* GA4: Page views */}
+          <div className={cn("p-4", GLASS)}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/15 text-primary">
+                <Eye className="h-4 w-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Page Views</span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums">{realtime.pageViews}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Últimos 30 minutos</p>
+          </div>
+
+          {/* Instagram: Followers */}
+          <div className={cn("p-4", GLASS)}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-pink-500/15 text-pink-400">
+                <Instagram className="h-4 w-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-pink-400">Seguidores</span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums">
+              {igStats.followers !== null ? igStats.followers.toLocaleString("pt-BR") : "—"}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">@roxou.pp</p>
+          </div>
+
+          {/* Instagram: Reach */}
+          <div className={cn("p-4", GLASS)}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-accent/15 text-accent">
+                <TrendingUp className="h-4 w-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-accent">Alcance</span>
+            </div>
+            <p className="text-2xl font-bold tabular-nums">
+              {igStats.reach !== null ? igStats.reach.toLocaleString("pt-BR") : "—"}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Últimos 7 dias</p>
+          </div>
+        </div>
+      </section>
+
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Insights</h2>
         {loading ? (
