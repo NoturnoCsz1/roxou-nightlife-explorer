@@ -52,6 +52,8 @@ const InstagramAdmin = () => {
   const [posts, setPosts] = useState<IgPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
   const [publishing, setPublishing] = useState<string | null>(null);
 
   const [newCaption, setNewCaption] = useState("");
