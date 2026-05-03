@@ -196,6 +196,14 @@ const Dashboard = () => {
     const noDescription = published.filter(e => !e.description || e.description.trim().length < 20).length;
     setPending({ noCover, noDescription });
 
+    // Rascunhos do Radar IA aguardando revisão
+    const { count: autoCount } = await supabase
+      .from("events")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "draft")
+      .eq("verification_source", "auto-discovery");
+    setAutoDrafts(autoCount || 0);
+
     // Insights: trending + most viewed
     const views7d = await fetchAllRows<{ page_path: string; created_at: string }>(
       () => supabase.from("page_views").select("page_path, created_at").gte("created_at", since7dISO)
