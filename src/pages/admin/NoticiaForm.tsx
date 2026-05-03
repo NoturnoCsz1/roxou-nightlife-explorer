@@ -218,6 +218,22 @@ const NoticiaForm = () => {
           />
         </div>
 
+        <div className="flex items-start gap-2 rounded-lg border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5 p-3">
+          <Checkbox
+            id="autoIG"
+            checked={autoPublishIG}
+            onCheckedChange={(v) => setAutoPublishIG(Boolean(v))}
+          />
+          <Label htmlFor="autoIG" className="cursor-pointer text-sm leading-tight">
+            <span className="flex items-center gap-1.5 font-semibold">
+              <Instagram className="h-3.5 w-3.5 text-pink-400" /> Publicar também no Instagram @roxou.pp
+            </span>
+            <span className="text-[11px] text-muted-foreground font-normal">
+              Requer status "Publicado" e imagem de capa. O card vai direto para o feed.
+            </span>
+          </Label>
+        </div>
+
         <Button type="submit" disabled={saving} className="gap-2">
           <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar notícia"}
         </Button>
