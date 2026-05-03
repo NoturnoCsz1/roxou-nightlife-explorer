@@ -3,10 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
+import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
+
 import Expo2026 from "./pages/Expo2026";
 import ExpoNoticia from "./pages/ExpoNoticia";
+
+// Admin
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
@@ -21,8 +26,21 @@ import InstagramAdminPage from "./pages/admin/InstagramAdmin";
 import Editores from "./pages/admin/Editores";
 import NoticiasList from "./pages/admin/NoticiasList";
 import NoticiaForm from "./pages/admin/NoticiaForm";
+
+// V3 (padrão)
 import V3Auth from "./pages/v3/V3Auth";
 import V3Parceiros from "./pages/v3/V3Parceiros";
+
+// Legacy v2 (arquivado em /archive/legacy-v2/*)
+import LegacyIndex from "./pages/Index";
+import LegacyEventDetail from "./pages/EventDetail";
+import LegacyHoje from "./pages/Hoje";
+import LegacySemana from "./pages/Semana";
+import LegacyCategorias from "./pages/Categorias";
+import LegacySalvos from "./pages/Salvos";
+import LegacyIndica from "./pages/Indica";
+import LegacyLocalDetail from "./pages/LocalDetail";
+import LegacyLocalEventos from "./pages/LocalEventos";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +51,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Admin — segue funcionando normalmente */}
+          {/* ========= ADMIN (central única de comando) ========= */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
@@ -54,19 +72,35 @@ const App = () => (
             <Route path="noticias/:id/editar" element={<NoticiaForm />} />
           </Route>
 
-          {/* Auth — segue funcionando para login */}
+          {/* ========= AUTH ========= */}
           <Route path="/auth" element={<V3Auth />} />
           <Route path="/auth/*" element={<V3Auth />} />
 
-          {/* Hot site Expo Prudente 2026 — exceção da manutenção */}
+          {/* ========= HOT SITE EXPO 2026 ========= */}
           <Route path="/expo2026" element={<Expo2026 />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
-          {/* Parceiros V3 — exceção da manutenção */}
+          {/* ========= V3 PADRÃO ========= */}
+          {/* Landing principal: contagem regressiva V3 (lançamento 04/05 18h) */}
+          <Route path="/" element={<Maintenance />} />
           <Route path="/v3/parceiros" element={<V3Parceiros />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
-          {/* Tudo o mais: manutenção para usuários comuns, app completo para admins logados */}
+          {/* ========= LEGACY V2 (arquivado, NoIndex) ========= */}
+          <Route path="/archive/legacy-v2" element={<LegacyArchiveLayout />}>
+            <Route index element={<LegacyIndex />} />
+            <Route path="evento/:slug" element={<LegacyEventDetail />} />
+            <Route path="hoje" element={<LegacyHoje />} />
+            <Route path="semana" element={<LegacySemana />} />
+            <Route path="categorias" element={<LegacyCategorias />} />
+            <Route path="salvos" element={<LegacySalvos />} />
+            <Route path="indica" element={<LegacyIndica />} />
+            <Route path="local/:slug" element={<LegacyLocalDetail />} />
+            <Route path="local/:slug/eventos" element={<LegacyLocalEventos />} />
+          </Route>
+
+          {/* Catch-all: admins logados acessam app completo (testes V3);
+              público vai para a landing V3 (Maintenance / contagem). */}
           <Route path="*" element={<AdminMaintenanceGate />} />
         </Routes>
       </BrowserRouter>

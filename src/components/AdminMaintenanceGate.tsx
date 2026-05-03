@@ -2,17 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import Maintenance from "@/pages/Maintenance";
 
-// Páginas públicas legadas
-import Index from "@/pages/Index";
-import EventDetail from "@/pages/EventDetail";
-import Hoje from "@/pages/Hoje";
-import Semana from "@/pages/Semana";
-import Categorias from "@/pages/Categorias";
-import Salvos from "@/pages/Salvos";
-import Indica from "@/pages/Indica";
-import LocalDetail from "@/pages/LocalDetail";
-import LocalEventos from "@/pages/LocalEventos";
-import NotFound from "@/pages/NotFound";
+// Páginas legadas removidas do gate — agora vivem em /archive/legacy-v2/* (ver App.tsx).
 
 // V3
 import V3Layout from "@/components/v3/V3Layout";
@@ -61,15 +51,18 @@ export default function AdminMaintenanceGate() {
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/evento/:slug" element={<EventDetail />} />
-      <Route path="/hoje" element={<Hoje />} />
-      <Route path="/semana" element={<Semana />} />
-      <Route path="/categorias" element={<Categorias />} />
-      <Route path="/salvos" element={<Salvos />} />
-      <Route path="/indica" element={<Indica />} />
-      <Route path="/local/:slug" element={<LocalDetail />} />
-      <Route path="/local/:slug/eventos" element={<LocalEventos />} />
+      {/* Para admins logados, raiz vai direto para V3 Home (padrão pós-lançamento). */}
+      <Route path="/" element={<Navigate to="/v3" replace />} />
+
+      {/* Rotas legadas v2 redirecionadas para o arquivo (admins ainda podem inspecionar). */}
+      <Route path="/evento/:slug" element={<Navigate to="/archive/legacy-v2" replace />} />
+      <Route path="/hoje" element={<Navigate to="/archive/legacy-v2/hoje" replace />} />
+      <Route path="/semana" element={<Navigate to="/archive/legacy-v2/semana" replace />} />
+      <Route path="/categorias" element={<Navigate to="/archive/legacy-v2/categorias" replace />} />
+      <Route path="/salvos" element={<Navigate to="/archive/legacy-v2/salvos" replace />} />
+      <Route path="/indica" element={<Navigate to="/archive/legacy-v2/indica" replace />} />
+      <Route path="/local/:slug" element={<Navigate to="/archive/legacy-v2" replace />} />
+      <Route path="/local/:slug/eventos" element={<Navigate to="/archive/legacy-v2" replace />} />
 
       <Route path="/v3" element={<V3Layout />}>
         <Route index element={<V3Home />} />
