@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
+import { trackEventClick } from "@/lib/ga";
 
 interface EventCardV3Props {
   id: string;
