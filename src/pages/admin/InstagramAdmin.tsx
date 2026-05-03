@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles } from "lucide-react";
+import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
 import InstagramStudio from "@/components/admin/InstagramStudio";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 interface IgAccount {
   id: string;
@@ -55,6 +56,7 @@ const InstagramAdmin = () => {
 
   const [newCaption, setNewCaption] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
+  const [scheduleAt, setScheduleAt] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -113,17 +115,19 @@ const InstagramAdmin = () => {
     if (!newImageUrl.trim()) { toast.error("URL da imagem é obrigatória"); return; }
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
+    const isScheduled = !!scheduleAt;
     const { error } = await supabase.from("instagram_posts" as any).insert({
       caption: newCaption || null,
       image_url: newImageUrl,
-      status: "draft",
+      status: isScheduled ? "scheduled" : "draft",
       created_by: userData.user?.id || "00000000-0000-0000-0000-000000000000",
       instagram_account_id: account?.id || null,
+      ...(isScheduled ? { published_at: new Date(scheduleAt).toISOString() } : {}),
     } as any);
-    if (error) { toast.error("Erro ao salvar rascunho"); }
+    if (error) { toast.error("Erro ao salvar"); }
     else {
-      toast.success("Rascunho salvo!");
-      setNewCaption(""); setNewImageUrl(""); setShowForm(false);
+      toast.success(isScheduled ? "Post agendado!" : "Rascunho salvo!");
+      setNewCaption(""); setNewImageUrl(""); setScheduleAt(""); setShowForm(false);
       loadData();
     }
     setSaving(false);
