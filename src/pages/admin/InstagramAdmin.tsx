@@ -124,6 +124,25 @@ const InstagramAdmin = () => {
     }
   }
 
+  async function handleTestConnection() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=test`,
+        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+      );
+      const result = await res.json();
+      setTestResult(result);
+      if (result.ok) toast.success("Conexão validada com sucesso");
+      else toast.error("Conexão com problemas", { description: "Veja detalhes abaixo." });
+    } catch (err: any) {
+      toast.error("Erro ao testar", { description: err.message });
+    } finally {
+      setTesting(false);
+    }
+  }
+
   async function handleSaveDraft() {
     if (!newImageUrl.trim()) { toast.error("URL da imagem é obrigatória"); return; }
     setSaving(true);
