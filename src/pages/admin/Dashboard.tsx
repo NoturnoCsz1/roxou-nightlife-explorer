@@ -139,8 +139,8 @@ const Dashboard = () => {
   const [kpis, setKpis] = useState({ today: 0, week: 0, total: 0 });
   const [kpiGrowth, setKpiGrowth] = useState<{ today: number; week: number }>({ today: 0, week: 0 });
   const [perf, setPerf] = useState({ views: 0, visitors: 0, clicks: 0 });
-  const [realtime, setRealtime] = useState({ activeUsers: 0, pageViews: 0 });
-  const [igStats, setIgStats] = useState<{ followers: number | null; reach: number | null }>({ followers: null, reach: null });
+  const [realtime, setRealtime] = useState({ activeUsers: 0, pageViews: 0, sessions: 0 });
+  const [igStats, setIgStats] = useState<{ followers: number | null; reach: number | null; impressions: number | null }>({ followers: null, reach: null, impressions: null });
   const [trending, setTrending] = useState<{ title: string; views: number; growth: number; slug: string } | null>(null);
   const [topEvent, setTopEvent] = useState<{ title: string; views: number; slug: string } | null>(null);
   const [opportunities, setOpportunities] = useState<string[]>([]);
