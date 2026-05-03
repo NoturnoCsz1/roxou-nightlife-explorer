@@ -311,6 +311,47 @@ const InstagramAdmin = () => {
                   </button>
                 </div>
               )}
+
+              {/* Botão Testar Conexão */}
+              <div className="pt-2 border-t border-border/30">
+                <button
+                  onClick={handleTestConnection}
+                  disabled={testing}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 px-4 py-2 text-xs font-semibold text-primary transition disabled:opacity-50"
+                >
+                  {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                  {testing ? "Testando..." : "Testar conexão e permissões"}
+                </button>
+
+                {testResult && (
+                  <div className="mt-3 space-y-2">
+                    <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold ${testResult.ok ? "bg-green-400/10 text-green-400" : "bg-destructive/10 text-destructive"}`}>
+                      {testResult.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+                      {testResult.ok ? "Tudo certo — Radar IA pronto para uso" : "Conexão incompleta — corrija os itens abaixo"}
+                    </div>
+                    {testResult.stage === "no_account" && (
+                      <p className="text-[11px] text-muted-foreground">{testResult.message}</p>
+                    )}
+                    {Array.isArray(testResult.checks) && (
+                      <ul className="space-y-1.5">
+                        {testResult.checks.map((c: any, i: number) => (
+                          <li key={i} className="flex items-start gap-2 rounded-lg bg-secondary/30 px-3 py-2">
+                            {c.ok ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-400 mt-0.5 shrink-0" />
+                            ) : (
+                              <XCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-semibold text-foreground">{c.name}</p>
+                              {c.detail && <p className="text-[10px] text-muted-foreground break-words">{c.detail}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             </div>
           )}
