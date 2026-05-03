@@ -147,6 +147,123 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Action: test connection (validates token + permissions + IG business discovery)
+  if (action === "test") {
+    const { data: acc } = await supabase
+      .from("instagram_accounts")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!acc) {
+      return new Response(
+        JSON.stringify({ ok: false, stage: "no_account", message: "Nenhuma conta conectada." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = acc.access_token;
+    const checks: Array<{ name: string; ok: boolean; detail?: string; data?: any }> = [];
+
+    // 1. /me — token validity
+    try {
+      const r = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${token}`);
+      const j = await r.json();
+      checks.push({ name: "Token válido (/me)", ok: !j.error, detail: j.error?.message, data: { id: j.id, name: j.name } });
+    } catch (e) {
+      checks.push({ name: "Token válido (/me)", ok: false, detail: String(e) });
+    }
+
+    // 2. Permissions
+    let hasInstagramBasic = false;
+    try {
+      const r = await fetch(`https://graph.facebook.com/v21.0/me/permissions?access_token=${token}`);
+      const j = await r.json();
+      const granted = (j.data || []).filter((p: any) => p.status === "granted").map((p: any) => p.permission);
+      hasInstagramBasic = granted.includes("instagram_basic");
+      checks.push({
+        name: "Permissões concedidas",
+        ok: hasInstagramBasic && granted.includes("pages_show_list"),
+        detail: granted.join(", ") || "nenhuma",
+        data: granted,
+      });
+    } catch (e) {
+      checks.push({ name: "Permissões concedidas", ok: false, detail: String(e) });
+    }
+
+    // 3. /me/accounts — Facebook Pages linked
+    let pages: any[] = [];
+    try {
+      const r = await fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,instagram_business_account&access_token=${token}`);
+      const j = await r.json();
+      pages = j.data || [];
+      checks.push({
+        name: "Página do Facebook vinculada",
+        ok: pages.length > 0,
+        detail: pages.length === 0 ? "Nenhuma Página encontrada — vincule @roxou.pp a uma Page no Facebook." : `${pages.length} página(s)`,
+        data: pages.map((p) => ({ id: p.id, name: p.name, has_ig: !!p.instagram_business_account })),
+      });
+    } catch (e) {
+      checks.push({ name: "Página do Facebook vinculada", ok: false, detail: String(e) });
+    }
+
+    // 4. IG Business Account
+    const pageWithIg = pages.find((p) => p.instagram_business_account);
+    let igAccountId: string | null = pageWithIg?.instagram_business_account?.id || null;
+    if (igAccountId) {
+      try {
+        const r = await fetch(`https://graph.facebook.com/v21.0/${igAccountId}?fields=id,username,followers_count,media_count&access_token=${token}`);
+        const j = await r.json();
+        checks.push({
+          name: "Instagram Business",
+          ok: !j.error,
+          detail: j.error?.message || `@${j.username} • ${j.followers_count ?? "?"} seguidores`,
+          data: j,
+        });
+      } catch (e) {
+        checks.push({ name: "Instagram Business", ok: false, detail: String(e) });
+      }
+    } else {
+      checks.push({
+        name: "Instagram Business",
+        ok: false,
+        detail: "Página do Facebook não está vinculada a um Instagram Business/Creator.",
+      });
+    }
+
+    // 5. Business Discovery — Radar IA dependency
+    if (igAccountId) {
+      try {
+        const r = await fetch(
+          `https://graph.facebook.com/v21.0/${igAccountId}?fields=business_discovery.username(roxou.pp){username,followers_count}&access_token=${token}`
+        );
+        const j = await r.json();
+        checks.push({
+          name: "Business Discovery (Radar IA)",
+          ok: !j.error && !!j.business_discovery,
+          detail: j.error?.message || "OK — Radar IA pode varrer perfis públicos.",
+          data: j.business_discovery,
+        });
+      } catch (e) {
+        checks.push({ name: "Business Discovery (Radar IA)", ok: false, detail: String(e) });
+      }
+    }
+
+    const allOk = checks.every((c) => c.ok);
+    return new Response(
+      JSON.stringify({
+        ok: allOk,
+        username: acc.username,
+        ig_account_id: acc.ig_account_id,
+        token_expires_at: acc.token_expires_at,
+        checks,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   return new Response(JSON.stringify({ error: "Action inválida" }), {
     status: 400,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
