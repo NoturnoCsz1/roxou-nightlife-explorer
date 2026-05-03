@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   // Action: get auth URL
   if (action === "auth_url") {
     const redirectUri = `${SUPABASE_URL}/functions/v1/instagram-oauth?action=callback`;
-    const scopes = "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement";
+    const scopes = "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management";
     const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code`;
 
     return new Response(JSON.stringify({ authUrl }), {
