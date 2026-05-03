@@ -102,13 +102,34 @@ const NoticiaForm = () => {
     };
 
     const op = editing
-      ? supabase.from("expo_news").update(payload).eq("id", id!)
-      : supabase.from("expo_news").insert(payload);
+      ? supabase.from("expo_news").update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author").single()
+      : supabase.from("expo_news").insert(payload).select("id, cover_image_url, title, excerpt, author").single();
 
-    const { error } = await op;
+    const { data: saved, error } = await op;
+    if (error) { setSaving(false); return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); }
+
+    // Publicação direta no Instagram
+    if (autoPublishIG && payload.status === "published" && saved?.cover_image_url) {
+      const caption = `📰 ${saved.title}\n\n${saved.excerpt || ""}\n\nLeia em roxou.com.br/expo2026/noticia/${payload.slug}\n\nPor ${saved.author} · ROXOU`;
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: postRow, error: postErr } = await supabase.from("instagram_posts").insert({
+        caption,
+        image_url: saved.cover_image_url,
+        status: "draft",
+        created_by: userData.user?.id,
+      }).select("id").single();
+      if (!postErr && postRow?.id) {
+        const { data: pub, error: pubErr } = await supabase.functions.invoke("instagram-publish", { body: { post_id: postRow.id } });
+        if (pubErr || !pub?.success) {
+          toast({ title: "Notícia salva, mas Instagram falhou", description: pub?.error || pubErr?.message, variant: "destructive" });
+        } else {
+          toast({ title: "Notícia + Instagram publicados!" });
+        }
+      }
+    } else {
+      toast({ title: editing ? "Notícia atualizada" : "Notícia criada" });
+    }
     setSaving(false);
-    if (error) return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
-    toast({ title: editing ? "Notícia atualizada" : "Notícia criada" });
     navigate("/admin/noticias");
   };
 
