@@ -23,6 +23,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import AuraCreateEventModal from "@/components/admin/AuraCreateEventModal";
 
 interface EventRow {
   id: string;
