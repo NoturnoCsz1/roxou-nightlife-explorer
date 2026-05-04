@@ -86,30 +86,29 @@ export default function V3ProfileEdit() {
     setSavingAvatar(false);
   };
 
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleCoverUpload(file: File) {
+    if (!user?.id) {
+      toast.error("Usuário não carregado.");
+      return;
+    }
     setSavingCover(true);
     try {
-      const url = await uploadImage(file, "cover");
-      if (url) {
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({ cover_image_url: url } as any)
-          .eq("user_id", user.id);
-        if (updateError) {
-          toast.error("Erro ao salvar capa: " + updateError.message);
-        } else {
-          // Cache-busting para forçar atualização imediata na tela
-          setCoverUrl(`${url}?t=${Date.now()}`);
-          toast.success("Capa atualizada!");
-        }
-      }
+      const uploadedUrl = await uploadImage(file, "cover");
+      if (!uploadedUrl) return;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ cover_image_url: uploadedUrl } as any)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setCoverUrl(`${uploadedUrl}?t=${Date.now()}`);
+      toast.success("Capa atualizada com sucesso");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao atualizar capa");
     } finally {
       setSavingCover(false);
-      if (e.target) e.target.value = "";
     }
-  };
+  }
 
   const handleSave = async () => {
     const result = profileSchema.safeParse({ display_name: displayName, nickname, whatsapp });
