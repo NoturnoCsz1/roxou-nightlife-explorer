@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
 
 const NAV_ITEMS = [
@@ -18,6 +19,7 @@ const DESKTOP_ITEMS = [
 export default function V3Layout() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
+  const { profile } = useV3Profile();
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
@@ -26,7 +28,11 @@ export default function V3Layout() {
 
   const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
 
-  const initial = (user?.email?.[0] ?? "R").toUpperCase();
+  const displayName = profile?.display_name?.trim() || user?.email?.split("@")[0] || "Visitante";
+  const nickname = (profile as any)?.nickname?.trim() || null;
+  const avatarUrl = (profile as any)?.avatar_url || null;
+  const initial = (displayName?.[0] ?? "R").toUpperCase();
+
 
   return (
     <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
@@ -78,21 +84,29 @@ export default function V3Layout() {
         <div className="flex-1 max-w-7xl w-full mx-auto lg:flex lg:gap-6 lg:px-4">
           {/* Sidebar Desktop */}
           <aside className="hidden lg:flex lg:flex-col lg:items-center lg:w-64 shrink-0 sticky top-14 self-start py-6 px-4 max-h-[calc(100vh-3.5rem)] overflow-y-auto backdrop-blur-xl bg-background/40">
-            {/* Card de perfil */}
+            {/* Card de perfil — clean, centralizado */}
             <button
               onClick={handleProfileClick}
-              className="w-[200px] flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 transition-colors mb-4"
+              className="w-[200px] flex flex-col items-center gap-2 px-3 py-4 rounded-xl hover:bg-white/5 transition-colors mb-4"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-display font-bold text-primary-foreground shrink-0">
-                {initial}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-display font-bold text-primary-foreground shrink-0 overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  initial
+                )}
               </div>
-              <div className="text-left min-w-0">
+              <div className="text-center min-w-0 w-full">
                 <p className="text-sm font-bold text-foreground line-clamp-1">
-                  {user?.email?.split("@")[0] ?? "Visitante"}
+                  {user ? displayName : "Visitante"}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {user ? "Ver perfil" : "Entrar"}
-                </p>
+                {user && nickname ? (
+                  <p className="text-[11px] text-primary/80 line-clamp-1">@{nickname}</p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    {user ? "Ver perfil" : "Entrar"}
+                  </p>
+                )}
               </div>
             </button>
 

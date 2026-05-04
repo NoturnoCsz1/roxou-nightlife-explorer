@@ -903,12 +903,7 @@ function CommandCenter({
   if (!todayEvents.length && !mainEvents.length && !hero) return null;
 
   return (
-    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[240px_minmax(0,1fr)_320px] gap-5 px-6 py-6">
-      {/* LEFT — Profile + Nav (glassmorphism) */}
-      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide rounded-3xl backdrop-blur-xl bg-background/30 border border-white/10 p-3">
-        <DesktopProfilePanel />
-        <DesktopNavPanel todayCount={todayCount} />
-      </aside>
+    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
 
       {/* CENTER — Hero, Search, Today Timeline, Weekly Spotlight, feed */}
       <section className="min-w-0 space-y-6">
