@@ -117,6 +117,7 @@ const EventosList = () => {
   const [publishing, setPublishing] = useState(false);
   const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name?: string }>>({});
   const [visibleCount, setVisibleCount] = useState(80);
+  const [auraModalOpen, setAuraModalOpen] = useState(false);
 
   const isAiOrigin = (e: EventRow) => {
     const src = (e.verification_source || "").toLowerCase();
