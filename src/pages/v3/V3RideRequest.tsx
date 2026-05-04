@@ -62,7 +62,7 @@ export default function V3RideRequest() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Entre para solicitar transporte");
-        navigate("/v3/auth?redirect=/v3/transporte");
+        navigate("/auth?redirect=/transporte");
         return;
       }
       const { data: prof } = await supabase
@@ -72,7 +72,7 @@ export default function V3RideRequest() {
         .maybeSingle();
       if (!prof?.display_name?.trim() || !(prof as any)?.nickname?.trim()) {
         toast.error("Complete seu perfil (nome e apelido) para solicitar transporte.");
-        navigate("/v3/perfil/editar");
+        navigate("/perfil/editar");
         return;
       }
       const { error } = await supabase.from("ride_requests").insert({
@@ -89,7 +89,7 @@ export default function V3RideRequest() {
       } as any);
       if (error) throw error;
       toast.success("Pedido criado com sucesso!");
-      navigate("/v3/transporte");
+      navigate("/transporte");
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar pedido");
     } finally {
@@ -100,7 +100,7 @@ export default function V3RideRequest() {
   return (
     <div className="px-4 py-6 max-w-md mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <Link to="/v3/transporte" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
+        <Link to="/transporte" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>

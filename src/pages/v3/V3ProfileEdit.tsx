@@ -45,7 +45,7 @@ export default function V3ProfileEdit() {
     return (
       <div className="px-4 py-12 text-center">
         <p className="text-muted-foreground mb-4">Faça login para editar seu perfil.</p>
-        <Button onClick={() => navigate("/v3/auth")}>Entrar</Button>
+        <Button onClick={() => navigate("/auth")}>Entrar</Button>
       </div>
     );
   }
@@ -152,7 +152,7 @@ export default function V3ProfileEdit() {
       return;
     }
     toast.success("Perfil atualizado!");
-    navigate("/v3/perfil");
+    navigate("/perfil");
   };
 
   return (
@@ -160,7 +160,7 @@ export default function V3ProfileEdit() {
       {/* Header */}
       <header className="sticky top-0 z-20 v3-glass-strong border-b border-primary/15 px-4 py-3">
         <div className="flex items-center gap-3 max-w-3xl mx-auto">
-          <Link to="/v3/perfil" className="rounded-full p-2 hover:bg-white/5 transition">
+          <Link to="/perfil" className="rounded-full p-2 hover:bg-white/5 transition">
             <ArrowLeft className="h-5 w-5 text-muted-foreground" />
           </Link>
           <h1 className="font-display text-lg font-black text-foreground">Editar Perfil</h1>
@@ -282,7 +282,7 @@ export default function V3ProfileEdit() {
             <Button
               variant="outline"
               className="flex-1 rounded-2xl h-12"
-              onClick={() => navigate("/v3/perfil")}
+              onClick={() => navigate("/perfil")}
               disabled={saving}
             >
               Cancelar

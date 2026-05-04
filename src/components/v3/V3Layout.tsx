@@ -5,15 +5,15 @@ import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
 
 const NAV_ITEMS = [
-  { to: "/v3", icon: Home, label: "Início" },
-  { to: "/v3/ia", icon: Bot, label: "Aura" },
-  { to: "/v3/transporte", icon: Car, label: "Caronas" },
-  { to: "/v3/perfil", icon: User, label: "Perfil" },
+  { to: "/", icon: Home, label: "Início" },
+  { to: "/ia", icon: Bot, label: "Aura" },
+  { to: "/transporte", icon: Car, label: "Caronas" },
+  { to: "/perfil", icon: User, label: "Perfil" },
 ];
 
 const DESKTOP_ITEMS = [
-  { to: "/v3/agenda", icon: CalendarDays, label: "Agenda" },
-  { to: "/v3/economize", icon: PiggyBank, label: "Economize" },
+  { to: "/agenda", icon: CalendarDays, label: "Agenda" },
+  { to: "/economize", icon: PiggyBank, label: "Economize" },
 ];
 
 export default function V3Layout() {
@@ -23,7 +23,7 @@ export default function V3Layout() {
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
-    navigate(user ? "/v3/perfil" : "/v3/auth");
+    navigate(user ? "/perfil" : "/auth");
   };
 
   const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
@@ -39,20 +39,20 @@ export default function V3Layout() {
       {/* Header — Midnight glass */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center justify-between gap-4 px-4 h-14 max-w-7xl mx-auto">
-          <Link to="/v3" className="font-display font-bold text-xl tracking-tight shrink-0">
+          <Link to="/" className="font-display font-bold text-xl tracking-tight shrink-0">
             <span className="text-primary v3-neon-text">Roxou</span>
           </Link>
 
           <div className="flex items-center gap-2 shrink-0">
             <Link
-              to="/v3/economize"
+              to="/economize"
               className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
               title="Economize"
             >
               <PiggyBank className="w-4 h-4 text-muted-foreground" />
             </Link>
             <Link
-              to="/v3/ia"
+              to="/ia"
               className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
               title="Aura"
             >
@@ -68,7 +68,7 @@ export default function V3Layout() {
               </button>
             ) : (
               <Link
-                to="/v3/auth"
+                to="/auth"
                 className="p-2 rounded-full hover:bg-white/5 transition-colors"
                 title="Entrar"
               >
@@ -113,7 +113,7 @@ export default function V3Layout() {
             {/* Itens de navegação — coluna coesa centralizada */}
             <nav className="flex flex-col items-center gap-1 w-full">
               {allDesktopItems.map(({ to, icon: Icon, label }) => {
-                const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
+                const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
                 return (
                   <button
                     key={to}
@@ -141,11 +141,11 @@ export default function V3Layout() {
       {/* Footer — apenas Desktop (no mobile a TabBar já fecha a tela) */}
       <div className="hidden lg:block pt-2 pb-3 text-center border-t border-white/5 space-y-1">
         <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
-          <Link to="/v3/sobre" className="hover:text-primary transition-colors">Sobre</Link>
+          <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
           <span className="opacity-30">·</span>
-          <Link to="/v3/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
+          <Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
           <span className="opacity-30">·</span>
-          <Link to="/v3/contato" className="hover:text-primary transition-colors">Contato</Link>
+          <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
         </div>
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
@@ -156,9 +156,9 @@ export default function V3Layout() {
       <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5 lg:hidden">
         <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
-            const isProfile = to === "/v3/perfil";
-            const active = to === "/v3"
-              ? pathname === "/v3"
+            const isProfile = to === "/perfil";
+            const active = to === "/"
+              ? pathname === "/"
               : pathname.startsWith(to);
             return (
               <button

@@ -2,7 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+/** Redireciona /v3/* (rotas legadas) para o caminho equivalente na raiz. */
+function RedirectV3() {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace(/^\/v3/, "") || "/";
+  return <Navigate to={`${target}${search}${hash}`} replace />;
+}
 
 import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
@@ -100,13 +107,15 @@ const App = () => (
           <Route path="/expo2026" element={<Expo2026 />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
-          {/* ========= V3 PADRÃO (PÚBLICO durante pré-lançamento) ========= */}
-          {/* Landing principal: contagem regressiva V3 (lançamento 04/05 18h) */}
-          <Route path="/" element={<Maintenance />} />
-          <Route path="/v3/parceiros" element={<V3Parceiros />} />
+          {/* ========= ROXOU V3 (raiz pública) ========= */}
+          <Route path="/manutencao" element={<Maintenance />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
-          <Route path="/v3" element={<V3Layout />}>
+          {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
+          <Route path="/v3" element={<Navigate to="/" replace />} />
+          <Route path="/v3/*" element={<RedirectV3 />} />
+
+          <Route path="/" element={<V3Layout />}>
             <Route index element={<V3Home />} />
             <Route path="descobrir" element={<V3Discover />} />
             <Route path="agenda" element={<V3Agenda />} />

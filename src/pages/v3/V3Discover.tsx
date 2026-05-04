@@ -365,7 +365,7 @@ export default function V3Discover() {
               </h3>
               <div className="space-y-2">
                 {partnerMatches.map((p: any) => (
-                  <Link key={p.id} to={`/v3/local/${p.slug}`}
+                  <Link key={p.id} to={`/local/${p.slug}`}
                     className="flex items-center gap-3 p-2.5 rounded-xl bg-card border border-border/40 hover:border-primary/40 transition-all active:scale-[0.98]">
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary shrink-0">
                       {p.logo_url ? (
@@ -427,7 +427,7 @@ export default function V3Discover() {
               {trending.length > 0 && (
                 <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
                   {trending.map(e => (
-                    <Link key={e.id} to={`/v3/evento/${e.slug}`}
+                    <Link key={e.id} to={`/evento/${e.slug}`}
                       className="shrink-0 snap-start w-[180px] rounded-xl overflow-hidden bg-card border border-border/40">
                       <div className="relative h-[100px] overflow-hidden">
                         <img src={e.image_url || "/placeholder.svg"} alt={e.title}
@@ -461,7 +461,7 @@ export default function V3Discover() {
               </div>
               <div className="flex gap-2.5 overflow-x-auto px-4 pb-1 scrollbar-hide snap-x snap-mandatory">
                 {trending.map(e => (
-                  <Link key={e.id} to={`/v3/evento/${e.slug}`}
+                  <Link key={e.id} to={`/evento/${e.slug}`}
                     className="shrink-0 snap-start w-[200px] rounded-xl overflow-hidden bg-card border border-border/40 group active:scale-[0.97] transition-transform">
                     <div className="relative h-[110px] overflow-hidden">
                       <img src={e.image_url || "/placeholder.svg"} alt={e.title}
@@ -500,7 +500,7 @@ export default function V3Discover() {
               <div className="flex gap-2.5 overflow-x-auto px-4 pb-1 scrollbar-hide snap-x snap-mandatory">
                 {verifiedPartners.map((p: any) => (
                   <div key={p.id} className="shrink-0 snap-start w-[160px] rounded-xl bg-card border border-border/40 hover:border-accent/30 transition-all overflow-hidden">
-                    <Link to={`/v3/local/${p.slug}`}>
+                    <Link to={`/local/${p.slug}`}>
                       <div className="relative h-[70px] bg-secondary overflow-hidden">
                         {p.logo_url ? (
                           <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
@@ -519,7 +519,7 @@ export default function V3Discover() {
                       </div>
                     </Link>
                     <div className="px-2.5 pb-2.5 flex items-center justify-between">
-                      <Link to={`/v3/local/${p.slug}`} className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary">
+                      <Link to={`/local/${p.slug}`} className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary">
                         Ver agenda <ChevronRight className="w-3 h-3" />
                       </Link>
                       {user && (
@@ -567,7 +567,7 @@ function DiscoverEventCard({ ev, isTrending, saved, onToggleSave }: {
 }) {
   return (
     <div className="relative rounded-xl overflow-hidden bg-card border border-border/40 group active:scale-[0.97] transition-transform">
-      <Link to={`/v3/evento/${ev.slug}`}>
+      <Link to={`/evento/${ev.slug}`}>
         <div className="relative h-[100px] overflow-hidden">
           <img src={ev.image_url || "/placeholder.svg"} alt={ev.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />

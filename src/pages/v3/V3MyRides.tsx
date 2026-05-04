@@ -93,7 +93,7 @@ export default function V3MyRides() {
     return (
       <div className="px-4 py-6 max-w-md mx-auto text-center space-y-4">
         <p className="text-muted-foreground text-sm">Faça login para ver seus pedidos.</p>
-        <Link to="/v3/auth?redirect=/v3/meus-pedidos">
+        <Link to="/auth?redirect=/meus-pedidos">
           <Button className="rounded-xl">Entrar</Button>
         </Link>
       </div>
@@ -103,7 +103,7 @@ export default function V3MyRides() {
   return (
     <div className="px-4 py-6 max-w-md mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <Link to="/v3/transporte" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
+        <Link to="/transporte" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>
@@ -122,7 +122,7 @@ export default function V3MyRides() {
             <Car className="w-7 h-7 text-primary" />
           </div>
           <p className="text-muted-foreground text-sm">Você ainda não pediu nenhuma carona</p>
-          <Link to="/v3/pedir-carona">
+          <Link to="/pedir-carona">
             <Button className="rounded-xl text-sm">Pedir carona</Button>
           </Link>
         </div>
@@ -182,7 +182,7 @@ export default function V3MyRides() {
                             </Button>
                           </a>
                         ) : (
-                          <Link to={`/v3/chat/${req.id}`}>
+                          <Link to={`/chat/${req.id}`}>
                             <Button size="sm" variant="ghost" className="h-7 px-2 rounded-lg text-xs gap-1">
                               <MessageCircle className="w-3.5 h-3.5" /> Chat
                             </Button>

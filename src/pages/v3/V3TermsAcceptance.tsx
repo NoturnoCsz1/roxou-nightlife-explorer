@@ -31,7 +31,7 @@ export default function V3TermsAcceptance() {
       if (error) throw error;
 
       toast.success("Termos aceitos com sucesso!");
-      navigate("/v3/transporte");
+      navigate("/transporte");
     } catch {
       toast.error("Erro ao aceitar termos. Tente novamente.");
     } finally {
@@ -61,8 +61,8 @@ export default function V3TermsAcceptance() {
           />
           <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
             Li e aceito os{" "}
-            <Link to="/v3/terms" className="text-primary hover:underline">Termos de Uso</Link> e a{" "}
-            <Link to="/v3/privacy" className="text-primary hover:underline">Política de Privacidade</Link> do Roxou Transporte.
+            <Link to="/terms" className="text-primary hover:underline">Termos de Uso</Link> e a{" "}
+            <Link to="/privacy" className="text-primary hover:underline">Política de Privacidade</Link> do Roxou Transporte.
           </label>
         </div>
       </div>

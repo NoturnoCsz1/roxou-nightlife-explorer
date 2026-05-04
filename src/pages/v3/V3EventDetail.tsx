@@ -41,7 +41,7 @@ export default function V3EventDetail() {
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">Evento não encontrado</p>
-        <Link to="/v3" className="text-primary text-sm mt-2 inline-block">Voltar</Link>
+        <Link to="/" className="text-primary text-sm mt-2 inline-block">Voltar</Link>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export default function V3EventDetail() {
         <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute top-4 left-4 right-4 flex justify-between">
-          <Link to="/v3" className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <Link to="/" className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
             <ArrowLeft className="w-4 h-4 text-white" />
           </Link>
           {user && (

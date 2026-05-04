@@ -75,7 +75,7 @@ function Body({
     if (venueName) params.set("venue", venueName);
     if (eventDate) params.set("date", eventDate);
     onClose();
-    navigate(`/v3/transporte?${params.toString()}`);
+    navigate(`/transporte?${params.toString()}`);
   };
 
   return (

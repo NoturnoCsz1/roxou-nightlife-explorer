@@ -37,7 +37,7 @@ export default function AIHomeWidget() {
 
   return (
     <section className="px-4 pt-4 pb-2">
-      <Link to="/v3/ia" className="group block rounded-3xl v3-glass-strong v3-pulse-glow overflow-hidden active:scale-[0.98] transition-transform">
+      <Link to="/ia" className="group block rounded-3xl v3-glass-strong v3-pulse-glow overflow-hidden active:scale-[0.98] transition-transform">
         <div className="relative p-4">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent" />
           <div className="relative flex items-start justify-between gap-3">

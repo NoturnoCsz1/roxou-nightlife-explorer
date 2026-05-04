@@ -18,7 +18,7 @@ const DEFAULT_CHIPS: VibeChip[] = [
 interface Props {
   /** Termo atual da busca (modo controlado). */
   value?: string;
-  /** Quando informado, clicar no chip aplica term na busca local. Sem isso, navega para /v3/agenda?q=term. */
+  /** Quando informado, clicar no chip aplica term na busca local. Sem isso, navega para /agenda?q=term. */
   onSelect?: (term: string) => void;
   chips?: VibeChip[];
   className?: string;
@@ -29,14 +29,14 @@ export default function V3VibeChips({ value, onSelect, chips = DEFAULT_CHIPS, cl
 
   const handleClick = (chip: VibeChip) => {
     if (chip.key === "categorias") {
-      navigate(`/v3/agenda#categorias`);
+      navigate(`/agenda#categorias`);
       return;
     }
     if (onSelect) {
       const isActive = value?.trim().toLowerCase() === chip.term.toLowerCase();
       onSelect(isActive ? "" : chip.term);
     } else {
-      navigate(`/v3/agenda?q=${encodeURIComponent(chip.term)}`);
+      navigate(`/agenda?q=${encodeURIComponent(chip.term)}`);
     }
   };
 

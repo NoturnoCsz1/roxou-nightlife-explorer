@@ -92,7 +92,7 @@ export default function V3Chat() {
     return (
       <div className="px-4 py-6 text-center space-y-3">
         <p className="text-muted-foreground text-sm">Faça login para acessar o chat.</p>
-        <Link to={`/v3/auth?redirect=/v3/chat/${requestId}`}>
+        <Link to={`/auth?redirect=/chat/${requestId}`}>
           <Button className="rounded-xl">Entrar</Button>
         </Link>
       </div>
@@ -104,7 +104,7 @@ export default function V3Chat() {
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/40 bg-card/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <Link to="/v3/transporte" className="p-1.5 -ml-1 rounded-lg hover:bg-accent transition-colors">
+          <Link to="/transporte" className="p-1.5 -ml-1 rounded-lg hover:bg-accent transition-colors">
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </Link>
           <div className="min-w-0">

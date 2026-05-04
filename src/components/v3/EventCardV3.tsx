@@ -37,7 +37,7 @@ export default function EventCardV3({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { isSaved, toggleSave } = useSavedEvents();
 
-  const goDetail = () => { trackEventClick(id, title); navigate(`/v3/evento/${slug}`); };
+  const goDetail = () => { trackEventClick(id, title); navigate(`/evento/${slug}`); };
 
   return (
     <>
