@@ -101,19 +101,9 @@ export default function V3Layout() {
       </PullToRefresh>
 
       {/* Footer */}
-      <div className="pb-24 lg:pb-6 pt-4 text-center border-t border-white/5">
+      <div className="pb-24 lg:pb-4 pt-3 text-center border-t border-white/5">
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
-        </p>
-        <p className="text-[9px] text-muted-foreground/40 mt-0.5">
-          Plataforma desenvolvida por{" "}
-          <a href="https://ntaplicacoes.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-            NT Aplicações
-          </a>
-          {" — "}
-          <a href="https://ntaplicacoes.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-            www.ntaplicacoes.com.br
-          </a>
         </p>
       </div>
 
