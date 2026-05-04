@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Bot, Crown, Loader2, Send, Sparkles, User, MapPin, Car, Video, Beer, Music, PartyPopper, Wine } from "lucide-react";
+import AuraAvatar from "@/components/v3/AuraAvatar";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,8 +101,8 @@ export default function V3AIChat() {
       <header className="v3-glass-strong border-b border-primary/15 px-4 py-3">
         <div className="flex items-center gap-3 max-w-3xl mx-auto">
           <Link to="/" className="rounded-full p-2 hover:bg-white/5 transition"><ArrowLeft className="h-5 w-5 text-muted-foreground" /></Link>
-          <div className="relative h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center neon-glow">
-            <Bot className="h-5 w-5 text-primary-foreground" />
+          <div className="relative">
+            <AuraAvatar className="h-10 w-10" />
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-background v3-pulse-glow" />
           </div>
           <div className="min-w-0 flex-1">
@@ -220,9 +221,7 @@ export default function V3AIChat() {
 function TypingIndicator() {
   return (
     <div className="flex gap-2 animate-fade-in">
-      <div className="mt-1 h-7 w-7 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
-        <Bot className="h-4 w-4 text-primary" />
-      </div>
+      <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />
       <div className="v3-glass rounded-3xl rounded-bl-lg px-5 py-3.5 flex items-center gap-1.5">
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "0ms" }} />
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "200ms" }} />
@@ -314,7 +313,7 @@ function Bubble({ msg }: { msg: Msg }) {
   const mine = msg.role === "user";
   return (
     <div className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-      {!mine && <div className="mt-1 h-7 w-7 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center"><Bot className="h-4 w-4 text-primary" /></div>}
+      {!mine && <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />}
       <div
         className={`max-w-[82%] rounded-3xl px-4 py-3 text-sm leading-relaxed ${
           mine
