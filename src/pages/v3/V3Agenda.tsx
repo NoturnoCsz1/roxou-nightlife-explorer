@@ -205,7 +205,7 @@ export default function V3Agenda() {
         </div>
 
         {/* MENU UNIFICADO — atalhos + categorias dinâmicas, rolagem horizontal full-bleed */}
-        <div className="mt-4 -mx-5 px-5 flex flex-nowrap overflow-x-auto gap-2 py-2 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+        <div className="mt-4 -mx-5 px-5 pr-10 flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 py-2 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
           {[
             { key: "hoje", label: "🔥 Hoje" },
             { key: "amanha", label: "🌅 Amanhã" },
