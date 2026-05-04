@@ -158,6 +158,14 @@ export default function V3ProfileEdit() {
 
   return (
     <div className="pb-32 lg:pb-12">
+      {/* DIAGNÓSTICO TEMPORÁRIO */}
+      <button
+        type="button"
+        className="fixed top-20 right-5 z-[999999] bg-red-600 text-white px-4 py-3 rounded-xl"
+        onClick={() => alert("CLIQUE FUNCIONOU")}
+      >
+        TESTE CAPA
+      </button>
       <input
         id="cover-upload-input"
         type="file"
