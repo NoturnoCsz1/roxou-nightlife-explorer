@@ -242,6 +242,7 @@ export default function V3Profile() {
           </div>
         )}
       </section>
+      </div>{/* /grid security+followed */}
 
       {/* ── Saved Events ── */}
       <section id="eventos-salvos" className="scroll-mt-6">
