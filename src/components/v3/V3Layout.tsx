@@ -99,9 +99,9 @@ export default function V3Layout() {
         </main>
       </PullToRefresh>
 
-      {/* Footer */}
-      <div className="pb-20 lg:pb-3 pt-2 text-center border-t border-white/5 space-y-1">
-        <div className="hidden lg:flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
+      {/* Footer — apenas Desktop (no mobile a TabBar já fecha a tela) */}
+      <div className="hidden lg:block pt-2 pb-3 text-center border-t border-white/5 space-y-1">
+        <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
           <Link to="/v3/sobre" className="hover:text-primary transition-colors">Sobre</Link>
           <span className="opacity-30">·</span>
           <Link to="/v3/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
