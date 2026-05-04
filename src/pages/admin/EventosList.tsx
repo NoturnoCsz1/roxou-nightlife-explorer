@@ -641,18 +641,18 @@ const EventosList = () => {
     <div className="space-y-4 md:ml-44">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-foreground">Eventos</h1>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <Link
             to="/admin/eventos/novo/lote"
-            className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur-xl transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
           >
             <Layers className="h-3.5 w-3.5" /> Lote
           </Link>
           <Link
             to="/admin/eventos/novo"
-            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_0_18px_hsl(var(--primary)/0.35)] transition hover:bg-primary/90 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_0_28px_hsl(var(--primary)/0.55)]"
           >
-            <Plus className="h-3.5 w-3.5" /> Novo
+            <Plus className="h-4 w-4" /> Novo
           </Link>
         </div>
       </div>
@@ -674,55 +674,6 @@ const EventosList = () => {
           >
              {onlyIncomplete ? "Mostrando incompletos" : "Mostrar apenas rascunhos incompletos"}
           </button>
-        </div>
-      )}
-
-      {/* Bulk action bar */}
-      {(withImages > 0 || selectedCount > 0) && (
-        <div className="flex items-center gap-2 flex-wrap rounded-2xl border border-border/40 bg-white/5 px-3 py-2 backdrop-blur-xl">
-          <button onClick={toggleSelectAll} className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase hover:text-foreground transition">
-            {selectedCount > 0 && selectedCount >= filtered.length ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
-            {selectedCount > 0 ? `${selectedCount} selecionado${selectedCount > 1 ? "s" : ""}` : "Selecionar todos"}
-          </button>
-          <span className="w-px h-4 bg-border/40" />
-          <button
-            onClick={handleBulkPublish}
-            disabled={publishing || selectedReadyToPublish === 0}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50 transition hover:bg-primary/90"
-            title="Publicar selecionados (apenas válidos)"
-          >
-            {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            Postar Selecionados {selectedReadyToPublish > 0 && `(${selectedReadyToPublish})`}
-          </button>
-          <button
-            onClick={handleDownloadZip}
-            disabled={zipping}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60 transition"
-          >
-            {zipping ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            {zipping ? `Baixando... ${zipPercent}%` : "📦 Baixar ZIP"}
-          </button>
-          {selectedCount > 0 && (
-            <>
-              <button
-                onClick={() => handleBulkAura(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-primary/15 border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/25 transition"
-                title="Marcar selecionados como Escolha da Aura"
-              >
-                <Bot className="h-3.5 w-3.5" /> Marcar Aura
-              </button>
-              <button
-                onClick={() => handleBulkFeatured(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-yellow-400/10 border border-yellow-400/30 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/20 transition"
-                title="Destacar selecionados"
-              >
-                <Flame className="h-3.5 w-3.5" /> Destacar
-              </button>
-            </>
-          )}
-          {zipping && (
-            <Progress value={zipPercent} className="h-1.5 flex-1 min-w-[80px]" />
-          )}
         </div>
       )}
 
