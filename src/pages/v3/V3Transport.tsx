@@ -152,7 +152,7 @@ export default function V3Transport() {
 
           <div className="flex items-center gap-2 pt-2">
             <Link
-              to={caronaClosed ? "#" : rideUrl}
+              to={caronaClosed ? "#" : (user ? rideUrl : "/v3/perfil")}
               onClick={(e) => {
                 if (caronaClosed) {
                   e.preventDefault();
@@ -168,7 +168,7 @@ export default function V3Transport() {
                     "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
                 }}
               >
-                <Car className="w-4 h-4 mr-1" /> Pedir carona
+                <Car className="w-4 h-4 mr-1" /> {user ? "Pedir carona" : "Entrar para solicitar carona"}
               </Button>
             </Link>
             <Link to="/v3/terms" className="shrink-0">
