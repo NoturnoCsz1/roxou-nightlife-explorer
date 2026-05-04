@@ -531,9 +531,11 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
   return (
     <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-[600px] lg:min-h-[600px] lg:max-h-[600px] overflow-hidden">
       {/* Background image with Ken Burns */}
-      <img
-        src={ev.image_url || "/placeholder.svg"}
+      <SmartImage
+        src={ev.image_url}
         alt={ev.title}
+        loading="eager"
+        wrapperClassName="absolute inset-0 w-full h-full"
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
       {/* Cinematic overlays */}
