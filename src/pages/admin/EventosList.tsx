@@ -838,6 +838,8 @@ const EventosList = () => {
         <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>
       ) : (
         <div className="space-y-6">
+          {renderSection("Escolha da Aura", auraEvents, "🤖")}
+          {renderSection("Destaques do dia", featuredTodayEvents, "🔥")}
           {renderSection("Hoje", todayEvents, "📌")}
           {renderSection("Próximos", upcomingEvents, "🔜")}
 
