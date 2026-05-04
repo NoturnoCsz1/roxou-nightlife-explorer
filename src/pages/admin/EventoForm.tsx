@@ -559,6 +559,18 @@ const EventoForm = () => {
                 }}
                 label="Flyer do Evento"
               />
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  🎬 Vídeo POV (opcional · MP4 público) <span className="text-[10px] font-normal normal-case text-muted-foreground/70">— usado no card "Destaque da Semana"</span>
+                </label>
+                <input
+                  type="url"
+                  value={form.video_url || ""}
+                  onChange={(e) => setForm((prev) => ({ ...prev, video_url: e.target.value }))}
+                  placeholder="https://..."
+                  className="w-full rounded-lg border border-border/40 bg-background/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/60 focus:outline-none"
+                />
+              </div>
               {duplicateCandidate && (
                 <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/10 p-3 text-xs text-yellow-100 space-y-2">
                   <p className="font-bold flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5" /> ⚠️ Este evento já foi postado.</p>
