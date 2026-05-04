@@ -97,6 +97,21 @@ export default function V3AIChat() {
       description="Conheça a Aura, a inteligência artificial da Roxou que recomenda os melhores rolês, promoções e caronas seguras em Presidente Prudente. Descubra o que fazer hoje."
       canonical="https://roxou.com.br/ia"
       ogImage="https://roxou.com.br/og-aura.png"
+      keywords="eventos Presidente Prudente, o que fazer em Prudente, baladas Prudente, bares em Prudente, agenda de eventos, Roxou, Aura IA"
+      locale="pt_BR"
+      jsonLd={{
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        name: "Aura IA",
+        applicationCategory: "LifestyleApplication",
+        operatingSystem: "Web",
+        url: "https://roxou.com.br/ia",
+        image: "https://roxou.com.br/og-aura.png",
+        inLanguage: "pt-BR",
+        description: "Aura é a inteligência artificial da Roxou que recomenda eventos, bares, baladas, promoções e caronas seguras em Presidente Prudente.",
+        publisher: { "@type": "Organization", name: "Roxou", url: "https://roxou.com.br" },
+        offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" }
+      }}
     />
     <div className="fixed inset-0 lg:inset-x-0 lg:top-14 lg:bottom-0 z-50 lg:z-10 flex flex-col overflow-hidden bg-background" style={{ height: "100dvh" }}>
       {/* Background neon glow ambient */}
