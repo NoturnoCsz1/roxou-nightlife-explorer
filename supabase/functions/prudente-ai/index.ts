@@ -47,7 +47,7 @@ async function callAI(messages: any[], tools?: any[]) {
   const body: Record<string, unknown> = {
     model: "google/gemini-3-flash-preview",
     messages,
-    temperature: 0.75,
+    temperature: 0.95,
   };
   if (tools) {
     body.tools = tools;
