@@ -641,18 +641,18 @@ const EventosList = () => {
     <div className="space-y-4 md:ml-44">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-foreground">Eventos</h1>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <Link
             to="/admin/eventos/novo/lote"
-            className="flex items-center gap-1 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-secondary/80 transition"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur-xl transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
           >
             <Layers className="h-3.5 w-3.5" /> Lote
           </Link>
           <Link
             to="/admin/eventos/novo"
-            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_0_18px_hsl(var(--primary)/0.35)] transition hover:bg-primary/90 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_0_28px_hsl(var(--primary)/0.55)]"
           >
-            <Plus className="h-3.5 w-3.5" /> Novo
+            <Plus className="h-4 w-4" /> Novo
           </Link>
         </div>
       </div>
