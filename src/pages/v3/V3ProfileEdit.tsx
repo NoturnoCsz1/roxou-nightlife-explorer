@@ -201,9 +201,14 @@ export default function V3ProfileEdit() {
           <input
             ref={coverInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
             className="hidden"
-            onChange={handleCoverChange}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              await handleCoverUpload(file);
+              e.target.value = "";
+            }}
           />
         </div>
 
