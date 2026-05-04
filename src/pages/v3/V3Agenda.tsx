@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
+import V3SearchBar from "@/components/v3/V3SearchBar";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
