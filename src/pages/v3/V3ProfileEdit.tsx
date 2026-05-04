@@ -246,7 +246,12 @@ export default function V3ProfileEdit() {
             <div className="h-24 w-24 rounded-2xl border-2 border-primary/60 bg-white/5 backdrop-blur-xl p-1 shadow-[0_0_30px_hsl(var(--primary)/0.45)]">
               <div className="h-full w-full overflow-hidden rounded-xl bg-secondary/40 flex items-center justify-center">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <img
+                    key={`avatar-${imgKey}`}
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="w-full h-full object-cover animate-in fade-in duration-500"
+                  />
                 ) : (
                   <User className="h-10 w-10 text-primary" />
                 )}
@@ -266,7 +271,13 @@ export default function V3ProfileEdit() {
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               className="hidden"
-              onChange={handleAvatarChange}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                if (!validateImageFile(file)) return;
+                setPendingAvatar(file);
+              }}
             />
           </div>
         </div>
