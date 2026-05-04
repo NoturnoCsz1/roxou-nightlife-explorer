@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Layers, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, Bot, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Flame, Image as ImageIcon, Layers, Link2, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ interface EventRow {
   sub_category: string | null;
   status: string;
   featured: boolean;
+  aura_pick: boolean;
   image_url: string | null;
   description: string | null;
   partner_id: string | null;
@@ -41,11 +42,21 @@ interface EventRow {
   verification_source: string | null;
 }
 
+function getQualityScore(e: EventRow): number {
+  let s = 0;
+  if (e.image_url) s += 25;
+  if (e.date_time && new Date(e.date_time).getTime() > Date.now()) s += 25;
+  if (e.venue_name && e.venue_name.trim()) s += 25;
+  if (e.category) s += 25;
+  return s;
+}
+
 // Centralized route builder for the full event edit form.
 // Use this everywhere instead of hardcoding paths to avoid divergences.
 export const getEventEditPath = (id: string) => `/admin/eventos/${id}/editar`;
 
 type OriginFilter = "todos" | "ai" | "manual";
+type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
@@ -96,6 +107,7 @@ const EventosList = () => {
   const [onlyIncomplete, setOnlyIncomplete] = useState(false);
   const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
   const [originFilter, setOriginFilter] = useState<OriginFilter>("todos");
+  const [extraFilter, setExtraFilter] = useState<ExtraFilter>("todos");
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [zipping, setZipping] = useState(false);
@@ -149,7 +161,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, image_url, description, partner_id, created_at, verification_source")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -212,7 +224,42 @@ const EventosList = () => {
   async function toggleFeatured(id: string, current: boolean) {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
-    toast.success(!current ? "Marcado como destaque" : "Removido do destaque");
+    toast.success(!current ? "🔥 Marcado como destaque" : "Removido do destaque");
+  }
+
+  async function toggleAuraPick(id: string, current: boolean) {
+    const { error } = await supabase.from("events").update({ aura_pick: !current } as any).eq("id", id);
+    if (error) { toast.error("Erro ao marcar Aura"); return; }
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, aura_pick: !current } : e)));
+    toast.success(!current ? "🤖 Escolha da Aura ativada" : "Removido da Aura");
+  }
+
+  async function copyEventLink(e: EventRow) {
+    const url = `${window.location.origin}/evento/${e.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("🔗 Link copiado");
+    } catch {
+      toast.error("Falha ao copiar link");
+    }
+  }
+
+  async function handleBulkAura(value: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("events").update({ aura_pick: value } as any).in("id", ids);
+    if (error) { toast.error("Erro ao atualizar Aura"); return; }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, aura_pick: value } : e));
+    toast.success(`${ids.length} evento(s) ${value ? "marcados como Aura" : "removidos da Aura"}`);
+  }
+
+  async function handleBulkFeatured(value: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("events").update({ featured: value }).in("id", ids);
+    if (error) { toast.error("Erro ao atualizar destaque"); return; }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, featured: value } : e));
+    toast.success(`${ids.length} evento(s) ${value ? "destacados" : "sem destaque"}`);
   }
 
   async function saveQuickEdit(e: EventRow) {
@@ -355,16 +402,28 @@ const EventosList = () => {
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
     .filter((e) => !onlyNeedsReview || needsReview(e))
-    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)));
+    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)))
+    .filter((e) => {
+      if (extraFilter === "todos") return true;
+      if (extraFilter === "aura") return e.aura_pick;
+      if (extraFilter === "destaques") return e.featured;
+      if (extraFilter === "sem-imagem") return !e.image_url;
+      if (extraFilter === "incompletos") return getQualityScore(e) < 100;
+      return true;
+    });
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter]);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter]);
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
-  const todayEvents = visibleFiltered.filter((e) => eventDayStr(e) === todayStr);
-  const upcomingEvents = visibleFiltered.filter((e) => eventDayStr(e) > todayStr);
+  const auraEvents = visibleFiltered.filter((e) => e.aura_pick && eventDayStr(e) >= todayStr);
+  const auraIds = new Set(auraEvents.map(e => e.id));
+  const featuredTodayEvents = visibleFiltered.filter((e) => e.featured && !auraIds.has(e.id) && eventDayStr(e) === todayStr);
+  const featuredIds = new Set(featuredTodayEvents.map(e => e.id));
+  const todayEvents = visibleFiltered.filter((e) => eventDayStr(e) === todayStr && !auraIds.has(e.id) && !featuredIds.has(e.id));
+  const upcomingEvents = visibleFiltered.filter((e) => eventDayStr(e) > todayStr && !auraIds.has(e.id));
   const pastEvents = visibleFiltered.filter((e) => eventDayStr(e) < todayStr);
 
   // Counter for header (sobre todos os eventos, não só os filtrados)
@@ -412,8 +471,16 @@ const EventosList = () => {
     const cl = getChecklist(e);
     const busy = aiBusy[e.id];
     const isDraft = e.status === "draft";
+    const score = getQualityScore(e);
+    const borderClass = e.aura_pick
+      ? "border-primary/60 bg-primary/5 shadow-[0_0_18px_rgba(168,85,247,0.25)]"
+      : e.featured
+        ? "border-primary/40 bg-white/5 shadow-[0_0_10px_rgba(168,85,247,0.15)]"
+        : isDraft && !cl.complete
+          ? "border-destructive/40 bg-white/5"
+          : "border-border/40 bg-white/5";
     return (
-      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl ${isDraft && !cl.complete ? "border-destructive/40 bg-white/5" : "border-border/40 bg-white/5"}`}>
+      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl transition-all hover:bg-white/[0.07] hover:-translate-y-0.5 ${borderClass}`}>
         <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
           {selectedIds.has(e.id)
             ? <CheckSquare className="h-4 w-4 text-primary" />
@@ -458,9 +525,19 @@ const EventosList = () => {
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
               {e.status === "published" ? "Publicado" : "Rascunho"}
             </span>
+            {e.aura_pick && (
+              <span title="Aura recomenda este evento como destaque do dia" className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/25 text-primary border border-primary/40 inline-flex items-center gap-0.5">
+                <Bot className="h-2.5 w-2.5" /> Escolha da Aura
+              </span>
+            )}
+            {e.featured && !e.aura_pick && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/15 text-yellow-300 border border-yellow-400/30 inline-flex items-center gap-0.5">
+                <Flame className="h-2.5 w-2.5" /> Destaque
+              </span>
+            )}
             {isAiOrigin(e) && (
               <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-0.5">
-                <Sparkles className="h-2.5 w-2.5" /> IA
+                <Bot className="h-2.5 w-2.5" /> Aura
               </span>
             )}
             {needsReview(e) && (
@@ -468,6 +545,12 @@ const EventosList = () => {
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
+            <span
+              title={`Qualidade: ${score}/100`}
+              className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${score === 100 ? "bg-green-500/15 text-green-400" : score >= 75 ? "bg-yellow-400/10 text-yellow-400" : "bg-red-500/15 text-red-400"}`}
+            >
+              {score === 100 ? "✔" : score >= 75 ? "⚠" : "❌"} {score}
+            </span>
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
@@ -525,8 +608,14 @@ const EventosList = () => {
           <Link to={`/evento/${e.slug}`} target="_blank" className="p-1.5 rounded-lg hover:bg-primary/10 transition" title="Acesso rápido V3">
             <ExternalLink className="h-4 w-4 text-primary" />
           </Link>
-          <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
+          <button onClick={() => toggleAuraPick(e.id, e.aura_pick)} className={`p-1.5 rounded-lg transition ${e.aura_pick ? "bg-primary/20 hover:bg-primary/30" : "hover:bg-primary/10"}`} title={e.aura_pick ? "Remover da Aura" : "Marcar como Escolha da Aura"}>
+            <Bot className={`h-4 w-4 ${e.aura_pick ? "text-primary" : "text-muted-foreground"}`} />
+          </button>
+          <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "🎯 Destacar evento"}>
             {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          <button onClick={() => copyEventLink(e)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="🔗 Copiar link público">
+            <Link2 className="h-4 w-4 text-muted-foreground" />
           </button>
           <button onClick={() => setDeleteTarget(e)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition" title="Excluir evento">
             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
@@ -613,6 +702,24 @@ const EventosList = () => {
             {zipping ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             {zipping ? `Baixando... ${zipPercent}%` : "📦 Baixar ZIP"}
           </button>
+          {selectedCount > 0 && (
+            <>
+              <button
+                onClick={() => handleBulkAura(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary/15 border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/25 transition"
+                title="Marcar selecionados como Escolha da Aura"
+              >
+                <Bot className="h-3.5 w-3.5" /> Marcar Aura
+              </button>
+              <button
+                onClick={() => handleBulkFeatured(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-yellow-400/10 border border-yellow-400/30 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/20 transition"
+                title="Destacar selecionados"
+              >
+                <Flame className="h-3.5 w-3.5" /> Destacar
+              </button>
+            </>
+          )}
           {zipping && (
             <Progress value={zipPercent} className="h-1.5 flex-1 min-w-[80px]" />
           )}
@@ -653,6 +760,22 @@ const EventosList = () => {
           </select>
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {([
+            { key: "todos", label: "Todos", icon: null },
+            { key: "aura", label: "🤖 Aura", icon: Bot },
+            { key: "destaques", label: "🔥 Destaques", icon: Flame },
+            { key: "sem-imagem", label: "Sem imagem", icon: ImageIcon },
+            { key: "incompletos", label: "Incompletos", icon: AlertTriangle },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setExtraFilter(key as ExtraFilter)}
+              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${extraFilter === key ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
+            >
+              {label}
+            </button>
+          ))}
           <button
             type="button"
             onClick={() => setOnlyNeedsReview(!onlyNeedsReview)}
@@ -695,11 +818,11 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
-        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete || onlyNeedsReview || originFilter !== "todos") && (
+        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete || onlyNeedsReview || originFilter !== "todos" || extraFilter !== "todos") && (
           <>
             <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
             <button
-                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); setOnlyNeedsReview(false); setOriginFilter("todos"); }}
+                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); setOnlyNeedsReview(false); setOriginFilter("todos"); setExtraFilter("todos"); }}
               className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
             >
               <X className="h-3 w-3" /> Limpar
@@ -715,6 +838,8 @@ const EventosList = () => {
         <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>
       ) : (
         <div className="space-y-6">
+          {renderSection("Escolha da Aura", auraEvents, "🤖")}
+          {renderSection("Destaques do dia", featuredTodayEvents, "🔥")}
           {renderSection("Hoje", todayEvents, "📌")}
           {renderSection("Próximos", upcomingEvents, "🔜")}
 

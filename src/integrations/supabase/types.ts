@@ -326,6 +326,7 @@ export type Database = {
       events: {
         Row: {
           address: string | null
+          aura_pick: boolean
           category: string
           city: string
           created_at: string
@@ -349,6 +350,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          aura_pick?: boolean
           category?: string
           city?: string
           created_at?: string
@@ -372,6 +374,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          aura_pick?: boolean
           category?: string
           city?: string
           created_at?: string
