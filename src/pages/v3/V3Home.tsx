@@ -903,6 +903,10 @@ function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents
           ))}
         </div>
 
+        {todayEvents.length > 0 && (
+          <DesktopTodayCarousel events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        )}
+
         {/* News from Expo Prudente 2026 */}
         {news.length > 0 && (
           <div className="rounded-3xl v3-glass p-5">
