@@ -348,11 +348,8 @@ export default function V3Home() {
         />
       </div>
 
-      {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão ══════ */}
+      {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
-
-      {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
-      <QuickFilterTabs todayCount={todayCount} weekCount={weekEvents.length} />
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
