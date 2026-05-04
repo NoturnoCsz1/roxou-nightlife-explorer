@@ -51,9 +51,6 @@ export default function AdminMaintenanceGate() {
 
   return (
     <Routes>
-      {/* Para admins logados, raiz vai direto para V3 Home (padrão pós-lançamento). */}
-      <Route path="/" element={<Navigate to="/" replace />} />
-
       {/* Rotas legadas v2 redirecionadas para o arquivo (admins ainda podem inspecionar). */}
       <Route path="/evento/:slug" element={<Navigate to="/archive/legacy-v2" replace />} />
       <Route path="/hoje" element={<Navigate to="/archive/legacy-v2/hoje" replace />} />
@@ -63,24 +60,6 @@ export default function AdminMaintenanceGate() {
       <Route path="/indica" element={<Navigate to="/archive/legacy-v2/indica" replace />} />
       <Route path="/local/:slug" element={<Navigate to="/archive/legacy-v2" replace />} />
       <Route path="/local/:slug/eventos" element={<Navigate to="/archive/legacy-v2" replace />} />
-
-      <Route path="/" element={<V3Layout />}>
-        <Route index element={<V3Home />} />
-        <Route path="descobrir" element={<V3Discover />} />
-        <Route path="agenda" element={<V3Agenda />} />
-        <Route path="perfil" element={<V3Profile />} />
-        <Route path="evento/:slug" element={<V3EventDetail />} />
-        <Route path="local/:slug" element={<V3LocalDetail />} />
-        <Route path="transporte" element={<V3Transport />} />
-        <Route path="pedir-carona" element={<V3RideRequest />} />
-        <Route path="motorista" element={<V3DriverBoard />} />
-        <Route path="chat/:requestId" element={<V3Chat />} />
-        <Route path="meus-pedidos" element={<V3MyRides />} />
-        <Route path="terms" element={<V3Terms />} />
-        <Route path="privacy" element={<V3Privacy />} />
-        <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
-        <Route path="auth" element={<V3Auth />} />
-      </Route>
 
       <Route path="/manutencao" element={<Maintenance />} />
       <Route path="*" element={<Navigate to="/" replace />} />
