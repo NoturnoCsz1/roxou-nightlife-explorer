@@ -10,7 +10,7 @@ import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
   Crown, Eye, TrendingUp,
   ChevronRight, ChevronLeft, Gem, BadgeCheck, Heart, Flame,
-  PartyPopper, Mic2, Zap, Beer, Music, Newspaper, Users, Search, Bot, PiggyBank,
+  PartyPopper, Mic2, Zap, Beer, Music, Newspaper, Users, Search, Bot, PiggyBank, Utensils,
 } from "lucide-react";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import CategoryChips from "@/components/v3/CategoryChips";
