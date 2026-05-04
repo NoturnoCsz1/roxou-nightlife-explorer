@@ -8,9 +8,11 @@ interface SEOProps {
   ogImage?: string;
   ogType?: string;
   jsonLd?: Record<string, unknown>;
+  keywords?: string;
+  locale?: string;
 }
 
-const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogType = "website", jsonLd }: SEOProps) => {
+const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogType = "website", jsonLd, keywords, locale = "pt_BR" }: SEOProps) => {
   useEffect(() => {
     document.title = title;
 
@@ -25,10 +27,12 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
     };
 
     setMeta("description", description);
+    if (keywords) setMeta("keywords", keywords);
     setMeta("og:title", title, "property");
     setMeta("og:description", description, "property");
     setMeta("og:type", ogType, "property");
     setMeta("og:image", ogImage, "property");
+    setMeta("og:locale", locale, "property");
     setMeta("og:site_name", "ROXOU", "property");
     setMeta("twitter:card", "summary_large_image", "name");
     setMeta("twitter:title", title, "name");
@@ -45,7 +49,7 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
       }
       link.setAttribute("href", canonical);
     }
-  }, [title, description, canonical, ogImage, ogType]);
+  }, [title, description, canonical, ogImage, ogType, keywords, locale]);
 
   if (!jsonLd) return null;
 
