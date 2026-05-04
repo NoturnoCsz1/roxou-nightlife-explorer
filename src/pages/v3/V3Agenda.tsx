@@ -67,9 +67,27 @@ export default function V3Agenda() {
   }, [events]);
 
   const filteredEvents = useMemo(() => {
-    if (activeCategory === "todos") return events;
-    return events.filter((e) => (e.category || "").toLowerCase() === activeCategory.toLowerCase());
-  }, [events, activeCategory]);
+    let list = events;
+    if (activeCategory !== "todos") {
+      list = list.filter((e) => (e.category || "").toLowerCase() === activeCategory.toLowerCase());
+    }
+    const term = searchTerm.trim().toLowerCase();
+    if (term.length >= 2) {
+      const tokens = term
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .split(/\s+/);
+      list = list.filter((e) => {
+        const hay = [e.title, e.venue_name, e.category, (e as any).address]
+          .join(" ")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        return tokens.every((t) => hay.includes(t));
+      });
+    }
+    return list;
+  }, [events, activeCategory, searchTerm]);
 
   /* Group by date */
   const grouped = useMemo(() => {
