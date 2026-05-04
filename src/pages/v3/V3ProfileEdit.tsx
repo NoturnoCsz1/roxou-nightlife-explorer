@@ -177,9 +177,13 @@ export default function V3ProfileEdit() {
               <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
             </div>
           )}
-          <label className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 cursor-pointer rounded-full bg-background/80 backdrop-blur-md border border-primary/30 px-3 py-2 text-[11px] font-bold text-foreground hover:border-primary/60 transition">
-            {savingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-            Trocar capa
+          <label className={`absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-md border px-3 py-2 text-[11px] font-bold text-foreground transition ${
+            savingCover
+              ? "border-primary/60 cursor-wait opacity-80 pointer-events-none shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
+              : "border-primary/30 hover:border-primary/60 cursor-pointer"
+          }`}>
+            {savingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5" />}
+            {savingCover ? "Enviando..." : "Trocar capa"}
             <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={savingCover} />
           </label>
         </div>
