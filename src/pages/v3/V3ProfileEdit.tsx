@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { profileSchema, maskWhatsappBR } from "@/lib/v3Validation";
 import CommunityConsentModal from "@/components/v3/CommunityConsentModal";
+import ImageCropModal from "@/components/v3/ImageCropModal";
 import { ShieldCheck } from "lucide-react";
 
 const BUCKET = "uploads";
