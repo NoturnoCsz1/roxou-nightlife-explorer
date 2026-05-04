@@ -62,14 +62,7 @@ export default function V3Profile() {
     enabled: followedIds.length > 0,
   });
 
-  const { data: referralCount = 0 } = useQuery({
-    queryKey: ["v3-referral-progress", user?.id],
-    queryFn: async () => {
-      const { count } = await supabase.from("affiliate_referrals").select("id", { count: "exact", head: true }).eq("referrer_user_id", user!.id);
-      return count || 0;
-    },
-    enabled: !!user?.id,
-  });
+  // Afiliados ocultos na fase Beta da Comunidade
 
   if (loading) {
     return (
