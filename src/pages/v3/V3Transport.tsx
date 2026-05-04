@@ -225,7 +225,7 @@ export default function V3Transport() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
-              {realEvents.map((e) => <EventRideCard key={e.id} event={e} />)}
+              {realEvents.map((e) => <EventRideCard key={e.id} event={e} isGuest={!user} />)}
             </div>
           )}
         </div>
