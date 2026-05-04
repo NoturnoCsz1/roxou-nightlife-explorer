@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
   Crown, Eye, TrendingUp,
-  ChevronRight, Gem, BadgeCheck, Heart, Flame,
+  ChevronRight, ChevronLeft, Gem, BadgeCheck, Heart, Flame,
   PartyPopper, Mic2, Zap, Beer, Music, Newspaper, Users, Search, Bot, PiggyBank,
 } from "lucide-react";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
