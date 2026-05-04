@@ -52,7 +52,6 @@ const VIBE_FILTERS = [
 const TODAY_KEY = "2026-05-04";
 const TODAY_START = `${TODAY_KEY}T00:00:00`;
 const TODAY_END = "2026-05-05T00:00:00";
-const isFixedTodayEvent = (dateTime: string) => dateTime >= TODAY_START && dateTime < TODAY_END;
 
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
@@ -975,7 +974,9 @@ function DesktopNavPanel({ todayCount }: { todayCount: number }) {
   return (
     <div className="rounded-3xl v3-glass-strong p-4">
       <p className="font-display text-2xl font-black text-primary v3-neon-text">ROXOU</p>
-      <p className="mt-1 text-[11px] text-muted-foreground">{todayCount} eventos para decidir a noite.</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {todayCount === 0 ? "Buscando o próximo rolê..." : `${todayCount} rolês para decidir a noite.`}
+      </p>
       <div className="mt-4 space-y-1.5">
         {items.map(({ to, label, icon: Icon }) => (
           <Link key={to} to={to} className="flex items-center gap-3 rounded-xl border border-border/15 bg-background/25 px-3 py-2.5 text-[13px] font-bold text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary">
