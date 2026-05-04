@@ -12,11 +12,7 @@ const DEFAULT_CHIPS: VibeChip[] = [
   { key: "hoje", label: "🔥 Hoje", term: "hoje", pulse: true },
   { key: "amanha", label: "🌅 Amanhã", term: "amanha" },
   { key: "fds", label: "🎉 Final de semana", term: "final de semana" },
-  { key: "expo", label: "🤠 Expo 2026", term: "expo" },
-  { key: "sertanejo", label: "🎸 Sertanejo", term: "sertanejo" },
-  { key: "pagode", label: "🥁 Pagode", term: "pagode" },
-  { key: "openbar", label: "🍺 Open Bar", term: "open bar" },
-  { key: "eletronico", label: "🎧 Eletrônico", term: "eletronic" },
+  { key: "categorias", label: "🎯 Categorias", term: "categorias" },
 ];
 
 interface Props {
