@@ -303,52 +303,31 @@ export default function V3Home() {
 
   return (
     <div>
-      {/* ══════ 1. IMMERSIVE HERO — mobile + desktop (acima de tudo) ══════ */}
-      {isLoading ? <HeroSkeleton /> : hero ? (
-        <div className="relative group lg:max-w-7xl lg:mx-auto lg:px-4 lg:pt-4 -mt-14 lg:mt-0">
-          <div className="relative lg:rounded-3xl lg:overflow-hidden lg:shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)]">
-            <ImmersiveHero
-              ev={hero}
-              isToday={!!heroIsToday}
-              todayCount={todayCount}
-              venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
-            />
-            {heroEvents.length > 1 && (
-              <>
-                <button
-                  aria-label="Slide anterior"
-                  onClick={() => setHeroIdx((heroIdx - 1 + heroEvents.length) % heroEvents.length)}
-                  className="hidden lg:flex absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 items-center justify-center rounded-full v3-glass-strong border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/20 hover:border-primary/60 hover:scale-110 backdrop-blur-xl"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  aria-label="Próximo slide"
-                  onClick={() => setHeroIdx((heroIdx + 1) % heroEvents.length)}
-                  className="hidden lg:flex absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 items-center justify-center rounded-full v3-glass-strong border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/20 hover:border-primary/60 hover:scale-110 backdrop-blur-xl"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-                <div className="absolute bottom-8 lg:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                  {heroEvents.map((_, i) => (
-                    <button
-                      key={i}
-                      aria-label={`Slide ${i + 1}`}
-                      onClick={() => setHeroIdx(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === heroIdx ? "bg-primary w-7 shadow-[0_0_10px_hsl(var(--primary)/0.7)]" : "bg-foreground/30 w-2 hover:bg-foreground/50"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
+      {/* ══════ MOBILE: IMMERSIVE HERO ══════ */}
+      <div className="lg:hidden">
+        {isLoading ? <HeroSkeleton /> : hero ? (
+          <div className="relative group -mt-14">
+            <div className="relative">
+              <ImmersiveHero
+                ev={hero}
+                isToday={!!heroIsToday}
+                todayCount={todayCount}
+                venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+              />
+            </div>
           </div>
-        </div>
-      ) : <div className="lg:hidden"><EmptyHero /></div>}
+        ) : <EmptyHero />}
+      </div>
 
+      {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
       <div className="hidden lg:block">
         <CommandCenter
+          hero={hero}
+          heroIsToday={!!heroIsToday}
+          heroEvents={heroEvents}
+          heroIdx={heroIdx}
+          setHeroIdx={setHeroIdx}
+          weeklyHighlight={weeklyHighlight}
           todayEvents={rawTodayEvents}
           todayCount={todayCount}
           trending={trending}
@@ -358,8 +337,10 @@ export default function V3Home() {
           partnerRankMap={partnerRankMap}
           venueRanks={venueRanks}
           featuredPartners={featuredPartners as any[]}
+          events={events}
         />
       </div>
+
 
       <div className="space-y-1 lg:hidden">
 
