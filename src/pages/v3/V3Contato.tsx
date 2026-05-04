@@ -1,28 +1,39 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, MessageCircle, Instagram, Mail, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, MessageCircle, Instagram, Mail, Send, Sparkles, Building2 } from "lucide-react";
 import { toast } from "sonner";
 
-const WHATSAPP_NUMBER = "5518997000000"; // placeholder — atualizar quando definido
-const INSTAGRAM_HANDLE = "roxou";
+const WHATSAPP_NUMBER = "5518997469865";
+const WHATSAPP_DISPLAY = "(18) 99746-9865";
+const INSTAGRAM_HANDLE = "roxou.pp";
+const EMAIL = "contato@roxou.com.br";
 
 export default function V3Contato() {
   const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
+  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !message.trim()) {
-      toast.error("Preencha seu nome e mensagem");
+    if (!name.trim() || !message.trim() || !subject.trim()) {
+      toast.error("Preencha nome, assunto e mensagem");
       return;
     }
-    const text = encodeURIComponent(`Olá ROXOU! Sou ${name}.\n\n${message}`);
+    const lines = [
+      `Olá ROXOU! Sou ${name}.`,
+      company.trim() ? `Empresa: ${company}` : null,
+      `Assunto: ${subject}`,
+      "",
+      message,
+    ].filter(Boolean).join("\n");
+    const text = encodeURIComponent(lines);
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, "_blank");
     toast.success("Abrindo WhatsApp...");
   };
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto space-y-7">
+    <div className="px-4 py-6 max-w-lg mx-auto space-y-6 pb-32 lg:pb-12">
       <div className="flex items-center gap-3">
         <Link to="/v3" className="w-9 h-9 rounded-full v3-glass flex items-center justify-center">
           <ArrowLeft className="w-4 h-4" />
@@ -45,49 +56,80 @@ export default function V3Contato() {
       </div>
 
       {/* Direct CTAs */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-2.5">
         <a
           href={`https://wa.me/${WHATSAPP_NUMBER}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-2xl p-4 v3-glass v3-neon-hover space-y-2 active:scale-[0.97] transition-transform"
+          className="rounded-2xl p-3 v3-glass v3-neon-hover space-y-1.5 active:scale-[0.97] transition-transform"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-emerald-400" />
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+            <MessageCircle className="w-4 h-4 text-emerald-400" />
           </div>
-          <p className="font-display font-bold text-sm text-foreground">WhatsApp</p>
-          <p className="text-[10px] text-muted-foreground">Resposta direta no chat</p>
+          <p className="font-display font-bold text-xs text-foreground">WhatsApp</p>
+          <p className="text-[10px] text-muted-foreground leading-tight">{WHATSAPP_DISPLAY}<br/><span className="opacity-60">só mensagens</span></p>
         </a>
         <a
           href={`https://instagram.com/${INSTAGRAM_HANDLE}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-2xl p-4 v3-glass v3-neon-hover space-y-2 active:scale-[0.97] transition-transform"
+          className="rounded-2xl p-3 v3-glass v3-neon-hover space-y-1.5 active:scale-[0.97] transition-transform"
         >
-          <div className="w-10 h-10 rounded-xl bg-pink-500/15 flex items-center justify-center">
-            <Instagram className="w-5 h-5 text-pink-400" />
+          <div className="w-9 h-9 rounded-xl bg-pink-500/15 flex items-center justify-center">
+            <Instagram className="w-4 h-4 text-pink-400" />
           </div>
-          <p className="font-display font-bold text-sm text-foreground">Instagram</p>
-          <p className="text-[10px] text-muted-foreground">@{INSTAGRAM_HANDLE}</p>
+          <p className="font-display font-bold text-xs text-foreground">Instagram</p>
+          <p className="text-[10px] text-muted-foreground leading-tight">@{INSTAGRAM_HANDLE}</p>
+        </a>
+        <a
+          href={`mailto:${EMAIL}`}
+          className="rounded-2xl p-3 v3-glass v3-neon-hover space-y-1.5 active:scale-[0.97] transition-transform"
+        >
+          <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+            <Mail className="w-4 h-4 text-primary" />
+          </div>
+          <p className="font-display font-bold text-xs text-foreground">E-mail</p>
+          <p className="text-[10px] text-muted-foreground leading-tight break-all">{EMAIL}</p>
         </a>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-3 rounded-2xl p-5 v3-glass">
         <div className="flex items-center gap-2 mb-1">
-          <Mail className="w-4 h-4 text-primary" />
+          <Send className="w-4 h-4 text-primary" />
           <h3 className="font-display font-bold text-base text-foreground">Mensagem direta</h3>
         </div>
         <input
           type="text"
           placeholder="Seu nome"
           value={name}
+          maxLength={80}
           onChange={(e) => setName(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/60 focus:outline-none transition-colors"
+        />
+        <div className="relative">
+          <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+          <input
+            type="text"
+            placeholder="Empresa (opcional)"
+            value={company}
+            maxLength={80}
+            onChange={(e) => setCompany(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/40 border border-white/10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/60 focus:outline-none transition-colors"
+          />
+        </div>
+        <input
+          type="text"
+          placeholder="Assunto"
+          value={subject}
+          maxLength={120}
+          onChange={(e) => setSubject(e.target.value)}
           className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/60 focus:outline-none transition-colors"
         />
         <textarea
           placeholder="Sua mensagem..."
           value={message}
+          maxLength={1000}
           onChange={(e) => setMessage(e.target.value)}
           rows={5}
           className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/60 focus:outline-none transition-colors resize-none"
@@ -105,7 +147,7 @@ export default function V3Contato() {
       </form>
 
       <p className="text-center text-[10px] text-muted-foreground/60">
-        © 2026 ROXOU — Plataforma da noite do interior paulista.
+        © 2026 ROXOU — Todos os direitos reservados.
       </p>
     </div>
   );
