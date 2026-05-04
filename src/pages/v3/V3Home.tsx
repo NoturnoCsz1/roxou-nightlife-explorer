@@ -858,11 +858,14 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
 
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Dashboard de entretenimento</p>
-            <h1 className="font-display text-4xl font-black uppercase text-foreground">Painel da noite</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Curadoria Roxou</p>
+            <h1 className="font-display text-4xl font-black uppercase text-foreground">
+              Acontecendo hoje
+              <span className="bg-gradient-to-r from-[hsl(var(--v3-neon))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">.</span>
+            </h1>
           </div>
-          <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)]">
-            {todayEvents.length} eventos hoje
+          <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)] whitespace-nowrap">
+            {todayEvents.length === 0 ? "Buscando o próximo rolê..." : `${todayEvents.length} rolês hoje ⚡`}
           </span>
         </div>
 
