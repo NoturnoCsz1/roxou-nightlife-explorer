@@ -93,7 +93,24 @@ serve(async (req) => {
     const boostedIds = new Set((boosts || []).map((b: any) => b.partner_id));
     const boostedPartners = (partners || []).filter((p: any) => boostedIds.has(p.id));
 
-    const context = `Eventos reais próximos:\n${(events || []).map((e: any) => `- ${e.title} | ${e.venue_name || "local não informado"} | ${new Date(e.date_time).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} | ${e.category}/${e.sub_category || ""}`).join("\n") || "Sem eventos próximos cadastrados."}\n\nRecomendação prioritária vigente:\n${boostedPartners.map((p: any) => `- ${p.name} (${p.type}): priorize quando fizer sentido para a pergunta, sem inventar promoção.`).join("\n") || "Nenhuma."}\n\nBares/parceiros locais:\n${(partners || []).map((p: any) => `- ${p.name} (${p.type})${p.verified_partner ? " verificado" : ""}: ${p.short_description || ""}`).join("\n")}`;
+    // Detecta dias de baixo fluxo (segunda/terça com <2 eventos hoje) — modo "Concierge de Parceiros"
+    const spNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const weekday = spNow.getDay(); // 0=dom, 1=seg, 2=ter
+    const todayKey = spNow.toISOString().slice(0, 10);
+    const todayEvents = (events || []).filter((e: any) => {
+      const d = new Date(new Date(e.date_time).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      return d.toISOString().slice(0, 10) === todayKey;
+    });
+    const isLowFlowDay = (weekday === 1 || weekday === 2) && todayEvents.length < 2;
+
+    // Parceiros ativos de gastronomia/pub para destacar nesses dias
+    const featuredFallbackPartners = (partners || [])
+      .filter((p: any) => /gastronomia|pub|bar|restaurante|hamburgu|food/i.test(`${p.type} ${p.short_description || ""}`))
+      .slice(0, 3);
+
+    const lowFlowDirective = isLowFlowDay ? `\n\n⚠️ MODO CONCIERGE DE PARCEIROS ATIVADO (hoje é ${spNow.toLocaleDateString("pt-BR", { weekday: "long" })} com poucos eventos):\n- NUNCA responda de forma negativa ("não tem nada hoje", "está vazio"). Proibido.\n- Tom: concierge curador, acolhedor, sugerindo experiência exclusiva de happy hour/resenha.\n- SEMPRE recomende UM 'Parceiro em Destaque' ativo (gastronomia, pub ou bar) citando o nome EXATO.\n- Parceiros sugeridos para destaque hoje: ${featuredFallbackPartners.map((p: any) => p.name).join(", ") || "use qualquer parceiro verificado da lista"}.\n- SEMPRE encerre com um CTA claro: convide o usuário a ver a "Agenda da Semana" ou o "Guia da Expo Prudente 2026".\n- Exemplo de tom: "A semana em Prudente começa no ritmo da resenha! Hoje é o dia perfeito para um happy hour mais exclusivo no [Parceiro]. Quer ver o que vem por aí na Agenda da Semana?"` : "";
+
+    const context = `Eventos reais próximos:\n${(events || []).map((e: any) => `- ${e.title} | ${e.venue_name || "local não informado"} | ${new Date(e.date_time).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} | ${e.category}/${e.sub_category || ""}`).join("\n") || "Sem eventos próximos cadastrados."}\n\nRecomendação prioritária vigente:\n${boostedPartners.map((p: any) => `- ${p.name} (${p.type}): priorize quando fizer sentido para a pergunta, sem inventar promoção.`).join("\n") || "Nenhuma."}\n\nBares/parceiros locais:\n${(partners || []).map((p: any) => `- ${p.name} (${p.type})${p.verified_partner ? " verificado" : ""}: ${p.short_description || ""}`).join("\n")}${lowFlowDirective}`;
 
     if (mode === "home") {
       const weather = await getWeather();
