@@ -1236,7 +1236,8 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             </span>
             {live && (
               <span className="absolute top-10 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_hsl(142_71%_45%)]" /> A rolar
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_hsl(142_71%_45%)]" />
+                {(ev as any).aura_pick ? "🤖 Aura ao vivo" : "🔥 Rolando agora"}
               </span>
             )}
             <button
