@@ -49,6 +49,11 @@ const VIBE_FILTERS = [
   { key: "grandes", label: "🏟️ Grandes Eventos" },
 ];
 
+const TODAY_KEY = "2026-05-04";
+const TODAY_START = `${TODAY_KEY}T00:00:00`;
+const TODAY_END = "2026-05-05T00:00:00";
+const isFixedTodayEvent = (dateTime: string) => dateTime >= TODAY_START && dateTime < TODAY_END;
+
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
   logo_url: string | null; short_description: string | null;
@@ -64,17 +69,21 @@ export default function V3Home() {
 
   /* ─── EVENTS ─── */
   const { data: events = [], isLoading: loadingEvents } = useQuery<Ev[]>({
-    queryKey: ["v3-events"],
+    queryKey: ["v3-events", TODAY_KEY],
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
           .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
-        .gte("date_time", today.toISOString())
+        .gte("date_time", TODAY_START)
         .order("date_time", { ascending: true })
         .limit(80);
       return (data as Ev[]) || [];
     },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   /* ─── TRENDING (views last 24h) ─── */
@@ -166,7 +175,7 @@ export default function V3Home() {
   const [heroIdx, setHeroIdx] = useState(0);
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
-  const todayCount = useMemo(() => events.filter(e => isTodayFn(new Date(e.date_time))).length, [events]);
+  const todayCount = useMemo(() => events.filter(e => isFixedTodayEvent(e.date_time)).length, [events]);
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
@@ -182,7 +191,7 @@ export default function V3Home() {
   }, [events, trendingIds, usedIds]);
 
   const todayEvents = useMemo(
-    () => events.filter(e => !usedIds.has(e.id) && isTodayFn(new Date(e.date_time)))
+    () => events.filter(e => !usedIds.has(e.id) && isFixedTodayEvent(e.date_time))
       .slice(0, 12).map(e => { usedIds.add(e.id); return e; }),
     [events, usedIds],
   );
