@@ -26,6 +26,8 @@ export default function V3ProfileEdit() {
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [savingCover, setSavingCover] = useState(false);
   const [saving, setSaving] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
