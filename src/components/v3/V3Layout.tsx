@@ -97,7 +97,7 @@ export default function V3Layout() {
 
       {/* Content — fade-in per route */}
       <PullToRefresh>
-        <main key={pathname} className="flex-1 pb-16 lg:pb-0 v3-page-fade">
+        <main key={pathname} className={`v3-page-fade ${isFullHeightRoute ? "flex-1 min-h-0 overflow-hidden pb-16 lg:pb-0" : "flex-1 pb-16 lg:pb-0"}`}>
           <Outlet />
         </main>
       </PullToRefresh>
