@@ -4,6 +4,7 @@ import { MapPin, CalendarDays, Sparkles, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import SmartImage from "@/components/v3/SmartImage";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import { trackEventClick } from "@/lib/ga";
 
@@ -51,11 +52,11 @@ export default function EventCardV3({
           onClick={goDetail}
           className={`relative w-full ${isWide ? "h-[160px]" : "h-[130px]"} overflow-hidden block`}
         >
-          <img
-            src={imageUrl || "/placeholder.svg"}
+          <SmartImage
+            src={imageUrl}
             alt={title}
+            wrapperClassName="absolute inset-0 w-full h-full"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/90 text-[10px] font-semibold text-primary-foreground uppercase tracking-wide">

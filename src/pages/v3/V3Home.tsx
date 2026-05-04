@@ -18,6 +18,7 @@ import { useSavedEvents } from "@/hooks/useSavedEvents";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
 import V3SearchBar from "@/components/v3/V3SearchBar";
 import V3VibeChips from "@/components/v3/V3VibeChips";
+import SmartImage from "@/components/v3/SmartImage";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -530,9 +531,11 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
   return (
     <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-[600px] lg:min-h-[600px] lg:max-h-[600px] overflow-hidden">
       {/* Background image with Ken Burns */}
-      <img
-        src={ev.image_url || "/placeholder.svg"}
+      <SmartImage
+        src={ev.image_url}
         alt={ev.title}
+        loading="eager"
+        wrapperClassName="absolute inset-0 w-full h-full"
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
       {/* Cinematic overlays */}
@@ -1137,7 +1140,12 @@ function NowPanel({ events }: { events: Ev[] }) {
       <div className="space-y-3">
         {events.map(ev => (
           <Link key={ev.id} to={`/v3/evento/${ev.slug}`} className="group flex gap-3 rounded-2xl border border-border/25 bg-background/25 p-2 transition-all hover:border-primary/40 hover:bg-primary/10">
-            <img src={ev.image_url || "/placeholder.svg"} alt={ev.title} className="h-14 w-14 rounded-xl object-cover" loading="lazy" />
+            <SmartImage
+              src={ev.image_url}
+              alt={ev.title}
+              wrapperClassName="h-14 w-14 rounded-xl shrink-0"
+              className="h-14 w-14 rounded-xl object-cover"
+            />
             <div className="min-w-0 flex-1">
               <p className="line-clamp-2 text-xs font-black text-foreground group-hover:text-primary">{ev.title}</p>
               <p className="mt-1 truncate text-[10px] text-muted-foreground">{fmtTime(ev.date_time)} · {ev.venue_name || "Local a confirmar"}</p>
@@ -1223,11 +1231,11 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
       >
         <Link to={`/v3/evento/${ev.slug}`} className="absolute inset-0 block">
           <div className="absolute inset-0 overflow-hidden">
-            <img
-              src={ev.image_url || "/placeholder.svg"}
+            <SmartImage
+              src={ev.image_url}
               alt={ev.title}
+              wrapperClassName="absolute inset-0 w-full h-full"
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/10" />
