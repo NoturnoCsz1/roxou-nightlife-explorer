@@ -28,8 +28,11 @@ export default function V3VibeChips({ value, onSelect, chips = DEFAULT_CHIPS, cl
   const navigate = useNavigate();
 
   const handleClick = (chip: VibeChip) => {
+    if (chip.key === "categorias") {
+      navigate(`/v3/agenda#categorias`);
+      return;
+    }
     if (onSelect) {
-      // Toggle: se já estiver ativo, limpa
       const isActive = value?.trim().toLowerCase() === chip.term.toLowerCase();
       onSelect(isActive ? "" : chip.term);
     } else {
