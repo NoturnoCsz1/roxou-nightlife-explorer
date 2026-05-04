@@ -182,7 +182,7 @@ export default function V3AIChat() {
       </div>
 
       {/* Input bar — rounded-full neon */}
-      <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3">
+      <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-3xl mx-auto">
           <div
             className={`relative flex items-center gap-2 rounded-full bg-background/60 backdrop-blur px-2 py-1.5 border transition-all duration-300 ${
