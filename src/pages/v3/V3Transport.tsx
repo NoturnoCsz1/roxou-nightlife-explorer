@@ -1,123 +1,88 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Car, Users, Clock, Info, ClipboardList, MapPin, WalletCards, ShieldCheck, Sparkles } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Car, Users, Clock, Info, ClipboardList, MapPin, ShieldCheck, Sparkles, BadgeCheck } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { V3PageSkeleton } from "@/components/v3/V3Skeletons";
 import { toast } from "sonner";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-interface MockRoute {
-  label: string;
-  from: string;
-  to: string;
-  time: string;
-  price: string;
-  occupancy: number; // 0-100
+interface RealEvent {
+  id: string;
+  slug: string;
+  title: string;
+  date_time: string;
+  venue_name: string | null;
+  address: string | null;
+  image_url: string | null;
 }
 
-const MOCK_ROUTES: MockRoute[] = [
-  { label: "🌙 Madrugada VIP", from: "Centro de Prudente", to: "Balada / Casas Noturnas", time: "23h - 04h", price: "R$ 18", occupancy: 78 },
-  { label: "🎤 Show Premium", from: "Bairros Zona Norte", to: "Casa de Show / Festivais", time: "20h - 23h", price: "R$ 22", occupancy: 54 },
-  { label: "🍻 Bar Hopping", from: "Multi-pontos", to: "Bares & Pubs", time: "21h - 02h", price: "R$ 15", occupancy: 91 },
-];
-
-function OccupancyBar({ value }: { value: number }) {
-  const [w, setW] = useState(0);
-  useEffect(() => {
-    const t = setTimeout(() => setW(value), 80);
-    return () => clearTimeout(t);
-  }, [value]);
-  const isHot = value >= 80;
+function VerifiedDriverBadge() {
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider">
-        <span className="text-muted-foreground">Lotação da van</span>
-        <span className={isHot ? "text-destructive" : "text-foreground/80"}>
-          {value}% {isHot && "· últimas vagas"}
-        </span>
-      </div>
-      <div className="h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/5">
-        <div
-          className="h-full rounded-full transition-all duration-700 ease-out"
-          style={{
-            width: `${w}%`,
-            background:
-              "linear-gradient(90deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
-            boxShadow: "0 0 12px hsl(var(--v3-neon) / 0.6)",
-          }}
-        />
-      </div>
-    </div>
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+      <BadgeCheck className="w-3 h-3" /> Motorista Verificado ROXOU
+    </span>
   );
 }
 
-function RouteCard({ route, eventDate, rideUrl }: { route: MockRoute; eventDate?: string; rideUrl: string }) {
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const closed = isRideWindowClosed(eventDate);
-  const availabilityText = getRideAvailabilityText(eventDate);
-  const handleRequest = () => {
-    if (closed) {
-      toast.error(RIDE_EXPIRED_MESSAGE);
-      return;
-    }
-    setConfirmOpen(true);
-  };
+function EventRideCard({ event }: { event: RealEvent }) {
+  const closed = isRideWindowClosed(event.date_time);
+  const availabilityText = getRideAvailabilityText(event.date_time);
+
+  const params = new URLSearchParams();
+  params.set("event", event.title);
+  if (event.venue_name) params.set("venue", event.venue_name);
+  params.set("date", event.date_time);
+  const rideUrl = `/v3/pedir-carona?${params.toString()}`;
+
   return (
     <div className="relative overflow-hidden rounded-2xl p-4 v3-glass v3-neon-hover">
-      {/* Black Membership shine */}
       <div className="absolute -top-1/2 -right-1/4 w-[200px] h-[200px] rounded-full opacity-10 pointer-events-none"
         style={{ background: "radial-gradient(circle, hsl(var(--v3-neon) / 0.6), transparent 70%)" }} />
 
       <div className="relative space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="font-display font-extrabold text-[13px] uppercase tracking-wider text-foreground">
-              {route.label}
+        <div className="flex items-start gap-3">
+          {event.image_url && (
+            <img
+              src={event.image_url}
+              alt={event.title}
+              className="w-14 h-14 rounded-xl object-cover ring-1 ring-white/10 shrink-0"
+              loading="lazy"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="font-display font-extrabold text-[13px] text-foreground line-clamp-2 leading-tight">
+              {event.title}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-              {route.from} → {route.to}
+            {event.venue_name && (
+              <p className="text-[11px] text-muted-foreground mt-0.5 truncate flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-primary" /> {event.venue_name}
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground/80 mt-0.5">
+              {format(new Date(event.date_time), "EEE, d 'de' MMM 'às' HH'h'mm", { locale: ptBR })}
             </p>
           </div>
-          <span className="shrink-0 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-foreground/90">
-            {route.price}
-          </span>
-        </div>
-        <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
-          <Clock className="w-3 h-3" /> {availabilityText}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground/90">
-          <div className="flex items-center gap-1.5 min-w-0"><MapPin className="w-3 h-3 text-primary" /><span className="truncate">{route.from}</span></div>
-          <div className="flex items-center gap-1.5 min-w-0"><MapPin className="w-3 h-3 text-accent" /><span className="truncate">{route.to}</span></div>
-          <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {route.time}</div>
-          <div className="flex items-center gap-1.5"><Users className="w-3 h-3" /> {Math.max(1, Math.round((100 - route.occupancy) / 25))} vagas</div>
-          <div className="col-span-2 flex items-center gap-1.5"><WalletCards className="w-3 h-3" /> {route.price} · rachada por pessoa</div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
+            <Clock className="w-3 h-3" /> {availabilityText}
+          </div>
+          <VerifiedDriverBadge />
         </div>
 
-        <OccupancyBar value={route.occupancy} />
-        <Button onClick={handleRequest} variant={closed ? "secondary" : "default"} className="w-full h-9 rounded-xl text-xs font-bold">
-          {closed ? "Sistema encerrado" : "Solicitar Carona"}
-        </Button>
+        <Link to={closed ? "#" : rideUrl} onClick={(e) => { if (closed) { e.preventDefault(); toast.error(RIDE_EXPIRED_MESSAGE); } }}>
+          <Button variant={closed ? "secondary" : "default"} className="w-full h-9 rounded-xl text-xs font-bold">
+            {closed ? "Sistema encerrado" : "Solicitar carona pra esse rolê"}
+          </Button>
+        </Link>
       </div>
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="max-w-[340px] rounded-2xl border-white/10 bg-background/95">
-          <DialogHeader>
-            <DialogTitle className="text-base">Confirmar solicitação</DialogTitle>
-            <DialogDescription>Combine o ponto de encontro, horário final e rachada diretamente com o motorista.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-muted-foreground">
-            <p>• Use o WhatsApp apenas após o motorista aceitar.</p>
-            <p>• A ROXOU conecta pessoas, mas não realiza o transporte.</p>
-            <p>• Confirme placa, veículo e ponto seguro antes de sair.</p>
-          </div>
-          <Link to={rideUrl} onClick={() => setConfirmOpen(false)}>
-            <Button className="w-full rounded-xl">Continuar pedido</Button>
-          </Link>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -139,11 +104,25 @@ export default function V3Transport() {
   if (eventDate) rideParams.set("date", eventDate);
   const rideUrl = `/v3/pedir-carona${rideParams.toString() ? `?${rideParams}` : ""}`;
 
+  const { data: realEvents = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ["v3-transport-events"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("events")
+        .select("id,slug,title,date_time,venue_name,address,image_url")
+        .eq("status", "published")
+        .gte("date_time", new Date().toISOString())
+        .order("date_time")
+        .limit(8);
+      return (data || []) as RealEvent[];
+    },
+  });
+
   if (loading) return <V3PageSkeleton />;
 
   return (
     <div className="space-y-6">
-      {/* ─── HERO CINEMATOGRÁFICO ─── */}
+      {/* ─── HERO ─── */}
       <section className="relative overflow-hidden">
         <div
           className="absolute inset-0 -z-0"
@@ -152,15 +131,6 @@ export default function V3Transport() {
               "radial-gradient(ellipse at 50% 0%, hsl(var(--v3-neon) / 0.28), transparent 60%), radial-gradient(ellipse at 80% 90%, hsl(var(--v3-neon-soft) / 0.18), transparent 65%)",
           }}
         />
-        <div
-          className="absolute inset-0 -z-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-
         <div className="relative px-5 pt-10 pb-8 space-y-4">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full v3-glass text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
             <Sparkles className="w-3 h-3" /> Roxou Transporte
@@ -171,7 +141,7 @@ export default function V3Transport() {
             é com a gente.
           </h1>
           <p className="text-[12px] text-muted-foreground/90 max-w-[280px] leading-relaxed">
-            Carona segura, ar-condicionado, Wi-Fi e playlist. Vans premium conectando você ao melhor do role.
+            Carona segura com motorista verificado pela ROXOU. Conectamos você ao melhor do role.
           </p>
 
           <div className="flex items-center gap-2 pt-2">
@@ -227,21 +197,31 @@ export default function V3Transport() {
           </div>
         )}
 
-        {/* ─── ROTAS PREMIUM ─── */}
+        {/* ─── EVENTOS REAIS ─── */}
         <div className="space-y-3">
           <div>
             <h2 className="font-display font-extrabold text-base text-foreground uppercase tracking-wide">
-              Rotas da noite
+              Caronas pros próximos rolês
             </h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Lotação atualizada · pegue antes que esgote
+              Eventos confirmados na agenda · motoristas verificados
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-3">
-            {MOCK_ROUTES.map((r) => (
-              <RouteCard key={r.label} route={r} eventDate={eventDate} rideUrl={rideUrl} />
-            ))}
-          </div>
+          {eventsLoading ? (
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-28 rounded-2xl bg-card border border-border/30 animate-pulse" />
+              ))}
+            </div>
+          ) : realEvents.length === 0 ? (
+            <div className="p-6 text-center rounded-2xl v3-glass">
+              <p className="text-sm text-muted-foreground">Nenhum evento confirmado no momento.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {realEvents.map((e) => <EventRideCard key={e.id} event={e} />)}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions — Passenger / Driver */}
@@ -312,7 +292,7 @@ export default function V3Transport() {
           <h2 className="font-display font-semibold text-base text-foreground">Como funciona</h2>
           {[
             { icon: Car, title: "Crie um pedido", desc: "Informe destino e horário" },
-            { icon: Users, title: "Motoristas conectam", desc: "Receba propostas de motoristas" },
+            { icon: Users, title: "Motoristas conectam", desc: "Receba propostas de motoristas verificados" },
             { icon: Clock, title: "Combine os detalhes", desc: "Converse pelo chat integrado" },
           ].map(({ icon: Icon, title, desc }, i) => (
             <div key={i} className="flex items-center gap-3 p-3 rounded-2xl v3-glass">
