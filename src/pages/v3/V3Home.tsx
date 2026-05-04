@@ -558,7 +558,6 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
             {ev.title}
           </h1>
         </div>
-        </h1>
 
         {/* Info row with neon icons */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
