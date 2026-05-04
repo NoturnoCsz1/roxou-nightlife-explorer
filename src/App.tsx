@@ -100,11 +100,13 @@ const App = () => (
           <Route path="/expo2026" element={<Expo2026 />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
-          {/* ========= V3 PADRÃO (PÚBLICO durante pré-lançamento) ========= */}
-          {/* Landing principal: contagem regressiva V3 (lançamento 04/05 18h) */}
-          <Route path="/" element={<Maintenance />} />
+          {/* ========= ROXOU V3 (raiz pública) ========= */}
+          <Route path="/manutencao" element={<Maintenance />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
-          <Route path="/parceiros" element={<V3Parceiros />} />
+
+          {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
+          <Route path="/v3" element={<Navigate to="/" replace />} />
+          <Route path="/v3/*" element={<RedirectV3 />} />
 
           <Route path="/" element={<V3Layout />}>
             <Route index element={<V3Home />} />
