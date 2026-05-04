@@ -129,6 +129,7 @@ const EventoForm = () => {
     title: "", slug: "", date_time: "", category: "festa", partner_id: "",
     venue_name: "", address: "", instagram: "", description: "",
     status: "draft", verification_source: "Instagram", featured: false, image_url: "",
+    video_url: "",
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
   });
 
@@ -197,6 +198,7 @@ const EventoForm = () => {
       instagram: data.instagram || "", description: data.description || "",
       status: data.status, verification_source: data.verification_source || "",
       featured: data.featured, image_url: data.image_url || "",
+      video_url: (data as any).video_url || "",
       ticket_url: (data as any).ticket_url || "",
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
