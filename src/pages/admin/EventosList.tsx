@@ -56,6 +56,7 @@ function getQualityScore(e: EventRow): number {
 export const getEventEditPath = (id: string) => `/admin/eventos/${id}/editar`;
 
 type OriginFilter = "todos" | "ai" | "manual";
+type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
