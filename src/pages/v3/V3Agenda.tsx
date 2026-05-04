@@ -48,10 +48,20 @@ export default function V3Agenda() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedEvents();
 
-  // Sincroniza ?q= -> searchTerm (entrada vinda dos chips de Vibe na Home)
+  // Sincroniza ?q= -> activeCategory (para vínculos vindos da Home/IA)
   useEffect(() => {
     const q = searchParams.get("q");
-    if (q && q !== searchTerm) setSearchTerm(q);
+    if (!q) return;
+    const map: Record<string, string> = {
+      hoje: "hoje", amanha: "amanha", "amanhã": "amanha",
+      "final de semana": "fds", fds: "fds",
+      expo: "expo2026", "expo 2026": "expo2026",
+      sertanejo: "sertanejo", pagode: "pagode", "open bar": "open bar",
+      eletronico: "eletr", "eletrônico": "eletr", funk: "funk",
+    };
+    const key = map[q.trim().toLowerCase()];
+    if (key) setActiveCategory(key);
+    else setSearchTerm(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
