@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
 
 const NAV_ITEMS = [
@@ -18,6 +19,7 @@ const DESKTOP_ITEMS = [
 export default function V3Layout() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
+  const { profile } = useV3Profile();
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
@@ -26,7 +28,11 @@ export default function V3Layout() {
 
   const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
 
-  const initial = (user?.email?.[0] ?? "R").toUpperCase();
+  const displayName = profile?.display_name?.trim() || user?.email?.split("@")[0] || "Visitante";
+  const nickname = (profile as any)?.nickname?.trim() || null;
+  const avatarUrl = (profile as any)?.avatar_url || null;
+  const initial = (displayName?.[0] ?? "R").toUpperCase();
+
 
   return (
     <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
