@@ -69,7 +69,7 @@ serve(async (req) => {
     const nowIso = new Date().toISOString();
     const { data: events } = await supabase
       .from("events")
-      .select("id,slug,title,venue_name,date_time,category,sub_category,description,image_url")
+      .select("id,slug,title,venue_name,address,date_time,category,sub_category,description,image_url,video_url")
       .eq("status", "published")
       .gte("date_time", nowIso)
       .order("date_time", { ascending: true })
