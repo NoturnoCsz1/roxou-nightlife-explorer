@@ -101,8 +101,8 @@ const Expo2026 = () => {
             Toda a cobertura, em tempo real, aqui.
           </p>
           <div className="mt-5 flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> 10 a 20 SET 2026</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> Recinto Expo Prudente</span>
+            <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> 10 a 14 SET 2026</span>
+            <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> Recinto de Exposições Jacob Tosello</span>
           </div>
 
           {/* Countdown */}
