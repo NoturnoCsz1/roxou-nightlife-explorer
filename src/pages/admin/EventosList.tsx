@@ -402,11 +402,19 @@ const EventosList = () => {
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
     .filter((e) => !onlyNeedsReview || needsReview(e))
-    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)));
+    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)))
+    .filter((e) => {
+      if (extraFilter === "todos") return true;
+      if (extraFilter === "aura") return e.aura_pick;
+      if (extraFilter === "destaques") return e.featured;
+      if (extraFilter === "sem-imagem") return !e.image_url;
+      if (extraFilter === "incompletos") return getQualityScore(e) < 100;
+      return true;
+    });
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter]);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter]);
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
