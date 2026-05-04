@@ -220,7 +220,12 @@ export default function V3ProfileEdit() {
         {/* Cover (21:9) — glass rounded */}
         <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
           {coverUrl ? (
-            <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
+            <img
+              key={`cover-${imgKey}`}
+              src={coverUrl}
+              alt="Capa"
+              className="w-full h-full object-cover animate-in fade-in duration-500"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 via-accent/10 to-background">
               <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
