@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PullToRefresh from "@/components/v3/PullToRefresh";
 
@@ -11,7 +11,6 @@ const NAV_ITEMS = [
 ];
 
 const DESKTOP_ITEMS = [
-  { to: "/v3/descobrir", icon: Search, label: "Pesquisar" },
   { to: "/v3/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/v3/economize", icon: PiggyBank, label: "Economize" },
 ];
@@ -101,7 +100,14 @@ export default function V3Layout() {
       </PullToRefresh>
 
       {/* Footer */}
-      <div className="pb-20 lg:pb-2 pt-2 text-center border-t border-white/5">
+      <div className="pb-20 lg:pb-3 pt-2 text-center border-t border-white/5 space-y-1">
+        <div className="hidden lg:flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
+          <Link to="/v3/sobre" className="hover:text-primary transition-colors">Sobre</Link>
+          <span className="opacity-30">·</span>
+          <Link to="/v3/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
+          <span className="opacity-30">·</span>
+          <Link to="/v3/contato" className="hover:text-primary transition-colors">Contato</Link>
+        </div>
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
         </p>
