@@ -126,11 +126,12 @@ export default function V3AIChat() {
                 </div>
               </div>
               <div className="text-center space-y-2 px-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">💜 Roxou</p>
                 <h2 className="font-display text-2xl font-black text-foreground">
-                  Qual rolê combina com <span className="v3-neon-text">hoje</span>?
+                  Olá, eu sou a <span className="v3-neon-text">Aura</span>
                 </h2>
                 <p className="text-xs leading-relaxed text-muted-foreground max-w-sm">
-                  Sou seu curador noturno em Prudente. Pergunte sobre eventos, bares, happy hour ou peça uma carona.
+                  Sua <strong className="text-primary font-black">inteligência artificial da Roxou</strong>. Pergunte sobre eventos, bares, happy hour ou peça uma carona. ✨
                 </p>
               </div>
 
