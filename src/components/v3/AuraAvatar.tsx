@@ -25,7 +25,7 @@ export default function AuraAvatar({ className, glow = true, alt = "Aura — IA 
         alt={alt}
         loading="lazy"
         decoding="async"
-        className="h-full w-full object-cover object-[30%_20%] scale-[1.6]"
+        className="h-full w-full object-cover"
       />
     </span>
   );
