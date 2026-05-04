@@ -3,7 +3,8 @@ import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date-fns";
+import { isAfter, startOfDay, addDays, format } from "date-fns";
+import { isToday as isTodayFn } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
