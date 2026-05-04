@@ -223,6 +223,20 @@ export default function V3AIChat() {
       </form>
       <VIPPaywallModal open={paywall} onOpenChange={setPaywall} />
     </div>
+    {/* SEO content block — discreet, off-screen for crawlers */}
+    <section aria-label="Sobre a Aura" className="sr-only">
+      <h1>Conheça a Aura 🤖💜</h1>
+      <h2>Sua promoter inteligente da Roxou</h2>
+      <p>
+        A Aura é a inteligência artificial da Roxou que recomenda eventos em Presidente Prudente,
+        ajuda você a descobrir o que fazer hoje e indica os melhores bares e baladas da cidade.
+      </p>
+      <p>
+        A Aura da Roxou ajuda você a descobrir os melhores eventos em Presidente Prudente,
+        incluindo bares, baladas e festas que acontecem hoje na cidade.
+      </p>
+    </section>
+    </>
   );
 }
 
