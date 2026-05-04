@@ -7,6 +7,8 @@ import { ArrowLeft, Camera, Image as ImageIcon, Loader2, User } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { profileSchema, maskWhatsappBR } from "@/lib/v3Validation";
+import CommunityConsentModal from "@/components/v3/CommunityConsentModal";
+import { ShieldCheck } from "lucide-react";
 
 const BUCKET = "uploads";
 
@@ -14,6 +16,7 @@ export default function V3ProfileEdit() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, loading } = useV3Profile();
+  const [consentOpen, setConsentOpen] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [nickname, setNickname] = useState("");
