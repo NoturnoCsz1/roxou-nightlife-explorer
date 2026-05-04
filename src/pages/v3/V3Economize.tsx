@@ -23,16 +23,44 @@ export default function V3Economize() {
         </div>
       </div>
 
+      {/* Hero — Dica de Ouro */}
       <div className="rounded-3xl v3-glass-strong v3-pulse-glow p-5 overflow-hidden relative">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-primary/10 to-transparent" />
         <div className="relative flex items-start gap-3">
           <PiggyBank className="h-8 w-8 text-accent" />
           <div>
             <h2 className="font-display text-xl font-black text-foreground">Dica de Ouro</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">A IA destaca parceiros que pagam para aparecer e ofertas úteis para você decidir o rolê gastando menos.</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">A Aura destaca parceiros e ofertas úteis pra você curtir o rolê gastando menos. 💜</p>
           </div>
         </div>
       </div>
+
+      {/* Card Destaque — Transporte Seguro */}
+      <Link
+        to="/v3/transporte"
+        className="group relative block overflow-hidden rounded-3xl v3-glass-strong border border-primary/30 p-5 transition hover:border-primary/60 hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.3)]"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-accent/10 to-transparent" />
+        <div className="relative flex items-start gap-4">
+          <div className="h-12 w-12 shrink-0 rounded-2xl bg-primary/20 flex items-center justify-center">
+            <Car className="h-6 w-6 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.8)]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Economize no rolê</span>
+            <h3 className="mt-1 font-display text-lg font-black text-foreground">Transporte Seguro</h3>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              Agende sua corrida direto com motoristas verificados ROXOU. Mais barato que app e sem surpresa.
+            </p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-primary group-hover:gap-2 transition-all">
+              Agendar carona <ExternalLink className="h-3 w-3" />
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      {/* Aura Indica Promo — destaque do dia */}
+      <AuraIndicaPromo />
+
 
       {isLoading ? <div className="rounded-3xl v3-skeleton h-32" /> : opportunities.length > 0 ? (
         <div className="space-y-3">
