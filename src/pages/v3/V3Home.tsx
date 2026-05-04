@@ -360,6 +360,11 @@ export default function V3Home() {
         </Rail>
       ) : null}
 
+      {/* ══════ 4.5 HOJE — destaque abaixo do carrossel ══════ */}
+      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
+        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+      ) : null}
+
       {/* ══════ 5. LOCAIS EM ALTA ══════ */}
       {loadingVenues ? <VenueRankSkeleton /> : venueRanks.length > 0 ? (
         <FadeSection className="px-4 pt-6 pb-3">
@@ -399,11 +404,6 @@ export default function V3Home() {
             </div>
           )}
         </FadeSection>
-      ) : null}
-
-      {/* ══════ 6. HOJE ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
-        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
