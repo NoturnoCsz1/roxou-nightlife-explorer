@@ -90,10 +90,6 @@ const Expo2026 = () => {
       {/* HERO */}
       <section className="px-4 pt-10 pb-8 mx-auto max-w-6xl">
         <div className="text-center">
-          <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            Hot site oficial
-          </span>
           <h1 className="mt-4 font-display text-4xl sm:text-6xl md:text-7xl font-black leading-[0.95] tracking-tight">
             O ROLÊ DO ANO <br />
             <span className="bg-gradient-to-r from-primary via-fuchsia-400 to-accent bg-clip-text text-transparent">
