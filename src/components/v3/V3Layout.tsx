@@ -11,7 +11,6 @@ const NAV_ITEMS = [
 ];
 
 const DESKTOP_ITEMS = [
-  { to: "/v3/descobrir", icon: Search, label: "Pesquisar" },
   { to: "/v3/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/v3/economize", icon: PiggyBank, label: "Economize" },
 ];
