@@ -239,7 +239,7 @@ export default function V3Transport() {
             <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
             <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
             <Link
-              to={caronaClosed ? "#" : rideUrl}
+              to={caronaClosed ? "#" : (user ? rideUrl : "/v3/perfil")}
               onClick={(e) => {
                 if (caronaClosed) {
                   e.preventDefault();
@@ -248,7 +248,7 @@ export default function V3Transport() {
               }}
             >
               <Button size="sm" className="w-full mt-1 rounded-lg text-xs h-8">
-                Pedir carona
+                {user ? "Pedir carona" : "Entrar para solicitar"}
               </Button>
             </Link>
           </div>
