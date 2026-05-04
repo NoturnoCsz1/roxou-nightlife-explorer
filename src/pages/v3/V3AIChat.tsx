@@ -75,7 +75,7 @@ export default function V3AIChat() {
     } catch (err: any) {
       const context = err?.context?.json ? await err.context.json().catch(() => null) : null;
       if (context?.error === "free_limit_reached") setPaywall(true);
-      else toast.error("Prudente IA indisponível", { description: context?.error || err.message });
+      else toast.error("Aura indisponível", { description: context?.error || err.message });
     } finally {
       setSending(false);
     }
@@ -105,7 +105,7 @@ export default function V3AIChat() {
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-background v3-pulse-glow" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-lg font-black text-foreground v3-neon-text">Prudente IA</h1>
+            <h1 className="font-display text-lg font-black text-foreground v3-neon-text">Aura 💜</h1>
             <p className="text-[10px] text-muted-foreground">{Math.max(0, 3 - used)} mensagens grátis hoje · ROXOU VIP ilimitado</p>
           </div>
           <button onClick={() => setPaywall(true)} className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[10px] font-black text-primary hover:bg-primary/20 transition">
@@ -198,7 +198,7 @@ export default function V3AIChat() {
               onChange={(e) => setInput(e.target.value)}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
-              placeholder="Ex: onde economizar no happy hour hoje?"
+              placeholder="Conta pra Aura: qual a vibe de hoje?"
               className="flex-1 bg-transparent border-0 outline-none px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
             />
             <button
