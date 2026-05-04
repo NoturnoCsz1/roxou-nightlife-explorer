@@ -418,8 +418,12 @@ const EventosList = () => {
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
-  const todayEvents = visibleFiltered.filter((e) => eventDayStr(e) === todayStr);
-  const upcomingEvents = visibleFiltered.filter((e) => eventDayStr(e) > todayStr);
+  const auraEvents = visibleFiltered.filter((e) => e.aura_pick && eventDayStr(e) >= todayStr);
+  const auraIds = new Set(auraEvents.map(e => e.id));
+  const featuredTodayEvents = visibleFiltered.filter((e) => e.featured && !auraIds.has(e.id) && eventDayStr(e) === todayStr);
+  const featuredIds = new Set(featuredTodayEvents.map(e => e.id));
+  const todayEvents = visibleFiltered.filter((e) => eventDayStr(e) === todayStr && !auraIds.has(e.id) && !featuredIds.has(e.id));
+  const upcomingEvents = visibleFiltered.filter((e) => eventDayStr(e) > todayStr && !auraIds.has(e.id));
   const pastEvents = visibleFiltered.filter((e) => eventDayStr(e) < todayStr);
 
   // Counter for header (sobre todos os eventos, não só os filtrados)
