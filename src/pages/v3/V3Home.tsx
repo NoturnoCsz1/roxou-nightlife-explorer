@@ -1458,13 +1458,22 @@ function ExpoCountdownPill() {
 function WeeklySpotlight({ ev }: { ev: Ev }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
-  const hasVideo = !!ev.video_url;
+  const [videoError, setVideoError] = useState(false);
+  const hasVideo = !!ev.video_url && !videoError;
 
   useEffect(() => {
-    if (videoRef.current && hasVideo) {
-      videoRef.current.play().catch(() => {});
-    }
-  }, [hasVideo]);
+    setVideoReady(false);
+    setVideoError(false);
+  }, [ev.video_url]);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !hasVideo) return;
+    const tryPlay = () => v.play().catch(() => {});
+    tryPlay();
+    v.addEventListener("loadeddata", tryPlay);
+    return () => v.removeEventListener("loadeddata", tryPlay);
+  }, [hasVideo, ev.video_url]);
 
   return (
     <FadeSection className="px-4 pt-4 pb-2">
@@ -1493,17 +1502,19 @@ function WeeklySpotlight({ ev }: { ev: Ev }) {
         }}
       >
         {/* Background — video POV or animated image */}
-        {hasVideo ? (
+        {ev.video_url && !videoError ? (
           <video
             ref={videoRef}
-            src={ev.video_url || ""}
+            src={ev.video_url}
             poster={ev.image_url || undefined}
             muted
             loop
             playsInline
             autoPlay
-            preload="metadata"
+            preload="auto"
+            onLoadedData={() => setVideoReady(true)}
             onCanPlay={() => setVideoReady(true)}
+            onError={() => { setVideoError(true); setVideoReady(false); }}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${videoReady ? "opacity-100" : "opacity-0"}`}
           />
         ) : null}
@@ -1519,13 +1530,13 @@ function WeeklySpotlight({ ev }: { ev: Ev }) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 mix-blend-overlay" />
 
-        {/* Top — POV badge */}
+        {/* Top — POV badge (somente se vídeo realmente carregou) */}
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <span
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15"
             style={{ background: "rgba(0,0,0,0.45)" }}
           >
-            {hasVideo ? (
+            {hasVideo && videoReady ? (
               <>
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70 animate-ping" />
