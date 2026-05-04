@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
   Crown, Eye, TrendingUp,
-  ChevronRight, Gem, BadgeCheck, Heart, Flame,
+  ChevronRight, ChevronLeft, Gem, BadgeCheck, Heart, Flame,
   PartyPopper, Mic2, Zap, Beer, Music, Newspaper, Users, Search, Bot, PiggyBank,
 } from "lucide-react";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
@@ -266,6 +266,50 @@ export default function V3Home() {
 
   return (
     <div>
+      {/* ══════ 1. IMMERSIVE HERO — mobile + desktop (acima de tudo) ══════ */}
+      {isLoading ? <HeroSkeleton /> : hero ? (
+        <div className="relative group lg:max-w-7xl lg:mx-auto lg:px-4 lg:pt-4 -mt-14 lg:mt-0">
+          <div className="relative lg:rounded-3xl lg:overflow-hidden lg:shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)]">
+            <ImmersiveHero
+              ev={hero}
+              isToday={!!heroIsToday}
+              todayCount={todayCount}
+              venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+            />
+            {heroEvents.length > 1 && (
+              <>
+                <button
+                  aria-label="Slide anterior"
+                  onClick={() => setHeroIdx((heroIdx - 1 + heroEvents.length) % heroEvents.length)}
+                  className="hidden lg:flex absolute left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 items-center justify-center rounded-full v3-glass-strong border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/20 hover:border-primary/60 hover:scale-110 backdrop-blur-xl"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  aria-label="Próximo slide"
+                  onClick={() => setHeroIdx((heroIdx + 1) % heroEvents.length)}
+                  className="hidden lg:flex absolute right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 items-center justify-center rounded-full v3-glass-strong border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-primary/20 hover:border-primary/60 hover:scale-110 backdrop-blur-xl"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+                <div className="absolute bottom-8 lg:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                  {heroEvents.map((_, i) => (
+                    <button
+                      key={i}
+                      aria-label={`Slide ${i + 1}`}
+                      onClick={() => setHeroIdx(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === heroIdx ? "bg-primary w-7 shadow-[0_0_10px_hsl(var(--primary)/0.7)]" : "bg-foreground/30 w-2 hover:bg-foreground/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      ) : <div className="lg:hidden"><EmptyHero /></div>}
+
       <div className="hidden lg:block">
         <CommandCenter
           todayEvents={rawTodayEvents}
@@ -280,32 +324,7 @@ export default function V3Home() {
         />
       </div>
 
-      <div className="space-y-1 -mt-14 lg:hidden">
-      {/* ══════ 1. IMMERSIVE HERO — viewport tall ══════ */}
-      {isLoading ? <HeroSkeleton /> : hero ? (
-        <div className="relative">
-          <ImmersiveHero
-            ev={hero}
-            isToday={!!heroIsToday}
-            todayCount={todayCount}
-            venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
-          />
-          {heroEvents.length > 1 && (
-            <div className="absolute bottom-28 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-              {heroEvents.map((_, i) => (
-                <button
-                  key={i}
-                  aria-label={`Slide ${i + 1}`}
-                  onClick={() => setHeroIdx(i)}
-                  className={`h-2 rounded-full transition-all ${
-                    i === heroIdx ? "bg-primary w-7 shadow-[0_0_10px_hsl(var(--primary)/0.7)]" : "bg-foreground/30 w-2"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : <EmptyHero />}
+      <div className="space-y-1 lg:hidden">
 
       {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
       <div className="px-4 pt-4">
@@ -480,7 +499,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
     : venueRank && venueRank <= 3 ? "Top venue da semana" : null;
 
   return (
-    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] overflow-hidden">
+    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-[600px] lg:min-h-[600px] lg:max-h-[600px] overflow-hidden">
       {/* Background image with Ken Burns */}
       <img
         src={ev.image_url || "/placeholder.svg"}
@@ -493,10 +512,10 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
 
       {/* Top badges — AUTHORITY COUNTER */}
-      <div className="absolute top-20 left-4 right-4 flex items-center gap-2 z-10">
+      <div className="absolute top-20 lg:top-8 left-4 lg:left-10 right-4 lg:right-10 flex items-center gap-2 z-10">
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
           {isToday ? <Flame className="w-3.5 h-3.5 text-primary-foreground" /> : <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />}
-          <span className="text-[10px] font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
+          <span className="text-[10px] lg:text-xs font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
         </span>
         {todayCount > 0 && (
           <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full v3-glass-strong border border-accent/40 v3-pulse-glow">
@@ -504,7 +523,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
               <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-70 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent))]" />
             </span>
-            <span className="text-[10px] font-black text-foreground uppercase tracking-[0.18em]">
+            <span className="text-[10px] lg:text-xs font-black text-foreground uppercase tracking-[0.18em]">
               <span className="text-accent">{todayCount}</span> {todayCount === 1 ? "evento" : "eventos"} hoje
             </span>
           </span>
@@ -512,9 +531,9 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       </div>
 
       {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 space-y-3 z-10">
-        <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
-        <h1 className="font-display font-black text-[44px] leading-[0.92] line-clamp-3 tracking-tight"
+      <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 lg:px-12 lg:pb-16 space-y-3 lg:space-y-5 z-10 lg:max-w-4xl">
+        <span className="text-[10px] lg:text-xs font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
+        <h1 className="font-display font-black text-[44px] lg:text-7xl xl:text-[88px] leading-[0.92] line-clamp-3 tracking-tight"
           style={{
             background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 55%, hsl(var(--v3-neon)) 100%)",
             WebkitBackgroundClip: "text",
@@ -530,36 +549,36 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
           {ev.venue_name && (
             <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                <MapPin className="w-3 h-3 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.8)]" />
+              <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <MapPin className="w-3 h-3 lg:w-4 lg:h-4 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.8)]" />
               </div>
-              <span className="text-sm font-bold text-foreground/95 truncate max-w-[180px]">{ev.venue_name}</span>
+              <span className="text-sm lg:text-base font-bold text-foreground/95 truncate max-w-[180px] lg:max-w-[320px]">{ev.venue_name}</span>
               {venueRank && venueRank <= 3 && (
-                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-[8px] font-bold text-primary">#{venueRank}</span>
+                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-[8px] lg:text-[10px] font-bold text-primary">#{venueRank}</span>
               )}
             </div>
           )}
           <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
-              <Clock className="w-3 h-3 text-accent drop-shadow-[0_0_6px_hsl(var(--accent)/0.8)]" />
+            <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-accent/20 flex items-center justify-center">
+              <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-accent drop-shadow-[0_0_6px_hsl(var(--accent)/0.8)]" />
             </div>
-            <span className="text-xs font-semibold text-foreground/85 capitalize">{fmtDateFull(ev.date_time)}</span>
+            <span className="text-xs lg:text-base font-semibold text-foreground/85 capitalize">{fmtDateFull(ev.date_time)}</span>
           </div>
         </div>
 
         {/* CTAs */}
-        <div className="flex gap-2 pt-3">
+        <div className="flex gap-2 lg:gap-3 pt-3">
           <Link
             to={`/v3/evento/${ev.slug}`}
-            className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full gradient-primary text-primary-foreground text-[12px] font-extrabold uppercase tracking-wider neon-glow active:scale-95 transition-transform"
+            className="inline-flex items-center gap-1.5 px-6 lg:px-8 py-3 lg:py-4 rounded-full gradient-primary text-primary-foreground text-[12px] lg:text-sm font-extrabold uppercase tracking-wider neon-glow active:scale-95 hover:scale-105 transition-transform"
           >
             Ver evento <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 px-4 py-3 rounded-full v3-glass-strong text-foreground text-[11px] font-bold uppercase tracking-wider hover:border-primary/50 transition-colors active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 lg:px-6 py-3 lg:py-4 rounded-full v3-glass-strong text-foreground text-[11px] lg:text-sm font-bold uppercase tracking-wider hover:border-primary/50 hover:scale-105 transition-all active:scale-95"
           >
-            <Car className="w-3.5 h-3.5 text-primary" /> Como vou?
+            <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" /> Como vou?
           </Link>
         </div>
       </div>
