@@ -975,7 +975,7 @@ function CommandCenter({
       </section>
 
       {/* RIGHT — IA + Categories + Week agenda (glassmorphism, sticky, lazy) */}
-      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide rounded-3xl backdrop-blur-xl bg-background/30 border border-white/10 p-3">
+      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide backdrop-blur-xl bg-background/40 py-6 px-4">
         <AIHomeWidget />
         <DesktopCategoriesPanel />
         <DesktopWeekPanel events={weekEvents} />
