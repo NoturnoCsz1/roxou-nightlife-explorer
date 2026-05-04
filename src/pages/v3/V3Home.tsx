@@ -19,6 +19,8 @@ import AIHomeWidget from "@/components/v3/AIHomeWidget";
 import V3SearchBar from "@/components/v3/V3SearchBar";
 import V3VibeChips from "@/components/v3/V3VibeChips";
 import SmartImage from "@/components/v3/SmartImage";
+import { useV3Profile } from "@/hooks/useV3Profile";
+import { User as UserIcon } from "lucide-react";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
