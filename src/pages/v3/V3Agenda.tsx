@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, format, addDays, isToday as isTodayFn, addHours, isWithinInterval } from "date-fns";
+import { startOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
+import { isToday as isTodayFn } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
