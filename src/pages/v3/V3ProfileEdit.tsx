@@ -160,13 +160,19 @@ export default function V3ProfileEdit() {
 
   return (
     <div className="pb-32 lg:pb-12">
-      {/* Header */}
-      <header className="sticky top-0 z-20 v3-glass-strong border-b border-primary/15 px-4 py-3">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
-          <Link to="/perfil" className="rounded-full p-2 hover:bg-white/5 transition">
-            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-          </Link>
-          <h1 className="font-display text-lg font-black text-foreground">Editar Perfil</h1>
+      {/* Header — glass rounded V3 */}
+      <header className="sticky top-2 z-20 mx-3 mt-2">
+        <div className="max-w-3xl mx-auto v3-glass-strong rounded-2xl border border-primary/25 px-4 py-3 shadow-[0_0_0_1px_hsl(var(--primary)/0.15),0_8px_28px_-8px_hsl(var(--primary)/0.35)]">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/perfil"
+              className="rounded-full p-2 hover:bg-primary/15 hover:text-primary transition text-muted-foreground"
+              aria-label="Voltar"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="font-display text-lg font-black text-foreground">Editar Perfil</h1>
+          </div>
         </div>
       </header>
 
@@ -180,15 +186,26 @@ export default function V3ProfileEdit() {
               <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
             </div>
           )}
-          <label className={`absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-background/60 backdrop-blur-xl border px-3 py-2 text-[11px] font-bold text-foreground transition ${
-            savingCover
-              ? "border-primary/60 cursor-wait opacity-80 pointer-events-none shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
-              : "border-primary/30 hover:border-primary/60 cursor-pointer"
-          }`}>
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={savingCover}
+            className={`absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-background/70 backdrop-blur-xl border px-3 py-2 text-[11px] font-bold text-foreground transition ${
+              savingCover
+                ? "border-primary/60 cursor-wait opacity-80 shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
+                : "border-primary/30 hover:border-primary/70 hover:bg-primary/15 hover:text-primary cursor-pointer"
+            }`}
+          >
             {savingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5" />}
             {savingCover ? "Enviando..." : "Trocar capa"}
-            <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={savingCover} />
-          </label>
+          </button>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            className="hidden"
+            onChange={handleCoverChange}
+          />
         </div>
 
         {/* Avatar — centralizado, overlap */}
@@ -203,10 +220,22 @@ export default function V3ProfileEdit() {
                 )}
               </div>
             </div>
-            <label className="absolute -bottom-1 -right-1 cursor-pointer rounded-full bg-primary p-2 shadow-lg shadow-primary/40 hover:scale-110 transition-transform">
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={savingAvatar}
+              className="absolute -bottom-1 -right-1 cursor-pointer rounded-full bg-primary p-2 shadow-lg shadow-primary/40 hover:scale-110 transition-transform disabled:opacity-70"
+              aria-label="Trocar avatar"
+            >
               {savingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary-foreground" /> : <Camera className="h-3.5 w-3.5 text-primary-foreground" />}
-              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={savingAvatar} />
-            </label>
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
         </div>
 
