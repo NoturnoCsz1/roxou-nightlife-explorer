@@ -493,7 +493,7 @@ const EventosList = () => {
               onChange={(ev) => setQuickEdits(prev => ({ ...prev, [e.id]: { title: ev.target.value, date_time: prev[e.id]?.date_time ?? isoToSpLocal(e.date_time), venue_name: prev[e.id]?.venue_name ?? (e.venue_name ?? "") } }))}
               onBlur={() => saveQuickEdit(e)}
               placeholder="Título do evento"
-              className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40"
+              className="block w-full rounded-lg border border-transparent bg-transparent px-1 py-0.5 text-sm lg:text-[13px] font-semibold text-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:bg-secondary/40 truncate"
             />
             <Link
               to={getEventEditPath(e.id)}
