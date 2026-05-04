@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfDay, format, addDays, isToday as isTodayFn, addHours, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import V3VibeChips from "@/components/v3/V3VibeChips";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
