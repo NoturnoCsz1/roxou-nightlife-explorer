@@ -60,6 +60,21 @@ export default function V3RideRequest() {
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Entre para solicitar transporte");
+        navigate("/v3/auth?redirect=/v3/transporte");
+        return;
+      }
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("display_name, nickname")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!prof?.display_name?.trim() || !(prof as any)?.nickname?.trim()) {
+        toast.error("Complete seu perfil (nome e apelido) para solicitar transporte.");
+        navigate("/v3/perfil/editar");
+        return;
+      }
       const { error } = await supabase.from("ride_requests").insert({
         event_name: eventName || null,
         venue_name: venueName || null,
@@ -70,7 +85,7 @@ export default function V3RideRequest() {
         seats_available: Math.min(4, Math.max(1, passengersCount)),
         price_note: priceNote || "Rachada combinada no chat",
         notes: notes || null,
-        passenger_id: user?.id || null,
+        passenger_id: user.id,
       } as any);
       if (error) throw error;
       toast.success("Pedido criado com sucesso!");
