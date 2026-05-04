@@ -7,14 +7,12 @@ import { useSavedEvents } from "@/hooks/useSavedEvents";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import {
   User, LogOut, Car, Bookmark, ChevronRight, Shield, Mail, Phone,
-  CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck, Building2,
-  Pencil, LockKeyhole, Gift, Copy, Crown,
+  CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck,
+  Pencil, LockKeyhole,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
 
 export default function V3Profile() {
   const navigate = useNavigate();
