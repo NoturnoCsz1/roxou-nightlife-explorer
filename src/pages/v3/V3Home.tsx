@@ -158,26 +158,47 @@ export default function V3Home() {
   });
 
   /* ─── FEATURED PARTNERS ─── */
+  const PINNED_PARTNERS = ["arapuca bar", "quinta aula", "boteco raiz"];
   const { data: featuredPartners = [] } = useQuery<VenueRank[]>({
     queryKey: ["v3-featured-partners"],
     queryFn: async () => {
       const { data: partners } = await supabase
         .from("partners").select("id,name,slug,type,logo_url,short_description,verified_partner")
-        .eq("active", true).limit(30);
+        .eq("active", true).limit(60);
       if (!partners?.length) return [];
       const weekEnd = addDays(today, 7).toISOString();
-      const { data: evData } = await supabase
-        .from("events").select("partner_id")
-        .eq("status", "published").gte("date_time", today.toISOString()).lte("date_time", weekEnd);
+      const since = new Date(Date.now() - 7 * 86400000).toISOString();
+      const [evRes, viewsRes] = await Promise.all([
+        supabase.from("events").select("partner_id")
+          .eq("status", "published").gte("date_time", today.toISOString()).lte("date_time", weekEnd),
+        supabase.from("page_views").select("partner_id")
+          .not("partner_id", "is", null).gte("created_at", since),
+      ]);
       const evMap: Record<string, number> = {};
-      evData?.forEach((e: any) => { if (e.partner_id) evMap[e.partner_id] = (evMap[e.partner_id] || 0) + 1; });
-      const withEvents = partners
-        .filter((p: any) => (evMap[p.id] || 0) > 0)
-        .map((p: any) => ({ ...p, views: 0, upcoming_events: evMap[p.id] || 0 }))
-        .sort((a: any, b: any) => b.upcoming_events - a.upcoming_events)
-        .slice(0, 8);
+      evRes.data?.forEach((e: any) => { if (e.partner_id) evMap[e.partner_id] = (evMap[e.partner_id] || 0) + 1; });
+      const viewsMap: Record<string, number> = {};
+      viewsRes.data?.forEach((r: any) => { if (r.partner_id) viewsMap[r.partner_id] = (viewsMap[r.partner_id] || 0) + 1; });
+
+      const enriched = partners.map((p: any) => ({
+        ...p,
+        views: viewsMap[p.id] || 0,
+        upcoming_events: evMap[p.id] || 0,
+        _pinIdx: PINNED_PARTNERS.indexOf((p.name || "").toLowerCase().trim()),
+      }));
+
+      // Pinned primeiro (na ordem definida) + restante por views (apenas com eventos futuros)
+      const pinned = enriched
+        .filter((p: any) => p._pinIdx >= 0)
+        .sort((a: any, b: any) => a._pinIdx - b._pinIdx);
+      const pinnedIds = new Set(pinned.map((p: any) => p.id));
+      const rest = enriched
+        .filter((p: any) => !pinnedIds.has(p.id) && p.upcoming_events > 0)
+        .sort((a: any, b: any) => b.views - a.views || b.upcoming_events - a.upcoming_events)
+        .slice(0, Math.max(0, 8 - pinned.length));
+
+      const ordered = [...pinned, ...rest];
       const rankMap = new Map(venueRanks.map((v, i) => [v.id, i + 1]));
-      return withEvents.map((p: any) => ({ ...p, _rank: rankMap.get(p.id) || 0 }));
+      return ordered.map((p: any) => ({ ...p, _rank: rankMap.get(p.id) || 0 }));
     },
     enabled: venueRanks !== undefined,
   });
@@ -351,6 +372,11 @@ export default function V3Home() {
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
 
+      {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
+      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
+        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+      ) : null}
+
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
 
@@ -387,11 +413,6 @@ export default function V3Home() {
             <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
-      ) : null}
-
-      {/* ══════ 4.5 HOJE — destaque abaixo do carrossel ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
-        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 5. LOCAIS EM ALTA ══════ */}

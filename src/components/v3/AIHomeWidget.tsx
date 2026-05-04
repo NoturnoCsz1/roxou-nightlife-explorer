@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { CloudSun, PiggyBank, Sparkles, ArrowRight, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useV3Profile } from "@/hooks/useV3Profile";
 
 interface HomeAIData {
   greeting: string;
@@ -10,7 +11,15 @@ interface HomeAIData {
   role_suggestion: string;
 }
 
+function getDaypartGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return "Bom dia";
+  if (h >= 12 && h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 export default function AIHomeWidget() {
+  const { user, profile } = useV3Profile();
   const { data, isLoading } = useQuery<HomeAIData>({
     queryKey: ["prudente-ai-home-widget"],
     queryFn: async () => {
@@ -20,6 +29,11 @@ export default function AIHomeWidget() {
     },
     staleTime: 1000 * 60 * 20,
   });
+
+  const daypart = getDaypartGreeting();
+  const nickname = (profile as any)?.nickname?.trim();
+  const displayName = nickname || (profile?.display_name?.split(" ")[0]) || "Prudente";
+  const greeting = `${daypart}, ${displayName}!`;
 
   return (
     <section className="px-4 pt-4 pb-2">
@@ -32,16 +46,21 @@ export default function AIHomeWidget() {
                 <Bot className="h-3.5 w-3.5" /> Prudente IA ao vivo
               </div>
               <h2 className="mt-1 font-display text-xl font-black text-foreground">
-                {isLoading ? "Bom dia, Prudente!" : data?.greeting || "Bom dia, Prudente!"}
+                {greeting}
               </h2>
+              {!user && (
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  <span className="font-bold text-primary">Faça seu cadastro</span> para recomendações exclusivas!
+                </p>
+              )}
             </div>
             <ArrowRight className="mt-1 h-5 w-5 text-primary transition-transform group-hover:translate-x-1" />
           </div>
 
           <div className="relative mt-4 grid grid-cols-1 gap-2">
-            <WidgetLine icon={CloudSun} label="Clima" text={data?.weather || "Calculando clima de Prudente..."} />
-            <WidgetLine icon={PiggyBank} label="Economia" text={data?.economy_tip || "Buscando happy hours e atalhos pra gastar menos."} />
-            <WidgetLine icon={Sparkles} label="Rolê IA" text={data?.role_suggestion || "Cruzando agenda, bares e horários da noite."} />
+            <WidgetLine icon={CloudSun} label="Clima" text={data?.weather || (isLoading ? "Calculando clima de Prudente..." : "—")} />
+            <WidgetLine icon={PiggyBank} label="Economia" text={data?.economy_tip || (isLoading ? "Buscando happy hours e atalhos pra gastar menos." : "—")} />
+            <WidgetLine icon={Sparkles} label="Roxou indica" text={data?.role_suggestion || (isLoading ? "Cruzando agenda, bares e horários da noite." : "—")} />
           </div>
         </div>
       </Link>
