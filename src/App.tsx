@@ -2,7 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+/** Redireciona /v3/* (rotas legadas) para o caminho equivalente na raiz. */
+function RedirectV3() {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace(/^\/v3/, "") || "/";
+  return <Navigate to={`${target}${search}${hash}`} replace />;
+}
 
 import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
