@@ -91,6 +91,13 @@ export default function V3AIChat() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
+    <>
+    <SEO
+      title="Aura IA — Sua promoter inteligente da noite em Presidente Prudente | Roxou"
+      description="Conheça a Aura, a inteligência artificial da Roxou que recomenda os melhores rolês, promoções e caronas seguras em Presidente Prudente. Descubra o que fazer hoje."
+      canonical="https://roxou.com.br/ia"
+      ogImage="https://roxou.com.br/og-aura.png"
+    />
     <div className="fixed inset-0 lg:inset-x-0 lg:top-14 lg:bottom-0 z-50 lg:z-10 flex flex-col overflow-hidden bg-background" style={{ height: "100dvh" }}>
       {/* Background neon glow ambient */}
       <div className="pointer-events-none absolute inset-0 -z-10">
