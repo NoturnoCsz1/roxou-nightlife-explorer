@@ -224,7 +224,42 @@ const EventosList = () => {
   async function toggleFeatured(id: string, current: boolean) {
     await supabase.from("events").update({ featured: !current }).eq("id", id);
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, featured: !current } : e)));
-    toast.success(!current ? "Marcado como destaque" : "Removido do destaque");
+    toast.success(!current ? "🔥 Marcado como destaque" : "Removido do destaque");
+  }
+
+  async function toggleAuraPick(id: string, current: boolean) {
+    const { error } = await supabase.from("events").update({ aura_pick: !current } as any).eq("id", id);
+    if (error) { toast.error("Erro ao marcar Aura"); return; }
+    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, aura_pick: !current } : e)));
+    toast.success(!current ? "🤖 Escolha da Aura ativada" : "Removido da Aura");
+  }
+
+  async function copyEventLink(e: EventRow) {
+    const url = `${window.location.origin}/evento/${e.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("🔗 Link copiado");
+    } catch {
+      toast.error("Falha ao copiar link");
+    }
+  }
+
+  async function handleBulkAura(value: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("events").update({ aura_pick: value } as any).in("id", ids);
+    if (error) { toast.error("Erro ao atualizar Aura"); return; }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, aura_pick: value } : e));
+    toast.success(`${ids.length} evento(s) ${value ? "marcados como Aura" : "removidos da Aura"}`);
+  }
+
+  async function handleBulkFeatured(value: boolean) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("events").update({ featured: value }).in("id", ids);
+    if (error) { toast.error("Erro ao atualizar destaque"); return; }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, featured: value } : e));
+    toast.success(`${ids.length} evento(s) ${value ? "destacados" : "sem destaque"}`);
   }
 
   async function saveQuickEdit(e: EventRow) {
