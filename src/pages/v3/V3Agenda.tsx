@@ -79,7 +79,12 @@ export default function V3Agenda() {
 
   const filteredEvents = useMemo(() => {
     let list = events;
-    if (activeCategory !== "todos") {
+    if (activeCategory === "expo2026") {
+      list = list.filter((e) => {
+        const hay = `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase();
+        return hay.includes("expo");
+      });
+    } else if (activeCategory !== "todos") {
       list = list.filter((e) => (e.category || "").toLowerCase() === activeCategory.toLowerCase());
     }
     const term = searchTerm.trim().toLowerCase();
