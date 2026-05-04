@@ -89,7 +89,7 @@ export default function V3AIChat() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-background">
+    <div className="fixed inset-x-0 top-14 bottom-16 lg:bottom-0 z-10 flex flex-col overflow-hidden bg-background">
       {/* Background neon glow ambient */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/15 blur-[120px]" />
@@ -126,11 +126,12 @@ export default function V3AIChat() {
                 </div>
               </div>
               <div className="text-center space-y-2 px-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">💜 Roxou</p>
                 <h2 className="font-display text-2xl font-black text-foreground">
-                  Qual rolê combina com <span className="v3-neon-text">hoje</span>?
+                  Olá, eu sou a <span className="v3-neon-text">Aura</span>
                 </h2>
                 <p className="text-xs leading-relaxed text-muted-foreground max-w-sm">
-                  Sou seu curador noturno em Prudente. Pergunte sobre eventos, bares, happy hour ou peça uma carona.
+                  Sua <strong className="text-primary font-black">inteligência artificial da Roxou</strong>. Pergunte sobre eventos, bares, happy hour ou peça uma carona. ✨
                 </p>
               </div>
 

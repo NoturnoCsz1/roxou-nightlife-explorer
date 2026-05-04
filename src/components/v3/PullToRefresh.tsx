@@ -25,7 +25,7 @@ export default function PullToRefresh({ children }: { children: ReactNode }) {
         }
         startY.current = null;
       }}
-      className="min-h-full h-full"
+      className="min-h-screen"
     >
       <div
         className="pointer-events-none fixed inset-x-0 top-14 z-40 flex justify-center transition-transform duration-200 lg:hidden"
