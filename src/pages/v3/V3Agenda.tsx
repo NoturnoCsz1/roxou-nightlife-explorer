@@ -179,6 +179,9 @@ export default function V3Agenda() {
           />
         </div>
 
+        {/* EXPLORAR POR VIBE */}
+        <V3VibeChips value={searchTerm} onSelect={setSearchTerm} className="-mx-4 px-0" />
+
         {/* CHIPS DE CATEGORIA */}
         {categories.length > 1 && (
           <div className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
