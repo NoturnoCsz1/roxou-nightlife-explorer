@@ -15,6 +15,7 @@ import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import CategoryChips from "@/components/v3/CategoryChips";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
+import V3SearchBar from "@/components/v3/V3SearchBar";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -273,6 +274,15 @@ export default function V3Home() {
           )}
         </div>
       ) : <EmptyHero />}
+
+      {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
+      <div className="px-4 pt-4">
+        <V3SearchBar
+          events={events as any}
+          fallbackEvent={(featured[0] || events[0]) as any}
+          placeholder="Buscar evento, local, vibe..."
+        />
+      </div>
 
       {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
       <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
@@ -834,6 +844,12 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
 
       {/* CENTER: Events feed + News */}
       <section className="min-w-0 space-y-6">
+        <V3SearchBar
+          events={mainEvents as any}
+          fallbackEvent={(featured[0] || mainEvents[0]) as any}
+          placeholder="Buscar evento, local, vibe..."
+        />
+
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Dashboard de entretenimento</p>
