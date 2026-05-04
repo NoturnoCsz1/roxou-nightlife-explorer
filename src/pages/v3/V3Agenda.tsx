@@ -42,6 +42,7 @@ export default function V3Agenda() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("todos");
+  const [searchTerm, setSearchTerm] = useState("");
   const { isSaved, toggleSave } = useSavedEvents();
 
   const { data: events = [], isLoading } = useQuery({
