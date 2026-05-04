@@ -35,6 +35,7 @@ import V3Home from "./pages/v3/V3Home";
 import V3Discover from "./pages/v3/V3Discover";
 import V3Agenda from "./pages/v3/V3Agenda";
 import V3Profile from "./pages/v3/V3Profile";
+import V3ProfileEdit from "./pages/v3/V3ProfileEdit";
 import V3EventDetail from "./pages/v3/V3EventDetail";
 import V3LocalDetail from "./pages/v3/V3LocalDetail";
 import V3Transport from "./pages/v3/V3Transport";
