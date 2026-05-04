@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sparkles, Car, MapPin, Users, Zap } from "lucide-react";
+import { ArrowLeft, Sparkles, Car, Users, Zap, Brain, TrendingUp } from "lucide-react";
 
 export default function V3Sobre() {
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto space-y-8">
+    <div className="px-4 py-6 max-w-2xl mx-auto space-y-8 pb-32 lg:pb-12">
       <div className="flex items-center gap-3">
         <Link
           to="/v3"
@@ -23,27 +23,31 @@ export default function V3Sobre() {
             <Sparkles className="w-3 h-3" /> Nossa missão
           </span>
           <h2 className="font-display font-extrabold text-3xl leading-tight text-foreground">
-            Tecnologia + entretenimento <span className="text-primary v3-neon-text">no interior de SP</span>
+            O elo entre quem produz e <span className="text-primary v3-neon-text">quem vive a noite</span>
           </h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            A ROXOU nasceu para conectar quem ama a noite com os melhores rolês do interior paulista — de
-            forma simples, rápida e segura. Reunimos festas, shows, baladas e bares em um só lugar, com
-            curadoria local e transporte integrado.
+            Conectamos empresas e clientes para que turistas, universitários e moradores de
+            Presidente Prudente encontrem a melhor experiência da cidade, sem perder tempo.
           </p>
         </div>
       </section>
 
       {/* Pillars grid */}
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { icon: MapPin, title: "Curadoria local", text: "Eventos verificados em cada cidade." },
-          { icon: Car, title: "Transporte seguro", text: "Caronas conectando passageiros e motoristas." },
-          { icon: Users, title: "Comunidade", text: "Pessoas reais movimentando a cena." },
-          { icon: Zap, title: "Tudo em tempo real", text: "Agenda atualizada e alta velocidade." },
+          { icon: Brain, title: "Curadoria por IA", text: "Algoritmo que aprende seu gosto e sugere o rolê certo na hora certa." },
+          { icon: Car, title: "Transporte integrado", text: "Caronas seguras conectando passageiros e motoristas verificados." },
+          { icon: TrendingUp, title: "Marketing de performance", text: "Tráfego qualificado para parceiros, com métricas em tempo real." },
         ].map(({ icon: Icon, title, text }) => (
           <div key={title} className="rounded-2xl p-4 v3-glass space-y-2">
-            <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
-              <Icon className="w-4 h-4 text-primary" />
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.25), hsl(var(--v3-neon-soft) / 0.15))",
+                boxShadow: "0 0 22px hsl(var(--v3-neon) / 0.35)",
+              }}
+            >
+              <Icon className="w-5 h-5 text-primary" />
             </div>
             <p className="font-display font-bold text-sm text-foreground">{title}</p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">{text}</p>
@@ -52,16 +56,23 @@ export default function V3Sobre() {
       </section>
 
       {/* Story */}
-      <section className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-        <h3 className="font-display font-bold text-lg text-foreground">Nossa história</h3>
+      <section className="space-y-3 text-sm text-muted-foreground leading-relaxed rounded-3xl v3-glass p-5">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-primary" />
+          <h3 className="font-display font-bold text-lg text-foreground">Nossa história</h3>
+        </div>
         <p>
-          A ROXOU começou em Presidente Prudente com a ideia de unir as pessoas certas aos rolês certos.
-          O interior tem cena, tem talento e tem público — só faltava uma plataforma que entendesse
-          essa realidade.
+          Criada por <strong className="text-foreground">Fernando Henrique</strong>, a ROXOU
+          surgiu da visão de um organizador de eventos que entende, na prática, a burocracia do
+          setor em Presidente Prudente.
         </p>
         <p>
-          Hoje conectamos milhares de pessoas a centenas de eventos por mês, com integração de transporte
-          para quem quer curtir a noite sem se preocupar com a volta para casa.
+          Somos o elo entre empresas e clientes, oferecendo o melhor guia para universitários,
+          turistas e moradores locais — com tecnologia, dados e atendimento humano.
+        </p>
+        <p>
+          Hoje conectamos milhares de pessoas a centenas de eventos por mês, com integração de
+          transporte para quem quer curtir sem se preocupar com a volta para casa.
         </p>
       </section>
 
