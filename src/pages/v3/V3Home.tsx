@@ -49,6 +49,10 @@ const VIBE_FILTERS = [
   { key: "grandes", label: "🏟️ Grandes Eventos" },
 ];
 
+const TODAY_KEY = "2026-05-04";
+const TODAY_START = `${TODAY_KEY}T00:00:00`;
+const TODAY_END = "2026-05-05T00:00:00";
+
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
   logo_url: string | null; short_description: string | null;
@@ -64,17 +68,39 @@ export default function V3Home() {
 
   /* ─── EVENTS ─── */
   const { data: events = [], isLoading: loadingEvents } = useQuery<Ev[]>({
-    queryKey: ["v3-events"],
+    queryKey: ["v3-events", TODAY_KEY],
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
           .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
-        .gte("date_time", today.toISOString())
+        .gte("date_time", TODAY_START)
         .order("date_time", { ascending: true })
         .limit(80);
       return (data as Ev[]) || [];
     },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+
+  const { data: rawTodayEvents = [] } = useQuery<Ev[]>({
+    queryKey: ["v3-today-events", TODAY_KEY],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("events")
+        .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
+        .eq("status", "published")
+        .gte("date_time", TODAY_START)
+        .lt("date_time", TODAY_END)
+        .order("date_time", { ascending: true });
+      return (data as Ev[]) || [];
+    },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   /* ─── TRENDING (views last 24h) ─── */
@@ -166,7 +192,7 @@ export default function V3Home() {
   const [heroIdx, setHeroIdx] = useState(0);
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
-  const todayCount = useMemo(() => events.filter(e => isTodayFn(new Date(e.date_time))).length, [events]);
+  const todayCount = rawTodayEvents.length;
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
@@ -182,9 +208,9 @@ export default function V3Home() {
   }, [events, trendingIds, usedIds]);
 
   const todayEvents = useMemo(
-    () => events.filter(e => !usedIds.has(e.id) && isTodayFn(new Date(e.date_time)))
+    () => rawTodayEvents.filter(e => !usedIds.has(e.id))
       .slice(0, 12).map(e => { usedIds.add(e.id); return e; }),
-    [events, usedIds],
+    [rawTodayEvents, usedIds],
   );
 
   const featured = useMemo(
@@ -240,6 +266,7 @@ export default function V3Home() {
       <div className="hidden lg:block">
         <CommandCenter
           todayEvents={todayEvents}
+          todayCount={todayCount}
           trending={trending}
           featured={featured}
           weekEvents={weekEvents}
@@ -290,7 +317,7 @@ export default function V3Home() {
       <V3VibeChips />
 
       {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
-      <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
+      <QuickFilterTabs todayCount={todayCount} weekCount={weekEvents.length} />
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
@@ -815,8 +842,8 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 }
 
 /* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
-function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingIdSet, partnerRankMap, venueRanks, featuredPartners }: {
-  todayEvents: Ev[]; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
+function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents, trendingIdSet, partnerRankMap, venueRanks, featuredPartners }: {
+  todayEvents: Ev[]; todayCount: number; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
   venueRanks: VenueRank[]; featuredPartners: any[];
 }) {
@@ -842,7 +869,7 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
     <FadeSection className="mx-auto grid max-w-7xl grid-cols-[240px_minmax(0,1fr)_320px] gap-5 px-6 py-6">
       {/* LEFT: Navigation + Categories */}
       <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide">
-        <DesktopNavPanel todayCount={todayEvents.length} />
+        <DesktopNavPanel todayCount={todayCount} />
         <DesktopCategoriesPanel />
         <AIHomeWidget />
       </aside>
@@ -866,7 +893,7 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
             </h1>
           </div>
           <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)] whitespace-nowrap">
-            {todayEvents.length === 0 ? "Buscando o próximo rolê..." : `${todayEvents.length} rolês hoje ⚡`}
+            {todayCount === 0 ? "Buscando o próximo rolê..." : `${todayCount} rolês hoje ⚡`}
           </span>
         </div>
 
@@ -947,7 +974,9 @@ function DesktopNavPanel({ todayCount }: { todayCount: number }) {
   return (
     <div className="rounded-3xl v3-glass-strong p-4">
       <p className="font-display text-2xl font-black text-primary v3-neon-text">ROXOU</p>
-      <p className="mt-1 text-[11px] text-muted-foreground">{todayCount} eventos para decidir a noite.</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {todayCount === 0 ? "Buscando o próximo rolê..." : `${todayCount} rolês para decidir a noite.`}
+      </p>
       <div className="mt-4 space-y-1.5">
         {items.map(({ to, label, icon: Icon }) => (
           <Link key={to} to={to} className="flex items-center gap-3 rounded-xl border border-border/15 bg-background/25 px-3 py-2.5 text-[13px] font-bold text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary">
