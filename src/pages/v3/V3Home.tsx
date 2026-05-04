@@ -546,7 +546,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 lg:px-12 lg:pb-16 space-y-3 lg:space-y-5 z-10 lg:max-w-4xl">
         <span className="text-[10px] lg:text-xs font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
-        <h1 className="font-display font-black text-[44px] lg:text-7xl xl:text-[88px] leading-[0.92] line-clamp-3 tracking-tight"
+        <h1 className="font-display font-black text-[32px] lg:text-5xl xl:text-6xl leading-[0.95] line-clamp-2 tracking-tight"
           style={{
             background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 55%, hsl(var(--v3-neon)) 100%)",
             WebkitBackgroundClip: "text",
