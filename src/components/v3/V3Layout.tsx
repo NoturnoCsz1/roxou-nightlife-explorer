@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
@@ -147,6 +147,25 @@ export default function V3Layout() {
           <Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
           <span className="opacity-30">·</span>
           <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
+          <span className="opacity-30">·</span>
+          <a
+            href="https://x.com/roxou_pp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-primary transition-colors"
+            title="Twitter/X"
+          >
+            <Twitter className="w-4 h-4 inline" />
+          </a>
+          <a
+            href="https://www.instagram.com/roxou.pp/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-primary transition-colors"
+            title="Instagram"
+          >
+            <Instagram className="w-4 h-4 inline" />
+          </a>
         </div>
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
