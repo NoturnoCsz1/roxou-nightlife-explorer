@@ -194,38 +194,30 @@ export default function V3Agenda() {
           />
         </div>
 
-        {/* EXPLORAR POR VIBE */}
-        <V3VibeChips value={searchTerm} onSelect={setSearchTerm} className="-mx-4 px-0" />
-
-        {/* CHIPS DE CATEGORIA — rolagem horizontal sempre */}
-        <div className="mt-4 -mx-1 flex flex-nowrap overflow-x-auto gap-2 py-2 px-1 scrollbar-hide">
-          {/* Atalho fixo Expo 2026 */}
-          <button
-            type="button"
-            onClick={() => { setSearchTerm(""); setActiveCategory("expo2026"); }}
-            className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-              activeCategory === "expo2026"
-                ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)]"
-                : "border border-accent/40 bg-accent/10 text-accent hover:bg-accent/20"
-            }`}
-            style={
-              activeCategory === "expo2026"
-                ? { background: "linear-gradient(135deg, hsl(var(--accent)), hsl(var(--v3-neon)))" }
-                : undefined
-            }
-          >
-            🎡 Expo 2026
-          </button>
-          {categories.map((cat) => {
-            const active = activeCategory === cat;
+        {/* MENU UNIFICADO — atalhos + categorias dinâmicas, rolagem horizontal full-bleed */}
+        <div className="mt-4 -mx-5 px-5 flex flex-nowrap overflow-x-auto gap-2 py-2 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+          {[
+            { key: "hoje", label: "🔥 Hoje" },
+            { key: "amanha", label: "🌅 Amanhã" },
+            { key: "fds", label: "🎉 Final de semana" },
+            { key: "expo2026", label: "🤠 Expo 2026" },
+            { key: "sertanejo", label: "🎸 Sertanejo" },
+            { key: "pagode", label: "🥁 Pagode" },
+            { key: "open bar", label: "🍺 Open Bar" },
+            { key: "eletr", label: "🎧 Eletrônico" },
+            { key: "funk", label: "🔊 Funk" },
+            { key: "todos", label: "✨ Tudo" },
+            ...categories.filter((c) => c !== "todos").map((c) => ({ key: c, label: `${categoryIcon(c)} ${c}` })),
+          ].map((chip) => {
+            const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
             return (
               <button
-                key={cat}
+                key={chip.key}
                 type="button"
-                onClick={() => { setSearchTerm(""); setActiveCategory(cat); }}
-                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                onClick={() => { setSearchTerm(""); setActiveCategory(chip.key); }}
+                className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold whitespace-nowrap transition-all ${
                   active
-                    ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+                    ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
                     : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
                 }`}
                 style={
@@ -234,7 +226,7 @@ export default function V3Agenda() {
                     : undefined
                 }
               >
-                {cat === "todos" ? "✨ Tudo" : `${categoryIcon(cat)} ${cat}`}
+                {chip.label}
               </button>
             );
           })}
