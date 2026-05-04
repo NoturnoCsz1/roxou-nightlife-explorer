@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
+import { startOfDay, endOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
 import { isToday as isTodayFn } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
@@ -8,7 +8,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import V3SearchBar from "@/components/v3/V3SearchBar";
-import V3VibeChips from "@/components/v3/V3VibeChips";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
