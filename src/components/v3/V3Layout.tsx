@@ -26,8 +26,11 @@ export default function V3Layout() {
 
   const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
 
+  // Rotas full-height (sem scroll de página, conteúdo ocupa exatamente a viewport útil)
+  const isFullHeightRoute = pathname.startsWith("/v3/ia");
+
   return (
-    <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
+    <div className={`v3-theme text-foreground font-body flex flex-col ${isFullHeightRoute ? "h-[100dvh] overflow-hidden" : "min-h-screen"}`}>
       {/* Header — Midnight glass (com nav integrada no desktop) */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center justify-between gap-4 px-4 h-14 max-w-7xl mx-auto">
