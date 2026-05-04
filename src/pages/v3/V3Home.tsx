@@ -266,24 +266,9 @@ export default function V3Home() {
 
   return (
     <div>
-      <div className="hidden lg:block">
-        <CommandCenter
-          todayEvents={rawTodayEvents}
-          todayCount={todayCount}
-          trending={trending}
-          featured={featured}
-          weekEvents={weekEvents}
-          trendingIdSet={trendingIdSet}
-          partnerRankMap={partnerRankMap}
-          venueRanks={venueRanks}
-          featuredPartners={featuredPartners as any[]}
-        />
-      </div>
-
-      <div className="space-y-1 -mt-14 lg:mt-0">
-      {/* ══════ 1. IMMERSIVE HERO — viewport tall (mobile + desktop) ══════ */}
+      {/* ══════ 1. IMMERSIVE HERO — mobile + desktop (acima de tudo) ══════ */}
       {isLoading ? <HeroSkeleton /> : hero ? (
-        <div className="relative group lg:max-w-7xl lg:mx-auto lg:px-4 lg:pt-4">
+        <div className="relative group lg:max-w-7xl lg:mx-auto lg:px-4 lg:pt-4 -mt-14 lg:mt-0">
           <div className="relative lg:rounded-3xl lg:overflow-hidden lg:shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)]">
             <ImmersiveHero
               ev={hero}
@@ -293,7 +278,6 @@ export default function V3Home() {
             />
             {heroEvents.length > 1 && (
               <>
-                {/* Prev/Next arrows — desktop only, hover reveal */}
                 <button
                   aria-label="Slide anterior"
                   onClick={() => setHeroIdx((heroIdx - 1 + heroEvents.length) % heroEvents.length)}
@@ -308,7 +292,6 @@ export default function V3Home() {
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
-                {/* Dots */}
                 <div className="absolute bottom-8 lg:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
                   {heroEvents.map((_, i) => (
                     <button
@@ -325,7 +308,23 @@ export default function V3Home() {
             )}
           </div>
         </div>
-      ) : <EmptyHero />}
+      ) : <div className="lg:hidden"><EmptyHero /></div>}
+
+      <div className="hidden lg:block">
+        <CommandCenter
+          todayEvents={rawTodayEvents}
+          todayCount={todayCount}
+          trending={trending}
+          featured={featured}
+          weekEvents={weekEvents}
+          trendingIdSet={trendingIdSet}
+          partnerRankMap={partnerRankMap}
+          venueRanks={venueRanks}
+          featuredPartners={featuredPartners as any[]}
+        />
+      </div>
+
+      <div className="space-y-1 lg:hidden">
 
       {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
       <div className="px-4 pt-4">
