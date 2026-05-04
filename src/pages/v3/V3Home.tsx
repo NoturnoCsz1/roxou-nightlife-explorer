@@ -189,7 +189,20 @@ export default function V3Home() {
     const trendMap = new Map(trendingIds.map(t => [t.id, t.views]));
     rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
     const combined = [...feat, ...rest];
-    return combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 4);
+    let unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
+    // Fallback: complete with random future events when there are fewer than 4 highlights
+    if (unique.length < 4) {
+      const usedIds = new Set(unique.map(e => e.id));
+      const pool = events.filter(e => !usedIds.has(e.id));
+      // Fisher-Yates shuffle (stable per render via slice)
+      const shuffled = pool.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      unique = [...unique, ...shuffled.slice(0, 4 - unique.length)];
+    }
+    return unique.slice(0, 4);
   }, [events, trendingIds]);
 
   const [heroIdx, setHeroIdx] = useState(0);
