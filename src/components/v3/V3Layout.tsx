@@ -77,16 +77,16 @@ export default function V3Layout() {
       <PullToRefresh>
         <div className="flex-1 max-w-7xl w-full mx-auto lg:flex lg:gap-6 lg:px-4">
           {/* Sidebar Desktop */}
-          <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 sticky top-14 self-start py-6 px-4 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+          <aside className="hidden lg:flex lg:flex-col lg:items-start lg:w-64 shrink-0 sticky top-14 self-start py-6 pl-4 pr-2 max-h-[calc(100vh-3.5rem)] overflow-y-auto backdrop-blur-xl bg-background/40">
             {/* Card de perfil */}
             <button
               onClick={handleProfileClick}
-              className="w-full max-w-[220px] mx-auto flex flex-col items-center gap-2 p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors mb-6"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors mb-4"
             >
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-lg font-display font-bold text-primary-foreground">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-display font-bold text-primary-foreground shrink-0">
                 {initial}
               </div>
-              <div className="text-center">
+              <div className="text-left min-w-0">
                 <p className="text-sm font-bold text-foreground line-clamp-1">
                   {user?.email?.split("@")[0] ?? "Visitante"}
                 </p>
@@ -97,21 +97,21 @@ export default function V3Layout() {
             </button>
 
             {/* Itens de navegação */}
-            <nav className="flex flex-col items-center gap-1.5 w-full">
+            <nav className="flex flex-col items-start gap-1 w-full">
               {allDesktopItems.map(({ to, icon: Icon, label }) => {
                 const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
                 return (
                   <button
                     key={to}
                     onClick={() => navigate(to)}
-                    className={`w-full max-w-[220px] inline-flex items-center justify-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+                    className={`w-full inline-flex items-center justify-start gap-3 rounded-xl pl-4 pr-3 py-2.5 text-sm font-semibold transition-colors ${
                       active
                         ? "bg-primary/15 text-primary shadow-[0_0_15px_rgba(168,85,247,0.25)]"
                         : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
-                    {label}
+                    <Icon className={`h-4 w-4 shrink-0 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
+                    <span>{label}</span>
                   </button>
                 );
               })}

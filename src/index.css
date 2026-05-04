@@ -72,6 +72,26 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
+
+  /* Discrete global scrollbar (neon purple, ultra-thin) */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.2);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.4);
+  }
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.25) transparent;
+  }
 }
 
 @layer utilities {
