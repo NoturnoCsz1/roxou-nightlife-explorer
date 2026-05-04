@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { CloudSun, PiggyBank, Sparkles, ArrowRight, Bot } from "lucide-react";
+import { CloudSun, PiggyBank, Sparkles, ArrowRight } from "lucide-react";
+import AuraAvatar from "@/components/v3/AuraAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
 
