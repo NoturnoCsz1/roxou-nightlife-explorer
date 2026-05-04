@@ -30,7 +30,7 @@ function VerifiedDriverBadge() {
   );
 }
 
-function EventRideCard({ event }: { event: RealEvent }) {
+function EventRideCard({ event, isGuest }: { event: RealEvent; isGuest: boolean }) {
   const closed = isRideWindowClosed(event.date_time);
   const availabilityText = getRideAvailabilityText(event.date_time);
 
@@ -39,6 +39,12 @@ function EventRideCard({ event }: { event: RealEvent }) {
   if (event.venue_name) params.set("venue", event.venue_name);
   params.set("date", event.date_time);
   const rideUrl = `/v3/pedir-carona?${params.toString()}`;
+  const targetUrl = isGuest ? "/v3/perfil" : rideUrl;
+  const ctaLabel = closed
+    ? "Sistema encerrado"
+    : isGuest
+    ? "Entrar para solicitar carona"
+    : "Solicitar carona pra esse rolê";
 
   return (
     <div className="relative overflow-hidden rounded-2xl p-4 v3-glass v3-neon-hover">
@@ -77,9 +83,9 @@ function EventRideCard({ event }: { event: RealEvent }) {
           <VerifiedDriverBadge />
         </div>
 
-        <Link to={closed ? "#" : rideUrl} onClick={(e) => { if (closed) { e.preventDefault(); toast.error(RIDE_EXPIRED_MESSAGE); } }}>
+        <Link to={closed ? "#" : targetUrl} onClick={(e) => { if (closed) { e.preventDefault(); toast.error(RIDE_EXPIRED_MESSAGE); } }}>
           <Button variant={closed ? "secondary" : "default"} className="w-full h-9 rounded-xl text-xs font-bold">
-            {closed ? "Sistema encerrado" : "Solicitar carona pra esse rolê"}
+            {ctaLabel}
           </Button>
         </Link>
       </div>
