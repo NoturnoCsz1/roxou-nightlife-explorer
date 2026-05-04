@@ -161,6 +161,7 @@ export default function V3Layout() {
             const active = to === "/"
               ? pathname === "/"
               : pathname.startsWith(to);
+            const isAura = to === "/ia";
             return (
               <button
                 key={to}
@@ -169,7 +170,11 @@ export default function V3Layout() {
                   active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
+                {isAura ? (
+                  <AuraAvatar className={`w-6 h-6 ${active ? "ring-2 ring-primary" : ""}`} glow={active} />
+                ) : (
+                  <Icon className={`w-5 h-5 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
+                )}
                 <span className="text-[10px] font-medium">{label}</span>
               </button>
             );
