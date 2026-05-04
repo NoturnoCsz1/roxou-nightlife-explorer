@@ -36,6 +36,7 @@ interface Ev {
   id: string; slug: string; title: string; image_url: string | null;
   date_time: string; venue_name: string | null; category: string;
   sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
+  video_url?: string | null;
 }
 
 const VIBE_FILTERS = [
