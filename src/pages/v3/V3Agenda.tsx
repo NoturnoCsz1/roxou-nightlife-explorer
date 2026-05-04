@@ -158,6 +158,17 @@ export default function V3Agenda() {
           </button>
         </div>
 
+        {/* SEARCH BAR */}
+        <div className="mt-4">
+          <V3SearchBar
+            events={events as any}
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar evento, local, vibe..."
+            fallbackEvent={(events[0] as any) || null}
+          />
+        </div>
+
         {/* CHIPS DE CATEGORIA */}
         {categories.length > 1 && (
           <div className="mt-4 flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
