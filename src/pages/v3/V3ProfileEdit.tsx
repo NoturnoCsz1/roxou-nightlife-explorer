@@ -260,6 +260,7 @@ export default function V3ProfileEdit() {
           </div>
         </div>
       </div>
+      <CommunityConsentModal open={consentOpen} onOpenChange={setConsentOpen} />
     </div>
   );
 }
