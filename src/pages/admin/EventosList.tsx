@@ -34,11 +34,21 @@ interface EventRow {
   sub_category: string | null;
   status: string;
   featured: boolean;
+  aura_pick: boolean;
   image_url: string | null;
   description: string | null;
   partner_id: string | null;
   created_at: string;
   verification_source: string | null;
+}
+
+function getQualityScore(e: EventRow): number {
+  let s = 0;
+  if (e.image_url) s += 25;
+  if (e.date_time && new Date(e.date_time).getTime() > Date.now()) s += 25;
+  if (e.venue_name && e.venue_name.trim()) s += 25;
+  if (e.category) s += 25;
+  return s;
 }
 
 // Centralized route builder for the full event edit form.
