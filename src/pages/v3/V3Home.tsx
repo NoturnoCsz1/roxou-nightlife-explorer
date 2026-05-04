@@ -189,7 +189,20 @@ export default function V3Home() {
     const trendMap = new Map(trendingIds.map(t => [t.id, t.views]));
     rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
     const combined = [...feat, ...rest];
-    return combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 4);
+    let unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
+    // Fallback: complete with random future events when there are fewer than 4 highlights
+    if (unique.length < 4) {
+      const usedIds = new Set(unique.map(e => e.id));
+      const pool = events.filter(e => !usedIds.has(e.id));
+      // Fisher-Yates shuffle (stable per render via slice)
+      const shuffled = pool.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      unique = [...unique, ...shuffled.slice(0, 4 - unique.length)];
+    }
+    return unique.slice(0, 4);
   }, [events, trendingIds]);
 
   const [heroIdx, setHeroIdx] = useState(0);
@@ -533,7 +546,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 lg:px-12 lg:pb-16 space-y-3 lg:space-y-5 z-10 lg:max-w-4xl">
         <span className="text-[10px] lg:text-xs font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
-        <h1 className="font-display font-black text-[44px] lg:text-7xl xl:text-[88px] leading-[0.92] line-clamp-3 tracking-tight"
+        <h1 className="font-display font-black text-[32px] lg:text-5xl xl:text-6xl leading-[0.95] line-clamp-2 tracking-tight"
           style={{
             background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 55%, hsl(var(--v3-neon)) 100%)",
             WebkitBackgroundClip: "text",
