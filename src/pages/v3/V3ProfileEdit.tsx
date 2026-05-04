@@ -167,9 +167,9 @@ export default function V3ProfileEdit() {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto">
-        {/* Cover (21:9) */}
-        <div className="relative aspect-[21/9] w-full overflow-hidden bg-secondary border-b border-white/5">
+      <div className="max-w-2xl mx-auto px-4 pt-4">
+        {/* Cover (21:9) — glass rounded */}
+        <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
           {coverUrl ? (
             <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
           ) : (
@@ -177,7 +177,7 @@ export default function V3ProfileEdit() {
               <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
             </div>
           )}
-          <label className={`absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-md border px-3 py-2 text-[11px] font-bold text-foreground transition ${
+          <label className={`absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-background/60 backdrop-blur-xl border px-3 py-2 text-[11px] font-bold text-foreground transition ${
             savingCover
               ? "border-primary/60 cursor-wait opacity-80 pointer-events-none shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
               : "border-primary/30 hover:border-primary/60 cursor-pointer"
@@ -188,11 +188,11 @@ export default function V3ProfileEdit() {
           </label>
         </div>
 
-        {/* Avatar — overlap */}
-        <div className="px-4 -mt-12 mb-4 relative z-10">
-          <div className="relative w-fit">
-            <div className="h-24 w-24 rounded-3xl border-2 border-primary/60 bg-background/80 backdrop-blur-xl p-1 shadow-[0_0_30px_hsl(var(--primary)/0.45)]">
-              <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-secondary flex items-center justify-center">
+        {/* Avatar — centralizado, overlap */}
+        <div className="flex justify-center -mt-12 mb-4 relative z-10">
+          <div className="relative">
+            <div className="h-24 w-24 rounded-2xl border-2 border-primary/60 bg-white/5 backdrop-blur-xl p-1 shadow-[0_0_30px_hsl(var(--primary)/0.45)]">
+              <div className="h-full w-full overflow-hidden rounded-xl bg-secondary/40 flex items-center justify-center">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
@@ -207,8 +207,8 @@ export default function V3ProfileEdit() {
           </div>
         </div>
 
-        {/* Form */}
-        <div className="px-4 space-y-4">
+        {/* Form — card glass único centralizado */}
+        <div className="rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 p-5 space-y-4">
           <Field label="Nome">
             <input
               type="text"
