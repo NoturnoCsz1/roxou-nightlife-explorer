@@ -698,6 +698,24 @@ const EventosList = () => {
             {zipping ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             {zipping ? `Baixando... ${zipPercent}%` : "📦 Baixar ZIP"}
           </button>
+          {selectedCount > 0 && (
+            <>
+              <button
+                onClick={() => handleBulkAura(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary/15 border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/25 transition"
+                title="Marcar selecionados como Escolha da Aura"
+              >
+                <Bot className="h-3.5 w-3.5" /> Marcar Aura
+              </button>
+              <button
+                onClick={() => handleBulkFeatured(true)}
+                className="flex items-center gap-1.5 rounded-lg bg-yellow-400/10 border border-yellow-400/30 px-3 py-1.5 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/20 transition"
+                title="Destacar selecionados"
+              >
+                <Flame className="h-3.5 w-3.5" /> Destacar
+              </button>
+            </>
+          )}
           {zipping && (
             <Progress value={zipPercent} className="h-1.5 flex-1 min-w-[80px]" />
           )}
