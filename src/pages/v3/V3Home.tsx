@@ -545,20 +545,19 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
         )}
       </div>
 
-      {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 lg:px-12 lg:pb-16 space-y-3 lg:space-y-5 z-10 lg:max-w-4xl">
-        <span className="text-[10px] lg:text-xs font-bold text-primary/90 uppercase tracking-[0.22em]">{ev.category}</span>
-        <h1 className="font-display font-bold text-[22px] lg:text-4xl xl:text-5xl leading-[1.05] line-clamp-2 tracking-tight"
-          style={{
-            background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 70%, hsl(var(--v3-neon)) 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            filter: "drop-shadow(0 0 10px hsl(var(--v3-neon) / 0.18))",
-          }}
-        >
-          {ev.title}
-        </h1>
+      {/* Bottom content — título mais leve, hierarquia respirada */}
+      <div className="absolute bottom-0 left-0 right-0 p-5 pb-10 lg:px-12 lg:pb-14 space-y-4 lg:space-y-6 z-10 lg:max-w-3xl">
+        <div className="space-y-2.5 lg:space-y-3">
+          <span className="inline-block text-[10px] lg:text-[11px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
+            {ev.category}
+          </span>
+          <h1
+            className="font-display font-semibold text-[26px] lg:text-[44px] xl:text-[52px] leading-[1.1] lg:leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
+            style={{ textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)" }}
+          >
+            {ev.title}
+          </h1>
+        </div>
 
         {/* Info row with neon icons */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
