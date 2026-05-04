@@ -211,6 +211,16 @@ export default function V3Home() {
     return [];
   }, [events, trendingIds, vibeFilter]);
 
+  // Destaque da Semana — prioriza evento featured com vídeo POV
+  const weeklyHighlight = useMemo(() => {
+    const candidates = events.filter(e => !usedIds.has(e.id));
+    return candidates.find(e => e.featured && e.video_url) ||
+           candidates.find(e => e.video_url) ||
+           candidates.find(e => e.featured) ||
+           null;
+  }, [events, usedIds]);
+  if (weeklyHighlight) usedIds.add(weeklyHighlight.id);
+
   const maxViews = venueRanks[0]?.views || 1;
   const isLoading = loadingEvents;
 
