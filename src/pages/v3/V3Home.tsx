@@ -1526,6 +1526,11 @@ function WeeklySpotlight({ ev }: { ev: Ev }) {
           } group-hover:scale-105 transition-transform`}
         />
 
+        {/* Skeleton shimmer enquanto o vídeo POV ainda não está pronto */}
+        {hasVideo && !videoReady && (
+          <div className="absolute inset-0 v3-skeleton" aria-hidden="true" />
+        )}
+
         {/* Cinematic overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 mix-blend-overlay" />
