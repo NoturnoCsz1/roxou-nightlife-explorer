@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Bot, Crown, Loader2, Send, Sparkles, User, MapPin, Car, Video, Beer, Music, PartyPopper, Wine } from "lucide-react";
 import AuraAvatar from "@/components/v3/AuraAvatar";
+import SEO from "@/components/SEO";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +91,13 @@ export default function V3AIChat() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
+    <>
+    <SEO
+      title="Aura IA — Sua promoter inteligente da noite em Presidente Prudente | Roxou"
+      description="Conheça a Aura, a inteligência artificial da Roxou que recomenda os melhores rolês, promoções e caronas seguras em Presidente Prudente. Descubra o que fazer hoje."
+      canonical="https://roxou.com.br/ia"
+      ogImage="https://roxou.com.br/og-aura.png"
+    />
     <div className="fixed inset-0 lg:inset-x-0 lg:top-14 lg:bottom-0 z-50 lg:z-10 flex flex-col overflow-hidden bg-background" style={{ height: "100dvh" }}>
       {/* Background neon glow ambient */}
       <div className="pointer-events-none absolute inset-0 -z-10">
@@ -215,6 +223,20 @@ export default function V3AIChat() {
       </form>
       <VIPPaywallModal open={paywall} onOpenChange={setPaywall} />
     </div>
+    {/* SEO content block — discreet, off-screen for crawlers */}
+    <section aria-label="Sobre a Aura" className="sr-only">
+      <h1>Conheça a Aura 🤖💜</h1>
+      <h2>Sua promoter inteligente da Roxou</h2>
+      <p>
+        A Aura é a inteligência artificial da Roxou que recomenda eventos em Presidente Prudente,
+        ajuda você a descobrir o que fazer hoje e indica os melhores bares e baladas da cidade.
+      </p>
+      <p>
+        A Aura da Roxou ajuda você a descobrir os melhores eventos em Presidente Prudente,
+        incluindo bares, baladas e festas que acontecem hoje na cidade.
+      </p>
+    </section>
+    </>
   );
 }
 
