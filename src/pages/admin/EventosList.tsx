@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Layers, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, Bot, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Flame, Image as ImageIcon, Layers, Link2, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
