@@ -28,8 +28,27 @@ import NoticiasList from "./pages/admin/NoticiasList";
 import NoticiaForm from "./pages/admin/NoticiaForm";
 
 // V3 (padrão)
+import V3Layout from "./components/v3/V3Layout";
 import V3Auth from "./pages/v3/V3Auth";
 import V3Parceiros from "./pages/v3/V3Parceiros";
+import V3Home from "./pages/v3/V3Home";
+import V3Discover from "./pages/v3/V3Discover";
+import V3Agenda from "./pages/v3/V3Agenda";
+import V3Profile from "./pages/v3/V3Profile";
+import V3EventDetail from "./pages/v3/V3EventDetail";
+import V3LocalDetail from "./pages/v3/V3LocalDetail";
+import V3Transport from "./pages/v3/V3Transport";
+import V3RideRequest from "./pages/v3/V3RideRequest";
+import V3DriverBoard from "./pages/v3/V3DriverBoard";
+import V3Chat from "./pages/v3/V3Chat";
+import V3MyRides from "./pages/v3/V3MyRides";
+import V3Terms from "./pages/v3/V3Terms";
+import V3Privacy from "./pages/v3/V3Privacy";
+import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
+import V3Economize from "./pages/v3/V3Economize";
+import V3AIChat from "./pages/v3/V3AIChat";
+import V3Sobre from "./pages/v3/V3Sobre";
+import V3Contato from "./pages/v3/V3Contato";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*)
 import LegacyIndex from "./pages/Index";
@@ -80,11 +99,33 @@ const App = () => (
           <Route path="/expo2026" element={<Expo2026 />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
-          {/* ========= V3 PADRÃO ========= */}
+          {/* ========= V3 PADRÃO (PÚBLICO durante pré-lançamento) ========= */}
           {/* Landing principal: contagem regressiva V3 (lançamento 04/05 18h) */}
           <Route path="/" element={<Maintenance />} />
           <Route path="/v3/parceiros" element={<V3Parceiros />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
+
+          <Route path="/v3" element={<V3Layout />}>
+            <Route index element={<V3Home />} />
+            <Route path="descobrir" element={<V3Discover />} />
+            <Route path="agenda" element={<V3Agenda />} />
+            <Route path="perfil" element={<V3Profile />} />
+            <Route path="evento/:slug" element={<V3EventDetail />} />
+            <Route path="local/:slug" element={<V3LocalDetail />} />
+            <Route path="transporte" element={<V3Transport />} />
+            <Route path="pedir-carona" element={<V3RideRequest />} />
+            <Route path="motorista" element={<V3DriverBoard />} />
+            <Route path="chat/:requestId" element={<V3Chat />} />
+            <Route path="meus-pedidos" element={<V3MyRides />} />
+            <Route path="terms" element={<V3Terms />} />
+            <Route path="privacy" element={<V3Privacy />} />
+            <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
+            <Route path="economize" element={<V3Economize />} />
+            <Route path="ia" element={<V3AIChat />} />
+            <Route path="sobre" element={<V3Sobre />} />
+            <Route path="contato" element={<V3Contato />} />
+            <Route path="auth" element={<V3Auth />} />
+          </Route>
 
           {/* ========= LEGACY V2 (arquivado, NoIndex) ========= */}
           <Route path="/archive/legacy-v2" element={<LegacyArchiveLayout />}>
