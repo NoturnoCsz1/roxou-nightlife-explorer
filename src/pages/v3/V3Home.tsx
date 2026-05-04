@@ -1006,6 +1006,7 @@ function DesktopProfilePanel() {
   );
 }
 
+function DesktopNavPanel({ todayCount }: { todayCount: number }) {
   const items = [
     { to: "/v3", label: "Início", icon: Sparkles },
     { to: "/v3/ia", label: "Prudente IA", icon: Bot },
