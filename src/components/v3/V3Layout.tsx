@@ -73,11 +73,55 @@ export default function V3Layout() {
         </div>
       </header>
 
-      {/* Content — fade-in per route */}
+      {/* Content + Sidebar Desktop */}
       <PullToRefresh>
-        <main key={pathname} className="flex-1 pb-16 lg:pb-0 v3-page-fade">
-          <Outlet />
-        </main>
+        <div className="flex-1 max-w-7xl w-full mx-auto lg:flex lg:gap-6 lg:px-4">
+          {/* Sidebar Desktop */}
+          <aside className="hidden lg:flex lg:flex-col lg:w-64 shrink-0 sticky top-14 self-start py-6 px-4 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
+            {/* Card de perfil */}
+            <button
+              onClick={handleProfileClick}
+              className="w-full max-w-[220px] mx-auto flex flex-col items-center gap-2 p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors mb-6"
+            >
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-lg font-display font-bold text-primary-foreground">
+                {initial}
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold text-foreground line-clamp-1">
+                  {user?.email?.split("@")[0] ?? "Visitante"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {user ? "Ver perfil" : "Entrar"}
+                </p>
+              </div>
+            </button>
+
+            {/* Itens de navegação */}
+            <nav className="flex flex-col items-center gap-1.5 w-full">
+              {allDesktopItems.map(({ to, icon: Icon, label }) => {
+                const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
+                return (
+                  <button
+                    key={to}
+                    onClick={() => navigate(to)}
+                    className={`w-full max-w-[220px] inline-flex items-center justify-center gap-2.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+                      active
+                        ? "bg-primary/15 text-primary shadow-[0_0_15px_rgba(168,85,247,0.25)]"
+                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
+                    {label}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          <main key={pathname} className="flex-1 min-w-0 pb-16 lg:pb-0 v3-page-fade">
+            <Outlet />
+          </main>
+        </div>
       </PullToRefresh>
 
       {/* Footer — apenas Desktop (no mobile a TabBar já fecha a tela) */}
