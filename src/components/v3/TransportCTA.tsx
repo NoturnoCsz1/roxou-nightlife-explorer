@@ -72,7 +72,7 @@ export default function TransportCTA({ eventName, venueName, eventDate }: Transp
               onClick={() => navigate(`/v3/perfil`)}
               className="rounded-xl bg-primary hover:bg-primary/90"
             >
-              Entrar para solicitar carona
+              Entre para solicitar transporte
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
