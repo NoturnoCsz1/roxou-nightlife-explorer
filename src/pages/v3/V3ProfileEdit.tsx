@@ -191,12 +191,12 @@ export default function V3ProfileEdit() {
         type="file"
         accept="image/png,image/jpeg,image/jpg,image/webp"
         className="sr-only"
-        onChange={async (e) => {
-          toast.info("Arquivo selecionado");
+        onChange={(e) => {
           const file = e.target.files?.[0];
-          if (!file) return;
-          await handleCoverUpload(file);
           e.target.value = "";
+          if (!file) return;
+          if (!validateImageFile(file)) return;
+          setPendingCover(file);
         }}
       />
 
