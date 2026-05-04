@@ -784,35 +784,50 @@ export type Database = {
         Row: {
           accepted_terms_at: string | null
           affiliate_code: string | null
+          age_confirmed_at: string | null
           avatar_url: string | null
+          community_terms_accepted_at: string | null
+          cover_image_url: string | null
           created_at: string
           display_name: string | null
           id: string
+          nickname: string | null
           phone: string | null
           updated_at: string
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           accepted_terms_at?: string | null
           affiliate_code?: string | null
+          age_confirmed_at?: string | null
           avatar_url?: string | null
+          community_terms_accepted_at?: string | null
+          cover_image_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          nickname?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           accepted_terms_at?: string | null
           affiliate_code?: string | null
+          age_confirmed_at?: string | null
           avatar_url?: string | null
+          community_terms_accepted_at?: string | null
+          cover_image_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          nickname?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
