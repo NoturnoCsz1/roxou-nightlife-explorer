@@ -351,6 +351,11 @@ export default function V3Home() {
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
 
+      {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
+      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
+        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+      ) : null}
+
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
 
@@ -387,11 +392,6 @@ export default function V3Home() {
             <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
-      ) : null}
-
-      {/* ══════ 4.5 HOJE — destaque abaixo do carrossel ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
-        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 5. LOCAIS EM ALTA ══════ */}
