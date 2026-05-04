@@ -814,11 +814,11 @@ const EventosList = () => {
             {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
           </button>
         ))}
-        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete || onlyNeedsReview || originFilter !== "todos") && (
+        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete || onlyNeedsReview || originFilter !== "todos" || extraFilter !== "todos") && (
           <>
             <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
             <button
-                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); setOnlyNeedsReview(false); setOriginFilter("todos"); }}
+                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); setOnlyNeedsReview(false); setOriginFilter("todos"); setExtraFilter("todos"); }}
               className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
             >
               <X className="h-3 w-3" /> Limpar
