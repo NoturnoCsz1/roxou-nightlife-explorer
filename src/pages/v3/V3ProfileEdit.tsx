@@ -209,6 +209,34 @@ export default function V3ProfileEdit() {
             />
           </Field>
 
+          {/* +18 / LGPD status */}
+          {(() => {
+            const accepted = !!(profile as any)?.age_confirmed_at && !!(profile as any)?.community_terms_accepted_at;
+            return (
+              <button
+                type="button"
+                onClick={() => setConsentOpen(true)}
+                className={`w-full flex items-center gap-3 rounded-2xl border p-4 text-left transition ${
+                  accepted ? "border-emerald-500/30 bg-emerald-500/5" : "border-primary/40 bg-primary/5 hover:border-primary/70"
+                }`}
+              >
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${accepted ? "bg-emerald-500/15 text-emerald-400" : "bg-primary/15 text-primary"}`}>
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground">
+                    {accepted ? "Você está apto à Comunidade ✓" : "Validação +18 e Termos da Comunidade"}
+                  </p>
+                  <p className="text-[10.5px] text-muted-foreground leading-relaxed mt-0.5">
+                    {accepted
+                      ? "Aceite registrado. Você pode rever quando quiser."
+                      : "Necessário para chat e funções sociais. Conformidade LGPD."}
+                  </p>
+                </div>
+              </button>
+            );
+          })()}
+
           <div className="flex gap-2 pt-2">
             <Button
               variant="outline"
