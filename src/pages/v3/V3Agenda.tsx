@@ -123,7 +123,7 @@ export default function V3Agenda() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Agenda da Cena
+              Agenda Completa
             </h1>
             <p className="text-xs text-muted-foreground mt-1">Linha do tempo dos próximos rolês</p>
           </div>
