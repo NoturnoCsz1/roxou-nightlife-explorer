@@ -95,7 +95,7 @@ export default function V3Layout() {
 
       {/* Content — fade-in per route */}
       <PullToRefresh>
-        <main key={pathname} className="flex-1 pb-32 lg:pb-12 v3-page-fade">
+        <main key={pathname} className="flex-1 pb-24 lg:pb-4 v3-page-fade">
           <Outlet />
         </main>
       </PullToRefresh>
