@@ -1009,7 +1009,7 @@ function DesktopProfilePanel() {
 function DesktopNavPanel({ todayCount }: { todayCount: number }) {
   const items = [
     { to: "/v3", label: "Início", icon: Sparkles },
-    { to: "/v3/ia", label: "Prudente IA", icon: Bot },
+    { to: "/v3/ia", label: "Aura", icon: Bot },
     { to: "/v3/descobrir", label: "Descobrir", icon: Search },
     { to: "/v3/transporte", label: "Caronas", icon: Car },
     { to: "/v3/parceiros", label: "Parceiros", icon: Users },

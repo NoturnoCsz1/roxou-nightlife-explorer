@@ -25,7 +25,7 @@ export default function VIPPaywallModal({ open, onOpenChange }: VIPPaywallModalP
 
           <div className="relative grid gap-2">
             {[
-              "Prudente IA sem limite diário",
+              "Aura sem limite diário",
               "Alertas de promoções e happy hours",
               "15 dias grátis a cada amigo indicado",
             ].map(item => (

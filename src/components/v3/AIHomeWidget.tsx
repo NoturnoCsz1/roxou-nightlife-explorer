@@ -43,7 +43,7 @@ export default function AIHomeWidget() {
           <div className="relative flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-                <Bot className="h-3.5 w-3.5" /> Prudente IA ao vivo
+                <Bot className="h-3.5 w-3.5" /> Aura ao vivo 💜
               </div>
               <h2 className="mt-1 font-display text-xl font-black text-foreground">
                 {greeting}

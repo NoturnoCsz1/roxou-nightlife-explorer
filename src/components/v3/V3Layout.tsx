@@ -5,7 +5,7 @@ import PullToRefresh from "@/components/v3/PullToRefresh";
 
 const NAV_ITEMS = [
   { to: "/v3", icon: Home, label: "Início" },
-  { to: "/v3/ia", icon: Bot, label: "IA" },
+  { to: "/v3/ia", icon: Bot, label: "Aura" },
   { to: "/v3/transporte", icon: Car, label: "Caronas" },
   { to: "/v3/perfil", icon: User, label: "Perfil" },
 ];
@@ -70,7 +70,7 @@ export default function V3Layout() {
             <Link
               to="/v3/ia"
               className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
-              title="Prudente IA"
+              title="Aura"
             >
               <Bot className="w-4 h-4 text-primary" />
             </Link>
