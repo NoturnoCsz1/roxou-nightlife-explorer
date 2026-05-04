@@ -207,9 +207,9 @@ export default function V3ProfileEdit() {
           </label>
         </div>
 
-        {/* Avatar — centralizado, overlap */}
-        <div className="flex justify-center -mt-12 mb-4 relative z-10">
-          <div className="relative">
+        {/* Avatar — centralizado, overlap (pointer-events-none no wrapper para não bloquear o label "Trocar capa" do card acima) */}
+        <div className="flex justify-center -mt-12 mb-4 relative z-10 pointer-events-none">
+          <div className="relative pointer-events-auto">
             <div className="h-24 w-24 rounded-2xl border-2 border-primary/60 bg-white/5 backdrop-blur-xl p-1 shadow-[0_0_30px_hsl(var(--primary)/0.45)]">
               <div className="h-full w-full overflow-hidden rounded-xl bg-secondary/40 flex items-center justify-center">
                 {avatarUrl ? (
