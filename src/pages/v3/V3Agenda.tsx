@@ -99,7 +99,7 @@ export default function V3Agenda() {
   }
 
   return (
-    <div className="pb-4 px-4 pt-4">
+    <div className="pb-32 px-4 pt-4">
       {/* ===== HEADER GRADIENTE NEON ===== */}
       <div className="relative mb-5 overflow-hidden rounded-3xl border border-primary/25 p-5 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
         <div
