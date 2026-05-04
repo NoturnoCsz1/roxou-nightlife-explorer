@@ -16,6 +16,7 @@ import CategoryChips from "@/components/v3/CategoryChips";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import V3VibeChips from "@/components/v3/V3VibeChips";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -283,6 +284,9 @@ export default function V3Home() {
           placeholder="Buscar evento, local, vibe..."
         />
       </div>
+
+      {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão ══════ */}
+      <V3VibeChips />
 
       {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
       <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
@@ -849,6 +853,8 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
           fallbackEvent={(featured[0] || mainEvents[0]) as any}
           placeholder="Buscar evento, local, vibe..."
         />
+
+        <V3VibeChips className="!py-0 -mx-0" />
 
         <div className="flex items-end justify-between">
           <div>

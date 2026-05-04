@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfDay, format, addDays, isToday as isTodayFn, addHours, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import V3VibeChips from "@/components/v3/V3VibeChips";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
@@ -43,7 +45,15 @@ export default function V3Agenda() {
   const [showShareCard, setShowShareCard] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedEvents();
+
+  // Sincroniza ?q= -> searchTerm (entrada vinda dos chips de Vibe na Home)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && q !== searchTerm) setSearchTerm(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["v3-agenda"],
@@ -168,6 +178,9 @@ export default function V3Agenda() {
             fallbackEvent={(events[0] as any) || null}
           />
         </div>
+
+        {/* EXPLORAR POR VIBE */}
+        <V3VibeChips value={searchTerm} onSelect={setSearchTerm} className="-mx-4 px-0" />
 
         {/* CHIPS DE CATEGORIA */}
         {categories.length > 1 && (
