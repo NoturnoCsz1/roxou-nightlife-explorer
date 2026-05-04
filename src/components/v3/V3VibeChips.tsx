@@ -12,11 +12,7 @@ const DEFAULT_CHIPS: VibeChip[] = [
   { key: "hoje", label: "🔥 Hoje", term: "hoje", pulse: true },
   { key: "amanha", label: "🌅 Amanhã", term: "amanha" },
   { key: "fds", label: "🎉 Final de semana", term: "final de semana" },
-  { key: "expo", label: "🤠 Expo 2026", term: "expo" },
-  { key: "sertanejo", label: "🎸 Sertanejo", term: "sertanejo" },
-  { key: "pagode", label: "🥁 Pagode", term: "pagode" },
-  { key: "openbar", label: "🍺 Open Bar", term: "open bar" },
-  { key: "eletronico", label: "🎧 Eletrônico", term: "eletronic" },
+  { key: "categorias", label: "🎯 Categorias", term: "categorias" },
 ];
 
 interface Props {
@@ -32,8 +28,11 @@ export default function V3VibeChips({ value, onSelect, chips = DEFAULT_CHIPS, cl
   const navigate = useNavigate();
 
   const handleClick = (chip: VibeChip) => {
+    if (chip.key === "categorias") {
+      navigate(`/v3/agenda#categorias`);
+      return;
+    }
     if (onSelect) {
-      // Toggle: se já estiver ativo, limpa
       const isActive = value?.trim().toLowerCase() === chip.term.toLowerCase();
       onSelect(isActive ? "" : chip.term);
     } else {
