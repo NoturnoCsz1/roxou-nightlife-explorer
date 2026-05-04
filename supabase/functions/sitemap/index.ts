@@ -34,12 +34,16 @@ Deno.serve(async (req) => {
     .eq("active", true)
     .order("name");
 
-  // Static pages
+  // Static pages (V3 — raiz)
   const staticPages = [
     { loc: "/", priority: "1.0", changefreq: "daily" },
-    { loc: "/hoje", priority: "0.9", changefreq: "daily" },
-    { loc: "/semana", priority: "0.8", changefreq: "daily" },
-    { loc: "/categorias", priority: "0.7", changefreq: "weekly" },
+    { loc: "/agenda", priority: "0.9", changefreq: "daily" },
+    { loc: "/descobrir", priority: "0.8", changefreq: "daily" },
+    { loc: "/parceiros", priority: "0.8", changefreq: "weekly" },
+    { loc: "/economize", priority: "0.7", changefreq: "weekly" },
+    { loc: "/transporte", priority: "0.7", changefreq: "weekly" },
+    { loc: "/sobre", priority: "0.5", changefreq: "monthly" },
+    { loc: "/contato", priority: "0.5", changefreq: "monthly" },
   ];
 
   // SEO landing pages
