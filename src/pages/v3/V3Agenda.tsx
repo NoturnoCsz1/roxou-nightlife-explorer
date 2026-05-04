@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
+import { startOfDay, endOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
 import { isToday as isTodayFn } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
@@ -8,7 +8,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import V3SearchBar from "@/components/v3/V3SearchBar";
-import V3VibeChips from "@/components/v3/V3VibeChips";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
@@ -49,10 +48,20 @@ export default function V3Agenda() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedEvents();
 
-  // Sincroniza ?q= -> searchTerm (entrada vinda dos chips de Vibe na Home)
+  // Sincroniza ?q= -> activeCategory (para vínculos vindos da Home/IA)
   useEffect(() => {
     const q = searchParams.get("q");
-    if (q && q !== searchTerm) setSearchTerm(q);
+    if (!q) return;
+    const map: Record<string, string> = {
+      hoje: "hoje", amanha: "amanha", "amanhã": "amanha",
+      "final de semana": "fds", fds: "fds",
+      expo: "expo2026", "expo 2026": "expo2026",
+      sertanejo: "sertanejo", pagode: "pagode", "open bar": "open bar",
+      eletronico: "eletr", "eletrônico": "eletr", funk: "funk",
+    };
+    const key = map[q.trim().toLowerCase()];
+    if (key) setActiveCategory(key);
+    else setSearchTerm(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -79,26 +88,36 @@ export default function V3Agenda() {
 
   const filteredEvents = useMemo(() => {
     let list = events;
-    if (activeCategory === "expo2026") {
+    const cat = activeCategory.toLowerCase();
+    const now = new Date();
+
+    if (cat === "hoje") {
+      const start = startOfDay(now); const end = endOfDay(now);
+      list = list.filter((e) => { const d = new Date(e.date_time); return d >= start && d <= end; });
+    } else if (cat === "amanha") {
+      const start = startOfDay(addDays(now, 1)); const end = endOfDay(addDays(now, 1));
+      list = list.filter((e) => { const d = new Date(e.date_time); return d >= start && d <= end; });
+    } else if (cat === "fds") {
       list = list.filter((e) => {
-        const hay = `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase();
-        return hay.includes("expo");
+        const day = new Date(e.date_time).getDay();
+        return day === 5 || day === 6 || day === 0;
       });
-    } else if (activeCategory !== "todos") {
-      list = list.filter((e) => (e.category || "").toLowerCase() === activeCategory.toLowerCase());
+    } else if (cat === "expo2026") {
+      list = list.filter((e) => `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase().includes("expo"));
+    } else if (cat !== "todos") {
+      list = list.filter((e) => {
+        const hay = `${e.title} ${e.category || ""} ${(e as any).sub_category || ""}`.toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const needle = cat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return hay.includes(needle);
+      });
     }
     const term = searchTerm.trim().toLowerCase();
     if (term.length >= 2) {
-      const tokens = term
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .split(/\s+/);
+      const tokens = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/);
       list = list.filter((e) => {
-        const hay = [e.title, e.venue_name, e.category, (e as any).address]
-          .join(" ")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
+        const hay = [e.title, e.venue_name, e.category, (e as any).address].join(" ").toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         return tokens.every((t) => hay.includes(t));
       });
     }
@@ -185,38 +204,30 @@ export default function V3Agenda() {
           />
         </div>
 
-        {/* EXPLORAR POR VIBE */}
-        <V3VibeChips value={searchTerm} onSelect={setSearchTerm} className="-mx-4 px-0" />
-
-        {/* CHIPS DE CATEGORIA — rolagem horizontal sempre */}
-        <div className="mt-4 -mx-1 flex flex-nowrap overflow-x-auto gap-2 py-2 px-1 scrollbar-hide">
-          {/* Atalho fixo Expo 2026 */}
-          <button
-            type="button"
-            onClick={() => { setSearchTerm(""); setActiveCategory("expo2026"); }}
-            className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
-              activeCategory === "expo2026"
-                ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)]"
-                : "border border-accent/40 bg-accent/10 text-accent hover:bg-accent/20"
-            }`}
-            style={
-              activeCategory === "expo2026"
-                ? { background: "linear-gradient(135deg, hsl(var(--accent)), hsl(var(--v3-neon)))" }
-                : undefined
-            }
-          >
-            🎡 Expo 2026
-          </button>
-          {categories.map((cat) => {
-            const active = activeCategory === cat;
+        {/* MENU UNIFICADO — atalhos + categorias dinâmicas, rolagem horizontal full-bleed */}
+        <div className="mt-4 -mx-5 px-5 flex flex-nowrap overflow-x-auto gap-2 py-2 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+          {[
+            { key: "hoje", label: "🔥 Hoje" },
+            { key: "amanha", label: "🌅 Amanhã" },
+            { key: "fds", label: "🎉 Final de semana" },
+            { key: "expo2026", label: "🤠 Expo 2026" },
+            { key: "sertanejo", label: "🎸 Sertanejo" },
+            { key: "pagode", label: "🥁 Pagode" },
+            { key: "open bar", label: "🍺 Open Bar" },
+            { key: "eletr", label: "🎧 Eletrônico" },
+            { key: "funk", label: "🔊 Funk" },
+            { key: "todos", label: "✨ Tudo" },
+            ...categories.filter((c) => c !== "todos").map((c) => ({ key: c, label: `${categoryIcon(c)} ${c}` })),
+          ].map((chip) => {
+            const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
             return (
               <button
-                key={cat}
+                key={chip.key}
                 type="button"
-                onClick={() => { setSearchTerm(""); setActiveCategory(cat); }}
-                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all ${
+                onClick={() => { setSearchTerm(""); setActiveCategory(chip.key); }}
+                className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold whitespace-nowrap transition-all ${
                   active
-                    ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+                    ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
                     : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
                 }`}
                 style={
@@ -225,7 +236,7 @@ export default function V3Agenda() {
                     : undefined
                 }
               >
-                {cat === "todos" ? "✨ Tudo" : `${categoryIcon(cat)} ${cat}`}
+                {chip.label}
               </button>
             );
           })}
