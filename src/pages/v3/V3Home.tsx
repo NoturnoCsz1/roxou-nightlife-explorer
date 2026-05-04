@@ -844,6 +844,12 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
 
       {/* CENTER: Events feed + News */}
       <section className="min-w-0 space-y-6">
+        <V3SearchBar
+          events={mainEvents as any}
+          fallbackEvent={(featured[0] || mainEvents[0]) as any}
+          placeholder="Buscar evento, local, vibe..."
+        />
+
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Dashboard de entretenimento</p>
