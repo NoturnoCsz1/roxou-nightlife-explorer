@@ -76,6 +76,24 @@ export default function V3Layout() {
                 <LogIn className="w-4 h-4 text-muted-foreground" />
               </Link>
             )}
+            <a
+              href="https://x.com/roxou_pp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              title="Twitter/X"
+            >
+              <Twitter className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+            </a>
+            <a
+              href="https://www.instagram.com/roxou.pp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              title="Instagram"
+            >
+              <Instagram className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+            </a>
           </div>
         </div>
       </header>
@@ -147,25 +165,6 @@ export default function V3Layout() {
           <Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
           <span className="opacity-30">·</span>
           <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
-          <span className="opacity-30">·</span>
-          <a
-            href="https://x.com/roxou_pp"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
-            title="Twitter/X"
-          >
-            <Twitter className="w-4 h-4 inline" />
-          </a>
-          <a
-            href="https://www.instagram.com/roxou.pp/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
-            title="Instagram"
-          >
-            <Instagram className="w-4 h-4 inline" />
-          </a>
         </div>
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
