@@ -30,7 +30,7 @@ function VerifiedDriverBadge() {
   );
 }
 
-function EventRideCard({ event }: { event: RealEvent }) {
+function EventRideCard({ event, isGuest }: { event: RealEvent; isGuest: boolean }) {
   const closed = isRideWindowClosed(event.date_time);
   const availabilityText = getRideAvailabilityText(event.date_time);
 
@@ -39,6 +39,12 @@ function EventRideCard({ event }: { event: RealEvent }) {
   if (event.venue_name) params.set("venue", event.venue_name);
   params.set("date", event.date_time);
   const rideUrl = `/v3/pedir-carona?${params.toString()}`;
+  const targetUrl = isGuest ? "/v3/perfil" : rideUrl;
+  const ctaLabel = closed
+    ? "Sistema encerrado"
+    : isGuest
+    ? "Entrar para solicitar carona"
+    : "Solicitar carona pra esse rolê";
 
   return (
     <div className="relative overflow-hidden rounded-2xl p-4 v3-glass v3-neon-hover">
@@ -77,9 +83,9 @@ function EventRideCard({ event }: { event: RealEvent }) {
           <VerifiedDriverBadge />
         </div>
 
-        <Link to={closed ? "#" : rideUrl} onClick={(e) => { if (closed) { e.preventDefault(); toast.error(RIDE_EXPIRED_MESSAGE); } }}>
+        <Link to={closed ? "#" : targetUrl} onClick={(e) => { if (closed) { e.preventDefault(); toast.error(RIDE_EXPIRED_MESSAGE); } }}>
           <Button variant={closed ? "secondary" : "default"} className="w-full h-9 rounded-xl text-xs font-bold">
-            {closed ? "Sistema encerrado" : "Solicitar carona pra esse rolê"}
+            {ctaLabel}
           </Button>
         </Link>
       </div>
@@ -146,7 +152,7 @@ export default function V3Transport() {
 
           <div className="flex items-center gap-2 pt-2">
             <Link
-              to={caronaClosed ? "#" : rideUrl}
+              to={caronaClosed ? "#" : (user ? rideUrl : "/v3/perfil")}
               onClick={(e) => {
                 if (caronaClosed) {
                   e.preventDefault();
@@ -162,7 +168,7 @@ export default function V3Transport() {
                     "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
                 }}
               >
-                <Car className="w-4 h-4 mr-1" /> Pedir carona
+                <Car className="w-4 h-4 mr-1" /> {user ? "Pedir carona" : "Entrar para solicitar carona"}
               </Button>
             </Link>
             <Link to="/v3/terms" className="shrink-0">
@@ -219,7 +225,7 @@ export default function V3Transport() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
-              {realEvents.map((e) => <EventRideCard key={e.id} event={e} />)}
+              {realEvents.map((e) => <EventRideCard key={e.id} event={e} isGuest={!user} />)}
             </div>
           )}
         </div>
@@ -233,7 +239,7 @@ export default function V3Transport() {
             <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
             <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
             <Link
-              to={caronaClosed ? "#" : rideUrl}
+              to={caronaClosed ? "#" : (user ? rideUrl : "/v3/perfil")}
               onClick={(e) => {
                 if (caronaClosed) {
                   e.preventDefault();
@@ -242,7 +248,7 @@ export default function V3Transport() {
               }}
             >
               <Button size="sm" className="w-full mt-1 rounded-lg text-xs h-8">
-                Pedir carona
+                {user ? "Pedir carona" : "Entrar para solicitar"}
               </Button>
             </Link>
           </div>
