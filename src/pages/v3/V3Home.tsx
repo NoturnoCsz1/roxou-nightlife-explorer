@@ -265,7 +265,7 @@ export default function V3Home() {
     <div>
       <div className="hidden lg:block">
         <CommandCenter
-          todayEvents={todayEvents}
+          todayEvents={rawTodayEvents}
           todayCount={todayCount}
           trending={trending}
           featured={featured}
@@ -399,8 +399,8 @@ export default function V3Home() {
       ) : null}
 
       {/* ══════ 6. HOJE ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : todayEvents.length > 0 ? (
-        <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
+        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
