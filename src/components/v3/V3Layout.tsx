@@ -25,25 +25,49 @@ export default function V3Layout() {
     navigate(user ? "/v3/perfil" : "/v3/auth");
   };
 
+  const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
+
   return (
     <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
-      {/* Header — Midnight glass */}
-      <header className="sticky top-0 z-50 v3-glass-strong border-b border-white/5">
-        <div className="flex items-center justify-between px-4 h-14">
-          <Link to="/v3" className="font-display font-bold text-xl tracking-tight">
+      {/* Header — Midnight glass (com nav integrada no desktop) */}
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
+        <div className="flex items-center justify-between gap-4 px-4 h-14 max-w-7xl mx-auto">
+          <Link to="/v3" className="font-display font-bold text-xl tracking-tight shrink-0">
             <span className="text-primary v3-neon-text">Roxou</span>
           </Link>
-          <div className="flex items-center gap-2">
+
+          {/* Nav Desktop — centralizada/à direita */}
+          <nav className="hidden lg:flex flex-1 items-center justify-center gap-1">
+            {allDesktopItems.map(({ to, icon: Icon, label }) => {
+              const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
+              return (
+                <button
+                  key={to}
+                  onClick={() => navigate(to)}
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition-colors ${
+                    active
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
+                  {label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center gap-2 shrink-0">
             <Link
               to="/v3/economize"
-              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
               title="Economize"
             >
               <PiggyBank className="w-4 h-4 text-muted-foreground" />
             </Link>
             <Link
               to="/v3/ia"
-              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
               title="Prudente IA"
             >
               <Bot className="w-4 h-4 text-primary" />
@@ -71,13 +95,13 @@ export default function V3Layout() {
 
       {/* Content — fade-in per route */}
       <PullToRefresh>
-        <main key={pathname} className="flex-1 pb-20 v3-page-fade">
+        <main key={pathname} className="flex-1 pb-32 lg:pb-12 v3-page-fade">
           <Outlet />
         </main>
       </PullToRefresh>
 
       {/* Footer */}
-      <div className="pb-20 pt-4 text-center border-t border-white/5">
+      <div className="pb-24 lg:pb-6 pt-4 text-center border-t border-white/5">
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
         </p>
@@ -93,9 +117,9 @@ export default function V3Layout() {
         </p>
       </div>
 
-      {/* Bottom Nav — glass premium */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5">
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto lg:hidden">
+      {/* Bottom Nav — apenas Mobile */}
+      <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5 lg:hidden">
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
             const isProfile = to === "/v3/perfil";
             const active = to === "/v3"
@@ -111,16 +135,6 @@ export default function V3Layout() {
               >
                 <Icon className={`w-5 h-5 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
                 <span className="text-[10px] font-medium">{label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="hidden lg:flex h-14 max-w-3xl mx-auto items-center justify-center gap-2">
-          {[...NAV_ITEMS, ...DESKTOP_ITEMS].map(({ to, icon: Icon, label }) => {
-            const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
-            return (
-              <button key={to} onClick={() => navigate(to)} className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors ${active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`}>
-                <Icon className="h-4 w-4" /> {label}
               </button>
             );
           })}
