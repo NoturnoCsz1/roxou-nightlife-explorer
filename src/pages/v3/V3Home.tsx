@@ -265,7 +265,7 @@ export default function V3Home() {
     <div>
       <div className="hidden lg:block">
         <CommandCenter
-          todayEvents={todayEvents}
+          todayEvents={rawTodayEvents}
           todayCount={todayCount}
           trending={trending}
           featured={featured}
@@ -399,8 +399,8 @@ export default function V3Home() {
       ) : null}
 
       {/* ══════ 6. HOJE ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : todayEvents.length > 0 ? (
-        <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
+        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
@@ -903,6 +903,10 @@ function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents
           ))}
         </div>
 
+        {todayEvents.length > 0 && (
+          <DesktopTodayCarousel events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        )}
+
         {/* News from Expo Prudente 2026 */}
         {news.length > 0 && (
           <div className="rounded-3xl v3-glass p-5">
@@ -1091,6 +1095,29 @@ function NowPanel({ events }: { events: Ev[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
+  events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>;
+}) {
+  return (
+    <section className="rounded-3xl v3-glass p-5">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Eventos de hoje</p>
+          <h2 className="font-display text-2xl font-black uppercase text-foreground">Carrossel da noite</h2>
+        </div>
+        <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase text-primary">
+          {events.length} rolês
+        </span>
+      </div>
+      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pr-2 scrollbar-hide">
+        {events.map((ev) => (
+          <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px]" />
+        ))}
+      </div>
+    </section>
   );
 }
 
