@@ -42,12 +42,12 @@ export default function V3VibeChips({ value, onSelect, chips = DEFAULT_CHIPS, cl
   };
 
   return (
-    <div className={`flex flex-col gap-4 py-4 overflow-hidden ${className}`}>
-      <div className="flex flex-nowrap gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide">
+    <div className={`relative py-4 ${className}`}>
+      <div className="flex flex-nowrap gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory [scroll-padding-inline:1rem]">
         {chips.map((chip) => {
           const isActive = !!value && value.trim().toLowerCase() === chip.term.toLowerCase();
           const base =
-            "flex-none px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap";
+            "snap-start flex-none px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap";
           const stateClass = isActive
             ? "bg-primary/25 border border-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--v3-neon)/0.45)]"
             : chip.pulse
@@ -64,7 +64,11 @@ export default function V3VibeChips({ value, onSelect, chips = DEFAULT_CHIPS, cl
             </button>
           );
         })}
+        {/* Spacer para garantir que o último chip não fique colado na borda */}
+        <div className="flex-none w-4" aria-hidden />
       </div>
+      {/* Fade gradiente à direita para indicar mais conteúdo */}
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent" />
     </div>
   );
 }
