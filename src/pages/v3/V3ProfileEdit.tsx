@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { profileSchema, maskWhatsappBR } from "@/lib/v3Validation";
 import CommunityConsentModal from "@/components/v3/CommunityConsentModal";
+import ImageCropModal from "@/components/v3/ImageCropModal";
 import { ShieldCheck } from "lucide-react";
 
 const BUCKET = "uploads";
@@ -27,6 +28,9 @@ export default function V3ProfileEdit() {
   const [savingCover, setSavingCover] = useState(false);
   const [saving, setSaving] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
+  const [pendingCover, setPendingCover] = useState<File | null>(null);
+  const [imgKey, setImgKey] = useState(0);
 
   useEffect(() => {
     if (profile) {
@@ -51,19 +55,15 @@ export default function V3ProfileEdit() {
     );
   }
 
-  const uploadImage = async (file: File, kind: "avatar" | "cover") => {
-    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    if (!allowed.includes(file.type.toLowerCase())) {
-      toast.error("Use uma imagem JPG, PNG ou WebP.");
+  const uploadBlob = async (blob: Blob, kind: "avatar" | "cover") => {
+    if (blob.size > 8 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx 8MB).");
       return null;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem muito grande (máx 5MB).");
-      return null;
-    }
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `v3-profiles/${user.id}/${kind}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+    const path = `v3-profiles/${user.id}/${kind}-${Date.now()}.jpg`;
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (error) {
       toast.error("Falha no upload: " + error.message);
       return null;
@@ -72,27 +72,53 @@ export default function V3ProfileEdit() {
     return data.publicUrl;
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSavingAvatar(true);
-    const url = await uploadImage(file, "avatar");
-    if (url) {
-      setAvatarUrl(url);
-      await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
-      toast.success("Avatar atualizado!");
+  const validateImageFile = (file: File) => {
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      toast.error("Use uma imagem JPG, PNG ou WebP.");
+      return false;
     }
-    setSavingAvatar(false);
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 15MB antes de processar).");
+      return false;
+    }
+    return true;
   };
 
-  async function handleCoverUpload(file: File) {
+  async function handleAvatarConfirm(blob: Blob) {
+    if (!user?.id) {
+      toast.error("Usuário não carregado.");
+      return;
+    }
+    setSavingAvatar(true);
+    try {
+      const url = await uploadBlob(blob, "avatar");
+      if (!url) return;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setAvatarUrl(`${url}?t=${Date.now()}`);
+      setImgKey((k) => k + 1);
+      toast.success("Avatar atualizado!");
+      setPendingAvatar(null);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erro ao atualizar avatar");
+    } finally {
+      setSavingAvatar(false);
+    }
+  }
+
+  async function handleCoverConfirm(blob: Blob) {
     if (!user?.id) {
       toast.error("Usuário não carregado.");
       return;
     }
     setSavingCover(true);
     try {
-      const uploadedUrl = await uploadImage(file, "cover");
+      const uploadedUrl = await uploadBlob(blob, "cover");
       if (!uploadedUrl) return;
       const { error } = await supabase
         .from("profiles")
@@ -100,7 +126,9 @@ export default function V3ProfileEdit() {
         .eq("user_id", user.id);
       if (error) throw error;
       setCoverUrl(`${uploadedUrl}?t=${Date.now()}`);
+      setImgKey((k) => k + 1);
       toast.success("Capa atualizada com sucesso");
+      setPendingCover(null);
     } catch (err) {
       console.error(err);
       toast.error("Erro ao atualizar capa");
@@ -163,12 +191,12 @@ export default function V3ProfileEdit() {
         type="file"
         accept="image/png,image/jpeg,image/jpg,image/webp"
         className="sr-only"
-        onChange={async (e) => {
-          toast.info("Arquivo selecionado");
+        onChange={(e) => {
           const file = e.target.files?.[0];
-          if (!file) return;
-          await handleCoverUpload(file);
           e.target.value = "";
+          if (!file) return;
+          if (!validateImageFile(file)) return;
+          setPendingCover(file);
         }}
       />
 
@@ -192,7 +220,12 @@ export default function V3ProfileEdit() {
         {/* Cover (21:9) — glass rounded */}
         <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10">
           {coverUrl ? (
-            <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
+            <img
+              key={`cover-${imgKey}`}
+              src={coverUrl}
+              alt="Capa"
+              className="w-full h-full object-cover animate-in fade-in duration-500"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 via-accent/10 to-background">
               <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
@@ -213,7 +246,12 @@ export default function V3ProfileEdit() {
             <div className="h-24 w-24 rounded-2xl border-2 border-primary/60 bg-white/5 backdrop-blur-xl p-1 shadow-[0_0_30px_hsl(var(--primary)/0.45)]">
               <div className="h-full w-full overflow-hidden rounded-xl bg-secondary/40 flex items-center justify-center">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  <img
+                    key={`avatar-${imgKey}`}
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="w-full h-full object-cover animate-in fade-in duration-500"
+                  />
                 ) : (
                   <User className="h-10 w-10 text-primary" />
                 )}
@@ -233,7 +271,13 @@ export default function V3ProfileEdit() {
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               className="hidden"
-              onChange={handleAvatarChange}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                if (!validateImageFile(file)) return;
+                setPendingAvatar(file);
+              }}
             />
           </div>
         </div>
@@ -333,6 +377,26 @@ export default function V3ProfileEdit() {
         </div>
       </div>
       <CommunityConsentModal open={consentOpen} onOpenChange={setConsentOpen} />
+
+      <ImageCropModal
+        open={!!pendingAvatar}
+        file={pendingAvatar}
+        aspect={1}
+        maxOutputWidth={512}
+        title="Ajustar avatar"
+        onClose={() => !savingAvatar && setPendingAvatar(null)}
+        onConfirm={handleAvatarConfirm}
+      />
+
+      <ImageCropModal
+        open={!!pendingCover}
+        file={pendingCover}
+        aspect={21 / 9}
+        maxOutputWidth={1920}
+        title="Ajustar capa"
+        onClose={() => !savingCover && setPendingCover(null)}
+        onConfirm={handleCoverConfirm}
+      />
     </div>
   );
 }
