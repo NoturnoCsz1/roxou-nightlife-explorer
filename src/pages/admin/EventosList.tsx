@@ -756,6 +756,22 @@ const EventosList = () => {
           </select>
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {([
+            { key: "todos", label: "Todos", icon: null },
+            { key: "aura", label: "🤖 Aura", icon: Bot },
+            { key: "destaques", label: "🔥 Destaques", icon: Flame },
+            { key: "sem-imagem", label: "Sem imagem", icon: ImageIcon },
+            { key: "incompletos", label: "Incompletos", icon: AlertTriangle },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setExtraFilter(key as ExtraFilter)}
+              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${extraFilter === key ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
+            >
+              {label}
+            </button>
+          ))}
           <button
             type="button"
             onClick={() => setOnlyNeedsReview(!onlyNeedsReview)}
