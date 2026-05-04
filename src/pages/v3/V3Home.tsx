@@ -15,6 +15,7 @@ import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import CategoryChips from "@/components/v3/CategoryChips";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
+import V3SearchBar from "@/components/v3/V3SearchBar";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
