@@ -467,8 +467,16 @@ const EventosList = () => {
     const cl = getChecklist(e);
     const busy = aiBusy[e.id];
     const isDraft = e.status === "draft";
+    const score = getQualityScore(e);
+    const borderClass = e.aura_pick
+      ? "border-primary/60 bg-primary/5 shadow-[0_0_18px_rgba(168,85,247,0.25)]"
+      : e.featured
+        ? "border-primary/40 bg-white/5 shadow-[0_0_10px_rgba(168,85,247,0.15)]"
+        : isDraft && !cl.complete
+          ? "border-destructive/40 bg-white/5"
+          : "border-border/40 bg-white/5";
     return (
-      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl ${isDraft && !cl.complete ? "border-destructive/40 bg-white/5" : "border-border/40 bg-white/5"}`}>
+      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl transition-all hover:bg-white/[0.07] hover:-translate-y-0.5 ${borderClass}`}>
         <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
           {selectedIds.has(e.id)
             ? <CheckSquare className="h-4 w-4 text-primary" />
