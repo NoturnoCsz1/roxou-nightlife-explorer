@@ -854,6 +854,8 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
           placeholder="Buscar evento, local, vibe..."
         />
 
+        <V3VibeChips className="!py-0 -mx-0" />
+
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Dashboard de entretenimento</p>
