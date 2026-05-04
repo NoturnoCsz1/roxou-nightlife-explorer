@@ -23,6 +23,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import AuraCreateEventModal from "@/components/admin/AuraCreateEventModal";
 
 interface EventRow {
   id: string;
@@ -116,6 +117,7 @@ const EventosList = () => {
   const [publishing, setPublishing] = useState(false);
   const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name?: string }>>({});
   const [visibleCount, setVisibleCount] = useState(80);
+  const [auraModalOpen, setAuraModalOpen] = useState(false);
 
   const isAiOrigin = (e: EventRow) => {
     const src = (e.verification_source || "").toLowerCase();
@@ -641,7 +643,15 @@ const EventosList = () => {
     <div className="space-y-4 md:ml-44">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-foreground">Eventos</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button
+            type="button"
+            onClick={() => setAuraModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary backdrop-blur-xl transition hover:bg-primary/20 hover:border-primary/60 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.5),0_0_18px_hsl(var(--primary)/0.35)]"
+            title="Cole texto e a Aura organiza o evento"
+          >
+            <Bot className="h-3.5 w-3.5" /> Criar com Aura
+          </button>
           <Link
             to="/admin/eventos/novo/lote"
             className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur-xl transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
@@ -656,6 +666,8 @@ const EventosList = () => {
           </Link>
         </div>
       </div>
+
+      <AuraCreateEventModal open={auraModalOpen} onClose={() => setAuraModalOpen(false)} />
 
       {/* Drafts Counter */}
       {draftEvents.length > 0 && (
