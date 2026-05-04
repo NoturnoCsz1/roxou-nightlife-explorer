@@ -267,6 +267,7 @@ export default function V3Home() {
       <div className="hidden lg:block">
         <CommandCenter
           todayEvents={todayEvents}
+          todayCount={todayCount}
           trending={trending}
           featured={featured}
           weekEvents={weekEvents}
@@ -317,7 +318,7 @@ export default function V3Home() {
       <V3VibeChips />
 
       {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
-      <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
+      <QuickFilterTabs todayCount={todayCount} weekCount={weekEvents.length} />
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
@@ -842,8 +843,8 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 }
 
 /* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
-function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingIdSet, partnerRankMap, venueRanks, featuredPartners }: {
-  todayEvents: Ev[]; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
+function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents, trendingIdSet, partnerRankMap, venueRanks, featuredPartners }: {
+  todayEvents: Ev[]; todayCount: number; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
   venueRanks: VenueRank[]; featuredPartners: any[];
 }) {
@@ -869,7 +870,7 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
     <FadeSection className="mx-auto grid max-w-7xl grid-cols-[240px_minmax(0,1fr)_320px] gap-5 px-6 py-6">
       {/* LEFT: Navigation + Categories */}
       <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide">
-        <DesktopNavPanel todayCount={todayEvents.length} />
+        <DesktopNavPanel todayCount={todayCount} />
         <DesktopCategoriesPanel />
         <AIHomeWidget />
       </aside>
@@ -893,7 +894,7 @@ function CommandCenter({ todayEvents, trending, featured, weekEvents, trendingId
             </h1>
           </div>
           <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)] whitespace-nowrap">
-            {todayEvents.length === 0 ? "Buscando o próximo rolê..." : `${todayEvents.length} rolês hoje ⚡`}
+            {todayCount === 0 ? "Buscando o próximo rolê..." : `${todayCount} rolês hoje ⚡`}
           </span>
         </div>
 
