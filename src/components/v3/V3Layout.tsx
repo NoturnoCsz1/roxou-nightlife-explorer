@@ -95,13 +95,13 @@ export default function V3Layout() {
 
       {/* Content — fade-in per route */}
       <PullToRefresh>
-        <main key={pathname} className="flex-1 pb-24 lg:pb-4 v3-page-fade">
+        <main key={pathname} className="flex-1 pb-16 lg:pb-0 v3-page-fade">
           <Outlet />
         </main>
       </PullToRefresh>
 
       {/* Footer */}
-      <div className="pb-24 lg:pb-4 pt-3 text-center border-t border-white/5">
+      <div className="pb-20 lg:pb-2 pt-2 text-center border-t border-white/5">
         <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
           © 2026 ROXOU — Todos os direitos reservados
         </p>
