@@ -107,6 +107,7 @@ const EventosList = () => {
   const [onlyIncomplete, setOnlyIncomplete] = useState(false);
   const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
   const [originFilter, setOriginFilter] = useState<OriginFilter>("todos");
+  const [extraFilter, setExtraFilter] = useState<ExtraFilter>("todos");
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [zipping, setZipping] = useState(false);
