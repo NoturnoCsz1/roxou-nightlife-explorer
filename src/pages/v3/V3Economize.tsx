@@ -94,6 +94,78 @@ export default function V3Economize() {
           <p className="mt-1 text-xs text-muted-foreground">Volte em breve para ofertas de parceiros ROXOU.</p>
         </div>
       )}
+
+      {/* CTA Parceiros */}
+      <a
+        href="https://wa.me/5518991234567?text=Ol%C3%A1%21%20Sou%20dono%20de%20bar%20e%20quero%20anunciar%20uma%20promo%C3%A7%C3%A3o%20no%20ROXOU."
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group relative block overflow-hidden rounded-3xl border border-accent/30 bg-gradient-to-br from-accent/15 via-primary/10 to-background p-5 transition hover:border-accent/60 hover:shadow-[0_0_28px_hsl(var(--accent)/0.25)]"
+      >
+        <div className="flex items-start gap-4">
+          <div className="h-12 w-12 shrink-0 rounded-2xl bg-accent/20 flex items-center justify-center">
+            <Store className="h-6 w-6 text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-accent">Parceiros ROXOU</span>
+            <h3 className="mt-1 font-display text-base font-black text-foreground">É dono de bar?</h3>
+            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+              Anuncie sua promoção aqui e apareça para milhares de universitários de Prudente.
+            </p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-accent group-hover:gap-2 transition-all">
+              <MessageCircle className="h-3.5 w-3.5" /> Falar com a equipe
+            </span>
+          </div>
+        </div>
+      </a>
+    </div>
+  );
+}
+
+function AuraIndicaPromo() {
+  const { data: promo, isLoading } = useQuery({
+    queryKey: ["aura-indica-promo-today"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("promotion_opportunities" as any)
+        .select("*, partners(name,slug)")
+        .order("featured", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+
+  if (isLoading || !promo) return null;
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-primary/25 bg-background/40 backdrop-blur-md p-4">
+      <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
+      <div className="relative flex items-center gap-3">
+        <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center">
+          <Beer className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">💜 Aura Indica · Promo do dia</span>
+          <p className="mt-0.5 text-sm font-bold text-foreground line-clamp-1">
+            {promo.offer_text || promo.title}
+          </p>
+          {promo.partners?.name && (
+            <p className="text-[10.5px] text-muted-foreground line-clamp-1">no <strong className="text-foreground/90">{promo.partners.name}</strong></p>
+          )}
+        </div>
+        {promo.affiliate_url && (
+          <a
+            href={promo.affiliate_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded-full bg-primary/90 px-3 py-1.5 text-[10px] font-black text-primary-foreground hover:bg-primary transition"
+          >
+            Ver
+          </a>
+        )}
+      </div>
     </div>
   );
 }
