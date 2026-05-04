@@ -83,7 +83,7 @@ const Expo2026 = () => {
             <Sparkles className="h-5 w-5 text-primary" />
             <span className="font-display font-black tracking-tight">EXPO PRUDENTE <span className="text-primary">2026</span></span>
           </Link>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">by ROXOU</span>
+          
         </div>
       </header>
 
