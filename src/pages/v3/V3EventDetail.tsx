@@ -6,8 +6,8 @@ import { CalendarDays, MapPin, ArrowLeft, Bookmark, Sparkles } from "lucide-reac
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
-import ReservationDrawer from "@/components/ReservationDrawer";
-import { V3DetailSkeleton } from "@/components/V3Skeletons";
+import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";

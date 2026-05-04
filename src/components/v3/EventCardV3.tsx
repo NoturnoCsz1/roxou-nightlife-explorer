@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, CalendarDays, Sparkles, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import ReservationDrawer from "@/components/ReservationDrawer";
-import SmartImage from "@/components/SmartImage";
+import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import SmartImage from "@/components/v3/SmartImage";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import { trackEventClick } from "@/lib/ga";
 

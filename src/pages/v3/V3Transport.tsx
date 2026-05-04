@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Car, Users, Clock, Info, ClipboardList, MapPin, ShieldCheck, Sparkles, BadgeCheck } from "lucide-react";
-import LegalDisclaimer from "@/components/LegalDisclaimer";
+import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { Button } from "@/components/ui/button";
 import { useV3Profile } from "@/hooks/useV3Profile";
-import { V3PageSkeleton } from "@/components/V3Skeletons";
+import { V3PageSkeleton } from "@/components/v3/V3Skeletons";
 import { toast } from "sonner";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 import { useQuery } from "@tanstack/react-query";

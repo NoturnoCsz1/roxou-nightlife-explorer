@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Clock, Users, Send } from "lucide-react";
-import LegalDisclaimer from "@/components/LegalDisclaimer";
-import PlacesAutocomplete from "@/components/PlacesAutocomplete";
+import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
+import PlacesAutocomplete from "@/components/v3/PlacesAutocomplete";
 import { getRideEstimatedEnd, getRideRequestDeadline, isRideWindowClosed, isSameSaoPauloDate, RIDE_EXPIRED_MESSAGE, toSaoPauloTimestamp } from "@/lib/rideTimeRules";
 
 function toLocalDatetime(iso: string): string {

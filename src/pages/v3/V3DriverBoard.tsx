@@ -5,7 +5,7 @@ import { useV3Profile } from "@/hooks/useV3Profile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, ShieldCheck, WalletCards } from "lucide-react";
-import LegalDisclaimer from "@/components/LegalDisclaimer";
+import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 import type { Tables } from "@/integrations/supabase/types";
 

@@ -12,13 +12,13 @@ import {
   ChevronRight, ChevronLeft, Gem, BadgeCheck, Heart, Flame,
   PartyPopper, Mic2, Zap, Beer, Music, Newspaper, Users, Search, Bot, PiggyBank, Utensils,
 } from "lucide-react";
-import ReservationDrawer from "@/components/ReservationDrawer";
-import CategoryChips from "@/components/CategoryChips";
+import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import CategoryChips from "@/components/v3/CategoryChips";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
-import AIHomeWidget from "@/components/AIHomeWidget";
-import V3SearchBar from "@/components/V3SearchBar";
-import V3VibeChips from "@/components/V3VibeChips";
-import SmartImage from "@/components/SmartImage";
+import AIHomeWidget from "@/components/v3/AIHomeWidget";
+import V3SearchBar from "@/components/v3/V3SearchBar";
+import V3VibeChips from "@/components/v3/V3VibeChips";
+import SmartImage from "@/components/v3/SmartImage";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { User as UserIcon } from "lucide-react";
 

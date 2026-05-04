@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
-import EventCardV3 from "@/components/EventCardV3";
+import EventCardV3 from "@/components/v3/EventCardV3";
 
 function getOperatingStatus(type?: string | null) {
   const hour = new Date().getHours();

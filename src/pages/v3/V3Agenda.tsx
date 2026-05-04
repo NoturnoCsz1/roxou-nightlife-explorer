@@ -7,7 +7,7 @@ import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucid
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
-import V3SearchBar from "@/components/V3SearchBar";
+import V3SearchBar from "@/components/v3/V3SearchBar";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 

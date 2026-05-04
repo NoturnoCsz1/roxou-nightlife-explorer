@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import SmartImage from "@/components/SmartImage";
+import SmartImage from "@/components/v3/SmartImage";
 
 interface HeroCardProps {
   slug: string;

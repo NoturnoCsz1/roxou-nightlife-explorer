@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { Shield } from "lucide-react";
-import LegalDisclaimer from "@/components/LegalDisclaimer";
+import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import { toast } from "sonner";
 
 export default function V3TermsAcceptance() {

@@ -7,7 +7,7 @@ import { ArrowLeft, Camera, Image as ImageIcon, Loader2, User } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { profileSchema, maskWhatsappBR } from "@/lib/v3Validation";
-import CommunityConsentModal from "@/components/CommunityConsentModal";
+import CommunityConsentModal from "@/components/v3/CommunityConsentModal";
 import { ShieldCheck } from "lucide-react";
 
 const BUCKET = "uploads";
