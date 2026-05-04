@@ -28,8 +28,27 @@ import NoticiasList from "./pages/admin/NoticiasList";
 import NoticiaForm from "./pages/admin/NoticiaForm";
 
 // V3 (padrão)
+import V3Layout from "./components/v3/V3Layout";
 import V3Auth from "./pages/v3/V3Auth";
 import V3Parceiros from "./pages/v3/V3Parceiros";
+import V3Home from "./pages/v3/V3Home";
+import V3Discover from "./pages/v3/V3Discover";
+import V3Agenda from "./pages/v3/V3Agenda";
+import V3Profile from "./pages/v3/V3Profile";
+import V3EventDetail from "./pages/v3/V3EventDetail";
+import V3LocalDetail from "./pages/v3/V3LocalDetail";
+import V3Transport from "./pages/v3/V3Transport";
+import V3RideRequest from "./pages/v3/V3RideRequest";
+import V3DriverBoard from "./pages/v3/V3DriverBoard";
+import V3Chat from "./pages/v3/V3Chat";
+import V3MyRides from "./pages/v3/V3MyRides";
+import V3Terms from "./pages/v3/V3Terms";
+import V3Privacy from "./pages/v3/V3Privacy";
+import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
+import V3Economize from "./pages/v3/V3Economize";
+import V3AIChat from "./pages/v3/V3AIChat";
+import V3Sobre from "./pages/v3/V3Sobre";
+import V3Contato from "./pages/v3/V3Contato";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*)
 import LegacyIndex from "./pages/Index";
