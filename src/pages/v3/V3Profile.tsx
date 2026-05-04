@@ -100,14 +100,7 @@ export default function V3Profile() {
     cancelled: { label: "Cancelado", cls: "bg-secondary text-muted-foreground" },
     completed: { label: "Concluído", cls: "bg-emerald-500/20 text-emerald-400" },
   };
-  const affiliateCode = (profile as any)?.affiliate_code || user.id.replace(/-/g, "").slice(0, 10).toLowerCase();
-  const affiliateLink = `${window.location.origin}/v3/auth?ref=${affiliateCode}`;
-  const referralsRemaining = Math.max(0, 2 - referralCount);
-  const vipProgress = Math.min(100, (referralCount / 2) * 100);
-  const copyAffiliate = () => {
-    navigator.clipboard.writeText(affiliateLink);
-    toast.success("Link de afiliado copiado!");
-  };
+  // Afiliados ocultos na fase Beta
 
   const coverUrl = (profile as any)?.cover_image_url as string | null;
   const nickname = (profile as any)?.nickname as string | null;
