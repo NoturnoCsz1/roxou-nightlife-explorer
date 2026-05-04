@@ -53,8 +53,9 @@ export default function V3ProfileEdit() {
   }
 
   const uploadImage = async (file: File, kind: "avatar" | "cover") => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Selecione um arquivo de imagem.");
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      toast.error("Use uma imagem JPG, PNG ou WebP.");
       return null;
     }
     if (file.size > 5 * 1024 * 1024) {
