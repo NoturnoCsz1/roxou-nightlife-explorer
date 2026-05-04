@@ -354,6 +354,7 @@ export default function V3Profile() {
         <LogOut className="w-4 h-4" />
         Sair da conta
       </button>
+      </div>
     </div>
   );
 }
