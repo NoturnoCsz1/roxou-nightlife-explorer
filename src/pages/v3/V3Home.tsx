@@ -274,6 +274,12 @@ export default function V3Home() {
         </div>
       ) : <EmptyHero />}
 
+      {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
+      <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
+
+      {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
+      {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
+
       <AIHomeWidget />
 
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
