@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_nickname_unique_idx ON public.profiles (lower(nickname)) WHERE nickname IS NOT NULL AND nickname <> '';
