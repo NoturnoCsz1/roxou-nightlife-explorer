@@ -472,7 +472,7 @@ export default function V3Home() {
         </Rail>
       ) : null}
       {/* Footer institucional V3 */}
-      <FadeSection className="px-4 pt-8 pb-4">
+      <FadeSection className="px-4 pt-6 pb-2">
         <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
           <Link to="/v3/sobre" className="hover:text-primary transition-colors">Sobre</Link>
           <span className="opacity-30">·</span>
@@ -481,8 +481,6 @@ export default function V3Home() {
           <Link to="/v3/contato" className="hover:text-primary transition-colors">Contato</Link>
         </div>
       </FadeSection>
-
-      <div className="h-6" />
       </div>
     </div>
   );
