@@ -604,8 +604,14 @@ const EventosList = () => {
           <Link to={`/evento/${e.slug}`} target="_blank" className="p-1.5 rounded-lg hover:bg-primary/10 transition" title="Acesso rápido V3">
             <ExternalLink className="h-4 w-4 text-primary" />
           </Link>
-          <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "Destacar"}>
+          <button onClick={() => toggleAuraPick(e.id, e.aura_pick)} className={`p-1.5 rounded-lg transition ${e.aura_pick ? "bg-primary/20 hover:bg-primary/30" : "hover:bg-primary/10"}`} title={e.aura_pick ? "Remover da Aura" : "Marcar como Escolha da Aura"}>
+            <Bot className={`h-4 w-4 ${e.aura_pick ? "text-primary" : "text-muted-foreground"}`} />
+          </button>
+          <button onClick={() => toggleFeatured(e.id, e.featured)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title={e.featured ? "Remover destaque" : "🎯 Destacar evento"}>
             {e.featured ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4 text-muted-foreground" />}
+          </button>
+          <button onClick={() => copyEventLink(e)} className="p-1.5 rounded-lg hover:bg-secondary/50 transition" title="🔗 Copiar link público">
+            <Link2 className="h-4 w-4 text-muted-foreground" />
           </button>
           <button onClick={() => setDeleteTarget(e)} className="p-1.5 rounded-lg hover:bg-red-500/10 transition" title="Excluir evento">
             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-400" />
