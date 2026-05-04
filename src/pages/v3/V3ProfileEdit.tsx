@@ -187,9 +187,12 @@ export default function V3ProfileEdit() {
           )}
           <button
             type="button"
-            onClick={() => coverInputRef.current?.click()}
+            onClick={() => {
+              toast.info("Clique detectado");
+              coverInputRef.current?.click();
+            }}
             disabled={savingCover}
-            className={`absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-background/70 backdrop-blur-xl border px-3 py-2 text-[11px] font-bold text-foreground transition ${
+            className={`absolute right-3 bottom-3 z-50 pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/70 backdrop-blur-xl border px-3 py-2 text-[11px] font-bold text-foreground transition ${
               savingCover
                 ? "border-primary/60 cursor-wait opacity-80 shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
                 : "border-primary/30 hover:border-primary/70 hover:bg-primary/15 hover:text-primary cursor-pointer"
@@ -198,19 +201,20 @@ export default function V3ProfileEdit() {
             {savingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5" />}
             {savingCover ? "Enviando..." : "Trocar capa"}
           </button>
-          <input
-            ref={coverInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            className="hidden"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              await handleCoverUpload(file);
-              e.target.value = "";
-            }}
-          />
         </div>
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/jpg,image/webp"
+          className="hidden"
+          onChange={async (e) => {
+            toast.info("Arquivo selecionado");
+            const file = e.target.files?.[0];
+            if (!file) return;
+            await handleCoverUpload(file);
+            e.target.value = "";
+          }}
+        />
 
         {/* Avatar — centralizado, overlap */}
         <div className="flex justify-center -mt-12 mb-4 relative z-10">
