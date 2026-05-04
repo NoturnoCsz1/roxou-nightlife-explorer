@@ -111,6 +111,7 @@ const App = () => (
             <Route path="descobrir" element={<V3Discover />} />
             <Route path="agenda" element={<V3Agenda />} />
             <Route path="perfil" element={<V3Profile />} />
+            <Route path="perfil/editar" element={<V3ProfileEdit />} />
             <Route path="evento/:slug" element={<V3EventDetail />} />
             <Route path="local/:slug" element={<V3LocalDetail />} />
             <Route path="transporte" element={<V3Transport />} />
