@@ -200,7 +200,7 @@ export default function V3Profile() {
         </div>
         <div className="divide-y divide-border/20 overflow-hidden rounded-2xl border border-border/20 bg-background/20">
           <SecurityRow icon={Mail} label="Email" value={user.email || "—"} />
-          <SecurityRow icon={Phone} label="Telefone" value={profile?.phone || "Não informado"} />
+          <SecurityRow icon={Phone} label="WhatsApp" value={whatsappBR || profile?.phone || "Não informado"} />
           <SecurityRow icon={isDriver ? Shield : BadgeCheck} label="Verificação" value={isDriver ? "Motorista verificado" : "Conta de passageiro"} />
         </div>
       </div>
