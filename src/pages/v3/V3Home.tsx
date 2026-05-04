@@ -65,8 +65,11 @@ export default function V3Home() {
   const [vibeFilter, setVibeFilter] = useState("");
   const now = new Date();
   const today = startOfDay(now);
+  // Tolerância: eventos iniciados nas últimas 4h ainda estão "rolando"
+  const LIVE_TOLERANCE_MS = 4 * 60 * 60 * 1000;
+  const futureCutoffISO = new Date(now.getTime() - LIVE_TOLERANCE_MS).toISOString();
 
-  /* ─── EVENTS ─── */
+  /* ─── EVENTS (apenas futuros / em andamento) ─── */
   const { data: events = [], isLoading: loadingEvents } = useQuery<Ev[]>({
     queryKey: ["v3-events", TODAY_KEY],
     queryFn: async () => {
@@ -74,7 +77,7 @@ export default function V3Home() {
         .from("events")
           .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
-        .gte("date_time", TODAY_START)
+        .gte("date_time", futureCutoffISO)
         .order("date_time", { ascending: true })
         .limit(80);
       return (data as Ev[]) || [];
@@ -92,7 +95,7 @@ export default function V3Home() {
         .from("events")
         .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
-        .gte("date_time", TODAY_START)
+        .gte("date_time", futureCutoffISO)
         .lt("date_time", TODAY_END)
         .order("date_time", { ascending: true });
       return (data as Ev[]) || [];
