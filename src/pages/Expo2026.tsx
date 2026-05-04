@@ -83,17 +83,13 @@ const Expo2026 = () => {
             <Sparkles className="h-5 w-5 text-primary" />
             <span className="font-display font-black tracking-tight">EXPO PRUDENTE <span className="text-primary">2026</span></span>
           </Link>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">by ROXOU</span>
+          
         </div>
       </header>
 
       {/* HERO */}
       <section className="px-4 pt-10 pb-8 mx-auto max-w-6xl">
         <div className="text-center">
-          <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            Hot site oficial
-          </span>
           <h1 className="mt-4 font-display text-4xl sm:text-6xl md:text-7xl font-black leading-[0.95] tracking-tight">
             O ROLÊ DO ANO <br />
             <span className="bg-gradient-to-r from-primary via-fuchsia-400 to-accent bg-clip-text text-transparent">
@@ -105,8 +101,8 @@ const Expo2026 = () => {
             Toda a cobertura, em tempo real, aqui.
           </p>
           <div className="mt-5 flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> 10 a 20 SET 2026</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> Recinto Expo Prudente</span>
+            <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> 10 a 14 SET 2026</span>
+            <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> Recinto de Exposições Jacob Tosello</span>
           </div>
 
           {/* Countdown */}
