@@ -313,7 +313,7 @@ function Bubble({ msg }: { msg: Msg }) {
   const mine = msg.role === "user";
   return (
     <div className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-      {!mine && <div className="mt-1 h-7 w-7 shrink-0 rounded-xl bg-primary/15 flex items-center justify-center"><Bot className="h-4 w-4 text-primary" /></div>}
+      {!mine && <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />}
       <div
         className={`max-w-[82%] rounded-3xl px-4 py-3 text-sm leading-relaxed ${
           mine
