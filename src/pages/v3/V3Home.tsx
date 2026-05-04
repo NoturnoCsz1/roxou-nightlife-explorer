@@ -431,24 +431,37 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent" />
       <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
 
-      {/* Top badges */}
+      {/* Top badges — AUTHORITY COUNTER */}
       <div className="absolute top-20 left-4 right-4 flex items-center gap-2 z-10">
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
           {isToday ? <Flame className="w-3.5 h-3.5 text-primary-foreground" /> : <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />}
           <span className="text-[10px] font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
         </span>
-        {momentumText && (
-          <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-full v3-glass-strong">
-            <TrendingUp className="w-3 h-3 text-accent" />
-            <span className="text-[9px] font-bold text-accent uppercase tracking-wide">{momentumText}</span>
+        {todayCount > 0 && (
+          <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full v3-glass-strong border border-accent/40 v3-pulse-glow">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-70 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent))]" />
+            </span>
+            <span className="text-[10px] font-black text-foreground uppercase tracking-[0.18em]">
+              <span className="text-accent">{todayCount}</span> {todayCount === 1 ? "evento" : "eventos"} hoje
+            </span>
           </span>
         )}
       </div>
 
-      {/* Bottom content — extra-bold gigantic title */}
+      {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 space-y-3 z-10">
-        <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em]">{ev.category}</span>
-        <h1 className="font-display font-black text-[42px] leading-[0.95] text-foreground line-clamp-3 neon-text">
+        <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
+        <h1 className="font-display font-black text-[44px] leading-[0.92] line-clamp-3 tracking-tight"
+          style={{
+            background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 55%, hsl(var(--v3-neon)) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            filter: "drop-shadow(0 0 18px hsl(var(--v3-neon) / 0.35))",
+          }}
+        >
           {ev.title.toUpperCase()}
         </h1>
 
