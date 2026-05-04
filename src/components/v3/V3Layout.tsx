@@ -76,6 +76,24 @@ export default function V3Layout() {
                 <LogIn className="w-4 h-4 text-muted-foreground" />
               </Link>
             )}
+            <a
+              href="https://x.com/roxou_pp"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              title="Twitter/X"
+            >
+              <Twitter className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+            </a>
+            <a
+              href="https://www.instagram.com/roxou.pp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-white/5 transition-colors"
+              title="Instagram"
+            >
+              <Instagram className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
+            </a>
           </div>
         </div>
       </header>
