@@ -87,7 +87,7 @@ export default function V3AIChat() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
-    <div className="relative flex h-[calc(100dvh-180px)] lg:h-[calc(100dvh-120px)] flex-col overflow-hidden">
+    <div className="relative flex h-[calc(100dvh-128px)] lg:h-[calc(100dvh-104px)] min-h-[520px] flex-col overflow-hidden">
       {/* Background neon glow ambient */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/15 blur-[120px]" />
@@ -133,7 +133,7 @@ export default function V3AIChat() {
               </div>
 
               {/* Starter cards grid */}
-              <div className="grid grid-cols-2 gap-3 w-full max-w-md pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md pt-2">
                 {STARTER_CARDS.map(({ icon: Icon, label, prompt, gradient }) => (
                   <button
                     key={label}
@@ -182,7 +182,7 @@ export default function V3AIChat() {
       </div>
 
       {/* Input bar — rounded-full neon */}
-      <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3">
+      <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-3xl mx-auto">
           <div
             className={`relative flex items-center gap-2 rounded-full bg-background/60 backdrop-blur px-2 py-1.5 border transition-all duration-300 ${
