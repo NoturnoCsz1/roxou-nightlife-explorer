@@ -16,7 +16,7 @@ export default function V3Economize() {
   return (
     <div className="px-4 py-4 space-y-4">
       <div className="flex items-center gap-3">
-        <Link to="/v3" className="rounded-full p-2 v3-glass"><ArrowLeft className="h-5 w-5 text-muted-foreground" /></Link>
+        <Link to="/" className="rounded-full p-2 v3-glass"><ArrowLeft className="h-5 w-5 text-muted-foreground" /></Link>
         <div>
           <h1 className="font-display text-2xl font-black text-foreground">Economize</h1>
           <p className="text-xs text-muted-foreground">Oportunidades, afiliados e promoções priorizadas pela IA.</p>
@@ -37,7 +37,7 @@ export default function V3Economize() {
 
       {/* Card Destaque — Transporte Seguro */}
       <Link
-        to="/v3/transporte"
+        to="/transporte"
         className="group relative block overflow-hidden rounded-3xl v3-glass-strong border border-primary/30 p-5 transition hover:border-primary/60 hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.3)]"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-accent/10 to-transparent" />

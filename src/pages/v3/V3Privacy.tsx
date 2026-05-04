@@ -5,7 +5,7 @@ export default function V3Privacy() {
   return (
     <div className="px-4 py-6 max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/v3" className="w-9 h-9 rounded-full v3-glass flex items-center justify-center">
+        <Link to="/" className="w-9 h-9 rounded-full v3-glass flex items-center justify-center">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <h1 className="font-display font-extrabold text-2xl text-foreground">Privacidade & LGPD</h1>
@@ -82,7 +82,7 @@ export default function V3Privacy() {
         <Section title="8. Contato do Encarregado (DPO)">
           <p>Para exercer seus direitos ou tirar dúvidas sobre privacidade, fale com a gente pelo
           Instagram <strong className="text-foreground">@roxou</strong> ou pela página de
-          <Link to="/v3/contato" className="text-primary font-semibold"> Contato</Link>.</p>
+          <Link to="/contato" className="text-primary font-semibold"> Contato</Link>.</p>
         </Section>
       </div>
     </div>

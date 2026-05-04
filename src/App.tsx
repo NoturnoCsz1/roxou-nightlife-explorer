@@ -103,10 +103,10 @@ const App = () => (
           {/* ========= V3 PADRÃO (PÚBLICO durante pré-lançamento) ========= */}
           {/* Landing principal: contagem regressiva V3 (lançamento 04/05 18h) */}
           <Route path="/" element={<Maintenance />} />
-          <Route path="/v3/parceiros" element={<V3Parceiros />} />
+          <Route path="/parceiros" element={<V3Parceiros />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
-          <Route path="/v3" element={<V3Layout />}>
+          <Route path="/" element={<V3Layout />}>
             <Route index element={<V3Home />} />
             <Route path="descobrir" element={<V3Discover />} />
             <Route path="agenda" element={<V3Agenda />} />

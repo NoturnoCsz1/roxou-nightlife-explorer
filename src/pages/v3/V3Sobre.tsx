@@ -6,7 +6,7 @@ export default function V3Sobre() {
     <div className="px-4 py-6 max-w-2xl mx-auto space-y-8 pb-32 lg:pb-12">
       <div className="flex items-center gap-3">
         <Link
-          to="/v3"
+          to="/"
           className="w-9 h-9 rounded-full v3-glass flex items-center justify-center"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -77,7 +77,7 @@ export default function V3Sobre() {
       </section>
 
       <Link
-        to="/v3/contato"
+        to="/contato"
         className="block rounded-2xl py-3.5 text-center font-bold uppercase tracking-wider text-[13px] text-white v3-pulse-glow"
         style={{
           background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",

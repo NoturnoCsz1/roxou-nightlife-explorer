@@ -38,8 +38,8 @@ function EventRideCard({ event, isGuest }: { event: RealEvent; isGuest: boolean 
   params.set("event", event.title);
   if (event.venue_name) params.set("venue", event.venue_name);
   params.set("date", event.date_time);
-  const rideUrl = `/v3/pedir-carona?${params.toString()}`;
-  const targetUrl = isGuest ? "/v3/perfil" : rideUrl;
+  const rideUrl = `/pedir-carona?${params.toString()}`;
+  const targetUrl = isGuest ? "/perfil" : rideUrl;
   const ctaLabel = closed
     ? "Sistema encerrado"
     : isGuest
@@ -108,7 +108,7 @@ export default function V3Transport() {
   if (eventName) rideParams.set("event", eventName);
   if (venueName) rideParams.set("venue", venueName);
   if (eventDate) rideParams.set("date", eventDate);
-  const rideUrl = `/v3/pedir-carona${rideParams.toString() ? `?${rideParams}` : ""}`;
+  const rideUrl = `/pedir-carona${rideParams.toString() ? `?${rideParams}` : ""}`;
 
   const { data: realEvents = [], isLoading: eventsLoading } = useQuery({
     queryKey: ["v3-transport-events"],
@@ -152,7 +152,7 @@ export default function V3Transport() {
 
           <div className="flex items-center gap-2 pt-2">
             <Link
-              to={caronaClosed ? "#" : (user ? rideUrl : "/v3/perfil")}
+              to={caronaClosed ? "#" : (user ? rideUrl : "/perfil")}
               onClick={(e) => {
                 if (caronaClosed) {
                   e.preventDefault();
@@ -171,7 +171,7 @@ export default function V3Transport() {
                 <Car className="w-4 h-4 mr-1" /> {user ? "Pedir carona" : "Entrar para solicitar carona"}
               </Button>
             </Link>
-            <Link to="/v3/terms" className="shrink-0">
+            <Link to="/terms" className="shrink-0">
               <Button
                 variant="ghost"
                 className="h-11 rounded-xl v3-glass text-[11px] font-semibold uppercase tracking-wider text-foreground/80 hover:text-foreground"
@@ -239,7 +239,7 @@ export default function V3Transport() {
             <h3 className="font-display font-semibold text-sm text-foreground">Preciso de carona</h3>
             <p className="text-[11px] text-muted-foreground">Crie um pedido e motoristas conectam com você</p>
             <Link
-              to={caronaClosed ? "#" : (user ? rideUrl : "/v3/perfil")}
+              to={caronaClosed ? "#" : (user ? rideUrl : "/perfil")}
               onClick={(e) => {
                 if (caronaClosed) {
                   e.preventDefault();
@@ -260,19 +260,19 @@ export default function V3Transport() {
             <h3 className="font-display font-semibold text-sm text-foreground">Sou motorista</h3>
             <p className="text-[11px] text-muted-foreground">Veja pedidos próximos e ofereça corridas</p>
             {driverBlocked ? (
-              <Link to="/v3/auth?redirect=/v3/motorista">
+              <Link to="/auth?redirect=/motorista">
                 <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
                   Entrar
                 </Button>
               </Link>
             ) : termsBlocked ? (
-              <Link to="/v3/terms-acceptance">
+              <Link to="/terms-acceptance">
                 <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
                   Aceitar termos
                 </Button>
               </Link>
             ) : (
-              <Link to="/v3/motorista">
+              <Link to="/motorista">
                 <Button size="sm" variant="secondary" className="w-full mt-1 rounded-lg text-xs h-8">
                   Ver pedidos
                 </Button>
@@ -283,7 +283,7 @@ export default function V3Transport() {
 
         {/* My rides */}
         {user && (
-          <Link to="/v3/meus-pedidos" className="flex items-center gap-3 p-4 rounded-2xl v3-glass v3-neon-hover">
+          <Link to="/meus-pedidos" className="flex items-center gap-3 p-4 rounded-2xl v3-glass v3-neon-hover">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <ClipboardList className="w-5 h-5 text-primary" />
             </div>
@@ -314,10 +314,10 @@ export default function V3Transport() {
         </div>
 
         <div className="flex gap-4 justify-center pt-2 pb-2">
-          <Link to="/v3/terms" className="text-[11px] text-muted-foreground hover:text-primary transition-colors">
+          <Link to="/terms" className="text-[11px] text-muted-foreground hover:text-primary transition-colors">
             Termos de uso
           </Link>
-          <Link to="/v3/privacy" className="text-[11px] text-muted-foreground hover:text-primary transition-colors">
+          <Link to="/privacy" className="text-[11px] text-muted-foreground hover:text-primary transition-colors">
             Política de privacidade
           </Link>
         </div>

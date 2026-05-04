@@ -35,7 +35,7 @@ export default function V3Contato() {
   return (
     <div className="px-4 py-6 max-w-lg mx-auto space-y-6 pb-32 lg:pb-12">
       <div className="flex items-center gap-3">
-        <Link to="/v3" className="w-9 h-9 rounded-full v3-glass flex items-center justify-center">
+        <Link to="/" className="w-9 h-9 rounded-full v3-glass flex items-center justify-center">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <h1 className="font-display font-extrabold text-2xl text-foreground">Contato</h1>

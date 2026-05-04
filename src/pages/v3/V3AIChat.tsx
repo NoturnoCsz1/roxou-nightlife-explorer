@@ -42,7 +42,7 @@ export default function V3AIChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/v3/auth?redirect=/v3/ia");
+    if (!loading && !user) navigate("/auth?redirect=/ia");
   }, [loading, user, navigate]);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function V3AIChat() {
       {/* Header glass */}
       <header className="v3-glass-strong border-b border-primary/15 px-4 py-3">
         <div className="flex items-center gap-3 max-w-3xl mx-auto">
-          <Link to="/v3" className="rounded-full p-2 hover:bg-white/5 transition"><ArrowLeft className="h-5 w-5 text-muted-foreground" /></Link>
+          <Link to="/" className="rounded-full p-2 hover:bg-white/5 transition"><ArrowLeft className="h-5 w-5 text-muted-foreground" /></Link>
           <div className="relative h-10 w-10 rounded-2xl gradient-primary flex items-center justify-center neon-glow">
             <Bot className="h-5 w-5 text-primary-foreground" />
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-background v3-pulse-glow" />

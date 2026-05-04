@@ -82,7 +82,7 @@ export default function V3Profile() {
         <p className="text-sm text-muted-foreground mb-6 max-w-[280px] leading-relaxed">
           Entre para salvar eventos, seguir locais e acompanhar tudo que rola na noite.
         </p>
-        <Button onClick={() => navigate("/v3/auth")} className="rounded-xl px-10 h-12 text-sm font-bold">
+        <Button onClick={() => navigate("/auth")} className="rounded-xl px-10 h-12 text-sm font-bold">
           Entrar ou criar conta
         </Button>
       </div>
@@ -91,7 +91,7 @@ export default function V3Profile() {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/v3");
+    navigate("/");
   };
 
   const statusConfig: Record<string, { label: string; cls: string }> = {
@@ -120,7 +120,7 @@ export default function V3Profile() {
           <div className="absolute inset-x-0 bottom-0 h-20 lg:h-40 bg-gradient-to-t from-background via-background/70 to-transparent" />
           <button
             type="button"
-            onClick={() => navigate("/v3/perfil/editar")}
+            onClick={() => navigate("/perfil/editar")}
             className="absolute right-4 top-4 lg:right-6 lg:top-6 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/70 px-3 py-1.5 text-[11px] lg:text-xs font-bold text-foreground backdrop-blur-xl transition-all hover:border-primary/70 lg:hidden"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -165,7 +165,7 @@ export default function V3Profile() {
           {/* Edit button — desktop top-right */}
           <button
             type="button"
-            onClick={() => navigate("/v3/perfil/editar")}
+            onClick={() => navigate("/perfil/editar")}
             className="hidden lg:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-background/70 px-5 py-2.5 text-sm font-bold text-foreground backdrop-blur-xl transition-all hover:border-primary/70 hover:bg-primary/10 mb-2"
           >
             <Pencil className="h-4 w-4" />
@@ -178,7 +178,7 @@ export default function V3Profile() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 px-4 lg:px-6 lg:max-w-5xl lg:mx-auto">
         <StatBentoCard to="#eventos-salvos" icon={Bookmark} label="Salvos" value={savedIds.length} tone="primary" className="min-h-[118px]" />
         <StatBentoCard to="#locais-seguidos" icon={Heart} label="Seguindo" value={followedIds.length} tone="accent" className="min-h-[118px]" />
-        <StatBentoCard to="/v3/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 lg:col-span-1 min-h-[92px] lg:min-h-[118px]" />
+        <StatBentoCard to="/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 lg:col-span-1 min-h-[92px] lg:min-h-[118px]" />
       </div>
 
       <div className="px-4 lg:px-6 lg:max-w-5xl lg:mx-auto space-y-4 lg:space-y-6">
@@ -215,7 +215,7 @@ export default function V3Profile() {
         {followedPartners.length > 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide">
             {followedPartners.map((p: any) => (
-              <Link key={p.id} to={`/v3/local/${p.slug}`}
+              <Link key={p.id} to={`/local/${p.slug}`}
                 className="group w-[78px] shrink-0 text-center">
                 <div className="mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full border border-border/50 bg-secondary transition-all group-hover:border-primary/50 group-hover:shadow-[0_0_22px_hsl(var(--primary)/0.25)]">
                   {p.logo_url ? (
@@ -236,7 +236,7 @@ export default function V3Profile() {
             <Heart className="mx-auto mb-3 h-14 w-14 text-muted-foreground/20" />
             <p className="text-sm font-bold text-foreground">Nenhum local seguido ainda</p>
             <p className="mx-auto mt-1 max-w-[220px] text-[11px] leading-relaxed text-muted-foreground">Siga seus parceiros favoritos para acessar tudo por aqui.</p>
-            <Link to="/v3/descobrir" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-black text-primary-foreground transition-transform active:scale-95">
+            <Link to="/descobrir" className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-black text-primary-foreground transition-transform active:scale-95">
               Explorar Locais <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -255,7 +255,7 @@ export default function V3Profile() {
         {savedEvents.length > 0 ? (
           <div className="space-y-2">
             {savedEvents.slice(0, 5).map(e => (
-              <Link key={e.id} to={`/v3/evento/${e.slug}`}
+              <Link key={e.id} to={`/evento/${e.slug}`}
                 className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40 hover:border-primary/20 transition-all">
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <img src={e.image_url || "/placeholder.svg"} alt={e.title} className="w-full h-full object-cover" loading="lazy" />
@@ -283,7 +283,7 @@ export default function V3Profile() {
             <Sparkles className="w-7 h-7 text-muted-foreground/20 mx-auto mb-1.5" />
             <p className="text-xs text-muted-foreground font-medium">Nenhum evento salvo</p>
             <p className="text-[10px] text-muted-foreground/60 mt-0.5">Toque no 🔖 nos eventos para salvá-los</p>
-            <Link to="/v3/descobrir" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
+            <Link to="/descobrir" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
               Descobrir eventos <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
@@ -295,7 +295,7 @@ export default function V3Profile() {
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-display font-bold text-sm text-foreground">🚗 Pedidos de transporte</h2>
           {rides.length > 0 && (
-            <Link to="/v3/meus-pedidos" className="text-[11px] text-primary font-medium flex items-center gap-0.5">
+            <Link to="/meus-pedidos" className="text-[11px] text-primary font-medium flex items-center gap-0.5">
               Ver todos <ChevronRight className="w-3 h-3" />
             </Link>
           )}
@@ -339,7 +339,7 @@ export default function V3Profile() {
             <Car className="w-7 h-7 text-muted-foreground/20 mx-auto mb-1.5" />
             <p className="text-xs text-muted-foreground font-medium">Nenhum pedido de transporte</p>
             <p className="text-[10px] text-muted-foreground/60 mt-0.5">Peça uma carona diretamente nos eventos</p>
-            <Link to="/v3/transporte" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
+            <Link to="/transporte" className="inline-flex items-center gap-1 mt-2 text-[11px] text-primary font-semibold">
               Ver transporte <ChevronRight className="w-3 h-3" />
             </Link>
           </div>

@@ -69,7 +69,7 @@ export default function V3LocalDetail() {
     return (
       <div className="p-8 text-center">
         <p className="text-muted-foreground">Local não encontrado</p>
-        <Link to="/v3" className="text-primary text-sm mt-2 inline-block">Voltar</Link>
+        <Link to="/" className="text-primary text-sm mt-2 inline-block">Voltar</Link>
       </div>
     );
   }
@@ -86,7 +86,7 @@ export default function V3LocalDetail() {
     <div className="pb-8">
       {/* Header — refined composition */}
       <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
-        <Link to="/v3" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
+        <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
           <ArrowLeft className="w-4 h-4 text-white" />
         </Link>
         <div className="px-4 pb-4 flex items-end gap-3.5 w-full">

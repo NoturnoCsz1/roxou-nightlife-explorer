@@ -98,7 +98,7 @@ export default function V3DriverBoard() {
     return (
       <div className="px-4 py-6 max-w-md mx-auto space-y-4 text-center">
         <p className="text-muted-foreground">Você precisa estar logado.</p>
-        <Link to="/v3/auth?redirect=/v3/motorista">
+        <Link to="/auth?redirect=/motorista">
           <Button className="rounded-xl">Entrar</Button>
         </Link>
       </div>
@@ -109,7 +109,7 @@ export default function V3DriverBoard() {
     return (
       <div className="px-4 py-6 max-w-md mx-auto space-y-4 text-center">
         <p className="text-muted-foreground">Aceite os termos para continuar.</p>
-        <Link to="/v3/terms-acceptance">
+        <Link to="/terms-acceptance">
           <Button className="rounded-xl">Aceitar termos</Button>
         </Link>
       </div>
@@ -123,7 +123,7 @@ export default function V3DriverBoard() {
           <ShieldCheck className="w-7 h-7 text-primary" />
         </div>
         <p className="text-sm text-muted-foreground">Apenas perfis Motorista validados podem acessar o DriverDash.</p>
-        <Link to="/v3/perfil">
+        <Link to="/perfil">
           <Button className="rounded-xl">Voltar ao perfil</Button>
         </Link>
       </div>
@@ -133,7 +133,7 @@ export default function V3DriverBoard() {
   return (
     <div className="px-4 py-6 max-w-md mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <Link to="/v3/transporte" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
+        <Link to="/transporte" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>
@@ -228,7 +228,7 @@ export default function V3DriverBoard() {
                 ))}
                 <div className="flex gap-2">
                   {alreadyOffered ? (
-                    <Link to={`/v3/chat/${req.id}`} className="flex-1">
+                    <Link to={`/chat/${req.id}`} className="flex-1">
                       <Button size="sm" variant="secondary" className="w-full rounded-lg text-xs h-9 gap-1.5">
                         <MessageCircle className="w-3.5 h-3.5" /> Chat
                       </Button>

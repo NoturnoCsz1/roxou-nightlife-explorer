@@ -425,7 +425,7 @@ export default function V3Home() {
           {venueRanks.length > 5 && (
             <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
               {venueRanks.slice(5).map((v, i) => (
-                <Link key={v.id} to={`/v3/local/${v.slug}`}
+                <Link key={v.id} to={`/local/${v.slug}`}
                   className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
                   <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
                   <div className="w-6 h-6 rounded-md overflow-hidden bg-secondary shrink-0">
@@ -476,11 +476,11 @@ export default function V3Home() {
       {/* Footer institucional V3 */}
       <FadeSection className="px-4 pt-6 pb-2">
         <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
-          <Link to="/v3/sobre" className="hover:text-primary transition-colors">Sobre</Link>
+          <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
           <span className="opacity-30">·</span>
-          <Link to="/v3/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
+          <Link to="/privacidade" className="hover:text-primary transition-colors">Privacidade</Link>
           <span className="opacity-30">·</span>
-          <Link to="/v3/contato" className="hover:text-primary transition-colors">Contato</Link>
+          <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
         </div>
       </FadeSection>
       </div>
@@ -583,13 +583,13 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
         {/* CTAs */}
         <div className="flex gap-2 lg:gap-3 pt-3">
           <Link
-            to={`/v3/evento/${ev.slug}`}
+            to={`/evento/${ev.slug}`}
             className="inline-flex items-center gap-1.5 px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
             Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
-            to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
+            to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
             className="inline-flex items-center gap-1.5 px-4 lg:px-5 py-2.5 lg:py-3 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-sm font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
           >
             <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary/80" /> Como vou?
@@ -650,7 +650,7 @@ function BentoGrid() {
       <div className="grid grid-cols-2 gap-3 auto-rows-[136px]">
         {/* Transport — large featured tile (2 cols, 2 rows) */}
         <Link
-          to="/v3/transporte"
+          to="/transporte"
           className="col-span-2 relative rounded-3xl overflow-hidden p-4 flex flex-col justify-between active:scale-[0.98] hover:scale-[1.02] transition-transform duration-300 group v3-neon-hover"
           style={{
             background:
@@ -705,7 +705,7 @@ function CategoryBentoCard({
 }) {
   return (
     <Link
-      to={`/v3/descobrir?cat=${categoryKey}`}
+      to={`/descobrir?cat=${categoryKey}`}
       className="relative rounded-3xl overflow-hidden v3-glass v3-neon-hover active:scale-[0.96] hover:scale-105 transition-transform duration-300 group"
       style={{ background }}
     >
@@ -759,7 +759,7 @@ function VibeSelector({ selected, onSelect }: { selected: string; onSelect: (key
 function VenueSpotlight({ v, maxViews }: { v: VenueRank; maxViews: number }) {
   return (
     <Link
-      to={`/v3/local/${v.slug}`}
+      to={`/local/${v.slug}`}
       className="relative flex items-center gap-4 p-4 mt-4 rounded-2xl bg-card border-2 border-primary/40 neon-border group overflow-hidden active:scale-[0.98] transition-transform"
     >
       <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 blur-3xl rounded-full" />
@@ -818,7 +818,7 @@ function VenueRankCard({ v, rank, maxViews }: { v: VenueRank; rank: number; maxV
   const pct = Math.max(15, Math.round((v.views / maxViews) * 100));
   return (
     <Link
-      to={`/v3/local/${v.slug}`}
+      to={`/local/${v.slug}`}
       className="flex flex-col p-3 rounded-xl bg-card border border-border/40 hover:border-primary/20 transition-all group active:scale-[0.97]"
     >
       <div className="flex items-center gap-2 mb-2">
@@ -850,7 +850,7 @@ function FeaturedPartnerCard({ p }: { p: any }) {
   const rankLabel = p._rank && p._rank <= 3 ? `📈 Top ${p._rank} mais acessado` : null;
   return (
     <Link
-      to={`/v3/local/${p.slug}`}
+      to={`/local/${p.slug}`}
       className="shrink-0 snap-start w-[200px] rounded-xl bg-card border border-border/40 hover:border-accent/30 transition-all overflow-hidden group active:scale-[0.97]"
     >
       <div className="relative h-[80px] bg-secondary overflow-hidden">
@@ -993,7 +993,7 @@ function DesktopProfilePanel() {
 
   return (
     <Link
-      to={user ? "/v3/perfil" : "/v3/auth"}
+      to={user ? "/perfil" : "/auth"}
       className="flex items-center gap-3 rounded-2xl border border-border/20 bg-background/30 p-3 transition-all hover:border-primary/40 hover:bg-primary/10"
     >
       <div className="h-10 w-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
@@ -1010,13 +1010,13 @@ function DesktopProfilePanel() {
 
 function DesktopNavPanel({ todayCount }: { todayCount: number }) {
   const items = [
-    { to: "/v3", label: "Início", icon: Sparkles },
-    { to: "/v3/ia", label: "Aura", icon: Bot },
-    { to: "/v3/descobrir", label: "Descobrir", icon: Search },
-    { to: "/v3/transporte", label: "Caronas", icon: Car },
-    { to: "/v3/parceiros", label: "Parceiros", icon: Users },
-    { to: "/v3/agenda", label: "Agenda", icon: CalendarDays },
-    { to: "/v3/economize", label: "Economize", icon: PiggyBank },
+    { to: "/", label: "Início", icon: Sparkles },
+    { to: "/ia", label: "Aura", icon: Bot },
+    { to: "/descobrir", label: "Descobrir", icon: Search },
+    { to: "/transporte", label: "Caronas", icon: Car },
+    { to: "/parceiros", label: "Parceiros", icon: Users },
+    { to: "/agenda", label: "Agenda", icon: CalendarDays },
+    { to: "/economize", label: "Economize", icon: PiggyBank },
     { to: "/expo2026", label: "Expo Prudente", icon: Newspaper },
   ];
   return (
@@ -1050,7 +1050,7 @@ function DesktopCategoriesPanel() {
       <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-3">Categorias</p>
       <div className="grid grid-cols-2 gap-2">
         {DESKTOP_CATEGORIES.map(({ key, label, icon: Icon }) => (
-          <Link key={key} to={`/v3/descobrir?cat=${key}`} className="flex flex-col items-center gap-1 rounded-xl border border-border/20 bg-background/25 px-2 py-3 text-[11px] font-bold text-foreground hover:border-primary/40 hover:text-primary transition-all">
+          <Link key={key} to={`/descobrir?cat=${key}`} className="flex flex-col items-center gap-1 rounded-xl border border-border/20 bg-background/25 px-2 py-3 text-[11px] font-bold text-foreground hover:border-primary/40 hover:text-primary transition-all">
             <Icon className="h-4 w-4" /> {label}
           </Link>
         ))}
@@ -1068,11 +1068,11 @@ function DesktopWeekPanel({ events }: { events: Ev[] }) {
           <CalendarDays className="h-4 w-4 text-primary" />
           <h2 className="font-display text-base font-black text-foreground">Agenda da semana</h2>
         </div>
-        <Link to="/v3/agenda" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
+        <Link to="/agenda" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
       </div>
       <div className="space-y-2">
         {events.slice(0, 5).map(ev => (
-          <Link key={ev.id} to={`/v3/evento/${ev.slug}`} className="group flex gap-2.5 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
+          <Link key={ev.id} to={`/evento/${ev.slug}`} className="group flex gap-2.5 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
             <div className="flex flex-col items-center justify-center rounded-lg bg-primary/10 px-2 py-1 min-w-[42px]">
               <span className="text-[8px] font-black uppercase text-primary">{format(new Date(ev.date_time), "MMM", { locale: ptBR })}</span>
               <span className="text-base font-black text-foreground leading-none">{format(new Date(ev.date_time), "dd")}</span>
@@ -1098,11 +1098,11 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
           <Gem className="h-4 w-4 text-accent" />
           <h2 className="font-display text-base font-black text-foreground">Parceiros destaque</h2>
         </div>
-        <Link to="/v3/parceiros" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
+        <Link to="/parceiros" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
       </div>
       <div className="space-y-2">
         {list.map((p: any) => (
-          <Link key={p.id} to={`/v3/local/${p.slug}`} className="group flex items-center gap-3 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
+          <Link key={p.id} to={`/local/${p.slug}`} className="group flex items-center gap-3 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
             <div className="h-10 w-10 rounded-lg overflow-hidden bg-secondary/40 flex items-center justify-center shrink-0">
               {p.logo_url ? <img src={p.logo_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" /> : <span className="text-sm font-black text-primary">{p.name?.[0]}</span>}
             </div>
@@ -1129,7 +1129,7 @@ function NowPanel({ events }: { events: Ev[] }) {
       </div>
       <div className="space-y-3">
         {events.map(ev => (
-          <Link key={ev.id} to={`/v3/evento/${ev.slug}`} className="group flex gap-3 rounded-2xl border border-border/25 bg-background/25 p-2 transition-all hover:border-primary/40 hover:bg-primary/10">
+          <Link key={ev.id} to={`/evento/${ev.slug}`} className="group flex gap-3 rounded-2xl border border-border/25 bg-background/25 p-2 transition-all hover:border-primary/40 hover:bg-primary/10">
             <SmartImage
               src={ev.image_url}
               alt={ev.title}
@@ -1219,7 +1219,7 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 15px hsl(var(--primary) / 0.18), 0 14px 36px rgba(0,0,0,0.5)",
         }}
       >
-        <Link to={`/v3/evento/${ev.slug}`} className="absolute inset-0 block">
+        <Link to={`/evento/${ev.slug}`} className="absolute inset-0 block">
           <div className="absolute inset-0 overflow-hidden">
             <SmartImage
               src={ev.image_url}
@@ -1286,7 +1286,7 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
           <p className="line-clamp-3 text-[11px] font-medium leading-relaxed text-foreground/90">
             {ev.venue_name ? `${ev.venue_name} · ` : ""}{ev.category} marcado para {fmtTime(ev.date_time)}. Veja detalhes, ingresso e opções de carona sem perder o ritmo.
           </p>
-          <Link to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`} className="pointer-events-auto mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-[10px] font-black uppercase text-primary hover:bg-primary/25">
+          <Link to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`} className="pointer-events-auto mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-[10px] font-black uppercase text-primary hover:bg-primary/25">
             <Car className="h-3 w-3" /> Pedir carona
           </Link>
         </div>
@@ -1390,8 +1390,8 @@ const EXPO_DATE = new Date("2026-09-10T20:00:00-03:00");
 
 function QuickFilterTabs({ todayCount, weekCount }: { todayCount: number; weekCount: number }) {
   const tabs = [
-    { key: "hoje", label: "Hoje", count: todayCount, to: "/v3/agenda?filter=today", icon: Flame },
-    { key: "semana", label: "Próx. 7 dias", count: weekCount, to: "/v3/agenda?filter=week", icon: CalendarDays },
+    { key: "hoje", label: "Hoje", count: todayCount, to: "/agenda?filter=today", icon: Flame },
+    { key: "semana", label: "Próx. 7 dias", count: weekCount, to: "/agenda?filter=week", icon: CalendarDays },
     { key: "expo", label: "Expo 2026", count: null, to: "/expo2026", icon: Sparkles, special: true },
   ];
   return (
@@ -1491,7 +1491,7 @@ function WeeklySpotlight({ ev }: { ev: Ev }) {
       </div>
 
       <Link
-        to={`/v3/evento/${ev.slug}`}
+        to={`/evento/${ev.slug}`}
         className="relative block rounded-3xl overflow-hidden v3-glass border border-primary/30 group"
         style={{
           aspectRatio: "16 / 20",

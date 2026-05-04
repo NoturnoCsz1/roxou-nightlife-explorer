@@ -52,7 +52,7 @@ export default function AdminMaintenanceGate() {
   return (
     <Routes>
       {/* Para admins logados, raiz vai direto para V3 Home (padrão pós-lançamento). */}
-      <Route path="/" element={<Navigate to="/v3" replace />} />
+      <Route path="/" element={<Navigate to="/" replace />} />
 
       {/* Rotas legadas v2 redirecionadas para o arquivo (admins ainda podem inspecionar). */}
       <Route path="/evento/:slug" element={<Navigate to="/archive/legacy-v2" replace />} />
@@ -64,7 +64,7 @@ export default function AdminMaintenanceGate() {
       <Route path="/local/:slug" element={<Navigate to="/archive/legacy-v2" replace />} />
       <Route path="/local/:slug/eventos" element={<Navigate to="/archive/legacy-v2" replace />} />
 
-      <Route path="/v3" element={<V3Layout />}>
+      <Route path="/" element={<V3Layout />}>
         <Route index element={<V3Home />} />
         <Route path="descobrir" element={<V3Discover />} />
         <Route path="agenda" element={<V3Agenda />} />

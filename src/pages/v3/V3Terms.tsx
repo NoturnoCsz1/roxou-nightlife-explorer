@@ -5,7 +5,7 @@ export default function V3Terms() {
   return (
     <div className="px-4 py-6 space-y-6 max-w-lg mx-auto">
       <div className="flex items-center gap-3">
-        <Link to="/v3/transporte" className="w-8 h-8 rounded-full bg-card border border-border/40 flex items-center justify-center">
+        <Link to="/transporte" className="w-8 h-8 rounded-full bg-card border border-border/40 flex items-center justify-center">
           <ArrowLeft className="w-4 h-4" />
         </Link>
         <h1 className="font-display font-bold text-xl text-foreground">Termos de Uso</h1>

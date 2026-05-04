@@ -21,7 +21,7 @@ export default function V3Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/v3";
+  const redirectTo = searchParams.get("redirect") || "/";
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
@@ -72,7 +72,7 @@ export default function V3Auth() {
   return (
     <div className="px-4 py-6 max-w-md mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/v3" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
+        <Link to="/" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Link>
         <div>
