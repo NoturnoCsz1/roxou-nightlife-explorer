@@ -377,6 +377,26 @@ export default function V3ProfileEdit() {
         </div>
       </div>
       <CommunityConsentModal open={consentOpen} onOpenChange={setConsentOpen} />
+
+      <ImageCropModal
+        open={!!pendingAvatar}
+        file={pendingAvatar}
+        aspect={1}
+        maxOutputWidth={512}
+        title="Ajustar avatar"
+        onClose={() => !savingAvatar && setPendingAvatar(null)}
+        onConfirm={handleAvatarConfirm}
+      />
+
+      <ImageCropModal
+        open={!!pendingCover}
+        file={pendingCover}
+        aspect={21 / 9}
+        maxOutputWidth={1920}
+        title="Ajustar capa"
+        onClose={() => !savingCover && setPendingCover(null)}
+        onConfirm={handleCoverConfirm}
+      />
     </div>
   );
 }
