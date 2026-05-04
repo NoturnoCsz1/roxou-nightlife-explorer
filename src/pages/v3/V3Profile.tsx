@@ -118,24 +118,39 @@ export default function V3Profile() {
     toast.success("Link de afiliado copiado!");
   };
 
-  return (
-    <div className="pb-8 px-4 pt-4 space-y-4">
-      {/* ── Profile Hero ── */}
-      <div className="relative overflow-hidden rounded-3xl v3-glass-strong p-5 min-h-[190px]">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/35 via-accent/10 to-background" />
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background/75 to-transparent" />
-        <button
-          type="button"
-          className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-background/20 px-3 py-1.5 text-[11px] font-bold text-foreground/85 backdrop-blur-xl transition-all hover:border-primary/40 hover:bg-primary/10"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          Editar Perfil
-        </button>
+  const coverUrl = (profile as any)?.cover_image_url as string | null;
+  const nickname = (profile as any)?.nickname as string | null;
+  const whatsappBR = (profile as any)?.whatsapp as string | null;
 
-        <div className="relative z-10 flex h-full flex-col justify-end pt-12">
-          <div className="relative mb-3 w-fit">
-            <div className="h-24 w-24 rounded-3xl border border-primary/50 bg-primary/20 p-1 v3-neon-glow">
-              <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-background/60 flex items-center justify-center">
+  return (
+    <div className="pb-32 lg:pb-12 space-y-4">
+      {/* ── Cover (21:9) + Avatar overlap ── */}
+      <div className="relative">
+        <div className="relative aspect-[21/9] w-full overflow-hidden bg-secondary">
+          {coverUrl ? (
+            <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/35 via-accent/15 to-background" />
+          )}
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background to-transparent" />
+          <button
+            type="button"
+            onClick={() => navigate("/v3/perfil/editar")}
+            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/70 px-3 py-1.5 text-[11px] font-bold text-foreground backdrop-blur-xl transition-all hover:border-primary/70"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Editar
+          </button>
+        </div>
+
+        {/* Avatar — borda neon glassmorphism */}
+        <div className="px-4 -mt-12 relative z-10">
+          <div className="relative w-fit">
+            <div
+              className="h-24 w-24 rounded-3xl border-2 border-primary/60 bg-background/70 backdrop-blur-xl p-1"
+              style={{ boxShadow: "0 0 30px hsl(var(--primary) / 0.45), inset 0 0 20px hsl(var(--primary) / 0.15)" }}
+            >
+              <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-secondary flex items-center justify-center">
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -146,60 +161,31 @@ export default function V3Profile() {
             {roles.length > 0 && (
               <div className="absolute -bottom-2 left-3 flex flex-wrap gap-1.5">
                 {roles.map(r => (
-                  <span key={r} className="rounded-full border border-primary/30 bg-background/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-primary backdrop-blur-xl">
+                  <span key={r} className="rounded-full border border-primary/30 bg-background/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-primary backdrop-blur-xl">
                     {r === "passenger" ? "Passageiro" : r === "driver" ? "Motorista" : r}
                   </span>
                 ))}
               </div>
             )}
           </div>
-          <div className="min-w-0 pt-2">
+          <div className="mt-3">
             <h1 className="font-display text-2xl font-black text-foreground truncate">
               {profile?.display_name || user.email?.split("@")[0]}
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground truncate">{user.email}</p>
+            {nickname && <p className="text-sm font-medium text-primary">@{nickname}</p>}
+            <p className="mt-0.5 text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         </div>
       </div>
 
       {/* ── Bento Stats ── */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 px-4">
         <StatBentoCard to="#eventos-salvos" icon={Bookmark} label="Salvos" value={savedIds.length} tone="primary" className="min-h-[118px]" />
         <StatBentoCard to="#locais-seguidos" icon={Heart} label="Seguindo" value={followedIds.length} tone="accent" className="min-h-[118px]" />
         <StatBentoCard to="/v3/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 min-h-[92px]" />
       </div>
 
-      {/* ── VIP Affiliate ── */}
-      <div className="relative overflow-hidden rounded-3xl v3-glass-strong p-4 v3-pulse-glow">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent" />
-        <div className="relative flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl gradient-primary neon-glow">
-            <Gift className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <Crown className="h-3.5 w-3.5 text-accent" />
-              <h2 className="font-display text-sm font-black text-foreground">Link de Afiliado ROXOU VIP</h2>
-            </div>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Indique um amigo e ganhe 15 dias de VIP quando ele entrar.</p>
-            <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/10 p-3">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-[11px] font-black text-foreground">
-                  {referralsRemaining > 0 ? `Indique mais ${referralsRemaining} amigo${referralsRemaining > 1 ? "s" : ""} para liberar +15 dias de VIP` : "Bônus VIP pronto para liberar"}
-                </p>
-                <span className="text-[10px] font-black text-primary">{Math.min(referralCount, 2)}/2</span>
-              </div>
-              <Progress value={vipProgress} className="h-2 bg-background/50" />
-            </div>
-            <div className="mt-3 flex items-center gap-2 rounded-2xl border border-border/30 bg-background/35 p-2">
-              <code className="flex-1 truncate text-[10px] text-muted-foreground">{affiliateLink}</code>
-              <button onClick={copyAffiliate} className="rounded-xl bg-primary/15 p-2 text-primary active:scale-95">
-                <Copy className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="px-4 space-y-4">
 
       {/* ── Security & Contact ── */}
       <div className="rounded-3xl v3-glass p-4">
