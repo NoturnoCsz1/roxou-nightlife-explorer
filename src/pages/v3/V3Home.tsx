@@ -284,6 +284,9 @@ export default function V3Home() {
         />
       </div>
 
+      {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão ══════ */}
+      <V3VibeChips />
+
       {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
       <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
 
