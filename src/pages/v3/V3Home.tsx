@@ -86,6 +86,24 @@ export default function V3Home() {
     refetchOnWindowFocus: true,
   });
 
+  const { data: rawTodayEvents = [] } = useQuery<Ev[]>({
+    queryKey: ["v3-today-events", TODAY_KEY],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("events")
+        .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
+        .eq("status", "published")
+        .gte("date_time", TODAY_START)
+        .lt("date_time", TODAY_END)
+        .order("date_time", { ascending: true });
+      return (data as Ev[]) || [];
+    },
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+
   /* ─── TRENDING (views last 24h) ─── */
   const { data: trendingIds = [], isLoading: loadingTrending } = useQuery({
     queryKey: ["v3-trending"],
@@ -175,7 +193,7 @@ export default function V3Home() {
   const [heroIdx, setHeroIdx] = useState(0);
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
-  const todayCount = useMemo(() => events.filter(e => isFixedTodayEvent(e.date_time)).length, [events]);
+  const todayCount = rawTodayEvents.length;
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
@@ -191,9 +209,9 @@ export default function V3Home() {
   }, [events, trendingIds, usedIds]);
 
   const todayEvents = useMemo(
-    () => events.filter(e => !usedIds.has(e.id) && isFixedTodayEvent(e.date_time))
+    () => rawTodayEvents.filter(e => !usedIds.has(e.id))
       .slice(0, 12).map(e => { usedIds.add(e.id); return e; }),
-    [events, usedIds],
+    [rawTodayEvents, usedIds],
   );
 
   const featured = useMemo(
