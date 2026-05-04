@@ -635,6 +635,14 @@ function BentoGrid() {
         "radial-gradient(circle at 28% 26%, hsl(var(--badge-bar) / 0.38), transparent 26%), radial-gradient(circle at 86% 70%, hsl(var(--badge-hoje) / 0.24), transparent 24%), linear-gradient(135deg, hsl(var(--secondary) / 0.92), hsl(var(--card) / 0.78))",
       texture: "bar",
     },
+    {
+      categoryKey: "restaurante",
+      label: "Restaurantes",
+      icon: Utensils,
+      background:
+        "radial-gradient(circle at 30% 30%, hsl(var(--v3-neon) / 0.34), transparent 28%), radial-gradient(circle at 80% 80%, hsl(var(--v3-neon-soft) / 0.28), transparent 28%), linear-gradient(135deg, hsl(var(--card) / 0.92), hsl(var(--secondary) / 0.78))",
+      texture: "bar",
+    },
   ] as const;
 
   return (
