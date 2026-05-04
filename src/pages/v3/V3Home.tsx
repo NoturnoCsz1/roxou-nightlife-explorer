@@ -879,40 +879,73 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 }
 
 /* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
-function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents, trendingIdSet, partnerRankMap, venueRanks, featuredPartners }: {
+function CommandCenter({
+  hero, heroIsToday, heroEvents, heroIdx, setHeroIdx, weeklyHighlight,
+  todayEvents, todayCount, trending, featured, weekEvents,
+  trendingIdSet, partnerRankMap, venueRanks, featuredPartners, events,
+}: {
+  hero: Ev | null; heroIsToday: boolean; heroEvents: Ev[];
+  heroIdx: number; setHeroIdx: (n: number) => void;
+  weeklyHighlight: Ev | null;
   todayEvents: Ev[]; todayCount: number; trending: Ev[]; featured: Ev[]; weekEvents: Ev[];
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
-  venueRanks: VenueRank[]; featuredPartners: any[];
+  venueRanks: VenueRank[]; featuredPartners: any[]; events: Ev[];
 }) {
   const mainEvents = [...trending, ...featured, ...todayEvents, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 10);
-  const nowEvents = mainEvents.filter(e => isEventLive(e.date_time)).slice(0, 3);
 
-  const { data: news = [] } = useQuery({
-    queryKey: ["v3-expo-news-home"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("expo_news" as any)
-        .select("id,slug,title,excerpt,cover_image_url,author,category,published_at")
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .limit(4);
-      return (data as any[]) || [];
-    },
-  });
-
-  if (!todayEvents.length && !mainEvents.length) return null;
+  if (!todayEvents.length && !mainEvents.length && !hero) return null;
 
   return (
     <FadeSection className="mx-auto grid max-w-7xl grid-cols-[240px_minmax(0,1fr)_320px] gap-5 px-6 py-6">
-      {/* LEFT: Navigation + Categories */}
-      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide">
+      {/* LEFT — Profile + Nav (glassmorphism) */}
+      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto pr-1 scrollbar-hide rounded-3xl backdrop-blur-xl bg-background/30 border border-white/10 p-3">
+        <DesktopProfilePanel />
         <DesktopNavPanel todayCount={todayCount} />
-        <DesktopCategoriesPanel />
-        <AIHomeWidget />
       </aside>
 
-      {/* CENTER: Events feed + News */}
+      {/* CENTER — Hero, Search, Today Timeline, Weekly Spotlight, feed */}
       <section className="min-w-0 space-y-6">
+        {hero && (
+          <div className="relative group rounded-3xl overflow-hidden shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)]">
+            <ImmersiveHero
+              ev={hero}
+              isToday={heroIsToday}
+              todayCount={todayCount}
+              venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+            />
+            {heroEvents.length > 1 && (
+              <>
+                <button
+                  aria-label="Slide anterior"
+                  onClick={() => setHeroIdx((heroIdx - 1 + heroEvents.length) % heroEvents.length)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  aria-label="Próximo slide"
+                  onClick={() => setHeroIdx((heroIdx + 1) % heroEvents.length)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                  {heroEvents.map((_, i) => (
+                    <button
+                      key={i}
+                      aria-label={`Slide ${i + 1}`}
+                      onClick={() => setHeroIdx(i)}
+                      className={`h-2 rounded-full transition-all ${
+                        i === heroIdx ? "bg-primary w-7 shadow-[0_0_10px_hsl(var(--primary)/0.7)]" : "bg-foreground/30 w-2 hover:bg-foreground/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <V3SearchBar
           events={mainEvents as any}
           fallbackEvent={(featured[0] || mainEvents[0]) as any}
@@ -921,79 +954,28 @@ function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents
 
         <V3VibeChips className="!py-0 -mx-0" />
 
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Curadoria Roxou</p>
-            <h1 className="font-display text-4xl font-black uppercase text-foreground">
-              Acontecendo hoje
-              <span className="bg-gradient-to-r from-[hsl(var(--v3-neon))] to-[hsl(var(--neon-pink))] bg-clip-text text-transparent">.</span>
-            </h1>
-          </div>
-          <span className="rounded-full border border-primary/25 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase text-primary shadow-[0_0_15px_hsl(var(--primary)/0.22)] whitespace-nowrap">
-            {todayCount === 0 ? "Buscando o próximo rolê..." : `${todayCount} rolês hoje ⚡`}
-          </span>
-        </div>
-
-        <div className="grid auto-rows-[260px] grid-cols-6 gap-4 transition-opacity duration-500">
-          {mainEvents.slice(0, 7).map((ev, i) => (
-            <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full animate-fade-up`} />
-          ))}
-        </div>
-
         {todayEvents.length > 0 && (
-          <DesktopTodayCarousel events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+          <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
         )}
 
-        {/* News from Expo Prudente 2026 */}
-        {news.length > 0 && (
-          <div className="rounded-3xl v3-glass p-5">
-            <div className="flex items-end justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Newspaper className="h-5 w-5 text-primary" />
-                <div>
-                  <h2 className="font-display text-xl font-black uppercase text-foreground">Notícias da Expo</h2>
-                  <p className="text-[10px] text-muted-foreground">Cobertura ao vivo · Expo Prudente 2026</p>
-                </div>
-              </div>
-              <Link to="/expo2026" className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1">
-                Ver tudo <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {news.map((n: any) => (
-                <Link key={n.id} to={`/expo2026/noticia/${n.slug}`} className="group rounded-2xl overflow-hidden border border-border/30 bg-background/30 hover:border-primary/40 transition-all">
-                  <div className="aspect-[16/9] overflow-hidden bg-secondary/30">
-                    {n.cover_image_url ? (
-                      <img
-                        src={n.cover_image_url}
-                        alt={n.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        style={{ imageRendering: "auto" }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center"><Newspaper className="h-8 w-8 text-muted-foreground/30" /></div>
-                    )}
-                  </div>
-                  <div className="p-3 space-y-1.5">
-                    <span className="inline-block text-[9px] font-black uppercase tracking-wider text-primary">{n.category}</span>
-                    <h3 className="font-display text-sm font-bold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{n.title}</h3>
-                    {n.excerpt && <p className="text-[11px] text-muted-foreground line-clamp-2">{n.excerpt}</p>}
-                    <p className="text-[10px] text-muted-foreground/70">por {n.author}</p>
-                  </div>
-                </Link>
+        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
+
+        {mainEvents.length > 0 && (
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary mb-2">Curadoria Roxou</p>
+            <div className="grid auto-rows-[260px] grid-cols-6 gap-4">
+              {mainEvents.slice(0, 7).map((ev, i) => (
+                <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full animate-fade-up`} />
               ))}
             </div>
           </div>
         )}
       </section>
 
-      {/* RIGHT: Now + Week + Featured Partners */}
-      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide">
-        <div className="backdrop-blur-2xl transition-all duration-300 hover:backdrop-blur-md">
-          <NowPanel events={nowEvents.length ? nowEvents : mainEvents.slice(0, 3)} />
-        </div>
+      {/* RIGHT — IA + Categories + Week agenda (glassmorphism, sticky, lazy) */}
+      <aside className="sticky top-20 h-[calc(100vh-150px)] space-y-4 overflow-y-auto scrollbar-hide rounded-3xl backdrop-blur-xl bg-background/30 border border-white/10 p-3">
+        <AIHomeWidget />
+        <DesktopCategoriesPanel />
         <DesktopWeekPanel events={weekEvents} />
         <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
       </aside>
@@ -1001,7 +983,29 @@ function CommandCenter({ todayEvents, todayCount, trending, featured, weekEvents
   );
 }
 
-function DesktopNavPanel({ todayCount }: { todayCount: number }) {
+function DesktopProfilePanel() {
+  const { user, profile } = useV3Profile();
+  const nickname = (profile as any)?.nickname?.trim();
+  const displayName = nickname || profile?.display_name?.split(" ")[0] || "Visitante";
+  const avatar = (profile as any)?.avatar_url;
+
+  return (
+    <Link
+      to={user ? "/v3/perfil" : "/v3/auth"}
+      className="flex items-center gap-3 rounded-2xl border border-border/20 bg-background/30 p-3 transition-all hover:border-primary/40 hover:bg-primary/10"
+    >
+      <div className="h-10 w-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
+        {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <UserIcon className="h-5 w-5 text-primary" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] font-black text-foreground truncate">{displayName}</p>
+        <p className="text-[10px] text-muted-foreground">{user ? "Ver perfil" : "Entrar / Criar conta"}</p>
+      </div>
+      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+    </Link>
+  );
+}
+
   const items = [
     { to: "/v3", label: "Início", icon: Sparkles },
     { to: "/v3/ia", label: "Prudente IA", icon: Bot },
