@@ -107,20 +107,21 @@ export default function V3Profile() {
   const whatsappBR = (profile as any)?.whatsapp as string | null;
 
   return (
-    <div className="pb-32 lg:pb-12 space-y-4">
-      {/* ── Cover (21:9) + Avatar overlap ── */}
-      <div className="relative">
-        <div className="relative aspect-[21/9] w-full overflow-hidden bg-secondary">
+    <div className="pb-32 lg:pb-12 space-y-4 lg:space-y-6">
+      {/* ── Cover (21:9 mobile / 400px desktop) + Avatar overlap ── */}
+      <div className="relative lg:max-w-5xl lg:mx-auto lg:px-6 lg:pt-6">
+        <div className="relative aspect-[21/9] lg:aspect-auto lg:h-[400px] w-full overflow-hidden bg-secondary lg:rounded-3xl">
           {coverUrl ? (
             <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/35 via-accent/15 to-background" />
           )}
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background to-transparent" />
+          {/* Mask gradient on bottom for smooth fade */}
+          <div className="absolute inset-x-0 bottom-0 h-20 lg:h-40 bg-gradient-to-t from-background via-background/70 to-transparent" />
           <button
             type="button"
             onClick={() => navigate("/v3/perfil/editar")}
-            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/70 px-3 py-1.5 text-[11px] font-bold text-foreground backdrop-blur-xl transition-all hover:border-primary/70"
+            className="absolute right-4 top-4 lg:right-6 lg:top-6 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/70 px-3 py-1.5 text-[11px] lg:text-xs font-bold text-foreground backdrop-blur-xl transition-all hover:border-primary/70 lg:hidden"
           >
             <Pencil className="h-3.5 w-3.5" />
             Editar
@@ -128,48 +129,62 @@ export default function V3Profile() {
         </div>
 
         {/* Avatar — borda neon glassmorphism */}
-        <div className="px-4 -mt-12 relative z-10">
-          <div className="relative w-fit">
-            <div
-              className="h-24 w-24 rounded-3xl border-2 border-primary/60 bg-background/70 backdrop-blur-xl p-1"
-              style={{ boxShadow: "0 0 30px hsl(var(--primary) / 0.45), inset 0 0 20px hsl(var(--primary) / 0.15)" }}
-            >
-              <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-secondary flex items-center justify-center">
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <User className="h-10 w-10 text-primary" />
-                )}
+        <div className="px-4 lg:px-0 -mt-12 lg:-mt-20 relative z-10 lg:flex lg:items-end lg:justify-between lg:gap-6">
+          <div className="lg:flex lg:items-end lg:gap-5">
+            <div className="relative w-fit">
+              <div
+                className="h-24 w-24 lg:h-40 lg:w-40 rounded-3xl border-2 border-primary/60 bg-background/70 backdrop-blur-xl p-1"
+                style={{ boxShadow: "0 0 30px hsl(var(--primary) / 0.45), inset 0 0 20px hsl(var(--primary) / 0.15)" }}
+              >
+                <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-secondary flex items-center justify-center">
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <User className="h-10 w-10 lg:h-16 lg:w-16 text-primary" />
+                  )}
+                </div>
               </div>
+              {roles.length > 0 && (
+                <div className="absolute -bottom-2 left-3 flex flex-wrap gap-1.5">
+                  {roles.map(r => (
+                    <span key={r} className="rounded-full border border-primary/30 bg-background/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-primary backdrop-blur-xl">
+                      {r === "passenger" ? "Passageiro" : r === "driver" ? "Motorista" : r}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-            {roles.length > 0 && (
-              <div className="absolute -bottom-2 left-3 flex flex-wrap gap-1.5">
-                {roles.map(r => (
-                  <span key={r} className="rounded-full border border-primary/30 bg-background/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-primary backdrop-blur-xl">
-                    {r === "passenger" ? "Passageiro" : r === "driver" ? "Motorista" : r}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="mt-3 lg:mt-0 lg:pb-2">
+              <h1 className="font-display text-2xl lg:text-4xl font-black text-foreground truncate">
+                {profile?.display_name || user.email?.split("@")[0]}
+              </h1>
+              {nickname && <p className="text-sm lg:text-base font-medium text-primary">@{nickname}</p>}
+              <p className="mt-0.5 text-xs lg:text-sm text-muted-foreground truncate">{user.email}</p>
+            </div>
           </div>
-          <div className="mt-3">
-            <h1 className="font-display text-2xl font-black text-foreground truncate">
-              {profile?.display_name || user.email?.split("@")[0]}
-            </h1>
-            {nickname && <p className="text-sm font-medium text-primary">@{nickname}</p>}
-            <p className="mt-0.5 text-xs text-muted-foreground truncate">{user.email}</p>
-          </div>
+          {/* Edit button — desktop top-right */}
+          <button
+            type="button"
+            onClick={() => navigate("/v3/perfil/editar")}
+            className="hidden lg:inline-flex items-center gap-2 rounded-full border border-primary/40 bg-background/70 px-5 py-2.5 text-sm font-bold text-foreground backdrop-blur-xl transition-all hover:border-primary/70 hover:bg-primary/10 mb-2"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar perfil
+          </button>
         </div>
       </div>
 
-      {/* ── Bento Stats ── */}
-      <div className="grid grid-cols-2 gap-3 px-4">
+      {/* ── Bento Stats — 3-col on desktop ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 px-4 lg:px-6 lg:max-w-5xl lg:mx-auto">
         <StatBentoCard to="#eventos-salvos" icon={Bookmark} label="Salvos" value={savedIds.length} tone="primary" className="min-h-[118px]" />
         <StatBentoCard to="#locais-seguidos" icon={Heart} label="Seguindo" value={followedIds.length} tone="accent" className="min-h-[118px]" />
-        <StatBentoCard to="/v3/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 min-h-[92px]" />
+        <StatBentoCard to="/v3/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 lg:col-span-1 min-h-[92px] lg:min-h-[118px]" />
       </div>
 
-      <div className="px-4 space-y-4">
+      <div className="px-4 lg:px-6 lg:max-w-5xl lg:mx-auto space-y-4 lg:space-y-6">
+
+      {/* ── Security + Followed Partners — side-by-side on desktop ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
 
       {/* ── Security & Contact ── */}
       <div className="rounded-3xl v3-glass p-4">
@@ -227,6 +242,7 @@ export default function V3Profile() {
           </div>
         )}
       </section>
+      </div>{/* /grid security+followed */}
 
       {/* ── Saved Events ── */}
       <section id="eventos-salvos" className="scroll-mt-6">
