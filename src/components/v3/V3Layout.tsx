@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PullToRefresh from "@/components/v3/PullToRefresh";
 
