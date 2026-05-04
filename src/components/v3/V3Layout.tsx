@@ -26,35 +26,16 @@ export default function V3Layout() {
 
   const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
 
+  const initial = (user?.email?.[0] ?? "R").toUpperCase();
+
   return (
     <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
-      {/* Header — Midnight glass (com nav integrada no desktop) */}
+      {/* Header — Midnight glass */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
         <div className="flex items-center justify-between gap-4 px-4 h-14 max-w-7xl mx-auto">
           <Link to="/v3" className="font-display font-bold text-xl tracking-tight shrink-0">
             <span className="text-primary v3-neon-text">Roxou</span>
           </Link>
-
-          {/* Nav Desktop — centralizada/à direita */}
-          <nav className="hidden lg:flex flex-1 items-center justify-center gap-1">
-            {allDesktopItems.map(({ to, icon: Icon, label }) => {
-              const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
-              return (
-                <button
-                  key={to}
-                  onClick={() => navigate(to)}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition-colors ${
-                    active
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${active ? "drop-shadow-[0_0_8px_hsl(var(--v3-neon))]" : ""}`} />
-                  {label}
-                </button>
-              );
-            })}
-          </nav>
 
           <div className="flex items-center gap-2 shrink-0">
             <Link
