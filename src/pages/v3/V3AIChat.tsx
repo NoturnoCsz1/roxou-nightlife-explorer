@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
-import VIPPaywallModal from "@/components/v3/VIPPaywallModal";
+import VIPPaywallModal from "@/components/VIPPaywallModal";
 import { toast } from "sonner";
 
 type ActionCard = {

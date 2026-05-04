@@ -24,7 +24,7 @@ export default function TransportCTA({ eventName, venueName, eventDate }: Transp
   if (venueName) params.set("venue", venueName);
   if (eventDate) params.set("date", eventDate);
   const closed = isRideWindowClosed(eventDate);
-  const target = `/v3/transporte?${params.toString()}`;
+  const target = `/transporte?${params.toString()}`;
 
   return (
     <>
@@ -69,7 +69,7 @@ export default function TransportCTA({ eventName, venueName, eventDate }: Transp
           <AlertDialogFooter className="sm:justify-center">
             <AlertDialogCancel className="rounded-xl">Agora não</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => navigate(`/v3/perfil`)}
+              onClick={() => navigate(`/perfil`)}
               className="rounded-xl bg-primary hover:bg-primary/90"
             >
               Entre para solicitar transporte

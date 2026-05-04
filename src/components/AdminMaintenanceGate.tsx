@@ -5,22 +5,22 @@ import Maintenance from "@/pages/Maintenance";
 // Páginas legadas removidas do gate — agora vivem em /archive/legacy-v2/* (ver App.tsx).
 
 // V3
-import V3Layout from "@/components/v3/V3Layout";
-import V3Home from "@/pages/v3/V3Home";
-import V3Discover from "@/pages/v3/V3Discover";
-import V3Agenda from "@/pages/v3/V3Agenda";
-import V3Profile from "@/pages/v3/V3Profile";
-import V3EventDetail from "@/pages/v3/V3EventDetail";
-import V3LocalDetail from "@/pages/v3/V3LocalDetail";
-import V3Transport from "@/pages/v3/V3Transport";
-import V3RideRequest from "@/pages/v3/V3RideRequest";
-import V3DriverBoard from "@/pages/v3/V3DriverBoard";
-import V3Chat from "@/pages/v3/V3Chat";
-import V3MyRides from "@/pages/v3/V3MyRides";
-import V3Terms from "@/pages/v3/V3Terms";
-import V3Privacy from "@/pages/v3/V3Privacy";
-import V3TermsAcceptance from "@/pages/v3/V3TermsAcceptance";
-import V3Auth from "@/pages/v3/V3Auth";
+import V3Layout from "@/components/V3Layout";
+import V3Home from "@/pages/V3Home";
+import V3Discover from "@/pages/V3Discover";
+import V3Agenda from "@/pages/V3Agenda";
+import V3Profile from "@/pages/V3Profile";
+import V3EventDetail from "@/pages/V3EventDetail";
+import V3LocalDetail from "@/pages/V3LocalDetail";
+import V3Transport from "@/pages/V3Transport";
+import V3RideRequest from "@/pages/V3RideRequest";
+import V3DriverBoard from "@/pages/V3DriverBoard";
+import V3Chat from "@/pages/V3Chat";
+import V3MyRides from "@/pages/V3MyRides";
+import V3Terms from "@/pages/V3Terms";
+import V3Privacy from "@/pages/V3Privacy";
+import V3TermsAcceptance from "@/pages/V3TermsAcceptance";
+import V3Auth from "@/pages/V3Auth";
 
 /**
  * Catch-all: usuários comuns veem Manutenção. Admins veem o app completo

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, MapPin, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import SmartImage from "@/components/v3/SmartImage";
+import SmartImage from "@/components/SmartImage";
 
 interface HeroCardProps {
   slug: string;
@@ -17,7 +17,7 @@ export default function HeroCard({ slug, title, imageUrl, dateTime, venueName, c
   const date = new Date(dateTime);
 
   return (
-    <Link to={`/v3/evento/${slug}`} className="block relative rounded-2xl overflow-hidden mx-4 group">
+    <Link to={`/evento/${slug}`} className="block relative rounded-2xl overflow-hidden mx-4 group">
       <div className="relative h-[220px] overflow-hidden">
         <SmartImage
           src={imageUrl}

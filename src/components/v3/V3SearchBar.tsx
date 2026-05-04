@@ -122,7 +122,7 @@ export default function V3SearchBar({
               {results.map((e) => (
                 <li key={e.id}>
                   <Link
-                    to={`/v3/evento/${e.slug}`}
+                    to={`/evento/${e.slug}`}
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-3 py-2 hover:bg-primary/10 transition-colors group"
                   >
@@ -156,7 +156,7 @@ export default function V3SearchBar({
               <p className="text-xs text-muted-foreground mt-1">Tente outro termo!</p>
               {fallbackEvent && (
                 <Link
-                  to={`/v3/evento/${fallbackEvent.slug}`}
+                  to={`/evento/${fallbackEvent.slug}`}
                   onClick={() => setOpen(false)}
                   className="mt-3 inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
                 >

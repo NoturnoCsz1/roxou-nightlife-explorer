@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MapPin, CalendarDays, Sparkles, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import ReservationDrawer from "@/components/v3/ReservationDrawer";
-import SmartImage from "@/components/v3/SmartImage";
+import ReservationDrawer from "@/components/ReservationDrawer";
+import SmartImage from "@/components/SmartImage";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import { trackEventClick } from "@/lib/ga";
 
@@ -37,7 +37,7 @@ export default function EventCardV3({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { isSaved, toggleSave } = useSavedEvents();
 
-  const goDetail = () => { trackEventClick(id, title); navigate(`/v3/evento/${slug}`); };
+  const goDetail = () => { trackEventClick(id, title); navigate(`/evento/${slug}`); };
 
   return (
     <>

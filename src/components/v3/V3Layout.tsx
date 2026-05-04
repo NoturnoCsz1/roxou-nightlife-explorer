@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
-import PullToRefresh from "@/components/v3/PullToRefresh";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
