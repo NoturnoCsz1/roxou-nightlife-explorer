@@ -133,7 +133,7 @@ export default function V3AIChat() {
               </div>
 
               {/* Starter cards grid */}
-              <div className="grid grid-cols-2 gap-3 w-full max-w-md pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md pt-2">
                 {STARTER_CARDS.map(({ icon: Icon, label, prompt, gradient }) => (
                   <button
                     key={label}
