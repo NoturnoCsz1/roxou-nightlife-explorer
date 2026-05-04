@@ -1,4 +1,4 @@
-import { useState, useMemo, ReactNode } from "react";
+import { useState, useMemo, ReactNode, useEffect, useRef } from "react";
 import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,7 @@ interface Ev {
   id: string; slug: string; title: string; image_url: string | null;
   date_time: string; venue_name: string | null; category: string;
   sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
+  video_url?: string | null;
 }
 
 const VIBE_FILTERS = [
@@ -64,7 +65,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-          .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url")
+          .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
         .gte("date_time", today.toISOString())
         .order("date_time", { ascending: true })
@@ -210,6 +211,16 @@ export default function V3Home() {
     return [];
   }, [events, trendingIds, vibeFilter]);
 
+  // Destaque da Semana — prioriza evento featured com vídeo POV
+  const weeklyHighlight = useMemo(() => {
+    const candidates = events.filter(e => !usedIds.has(e.id));
+    return candidates.find(e => e.featured && e.video_url) ||
+           candidates.find(e => e.video_url) ||
+           candidates.find(e => e.featured) ||
+           null;
+  }, [events, usedIds]);
+  if (weeklyHighlight) usedIds.add(weeklyHighlight.id);
+
   const maxViews = venueRanks[0]?.views || 1;
   const isLoading = loadingEvents;
 
@@ -262,6 +273,12 @@ export default function V3Home() {
           )}
         </div>
       ) : <EmptyHero />}
+
+      {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
+      <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
+
+      {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
+      {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
 
       <AIHomeWidget />
 
@@ -430,24 +447,37 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent" />
       <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
 
-      {/* Top badges */}
+      {/* Top badges — AUTHORITY COUNTER */}
       <div className="absolute top-20 left-4 right-4 flex items-center gap-2 z-10">
         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
           {isToday ? <Flame className="w-3.5 h-3.5 text-primary-foreground" /> : <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />}
           <span className="text-[10px] font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
         </span>
-        {momentumText && (
-          <span className="flex items-center gap-1 px-2.5 py-1.5 rounded-full v3-glass-strong">
-            <TrendingUp className="w-3 h-3 text-accent" />
-            <span className="text-[9px] font-bold text-accent uppercase tracking-wide">{momentumText}</span>
+        {todayCount > 0 && (
+          <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full v3-glass-strong border border-accent/40 v3-pulse-glow">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-70 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent))]" />
+            </span>
+            <span className="text-[10px] font-black text-foreground uppercase tracking-[0.18em]">
+              <span className="text-accent">{todayCount}</span> {todayCount === 1 ? "evento" : "eventos"} hoje
+            </span>
           </span>
         )}
       </div>
 
-      {/* Bottom content — extra-bold gigantic title */}
+      {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 space-y-3 z-10">
-        <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em]">{ev.category}</span>
-        <h1 className="font-display font-black text-[42px] leading-[0.95] text-foreground line-clamp-3 neon-text">
+        <span className="text-[10px] font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
+        <h1 className="font-display font-black text-[44px] leading-[0.92] line-clamp-3 tracking-tight"
+          style={{
+            background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 55%, hsl(var(--v3-neon)) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            filter: "drop-shadow(0 0 18px hsl(var(--v3-neon) / 0.35))",
+          }}
+        >
           {ev.title.toUpperCase()}
         </h1>
 
@@ -1223,3 +1253,207 @@ function Rail({ title, subtitle, children }: { title: string; subtitle?: string;
 }
 
 /* (CategoryChips is imported from shared component) */
+
+/* ─── QUICK FILTER TABS — Hoje · 7 dias · Expo 2026 ─── */
+const EXPO_DATE = new Date("2026-09-10T20:00:00-03:00");
+
+function QuickFilterTabs({ todayCount, weekCount }: { todayCount: number; weekCount: number }) {
+  const tabs = [
+    { key: "hoje", label: "Hoje", count: todayCount, to: "/v3/agenda?filter=today", icon: Flame },
+    { key: "semana", label: "Próx. 7 dias", count: weekCount, to: "/v3/agenda?filter=week", icon: CalendarDays },
+    { key: "expo", label: "Expo 2026", count: null, to: "/expo2026", icon: Sparkles, special: true },
+  ];
+  return (
+    <FadeSection className="px-4 pt-3 pb-1">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+        {tabs.map(({ key, label, count, to, icon: Icon, special }) => (
+          <Link
+            key={key}
+            to={to}
+            className={`shrink-0 snap-start group inline-flex items-center gap-2 rounded-2xl px-4 py-3 border transition-all active:scale-95 ${
+              special
+                ? "border-primary/50 v3-pulse-glow"
+                : "border-border/40 v3-glass hover:border-primary/40"
+            }`}
+            style={
+              special
+                ? {
+                    background:
+                      "linear-gradient(135deg, hsl(var(--v3-neon) / 0.25), hsl(var(--v3-neon-soft) / 0.18))",
+                  }
+                : undefined
+            }
+          >
+            <Icon className={`w-4 h-4 ${special ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" : "text-foreground/80 group-hover:text-primary"}`} />
+            <span className={`text-[12px] font-extrabold uppercase tracking-wider ${special ? "text-foreground" : "text-foreground"}`}>
+              {label}
+            </span>
+            {count !== null && count > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-primary/25 text-[10px] font-black text-primary leading-none">
+                {count}
+              </span>
+            )}
+            {special && <ArrowRight className="w-3.5 h-3.5 text-primary" />}
+          </Link>
+        ))}
+      </div>
+    </FadeSection>
+  );
+}
+
+/* ─── EXPO COUNTDOWN PILL (compact) ─── */
+function ExpoCountdownPill() {
+  const [diff, setDiff] = useState(() => EXPO_DATE.getTime() - Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setDiff(EXPO_DATE.getTime() - Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-primary">
+      <span className="px-2 py-1 rounded-md bg-primary/20 text-primary">{days}d</span>
+      <span className="text-foreground/50">:</span>
+      <span className="px-2 py-1 rounded-md bg-primary/20 text-primary">{hours}h</span>
+      <span className="text-foreground/70">para a Expo</span>
+    </div>
+  );
+}
+
+/* ─── WEEKLY SPOTLIGHT — vídeo POV em background, glass overlay ─── */
+function WeeklySpotlight({ ev }: { ev: Ev }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const hasVideo = !!ev.video_url;
+
+  useEffect(() => {
+    if (videoRef.current && hasVideo) {
+      videoRef.current.play().catch(() => {});
+    }
+  }, [hasVideo]);
+
+  return (
+    <FadeSection className="px-4 pt-4 pb-2">
+      {/* Section header — agency authority */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center neon-glow v3-pulse-glow">
+            <Crown className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.28em] text-primary">Curadoria Roxou</p>
+            <h2 className="font-display font-black text-lg text-foreground uppercase tracking-tight leading-none">
+              Destaque da semana
+            </h2>
+          </div>
+        </div>
+      </div>
+
+      <Link
+        to={`/v3/evento/${ev.slug}`}
+        className="relative block rounded-3xl overflow-hidden v3-glass border border-primary/30 group"
+        style={{
+          aspectRatio: "16 / 20",
+          boxShadow:
+            "0 0 0 1px hsl(var(--v3-neon) / 0.35), 0 0 30px hsl(var(--v3-neon) / 0.25), 0 24px 60px rgba(0,0,0,0.6)",
+        }}
+      >
+        {/* Background — video POV or animated image */}
+        {hasVideo ? (
+          <video
+            ref={videoRef}
+            src={ev.video_url || ""}
+            poster={ev.image_url || undefined}
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="metadata"
+            onCanPlay={() => setVideoReady(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${videoReady ? "opacity-100" : "opacity-0"}`}
+          />
+        ) : null}
+        <img
+          src={ev.image_url || "/placeholder.svg"}
+          alt={ev.title}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+            hasVideo && videoReady ? "opacity-0" : "opacity-100"
+          } group-hover:scale-105 transition-transform`}
+        />
+
+        {/* Cinematic overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 mix-blend-overlay" />
+
+        {/* Top — POV badge */}
+        <div className="absolute top-3 left-3 flex items-center gap-2">
+          <span
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/15"
+            style={{ background: "rgba(0,0,0,0.45)" }}
+          >
+            {hasVideo ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-70 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+                <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">POV ao vivo</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3 h-3 text-primary" />
+                <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Imperdível</span>
+              </>
+            )}
+          </span>
+        </div>
+
+        {/* Bottom — glass info card */}
+        <div className="absolute inset-x-3 bottom-3 rounded-2xl v3-glass-strong p-4 border border-white/10">
+          <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-primary v3-neon-text">
+            {ev.category}
+          </span>
+          <h3 className="font-display font-black text-2xl text-foreground leading-[0.95] mt-1.5 line-clamp-2">
+            {ev.title.toUpperCase()}
+          </h3>
+          <div className="flex items-center gap-3 mt-3 text-[11px] font-bold text-foreground/85">
+            {ev.venue_name && (
+              <span className="flex items-center gap-1 truncate max-w-[60%]">
+                <MapPin className="w-3.5 h-3.5 text-primary shrink-0 drop-shadow-[0_0_6px_hsl(var(--primary))]" />
+                <span className="truncate">{ev.venue_name}</span>
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-accent drop-shadow-[0_0_6px_hsl(var(--accent))]" />
+              <span className="capitalize">{fmtDateFull(ev.date_time)}</span>
+            </span>
+          </div>
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+            <span className="text-[10px] font-black uppercase tracking-[0.18em] text-foreground/70">
+              Toque para explorar
+            </span>
+            <span
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[11px] font-extrabold uppercase tracking-wider text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
+                boxShadow: "0 0 20px hsl(var(--v3-neon) / 0.5)",
+              }}
+            >
+              Ver agora <ArrowRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+        </div>
+
+        {/* Animated corner glow */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/30 blur-3xl group-hover:scale-110 transition-transform duration-700" />
+      </Link>
+
+      {/* Expo countdown — subtle context */}
+      <div className="mt-3 flex items-center justify-center">
+        <ExpoCountdownPill />
+      </div>
+    </FadeSection>
+  );
+}
