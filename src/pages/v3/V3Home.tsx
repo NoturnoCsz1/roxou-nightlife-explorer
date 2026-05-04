@@ -18,6 +18,7 @@ import { useSavedEvents } from "@/hooks/useSavedEvents";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
 import V3SearchBar from "@/components/v3/V3SearchBar";
 import V3VibeChips from "@/components/v3/V3VibeChips";
+import SmartImage from "@/components/v3/SmartImage";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
