@@ -78,26 +78,36 @@ export default function V3Agenda() {
 
   const filteredEvents = useMemo(() => {
     let list = events;
-    if (activeCategory === "expo2026") {
+    const cat = activeCategory.toLowerCase();
+    const now = new Date();
+
+    if (cat === "hoje") {
+      const start = startOfDay(now); const end = endOfDay(now);
+      list = list.filter((e) => { const d = new Date(e.date_time); return d >= start && d <= end; });
+    } else if (cat === "amanha") {
+      const start = startOfDay(addDays(now, 1)); const end = endOfDay(addDays(now, 1));
+      list = list.filter((e) => { const d = new Date(e.date_time); return d >= start && d <= end; });
+    } else if (cat === "fds") {
       list = list.filter((e) => {
-        const hay = `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase();
-        return hay.includes("expo");
+        const day = new Date(e.date_time).getDay();
+        return day === 5 || day === 6 || day === 0;
       });
-    } else if (activeCategory !== "todos") {
-      list = list.filter((e) => (e.category || "").toLowerCase() === activeCategory.toLowerCase());
+    } else if (cat === "expo2026") {
+      list = list.filter((e) => `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase().includes("expo"));
+    } else if (cat !== "todos") {
+      list = list.filter((e) => {
+        const hay = `${e.title} ${e.category || ""} ${(e as any).sub_category || ""}`.toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const needle = cat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return hay.includes(needle);
+      });
     }
     const term = searchTerm.trim().toLowerCase();
     if (term.length >= 2) {
-      const tokens = term
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .split(/\s+/);
+      const tokens = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/\s+/);
       list = list.filter((e) => {
-        const hay = [e.title, e.venue_name, e.category, (e as any).address]
-          .join(" ")
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
+        const hay = [e.title, e.venue_name, e.category, (e as any).address].join(" ").toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         return tokens.every((t) => hay.includes(t));
       });
     }
