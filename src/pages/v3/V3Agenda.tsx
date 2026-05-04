@@ -156,9 +156,9 @@ export default function V3Agenda() {
   return (
     <div className="pb-32 pt-4 max-w-5xl mx-auto px-4">
       {/* ===== HEADER GRADIENTE NEON ===== */}
-      <div className="relative mb-5 overflow-hidden rounded-3xl border border-primary/25 p-5 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
+      <div className="relative mb-5 rounded-3xl border border-primary/25 p-5 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
         <div
-          className="absolute inset-0 opacity-90 -z-10"
+          className="absolute inset-0 opacity-90 -z-10 rounded-3xl overflow-hidden"
           style={{
             background:
               "radial-gradient(circle at 20% 0%, hsl(var(--v3-neon)/0.45), transparent 55%), radial-gradient(circle at 90% 100%, hsl(var(--v3-neon-soft)/0.35), transparent 55%), linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)))",
