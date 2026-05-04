@@ -25,7 +25,7 @@ const CATEGORIES = [
   { key: "funk", label: "Funk", icon: Flame, color: "bg-pink-500/15 text-pink-400" },
   { key: "futebol", label: "Futebol", icon: Trophy, color: "bg-yellow-500/15 text-yellow-400" },
   { key: "universitario", label: "Universitário", icon: GraduationCap, color: "bg-indigo-500/15 text-indigo-400" },
-  { key: "restaurante", label: "Restaurantes", icon: Utensils, color: "bg-rose-500/15 text-rose-400" },
+  { key: "restaurante", label: "Restaurantes", icon: Utensils, color: "bg-primary/15 text-primary shadow-[0_0_12px_hsl(var(--v3-neon)/0.45)]" },
   { key: "cultural", label: "Cultural", icon: Palette, color: "bg-fuchsia-500/15 text-fuchsia-400" },
 ];
 
