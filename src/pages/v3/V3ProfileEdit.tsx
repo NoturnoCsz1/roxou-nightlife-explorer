@@ -87,13 +87,25 @@ export default function V3ProfileEdit() {
     const file = e.target.files?.[0];
     if (!file) return;
     setSavingCover(true);
-    const url = await uploadImage(file, "cover");
-    if (url) {
-      setCoverUrl(url);
-      await supabase.from("profiles").update({ cover_image_url: url } as any).eq("user_id", user.id);
-      toast.success("Capa atualizada!");
+    try {
+      const url = await uploadImage(file, "cover");
+      if (url) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ cover_image_url: url } as any)
+          .eq("user_id", user.id);
+        if (updateError) {
+          toast.error("Erro ao salvar capa: " + updateError.message);
+        } else {
+          // Cache-busting para forçar atualização imediata na tela
+          setCoverUrl(`${url}?t=${Date.now()}`);
+          toast.success("Capa atualizada!");
+        }
+      }
+    } finally {
+      setSavingCover(false);
+      if (e.target) e.target.value = "";
     }
-    setSavingCover(false);
   };
 
   const handleSave = async () => {
@@ -104,14 +116,39 @@ export default function V3ProfileEdit() {
       return;
     }
     setSaving(true);
+
+    const trimmedNick = (result.data.nickname || "").trim();
+    if (trimmedNick) {
+      const { data: existing, error: checkError } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .ilike("nickname", trimmedNick)
+        .neq("user_id", user.id)
+        .maybeSingle();
+      if (checkError) {
+        setSaving(false);
+        toast.error("Erro ao validar apelido: " + checkError.message);
+        return;
+      }
+      if (existing) {
+        setSaving(false);
+        toast.error("Apelido já em uso");
+        return;
+      }
+    }
+
     const { error } = await supabase.from("profiles").update({
       display_name: result.data.display_name,
-      nickname: result.data.nickname || null,
+      nickname: trimmedNick || null,
       whatsapp: result.data.whatsapp || null,
     } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) {
-      toast.error("Erro ao salvar: " + error.message);
+      if ((error as any).code === "23505" || /duplicate|unique/i.test(error.message)) {
+        toast.error("Apelido já em uso");
+      } else {
+        toast.error("Erro ao salvar: " + error.message);
+      }
       return;
     }
     toast.success("Perfil atualizado!");
