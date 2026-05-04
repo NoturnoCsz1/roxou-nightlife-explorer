@@ -521,9 +521,19 @@ const EventosList = () => {
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
               {e.status === "published" ? "Publicado" : "Rascunho"}
             </span>
+            {e.aura_pick && (
+              <span title="Aura recomenda este evento como destaque do dia" className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/25 text-primary border border-primary/40 inline-flex items-center gap-0.5">
+                <Bot className="h-2.5 w-2.5" /> Escolha da Aura
+              </span>
+            )}
+            {e.featured && !e.aura_pick && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/15 text-yellow-300 border border-yellow-400/30 inline-flex items-center gap-0.5">
+                <Flame className="h-2.5 w-2.5" /> Destaque
+              </span>
+            )}
             {isAiOrigin(e) && (
               <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-0.5">
-                <Sparkles className="h-2.5 w-2.5" /> IA
+                <Bot className="h-2.5 w-2.5" /> Aura
               </span>
             )}
             {needsReview(e) && (
@@ -531,6 +541,12 @@ const EventosList = () => {
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
+            <span
+              title={`Qualidade: ${score}/100`}
+              className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${score === 100 ? "bg-green-500/15 text-green-400" : score >= 75 ? "bg-yellow-400/10 text-yellow-400" : "bg-red-500/15 text-red-400"}`}
+            >
+              {score === 100 ? "✔" : score >= 75 ? "⚠" : "❌"} {score}
+            </span>
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
