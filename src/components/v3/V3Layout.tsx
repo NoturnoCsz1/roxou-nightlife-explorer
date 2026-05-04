@@ -77,11 +77,11 @@ export default function V3Layout() {
       <PullToRefresh>
         <div className="flex-1 max-w-7xl w-full mx-auto lg:flex lg:gap-6 lg:px-4">
           {/* Sidebar Desktop */}
-          <aside className="hidden lg:flex lg:flex-col lg:items-start lg:w-64 shrink-0 sticky top-14 self-start py-6 pl-4 pr-2 max-h-[calc(100vh-3.5rem)] overflow-y-auto backdrop-blur-xl bg-background/40">
+          <aside className="hidden lg:flex lg:flex-col lg:items-center lg:w-64 shrink-0 sticky top-14 self-start py-6 px-4 max-h-[calc(100vh-3.5rem)] overflow-y-auto backdrop-blur-xl bg-background/40">
             {/* Card de perfil */}
             <button
               onClick={handleProfileClick}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-colors mb-4"
+              className="w-[200px] flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 transition-colors mb-4"
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-display font-bold text-primary-foreground shrink-0">
                 {initial}
@@ -96,15 +96,15 @@ export default function V3Layout() {
               </div>
             </button>
 
-            {/* Itens de navegação */}
-            <nav className="flex flex-col items-start gap-1 w-full">
+            {/* Itens de navegação — coluna coesa centralizada */}
+            <nav className="flex flex-col items-center gap-1 w-full">
               {allDesktopItems.map(({ to, icon: Icon, label }) => {
                 const active = to === "/v3" ? pathname === "/v3" : pathname.startsWith(to);
                 return (
                   <button
                     key={to}
                     onClick={() => navigate(to)}
-                    className={`w-full inline-flex items-center justify-start gap-3 rounded-xl pl-4 pr-3 py-2.5 text-sm font-semibold transition-colors ${
+                    className={`w-[200px] inline-flex items-center justify-start gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
                       active
                         ? "bg-primary/15 text-primary shadow-[0_0_15px_rgba(168,85,247,0.25)]"
                         : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
