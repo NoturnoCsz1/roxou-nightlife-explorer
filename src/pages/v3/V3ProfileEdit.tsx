@@ -55,19 +55,15 @@ export default function V3ProfileEdit() {
     );
   }
 
-  const uploadImage = async (file: File, kind: "avatar" | "cover") => {
-    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    if (!allowed.includes(file.type.toLowerCase())) {
-      toast.error("Use uma imagem JPG, PNG ou WebP.");
+  const uploadBlob = async (blob: Blob, kind: "avatar" | "cover") => {
+    if (blob.size > 8 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx 8MB).");
       return null;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem muito grande (máx 5MB).");
-      return null;
-    }
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `v3-profiles/${user.id}/${kind}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
+    const path = `v3-profiles/${user.id}/${kind}-${Date.now()}.jpg`;
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (error) {
       toast.error("Falha no upload: " + error.message);
       return null;
@@ -76,27 +72,53 @@ export default function V3ProfileEdit() {
     return data.publicUrl;
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSavingAvatar(true);
-    const url = await uploadImage(file, "avatar");
-    if (url) {
-      setAvatarUrl(url);
-      await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
-      toast.success("Avatar atualizado!");
+  const validateImageFile = (file: File) => {
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      toast.error("Use uma imagem JPG, PNG ou WebP.");
+      return false;
     }
-    setSavingAvatar(false);
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 15MB antes de processar).");
+      return false;
+    }
+    return true;
   };
 
-  async function handleCoverUpload(file: File) {
+  async function handleAvatarConfirm(blob: Blob) {
+    if (!user?.id) {
+      toast.error("Usuário não carregado.");
+      return;
+    }
+    setSavingAvatar(true);
+    try {
+      const url = await uploadBlob(blob, "avatar");
+      if (!url) return;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setAvatarUrl(`${url}?t=${Date.now()}`);
+      setImgKey((k) => k + 1);
+      toast.success("Avatar atualizado!");
+      setPendingAvatar(null);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erro ao atualizar avatar");
+    } finally {
+      setSavingAvatar(false);
+    }
+  }
+
+  async function handleCoverConfirm(blob: Blob) {
     if (!user?.id) {
       toast.error("Usuário não carregado.");
       return;
     }
     setSavingCover(true);
     try {
-      const uploadedUrl = await uploadImage(file, "cover");
+      const uploadedUrl = await uploadBlob(blob, "cover");
       if (!uploadedUrl) return;
       const { error } = await supabase
         .from("profiles")
@@ -104,7 +126,9 @@ export default function V3ProfileEdit() {
         .eq("user_id", user.id);
       if (error) throw error;
       setCoverUrl(`${uploadedUrl}?t=${Date.now()}`);
+      setImgKey((k) => k + 1);
       toast.success("Capa atualizada com sucesso");
+      setPendingCover(null);
     } catch (err) {
       console.error(err);
       toast.error("Erro ao atualizar capa");
