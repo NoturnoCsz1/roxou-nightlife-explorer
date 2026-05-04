@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `Você é o Prudente IA, assistente da ROXOU. Ajude moradores de Presidente Prudente a economizar e decidir o rolê usando dados reais de bares locais (Agrobar, Fábrica, Arapuca, Bear Lounge, parceiros e eventos cadastrados). Seja direto, útil, local e nunca invente preços, horários ou promoções. Quando não houver dado real, diga que é uma sugestão estratégica.`;
+const SYSTEM_PROMPT = `Você é o Prudente IA, assistente da ROXOU para a vida noturna de Presidente Prudente e região. Hoje é ${new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "long", year: "numeric" })}. Use APENAS dados reais de eventos publicados e parceiros cadastrados (Agrobar, Fábrica, Arapuca, Bear Lounge, etc). Priorize sugestões para HOJE quando o usuário perguntar sobre rolê, happy hour ou onde ir. Quando houver "Segunda da Ressaca" no contexto, destaque-a como rolê do dia. Mencione preparativos da Expo Prudente 2026 quando for relevante. Seja direto, local, com tom de amigo curador — nunca invente preços, horários ou promoções. Cite o nome EXATO do evento ou parceiro quando recomendar (isso vira card clicável).`;
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -69,7 +69,7 @@ serve(async (req) => {
     const nowIso = new Date().toISOString();
     const { data: events } = await supabase
       .from("events")
-      .select("id,slug,title,venue_name,date_time,category,sub_category,description,image_url")
+      .select("id,slug,title,venue_name,address,date_time,category,sub_category,description,image_url,video_url")
       .eq("status", "published")
       .gte("date_time", nowIso)
       .order("date_time", { ascending: true })
@@ -190,8 +190,8 @@ serve(async (req) => {
     const mentionedPartners = (partners || []).filter((p: any) => answerLower.includes(String(p.name).toLowerCase())).slice(0, 4);
     const mentionedEvents = (events || []).filter((e: any) => answerLower.includes(String(e.title).toLowerCase())).slice(0, 4);
     const cards = [
-      ...mentionedEvents.map((e: any) => ({ type: "event", id: e.id, title: e.title, subtitle: e.venue_name || "Evento ROXOU", image_url: e.image_url, href: `/v3/evento/${e.slug}` })),
-      ...mentionedPartners.map((p: any) => ({ type: "partner", id: p.id, title: p.name, subtitle: p.type || "Parceiro ROXOU", image_url: p.logo_url, href: `/v3/local/${p.slug}` })),
+      ...mentionedEvents.map((e: any) => ({ type: "event", id: e.id, title: e.title, subtitle: e.venue_name || "Evento ROXOU", image_url: e.image_url, address: e.address || null, video_url: e.video_url || null, date_time: e.date_time, href: `/v3/evento/${e.slug}` })),
+      ...mentionedPartners.map((p: any) => ({ type: "partner", id: p.id, title: p.name, subtitle: p.type || "Parceiro ROXOU", image_url: p.logo_url, address: null, video_url: null, date_time: null, href: `/v3/local/${p.slug}` })),
     ].slice(0, 4);
 
     await supabase.from("ai_chat_messages").insert([
