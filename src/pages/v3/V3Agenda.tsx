@@ -45,7 +45,15 @@ export default function V3Agenda() {
   const [showShareCard, setShowShareCard] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedEvents();
+
+  // Sincroniza ?q= -> searchTerm (entrada vinda dos chips de Vibe na Home)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && q !== searchTerm) setSearchTerm(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["v3-agenda"],
