@@ -26,7 +26,6 @@ export default function V3ProfileEdit() {
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [savingCover, setSavingCover] = useState(false);
   const [saving, setSaving] = useState(false);
-  const coverInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -159,6 +158,20 @@ export default function V3ProfileEdit() {
 
   return (
     <div className="pb-32 lg:pb-12">
+      <input
+        id="cover-upload-input"
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        className="sr-only"
+        onChange={async (e) => {
+          toast.info("Arquivo selecionado");
+          const file = e.target.files?.[0];
+          if (!file) return;
+          await handleCoverUpload(file);
+          e.target.value = "";
+        }}
+      />
+
       {/* Header — glass rounded V3 */}
       <header className="sticky top-2 z-20 mx-3 mt-2">
         <div className="max-w-3xl mx-auto v3-glass-strong rounded-2xl border border-primary/25 px-4 py-3 shadow-[0_0_0_1px_hsl(var(--primary)/0.15),0_8px_28px_-8px_hsl(var(--primary)/0.35)]">
@@ -185,36 +198,14 @@ export default function V3ProfileEdit() {
               <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              toast.info("Clique detectado");
-              coverInputRef.current?.click();
-            }}
-            disabled={savingCover}
-            className={`absolute right-3 bottom-3 z-50 pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/70 backdrop-blur-xl border px-3 py-2 text-[11px] font-bold text-foreground transition ${
-              savingCover
-                ? "border-primary/60 cursor-wait opacity-80 shadow-[0_0_20px_hsl(var(--primary)/0.4)]"
-                : "border-primary/30 hover:border-primary/70 hover:bg-primary/15 hover:text-primary cursor-pointer"
-            }`}
+          <label
+            htmlFor="cover-upload-input"
+            className="absolute right-3 bottom-3 z-[9999] pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur-xl border border-primary/40 px-3 py-2 text-[11px] font-bold text-foreground transition hover:border-primary hover:bg-primary/15 hover:text-primary cursor-pointer"
           >
             {savingCover ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5" />}
             {savingCover ? "Enviando..." : "Trocar capa"}
-          </button>
+          </label>
         </div>
-        <input
-          ref={coverInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
-          className="hidden"
-          onChange={async (e) => {
-            toast.info("Arquivo selecionado");
-            const file = e.target.files?.[0];
-            if (!file) return;
-            await handleCoverUpload(file);
-            e.target.value = "";
-          }}
-        />
 
         {/* Avatar — centralizado, overlap */}
         <div className="flex justify-center -mt-12 mb-4 relative z-10">
