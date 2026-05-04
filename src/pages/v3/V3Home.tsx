@@ -547,17 +547,17 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
 
       {/* Bottom content — extra-bold gigantic title with NEON GRADIENT */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pb-12 lg:px-12 lg:pb-16 space-y-3 lg:space-y-5 z-10 lg:max-w-4xl">
-        <span className="text-[10px] lg:text-xs font-extrabold text-primary uppercase tracking-[0.25em] v3-neon-text">{ev.category}</span>
-        <h1 className="font-display font-black text-[24px] lg:text-5xl xl:text-6xl leading-[0.95] line-clamp-2 tracking-tight"
+        <span className="text-[10px] lg:text-xs font-bold text-primary/90 uppercase tracking-[0.22em]">{ev.category}</span>
+        <h1 className="font-display font-bold text-[22px] lg:text-4xl xl:text-5xl leading-[1.05] line-clamp-2 tracking-tight"
           style={{
-            background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 55%, hsl(var(--v3-neon)) 100%)",
+            background: "linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--foreground)) 70%, hsl(var(--v3-neon)) 100%)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-            filter: "drop-shadow(0 0 18px hsl(var(--v3-neon) / 0.35))",
+            filter: "drop-shadow(0 0 10px hsl(var(--v3-neon) / 0.18))",
           }}
         >
-          {ev.title.toUpperCase()}
+          {ev.title}
         </h1>
 
         {/* Info row with neon icons */}
@@ -585,15 +585,15 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
         <div className="flex gap-2 lg:gap-3 pt-3">
           <Link
             to={`/v3/evento/${ev.slug}`}
-            className="inline-flex items-center gap-1.5 px-6 lg:px-8 py-3 lg:py-4 rounded-full gradient-primary text-primary-foreground text-[12px] lg:text-sm font-extrabold uppercase tracking-wider neon-glow active:scale-95 hover:scale-105 transition-transform"
+            className="inline-flex items-center gap-1.5 px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
-            Ver evento <ArrowRight className="w-4 h-4" />
+            Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
             to={`/v3/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 px-4 lg:px-6 py-3 lg:py-4 rounded-full v3-glass-strong text-foreground text-[11px] lg:text-sm font-bold uppercase tracking-wider hover:border-primary/50 hover:scale-105 transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 lg:px-5 py-2.5 lg:py-3 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-sm font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
           >
-            <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary" /> Como vou?
+            <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary/80" /> Como vou?
           </Link>
         </div>
       </div>
