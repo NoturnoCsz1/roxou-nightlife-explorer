@@ -1231,11 +1231,11 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
       >
         <Link to={`/v3/evento/${ev.slug}`} className="absolute inset-0 block">
           <div className="absolute inset-0 overflow-hidden">
-            <img
-              src={ev.image_url || "/placeholder.svg"}
+            <SmartImage
+              src={ev.image_url}
               alt={ev.title}
+              wrapperClassName="absolute inset-0 w-full h-full"
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/35 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/10" />
