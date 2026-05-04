@@ -275,6 +275,15 @@ export default function V3Home() {
         </div>
       ) : <EmptyHero />}
 
+      {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
+      <div className="px-4 pt-4">
+        <V3SearchBar
+          events={events as any}
+          fallbackEvent={(featured[0] || events[0]) as any}
+          placeholder="Buscar evento, local, vibe..."
+        />
+      </div>
+
       {/* ══════ 1.5 QUICK FILTER TABS — Hoje · 7 dias · Expo ══════ */}
       <QuickFilterTabs todayCount={todayEvents.length} weekCount={weekEvents.length} />
 
