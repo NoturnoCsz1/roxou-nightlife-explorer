@@ -15,6 +15,7 @@ interface News {
   author: string;
   category: string;
   published_at: string | null;
+  source_url?: string | null;
 }
 
 const ExpoNoticia = () => {
