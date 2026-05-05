@@ -483,7 +483,27 @@ const Expo2026 = () => {
         </p>
       </section>
 
-      <footer className="mt-20 border-t border-white/10 py-8 text-center">
+      <footer className="mt-20 border-t border-white/10 py-10 text-center">
+        <div className="mx-auto max-w-3xl px-4 grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-orange-300 font-bold mb-2">
+              Realização
+            </div>
+            <div className="text-sm font-semibold text-white/90 leading-relaxed">
+              Fabio Nascimento <span className="text-muted-foreground">·</span> Prudente em Foco{" "}
+              <span className="text-muted-foreground">·</span> KDS Produções e Eventos
+            </div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-primary font-bold mb-2">
+              Apoio
+            </div>
+            <div className="text-sm font-semibold text-white/90 leading-relaxed">
+              Prefeitura de Presidente Prudente
+            </div>
+          </div>
+        </div>
+
         <div className="text-xs text-muted-foreground">
           Hot site oficial · <span className="text-primary font-bold">ROXOU</span> ×{" "}
           <span className="text-orange-400 font-bold">Expo Prudente 2026</span>
