@@ -4,7 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { isAfter, startOfDay, addDays, format } from "date-fns";
-import { isToday as isTodayFn } from "@/lib/dateUtils";
+import {
+  isTodaySP as isTodayFn,
+  isTomorrowSP,
+  getStartOfTodaySP,
+  getEndOfTodaySP,
+  getDateKeySP,
+  getNowInSaoPaulo,
+} from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
@@ -33,8 +40,7 @@ const isEventLive = (d: string) => {
 const getDayLabel = (d: string) => {
   const dt = new Date(d);
   if (isTodayFn(dt)) return "HOJE";
-  const tomorrow = addDays(startOfDay(new Date()), 1);
-  if (dt >= tomorrow && dt < addDays(tomorrow, 1)) return "AMANHÃ";
+  if (isTomorrowSP(dt)) return "AMANHÃ";
   return format(dt, "EEEE", { locale: ptBR }).toUpperCase();
 };
 
@@ -52,9 +58,10 @@ const VIBE_FILTERS = [
   { key: "grandes", label: "🏟️ Grandes Eventos" },
 ];
 
-const TODAY_KEY = "2026-05-04";
-const TODAY_START = `${TODAY_KEY}T00:00:00`;
-const TODAY_END = "2026-05-05T00:00:00";
+// Chaves de cache derivadas do dia civil de São Paulo (não hardcoded).
+const TODAY_KEY = getDateKeySP(new Date());
+const TODAY_START = getStartOfTodaySP();
+const TODAY_END = getEndOfTodaySP();
 
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
