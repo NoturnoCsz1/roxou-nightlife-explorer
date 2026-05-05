@@ -94,6 +94,7 @@ const App = () => (
             <Route path="parceiros" element={<ParceirosList />} />
             <Route path="parceiros/novo" element={<ParceiroForm />} />
             <Route path="parceiros/:id/editar" element={<ParceiroForm />} />
+            <Route path="estabelecimentos" element={<EstabelecimentosAudit />} />
             <Route path="eventos" element={<EventosList />} />
             <Route path="eventos/novo" element={<EventoForm />} />
             <Route path="eventos/novo/lote" element={<EventoBulkForm />} />
