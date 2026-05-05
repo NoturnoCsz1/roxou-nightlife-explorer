@@ -1252,7 +1252,7 @@ export async function renderStoryV3(
   ctx.restore();
 
   // 10) CTA — STAR ELEMENT, high contrast, strong glow, above footer
-  const ctaText = "🔥 HOJE É NESSE ROLÊ";
+  const ctaText = "🔥 VEJA MAIS EM ROXOU.COM.BR";
   ctx.save();
   ctx.font = "900 42px sans-serif";
   const ctaW = Math.min(ctx.measureText(ctaText).width + 110, W - PAD * 2);
