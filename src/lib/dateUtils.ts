@@ -47,7 +47,14 @@ const addDaysSP = (y: number, m: number, d: number, days: number) => {
  * API oficial de datas (use estas funções em todo o projeto)
  * ============================================================ */
 
-/** "Agora" como Date — o instante é único; o fuso só importa na hora de formatar/comparar. */
+/**
+ * Retorna o instante atual. O `Date` em si é um instante absoluto (UTC interno);
+ * o que importa é que TODA leitura de "dia/mês/ano/hora" derivada dele passa por
+ * `getSpParts()` ou pelos formatadores com `timeZone: "America/Sao_Paulo"`.
+ *
+ * NÃO usar `.getDay()`, `.getDate()`, `.setHours()` ou `.toISOString()` em cima
+ * do retorno desta função para comparar dia civil — sempre via funções SP abaixo.
+ */
 export const getNowInSaoPaulo = () => new Date();
 
 /** ISO do início do dia atual em SP. */
