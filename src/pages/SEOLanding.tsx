@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
-import { isToday, isTomorrow } from "@/lib/dateUtils";
+import { isTodaySP, isTomorrowSP, getWeekendRangeSP } from "@/lib/dateUtils";
 
 /* ─── Landing page config ─── */
 interface LandingConfig {
@@ -25,17 +25,11 @@ interface LandingConfig {
 
 const CITY = "Presidente Prudente";
 
-function getWeekendRange(): [Date, Date] {
-  const now = new Date();
-  const day = now.getDay();
-  const daysUntilSat = day === 6 ? 0 : day === 0 ? -1 : 6 - day;
-  const sat = new Date(now);
-  sat.setDate(now.getDate() + daysUntilSat);
-  sat.setHours(0, 0, 0, 0);
-  const sun = new Date(sat);
-  sun.setDate(sat.getDate() + 1);
-  sun.setHours(23, 59, 59, 999);
-  return [sat, sun];
+// ATENÇÃO: usa America/Sao_Paulo. Não trocar por getDay() local.
+function isInWeekendSP(value: string): boolean {
+  const { start, end } = getWeekendRangeSP();
+  const t = new Date(value).getTime();
+  return t >= new Date(start).getTime() && t < new Date(end).getTime();
 }
 
 const LANDING_CONFIGS: Record<string, LandingConfig> = {
@@ -46,7 +40,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
     metaDescription: `Descubra todos os eventos, festas, baladas e shows acontecendo HOJE em ${CITY}. Atualizado em tempo real.`,
     heading: `🔥 Eventos Hoje em ${CITY}`,
     intro: `Confira o que rola hoje à noite em ${CITY}. Festas, baladas, shows ao vivo e bares — tudo num só lugar, atualizado em tempo real.`,
-    filter: (e) => isToday(new Date(e.date_time)),
+    filter: (e) => isTodaySP(new Date(e.date_time)),
     faqItems: [
       { q: `O que fazer hoje em ${CITY}?`, a: `Confira a lista completa de eventos, festas e baladas acontecendo hoje em ${CITY} aqui na ROXOU. Atualizamos diariamente com os melhores rolês.` },
       { q: `Qual balada abre hoje em ${CITY}?`, a: `Veja acima todos os eventos de balada e festas universitárias com data de hoje. Clique em cada evento para ver horário, local e como comprar ingresso.` },
@@ -66,7 +60,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
     metaDescription: `Veja os eventos confirmados para amanhã em ${CITY}. Baladas, shows, bares e festas.`,
     heading: `📅 Eventos Amanhã em ${CITY}`,
     intro: `Planeje sua noite! Veja todos os eventos confirmados para amanhã em ${CITY}.`,
-    filter: (e) => isTomorrow(new Date(e.date_time)),
+    filter: (e) => isTomorrowSP(new Date(e.date_time)),
     relatedLinks: [
       { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
       { label: "Fim de semana", href: "/eventos-fim-de-semana-em-presidente-prudente" },
@@ -80,11 +74,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
     metaDescription: `Agenda completa do fim de semana em ${CITY}. Festas, baladas, shows e bares no sábado e domingo.`,
     heading: `🎉 Fim de Semana em ${CITY}`,
     intro: `Os melhores eventos do fim de semana em ${CITY}. Sábado e domingo com festas, shows e baladas.`,
-    filter: (e) => {
-      const [sat, sun] = getWeekendRange();
-      const d = new Date(e.date_time);
-      return d >= sat && d <= sun;
-    },
+    filter: (e) => isInWeekendSP(e.date_time),
     faqItems: [
       { q: `O que fazer no fim de semana em ${CITY}?`, a: `Confira a agenda completa do sábado e domingo na ROXOU. Listamos baladas, shows, pagode, sertanejo e mais.` },
       { q: `Quais festas tem no sábado em ${CITY}?`, a: `Todos os eventos de sábado estão listados acima. Filtramos por categoria para facilitar sua escolha.` },
