@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search, ExternalLink, MapPin, Instagram as InstagramIcon, CheckCircle2,
-  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye,
+  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
@@ -61,6 +61,75 @@ const EstabelecimentosAudit = () => {
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
+
+  // AI audit state
+  type SingleAI = {
+    risk: "baixo" | "medio" | "alto";
+    summary: string;
+    problems: string[];
+    suggestions: string[];
+    recommended_actions: string[];
+    priority: "baixa" | "media" | "alta";
+    oficial_candidate: boolean;
+  };
+  type GlobalAI = {
+    total: number;
+    with_errors: number;
+    top_problems: string[];
+    fix_priority: string[];
+    oficial_candidates: string[];
+    high_traffic_bad_data: string[];
+    summary: string;
+  };
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<Record<string, SingleAI>>({});
+  const [globalAI, setGlobalAI] = useState<GlobalAI | null>(null);
+  const [globalBusy, setGlobalBusy] = useState(false);
+
+  async function analyzeOne(e: Establishment) {
+    setAiBusy(e.id);
+    try {
+      const payload = {
+        id: e.id, name: e.name, slug: e.slug, type: e.type, city: e.city,
+        address: e.address, neighborhood: e.neighborhood, instagram: e.instagram,
+        whatsapp: e.whatsapp, status: e.status, active: e.active,
+        instagram_validated: e.instagram_validated,
+        latitude: e.latitude, longitude: e.longitude,
+        event_count: metrics[e.id]?.eventCount ?? 0,
+      };
+      const { data, error } = await supabase.functions.invoke("ai-audit-establishments", {
+        body: { mode: "single", establishment: payload },
+      });
+      if (error || !data?.result) throw new Error(data?.error || error?.message || "Falha");
+      setAiResult(prev => ({ ...prev, [e.id]: data.result }));
+    } catch (err: any) {
+      toast.error(err.message || "Falha na análise IA");
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  async function analyzeBase() {
+    setGlobalBusy(true);
+    try {
+      const list = items.map(e => ({
+        name: e.name, slug: e.slug, type: e.type, city: e.city,
+        address: e.address, instagram: e.instagram, status: e.status,
+        active: e.active, has_coords: e.latitude != null && e.longitude != null,
+        instagram_validated: e.instagram_validated,
+        event_count: metrics[e.id]?.eventCount ?? 0,
+      }));
+      const { data, error } = await supabase.functions.invoke("ai-audit-establishments", {
+        body: { mode: "global", establishments: list },
+      });
+      if (error || !data?.result) throw new Error(data?.error || error?.message || "Falha");
+      setGlobalAI(data.result);
+    } catch (err: any) {
+      toast.error(err.message || "Falha na análise IA");
+    } finally {
+      setGlobalBusy(false);
+    }
+  }
 
   useEffect(() => { load(); }, []);
 
@@ -177,6 +246,14 @@ const EstabelecimentosAudit = () => {
         </div>
         <div className="flex items-center gap-1.5">
           <button
+            onClick={analyzeBase}
+            disabled={globalBusy}
+            className="inline-flex items-center gap-1 rounded-lg bg-primary/15 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/25 disabled:opacity-50"
+          >
+            {globalBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+            Análise IA da base
+          </button>
+          <button
             onClick={async () => {
               const targets = items.filter(e => e.address && (e.latitude == null || e.longitude == null));
               if (!targets.length) { toast.message("Nada a geocodificar"); return; }
@@ -196,6 +273,61 @@ const EstabelecimentosAudit = () => {
           </Link>
         </div>
       </div>
+
+      {globalAI && (
+        <div className="rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-card p-3 space-y-2 relative">
+          <button onClick={() => setGlobalAI(null)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground">
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold">Diagnóstico IA da base</h2>
+          </div>
+          <p className="text-xs text-foreground/90">{globalAI.summary}</p>
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div><span className="text-muted-foreground">Total:</span> <b>{globalAI.total}</b></div>
+            <div><span className="text-muted-foreground">Com erro:</span> <b className="text-destructive">{globalAI.with_errors}</b></div>
+          </div>
+          {globalAI.top_problems?.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Principais problemas</p>
+              <ul className="text-xs space-y-0.5 list-disc list-inside">
+                {globalAI.top_problems.map((p, i) => <li key={i}>{p}</li>)}
+              </ul>
+            </div>
+          )}
+          {globalAI.fix_priority?.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Corrigir primeiro</p>
+              <div className="flex flex-wrap gap-1">
+                {globalAI.fix_priority.slice(0, 12).map((p, i) => (
+                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {globalAI.oficial_candidates?.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Candidatos a Oficial Roxou</p>
+              <div className="flex flex-wrap gap-1">
+                {globalAI.oficial_candidates.map((p, i) => (
+                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {globalAI.high_traffic_bad_data?.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Muitos eventos + dados ruins</p>
+              <div className="flex flex-wrap gap-1">
+                {globalAI.high_traffic_bad_data.map((p, i) => (
+                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Métricas */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -347,6 +479,14 @@ const EstabelecimentosAudit = () => {
                     {busy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
                     Geocodificar endereço
                   </button>
+                  <button
+                    disabled={aiBusy === e.id}
+                    onClick={() => analyzeOne(e)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1 text-[10px] font-semibold text-primary hover:bg-primary/25"
+                  >
+                    {aiBusy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Analisar com IA
+                  </button>
                   <a
                     href={`/local/${e.slug}`}
                     target="_blank"
@@ -356,6 +496,80 @@ const EstabelecimentosAudit = () => {
                     <ExternalLink className="h-3 w-3" /> Ver página
                   </a>
                 </div>
+
+                {aiResult[e.id] && (() => {
+                  const r = aiResult[e.id];
+                  const riskCls = r.risk === "alto" ? "bg-destructive/15 text-destructive border-destructive/40"
+                    : r.risk === "medio" ? "bg-amber-500/15 text-amber-400 border-amber-500/40"
+                    : "bg-green-500/15 text-green-400 border-green-500/40";
+                  return (
+                    <div className={`mt-2 rounded-lg border ${riskCls.split(" ").slice(-1)} bg-card p-2.5 space-y-1.5 relative`}>
+                      <button onClick={() => setAiResult(prev => { const n = { ...prev }; delete n[e.id]; return n; })}
+                        className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground">
+                        <X className="h-3 w-3" />
+                      </button>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Sparkles className="h-3 w-3 text-primary" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide">Diagnóstico IA</span>
+                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${riskCls}`}>Risco {r.risk}</span>
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-secondary/60">Prioridade {r.priority}</span>
+                        {r.oficial_candidate && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-primary/15 text-primary inline-flex items-center gap-0.5">
+                            <ShieldCheck className="h-2.5 w-2.5" />Candidato Oficial
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-foreground/90">{r.summary}</p>
+                      {r.problems?.length > 0 && (
+                        <ul className="text-[10px] space-y-0.5 list-disc list-inside text-amber-400">
+                          {r.problems.map((p, i) => <li key={i} className="text-foreground/80"><span className="text-amber-400">•</span> {p}</li>)}
+                        </ul>
+                      )}
+                      {r.suggestions?.length > 0 && (
+                        <ul className="text-[10px] space-y-0.5 list-disc list-inside text-primary">
+                          {r.suggestions.map((s, i) => <li key={i} className="text-foreground/80">{s}</li>)}
+                        </ul>
+                      )}
+                      {r.recommended_actions?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {r.recommended_actions.includes("geocode") && (
+                            <button onClick={() => generateCoordinates(e)} className="text-[10px] px-2 py-0.5 rounded bg-secondary/60 hover:bg-secondary inline-flex items-center gap-1">
+                              <MapPin className="h-2.5 w-2.5" />Geocodificar
+                            </button>
+                          )}
+                          {r.recommended_actions.includes("validate_instagram") && (
+                            <button onClick={() => validateInstagram(e)} className="text-[10px] px-2 py-0.5 rounded bg-secondary/60 hover:bg-secondary inline-flex items-center gap-1">
+                              <InstagramIcon className="h-2.5 w-2.5" />Validar IG
+                            </button>
+                          )}
+                          {r.recommended_actions.includes("set_ativo") && (
+                            <button onClick={() => setStatus(e, "ativo")} className="text-[10px] px-2 py-0.5 rounded bg-green-500/15 text-green-400 hover:bg-green-500/25">Marcar Ativo</button>
+                          )}
+                          {r.recommended_actions.includes("set_destaque") && (
+                            <button onClick={() => setStatus(e, "destaque")} className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 inline-flex items-center gap-1">
+                              <Star className="h-2.5 w-2.5" />Destaque
+                            </button>
+                          )}
+                          {r.recommended_actions.includes("set_oficial") && (
+                            <button onClick={() => setStatus(e, "oficial")} className="text-[10px] px-2 py-0.5 rounded bg-primary/15 text-primary hover:bg-primary/25 inline-flex items-center gap-1">
+                              <ShieldCheck className="h-2.5 w-2.5" />Oficial Roxou
+                            </button>
+                          )}
+                          {r.recommended_actions.includes("set_bloqueado") && (
+                            <button onClick={() => setStatus(e, "bloqueado")} className="text-[10px] px-2 py-0.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 inline-flex items-center gap-1">
+                              <Ban className="h-2.5 w-2.5" />Bloquear
+                            </button>
+                          )}
+                          {r.recommended_actions.includes("edit") && (
+                            <Link to={`/admin/parceiros/${e.id}/editar`} className="text-[10px] px-2 py-0.5 rounded bg-secondary/60 hover:bg-secondary inline-flex items-center gap-1">
+                              <Edit2 className="h-2.5 w-2.5" />Editar
+                            </Link>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
