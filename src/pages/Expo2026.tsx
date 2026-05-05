@@ -132,13 +132,6 @@ const Expo2026 = () => {
           <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-primary/40 rounded-full blur-3xl" />
 
           <div className="relative text-center">
-            {/* Logo placeholder */}
-            <div className="mx-auto mb-5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-400/40 bg-orange-500/10 backdrop-blur-md">
-              <Flame className="h-3.5 w-3.5 text-orange-400" />
-              <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-orange-300">
-                Expo Prudente Oficial
-              </span>
-            </div>
 
             <h1 className="sr-only">Expo Prudente 2026</h1>
             <img
