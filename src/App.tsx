@@ -16,6 +16,7 @@ import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
 
 import Expo2026 from "./pages/Expo2026";
+import Expo2026Contato from "./pages/Expo2026Contato";
 import ExpoNoticia from "./pages/ExpoNoticia";
 import ExpoShows from "./pages/expo/ExpoShows";
 import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
