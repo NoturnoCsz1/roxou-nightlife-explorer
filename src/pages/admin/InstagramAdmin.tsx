@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap } from "lucide-react";
+import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
@@ -187,14 +187,35 @@ const InstagramAdmin = () => {
   const tokenExpiry = account?.token_expires_at ? new Date(account.token_expires_at) : null;
   const tokenExpiresSoon = tokenExpiry && tokenExpiry.getTime() - Date.now() < 7 * 86400000;
 
-  // Quick metrics (best-effort: real follower counts require Graph API; show DB-derived insights)
-  const publishedPosts = useMemo(() => posts.filter(p => p.status === "published"), [posts]);
-  const last7 = useMemo(() => {
-    const cutoff = Date.now() - 7 * 86400000;
-    return publishedPosts.filter(p => p.published_at && new Date(p.published_at).getTime() >= cutoff);
-  }, [publishedPosts]);
-  const reachEstimate = last7.length * 320; // estimativa simples
-  const engagementEstimate = last7.length * 18;
+  // Manual metrics (sem integração Meta) — persistidos em localStorage
+  const METRICS_KEY = "roxou:ig:manual-metrics";
+  const [manualMetrics, setManualMetrics] = useState<{ followers: number; reach: number; engagement: number; updatedAt: string | null }>(() => {
+    if (typeof window === "undefined") return { followers: 0, reach: 0, engagement: 0, updatedAt: null };
+    try {
+      const raw = localStorage.getItem(METRICS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { followers: 0, reach: 0, engagement: 0, updatedAt: null };
+  });
+  const [editMetrics, setEditMetrics] = useState(false);
+  const [draftMetrics, setDraftMetrics] = useState(manualMetrics);
+
+  function openEditMetrics() {
+    setDraftMetrics(manualMetrics);
+    setEditMetrics(true);
+  }
+  function saveMetrics() {
+    const next = {
+      followers: Number(draftMetrics.followers) || 0,
+      reach: Number(draftMetrics.reach) || 0,
+      engagement: Number(draftMetrics.engagement) || 0,
+      updatedAt: new Date().toISOString(),
+    };
+    setManualMetrics(next);
+    try { localStorage.setItem(METRICS_KEY, JSON.stringify(next)); } catch {}
+    setEditMetrics(false);
+    toast.success("Métricas atualizadas");
+  }
 
   return (
     <div className="space-y-4 md:ml-44">
@@ -223,12 +244,73 @@ const InstagramAdmin = () => {
         </button>
       </div>
 
+      {/* Manual metrics bar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+            <Pencil className="h-3 w-3" /> Modo manual ativo
+          </span>
+          {manualMetrics.updatedAt && (
+            <span className="text-[10px] text-muted-foreground">
+              Atualizado em {new Date(manualMetrics.updatedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={openEditMetrics}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/20 transition"
+        >
+          <RefreshCw className="h-3 w-3" /> Atualizar dados
+        </button>
+      </div>
+
       {/* Quick metrics */}
       <div className="grid grid-cols-3 gap-2">
-        <MetricCard icon={Users} label="Seguidores" value={account ? "—" : "0"} hint={account ? `@${account.username}` : "Conecte uma conta"} />
-        <MetricCard icon={Eye} label="Alcance 7d" value={reachEstimate.toLocaleString("pt-BR")} hint={`${last7.length} posts`} />
-        <MetricCard icon={Heart} label="Engajamento" value={engagementEstimate.toLocaleString("pt-BR")} hint="Estimativa" />
+        <MetricCard icon={Users} label="Seguidores" value={manualMetrics.followers.toLocaleString("pt-BR")} hint={account ? `@${account.username}` : "Manual"} />
+        <MetricCard icon={Eye} label="Alcance 7d" value={manualMetrics.reach.toLocaleString("pt-BR")} hint="Manual" />
+        <MetricCard icon={Heart} label="Engajamento" value={manualMetrics.engagement.toLocaleString("pt-BR")} hint="Manual" />
       </div>
+
+      {/* Edit metrics modal */}
+      {editMetrics && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditMetrics(false)}>
+          <div className="w-full max-w-sm rounded-2xl border border-border/40 bg-card p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">Atualizar dados manuais</h3>
+              <button type="button" onClick={() => setEditMetrics(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {[
+                { key: "followers", label: "Seguidores" },
+                { key: "reach", label: "Alcance 7 dias" },
+                { key: "engagement", label: "Engajamento" },
+              ].map((f) => (
+                <div key={f.key} className="space-y-1">
+                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{f.label}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={(draftMetrics as any)[f.key]}
+                    onChange={(e) => setDraftMetrics({ ...draftMetrics, [f.key]: Number(e.target.value) })}
+                    className="w-full rounded-lg border border-border/40 bg-background px-3 py-2 text-sm text-foreground focus:border-primary outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button type="button" onClick={() => setEditMetrics(false)} className="flex-1 rounded-lg border border-border/40 px-3 py-2 text-[12px] font-semibold text-muted-foreground hover:bg-secondary/40 transition">
+                Cancelar
+              </button>
+              <button type="button" onClick={saveMetrics} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-primary-foreground hover:bg-primary/90 transition">
+                <Check className="h-3.5 w-3.5" /> Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab navigation */}
       <div className="flex gap-1 overflow-x-auto pb-1">
