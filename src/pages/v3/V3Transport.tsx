@@ -35,9 +35,7 @@ function EventRideCard({ event, isGuest }: { event: RealEvent; isGuest: boolean 
   const availabilityText = getRideAvailabilityText(event.date_time);
 
   const params = new URLSearchParams();
-  params.set("event", event.title);
-  if (event.venue_name) params.set("venue", event.venue_name);
-  params.set("date", event.date_time);
+  params.set("eventId", event.id);
   const rideUrl = `/pedir-carona?${params.toString()}`;
   const targetUrl = isGuest ? "/perfil" : rideUrl;
   const ctaLabel = closed
