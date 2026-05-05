@@ -50,6 +50,7 @@ const NoticiaForm = () => {
     category: "geral",
     status: "draft",
     published_at: "",
+    seo_keyword: "",
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [autoPublishIG, setAutoPublishIG] = useState(false);
@@ -74,6 +75,7 @@ const NoticiaForm = () => {
         category: data.category ?? "geral",
         status: data.status ?? "draft",
         published_at: data.published_at ?? "",
+        seo_keyword: (data as any).seo_keyword ?? "",
       });
       setSlugTouched(true);
       setLoading(false);
@@ -91,15 +93,28 @@ const NoticiaForm = () => {
     }
     setSaving(true);
     const finalStatus = publish ? "published" : form.status;
-    const payload = {
+
+    // SEO automático: garante slug com palavra-chave + injeta linha SEO no conteúdo
+    const baseSlug = form.slug || slugify(form.title);
+    const seoSlug = form.seo_keyword
+      ? `${slugify(form.seo_keyword)}-${baseSlug}`.replace(/-+/g, "-").slice(0, 90)
+      : baseSlug;
+
+    const seoFooter = `\n\n<p><em>Cobertura oficial Expo Prudente 2026 em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/expo2026">Veja tudo da Expo Prudente 2026</a>.</p>`;
+    const contentWithSeo = form.content?.includes("Expo Prudente 2026 em Presidente Prudente")
+      ? form.content
+      : (form.content || "") + seoFooter;
+
+    const payload: any = {
       title: form.title,
-      slug: form.slug || slugify(form.title),
+      slug: seoSlug,
       excerpt: form.excerpt || null,
-      content: form.content,
+      content: contentWithSeo,
       cover_image_url: form.cover_image_url || null,
       author: form.author,
       category: form.category,
       status: finalStatus,
+      seo_keyword: form.seo_keyword || null,
       published_at:
         finalStatus === "published"
           ? form.published_at || new Date().toISOString()
@@ -107,14 +122,14 @@ const NoticiaForm = () => {
     };
 
     const op = editing
-      ? supabase.from("expo_news").update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author").single()
-      : supabase.from("expo_news").insert(payload).select("id, cover_image_url, title, excerpt, author").single();
+      ? supabase.from("expo_news").update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author, slug").single()
+      : supabase.from("expo_news").insert(payload).select("id, cover_image_url, title, excerpt, author, slug").single();
 
     const { data: saved, error } = await op;
     if (error) { setSaving(false); return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); }
 
     if (autoPublishIG && payload.status === "published" && saved?.cover_image_url) {
-      const caption = `📰 ${saved.title}\n\n${saved.excerpt || ""}\n\nLeia em roxou.com.br/expo2026/noticia/${payload.slug}\n\nPor ${saved.author} · ROXOU`;
+      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 Expo Prudente 2026\n👉 roxou.com.br/expo2026/noticia/${saved.slug}?utm_source=instagram&utm_medium=organic&utm_campaign=expo2026\n\n#expoprudente #prudente #shows #eventos #presidenteprudente #expo2026`;
       const { data: userData } = await supabase.auth.getUser();
       const { data: postRow, error: postErr } = await supabase.from("instagram_posts").insert({
         caption,
@@ -203,6 +218,21 @@ const NoticiaForm = () => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-orange-400/20 bg-gradient-to-r from-orange-500/5 to-yellow-500/5 p-3">
+            <Label className="flex items-center gap-1.5 text-xs">
+              <Sparkles className="h-3 w-3 text-orange-400" /> Foco SEO (palavra-chave principal)
+            </Label>
+            <Input
+              value={form.seo_keyword}
+              onChange={(e) => setForm((f) => ({ ...f, seo_keyword: e.target.value }))}
+              placeholder='Ex: "shows expo prudente 2026"'
+              className="mt-1.5"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Aparecerá no slug da URL e turbina o ranking no Google. Frase natural focada em Presidente Prudente.
+            </p>
           </div>
         </div>
 

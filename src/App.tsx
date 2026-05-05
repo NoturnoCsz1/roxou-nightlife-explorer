@@ -17,6 +17,9 @@ import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
 
 import Expo2026 from "./pages/Expo2026";
 import ExpoNoticia from "./pages/ExpoNoticia";
+import ExpoShows from "./pages/expo/ExpoShows";
+import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
+import ExpoIngressos from "./pages/expo/ExpoIngressos";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -105,6 +108,9 @@ const App = () => (
 
           {/* ========= HOT SITE EXPO 2026 ========= */}
           <Route path="/expo2026" element={<Expo2026 />} />
+          <Route path="/expo2026/shows" element={<ExpoShows />} />
+          <Route path="/expo2026/programacao" element={<ExpoProgramacao />} />
+          <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
           {/* ========= ROXOU V3 (raiz pública) ========= */}

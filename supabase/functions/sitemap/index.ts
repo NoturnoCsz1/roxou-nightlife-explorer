@@ -44,7 +44,18 @@ Deno.serve(async (req) => {
     { loc: "/transporte", priority: "0.7", changefreq: "weekly" },
     { loc: "/sobre", priority: "0.5", changefreq: "monthly" },
     { loc: "/contato", priority: "0.5", changefreq: "monthly" },
+    { loc: "/expo2026", priority: "1.0", changefreq: "daily" },
+    { loc: "/expo2026/shows", priority: "0.95", changefreq: "daily" },
+    { loc: "/expo2026/programacao", priority: "0.95", changefreq: "daily" },
+    { loc: "/expo2026/ingressos", priority: "0.9", changefreq: "daily" },
   ];
+
+  // Fetch published expo news
+  const { data: expoNews } = await supabase
+    .from("expo_news")
+    .select("slug, published_at, updated_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
 
   // SEO landing pages
   const seoLandings = [
@@ -100,6 +111,18 @@ Deno.serve(async (req) => {
     const lastmod = (partner.created_at || today).split("T")[0];
     xml += `  <url>
     <loc>${BASE_URL}/local/${partner.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
+  // Expo news
+  for (const n of expoNews || []) {
+    const lastmod = (n.updated_at || n.published_at || today).split("T")[0];
+    xml += `  <url>
+    <loc>${BASE_URL}/expo2026/noticia/${n.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

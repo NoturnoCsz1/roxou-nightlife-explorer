@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles, Star, Flame, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
+import ExpoFAQ, { faqJsonLd, DEFAULT_EXPO_FAQ } from "@/components/expo/ExpoFAQ";
 
 interface ExpoNews {
   id: string;
@@ -90,9 +91,11 @@ const Expo2026 = () => {
   return (
     <div className="min-h-screen bg-[#0a0612] text-foreground relative overflow-hidden">
       <SEO
-        title="Expo Prudente 2026 — O Maior Rolê do Oeste | ROXOU"
-        description="Tudo da Expo Prudente 2026: shows, rodeio, gastronomia, ingressos e caronas. Cobertura oficial ROXOU."
+        title="Expo Prudente 2026 — Shows, Programação e Ingressos | ROXOU"
+        description="Tudo da Expo Prudente 2026 em Presidente Prudente: shows confirmados, programação, ingressos, rodeio e caronas. Cobertura oficial ROXOU."
         canonical="https://roxou.com.br/expo2026"
+        keywords="expo prudente 2026, shows prudente, eventos hoje em presidente prudente, o que fazer em prudente, expo presidente prudente"
+        jsonLd={faqJsonLd(DEFAULT_EXPO_FAQ)}
       />
 
       {/* Glow ambient — roxo + laranja */}
@@ -192,7 +195,27 @@ const Expo2026 = () => {
         </div>
       </section>
 
-      {/* ATRAÇÕES CONFIRMADAS */}
+      {/* SUB-PÁGINAS / NAV INTERNA SEO */}
+      <nav aria-label="Seções da Expo" className="px-4 mx-auto max-w-6xl -mt-2">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <Link to="/expo2026/shows" className="rounded-2xl border border-orange-400/20 bg-white/5 hover:bg-orange-500/10 hover:border-orange-400/50 backdrop-blur-md p-4 text-center transition">
+            <Music className="h-5 w-5 mx-auto text-orange-400" />
+            <div className="mt-1 text-xs sm:text-sm font-bold">🔥 Shows</div>
+            <div className="hidden sm:block text-[11px] text-muted-foreground">Atrações confirmadas</div>
+          </Link>
+          <Link to="/expo2026/programacao" className="rounded-2xl border border-yellow-400/20 bg-white/5 hover:bg-yellow-500/10 hover:border-yellow-400/50 backdrop-blur-md p-4 text-center transition">
+            <Calendar className="h-5 w-5 mx-auto text-yellow-400" />
+            <div className="mt-1 text-xs sm:text-sm font-bold">📅 Programação</div>
+            <div className="hidden sm:block text-[11px] text-muted-foreground">Dia a dia da Expo</div>
+          </Link>
+          <Link to="/expo2026/ingressos" className="rounded-2xl border border-primary/30 bg-white/5 hover:bg-primary/10 hover:border-primary/60 backdrop-blur-md p-4 text-center transition">
+            <Ticket className="h-5 w-5 mx-auto text-primary" />
+            <div className="mt-1 text-xs sm:text-sm font-bold">🎟️ Ingressos</div>
+            <div className="hidden sm:block text-[11px] text-muted-foreground">Onde comprar</div>
+          </Link>
+        </div>
+      </nav>
+
       <section id="atracoes" className="px-4 mx-auto max-w-6xl mt-6">
         <div className="flex items-end justify-between mb-5">
           <div>
@@ -396,6 +419,24 @@ const Expo2026 = () => {
             Sistema "Como você vai?" da ROXOU vai conectar passageiros e motoristas durante toda a Expo.
           </p>
         </div>
+      </section>
+
+      {/* FAQ SEO */}
+      <ExpoFAQ />
+
+      {/* SEO local — texto rico para indexação */}
+      <section className="sr-only" aria-hidden="true">
+        <h2>Eventos em Presidente Prudente e Expo Prudente 2026</h2>
+        <p>
+          A Expo Prudente 2026 é o maior evento de Presidente Prudente e do Oeste Paulista. Aqui na
+          ROXOU você encontra a agenda de shows em Prudente, eventos hoje em Presidente Prudente,
+          o que fazer em Prudente, baladas, bares, rodeio, gastronomia e ingressos. Cobertura
+          oficial e atualizada diariamente.
+        </p>
+        <p>
+          Pesquise por: expo prudente 2026, shows prudente, programação expo prudente, ingressos
+          expo prudente, eventos em presidente prudente, agenda de shows em prudente.
+        </p>
       </section>
 
       <footer className="mt-20 border-t border-white/10 py-8 text-center">
