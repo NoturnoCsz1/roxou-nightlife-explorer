@@ -1,20 +1,131 @@
-const TZ = "America/Sao_Paulo";
+// ATENÇÃO:
+// Toda lógica de datas da Roxou/Hotshow deve usar America/Sao_Paulo.
+// Não usar Date UTC diretamente para filtros de eventos.
+// Alterar isso pode quebrar agenda, semana, hoje, amanhã e final de semana.
+
+const TIMEZONE = "America/Sao_Paulo";
+const TZ = TIMEZONE;
+const SP_OFFSET = "-03:00"; // São Paulo não adota mais horário de verão
+
+/* ============================================================
+ * Núcleo: extrair partes de uma data já no fuso de São Paulo
+ * ============================================================ */
+
+/** Retorna { y, m, d, dow, hh, mm } da data informada, no fuso de SP. dow: 0=domingo..6=sábado */
+const getSpParts = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    weekday: "short", hour12: false,
+  }).formatToParts(date);
+  const get = (t: string) => parts.find(p => p.type === t)?.value || "";
+  const weekdayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return {
+    y: Number(get("year")),
+    m: Number(get("month")),
+    d: Number(get("day")),
+    hh: Number(get("hour")),
+    mm: Number(get("minute")),
+    dow: weekdayMap[get("weekday")] ?? new Date(date).getUTCDay(),
+  };
+};
+
+const ymdToISO = (y: number, m: number, d: number, time = "00:00:00") =>
+  `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}T${time}${SP_OFFSET}`;
+
+/** Soma `days` a um YMD interpretando-o como dia civil em SP, retorna novo {y,m,d}. */
+const addDaysSP = (y: number, m: number, d: number, days: number) => {
+  // Cria um Date "âncora" às 12h SP daquele dia e soma dias em ms (longe das bordas DST).
+  const anchor = new Date(`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}T12:00:00${SP_OFFSET}`);
+  const next = new Date(anchor.getTime() + days * 24 * 60 * 60 * 1000);
+  const p = getSpParts(next);
+  return { y: p.y, m: p.m, d: p.d };
+};
+
+/* ============================================================
+ * API oficial de datas (use estas funções em todo o projeto)
+ * ============================================================ */
+
+/** "Agora" como Date — o instante é único; o fuso só importa na hora de formatar/comparar. */
+export const getNowInSaoPaulo = () => new Date();
+
+/** ISO do início do dia atual em SP. */
+export const getStartOfTodaySP = () => {
+  const { y, m, d } = getSpParts(new Date());
+  return ymdToISO(y, m, d, "00:00:00");
+};
+
+/** ISO do fim do dia atual em SP (exclusivo: 00:00 do dia seguinte). */
+export const getEndOfTodaySP = () => {
+  const { y, m, d } = getSpParts(new Date());
+  const t = addDaysSP(y, m, d, 1);
+  return ymdToISO(t.y, t.m, t.d, "00:00:00");
+};
+
+/** Intervalo [start, end) de amanhã em SP. */
+export const getTomorrowRangeSP = () => {
+  const { y, m, d } = getSpParts(new Date());
+  const t1 = addDaysSP(y, m, d, 1);
+  const t2 = addDaysSP(y, m, d, 2);
+  return { start: ymdToISO(t1.y, t1.m, t1.d), end: ymdToISO(t2.y, t2.m, t2.d) };
+};
 
 /**
- * Convert a "datetime-local" string (e.g. "2026-05-15T22:00") into an
- * ISO timestamp anchored to São Paulo (-03:00), regardless of the browser TZ.
- * This is the ONLY safe way to persist admin-entered local times.
+ * Intervalo [start, end) do próximo final de semana em SP.
+ * Considera sábado e domingo. Se hoje for sábado ou domingo, retorna o FDS atual.
+ */
+export const getWeekendRangeSP = () => {
+  const { y, m, d, dow } = getSpParts(new Date());
+  // dow: 0=dom, 6=sáb
+  let toSat: number;
+  if (dow === 6) toSat = 0;
+  else if (dow === 0) toSat = -1;
+  else toSat = 6 - dow;
+  const sat = addDaysSP(y, m, d, toSat);
+  const monAfter = addDaysSP(sat.y, sat.m, sat.d, 2);
+  return { start: ymdToISO(sat.y, sat.m, sat.d), end: ymdToISO(monAfter.y, monAfter.m, monAfter.d) };
+};
+
+/** Compara duas datas pelo dia civil em SP. */
+export const isSameDaySP = (a: Date, b: Date) => {
+  const p1 = getSpParts(a), p2 = getSpParts(b);
+  return p1.y === p2.y && p1.m === p2.m && p1.d === p2.d;
+};
+
+/** "Hoje" no fuso de SP. */
+export const isTodaySP = (date: Date) => isSameDaySP(date, new Date());
+
+/** "Amanhã" no fuso de SP. */
+export const isTomorrowSP = (date: Date) => {
+  const { y, m, d } = getSpParts(new Date());
+  const t = addDaysSP(y, m, d, 1);
+  const p = getSpParts(date);
+  return p.y === t.y && p.m === t.m && p.d === t.d;
+};
+
+/** Garante que um valor de data do banco vire Date. */
+export const getEventDateSP = (value: string | Date | null | undefined): Date | null => {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+/* ============================================================
+ * Helpers de conversão para o admin (form datetime-local <-> ISO)
+ * ============================================================ */
+
+/**
+ * Converte uma string "datetime-local" em ISO ancorado em SP (-03:00),
+ * independente do fuso do navegador.
  */
 export const spLocalToISO = (localDateTime: string): string => {
   if (!localDateTime) return "";
   const trimmed = localDateTime.length === 16 ? `${localDateTime}:00` : localDateTime;
-  return `${trimmed}-03:00`;
+  return `${trimmed}${SP_OFFSET}`;
 };
 
-/**
- * Convert a stored ISO timestamp into the "datetime-local" string that
- * represents the same wall-clock time in São Paulo.
- */
+/** Converte um ISO em uma string "datetime-local" representando a hora local de SP. */
 export const isoToSpLocal = (iso: string | null | undefined): string => {
   if (!iso) return "";
   const d = new Date(iso);
@@ -28,47 +139,47 @@ export const isoToSpLocal = (iso: string | null | undefined): string => {
   return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
 };
 
-/** Format time as HH:mm in São Paulo timezone */
+/* ============================================================
+ * Formatação (sempre no fuso de SP)
+ * ============================================================ */
+
 export const formatTime = (date: Date) =>
   date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
 
-/** Format short date like "07 mar." in São Paulo timezone */
 export const formatDateShort = (date: Date) =>
   date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: TZ });
 
-/** Format full date like "sexta-feira, 07 de março de 2026" */
 export const formatDateFull = (date: Date) =>
   date.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric", timeZone: TZ });
 
-/** Format day number */
 export const formatDay = (date: Date) =>
   date.toLocaleDateString("pt-BR", { day: "2-digit", timeZone: TZ });
 
-/** Format short month uppercase */
 export const formatMonthShort = (date: Date) =>
   date.toLocaleDateString("pt-BR", { month: "short", timeZone: TZ }).replace(".", "").toUpperCase();
 
-/** Format readable date for headers */
 export const formatDateHeader = (date: Date) =>
   date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: TZ });
 
-/** Get today's date string in São Paulo timezone for comparisons */
+/** Alias para data completa em SP. */
+export const formatDateSP = formatDateFull;
+/** Alias para dia da semana em SP (ex.: "sexta-feira"). */
+export const formatWeekdaySP = (date: Date) =>
+  date.toLocaleDateString("pt-BR", { weekday: "long", timeZone: TZ });
+
+/* ============================================================
+ * Compatibilidade com código existente (mantém nomes antigos)
+ * ============================================================ */
+
 export const getTodayStr = () => {
-  const now = new Date();
-  return now.toLocaleDateString("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: TZ });
+  const { y, m, d } = getSpParts(new Date());
+  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 };
 
-/** Get a date's string in São Paulo timezone for comparisons */
-export const getDateStr = (date: Date) =>
-  date.toLocaleDateString("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: TZ });
-
-/** Check if a date is today in São Paulo timezone */
-export const isToday = (date: Date) => getDateStr(date) === getTodayStr();
-
-/** Check if a date is tomorrow in São Paulo timezone */
-export const isTomorrow = (date: Date) => {
-  // Add 24h to "now" — comparison is then done via SP-formatted strings,
-  // which is independent of the browser's local timezone.
-  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  return getDateStr(date) === getDateStr(tomorrow);
+export const getDateStr = (date: Date) => {
+  const { y, m, d } = getSpParts(date);
+  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
 };
+
+export const isToday = (date: Date) => isTodaySP(date);
+export const isTomorrow = (date: Date) => isTomorrowSP(date);
