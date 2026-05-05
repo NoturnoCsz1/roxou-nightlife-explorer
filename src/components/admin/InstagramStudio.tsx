@@ -127,7 +127,7 @@ const InstagramStudio = () => {
     const { start, end } = getDateRange(dateFilter);
 
     let query = supabase.from("events")
-      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
+      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url, aura_pick")
       .eq("status", "published")
       .gte("date_time", start.toISOString())
       .order("date_time");
