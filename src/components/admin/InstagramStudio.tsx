@@ -45,6 +45,7 @@ interface ScoredEvent extends CoverEvent {
   views: number;
   saves: number;
   verifiedPartner: boolean;
+  aura_pick: boolean;
 }
 
 interface GeneratedItem {
