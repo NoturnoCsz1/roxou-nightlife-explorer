@@ -1,24 +1,35 @@
 import { corsHeaders } from "@supabase/supabase-js/cors";
-
-interface Payload {
-  name: string;
-  email: string;
-  phone: string;
-  contact_type: string;
-  subject: string;
-  message: string;
-}
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const TO_EMAIL = Deno.env.get("CONTACT_TO_EMAIL") ?? "contato@roxou.com.br";
-const FROM_EMAIL = "Expo Prudente 2026 <onboarding@resend.dev>";
+const FROM_EMAIL = Deno.env.get("CONTACT_FROM_EMAIL") ?? "Roxou <onboarding@resend.dev>";
 
-function escapeHtml(s: string) {
-  return s
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const ALLOWED_TYPES = [
+  "Dúvidas sobre o evento",
+  "Proposta comercial",
+  "Patrocínio",
+  "Imprensa",
+  "Trabalhe com a gente",
+  "Outro",
+];
+
+const escapeHtml = (s: string) =>
+  String(s ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+function jsonResponse(status: number, body: Record<string, unknown>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
@@ -32,7 +43,6 @@ async function sendEmail(to: string, subject: string, html: string) {
   });
   if (!res.ok) {
     const txt = await res.text();
-    console.error("Resend error", res.status, txt);
     throw new Error(`Resend ${res.status}: ${txt}`);
   }
   return res.json();
@@ -40,37 +50,69 @@ async function sendEmail(to: string, subject: string, html: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return jsonResponse(405, { success: false, error: "Método não permitido" });
 
   try {
-    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY não configurada");
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY ausente");
+      return jsonResponse(500, { success: false, error: "Configuração de e-mail indisponível." });
+    }
 
-    const body = (await req.json()) as Payload;
-    const { name, email, phone, contact_type, subject, message } = body;
+    const body = await req.json().catch(() => null);
+    if (!body) return jsonResponse(400, { success: false, error: "JSON inválido." });
 
-    if (!name || !email || !phone || !contact_type || !subject || !message || message.length < 10) {
-      return new Response(JSON.stringify({ error: "Dados inválidos" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const name = String(body.name ?? "").trim();
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const phone = String(body.phone ?? "").trim();
+    const contact_type = String(body.contact_type ?? "").trim();
+    const subject = String(body.subject ?? "").trim();
+    const message = String(body.message ?? "").trim();
+
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const errors: string[] = [];
+    if (!name || name.length > 120) errors.push("name");
+    if (!email || !emailRe.test(email) || email.length > 160) errors.push("email");
+    if (!phone || phone.length > 30) errors.push("phone");
+    if (!contact_type || !ALLOWED_TYPES.includes(contact_type)) errors.push("contact_type");
+    if (!subject || subject.length > 200) errors.push("subject");
+    if (!message || message.length < 10 || message.length > 2000) errors.push("message");
+
+    if (errors.length) {
+      return jsonResponse(400, { success: false, error: "Dados inválidos.", fields: errors });
+    }
+
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    });
+
+    const { error: dbError } = await supabase.from("expo2026_contacts").insert({
+      name, email, phone, contact_type, subject, message,
+      source: "expo2026_contato",
+      status: "novo",
+    });
+
+    if (dbError) {
+      console.error("DB insert error", dbError.message);
+      return jsonResponse(500, { success: false, error: "Não foi possível salvar sua mensagem." });
     }
 
     const now = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
     const adminHtml = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0a0a0f;color:#fff;border-radius:12px;">
-        <h2 style="color:#a855f7;margin:0 0 16px;">Novo contato — Expo Prudente 2026</h2>
+        <h2 style="color:#a855f7;margin:0 0 16px;">Novo contato recebido — Expo Prudente 2026</h2>
         <table style="width:100%;border-collapse:collapse;color:#e5e5e5;">
           <tr><td style="padding:8px 0;color:#a855f7;"><b>Nome:</b></td><td>${escapeHtml(name)}</td></tr>
           <tr><td style="padding:8px 0;color:#a855f7;"><b>E-mail:</b></td><td>${escapeHtml(email)}</td></tr>
-          <tr><td style="padding:8px 0;color:#a855f7;"><b>Telefone:</b></td><td>${escapeHtml(phone)}</td></tr>
-          <tr><td style="padding:8px 0;color:#a855f7;"><b>Tipo:</b></td><td>${escapeHtml(contact_type)}</td></tr>
+          <tr><td style="padding:8px 0;color:#a855f7;"><b>Telefone/WhatsApp:</b></td><td>${escapeHtml(phone)}</td></tr>
+          <tr><td style="padding:8px 0;color:#a855f7;"><b>Tipo de contato:</b></td><td>${escapeHtml(contact_type)}</td></tr>
           <tr><td style="padding:8px 0;color:#a855f7;"><b>Assunto:</b></td><td>${escapeHtml(subject)}</td></tr>
         </table>
         <div style="margin-top:16px;padding:16px;background:#18181b;border-left:3px solid #7c3aed;border-radius:6px;">
-          <b style="color:#a855f7;">Mensagem:</b><br/>
+          <b style="color:#a855f7;">Mensagem:</b>
           <p style="white-space:pre-wrap;color:#e5e5e5;margin:8px 0 0;">${escapeHtml(message)}</p>
         </div>
-        <p style="margin-top:16px;color:#71717a;font-size:12px;">Recebido em ${now}</p>
+        <p style="margin-top:16px;color:#71717a;font-size:12px;">Enviado pela página /expo2026/contato em ${now}</p>
       </div>`;
 
     const userHtml = `
@@ -83,24 +125,25 @@ Deno.serve(async (req) => {
           <p style="margin:8px 0 0;color:#e5e5e5;"><b>Assunto:</b> ${escapeHtml(subject)}</p>
           <p style="margin:4px 0 0;color:#e5e5e5;"><b>Tipo:</b> ${escapeHtml(contact_type)}</p>
         </div>
-        <p style="margin-top:24px;color:#71717a;font-size:12px;">Roxou — O portal de eventos de Presidente Prudente</p>
+        <p style="margin-top:24px;color:#71717a;font-size:12px;">Roxou — O seu portal de eventos.</p>
       </div>`;
 
-    await sendEmail(TO_EMAIL, "Novo contato recebido — Expo Prudente 2026", adminHtml);
+    try {
+      await sendEmail(TO_EMAIL, "Novo contato recebido — Expo Prudente 2026", adminHtml);
+    } catch (e) {
+      console.error("Falha enviando e-mail admin:", (e as Error).message);
+      return jsonResponse(500, { success: false, error: "Não foi possível enviar sua mensagem." });
+    }
+
     try {
       await sendEmail(email, "Recebemos sua mensagem — Expo Prudente 2026", userHtml);
     } catch (e) {
-      console.error("Falha no auto-reply (seguindo)", e);
+      console.error("Falha enviando auto-reply (seguindo):", (e as Error).message);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(200, { success: true, message: "Mensagem enviada com sucesso." });
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Erro inesperado:", (e as Error).message);
+    return jsonResponse(500, { success: false, error: "Não foi possível enviar sua mensagem." });
   }
 });
