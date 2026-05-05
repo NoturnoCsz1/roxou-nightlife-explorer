@@ -49,14 +49,6 @@ const TBA_DATES = [
   { date: "14/09/2026", label: "Segunda" },
 ];
 
-const GALLERY = [
-  "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=70",
-];
 
 function useExpoCountdown() {
   const target = useMemo(() => new Date("2026-09-10T20:00:00-03:00").getTime(), []);
