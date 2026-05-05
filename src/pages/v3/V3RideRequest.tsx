@@ -61,6 +61,13 @@ async function loadGoogleMaps(): Promise<void> {
   return mapsLoadPromise;
 }
 
+interface PartnerData {
+  name: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  maps_place_id?: string | null;
+}
 interface EventData {
   id: string;
   title: string;
@@ -70,6 +77,8 @@ interface EventData {
   latitude: number | null;
   longitude: number | null;
   status: string;
+  partner_id: string | null;
+  partner?: PartnerData | null;
 }
 
 export default function V3RideRequest() {
