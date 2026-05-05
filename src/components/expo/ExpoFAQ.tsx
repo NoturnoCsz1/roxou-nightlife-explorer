@@ -9,11 +9,11 @@ export interface FAQItem {
 export const DEFAULT_EXPO_FAQ: FAQItem[] = [
   {
     q: "Quando começa a Expo Prudente 2026?",
-    a: "A Expo Prudente 2026 acontece entre 10 e 14 de setembro de 2026 em Presidente Prudente, no Recinto Jacob Tosello. As datas oficiais e a programação completa de shows estão sendo atualizadas aqui na ROXOU.",
+    a: "A Expo Prudente 2026 acontece entre 10 e 14 de setembro de 2026 em Presidente Prudente, no Recinto de Exposições Jacob Tosello. As datas oficiais e a programação completa de shows estão sendo atualizadas aqui na ROXOU.",
   },
   {
     q: "Onde acontece a Expo Prudente?",
-    a: "A Expo Prudente é realizada no Recinto Jacob Tosello, em Presidente Prudente (SP), o maior espaço de eventos do Oeste Paulista, com estrutura de arena de shows, rodeio, praça gastronômica e parque de exposições.",
+    a: "A Expo Prudente é realizada no Recinto de Exposições Jacob Tosello, em Presidente Prudente (SP), o maior espaço de eventos do Oeste Paulista, com estrutura de arena de shows, rodeio, praça gastronômica e parque de exposições.",
   },
   {
     q: "Quais shows já foram confirmados na Expo Prudente 2026?",

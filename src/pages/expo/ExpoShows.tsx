@@ -70,7 +70,7 @@ const ExpoShows = () => {
             <MapPin className="h-5 w-5 text-orange-400 mb-2" />
             <div className="font-bold">Onde</div>
             <div className="text-muted-foreground">
-              Recinto Jacob Tosello — Presidente Prudente, SP
+              Recinto de Exposições Jacob Tosello — Presidente Prudente, SP
             </div>
           </div>
         </div>

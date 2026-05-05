@@ -42,7 +42,7 @@ const ExpoProgramacao = () => {
           Confira a <strong>programação completa da Expo Prudente 2026</strong> dia a dia. A maior
           festa de <strong>Presidente Prudente</strong> reúne shows nacionais, rodeio profissional,
           praça gastronômica e atrações para toda a família entre 10 e 14 de setembro de 2026, no
-          Recinto Jacob Tosello.
+          Recinto de Exposições Jacob Tosello.
         </p>
         <p className="mt-3 text-sm text-white/60 leading-relaxed">
           A ROXOU é a fonte oficial da agenda de <strong>eventos em Presidente Prudente</strong>.
