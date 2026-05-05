@@ -268,10 +268,33 @@ const Expo2026 = () => {
                 <img
                   src={a.image}
                   alt={a.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  style={{ objectPosition: a.position }}
+                  className="w-full h-full object-cover scale-[1.03] group-hover:scale-[1.08] transition-transform duration-700"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                {/* Overlay base para legibilidade */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(9,9,11,0.88) 0%, rgba(9,9,11,0.45) 40%, rgba(9,9,11,0.1) 100%)",
+                  }}
+                />
+                {/* Light leak no topo (estilo show) */}
+                <div
+                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none mix-blend-screen opacity-70"
+                  style={{
+                    background:
+                      "radial-gradient(ellipse at 30% 0%, rgba(168,85,247,0.45), transparent 55%), radial-gradient(ellipse at 75% 0%, rgba(255,140,0,0.35), transparent 60%)",
+                  }}
+                />
+                {/* Vinheta nas bordas */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    boxShadow: "inset 0 0 80px 20px rgba(0,0,0,0.55)",
+                  }}
+                />
                 <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/20 border border-green-400/40 backdrop-blur-md">
                   <CheckCircle2 className="h-3 w-3 text-green-300" />
                   <span className="text-[10px] font-bold uppercase tracking-wider text-green-300">
