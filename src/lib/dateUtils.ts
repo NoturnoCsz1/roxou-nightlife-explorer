@@ -190,3 +190,30 @@ export const getDateStr = (date: Date) => {
 
 export const isToday = (date: Date) => isTodaySP(date);
 export const isTomorrow = (date: Date) => isTomorrowSP(date);
+
+/* ============================================================
+ * Agrupamento por dia civil em SP
+ * ============================================================ */
+
+/** Chave YYYY-MM-DD do dia civil em SP. Use sempre para agrupar eventos por dia. */
+export const getDateKeySP = (date: Date) => {
+  const { y, m, d } = getSpParts(date);
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+};
+
+/**
+ * Recebe uma chave "YYYY-MM-DD" (já em SP) e retorna um Date âncora ao meio-dia
+ * de SP — seguro para formatadores com timeZone: "America/Sao_Paulo".
+ */
+export const dateKeySPToAnchorDate = (key: string): Date =>
+  new Date(`${key}T12:00:00${SP_OFFSET}`);
+
+/** Cabeçalho longo: "terça-feira, 5 de maio" sempre em SP. */
+export const formatDateHeaderSP = (date: Date) =>
+  date.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: TZ,
+  });
+
