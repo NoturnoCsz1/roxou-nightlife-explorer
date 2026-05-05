@@ -62,6 +62,75 @@ const EstabelecimentosAudit = () => {
   const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
 
+  // AI audit state
+  type SingleAI = {
+    risk: "baixo" | "medio" | "alto";
+    summary: string;
+    problems: string[];
+    suggestions: string[];
+    recommended_actions: string[];
+    priority: "baixa" | "media" | "alta";
+    oficial_candidate: boolean;
+  };
+  type GlobalAI = {
+    total: number;
+    with_errors: number;
+    top_problems: string[];
+    fix_priority: string[];
+    oficial_candidates: string[];
+    high_traffic_bad_data: string[];
+    summary: string;
+  };
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<Record<string, SingleAI>>({});
+  const [globalAI, setGlobalAI] = useState<GlobalAI | null>(null);
+  const [globalBusy, setGlobalBusy] = useState(false);
+
+  async function analyzeOne(e: Establishment) {
+    setAiBusy(e.id);
+    try {
+      const payload = {
+        id: e.id, name: e.name, slug: e.slug, type: e.type, city: e.city,
+        address: e.address, neighborhood: e.neighborhood, instagram: e.instagram,
+        whatsapp: e.whatsapp, status: e.status, active: e.active,
+        instagram_validated: e.instagram_validated,
+        latitude: e.latitude, longitude: e.longitude,
+        event_count: metrics[e.id]?.eventCount ?? 0,
+      };
+      const { data, error } = await supabase.functions.invoke("ai-audit-establishments", {
+        body: { mode: "single", establishment: payload },
+      });
+      if (error || !data?.result) throw new Error(data?.error || error?.message || "Falha");
+      setAiResult(prev => ({ ...prev, [e.id]: data.result }));
+    } catch (err: any) {
+      toast.error(err.message || "Falha na análise IA");
+    } finally {
+      setAiBusy(null);
+    }
+  }
+
+  async function analyzeBase() {
+    setGlobalBusy(true);
+    try {
+      const list = items.map(e => ({
+        name: e.name, slug: e.slug, type: e.type, city: e.city,
+        address: e.address, instagram: e.instagram, status: e.status,
+        active: e.active, has_coords: e.latitude != null && e.longitude != null,
+        instagram_validated: e.instagram_validated,
+        event_count: metrics[e.id]?.eventCount ?? 0,
+      }));
+      const { data, error } = await supabase.functions.invoke("ai-audit-establishments", {
+        body: { mode: "global", establishments: list },
+      });
+      if (error || !data?.result) throw new Error(data?.error || error?.message || "Falha");
+      setGlobalAI(data.result);
+    } catch (err: any) {
+      toast.error(err.message || "Falha na análise IA");
+    } finally {
+      setGlobalBusy(false);
+    }
+  }
+
   useEffect(() => { load(); }, []);
 
   async function load() {
