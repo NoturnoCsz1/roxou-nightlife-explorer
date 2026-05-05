@@ -128,8 +128,11 @@ const NoticiaForm = () => {
       ? `${slugify(form.seo_keyword)}-${baseSlug}`.replace(/-+/g, "-").slice(0, 90)
       : baseSlug;
 
-    const seoFooter = `\n\n<p><em>Cobertura oficial Expo Prudente 2026 em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/expo2026">Veja tudo da Expo Prudente 2026</a>.</p>`;
-    const contentWithSeo = form.content?.includes("Expo Prudente 2026 em Presidente Prudente")
+    const seoFooter = scope === "expo"
+      ? `\n\n<p><em>Cobertura oficial Expo Prudente 2026 em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/expo2026">Veja tudo da Expo Prudente 2026</a>.</p>`
+      : `\n\n<p><em>Notícias de bares, festas, baladas, restaurantes e shows em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/noticias">Veja todas as notícias da Roxou</a>.</p>`;
+    const sentinelText = scope === "expo" ? "Expo Prudente 2026 em Presidente Prudente" : "Notícias de bares, festas, baladas";
+    const contentWithSeo = form.content?.includes(sentinelText)
       ? form.content
       : (form.content || "") + seoFooter;
 
@@ -151,14 +154,19 @@ const NoticiaForm = () => {
     };
 
     const op = editing
-      ? supabase.from("expo_news").update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author, slug").single()
-      : supabase.from("expo_news").insert(payload).select("id, cover_image_url, title, excerpt, author, slug").single();
+      ? supabase.from(table).update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author, slug").single()
+      : supabase.from(table).insert(payload).select("id, cover_image_url, title, excerpt, author, slug").single();
 
     const { data: saved, error } = await op;
     if (error) { setSaving(false); return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); }
 
     if (autoPublishIG && payload.status === "published" && saved?.cover_image_url) {
-      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 Expo Prudente 2026\n👉 roxou.com.br/expo2026/noticia/${saved.slug}?utm_source=instagram&utm_medium=organic&utm_campaign=expo2026\n\n#expoprudente #prudente #shows #eventos #presidenteprudente #expo2026`;
+      const slugPath = scope === "expo" ? `expo2026/noticia/${saved.slug}` : `noticia/${saved.slug}`;
+      const utmCampaign = scope === "expo" ? "expo2026" : "roxou_news";
+      const tags = scope === "expo"
+        ? "#expoprudente #prudente #shows #eventos #presidenteprudente #expo2026"
+        : "#roxou #prudente #presidenteprudente #baladasprudente #baresprudente #festasprudente";
+      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 ${scope === "expo" ? "Expo Prudente 2026" : "Roxou — Presidente Prudente"}\n👉 roxou.com.br/${slugPath}?utm_source=instagram&utm_medium=organic&utm_campaign=${utmCampaign}\n\n${tags}`;
       const { data: userData } = await supabase.auth.getUser();
       const { data: postRow, error: postErr } = await supabase.from("instagram_posts").insert({
         caption,
