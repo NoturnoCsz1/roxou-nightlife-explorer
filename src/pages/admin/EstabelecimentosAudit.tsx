@@ -103,7 +103,7 @@ const EstabelecimentosAudit = () => {
       }
       if (cityF && e.city !== cityF) return false;
       if (categoryF && e.type !== categoryF) return false;
-      if (errorsOnly && computeFlags(e, metrics[e.id]).length === 0) return false;
+      if (errorsOnly && computeFlags(e).length === 0) return false;
       return true;
     });
     if (orderBy === "events_desc") arr = [...arr].sort((a, b) => (metrics[b.id]?.eventCount || 0) - (metrics[a.id]?.eventCount || 0));
@@ -119,7 +119,7 @@ const EstabelecimentosAudit = () => {
       if (cur === "ativo") ativo++;
       if (cur === "destaque") destaque++;
       if (cur === "oficial") oficial++;
-      if (computeFlags(e, metrics[e.id]).length > 0) errors++;
+      if (computeFlags(e).length > 0) errors++;
     });
     return { total, ativo, destaque, oficial, errors };
   }, [items, metrics]);
@@ -242,7 +242,7 @@ const EstabelecimentosAudit = () => {
         <div className="space-y-2">
           {filtered.map(e => {
             const m = metrics[e.id];
-            const flags = computeFlags(e, m);
+            const flags = computeFlags(e);
             const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
             const meta = STATUS_META[cur];
             return (
