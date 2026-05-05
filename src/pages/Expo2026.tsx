@@ -141,8 +141,7 @@ const Expo2026 = () => {
           <div
             className="absolute inset-0 -z-10 bg-cover bg-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 motion-safe:animate-[fade-in_1s_ease-out]"
             style={{
-              backgroundImage:
-                'url("https://www.prudentenews.com.br/img/noticias/7516.jpg")',
+              backgroundImage: 'url("/expo2026/hero-bg.jpg")',
             }}
             aria-hidden="true"
           />
