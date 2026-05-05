@@ -337,6 +337,9 @@ export type Database = {
           image_hash: string | null
           image_url: string | null
           instagram: string | null
+          latitude: number | null
+          longitude: number | null
+          maps_place_id: string | null
           opportunity_tags: string[]
           partner_id: string | null
           slug: string
@@ -361,6 +364,9 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maps_place_id?: string | null
           opportunity_tags?: string[]
           partner_id?: string | null
           slug: string
@@ -385,6 +391,9 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          maps_place_id?: string | null
           opportunity_tags?: string[]
           partner_id?: string | null
           slug?: string
@@ -976,11 +985,17 @@ export type Database = {
           accepted_offer_id: string | null
           created_at: string
           destination_address: string | null
+          destination_lat: number | null
+          destination_lng: number | null
           event_date: string | null
           event_id: string | null
           event_name: string | null
           id: string
           notes: string | null
+          origin_accuracy: number | null
+          origin_lat: number | null
+          origin_lng: number | null
+          origin_source: string | null
           passenger_id: string | null
           passengers_count: number
           pickup_address: string | null
@@ -995,11 +1010,17 @@ export type Database = {
           accepted_offer_id?: string | null
           created_at?: string
           destination_address?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           event_date?: string | null
           event_id?: string | null
           event_name?: string | null
           id?: string
           notes?: string | null
+          origin_accuracy?: number | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          origin_source?: string | null
           passenger_id?: string | null
           passengers_count?: number
           pickup_address?: string | null
@@ -1014,11 +1035,17 @@ export type Database = {
           accepted_offer_id?: string | null
           created_at?: string
           destination_address?: string | null
+          destination_lat?: number | null
+          destination_lng?: number | null
           event_date?: string | null
           event_id?: string | null
           event_name?: string | null
           id?: string
           notes?: string | null
+          origin_accuracy?: number | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          origin_source?: string | null
           passenger_id?: string | null
           passengers_count?: number
           pickup_address?: string | null
