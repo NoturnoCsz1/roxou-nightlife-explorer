@@ -23,11 +23,13 @@ interface Establishment {
   active: boolean;
   status: Status | null;
   instagram_validated: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
   updated_at: string | null;
   created_at: string;
 }
 
-interface Metrics { eventCount: number; latitude: number | null; longitude: number | null; }
+interface Metrics { eventCount: number; }
 
 const STATUS_META: Record<Status, { label: string; cls: string }> = {
   draft:      { label: "Rascunho",   cls: "bg-muted/40 text-muted-foreground" },
@@ -38,11 +40,11 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
 };
 
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
-function computeFlags(e: Establishment, m: Metrics | undefined): FlagKey[] {
+function computeFlags(e: Establishment): FlagKey[] {
   const f: FlagKey[] = [];
   if (!e.address?.trim()) f.push("missing_address");
   if (!e.instagram?.trim()) f.push("missing_instagram");
-  if (!m || m.latitude == null || m.longitude == null) f.push("missing_coordinates");
+  if (e.latitude == null || e.longitude == null) f.push("missing_coordinates");
   if (!e.type?.trim()) f.push("missing_category");
   return f;
 }
