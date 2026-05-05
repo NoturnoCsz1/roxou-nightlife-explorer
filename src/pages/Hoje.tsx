@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
-import { formatDateHeader } from "@/lib/dateUtils";
+import { formatDateHeader, getStartOfTodaySP, getEndOfTodaySP, getNowInSaoPaulo } from "@/lib/dateUtils";
 
 const Hoje = () => {
   usePageTracking();
@@ -16,15 +16,9 @@ const Hoje = () => {
 
   useEffect(() => {
     async function load() {
-      // Build "today" in São Paulo timezone, regardless of browser TZ.
-      const spDate = new Intl.DateTimeFormat("sv-SE", {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        timeZone: "America/Sao_Paulo",
-      }).format(new Date()); // "YYYY-MM-DD" in SP
-      const startOfDay = `${spDate}T00:00:00-03:00`;
-      const next = new Date(`${spDate}T00:00:00-03:00`);
-      next.setUTCDate(next.getUTCDate() + 1);
-      const endOfDay = next.toISOString();
+      // ATENÇÃO: filtro "Hoje" sempre em America/Sao_Paulo. Não usar UTC puro.
+      const startOfDay = getStartOfTodaySP();
+      const endOfDay = getEndOfTodaySP();
 
       const { data: eventsData } = await supabase
         .from("events")
