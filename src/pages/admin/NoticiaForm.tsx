@@ -49,7 +49,12 @@ function slugify(s: string) {
 const NoticiaForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const editing = Boolean(id);
+  const [scope, setScope] = useState<Scope>(((params.get("scope") as Scope) === "expo" ? "expo" : "roxou"));
+  const table = scope === "expo" ? "expo_news" : "roxou_news";
+  const CATEGORIES = scope === "expo" ? CATEGORIES_EXPO : CATEGORIES_ROXOU;
+  const backTo = `/admin/noticias?scope=${scope}`;
 
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
@@ -68,7 +73,6 @@ const NoticiaForm = () => {
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [autoPublishIG, setAutoPublishIG] = useState(false);
-  const [expoFeatured, setExpoFeatured] = useState(true);
 
   useEffect(() => {
     if (!editing) return;
