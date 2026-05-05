@@ -1318,7 +1318,7 @@ export async function renderStoryV3(
   ctx.restore();
 
   // 10) Premium CTA — bigger, centered bottom
-  const ctaText = "👉 TOCA AQUI E CONFERE O ROLÊ";
+  const ctaText = "👉 PARTIU VER ESSE ROLÊ AGORA";
   ctx.save();
   ctx.font = "bold 36px sans-serif";
   const ctaW = Math.min(ctx.measureText(ctaText).width + 90, W - PAD * 2);
