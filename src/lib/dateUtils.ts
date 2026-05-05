@@ -67,7 +67,8 @@ export const isToday = (date: Date) => getDateStr(date) === getTodayStr();
 
 /** Check if a date is tomorrow in São Paulo timezone */
 export const isTomorrow = (date: Date) => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Add 24h to "now" — comparison is then done via SP-formatted strings,
+  // which is independent of the browser's local timezone.
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
   return getDateStr(date) === getDateStr(tomorrow);
 };
