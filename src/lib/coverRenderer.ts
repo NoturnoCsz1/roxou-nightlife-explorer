@@ -1237,7 +1237,7 @@ export async function renderStoryV3(
   const phrase = event.aura_phrase?.trim() || "Hoje é aqui que você tem que estar";
   ctx.save();
   ctx.font = "italic 600 28px sans-serif";
-  const prefix = "🤖  ";
+  const prefix = "🔥  ";
   const fullText = prefix + phrase;
   const maxBubbleW = 520;
   const tw = Math.min(ctx.measureText(fullText).width + 48, maxBubbleW);
