@@ -19,6 +19,8 @@ import Expo2026 from "./pages/Expo2026";
 import Expo2026Contato from "./pages/Expo2026Contato";
 import Contato from "./pages/Contato";
 import ExpoNoticia from "./pages/ExpoNoticia";
+import RoxouNoticias from "./pages/RoxouNoticias";
+import RoxouNoticia from "./pages/RoxouNoticia";
 import ExpoShows from "./pages/expo/ExpoShows";
 import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
 import ExpoIngressos from "./pages/expo/ExpoIngressos";
@@ -116,6 +118,10 @@ const App = () => (
           <Route path="/expo2026/programacao" element={<ExpoProgramacao />} />
           <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
+
+          {/* ========= NOTÍCIAS ROXOU ========= */}
+          <Route path="/noticias" element={<RoxouNoticias />} />
+          <Route path="/noticia/:slug" element={<RoxouNoticia />} />
 
           {/* ========= ROXOU V3 (raiz pública) ========= */}
           <Route path="/manutencao" element={<Maintenance />} />

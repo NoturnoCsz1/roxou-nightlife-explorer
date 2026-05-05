@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Save, Instagram, Sparkles, Image as ImageIcon, Rocket, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/admin/ImageUpload";
 
-const CATEGORIES = [
+type Scope = "roxou" | "expo";
+
+const CATEGORIES_EXPO = [
   { value: "geral", label: "Geral" },
   { value: "atracoes", label: "Atrações" },
   { value: "shows", label: "Shows" },
@@ -20,6 +22,17 @@ const CATEGORIES = [
   { value: "rodeio", label: "Rodeio" },
   { value: "gastronomia", label: "Gastronomia" },
   { value: "avisos", label: "Avisos" },
+];
+
+const CATEGORIES_ROXOU = [
+  { value: "geral", label: "Geral" },
+  { value: "bares", label: "Bares" },
+  { value: "festas", label: "Festas" },
+  { value: "baladas", label: "Baladas" },
+  { value: "restaurantes", label: "Restaurantes" },
+  { value: "shows", label: "Shows" },
+  { value: "gastronomia", label: "Gastronomia" },
+  { value: "cultura", label: "Cultura" },
 ];
 
 function slugify(s: string) {
@@ -36,7 +49,12 @@ function slugify(s: string) {
 const NoticiaForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const editing = Boolean(id);
+  const [scope, setScope] = useState<Scope>(((params.get("scope") as Scope) === "expo" ? "expo" : "roxou"));
+  const table = scope === "expo" ? "expo_news" : "roxou_news";
+  const CATEGORIES = scope === "expo" ? CATEGORIES_EXPO : CATEGORIES_ROXOU;
+  const backTo = `/admin/noticias?scope=${scope}`;
 
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
@@ -55,17 +73,24 @@ const NoticiaForm = () => {
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [autoPublishIG, setAutoPublishIG] = useState(false);
-  const [expoFeatured, setExpoFeatured] = useState(true);
 
   useEffect(() => {
     if (!editing) return;
     (async () => {
-      const { data, error } = await supabase.from("expo_news").select("*").eq("id", id).maybeSingle();
-      if (error || !data) {
+      // tenta primeiro no escopo atual; se não encontrar, tenta o outro
+      const tryTables: ("roxou_news" | "expo_news")[] = scope === "expo" ? ["expo_news", "roxou_news"] : ["roxou_news", "expo_news"];
+      let data: any = null;
+      let foundScope: Scope = scope;
+      for (const t of tryTables) {
+        const { data: row } = await supabase.from(t).select("*").eq("id", id).maybeSingle();
+        if (row) { data = row; foundScope = t === "expo_news" ? "expo" : "roxou"; break; }
+      }
+      if (!data) {
         toast({ title: "Não encontrado", variant: "destructive" });
         navigate("/admin/noticias");
         return;
       }
+      setScope(foundScope);
       setForm({
         title: data.title ?? "",
         slug: data.slug ?? "",
@@ -82,7 +107,7 @@ const NoticiaForm = () => {
       setSlugTouched(true);
       setLoading(false);
     })();
-  }, [id, editing, navigate]);
+  }, [id, editing, navigate, scope]);
 
   const updateTitle = (rawTitle: string) => {
     const title = rawTitle.toUpperCase();
@@ -103,8 +128,11 @@ const NoticiaForm = () => {
       ? `${slugify(form.seo_keyword)}-${baseSlug}`.replace(/-+/g, "-").slice(0, 90)
       : baseSlug;
 
-    const seoFooter = `\n\n<p><em>Cobertura oficial Expo Prudente 2026 em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/expo2026">Veja tudo da Expo Prudente 2026</a>.</p>`;
-    const contentWithSeo = form.content?.includes("Expo Prudente 2026 em Presidente Prudente")
+    const seoFooter = scope === "expo"
+      ? `\n\n<p><em>Cobertura oficial Expo Prudente 2026 em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/expo2026">Veja tudo da Expo Prudente 2026</a>.</p>`
+      : `\n\n<p><em>Notícias de bares, festas, baladas, restaurantes e shows em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/noticias">Veja todas as notícias da Roxou</a>.</p>`;
+    const sentinelText = scope === "expo" ? "Expo Prudente 2026 em Presidente Prudente" : "Notícias de bares, festas, baladas";
+    const contentWithSeo = form.content?.includes(sentinelText)
       ? form.content
       : (form.content || "") + seoFooter;
 
@@ -126,14 +154,19 @@ const NoticiaForm = () => {
     };
 
     const op = editing
-      ? supabase.from("expo_news").update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author, slug").single()
-      : supabase.from("expo_news").insert(payload).select("id, cover_image_url, title, excerpt, author, slug").single();
+      ? supabase.from(table).update(payload).eq("id", id!).select("id, cover_image_url, title, excerpt, author, slug").single()
+      : supabase.from(table).insert(payload).select("id, cover_image_url, title, excerpt, author, slug").single();
 
     const { data: saved, error } = await op;
     if (error) { setSaving(false); return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); }
 
     if (autoPublishIG && payload.status === "published" && saved?.cover_image_url) {
-      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 Expo Prudente 2026\n👉 roxou.com.br/expo2026/noticia/${saved.slug}?utm_source=instagram&utm_medium=organic&utm_campaign=expo2026\n\n#expoprudente #prudente #shows #eventos #presidenteprudente #expo2026`;
+      const slugPath = scope === "expo" ? `expo2026/noticia/${saved.slug}` : `noticia/${saved.slug}`;
+      const utmCampaign = scope === "expo" ? "expo2026" : "roxou_news";
+      const tags = scope === "expo"
+        ? "#expoprudente #prudente #shows #eventos #presidenteprudente #expo2026"
+        : "#roxou #prudente #presidenteprudente #baladasprudente #baresprudente #festasprudente";
+      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 ${scope === "expo" ? "Expo Prudente 2026" : "Roxou — Presidente Prudente"}\n👉 roxou.com.br/${slugPath}?utm_source=instagram&utm_medium=organic&utm_campaign=${utmCampaign}\n\n${tags}`;
       const { data: userData } = await supabase.auth.getUser();
       const { data: postRow, error: postErr } = await supabase.from("instagram_posts").insert({
         caption,
@@ -153,7 +186,7 @@ const NoticiaForm = () => {
       toast({ title: editing ? "Notícia atualizada" : publish ? "Notícia publicada!" : "Rascunho salvo" });
     }
     setSaving(false);
-    navigate("/admin/noticias");
+    navigate(backTo);
   };
 
   if (loading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
@@ -165,18 +198,32 @@ const NoticiaForm = () => {
       <div className="pointer-events-none absolute top-40 -left-10 w-72 h-72 bg-primary/15 blur-3xl rounded-full -z-10" />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link to="/admin/noticias" className="text-muted-foreground hover:text-foreground">
+        <Link to={backTo} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
           <h1 className="text-xl font-black font-display flex items-center gap-2">
             {editing ? "Editar notícia" : "Nova notícia"}
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
-              <Flame className="h-2.5 w-2.5" /> Expo 2026
-            </span>
+            {scope === "expo" ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
+                <Flame className="h-2.5 w-2.5" /> Expo 2026
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-primary/20 border border-primary/30 text-primary">
+                <Sparkles className="h-2.5 w-2.5" /> Roxou
+              </span>
+            )}
           </h1>
-          <p className="text-xs text-muted-foreground">Conteúdo do hot site /expo2026</p>
+          <p className="text-xs text-muted-foreground">
+            {scope === "expo" ? "Conteúdo do hot site /expo2026" : "Notícias da Roxou (bares, festas, baladas, restaurantes, shows)"}
+          </p>
         </div>
+        {!editing && (
+          <div className="ml-auto flex items-center gap-1 p-1 rounded-lg border border-border/60 bg-card/40">
+            <button type="button" onClick={() => setScope("roxou")} className={`px-2 py-1 rounded text-[11px] font-bold ${scope === "roxou" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Roxou</button>
+            <button type="button" onClick={() => setScope("expo")} className={`px-2 py-1 rounded text-[11px] font-bold ${scope === "expo" ? "bg-gradient-to-r from-orange-500 to-yellow-400 text-black" : "text-muted-foreground"}`}>Expo 2026</button>
+          </div>
+        )}
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); persist(false); }} className="space-y-5 max-w-3xl">
@@ -320,23 +367,8 @@ const NoticiaForm = () => {
           </div>
         </div>
 
-        {/* Destaques Expo + IG */}
+        {/* IG */}
         <div className="space-y-3">
-          <div className="flex items-start gap-2 rounded-xl border border-orange-400/30 bg-gradient-to-r from-orange-500/10 to-yellow-500/5 p-3">
-            <Checkbox
-              id="expoFeat"
-              checked={expoFeatured}
-              onCheckedChange={(v) => setExpoFeatured(Boolean(v))}
-            />
-            <Label htmlFor="expoFeat" className="cursor-pointer text-sm leading-tight">
-              <span className="flex items-center gap-1.5 font-semibold">
-                <Flame className="h-3.5 w-3.5 text-orange-400" /> Mostrar no hotsite Expo 2026
-              </span>
-              <span className="text-[11px] text-muted-foreground font-normal">
-                Toda notícia publicada já aparece em /expo2026. Use o status "Publicado" para liberar.
-              </span>
-            </Label>
-          </div>
 
           <div className="flex items-start gap-2 rounded-xl border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5 p-3">
             <Checkbox
