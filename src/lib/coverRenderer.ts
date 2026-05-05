@@ -668,7 +668,11 @@ export async function renderCoverPartners(canvas: HTMLCanvasElement, partners: C
 
 // ============ FLYER INDIVIDUAL ============
 
-export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, badge = "HOJE", fmt: ArtFormat = "feed"): Promise<string> {
+export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent & { aura_phrase?: string | null }, badge = "HOJE", fmt: ArtFormat = "feed"): Promise<string> {
+  // Story uses the new Roxou V3 template (Aura protagonist).
+  if (fmt === "story") {
+    return renderStoryV3(canvas, event);
+  }
   const { w: W, h: H } = FORMAT_SIZES[fmt === "banner" ? "feed" : fmt];
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
