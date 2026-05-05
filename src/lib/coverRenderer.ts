@@ -1100,3 +1100,248 @@ export async function renderCTASlide(canvas: HTMLCanvasElement, fmt: ArtFormat =
 
   return canvas.toDataURL("image/png");
 }
+
+// ============ STORY V3 (Roxou template w/ Aura) ============
+
+const STORY_BG = "#09090B";
+const STORY_PURPLE = "#7C3AED";
+const STORY_VIOLET = "#A855F7";
+const STORY_LILAC = "#C084FC";
+
+async function tryLoadImage(src: string): Promise<HTMLImageElement | null> {
+  try { return await loadImage(src); } catch { return null; }
+}
+
+export async function renderStoryV3(
+  canvas: HTMLCanvasElement,
+  event: CoverEvent & { aura_phrase?: string | null }
+): Promise<string> {
+  const W = 1080, H = 1920;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+  const PAD = 72;
+
+  // 1) Solid dark base
+  ctx.fillStyle = STORY_BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // 2) Event flyer as background — blurred, desaturated
+  if (event.image_url) {
+    const img = await tryLoadImage(event.image_url);
+    if (img) {
+      const imgR = img.width / img.height;
+      const canR = W / H;
+      let sw = img.width, sh = img.height, sx = 0, sy = 0;
+      if (imgR > canR) { sw = img.height * canR; sx = (img.width - sw) / 2; }
+      else { sh = img.width / canR; sy = (img.height - sh) / 2; }
+      ctx.save();
+      ctx.filter = "blur(18px) saturate(0.55) brightness(0.7)";
+      ctx.drawImage(img, sx, sy, sw, sh, -30, -30, W + 60, H + 60);
+      ctx.filter = "none";
+      ctx.restore();
+    }
+  }
+
+  // 3) Strong dark overlay
+  ctx.fillStyle = "rgba(9,9,11,0.65)";
+  ctx.fillRect(0, 0, W, H);
+
+  // 4) Purple gradient on top
+  const pg = ctx.createLinearGradient(0, 0, 0, H);
+  pg.addColorStop(0, "rgba(124,58,237,0.28)");
+  pg.addColorStop(0.5, "rgba(168,85,247,0.10)");
+  pg.addColorStop(1, "rgba(9,9,11,0.85)");
+  ctx.fillStyle = pg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Neon glows
+  drawGlow(ctx, W * 0.18, H * 0.22, 600, STORY_PURPLE, 0.22);
+  drawGlow(ctx, W * 0.85, H * 0.78, 620, STORY_VIOLET, 0.20);
+  drawGrain(ctx, W, H);
+
+  // 5) Top badge — "💜 AURA INDICA"
+  const badgeText = "💜 AURA INDICA";
+  ctx.save();
+  ctx.font = "bold 30px sans-serif";
+  const bw = ctx.measureText(badgeText).width + 56;
+  const bh = 64;
+  const bx = (W - bw) / 2;
+  const by = PAD + 20;
+  // glow
+  ctx.shadowColor = "rgba(168,85,247,0.7)";
+  ctx.shadowBlur = 28;
+  const bg = ctx.createLinearGradient(bx, by, bx + bw, by);
+  bg.addColorStop(0, STORY_PURPLE);
+  bg.addColorStop(1, STORY_VIOLET);
+  ctx.fillStyle = bg;
+  roundRect(ctx, bx, by, bw, bh, bh / 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  // border glow
+  ctx.strokeStyle = "rgba(192,132,252,0.9)";
+  ctx.lineWidth = 2;
+  roundRect(ctx, bx, by, bw, bh, bh / 2);
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(badgeText, W / 2, by + bh / 2 + 1);
+  ctx.restore();
+
+  // 6) Title — large, white, top-positioned, max 3 lines
+  const titleY = by + bh + 90;
+  ctx.save();
+  ctx.font = "bold 88px sans-serif";
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  const titleLines = wrapText(ctx, event.title, W - PAD * 2).slice(0, 3);
+  const lineH = 96;
+  // shadow
+  ctx.fillStyle = "rgba(0,0,0,0.65)";
+  titleLines.forEach((l, i) => ctx.fillText(l, PAD + 4, titleY + i * lineH + 4));
+  ctx.shadowColor = "rgba(168,85,247,0.45)";
+  ctx.shadowBlur = 18;
+  ctx.fillStyle = "#ffffff";
+  titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * lineH));
+  ctx.restore();
+
+  const titleEnd = titleY + titleLines.length * lineH;
+
+  // 7) Glass info card
+  const cardY = titleEnd + 56;
+  const cardX = PAD;
+  const cardW = W - PAD * 2;
+
+  // Build info lines
+  const d = new Date(event.date_time);
+  const months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+  const timeStr = `${String(d.getHours()).padStart(2,"0")}h${d.getMinutes() ? String(d.getMinutes()).padStart(2,"0") : ""}`.replace(/h$/, "h");
+  const dateStr = `${d.getDate()} ${months[d.getMonth()]}`;
+  const price = extractPrice(event.description, event.ticket_url);
+
+  const infoLines: { icon: string; text: string }[] = [
+    { icon: "🕒", text: timeStr },
+    { icon: "📅", text: dateStr },
+  ];
+  if (event.venue_name) infoLines.push({ icon: "📍", text: event.venue_name });
+  if (price) infoLines.push({ icon: "💸", text: price });
+
+  const rowH = 64;
+  const cardH = 36 + infoLines.length * rowH;
+
+  ctx.save();
+  // glass bg
+  ctx.fillStyle = "rgba(20,15,35,0.55)";
+  roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.fill();
+  // border
+  ctx.strokeStyle = "rgba(192,132,252,0.35)";
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.font = "600 36px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textBaseline = "middle";
+  infoLines.forEach((row, i) => {
+    const ry = cardY + 18 + rowH / 2 + i * rowH;
+    ctx.fillStyle = STORY_LILAC;
+    ctx.fillText(row.icon, cardX + 32, ry);
+    ctx.fillStyle = "#ffffff";
+    // truncate if too wide
+    const maxW = cardW - 110;
+    let txt = row.text;
+    while (ctx.measureText(txt).width > maxW && txt.length > 4) txt = txt.slice(0, -2);
+    if (txt !== row.text) txt = txt.trim() + "…";
+    ctx.fillText(txt, cardX + 96, ry);
+  });
+  ctx.restore();
+
+  // 8) Aura mascot (bottom right)
+  const auraSize = 460;
+  const auraX = W - auraSize + 30;
+  const auraY = H - auraSize - 280;
+  const aura = (await tryLoadImage("/aura-story.png")) || (await tryLoadImage("/src/assets/aura-mascot.png"));
+  if (aura) {
+    // soft glow halo
+    ctx.save();
+    const halo = ctx.createRadialGradient(
+      auraX + auraSize / 2, auraY + auraSize / 2, auraSize * 0.1,
+      auraX + auraSize / 2, auraY + auraSize / 2, auraSize * 0.7
+    );
+    halo.addColorStop(0, "rgba(168,85,247,0.45)");
+    halo.addColorStop(1, "rgba(168,85,247,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(auraX - 80, auraY - 80, auraSize + 160, auraSize + 160);
+    ctx.restore();
+    ctx.drawImage(aura, auraX, auraY, auraSize, auraSize);
+  }
+
+  // 9) Aura speech bubble
+  const phrase = event.aura_phrase?.trim() || "Eu indico esse rolê 💜";
+  ctx.save();
+  ctx.font = "italic 600 30px sans-serif";
+  const tw = Math.min(ctx.measureText(phrase).width + 56, 560);
+  const bubbleH = 76;
+  const bubbleX = aura ? auraX - tw + 80 : (W - tw) / 2;
+  const bubbleY = aura ? auraY + 60 : H - 520;
+  ctx.shadowColor = "rgba(168,85,247,0.6)";
+  ctx.shadowBlur = 22;
+  ctx.fillStyle = "rgba(20,15,35,0.92)";
+  roundRect(ctx, bubbleX, bubbleY, tw, bubbleH, 24);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = STORY_VIOLET;
+  ctx.lineWidth = 2;
+  roundRect(ctx, bubbleX, bubbleY, tw, bubbleH, 24);
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  let ptxt = phrase;
+  while (ctx.measureText(ptxt).width > tw - 40 && ptxt.length > 6) ptxt = ptxt.slice(0, -2);
+  if (ptxt !== phrase) ptxt = ptxt.trim() + "…";
+  ctx.fillText(ptxt, bubbleX + tw / 2, bubbleY + bubbleH / 2 + 1);
+  ctx.restore();
+
+  // 10) Premium CTA — centered button + brand
+  const ctaText = "🔥 VER EVENTO COMPLETO";
+  ctx.save();
+  ctx.font = "bold 38px sans-serif";
+  const ctaW = Math.min(ctx.measureText(ctaText).width + 80, W - PAD * 2);
+  const ctaH = 96;
+  const ctaX = (W - ctaW) / 2;
+  const ctaYpos = H - ctaH - 150;
+  // glow
+  ctx.shadowColor = "rgba(168,85,247,0.85)";
+  ctx.shadowBlur = 38;
+  const cg = ctx.createLinearGradient(ctaX, ctaYpos, ctaX + ctaW, ctaYpos);
+  cg.addColorStop(0, STORY_PURPLE);
+  cg.addColorStop(1, STORY_VIOLET);
+  ctx.fillStyle = cg;
+  roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(192,132,252,0.7)";
+  ctx.lineWidth = 2;
+  roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(ctaText, W / 2, ctaYpos + ctaH / 2 + 2);
+  ctx.restore();
+
+  // Brand below CTA
+  ctx.save();
+  ctx.font = "bold 32px sans-serif";
+  ctx.fillStyle = STORY_LILAC;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("ROXOU.COM.BR", W / 2, ctaYpos + ctaH + 22);
+  ctx.restore();
+
+  return canvas.toDataURL("image/png");
+}
