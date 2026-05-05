@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfDay, endOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
-import { isToday as isTodayFn } from "@/lib/dateUtils";
+import { isTodaySP, isTomorrowSP, getDateKeySP, dateKeySPToAnchorDate, formatDateHeaderSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -128,20 +128,24 @@ export default function V3Agenda() {
   const grouped = useMemo(() => {
     const map = new Map<string, typeof events>();
     filteredEvents.forEach((e) => {
-      const key = format(new Date(e.date_time), "yyyy-MM-dd");
+      // Agrupar pela chave civil (YYYY-MM-DD) em America/Sao_Paulo
+      const key = getDateKeySP(new Date(e.date_time));
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });
-    return Array.from(map.entries()).map(([key, evts]) => ({
-      key,
-      label: isTodayFn(new Date(key)) ? "Hoje" :
-        new Date(key).getTime() === addDays(today, 1).getTime() ? "Amanhã" :
-        format(new Date(key), "EEEE, d 'de' MMMM", { locale: ptBR }),
-      events: evts,
-    }));
-  }, [filteredEvents, today]);
+    return Array.from(map.entries()).map(([key, evts]) => {
+      const anchor = dateKeySPToAnchorDate(key);
+      const label = isTodaySP(anchor)
+        ? `Hoje, ${formatDateHeaderSP(getNowInSaoPaulo())}`
+        : isTomorrowSP(anchor)
+        ? `Amanhã, ${formatDateHeaderSP(anchor)}`
+        : formatDateHeaderSP(anchor);
+      return { key, label, events: evts };
+    });
+  }, [filteredEvents]);
 
-  const shareGroup = grouped.find((g) => isTodayFn(new Date(g.key))) || grouped[0];
+  const shareGroup =
+    grouped.find((g) => isTodaySP(dateKeySPToAnchorDate(g.key))) || grouped[0];
 
   if (isLoading) {
     return (
