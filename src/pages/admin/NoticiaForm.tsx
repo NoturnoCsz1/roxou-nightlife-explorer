@@ -50,6 +50,7 @@ const NoticiaForm = () => {
     category: "geral",
     status: "draft",
     published_at: "",
+    seo_keyword: "",
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [autoPublishIG, setAutoPublishIG] = useState(false);
@@ -74,6 +75,7 @@ const NoticiaForm = () => {
         category: data.category ?? "geral",
         status: data.status ?? "draft",
         published_at: data.published_at ?? "",
+        seo_keyword: (data as any).seo_keyword ?? "",
       });
       setSlugTouched(true);
       setLoading(false);
