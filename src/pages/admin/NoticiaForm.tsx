@@ -117,6 +117,7 @@ const NoticiaForm = () => {
       category: form.category,
       status: finalStatus,
       seo_keyword: form.seo_keyword || null,
+      source_url: form.source_url?.trim() || null,
       published_at:
         finalStatus === "published"
           ? form.published_at || new Date().toISOString()
