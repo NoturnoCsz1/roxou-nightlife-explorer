@@ -45,6 +45,7 @@ interface ScoredEvent extends CoverEvent {
   views: number;
   saves: number;
   verifiedPartner: boolean;
+  aura_pick: boolean;
 }
 
 interface GeneratedItem {
@@ -126,7 +127,7 @@ const InstagramStudio = () => {
     const { start, end } = getDateRange(dateFilter);
 
     let query = supabase.from("events")
-      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url")
+      .select("id, title, slug, date_time, venue_name, category, sub_category, image_url, featured, partner_id, description, ticket_url, aura_pick")
       .eq("status", "published")
       .gte("date_time", start.toISOString())
       .order("date_time");
@@ -159,7 +160,7 @@ const InstagramStudio = () => {
       if (views >= 5) score += 2;
       if (isPrimeTime) score += 1;
       if (e.image_url) score += 1;
-      return { ...e, score, views, saves, verifiedPartner: isVerified };
+      return { ...e, score, views, saves, verifiedPartner: isVerified, aura_pick: !!e.aura_pick };
     });
 
     setEvents(scored);
@@ -646,34 +647,73 @@ const InstagramStudio = () => {
         {filteredEvents.length === 0 ? (
           <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>
         ) : (
-          <div className="space-y-1.5 max-h-[350px] overflow-y-auto">
-            {filteredEvents.map(e => {
-              const isSelected = selected.has(e.id);
-              const h = format(new Date(e.date_time), "HH:mm");
-              return (
-                <div key={e.id} onClick={() => toggleSelect(e.id)}
-                  className={`flex items-start gap-2 rounded-2xl p-2 cursor-pointer transition border ${isSelected ? "border-primary/30 bg-primary/5" : "border-transparent bg-white/5 hover:bg-secondary/30"}`}>
-                  {isSelected ? <CheckSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" /> : <Square className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />}
-                  {e.image_url && <img src={e.image_url} alt="" className="h-9 w-9 rounded-md object-cover shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">{e.title}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span className="text-[10px] text-muted-foreground">{h}</span>
-                      {e.venue_name && <span className="text-[10px] text-muted-foreground">· {e.venue_name}</span>}
+          <div className="space-y-3 max-h-[420px] overflow-y-auto">
+            {(() => {
+              const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+              const isToday = (dt: string) =>
+                new Date(dt).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) === todayStr;
+
+              const auraList = filteredEvents.filter(e => e.aura_pick);
+              const auraIds = new Set(auraList.map(e => e.id));
+              const todayList = filteredEvents.filter(e => !auraIds.has(e.id) && isToday(e.date_time));
+              const todayIds = new Set(todayList.map(e => e.id));
+              const upcomingList = filteredEvents.filter(e => !auraIds.has(e.id) && !todayIds.has(e.id));
+
+              const renderRow = (e: ScoredEvent) => {
+                const isSelected = selected.has(e.id);
+                const h = format(new Date(e.date_time), "HH:mm");
+                return (
+                  <div key={e.id} onClick={() => toggleSelect(e.id)}
+                    className={`flex items-start gap-2 rounded-2xl p-2 cursor-pointer transition border ${isSelected ? "border-primary/30 bg-primary/5" : "border-transparent bg-white/5 hover:bg-secondary/30"}`}>
+                    {isSelected ? <CheckSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" /> : <Square className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />}
+                    {e.image_url && <img src={e.image_url} alt="" className="h-9 w-9 rounded-md object-cover shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{e.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-[10px] text-muted-foreground">{h}</span>
+                        {e.venue_name && <span className="text-[10px] text-muted-foreground">· {e.venue_name}</span>}
+                      </div>
+                      <div className="flex gap-1 mt-0.5 flex-wrap">
+                        {e.aura_pick && <span className="text-[9px] bg-pink-500/15 text-pink-300 px-1.5 py-0.5 rounded-full font-bold">🤖 Aura</span>}
+                        {e.featured && <span className="text-[9px] bg-yellow-400/15 text-yellow-500 px-1.5 py-0.5 rounded-full font-medium"><Star className="h-2.5 w-2.5 inline" /></span>}
+                        {e.verifiedPartner && <span className="text-[9px] bg-green-400/15 text-green-500 px-1.5 py-0.5 rounded-full font-medium"><BadgeCheck className="h-2.5 w-2.5 inline" /></span>}
+                        {e.views > 0 && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{e.views}v</span>}
+                        {e.score >= 6 && <span className="text-[9px] bg-pink-500/15 text-pink-400 px-1.5 py-0.5 rounded-full font-bold">🔥 Alto</span>}
+                        {e.score >= 4 && e.score < 6 && <span className="text-[9px] bg-orange-400/15 text-orange-400 px-1.5 py-0.5 rounded-full font-bold">⚡ Médio</span>}
+                        {e.score < 4 && <span className="text-[9px] bg-muted/30 text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">⚠️ Baixo</span>}
+                      </div>
                     </div>
-                    <div className="flex gap-1 mt-0.5 flex-wrap">
-                      {e.featured && <span className="text-[9px] bg-yellow-400/15 text-yellow-500 px-1.5 py-0.5 rounded-full font-medium"><Star className="h-2.5 w-2.5 inline" /></span>}
-                      {e.verifiedPartner && <span className="text-[9px] bg-green-400/15 text-green-500 px-1.5 py-0.5 rounded-full font-medium"><BadgeCheck className="h-2.5 w-2.5 inline" /></span>}
-                      {e.views > 0 && <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{e.views}v</span>}
-                      {e.score >= 6 && <span className="text-[9px] bg-pink-500/15 text-pink-400 px-1.5 py-0.5 rounded-full font-bold">🔥 Alto</span>}
-                      {e.score >= 4 && e.score < 6 && <span className="text-[9px] bg-orange-400/15 text-orange-400 px-1.5 py-0.5 rounded-full font-bold">⚡ Médio</span>}
-                      {e.score < 4 && <span className="text-[9px] bg-muted/30 text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">⚠️ Baixo</span>}
-                    </div>
+                    <div className="text-[10px] font-bold text-primary shrink-0">{e.score}pt</div>
                   </div>
-                  <div className="text-[10px] font-bold text-primary shrink-0">{e.score}pt</div>
-                </div>
+                );
+              };
+
+              const renderSection = (
+                title: string,
+                icon: string,
+                accent: string,
+                list: ScoredEvent[]
+              ) => (
+                list.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className={`flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider ${accent}`}>
+                      <span>{icon}</span>
+                      <span>{title}</span>
+                      <span className="text-muted-foreground font-medium">({list.length})</span>
+                    </div>
+                    <div className="space-y-1.5">{list.map(renderRow)}</div>
+                  </div>
+                )
               );
-            })}
+
+              return (
+                <>
+                  {renderSection("Destaques da Aura", "🤖", "text-pink-300", auraList)}
+                  {renderSection("Hoje", "🔥", "text-orange-400", todayList)}
+                  {renderSection("Próximos", "📅", "text-primary", upcomingList)}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
