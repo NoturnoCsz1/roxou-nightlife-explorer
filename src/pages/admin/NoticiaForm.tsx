@@ -77,12 +77,20 @@ const NoticiaForm = () => {
   useEffect(() => {
     if (!editing) return;
     (async () => {
-      const { data, error } = await supabase.from("expo_news").select("*").eq("id", id).maybeSingle();
-      if (error || !data) {
+      // tenta primeiro no escopo atual; se não encontrar, tenta o outro
+      const tryTables: ("roxou_news" | "expo_news")[] = scope === "expo" ? ["expo_news", "roxou_news"] : ["roxou_news", "expo_news"];
+      let data: any = null;
+      let foundScope: Scope = scope;
+      for (const t of tryTables) {
+        const { data: row } = await supabase.from(t).select("*").eq("id", id).maybeSingle();
+        if (row) { data = row; foundScope = t === "expo_news" ? "expo" : "roxou"; break; }
+      }
+      if (!data) {
         toast({ title: "Não encontrado", variant: "destructive" });
         navigate("/admin/noticias");
         return;
       }
+      setScope(foundScope);
       setForm({
         title: data.title ?? "",
         slug: data.slug ?? "",
@@ -99,7 +107,7 @@ const NoticiaForm = () => {
       setSlugTouched(true);
       setLoading(false);
     })();
-  }, [id, editing, navigate]);
+  }, [id, editing, navigate, scope]);
 
   const updateTitle = (rawTitle: string) => {
     const title = rawTitle.toUpperCase();
