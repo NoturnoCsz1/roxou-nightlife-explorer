@@ -367,23 +367,8 @@ const NoticiaForm = () => {
           </div>
         </div>
 
-        {/* Destaques Expo + IG */}
+        {/* IG */}
         <div className="space-y-3">
-          <div className="flex items-start gap-2 rounded-xl border border-orange-400/30 bg-gradient-to-r from-orange-500/10 to-yellow-500/5 p-3">
-            <Checkbox
-              id="expoFeat"
-              checked={expoFeatured}
-              onCheckedChange={(v) => setExpoFeatured(Boolean(v))}
-            />
-            <Label htmlFor="expoFeat" className="cursor-pointer text-sm leading-tight">
-              <span className="flex items-center gap-1.5 font-semibold">
-                <Flame className="h-3.5 w-3.5 text-orange-400" /> Mostrar no hotsite Expo 2026
-              </span>
-              <span className="text-[11px] text-muted-foreground font-normal">
-                Toda notícia publicada já aparece em /expo2026. Use o status "Publicado" para liberar.
-              </span>
-            </Label>
-          </div>
 
           <div className="flex items-start gap-2 rounded-xl border border-pink-500/30 bg-gradient-to-r from-pink-500/5 to-purple-500/5 p-3">
             <Checkbox
