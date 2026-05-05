@@ -688,26 +688,34 @@ export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, 
     } catch { /* fallback solid */ }
   }
 
-  // Heavy bottom gradient
-  const grad = ctx.createLinearGradient(0, H * 0.2, 0, H);
-  grad.addColorStop(0, "rgba(15,10,26,0)");
-  grad.addColorStop(0.25, "rgba(15,10,26,0.3)");
-  grad.addColorStop(0.5, "rgba(15,10,26,0.7)");
-  grad.addColorStop(0.75, "rgba(15,10,26,0.92)");
-  grad.addColorStop(1, "rgba(15,10,26,0.98)");
+  const isStory = fmt === "story";
+
+  // Heavy bottom gradient (mais escuro no story para virar conteúdo social)
+  const grad = ctx.createLinearGradient(0, H * (isStory ? 0.05 : 0.2), 0, H);
+  grad.addColorStop(0, isStory ? "rgba(15,10,26,0.45)" : "rgba(15,10,26,0)");
+  grad.addColorStop(0.25, isStory ? "rgba(15,10,26,0.7)" : "rgba(15,10,26,0.3)");
+  grad.addColorStop(0.5, isStory ? "rgba(15,10,26,0.88)" : "rgba(15,10,26,0.7)");
+  grad.addColorStop(0.75, "rgba(15,10,26,0.96)");
+  grad.addColorStop(1, "rgba(15,10,26,1)");
   ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
 
   // Top gradient
   const topG = ctx.createLinearGradient(0, 0, 0, H * 0.2);
-  topG.addColorStop(0, "rgba(15,10,26,0.6)");
+  topG.addColorStop(0, isStory ? "rgba(15,10,26,0.85)" : "rgba(15,10,26,0.6)");
   topG.addColorStop(1, "rgba(15,10,26,0)");
   ctx.fillStyle = topG; ctx.fillRect(0, 0, W, H * 0.25);
 
-  drawGrain(ctx, W, H);
-  drawGlow(ctx, W * 0.5, H * 0.7, 400, ACCENT, 0.06);
+  // Roxou neon purple side accents (apenas story)
+  if (isStory) {
+    drawGlow(ctx, W * 0.15, H * 0.35, 520, "#9b5cff", 0.18);
+    drawGlow(ctx, W * 0.85, H * 0.78, 520, "#c084fc", 0.14);
+  }
 
-  // Badge
-  drawBadge(ctx, badge.toUpperCase(), PAD, PAD);
+  drawGrain(ctx, W, H);
+  drawGlow(ctx, W * 0.5, H * 0.7, 400, ACCENT, isStory ? 0.1 : 0.06);
+
+  // Badge — AURA INDICA no story, badge custom no resto
+  drawBadge(ctx, isStory ? "💜 AURA INDICA" : badge.toUpperCase(), PAD, PAD);
 
   // Weekday chip (top right)
   const wd = WEEKDAYS[new Date(event.date_time).getDay()];
@@ -793,7 +801,7 @@ export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, 
     ctx.restore();
   }
 
-  drawPremiumCTA(ctx, W, H, "CONFIRA NA ROXOU.COM.BR", PAD);
+  drawPremiumCTA(ctx, W, H, isStory ? "🔥 VEJA MAIS NO ROXOU.COM.BR" : "CONFIRA NA ROXOU.COM.BR", PAD);
   return canvas.toDataURL("image/png");
 }
 
