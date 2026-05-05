@@ -345,7 +345,7 @@ const EstabelecimentosAudit = () => {
                     className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
                   >
                     {busy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
-                    Gerar coordenadas
+                    Geocodificar endereço
                   </button>
                   <a
                     href={`/local/${e.slug}`}
