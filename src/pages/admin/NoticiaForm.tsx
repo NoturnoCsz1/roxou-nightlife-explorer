@@ -219,6 +219,21 @@ const NoticiaForm = () => {
               </Select>
             </div>
           </div>
+
+          <div className="rounded-xl border border-orange-400/20 bg-gradient-to-r from-orange-500/5 to-yellow-500/5 p-3">
+            <Label className="flex items-center gap-1.5 text-xs">
+              <Sparkles className="h-3 w-3 text-orange-400" /> Foco SEO (palavra-chave principal)
+            </Label>
+            <Input
+              value={form.seo_keyword}
+              onChange={(e) => setForm((f) => ({ ...f, seo_keyword: e.target.value }))}
+              placeholder='Ex: "shows expo prudente 2026"'
+              className="mt-1.5"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Aparecerá no slug da URL e turbina o ranking no Google. Frase natural focada em Presidente Prudente.
+            </p>
+          </div>
         </div>
 
         {/* Capa */}
