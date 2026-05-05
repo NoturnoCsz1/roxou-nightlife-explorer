@@ -31,6 +31,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import ParceirosList from "./pages/admin/ParceirosList";
 import ParceiroForm from "./pages/admin/ParceiroForm";
+import EstabelecimentosAudit from "./pages/admin/EstabelecimentosAudit";
 import EventosList from "./pages/admin/EventosList";
 import EventoForm from "./pages/admin/EventoForm";
 import EventoBulkForm from "./pages/admin/EventoBulkForm";
@@ -93,6 +94,7 @@ const App = () => (
             <Route path="parceiros" element={<ParceirosList />} />
             <Route path="parceiros/novo" element={<ParceiroForm />} />
             <Route path="parceiros/:id/editar" element={<ParceiroForm />} />
+            <Route path="estabelecimentos" element={<EstabelecimentosAudit />} />
             <Route path="eventos" element={<EventosList />} />
             <Route path="eventos/novo" element={<EventoForm />} />
             <Route path="eventos/novo/lote" element={<EventoBulkForm />} />

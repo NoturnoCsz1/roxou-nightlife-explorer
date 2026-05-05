@@ -790,12 +790,15 @@ export type Database = {
           full_description: string | null
           id: string
           instagram: string | null
+          instagram_validated: boolean
           logo_url: string | null
           name: string
           neighborhood: string | null
           short_description: string | null
           slug: string
+          status: string
           type: string
+          updated_at: string
           verified_partner: boolean
           whatsapp: string | null
         }
@@ -808,12 +811,15 @@ export type Database = {
           full_description?: string | null
           id?: string
           instagram?: string | null
+          instagram_validated?: boolean
           logo_url?: string | null
           name: string
           neighborhood?: string | null
           short_description?: string | null
           slug: string
+          status?: string
           type?: string
+          updated_at?: string
           verified_partner?: boolean
           whatsapp?: string | null
         }
@@ -826,12 +832,15 @@ export type Database = {
           full_description?: string | null
           id?: string
           instagram?: string | null
+          instagram_validated?: boolean
           logo_url?: string | null
           name?: string
           neighborhood?: string | null
           short_description?: string | null
           slug?: string
+          status?: string
           type?: string
+          updated_at?: string
           verified_partner?: boolean
           whatsapp?: string | null
         }
