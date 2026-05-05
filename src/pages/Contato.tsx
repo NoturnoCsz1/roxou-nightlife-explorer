@@ -4,21 +4,22 @@ import SEO from "@/components/SEO";
 import ContactForm from "@/components/ContactForm";
 
 const CONTACT_TYPES = [
-  "Dúvidas sobre o evento",
-  "Proposta comercial",
-  "Patrocínio",
+  "Divulgar evento",
+  "Parceria comercial",
+  "Anunciar na Roxou",
   "Imprensa",
-  "Trabalhe com a gente",
+  "Suporte",
+  "Sugestão",
   "Outro",
 ];
 
-export default function Expo2026Contato() {
+export default function Contato() {
   return (
     <div className="min-h-screen bg-[#09090b] text-white">
       <SEO
-        title="Contato Expo Prudente 2026 | Roxou"
-        description="Entre em contato com a equipe da Expo Prudente 2026 para dúvidas, propostas comerciais, patrocínio e imprensa."
-        keywords="Expo Prudente 2026, contato Expo Prudente, patrocínio Expo Prudente, eventos Presidente Prudente, Roxou"
+        title="Contato Roxou | Portal de Eventos em Presidente Prudente"
+        description="Entre em contato com a Roxou para divulgar eventos, parcerias comerciais, publicidade, imprensa, suporte e sugestões."
+        keywords="Roxou contato, divulgar evento Presidente Prudente, anunciar na Roxou, eventos Presidente Prudente, portal de eventos Prudente"
       />
 
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -28,11 +29,11 @@ export default function Expo2026Contato() {
 
       <header className="border-b border-white/10 bg-black/40 backdrop-blur-xl sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/expo2026" className="flex items-center gap-2 text-white/70 hover:text-white transition text-sm">
+          <Link to="/" className="flex items-center gap-2 text-white/70 hover:text-white transition text-sm">
             <ArrowLeft className="w-4 h-4" /> Voltar
           </Link>
-          <Link to="/expo2026" className="font-bold tracking-tight bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
-            EXPO PRUDENTE 2026
+          <Link to="/" className="font-bold tracking-tight bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+            ROXOU
           </Link>
         </div>
       </header>
@@ -44,14 +45,11 @@ export default function Expo2026Contato() {
           </div>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight mb-4">
             <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-400 bg-clip-text text-transparent">
-              CONTATO
-            </span>
-            <span className="block text-white/90 text-xl sm:text-2xl mt-2 font-bold">
-              EXPO PRUDENTE 2026
+              CONTATO ROXOU
             </span>
           </h1>
           <p className="text-white/60 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-            Fale com a equipe da Expo Prudente 2026 para dúvidas, propostas comerciais, imprensa, parcerias ou informações sobre o evento.
+            Fale com a equipe da Roxou para dúvidas, parcerias, divulgação de eventos, imprensa, suporte ou propostas comerciais.
           </p>
           <a
             href="mailto:contato@roxou.com.br"
@@ -61,20 +59,20 @@ export default function Expo2026Contato() {
           </a>
         </div>
 
-        <ContactForm kind="expo" contactTypes={CONTACT_TYPES} />
+        <ContactForm kind="roxou" contactTypes={CONTACT_TYPES} />
 
         <div className="mt-12 text-center border-t border-white/5 pt-10">
           <h3 className="text-lg font-bold mb-2 bg-gradient-to-r from-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
             Roxou — O portal de eventos de Presidente Prudente
           </h3>
           <p className="text-white/60 text-sm max-w-md mx-auto mb-5">
-            Acompanhe as novidades da Expo Prudente 2026, shows confirmados e programação completa.
+            Eventos, baladas, shows, gastronomia e os melhores rolês da cidade.
           </p>
           <Link
-            to="/expo2026"
+            to="/"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-purple-500/40 hover:bg-purple-500/10 hover:border-purple-400 transition text-sm font-bold"
           >
-            VER NOTÍCIAS DA EXPO 2026 <ArrowLeft className="w-4 h-4 rotate-180" />
+            VOLTAR PARA A HOME <ArrowLeft className="w-4 h-4 rotate-180" />
           </Link>
         </div>
       </main>

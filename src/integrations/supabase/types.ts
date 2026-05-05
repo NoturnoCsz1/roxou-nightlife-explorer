@@ -1039,6 +1039,45 @@ export type Database = {
           },
         ]
       }
+      roxou_contacts: {
+        Row: {
+          contact_type: string
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string
+          source: string | null
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          contact_type: string
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone: string
+          source?: string | null
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string
+          source?: string | null
+          status?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       saved_events: {
         Row: {
           created_at: string
