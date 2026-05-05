@@ -170,18 +170,18 @@ const Expo2026 = () => {
               className="mx-auto w-[220px] sm:w-[320px] h-auto drop-shadow-[0_0_40px_rgba(251,146,60,0.45)]"
             />
 
-            <p className="mt-5 text-base sm:text-xl text-white/80 max-w-2xl mx-auto font-medium">
+            <p className="mt-5 text-lg sm:text-2xl text-white max-w-2xl mx-auto font-bold drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
               As atrações divulgadas já estão aqui.
             </p>
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                <Calendar className="h-4 w-4 text-orange-400" />{" "}
-                <span className="font-semibold">10 a 14 SET 2026</span>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-sm">
+              <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/60 border border-orange-400/40 backdrop-blur-md shadow-[0_0_25px_-5px_rgba(251,146,60,0.5)]">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
+                <span className="font-bold text-white text-sm sm:text-base tracking-wide">10 a 14 SET 2026</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                <MapPin className="h-4 w-4 text-orange-400" />{" "}
-                <span className="font-semibold">Recinto de Exposições Jacob Tosello</span>
+              <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/60 border border-orange-400/40 backdrop-blur-md shadow-[0_0_25px_-5px_rgba(251,146,60,0.5)]">
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
+                <span className="font-bold text-white text-sm sm:text-base tracking-wide">Recinto de Exposições Jacob Tosello</span>
               </span>
             </div>
 
