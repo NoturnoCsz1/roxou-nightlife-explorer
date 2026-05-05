@@ -84,7 +84,8 @@ const NoticiaForm = () => {
     })();
   }, [id, editing, navigate]);
 
-  const updateTitle = (title: string) => {
+  const updateTitle = (rawTitle: string) => {
+    const title = rawTitle.toUpperCase();
     setForm((f) => ({ ...f, title, slug: slugTouched ? f.slug : slugify(title) }));
   };
 
