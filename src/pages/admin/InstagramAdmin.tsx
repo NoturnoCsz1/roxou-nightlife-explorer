@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap } from "lucide-react";
+import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
