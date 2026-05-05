@@ -175,14 +175,19 @@ export default function V3RideRequest() {
         if (cancelled) return;
         const g = (window as any).google;
 
-        let destLat = event.latitude;
-        let destLng = event.longitude;
+        let destLat = event.latitude ?? event.partner?.latitude ?? null;
+        let destLng = event.longitude ?? event.partner?.longitude ?? null;
+        const destAddress =
+          event.address ||
+          event.partner?.address ||
+          event.venue_name ||
+          event.partner?.name ||
+          "";
 
-        if ((destLat == null || destLng == null) && event.address) {
-          // fallback: client-side geocode (best effort) — do NOT persist; admin should fix
+        if ((destLat == null || destLng == null) && destAddress) {
           const geocoder = new g.maps.Geocoder();
           try {
-            const res = await geocoder.geocode({ address: `${event.address}, Brasil` });
+            const res = await geocoder.geocode({ address: `${destAddress}, Brasil` });
             const loc = res?.results?.[0]?.geometry?.location;
             if (loc) {
               destLat = loc.lat();
@@ -191,7 +196,7 @@ export default function V3RideRequest() {
           } catch {}
         }
         if (destLat == null || destLng == null) {
-          setEventError("Este evento ainda não tem localização cadastrada. Avisamos a equipe para corrigir.");
+          setEventError("Este estabelecimento ainda não tem localização cadastrada. Valide as coordenadas no admin.");
           return;
         }
         setEvent((prev) => prev ? { ...prev, latitude: destLat!, longitude: destLng! } : prev);
