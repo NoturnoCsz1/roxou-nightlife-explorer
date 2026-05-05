@@ -160,7 +160,7 @@ const InstagramStudio = () => {
       if (views >= 5) score += 2;
       if (isPrimeTime) score += 1;
       if (e.image_url) score += 1;
-      return { ...e, score, views, saves, verifiedPartner: isVerified };
+      return { ...e, score, views, saves, verifiedPartner: isVerified, aura_pick: !!e.aura_pick };
     });
 
     setEvents(scored);
