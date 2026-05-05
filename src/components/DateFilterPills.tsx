@@ -28,7 +28,11 @@ const DateFilterPills = ({ active, onScrollTo }: Props) => {
   }, [active]);
 
   return (
-    <div ref={containerRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+    <div
+      ref={containerRef}
+      className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide -mx-4 md:mx-0"
+    >
+      <div className="flex flex-nowrap gap-2 px-4 md:px-0 pb-1 min-w-max">
       {anchors.map((f) => {
         const isActive = active === f.key;
         return (
@@ -36,7 +40,7 @@ const DateFilterPills = ({ active, onScrollTo }: Props) => {
             key={f.key}
             ref={el => { pillRefs.current[f.key] = el; }}
             onClick={() => onScrollTo(f.key)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold tracking-wide transition-all duration-300 ease-out ${
+            className={`flex flex-shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold tracking-wide transition-all duration-300 ease-out ${
               isActive
                 ? "gradient-primary text-primary-foreground neon-glow scale-105"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80 scale-100"
@@ -47,6 +51,7 @@ const DateFilterPills = ({ active, onScrollTo }: Props) => {
           </button>
         );
       })}
+      </div>
     </div>
   );
 };
