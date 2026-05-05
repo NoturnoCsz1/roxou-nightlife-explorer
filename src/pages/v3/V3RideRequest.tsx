@@ -61,6 +61,13 @@ async function loadGoogleMaps(): Promise<void> {
   return mapsLoadPromise;
 }
 
+interface PartnerData {
+  name: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  maps_place_id?: string | null;
+}
 interface EventData {
   id: string;
   title: string;
@@ -70,6 +77,8 @@ interface EventData {
   latitude: number | null;
   longitude: number | null;
   status: string;
+  partner_id: string | null;
+  partner?: PartnerData | null;
 }
 
 export default function V3RideRequest() {
@@ -115,7 +124,7 @@ export default function V3RideRequest() {
       }
       const { data, error } = await supabase
         .from("events")
-        .select("id,title,venue_name,address,date_time,latitude,longitude,status")
+        .select("id,title,venue_name,address,date_time,latitude,longitude,status,partner_id")
         .eq("id", eventIdParam)
         .maybeSingle();
       if (error || !data) {
@@ -128,7 +137,16 @@ export default function V3RideRequest() {
         setEventLoading(false);
         return;
       }
-      setEvent(data as EventData);
+      let partner: PartnerData | null = null;
+      if (data.partner_id) {
+        const { data: p } = await supabase
+          .from("partners")
+          .select("name,address,latitude,longitude")
+          .eq("id", data.partner_id)
+          .maybeSingle();
+        if (p) partner = p as PartnerData;
+      }
+      setEvent({ ...(data as any), partner } as EventData);
       setEventDate(toLocalDatetime(data.date_time));
       setEventLoading(false);
     })();
@@ -157,14 +175,19 @@ export default function V3RideRequest() {
         if (cancelled) return;
         const g = (window as any).google;
 
-        let destLat = event.latitude;
-        let destLng = event.longitude;
+        let destLat = event.latitude ?? event.partner?.latitude ?? null;
+        let destLng = event.longitude ?? event.partner?.longitude ?? null;
+        const destAddress =
+          event.address ||
+          event.partner?.address ||
+          event.venue_name ||
+          event.partner?.name ||
+          "";
 
-        if ((destLat == null || destLng == null) && event.address) {
-          // fallback: client-side geocode (best effort) — do NOT persist; admin should fix
+        if ((destLat == null || destLng == null) && destAddress) {
           const geocoder = new g.maps.Geocoder();
           try {
-            const res = await geocoder.geocode({ address: `${event.address}, Brasil` });
+            const res = await geocoder.geocode({ address: `${destAddress}, Brasil` });
             const loc = res?.results?.[0]?.geometry?.location;
             if (loc) {
               destLat = loc.lat();
@@ -173,7 +196,7 @@ export default function V3RideRequest() {
           } catch {}
         }
         if (destLat == null || destLng == null) {
-          setEventError("Este evento ainda não tem localização cadastrada. Avisamos a equipe para corrigir.");
+          setEventError("Este estabelecimento ainda não tem localização cadastrada. Valide as coordenadas no admin.");
           return;
         }
         setEvent((prev) => prev ? { ...prev, latitude: destLat!, longitude: destLng! } : prev);
@@ -330,7 +353,7 @@ export default function V3RideRequest() {
         origin_accuracy: originAccuracy,
         origin_source: originSource ?? "gps",
         // Destination — LOCKED to event
-        destination_address: event.address || event.venue_name || event.title,
+        destination_address: event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title,
         destination_lat: event.latitude,
         destination_lng: event.longitude,
         passengers_count: passengersCount,
