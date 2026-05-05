@@ -45,7 +45,7 @@ const ExpoIngressos = () => {
           <div className="rounded-2xl border border-orange-400/20 bg-white/5 p-4">
             <Ticket className="h-5 w-5 text-orange-400 mb-2" />
             <div className="font-bold">Lote 1</div>
-            <div className="text-muted-foreground">Em breve</div>
+            <div className="text-muted-foreground">10/09/2026</div>
           </div>
           <div className="rounded-2xl border border-orange-400/20 bg-white/5 p-4">
             <Calendar className="h-5 w-5 text-orange-400 mb-2" />

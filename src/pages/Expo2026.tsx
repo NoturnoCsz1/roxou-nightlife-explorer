@@ -28,14 +28,14 @@ const CATEGORIES = [
 const ATTRACTIONS = [
   {
     name: "Gusttavo Lima",
-    date: "Em breve",
+    date: "10/09/2026",
     tag: "Sertanejo",
     image:
       "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
   },
   {
     name: "Zezé Di Camargo & Luciano",
-    date: "Em breve",
+    date: "10/09/2026",
     tag: "Sertanejo Raiz",
     image:
       "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
