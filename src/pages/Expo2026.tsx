@@ -453,16 +453,22 @@ const Expo2026 = () => {
             Vendas oficiais com link direto liberadas em breve aqui.
           </p>
         </div>
-        <div
+        <a
           id="transporte"
-          className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent backdrop-blur-md p-6"
+          href="https://roxou.com.br/pedir-carona"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent backdrop-blur-md p-6 hover:border-primary/60 hover:-translate-y-0.5 hover:shadow-[0_0_30px_-5px_hsl(var(--primary)/0.5)] transition-all"
         >
           <Car className="h-7 w-7 text-primary mb-3" />
           <h3 className="font-display font-black text-xl">Caronas e transporte</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Sistema "Como você vai?" da ROXOU vai conectar passageiros e motoristas durante toda a Expo.
           </p>
-        </div>
+          <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary">
+            Pedir carona <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </a>
       </section>
 
       {/* FAQ SEO */}
