@@ -140,15 +140,14 @@ const Expo2026 = () => {
               </span>
             </div>
 
-            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-black leading-[0.95] tracking-tight">
-              <span className="bg-gradient-to-br from-orange-300 via-yellow-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,146,60,0.3)]">
-                EXPO PRUDENTE
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-primary via-fuchsia-400 to-primary bg-clip-text text-transparent">
-                2026
-              </span>
-            </h1>
+            <h1 className="sr-only">Expo Prudente 2026</h1>
+            <img
+              src="/expo2026/logo-expo.png"
+              alt="Expo Prudente 2026"
+              width={320}
+              height={200}
+              className="mx-auto w-[220px] sm:w-[320px] h-auto drop-shadow-[0_0_40px_rgba(251,146,60,0.45)]"
+            />
 
             <p className="mt-5 text-base sm:text-xl text-white/80 max-w-2xl mx-auto font-medium">
               As atrações divulgadas já estão aqui.
