@@ -57,17 +57,18 @@ export default function Expo2026Contato() {
         message: form.message.trim(),
       };
 
-      const { error: dbError } = await supabase.from("expo2026_contacts").insert(payload);
-      if (dbError) throw dbError;
+      const { data, error: fnError } = await supabase.functions.invoke<{
+        success: boolean;
+        error?: string;
+      }>("send-expo-contact", { body: payload });
 
-      const { error: fnError } = await supabase.functions.invoke("send-expo-contact", {
-        body: payload,
-      });
-      if (fnError) console.error("E-mail falhou (lead salvo):", fnError);
+      if (fnError || !data?.success) {
+        throw new Error(data?.error || fnError?.message || "Falha no envio");
+      }
 
       setSuccess(true);
       setForm({ name: "", email: "", phone: "", contact_type: "", subject: "", message: "" });
-      toast.success("Mensagem enviada com sucesso!");
+      toast.success("Mensagem enviada com sucesso! Em breve nossa equipe entrará em contato.");
     } catch (e) {
       console.error(e);
       toast.error("Não foi possível enviar sua mensagem. Tente novamente.");
