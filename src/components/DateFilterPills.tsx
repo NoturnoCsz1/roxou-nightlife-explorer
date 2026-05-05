@@ -51,6 +51,7 @@ const DateFilterPills = ({ active, onScrollTo }: Props) => {
           </button>
         );
       })}
+      </div>
     </div>
   );
 };
