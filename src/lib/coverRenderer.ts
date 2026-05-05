@@ -1234,7 +1234,7 @@ export async function renderStoryV3(
   }
 
   // 8) Aura speech bubble — near her face (top-left of mascot)
-  const phrase = event.aura_phrase?.trim() || "Eu indico esse rolê 💜";
+  const phrase = event.aura_phrase?.trim() || "Hoje é aqui que você tem que estar";
   ctx.save();
   ctx.font = "italic 600 28px sans-serif";
   const prefix = "🤖  ";
