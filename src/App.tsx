@@ -119,6 +119,10 @@ const App = () => (
           <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
           <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
 
+          {/* ========= NOTÍCIAS ROXOU ========= */}
+          <Route path="/noticias" element={<RoxouNoticias />} />
+          <Route path="/noticia/:slug" element={<RoxouNoticia />} />
+
           {/* ========= ROXOU V3 (raiz pública) ========= */}
           <Route path="/manutencao" element={<Maintenance />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
