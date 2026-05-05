@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles, Star, Flame, CheckCircle2 } from "lucide-react";
+import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles, Star, Flame, CheckCircle2, Instagram, Twitter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
 import ExpoFAQ, { faqJsonLd, DEFAULT_EXPO_FAQ } from "@/components/expo/ExpoFAQ";
