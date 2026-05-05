@@ -77,6 +77,7 @@ const NoticiaForm = () => {
         status: data.status ?? "draft",
         published_at: data.published_at ?? "",
         seo_keyword: (data as any).seo_keyword ?? "",
+        source_url: (data as any).source_url ?? "",
       });
       setSlugTouched(true);
       setLoading(false);
