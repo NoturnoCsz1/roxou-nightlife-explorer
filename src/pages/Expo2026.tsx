@@ -35,7 +35,7 @@ const ATTRACTIONS = [
   },
   {
     name: "Zezé Di Camargo & Luciano",
-    date: "10/09/2026",
+    date: "11/09/2026",
     tag: "Sertanejo Raiz",
     image:
       "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
