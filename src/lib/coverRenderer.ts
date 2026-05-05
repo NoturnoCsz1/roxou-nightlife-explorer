@@ -1219,9 +1219,13 @@ export async function renderStoryV3(
   // Title positioned above info card + CTA stack
   const titleBlockH = titleLines.length * lineH;
   const titleY = H - 130 - 124 - 40 - 130 - titleBlockH; // CTA bottom margin + CTA + gap + infocard + gap
-  ctx.shadowColor = "rgba(0,0,0,0.65)";
-  ctx.shadowBlur = 18;
   ctx.fillStyle = "#FFFFFF";
+  // Double-pass shadow for legibility on bright flyers
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = 28;
+  titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * lineH));
+  ctx.shadowColor = "rgba(0,0,0,0.55)";
+  ctx.shadowBlur = 8;
   titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * lineH));
   ctx.restore();
 
