@@ -186,7 +186,7 @@ const NoticiaForm = () => {
       toast({ title: editing ? "Notícia atualizada" : publish ? "Notícia publicada!" : "Rascunho salvo" });
     }
     setSaving(false);
-    navigate("/admin/noticias");
+    navigate(backTo);
   };
 
   if (loading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
