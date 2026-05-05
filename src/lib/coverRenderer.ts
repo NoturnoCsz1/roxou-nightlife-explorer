@@ -801,7 +801,7 @@ export async function renderFlyer(canvas: HTMLCanvasElement, event: CoverEvent, 
     ctx.restore();
   }
 
-  drawPremiumCTA(ctx, W, H, "CONFIRA NA ROXOU.COM.BR", PAD);
+  drawPremiumCTA(ctx, W, H, isStory ? "🔥 VEJA MAIS NO ROXOU.COM.BR" : "CONFIRA NA ROXOU.COM.BR", PAD);
   return canvas.toDataURL("image/png");
 }
 
