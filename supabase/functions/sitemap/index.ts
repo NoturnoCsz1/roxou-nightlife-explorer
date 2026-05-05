@@ -118,6 +118,18 @@ Deno.serve(async (req) => {
 `;
   }
 
+  // Expo news
+  for (const n of expoNews || []) {
+    const lastmod = (n.updated_at || n.published_at || today).split("T")[0];
+    xml += `  <url>
+    <loc>${BASE_URL}/expo2026/noticia/${n.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
   xml += `</urlset>`;
 
   return new Response(xml, {
