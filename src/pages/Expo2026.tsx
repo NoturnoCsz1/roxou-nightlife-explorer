@@ -4,6 +4,7 @@ import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles, 
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
 import ExpoFAQ, { faqJsonLd, DEFAULT_EXPO_FAQ } from "@/components/expo/ExpoFAQ";
+import ExpoGallery from "@/components/expo/ExpoGallery";
 
 interface ExpoNews {
   id: string;
@@ -396,8 +397,11 @@ const Expo2026 = () => {
         )}
       </section>
 
-      {/* GALERIA */}
-      <section id="galeria" className="px-4 mx-auto max-w-6xl mt-16">
+      {/* GALERIA PREMIUM — Álbuns por artista */}
+      <ExpoGallery />
+
+      {/* GALERIA bastidores ROXOU */}
+      <section id="galeria-bastidores" className="px-4 mx-auto max-w-6xl mt-16">
         <div className="mb-5">
           <div className="inline-flex items-center gap-2 mb-2">
             <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
