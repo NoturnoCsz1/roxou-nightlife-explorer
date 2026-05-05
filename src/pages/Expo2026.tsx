@@ -139,7 +139,7 @@ const Expo2026 = () => {
         <div className="group relative rounded-3xl overflow-hidden border border-white/10 p-6 sm:p-12">
           {/* Background image with parallax */}
           <div
-            className="absolute inset-0 -z-10 bg-cover bg-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 motion-safe:animate-[fade-in_1s_ease-out]"
+            className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 motion-safe:animate-[fade-in_1s_ease-out]"
             style={{
               backgroundImage: 'url("/expo2026/hero-bg.jpg")',
             }}
@@ -147,19 +147,19 @@ const Expo2026 = () => {
           />
           {/* Dark overlay for readability */}
           <div
-            className="absolute inset-0 -z-10"
+            className="absolute inset-0 z-0"
             style={{
               background:
-                "linear-gradient(to bottom, rgba(9,9,11,0.65), rgba(9,9,11,0.9))",
+                "linear-gradient(to bottom, rgba(9,9,11,0.55), rgba(9,9,11,0.85))",
             }}
             aria-hidden="true"
           />
           {/* Roxou identity glows */}
           <div
-            className="absolute inset-0 -z-10 pointer-events-none"
+            className="absolute inset-0 z-0 pointer-events-none"
             style={{
               background:
-                "radial-gradient(circle at left, rgba(168,85,247,0.25), transparent 60%), radial-gradient(circle at right, rgba(255,140,0,0.18), transparent 60%)",
+                "radial-gradient(circle at left, rgba(168,85,247,0.35), transparent 60%), radial-gradient(circle at right, rgba(255,140,0,0.25), transparent 60%)",
             }}
             aria-hidden="true"
           />
