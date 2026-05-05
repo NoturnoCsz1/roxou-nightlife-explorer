@@ -457,6 +457,45 @@ export type Database = {
         }
         Relationships: []
       }
+      expo2026_contacts: {
+        Row: {
+          contact_type: string
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string
+          source: string | null
+          status: string | null
+          subject: string
+        }
+        Insert: {
+          contact_type: string
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone: string
+          source?: string | null
+          status?: string | null
+          subject: string
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string
+          source?: string | null
+          status?: string | null
+          subject?: string
+        }
+        Relationships: []
+      }
       instagram_accounts: {
         Row: {
           access_token: string
