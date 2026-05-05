@@ -108,6 +108,7 @@ const App = () => (
 
           {/* ========= HOT SITE EXPO 2026 ========= */}
           <Route path="/expo2026" element={<Expo2026 />} />
+          <Route path="/expo2026/contato" element={<Expo2026Contato />} />
           <Route path="/expo2026/shows" element={<ExpoShows />} />
           <Route path="/expo2026/programacao" element={<ExpoProgramacao />} />
           <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
