@@ -40,8 +40,7 @@ const isEventLive = (d: string) => {
 const getDayLabel = (d: string) => {
   const dt = new Date(d);
   if (isTodayFn(dt)) return "HOJE";
-  const tomorrow = addDays(startOfDay(new Date()), 1);
-  if (dt >= tomorrow && dt < addDays(tomorrow, 1)) return "AMANHÃ";
+  if (isTomorrowSP(dt)) return "AMANHÃ";
   return format(dt, "EEEE", { locale: ptBR }).toUpperCase();
 };
 
