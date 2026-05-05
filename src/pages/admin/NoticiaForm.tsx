@@ -51,6 +51,7 @@ const NoticiaForm = () => {
     status: "draft",
     published_at: "",
     seo_keyword: "",
+    source_url: "",
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [autoPublishIG, setAutoPublishIG] = useState(false);
