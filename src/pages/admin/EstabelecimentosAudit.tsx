@@ -167,9 +167,6 @@ const EstabelecimentosAudit = () => {
       setBusy(null);
     }
   }
-      setBusy(null);
-    }
-  }
 
   return (
     <div className="space-y-4 md:ml-44">
