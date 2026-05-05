@@ -175,9 +175,26 @@ const EstabelecimentosAudit = () => {
           <h1 className="text-lg font-bold text-foreground">Auditoria de Estabelecimentos</h1>
           <p className="text-[11px] text-muted-foreground">Validação, status e qualidade de dados</p>
         </div>
-        <Link to="/admin/parceiros/novo" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-          Novo
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={async () => {
+              const targets = items.filter(e => e.address && (e.latitude == null || e.longitude == null));
+              if (!targets.length) { toast.message("Nada a geocodificar"); return; }
+              toast.message(`Geocodificando ${targets.length}...`);
+              for (const e of targets) {
+                await generateCoordinates(e);
+                await new Promise(r => setTimeout(r, 250));
+              }
+              toast.success("Lote concluído");
+            }}
+            className="rounded-lg bg-secondary/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+          >
+            Geocodificar faltantes
+          </button>
+          <Link to="/admin/parceiros/novo" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+            Novo
+          </Link>
+        </div>
       </div>
 
       {/* Métricas */}
