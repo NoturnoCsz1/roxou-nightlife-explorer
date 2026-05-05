@@ -16,6 +16,7 @@ import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
 
 import Expo2026 from "./pages/Expo2026";
+import Expo2026Contato from "./pages/Expo2026Contato";
 import ExpoNoticia from "./pages/ExpoNoticia";
 import ExpoShows from "./pages/expo/ExpoShows";
 import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
@@ -108,6 +109,7 @@ const App = () => (
 
           {/* ========= HOT SITE EXPO 2026 ========= */}
           <Route path="/expo2026" element={<Expo2026 />} />
+          <Route path="/expo2026/contato" element={<Expo2026Contato />} />
           <Route path="/expo2026/shows" element={<ExpoShows />} />
           <Route path="/expo2026/programacao" element={<ExpoProgramacao />} />
           <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
