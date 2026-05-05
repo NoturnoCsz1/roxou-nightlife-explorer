@@ -32,14 +32,16 @@ const ATTRACTIONS = [
     date: "10/09/2026",
     tag: "Sertanejo",
     image:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
+      "https://gusttavolima.com.br/wp-content/uploads/2025/08/R5C15611-2.png",
+    position: "center 20%",
   },
   {
     name: "Zezé Di Camargo & Luciano",
     date: "11/09/2026",
     tag: "Sertanejo Raiz",
     image:
-      "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
+      "https://midias.correiobraziliense.com.br/_midias/jpg/2023/03/19/675x450/1_zeze_di_camargo_e_luciano_1024x768-27646392.jpg",
+    position: "center 30%",
   },
 ];
 
