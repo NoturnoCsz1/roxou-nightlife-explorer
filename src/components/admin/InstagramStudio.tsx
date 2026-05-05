@@ -764,8 +764,11 @@ const InstagramStudio = () => {
           <button onClick={handleIdealOfDay} disabled={generating || filteredEvents.length === 0}
             className="relative w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-orange-500 px-4 py-4 text-base font-black text-white hover:opacity-95 transition disabled:opacity-50 shadow-[0_0_24px_hsl(var(--primary)/0.55),0_0_48px_hsl(var(--primary)/0.3)] animate-pulse">
             {generating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-            ✨ GERAR IDEAL DO DIA
+            ✨ CRIAR STORY COM AURA
           </button>
+          <p className="relative text-center text-[11px] text-pink-200/80 font-medium">
+            Em 1 clique: Story, Destaque e Reels prontos pra postar.
+          </p>
         </div>
       </section>
 
