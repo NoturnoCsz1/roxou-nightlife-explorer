@@ -124,7 +124,7 @@ export default function V3RideRequest() {
       }
       const { data, error } = await supabase
         .from("events")
-        .select("id,title,venue_name,address,date_time,latitude,longitude,status")
+        .select("id,title,venue_name,address,date_time,latitude,longitude,status,partner_id")
         .eq("id", eventIdParam)
         .maybeSingle();
       if (error || !data) {
@@ -137,7 +137,16 @@ export default function V3RideRequest() {
         setEventLoading(false);
         return;
       }
-      setEvent(data as EventData);
+      let partner: PartnerData | null = null;
+      if (data.partner_id) {
+        const { data: p } = await supabase
+          .from("partners")
+          .select("name,address,latitude,longitude")
+          .eq("id", data.partner_id)
+          .maybeSingle();
+        if (p) partner = p as PartnerData;
+      }
+      setEvent({ ...(data as any), partner } as EventData);
       setEventDate(toLocalDatetime(data.date_time));
       setEventLoading(false);
     })();
