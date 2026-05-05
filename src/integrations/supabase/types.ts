@@ -416,6 +416,7 @@ export type Database = {
           excerpt: string | null
           id: string
           published_at: string | null
+          seo_keyword: string | null
           slug: string
           status: string
           title: string
@@ -430,6 +431,7 @@ export type Database = {
           excerpt?: string | null
           id?: string
           published_at?: string | null
+          seo_keyword?: string | null
           slug: string
           status?: string
           title: string
@@ -444,6 +446,7 @@ export type Database = {
           excerpt?: string | null
           id?: string
           published_at?: string | null
+          seo_keyword?: string | null
           slug?: string
           status?: string
           title?: string
