@@ -195,7 +195,27 @@ const Expo2026 = () => {
         </div>
       </section>
 
-      {/* ATRAÇÕES CONFIRMADAS */}
+      {/* SUB-PÁGINAS / NAV INTERNA SEO */}
+      <nav aria-label="Seções da Expo" className="px-4 mx-auto max-w-6xl -mt-2">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <Link to="/expo2026/shows" className="rounded-2xl border border-orange-400/20 bg-white/5 hover:bg-orange-500/10 hover:border-orange-400/50 backdrop-blur-md p-4 text-center transition">
+            <Music className="h-5 w-5 mx-auto text-orange-400" />
+            <div className="mt-1 text-xs sm:text-sm font-bold">🔥 Shows</div>
+            <div className="hidden sm:block text-[11px] text-muted-foreground">Atrações confirmadas</div>
+          </Link>
+          <Link to="/expo2026/programacao" className="rounded-2xl border border-yellow-400/20 bg-white/5 hover:bg-yellow-500/10 hover:border-yellow-400/50 backdrop-blur-md p-4 text-center transition">
+            <Calendar className="h-5 w-5 mx-auto text-yellow-400" />
+            <div className="mt-1 text-xs sm:text-sm font-bold">📅 Programação</div>
+            <div className="hidden sm:block text-[11px] text-muted-foreground">Dia a dia da Expo</div>
+          </Link>
+          <Link to="/expo2026/ingressos" className="rounded-2xl border border-primary/30 bg-white/5 hover:bg-primary/10 hover:border-primary/60 backdrop-blur-md p-4 text-center transition">
+            <Ticket className="h-5 w-5 mx-auto text-primary" />
+            <div className="mt-1 text-xs sm:text-sm font-bold">🎟️ Ingressos</div>
+            <div className="hidden sm:block text-[11px] text-muted-foreground">Onde comprar</div>
+          </Link>
+        </div>
+      </nav>
+
       <section id="atracoes" className="px-4 mx-auto max-w-6xl mt-6">
         <div className="flex items-end justify-between mb-5">
           <div>
