@@ -16,9 +16,15 @@ const Hoje = () => {
 
   useEffect(() => {
     async function load() {
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+      // Build "today" in São Paulo timezone, regardless of browser TZ.
+      const spDate = new Intl.DateTimeFormat("sv-SE", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        timeZone: "America/Sao_Paulo",
+      }).format(new Date()); // "YYYY-MM-DD" in SP
+      const startOfDay = `${spDate}T00:00:00-03:00`;
+      const next = new Date(`${spDate}T00:00:00-03:00`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      const endOfDay = next.toISOString();
 
       const { data: eventsData } = await supabase
         .from("events")
