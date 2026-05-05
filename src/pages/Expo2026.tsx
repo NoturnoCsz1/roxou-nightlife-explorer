@@ -42,6 +42,12 @@ const ATTRACTIONS = [
   },
 ];
 
+const TBA_DATES = [
+  { date: "12/09/2026", label: "Sábado" },
+  { date: "13/09/2026", label: "Domingo" },
+  { date: "14/09/2026", label: "Segunda" },
+];
+
 const GALLERY = [
   "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
   "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop&q=70",
@@ -263,6 +269,33 @@ const Expo2026 = () => {
                     <span>{a.date}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Datas a confirmar */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+          {TBA_DATES.map((t) => (
+            <div
+              key={t.date}
+              className="relative rounded-2xl overflow-hidden border border-dashed border-orange-400/30 bg-gradient-to-br from-white/5 to-orange-500/5 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center min-h-[180px] hover:border-orange-400/60 transition-all"
+            >
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-500/10 border border-yellow-400/30 mb-3">
+                <Sparkles className="h-3 w-3 text-yellow-300" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-300">
+                  Em breve
+                </span>
+              </span>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-300">
+                {t.label}
+              </div>
+              <div className="font-display font-black text-2xl sm:text-3xl text-white mt-1">
+                {t.date}
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 text-white/60 text-xs">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Atrações a confirmar</span>
               </div>
             </div>
           ))}
