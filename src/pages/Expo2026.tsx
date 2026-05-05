@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles, Star, Flame, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
+import ExpoFAQ, { faqJsonLd, DEFAULT_EXPO_FAQ } from "@/components/expo/ExpoFAQ";
 
 interface ExpoNews {
   id: string;
@@ -90,9 +91,11 @@ const Expo2026 = () => {
   return (
     <div className="min-h-screen bg-[#0a0612] text-foreground relative overflow-hidden">
       <SEO
-        title="Expo Prudente 2026 — O Maior Rolê do Oeste | ROXOU"
-        description="Tudo da Expo Prudente 2026: shows, rodeio, gastronomia, ingressos e caronas. Cobertura oficial ROXOU."
+        title="Expo Prudente 2026 — Shows, Programação e Ingressos | ROXOU"
+        description="Tudo da Expo Prudente 2026 em Presidente Prudente: shows confirmados, programação, ingressos, rodeio e caronas. Cobertura oficial ROXOU."
         canonical="https://roxou.com.br/expo2026"
+        keywords="expo prudente 2026, shows prudente, eventos hoje em presidente prudente, o que fazer em prudente, expo presidente prudente"
+        jsonLd={faqJsonLd(DEFAULT_EXPO_FAQ)}
       />
 
       {/* Glow ambient — roxo + laranja */}
