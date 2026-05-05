@@ -17,7 +17,7 @@ import SectionHeader from "@/components/SectionHeader";
 import PopularVenues from "@/components/PopularVenues";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { isToday, isTomorrow } from "@/lib/dateUtils";
+import { isTodaySP, isTomorrowSP, getWeekendRangeSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 
 type EventCategory = "balada" | "show" | "bar" | "festival" | "sertanejo" | "funk" | "eletronica" | "festa";
 
@@ -109,33 +109,23 @@ const Index = () => {
     load();
   }, []);
 
-  // Build sections with deduplication
-  const now = new Date();
-  const todayEvents = events.filter(e => isToday(new Date(e.date_time)));
+  // ATENÇÃO: agrupamentos Hoje/Amanhã/FDS sempre em America/Sao_Paulo.
+  const now = getNowInSaoPaulo();
+  const todayEvents = events.filter(e => isTodaySP(new Date(e.date_time)));
   const todayIds = new Set(todayEvents.map(e => e.id));
 
-  const tomorrowEvents = events.filter(e => !todayIds.has(e.id) && isTomorrow(new Date(e.date_time)));
+  const tomorrowEvents = events.filter(e => !todayIds.has(e.id) && isTomorrowSP(new Date(e.date_time)));
   const tomorrowIds = new Set(tomorrowEvents.map(e => e.id));
 
   const getWeekendEvents = () => {
-    const day = now.getDay();
-    let satStart: Date, sunEnd: Date;
-    if (day === 0) {
-      satStart = new Date(now); satStart.setHours(0,0,0,0);
-      sunEnd = new Date(satStart); sunEnd.setHours(23,59,59,999);
-    } else if (day === 6) {
-      satStart = new Date(now); satStart.setHours(0,0,0,0);
-      sunEnd = new Date(satStart); sunEnd.setDate(satStart.getDate() + 1); sunEnd.setHours(23,59,59,999);
-    } else {
-      const daysUntilSat = 6 - day;
-      satStart = new Date(now); satStart.setDate(now.getDate() + daysUntilSat); satStart.setHours(0,0,0,0);
-      sunEnd = new Date(satStart); sunEnd.setDate(satStart.getDate() + 1); sunEnd.setHours(23,59,59,999);
-    }
+    const { start, end } = getWeekendRangeSP();
+    const startMs = new Date(start).getTime();
+    const endMs = new Date(end).getTime();
     const usedIds = new Set([...todayIds, ...tomorrowIds]);
     return events.filter(e => {
       if (usedIds.has(e.id)) return false;
-      const d = new Date(e.date_time);
-      return d >= satStart && d <= sunEnd;
+      const t = new Date(e.date_time).getTime();
+      return t >= startMs && t < endMs;
     });
   };
   const weekendEvents = getWeekendEvents();
