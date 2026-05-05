@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles } from "lucide-react";
+import { Calendar, MapPin, Music, Newspaper, Ticket, Car, ArrowRight, Sparkles, Star, Flame, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
-import SafeHtml from "@/components/SafeHtml";
 
 interface ExpoNews {
   id: string;
@@ -23,6 +22,32 @@ const CATEGORIES = [
   { value: "gastronomia", label: "Gastronomia" },
   { value: "avisos", label: "Avisos" },
   { value: "geral", label: "Geral" },
+];
+
+const ATTRACTIONS = [
+  {
+    name: "Gusttavo Lima",
+    date: "Em breve",
+    tag: "Sertanejo",
+    image:
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
+  },
+  {
+    name: "Zezé Di Camargo & Luciano",
+    date: "Em breve",
+    tag: "Sertanejo Raiz",
+    image:
+      "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
+  },
+];
+
+const GALLERY = [
+  "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
+  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop&q=70",
+  "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
+  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=70",
+  "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&auto=format&fit=crop&q=70",
+  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=70",
 ];
 
 function useExpoCountdown() {
@@ -63,92 +88,185 @@ const Expo2026 = () => {
   const filtered = filter === "all" ? news : news.filter((n) => n.category === filter);
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a0612] text-foreground relative overflow-hidden">
       <SEO
         title="Expo Prudente 2026 — O Maior Rolê do Oeste | ROXOU"
         description="Tudo da Expo Prudente 2026: shows, rodeio, gastronomia, ingressos e caronas. Cobertura oficial ROXOU."
         canonical="https://roxou.com.br/expo2026"
       />
 
-      {/* Glow ambient */}
+      {/* Glow ambient — roxo + laranja */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[60vh] bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-[40vw] h-[40vh] bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[90vw] h-[60vh] bg-primary/25 rounded-full blur-[120px]" />
+        <div className="absolute top-[30vh] -right-20 w-[50vw] h-[50vh] bg-orange-500/20 rounded-full blur-[120px]" />
+        <div className="absolute top-[60vh] -left-20 w-[50vw] h-[50vh] bg-yellow-500/15 rounded-full blur-[120px]" />
       </div>
 
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-background/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0612]/80 backdrop-blur-xl">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-4 h-14">
           <Link to="/expo2026" className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span className="font-display font-black tracking-tight">EXPO PRUDENTE <span className="text-primary">2026</span></span>
+            <div className="relative">
+              <Sparkles className="h-5 w-5 text-orange-400" />
+              <div className="absolute inset-0 blur-md bg-orange-400/50 -z-10" />
+            </div>
+            <span className="font-display font-black tracking-tight text-sm sm:text-base">
+              EXPO PRUDENTE{" "}
+              <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">2026</span>
+            </span>
           </Link>
-          
+          <Link
+            to="/"
+            className="text-[10px] sm:text-xs font-semibold text-muted-foreground hover:text-primary transition flex items-center gap-1"
+          >
+            <span className="text-primary">●</span> ROXOU
+          </Link>
         </div>
       </header>
 
       {/* HERO */}
-      <section className="px-4 pt-10 pb-8 mx-auto max-w-6xl">
-        <div className="text-center">
-          <h1 className="mt-4 font-display text-4xl sm:text-6xl md:text-7xl font-black leading-[0.95] tracking-tight">
-            O ROLÊ DO ANO <br />
-            <span className="bg-gradient-to-r from-primary via-fuchsia-400 to-accent bg-clip-text text-transparent">
-              ESTÁ CHEGANDO.
-            </span>
-          </h1>
-          <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Shows nacionais, rodeio profissional, gastronomia e o maior ponto de encontro de Presidente Prudente.
-            Toda a cobertura, em tempo real, aqui.
-          </p>
-          <div className="mt-5 flex items-center justify-center gap-4 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4 text-primary" /> 10 a 14 SET 2026</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> Recinto de Exposições Jacob Tosello</span>
-          </div>
+      <section className="relative px-4 pt-12 pb-12 mx-auto max-w-6xl">
+        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-primary/30 via-[#0a0612] to-orange-600/30 p-6 sm:p-12 backdrop-blur-md">
+          {/* Decorative bg accents */}
+          <div className="absolute -top-10 -right-10 w-72 h-72 bg-orange-500/30 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-primary/40 rounded-full blur-3xl" />
 
-          {/* Countdown */}
-          <div className="mt-8 grid grid-cols-4 gap-2 sm:gap-3 max-w-xl mx-auto">
-            {[
-              { v: countdown.days, l: "dias" },
-              { v: countdown.hours, l: "horas" },
-              { v: countdown.minutes, l: "min" },
-              { v: countdown.seconds, l: "seg" },
-            ].map((b) => (
-              <div key={b.l} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md py-4 shadow-[0_0_30px_-10px_hsl(var(--primary)/0.5)]">
-                <div className="text-3xl sm:text-4xl font-black text-primary tabular-nums">{String(b.v).padStart(2, "0")}</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{b.l}</div>
-              </div>
-            ))}
+          <div className="relative text-center">
+            {/* Logo placeholder */}
+            <div className="mx-auto mb-5 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-400/40 bg-orange-500/10 backdrop-blur-md">
+              <Flame className="h-3.5 w-3.5 text-orange-400" />
+              <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-orange-300">
+                Expo Prudente Oficial
+              </span>
+            </div>
+
+            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-black leading-[0.95] tracking-tight">
+              <span className="bg-gradient-to-br from-orange-300 via-yellow-300 to-orange-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(251,146,60,0.3)]">
+                EXPO PRUDENTE
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-primary via-fuchsia-400 to-primary bg-clip-text text-transparent">
+                2026
+              </span>
+            </h1>
+
+            <p className="mt-5 text-base sm:text-xl text-white/80 max-w-2xl mx-auto font-medium">
+              As atrações divulgadas já estão aqui.
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                <Calendar className="h-4 w-4 text-orange-400" />{" "}
+                <span className="font-semibold">10 a 14 SET 2026</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                <MapPin className="h-4 w-4 text-orange-400" />{" "}
+                <span className="font-semibold">Recinto Jacob Tosello</span>
+              </span>
+            </div>
+
+            {/* CTA */}
+            <a
+              href="#atracoes"
+              className="mt-7 inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-sm sm:text-base text-black bg-gradient-to-r from-yellow-400 via-orange-400 to-orange-500 shadow-[0_0_40px_-5px_rgba(251,146,60,0.7)] hover:shadow-[0_0_50px_-2px_rgba(251,146,60,0.9)] hover:scale-105 transition-all"
+            >
+              <Star className="h-4 w-4 fill-black" />
+              Ver atrações confirmadas
+              <ArrowRight className="h-4 w-4" />
+            </a>
+
+            {/* Countdown */}
+            <div className="mt-9 grid grid-cols-4 gap-2 sm:gap-3 max-w-xl mx-auto">
+              {[
+                { v: countdown.days, l: "dias" },
+                { v: countdown.hours, l: "horas" },
+                { v: countdown.minutes, l: "min" },
+                { v: countdown.seconds, l: "seg" },
+              ].map((b) => (
+                <div
+                  key={b.l}
+                  className="rounded-2xl border border-orange-400/20 bg-black/40 backdrop-blur-md py-3 sm:py-4 shadow-[0_0_30px_-15px_rgba(251,146,60,0.6)]"
+                >
+                  <div className="text-2xl sm:text-4xl font-black tabular-nums bg-gradient-to-b from-orange-300 to-orange-500 bg-clip-text text-transparent">
+                    {String(b.v).padStart(2, "0")}
+                  </div>
+                  <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                    {b.l}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* QUICK LINKS */}
-      <section className="px-4 mx-auto max-w-6xl">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { icon: Music, label: "Shows", href: "#shows" },
-            { icon: Ticket, label: "Ingressos", href: "#ingressos" },
-            { icon: Car, label: "Caronas", href: "#transporte" },
-            { icon: Newspaper, label: "Notícias", href: "#noticias" },
-          ].map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              className="group rounded-xl border border-white/10 bg-card/50 hover:bg-card/80 hover:border-primary/40 backdrop-blur-md p-4 transition-all hover:-translate-y-0.5"
+      {/* ATRAÇÕES CONFIRMADAS */}
+      <section id="atracoes" className="px-4 mx-auto max-w-6xl mt-6">
+        <div className="flex items-end justify-between mb-5">
+          <div>
+            <div className="inline-flex items-center gap-2 mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-300">
+                Line-up oficial
+              </span>
+            </div>
+            <h2 className="font-display text-2xl sm:text-4xl font-black">
+              Atrações <span className="text-orange-400">confirmadas</span>
+            </h2>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {ATTRACTIONS.map((a) => (
+            <div
+              key={a.name}
+              className="group relative rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md hover:border-orange-400/40 hover:-translate-y-0.5 transition-all"
             >
-              <l.icon className="h-5 w-5 text-primary mb-2 group-hover:drop-shadow-[0_0_8px_hsl(var(--primary))]" />
-              <div className="text-sm font-bold">{l.label}</div>
-            </a>
+              <div className="aspect-[16/10] relative overflow-hidden">
+                <img
+                  src={a.image}
+                  alt={a.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/20 border border-green-400/40 backdrop-blur-md">
+                  <CheckCircle2 className="h-3 w-3 text-green-300" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-green-300">
+                    Confirmado
+                  </span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-300">
+                    {a.tag}
+                  </span>
+                  <h3 className="font-display font-black text-2xl sm:text-3xl text-white leading-tight mt-1">
+                    {a.name}
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-2 text-white/70 text-xs">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>{a.date}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </section>
 
       {/* NOTÍCIAS */}
-      <section id="noticias" className="px-4 mx-auto max-w-6xl mt-14">
+      <section id="noticias" className="px-4 mx-auto max-w-6xl mt-16">
         <div className="flex items-end justify-between mb-4">
           <div>
-            <h2 className="font-display text-2xl sm:text-3xl font-black">Últimas notícias</h2>
-            <p className="text-sm text-muted-foreground">Cobertura oficial direto do recinto.</p>
+            <div className="inline-flex items-center gap-2 mb-2">
+              <Newspaper className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
+                Cobertura ROXOU
+              </span>
+            </div>
+            <h2 className="font-display text-2xl sm:text-4xl font-black">
+              Últimas <span className="text-primary">notícias</span>
+            </h2>
           </div>
         </div>
 
@@ -160,8 +278,8 @@ const Expo2026 = () => {
               onClick={() => setFilter(c.value)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition ${
                 filter === c.value
-                  ? "bg-primary text-primary-foreground border-primary shadow-[0_0_20px_-5px_hsl(var(--primary))]"
-                  : "border-white/10 text-muted-foreground hover:text-foreground"
+                  ? "bg-gradient-to-r from-orange-500 to-orange-400 text-black border-transparent shadow-[0_0_20px_-5px_rgba(251,146,60,0.7)]"
+                  : "border-white/10 text-muted-foreground hover:text-foreground hover:border-orange-400/30"
               }`}
             >
               {c.label}
@@ -185,32 +303,43 @@ const Expo2026 = () => {
               <Link
                 key={n.id}
                 to={`/expo2026/noticia/${n.slug}`}
-                className="group rounded-2xl overflow-hidden border border-white/10 bg-card/50 backdrop-blur-md hover:border-primary/40 hover:-translate-y-0.5 transition-all"
+                className="group rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md hover:border-orange-400/40 hover:-translate-y-0.5 transition-all"
               >
                 {n.cover_image_url ? (
                   <div className="aspect-[16/10] overflow-hidden">
-                    <img src={n.cover_image_url} alt={n.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <img
+                      src={n.cover_image_url}
+                      alt={n.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
                   </div>
                 ) : (
-                  <div className="aspect-[16/10] bg-gradient-to-br from-primary/30 to-accent/20" />
+                  <div className="aspect-[16/10] bg-gradient-to-br from-primary/30 via-orange-500/20 to-yellow-500/10" />
                 )}
                 <div className="p-4">
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-primary font-bold">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-orange-300 font-bold">
                     <span>{n.category}</span>
                     {n.published_at && (
                       <>
                         <span className="text-muted-foreground">·</span>
                         <span className="text-muted-foreground">
-                          {new Date(n.published_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                          {new Date(n.published_at).toLocaleDateString("pt-BR", {
+                            day: "2-digit",
+                            month: "short",
+                          })}
                         </span>
                       </>
                     )}
                   </div>
-                  <h3 className="mt-2 font-bold leading-tight group-hover:text-primary transition">{n.title}</h3>
-                  {n.excerpt && <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{n.excerpt}</p>}
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">por <span className="text-foreground font-semibold">{n.author}</span></span>
-                    <ArrowRight className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition" />
+                  <h3 className="mt-2 font-bold leading-tight group-hover:text-orange-300 transition">
+                    {n.title}
+                  </h3>
+                  {n.excerpt && (
+                    <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{n.excerpt}</p>
+                  )}
+                  <div className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-orange-300 group-hover:gap-2.5 transition-all">
+                    Ler notícia <ArrowRight className="h-3.5 w-3.5" />
                   </div>
                 </div>
               </Link>
@@ -219,31 +348,70 @@ const Expo2026 = () => {
         )}
       </section>
 
-      {/* SHOWS placeholder */}
-      <section id="shows" className="px-4 mx-auto max-w-6xl mt-16">
-        <h2 className="font-display text-2xl sm:text-3xl font-black mb-4">Programação de shows</h2>
-        <div className="rounded-2xl border border-white/10 bg-card/50 backdrop-blur-md p-8 text-center">
-          <Music className="h-8 w-8 text-primary mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Line-up completo em breve. Acompanhe pelas notícias acima.</p>
+      {/* GALERIA */}
+      <section id="galeria" className="px-4 mx-auto max-w-6xl mt-16">
+        <div className="mb-5">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-300">
+              Bastidores
+            </span>
+          </div>
+          <h2 className="font-display text-2xl sm:text-4xl font-black">
+            Galeria <span className="text-yellow-400">oficial</span>
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Imagens da Expo Prudente, atualizadas pela equipe ROXOU.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+          {GALLERY.map((src, i) => (
+            <div
+              key={i}
+              className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 ${
+                i === 0 ? "col-span-2 row-span-2 aspect-square sm:aspect-[4/5]" : "aspect-square"
+              }`}
+            >
+              <img
+                src={src}
+                alt={`Galeria Expo ${i + 1}`}
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
+            </div>
+          ))}
         </div>
       </section>
 
       {/* INGRESSOS / TRANSPORTE */}
-      <section id="ingressos" className="px-4 mx-auto max-w-6xl mt-10 grid sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-white/10 bg-card/50 backdrop-blur-md p-6">
-          <Ticket className="h-6 w-6 text-primary mb-2" />
-          <h3 className="font-bold text-lg">Ingressos</h3>
-          <p className="text-sm text-muted-foreground mt-1">Vendas oficiais com link direto liberadas em breve aqui.</p>
+      <section id="ingressos" className="px-4 mx-auto max-w-6xl mt-16 grid sm:grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-orange-400/20 bg-gradient-to-br from-orange-500/10 to-transparent backdrop-blur-md p-6">
+          <Ticket className="h-7 w-7 text-orange-400 mb-3" />
+          <h3 className="font-display font-black text-xl">Ingressos</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Vendas oficiais com link direto liberadas em breve aqui.
+          </p>
         </div>
-        <div id="transporte" className="rounded-2xl border border-white/10 bg-card/50 backdrop-blur-md p-6">
-          <Car className="h-6 w-6 text-primary mb-2" />
-          <h3 className="font-bold text-lg">Caronas e transporte</h3>
-          <p className="text-sm text-muted-foreground mt-1">Sistema "Como você vai?" da ROXOU vai conectar passageiros e motoristas durante toda a Expo.</p>
+        <div
+          id="transporte"
+          className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent backdrop-blur-md p-6"
+        >
+          <Car className="h-7 w-7 text-primary mb-3" />
+          <h3 className="font-display font-black text-xl">Caronas e transporte</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Sistema "Como você vai?" da ROXOU vai conectar passageiros e motoristas durante toda a Expo.
+          </p>
         </div>
       </section>
 
-      <footer className="mt-20 border-t border-white/10 py-8 text-center text-xs text-muted-foreground">
-        Hot site oficial · ROXOU © {new Date().getFullYear()}
+      <footer className="mt-20 border-t border-white/10 py-8 text-center">
+        <div className="text-xs text-muted-foreground">
+          Hot site oficial · <span className="text-primary font-bold">ROXOU</span> ×{" "}
+          <span className="text-orange-400 font-bold">Expo Prudente 2026</span>
+        </div>
+        <div className="text-[10px] text-muted-foreground/60 mt-1">© {new Date().getFullYear()}</div>
       </footer>
     </div>
   );
