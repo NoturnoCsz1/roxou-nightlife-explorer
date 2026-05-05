@@ -1119,7 +1119,7 @@ export async function renderStoryV3(
   const W = 1080, H = 1920;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
-  const PAD = 72;
+  const PAD = 64;
 
   // 1) Solid dark base
   ctx.fillStyle = STORY_BG;
@@ -1135,41 +1135,40 @@ export async function renderStoryV3(
       if (imgR > canR) { sw = img.height * canR; sx = (img.width - sw) / 2; }
       else { sh = img.width / canR; sy = (img.height - sh) / 2; }
       ctx.save();
-      ctx.filter = "blur(18px) saturate(0.55) brightness(0.7)";
-      ctx.drawImage(img, sx, sy, sw, sh, -30, -30, W + 60, H + 60);
+      ctx.filter = "blur(16px) saturate(0.5) brightness(0.65)";
+      ctx.drawImage(img, sx, sy, sw, sh, -40, -40, W + 80, H + 80);
       ctx.filter = "none";
       ctx.restore();
     }
   }
 
   // 3) Strong dark overlay
-  ctx.fillStyle = "rgba(9,9,11,0.65)";
+  ctx.fillStyle = "rgba(9,9,11,0.7)";
   ctx.fillRect(0, 0, W, H);
 
-  // 4) Purple gradient on top
+  // 4) Purple gradient (#09090B → rgba(124,58,237,0.35))
   const pg = ctx.createLinearGradient(0, 0, 0, H);
-  pg.addColorStop(0, "rgba(124,58,237,0.28)");
-  pg.addColorStop(0.5, "rgba(168,85,247,0.10)");
-  pg.addColorStop(1, "rgba(9,9,11,0.85)");
+  pg.addColorStop(0, "rgba(9,9,11,0.95)");
+  pg.addColorStop(0.5, "rgba(124,58,237,0.18)");
+  pg.addColorStop(1, "rgba(124,58,237,0.35)");
   ctx.fillStyle = pg;
   ctx.fillRect(0, 0, W, H);
 
   // Neon glows
-  drawGlow(ctx, W * 0.18, H * 0.22, 600, STORY_PURPLE, 0.22);
-  drawGlow(ctx, W * 0.85, H * 0.78, 620, STORY_VIOLET, 0.20);
+  drawGlow(ctx, W * 0.15, H * 0.2, 600, STORY_PURPLE, 0.18);
+  drawGlow(ctx, W * 0.85, H * 0.7, 700, STORY_VIOLET, 0.22);
   drawGrain(ctx, W, H);
 
   // 5) Top badge — "💜 AURA INDICA"
   const badgeText = "💜 AURA INDICA";
   ctx.save();
-  ctx.font = "bold 30px sans-serif";
-  const bw = ctx.measureText(badgeText).width + 56;
-  const bh = 64;
+  ctx.font = "bold 32px sans-serif";
+  const bw = ctx.measureText(badgeText).width + 60;
+  const bh = 70;
   const bx = (W - bw) / 2;
-  const by = PAD + 20;
-  // glow
+  const by = PAD + 30;
   ctx.shadowColor = "rgba(168,85,247,0.7)";
-  ctx.shadowBlur = 28;
+  ctx.shadowBlur = 30;
   const bg = ctx.createLinearGradient(bx, by, bx + bw, by);
   bg.addColorStop(0, STORY_PURPLE);
   bg.addColorStop(1, STORY_VIOLET);
@@ -1177,8 +1176,7 @@ export async function renderStoryV3(
   roundRect(ctx, bx, by, bw, bh, bh / 2);
   ctx.fill();
   ctx.shadowBlur = 0;
-  // border glow
-  ctx.strokeStyle = "rgba(192,132,252,0.9)";
+  ctx.strokeStyle = "rgba(192,132,252,0.95)";
   ctx.lineWidth = 2;
   roundRect(ctx, bx, by, bw, bh, bh / 2);
   ctx.stroke();
@@ -1189,33 +1187,87 @@ export async function renderStoryV3(
   ctx.restore();
 
   // 6) Title — large, white, top-positioned, max 3 lines
-  const titleY = by + bh + 90;
+  const titleY = by + bh + 80;
   ctx.save();
-  ctx.font = "bold 88px sans-serif";
+  ctx.font = "bold 84px sans-serif";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
   const titleLines = wrapText(ctx, event.title, W - PAD * 2).slice(0, 3);
-  const lineH = 96;
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,0.65)";
-  titleLines.forEach((l, i) => ctx.fillText(l, PAD + 4, titleY + i * lineH + 4));
-  ctx.shadowColor = "rgba(168,85,247,0.45)";
-  ctx.shadowBlur = 18;
+  const lineH = 92;
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  titleLines.forEach((l, i) => ctx.fillText(l, PAD + 4, titleY + i * lineH + 5));
+  ctx.shadowColor = "rgba(168,85,247,0.4)";
+  ctx.shadowBlur = 16;
   ctx.fillStyle = "#ffffff";
   titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * lineH));
   ctx.restore();
 
-  const titleEnd = titleY + titleLines.length * lineH;
+  // 7) Aura mascot — right, 42% width, mid-to-bottom
+  const auraW = Math.round(W * 0.52);
+  const auraH = Math.round(auraW * (16 / 9)); // image is 9:16 portrait
+  const auraX = W - auraW + 30;
+  const auraY = H * 0.42;
+  const aura = (await tryLoadImage("/aura-story.png")) || (await tryLoadImage("/src/assets/aura-mascot.png"));
+  if (aura) {
+    // Purple drop-shadow halo
+    ctx.save();
+    const halo = ctx.createRadialGradient(
+      auraX + auraW / 2, auraY + auraH / 2, auraW * 0.1,
+      auraX + auraW / 2, auraY + auraH / 2, auraW * 0.65
+    );
+    halo.addColorStop(0, "rgba(168,85,247,0.5)");
+    halo.addColorStop(0.6, "rgba(168,85,247,0.18)");
+    halo.addColorStop(1, "rgba(168,85,247,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(auraX - 100, auraY - 100, auraW + 200, auraH + 200);
+    ctx.restore();
 
-  // 7) Glass info card
-  const cardY = titleEnd + 56;
-  const cardX = PAD;
-  const cardW = W - PAD * 2;
+    // Draw with shadow
+    ctx.save();
+    ctx.shadowColor = "rgba(168,85,247,0.65)";
+    ctx.shadowBlur = 28;
+    // Preserve aspect: fit by width, let it overflow bottom slightly if needed
+    const naturalRatio = aura.height / aura.width;
+    const drawH = Math.min(auraW * naturalRatio, H - auraY + 40);
+    ctx.drawImage(aura, auraX, auraY, auraW, drawH);
+    ctx.restore();
+  }
 
-  // Build info lines
+  // 8) Aura speech bubble — near her face (top-left of mascot)
+  const phrase = event.aura_phrase?.trim() || "Eu indico esse rolê 💜";
+  ctx.save();
+  ctx.font = "italic 600 28px sans-serif";
+  const prefix = "🤖  ";
+  const fullText = prefix + phrase;
+  const maxBubbleW = 520;
+  const tw = Math.min(ctx.measureText(fullText).width + 48, maxBubbleW);
+  const bubbleH = 72;
+  const bubbleX = Math.max(PAD, auraX - tw + 60);
+  const bubbleY = auraY - bubbleH / 2 + 40;
+  ctx.shadowColor = "rgba(168,85,247,0.55)";
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = "rgba(20,15,35,0.92)";
+  roundRect(ctx, bubbleX, bubbleY, tw, bubbleH, 22);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = STORY_VIOLET;
+  ctx.lineWidth = 2;
+  roundRect(ctx, bubbleX, bubbleY, tw, bubbleH, 22);
+  ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  let ptxt = fullText;
+  while (ctx.measureText(ptxt).width > tw - 32 && ptxt.length > 8) ptxt = ptxt.slice(0, -2);
+  if (ptxt !== fullText) ptxt = ptxt.trim() + "…";
+  ctx.fillText(ptxt, bubbleX + tw / 2, bubbleY + bubbleH / 2 + 1);
+  ctx.restore();
+
+  // 9) Info card — bottom-left
   const d = new Date(event.date_time);
   const months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
-  const timeStr = `${String(d.getHours()).padStart(2,"0")}h${d.getMinutes() ? String(d.getMinutes()).padStart(2,"0") : ""}`.replace(/h$/, "h");
+  const mins = d.getMinutes();
+  const timeStr = mins ? `${String(d.getHours()).padStart(2,"0")}h${String(mins).padStart(2,"0")}` : `${String(d.getHours()).padStart(2,"0")}h`;
   const dateStr = `${d.getDate()} ${months[d.getMonth()]}`;
   const price = extractPrice(event.description, event.ticket_url);
 
@@ -1226,97 +1278,55 @@ export async function renderStoryV3(
   if (event.venue_name) infoLines.push({ icon: "📍", text: event.venue_name });
   if (price) infoLines.push({ icon: "💸", text: price });
 
-  const rowH = 64;
-  const cardH = 36 + infoLines.length * rowH;
+  const cardW = 560;
+  const rowH = 56;
+  const cardH = 32 + infoLines.length * rowH;
+  const cardX = PAD;
+  const cardY = H - cardH - 360;
 
   ctx.save();
-  // glass bg
-  ctx.fillStyle = "rgba(20,15,35,0.55)";
-  roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+  ctx.shadowColor = "rgba(168,85,247,0.25)";
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = "rgba(9,9,11,0.72)";
+  roundRect(ctx, cardX, cardY, cardW, cardH, 24);
   ctx.fill();
-  // border
-  ctx.strokeStyle = "rgba(192,132,252,0.35)";
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(168,85,247,0.35)";
   ctx.lineWidth = 1.5;
-  roundRect(ctx, cardX, cardY, cardW, cardH, 28);
+  roundRect(ctx, cardX, cardY, cardW, cardH, 24);
   ctx.stroke();
   ctx.restore();
 
   ctx.save();
-  ctx.font = "600 36px sans-serif";
-  ctx.fillStyle = "#ffffff";
   ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
   infoLines.forEach((row, i) => {
-    const ry = cardY + 18 + rowH / 2 + i * rowH;
+    const ry = cardY + 16 + rowH / 2 + i * rowH;
+    // Icon (lilac)
+    ctx.font = "600 32px sans-serif";
     ctx.fillStyle = STORY_LILAC;
-    ctx.fillText(row.icon, cardX + 32, ry);
+    ctx.fillText(row.icon, cardX + 28, ry);
+    // Text (white)
+    ctx.font = "600 30px sans-serif";
     ctx.fillStyle = "#ffffff";
-    // truncate if too wide
-    const maxW = cardW - 110;
     let txt = row.text;
+    const maxW = cardW - 100;
     while (ctx.measureText(txt).width > maxW && txt.length > 4) txt = txt.slice(0, -2);
     if (txt !== row.text) txt = txt.trim() + "…";
-    ctx.fillText(txt, cardX + 96, ry);
+    ctx.fillText(txt, cardX + 84, ry);
   });
   ctx.restore();
 
-  // 8) Aura mascot (bottom right)
-  const auraSize = 460;
-  const auraX = W - auraSize + 30;
-  const auraY = H - auraSize - 280;
-  const aura = (await tryLoadImage("/aura-story.png")) || (await tryLoadImage("/src/assets/aura-mascot.png"));
-  if (aura) {
-    // soft glow halo
-    ctx.save();
-    const halo = ctx.createRadialGradient(
-      auraX + auraSize / 2, auraY + auraSize / 2, auraSize * 0.1,
-      auraX + auraSize / 2, auraY + auraSize / 2, auraSize * 0.7
-    );
-    halo.addColorStop(0, "rgba(168,85,247,0.45)");
-    halo.addColorStop(1, "rgba(168,85,247,0)");
-    ctx.fillStyle = halo;
-    ctx.fillRect(auraX - 80, auraY - 80, auraSize + 160, auraSize + 160);
-    ctx.restore();
-    ctx.drawImage(aura, auraX, auraY, auraSize, auraSize);
-  }
-
-  // 9) Aura speech bubble
-  const phrase = event.aura_phrase?.trim() || "Eu indico esse rolê 💜";
+  // 10) Premium CTA — bigger, centered bottom
+  const ctaText = "👉 TOCA AQUI E CONFERE O ROLÊ";
   ctx.save();
-  ctx.font = "italic 600 30px sans-serif";
-  const tw = Math.min(ctx.measureText(phrase).width + 56, 560);
-  const bubbleH = 76;
-  const bubbleX = aura ? auraX - tw + 80 : (W - tw) / 2;
-  const bubbleY = aura ? auraY + 60 : H - 520;
-  ctx.shadowColor = "rgba(168,85,247,0.6)";
-  ctx.shadowBlur = 22;
-  ctx.fillStyle = "rgba(20,15,35,0.92)";
-  roundRect(ctx, bubbleX, bubbleY, tw, bubbleH, 24);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = STORY_VIOLET;
-  ctx.lineWidth = 2;
-  roundRect(ctx, bubbleX, bubbleY, tw, bubbleH, 24);
-  ctx.stroke();
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  let ptxt = phrase;
-  while (ctx.measureText(ptxt).width > tw - 40 && ptxt.length > 6) ptxt = ptxt.slice(0, -2);
-  if (ptxt !== phrase) ptxt = ptxt.trim() + "…";
-  ctx.fillText(ptxt, bubbleX + tw / 2, bubbleY + bubbleH / 2 + 1);
-  ctx.restore();
-
-  // 10) Premium CTA — centered button + brand
-  const ctaText = "🔥 VER EVENTO COMPLETO";
-  ctx.save();
-  ctx.font = "bold 38px sans-serif";
-  const ctaW = Math.min(ctx.measureText(ctaText).width + 80, W - PAD * 2);
-  const ctaH = 96;
+  ctx.font = "bold 36px sans-serif";
+  const ctaW = Math.min(ctx.measureText(ctaText).width + 90, W - PAD * 2);
+  const ctaH = 110;
   const ctaX = (W - ctaW) / 2;
-  const ctaYpos = H - ctaH - 150;
-  // glow
+  const ctaYpos = H - ctaH - 180;
   ctx.shadowColor = "rgba(168,85,247,0.85)";
-  ctx.shadowBlur = 38;
+  ctx.shadowBlur = 42;
   const cg = ctx.createLinearGradient(ctaX, ctaYpos, ctaX + ctaW, ctaYpos);
   cg.addColorStop(0, STORY_PURPLE);
   cg.addColorStop(1, STORY_VIOLET);
@@ -1324,7 +1334,7 @@ export async function renderStoryV3(
   roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = "rgba(192,132,252,0.7)";
+  ctx.strokeStyle = "rgba(192,132,252,0.8)";
   ctx.lineWidth = 2;
   roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
   ctx.stroke();
@@ -1334,13 +1344,22 @@ export async function renderStoryV3(
   ctx.fillText(ctaText, W / 2, ctaYpos + ctaH / 2 + 2);
   ctx.restore();
 
-  // Brand below CTA
+  // Sub-line: ROXOU.COM.BR
   ctx.save();
-  ctx.font = "bold 32px sans-serif";
+  ctx.font = "bold 26px sans-serif";
   ctx.fillStyle = STORY_LILAC;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("ROXOU.COM.BR", W / 2, ctaYpos + ctaH + 22);
+  ctx.fillText("ROXOU.COM.BR", W / 2, ctaYpos + ctaH + 18);
+  ctx.restore();
+
+  // 11) Discreet ROXOU footer
+  ctx.save();
+  ctx.font = "bold 18px sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillText("ROXOU", W / 2, H - 40);
   ctx.restore();
 
   return canvas.toDataURL("image/png");
