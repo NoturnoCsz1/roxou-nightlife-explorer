@@ -1177,45 +1177,25 @@ export async function renderStoryV3(
   ctx.fillText(badgeText, bx + bw / 2, by + bh / 2 + 1);
   ctx.restore();
 
-  // Subtle side purple glows
-  drawGlow(ctx, -100, H * 0.35, 520, STORY_PURPLE, 0.14);
-  drawGlow(ctx, W + 100, H * 0.65, 520, STORY_VIOLET, 0.14);
+  // Side purple neon glows
+  drawGlow(ctx, -120, H * 0.35, 600, STORY_PURPLE, 0.28);
+  drawGlow(ctx, W + 120, H * 0.65, 600, STORY_VIOLET, 0.28);
 
-  // 7) Aura mascot — RIGHT, secondary, max 55% height
-  const aura = (await tryLoadImage("/aura-story.png")) || (await tryLoadImage("/src/assets/aura-mascot.png"));
-  let auraLeft = W;
-  if (aura) {
-    const maxH = Math.round(H * 0.55);
-    const naturalRatio = aura.width / aura.height;
-    const drawH = maxH;
-    const drawW = Math.round(drawH * naturalRatio);
-    const ax = W - drawW + 30;
-    const ay = H - drawH - 320;
-    auraLeft = ax;
-
-    ctx.save();
-    ctx.shadowColor = "rgba(168,85,247,0.35)";
-    ctx.shadowBlur = 20;
-    ctx.drawImage(aura, ax, ay, drawW, drawH);
-    ctx.restore();
-  }
-
-  // 6) Title — LEFT (60%), max 2 lines, large
+  // 6) Title — LEFT, up to 3 lines
   const titleY = by + bh + 70;
   ctx.save();
-  ctx.font = "bold 92px sans-serif";
+  ctx.font = "bold 84px sans-serif";
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
-  const titleMaxW = Math.max(460, Math.min(W - PAD * 2, auraLeft - PAD - 20));
-  let titleLines = wrapText(ctx, event.title, titleMaxW).slice(0, 2);
-  // If truncated, add ellipsis to last line
+  const titleMaxW = W - PAD * 2 - 40;
+  let titleLines = wrapText(ctx, event.title, titleMaxW).slice(0, 3);
   const allLines = wrapText(ctx, event.title, titleMaxW);
-  if (allLines.length > 2) {
-    let last = titleLines[1];
+  if (allLines.length > 3) {
+    let last = titleLines[2];
     while (ctx.measureText(last + "…").width > titleMaxW && last.length > 4) last = last.slice(0, -2);
-    titleLines[1] = last.trim() + "…";
+    titleLines[2] = last.trim() + "…";
   }
-  const lineH = 100;
+  const lineH = 92;
   ctx.fillStyle = "rgba(0,0,0,0.85)";
   titleLines.forEach((l, i) => ctx.fillText(l, PAD + 3, titleY + i * lineH + 4));
   ctx.shadowColor = "rgba(0,0,0,0.75)";
