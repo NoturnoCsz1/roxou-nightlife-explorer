@@ -51,6 +51,7 @@ const NoticiaForm = () => {
     status: "draft",
     published_at: "",
     seo_keyword: "",
+    source_url: "",
   });
   const [slugTouched, setSlugTouched] = useState(false);
   const [autoPublishIG, setAutoPublishIG] = useState(false);
@@ -76,6 +77,7 @@ const NoticiaForm = () => {
         status: data.status ?? "draft",
         published_at: data.published_at ?? "",
         seo_keyword: (data as any).seo_keyword ?? "",
+        source_url: (data as any).source_url ?? "",
       });
       setSlugTouched(true);
       setLoading(false);
@@ -115,6 +117,7 @@ const NoticiaForm = () => {
       category: form.category,
       status: finalStatus,
       seo_keyword: form.seo_keyword || null,
+      source_url: form.source_url?.trim() || null,
       published_at:
         finalStatus === "published"
           ? form.published_at || new Date().toISOString()
@@ -232,6 +235,20 @@ const NoticiaForm = () => {
             />
             <p className="text-[11px] text-muted-foreground mt-1">
               Aparecerá no slug da URL e turbina o ranking no Google. Frase natural focada em Presidente Prudente.
+            </p>
+          </div>
+
+          <div>
+            <Label className="text-xs">Link da fonte (opcional)</Label>
+            <Input
+              type="url"
+              value={form.source_url}
+              onChange={(e) => setForm((f) => ({ ...f, source_url: e.target.value }))}
+              placeholder="https://exemplo.com.br/materia-original"
+              className="mt-1.5"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Se a matéria foi baseada em outra publicação, cole aqui o link da fonte original. Aparecerá como crédito no final da notícia.
             </p>
           </div>
         </div>

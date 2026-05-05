@@ -15,6 +15,7 @@ interface News {
   author: string;
   category: string;
   published_at: string | null;
+  source_url?: string | null;
 }
 
 const ExpoNoticia = () => {
@@ -94,6 +95,20 @@ const ExpoNoticia = () => {
         <div className="mt-8 prose prose-invert max-w-none">
           <SafeHtml html={news.content} className="text-base leading-relaxed text-foreground/90 space-y-4" />
         </div>
+
+        {news.source_url && (
+          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
+            <span className="text-muted-foreground">Fonte: </span>
+            <a
+              href={news.source_url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="text-primary hover:underline break-all"
+            >
+              {news.source_url}
+            </a>
+          </div>
+        )}
 
         <div className="mt-12 rounded-2xl border border-white/10 bg-card/50 p-5 flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
