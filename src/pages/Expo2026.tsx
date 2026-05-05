@@ -119,12 +119,32 @@ const Expo2026 = () => {
               <span className="bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">2026</span>
             </span>
           </Link>
-          <Link
-            to="/"
-            className="text-[10px] sm:text-xs font-semibold text-muted-foreground hover:text-primary transition flex items-center gap-1"
-          >
-            <span className="text-primary">●</span> ROXOU
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="text-[10px] sm:text-xs font-semibold text-muted-foreground hover:text-primary transition flex items-center gap-1"
+            >
+              <span className="text-primary">●</span> ROXOU
+            </Link>
+            <a
+              href="https://www.instagram.com/roxou.pp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram @roxou.pp"
+              className="p-1.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/5 transition"
+            >
+              <Instagram className="h-3.5 w-3.5" />
+            </a>
+            <a
+              href="https://x.com/roxou_pp"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter @roxou_pp"
+              className="p-1.5 rounded-full text-muted-foreground hover:text-primary hover:bg-white/5 transition"
+            >
+              <Twitter className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </div>
       </header>
 
