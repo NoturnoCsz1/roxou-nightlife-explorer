@@ -156,7 +156,7 @@ const Expo2026 = () => {
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
                 <MapPin className="h-4 w-4 text-orange-400" />{" "}
-                <span className="font-semibold">Recinto Jacob Tosello</span>
+                <span className="font-semibold">Recinto de Exposições Jacob Tosello</span>
               </span>
             </div>
 
