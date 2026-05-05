@@ -58,9 +58,10 @@ const VIBE_FILTERS = [
   { key: "grandes", label: "🏟️ Grandes Eventos" },
 ];
 
-const TODAY_KEY = "2026-05-04";
-const TODAY_START = `${TODAY_KEY}T00:00:00`;
-const TODAY_END = "2026-05-05T00:00:00";
+// Chaves de cache derivadas do dia civil de São Paulo (não hardcoded).
+const TODAY_KEY = getDateKeySP(new Date());
+const TODAY_START = getStartOfTodaySP();
+const TODAY_END = getEndOfTodaySP();
 
 interface VenueRank {
   id: string; name: string; slug: string; type: string;
