@@ -286,6 +286,11 @@ const EstabelecimentosAudit = () => {
                       <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{e.address || "sem endereço"}</span>
                       {e.instagram && <span className="inline-flex items-center gap-1"><InstagramIcon className="h-3 w-3" />{e.instagram}</span>}
                       <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" />{m?.eventCount ?? 0} evento(s)</span>
+                      {e.latitude != null && e.longitude != null && (
+                        <span className="inline-flex items-center gap-1 text-green-400">
+                          <MapPin className="h-3 w-3" />{e.latitude.toFixed(4)}, {e.longitude.toFixed(4)}
+                        </span>
+                      )}
                       {e.updated_at && <span>atualizado {new Date(e.updated_at).toLocaleDateString("pt-BR")}</span>}
                     </div>
                     {flags.length > 0 && (
