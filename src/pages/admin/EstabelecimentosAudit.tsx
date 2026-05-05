@@ -23,11 +23,13 @@ interface Establishment {
   active: boolean;
   status: Status | null;
   instagram_validated: boolean | null;
+  latitude: number | null;
+  longitude: number | null;
   updated_at: string | null;
   created_at: string;
 }
 
-interface Metrics { eventCount: number; latitude: number | null; longitude: number | null; }
+interface Metrics { eventCount: number; }
 
 const STATUS_META: Record<Status, { label: string; cls: string }> = {
   draft:      { label: "Rascunho",   cls: "bg-muted/40 text-muted-foreground" },
@@ -38,11 +40,11 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
 };
 
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
-function computeFlags(e: Establishment, m: Metrics | undefined): FlagKey[] {
+function computeFlags(e: Establishment): FlagKey[] {
   const f: FlagKey[] = [];
   if (!e.address?.trim()) f.push("missing_address");
   if (!e.instagram?.trim()) f.push("missing_instagram");
-  if (!m || m.latitude == null || m.longitude == null) f.push("missing_coordinates");
+  if (e.latitude == null || e.longitude == null) f.push("missing_coordinates");
   if (!e.type?.trim()) f.push("missing_category");
   return f;
 }
@@ -73,15 +75,10 @@ const EstabelecimentosAudit = () => {
 
     if (list.length) {
       const ids = list.map(p => p.id);
-      const [eventsRes, coordsRes] = await Promise.all([
-        supabase.from("events").select("partner_id").in("partner_id", ids),
-        supabase.from("events").select("partner_id, latitude, longitude").in("partner_id", ids).not("latitude", "is", null).limit(1000),
-      ]);
+      const { data: evRows } = await supabase.from("events").select("partner_id").in("partner_id", ids);
       const m: Record<string, Metrics> = {};
-      ids.forEach(id => { m[id] = { eventCount: 0, latitude: null, longitude: null }; });
-      (eventsRes.data || []).forEach(e => { if (e.partner_id) m[e.partner_id].eventCount++; });
-      // Coordenadas vivem em partners? Não. Estão em events. Para "missing_coordinates" usamos um campo
-      // dedicado se existir ou consideramos vazio. Aqui vamos buscar no próprio partner via campos extras:
+      ids.forEach(id => { m[id] = { eventCount: 0 }; });
+      (evRows || []).forEach(e => { if (e.partner_id) m[e.partner_id].eventCount++; });
       setMetrics(m);
     }
     setLoading(false);
@@ -106,7 +103,7 @@ const EstabelecimentosAudit = () => {
       }
       if (cityF && e.city !== cityF) return false;
       if (categoryF && e.type !== categoryF) return false;
-      if (errorsOnly && computeFlags(e, metrics[e.id]).length === 0) return false;
+      if (errorsOnly && computeFlags(e).length === 0) return false;
       return true;
     });
     if (orderBy === "events_desc") arr = [...arr].sort((a, b) => (metrics[b.id]?.eventCount || 0) - (metrics[a.id]?.eventCount || 0));
@@ -122,7 +119,7 @@ const EstabelecimentosAudit = () => {
       if (cur === "ativo") ativo++;
       if (cur === "destaque") destaque++;
       if (cur === "oficial") oficial++;
-      if (computeFlags(e, metrics[e.id]).length > 0) errors++;
+      if (computeFlags(e).length > 0) errors++;
     });
     return { total, ativo, destaque, oficial, errors };
   }, [items, metrics]);
@@ -157,10 +154,13 @@ const EstabelecimentosAudit = () => {
         body: { address: e.address, city: e.city },
       });
       if (error || !data?.latitude) throw new Error(data?.error || "Não encontrado");
-      toast.success(`Coordenadas: ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`);
-      // partners não armazena lat/lng hoje — exibimos ao admin para uso manual ou em events
-      navigator.clipboard?.writeText(`${data.latitude},${data.longitude}`).catch(() => {});
-      toast.message("Copiado para a área de transferência");
+      const { error: updErr } = await supabase
+        .from("partners")
+        .update({ latitude: data.latitude, longitude: data.longitude })
+        .eq("id", e.id);
+      if (updErr) throw updErr;
+      setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: data.latitude, longitude: data.longitude } : p));
+      toast.success(`Coordenadas salvas: ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`);
     } catch (err: any) {
       toast.error(err.message || "Falha no geocoding");
     } finally {
@@ -175,9 +175,26 @@ const EstabelecimentosAudit = () => {
           <h1 className="text-lg font-bold text-foreground">Auditoria de Estabelecimentos</h1>
           <p className="text-[11px] text-muted-foreground">Validação, status e qualidade de dados</p>
         </div>
-        <Link to="/admin/parceiros/novo" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-          Novo
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={async () => {
+              const targets = items.filter(e => e.address && (e.latitude == null || e.longitude == null));
+              if (!targets.length) { toast.message("Nada a geocodificar"); return; }
+              toast.message(`Geocodificando ${targets.length}...`);
+              for (const e of targets) {
+                await generateCoordinates(e);
+                await new Promise(r => setTimeout(r, 250));
+              }
+              toast.success("Lote concluído");
+            }}
+            className="rounded-lg bg-secondary/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+          >
+            Geocodificar faltantes
+          </button>
+          <Link to="/admin/parceiros/novo" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+            Novo
+          </Link>
+        </div>
       </div>
 
       {/* Métricas */}
@@ -245,7 +262,7 @@ const EstabelecimentosAudit = () => {
         <div className="space-y-2">
           {filtered.map(e => {
             const m = metrics[e.id];
-            const flags = computeFlags(e, m);
+            const flags = computeFlags(e);
             const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
             const meta = STATUS_META[cur];
             return (
@@ -269,6 +286,11 @@ const EstabelecimentosAudit = () => {
                       <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{e.address || "sem endereço"}</span>
                       {e.instagram && <span className="inline-flex items-center gap-1"><InstagramIcon className="h-3 w-3" />{e.instagram}</span>}
                       <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" />{m?.eventCount ?? 0} evento(s)</span>
+                      {e.latitude != null && e.longitude != null && (
+                        <span className="inline-flex items-center gap-1 text-green-400">
+                          <MapPin className="h-3 w-3" />{e.latitude.toFixed(4)}, {e.longitude.toFixed(4)}
+                        </span>
+                      )}
                       {e.updated_at && <span>atualizado {new Date(e.updated_at).toLocaleDateString("pt-BR")}</span>}
                     </div>
                     {flags.length > 0 && (
@@ -323,7 +345,7 @@ const EstabelecimentosAudit = () => {
                     className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
                   >
                     {busy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
-                    Gerar coordenadas
+                    Geocodificar endereço
                   </button>
                   <a
                     href={`/local/${e.slug}`}
