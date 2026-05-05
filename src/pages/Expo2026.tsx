@@ -421,6 +421,24 @@ const Expo2026 = () => {
         </div>
       </section>
 
+      {/* FAQ SEO */}
+      <ExpoFAQ />
+
+      {/* SEO local — texto rico para indexação */}
+      <section className="sr-only" aria-hidden="true">
+        <h2>Eventos em Presidente Prudente e Expo Prudente 2026</h2>
+        <p>
+          A Expo Prudente 2026 é o maior evento de Presidente Prudente e do Oeste Paulista. Aqui na
+          ROXOU você encontra a agenda de shows em Prudente, eventos hoje em Presidente Prudente,
+          o que fazer em Prudente, baladas, bares, rodeio, gastronomia e ingressos. Cobertura
+          oficial e atualizada diariamente.
+        </p>
+        <p>
+          Pesquise por: expo prudente 2026, shows prudente, programação expo prudente, ingressos
+          expo prudente, eventos em presidente prudente, agenda de shows em prudente.
+        </p>
+      </section>
+
       <footer className="mt-20 border-t border-white/10 py-8 text-center">
         <div className="text-xs text-muted-foreground">
           Hot site oficial · <span className="text-primary font-bold">ROXOU</span> ×{" "}
