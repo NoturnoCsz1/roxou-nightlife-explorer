@@ -154,13 +154,19 @@ const EstabelecimentosAudit = () => {
         body: { address: e.address, city: e.city },
       });
       if (error || !data?.latitude) throw new Error(data?.error || "Não encontrado");
-      toast.success(`Coordenadas: ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`);
-      // partners não armazena lat/lng hoje — exibimos ao admin para uso manual ou em events
-      navigator.clipboard?.writeText(`${data.latitude},${data.longitude}`).catch(() => {});
-      toast.message("Copiado para a área de transferência");
+      const { error: updErr } = await supabase
+        .from("partners")
+        .update({ latitude: data.latitude, longitude: data.longitude })
+        .eq("id", e.id);
+      if (updErr) throw updErr;
+      setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: data.latitude, longitude: data.longitude } : p));
+      toast.success(`Coordenadas salvas: ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`);
     } catch (err: any) {
       toast.error(err.message || "Falha no geocoding");
     } finally {
+      setBusy(null);
+    }
+  }
       setBusy(null);
     }
   }
