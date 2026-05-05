@@ -791,7 +791,9 @@ export type Database = {
           id: string
           instagram: string | null
           instagram_validated: boolean
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           name: string
           neighborhood: string | null
           short_description: string | null
@@ -812,7 +814,9 @@ export type Database = {
           id?: string
           instagram?: string | null
           instagram_validated?: boolean
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name: string
           neighborhood?: string | null
           short_description?: string | null
@@ -833,7 +837,9 @@ export type Database = {
           id?: string
           instagram?: string | null
           instagram_validated?: boolean
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           name?: string
           neighborhood?: string | null
           short_description?: string | null
