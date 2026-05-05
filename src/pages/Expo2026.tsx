@@ -136,12 +136,39 @@ const Expo2026 = () => {
 
       {/* HERO */}
       <section className="relative px-4 pt-12 pb-12 mx-auto max-w-6xl">
-        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-primary/30 via-[#0a0612] to-orange-600/30 p-6 sm:p-12 backdrop-blur-md">
+        <div className="group relative rounded-3xl overflow-hidden border border-white/10 p-6 sm:p-12">
+          {/* Background image with parallax */}
+          <div
+            className="absolute inset-0 -z-10 bg-cover bg-center transition-transform duration-[1200ms] ease-out group-hover:scale-105 motion-safe:animate-[fade-in_1s_ease-out]"
+            style={{
+              backgroundImage:
+                'url("https://www.prudentenews.com.br/img/noticias/7516.jpg")',
+            }}
+            aria-hidden="true"
+          />
+          {/* Dark overlay for readability */}
+          <div
+            className="absolute inset-0 -z-10"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(9,9,11,0.65), rgba(9,9,11,0.9))",
+            }}
+            aria-hidden="true"
+          />
+          {/* Roxou identity glows */}
+          <div
+            className="absolute inset-0 -z-10 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at left, rgba(168,85,247,0.25), transparent 60%), radial-gradient(circle at right, rgba(255,140,0,0.18), transparent 60%)",
+            }}
+            aria-hidden="true"
+          />
           {/* Decorative bg accents */}
-          <div className="absolute -top-10 -right-10 w-72 h-72 bg-orange-500/30 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-primary/40 rounded-full blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative text-center">
+          <div className="relative z-10 text-center">
 
             <h1 className="sr-only">Expo Prudente 2026</h1>
             <img
