@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Save, Instagram, Sparkles, Image as ImageIcon, Rocket, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -11,7 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/admin/ImageUpload";
 
-const CATEGORIES = [
+type Scope = "roxou" | "expo";
+
+const CATEGORIES_EXPO = [
   { value: "geral", label: "Geral" },
   { value: "atracoes", label: "Atrações" },
   { value: "shows", label: "Shows" },
@@ -20,6 +22,17 @@ const CATEGORIES = [
   { value: "rodeio", label: "Rodeio" },
   { value: "gastronomia", label: "Gastronomia" },
   { value: "avisos", label: "Avisos" },
+];
+
+const CATEGORIES_ROXOU = [
+  { value: "geral", label: "Geral" },
+  { value: "bares", label: "Bares" },
+  { value: "festas", label: "Festas" },
+  { value: "baladas", label: "Baladas" },
+  { value: "restaurantes", label: "Restaurantes" },
+  { value: "shows", label: "Shows" },
+  { value: "gastronomia", label: "Gastronomia" },
+  { value: "cultura", label: "Cultura" },
 ];
 
 function slugify(s: string) {
