@@ -49,14 +49,6 @@ const TBA_DATES = [
   { date: "14/09/2026", label: "Segunda" },
 ];
 
-const GALLERY = [
-  "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&auto=format&fit=crop&q=70",
-  "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=70",
-];
 
 function useExpoCountdown() {
   const target = useMemo(() => new Date("2026-09-10T20:00:00-03:00").getTime(), []);
@@ -426,42 +418,6 @@ const Expo2026 = () => {
       {/* GALERIA PREMIUM — Álbuns por artista */}
       <ExpoGallery />
 
-      {/* GALERIA bastidores ROXOU */}
-      <section id="galeria-bastidores" className="px-4 mx-auto max-w-6xl mt-16">
-        <div className="mb-5">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-300">
-              Bastidores
-            </span>
-          </div>
-          <h2 className="font-display text-2xl sm:text-4xl font-black">
-            Galeria <span className="text-yellow-400">oficial</span>
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Imagens da Expo Prudente, atualizadas pela equipe ROXOU.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-          {GALLERY.map((src, i) => (
-            <div
-              key={i}
-              className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 ${
-                i === 0 ? "col-span-2 row-span-2 aspect-square sm:aspect-[4/5]" : "aspect-square"
-              }`}
-            >
-              <img
-                src={src}
-                alt={`Galeria Expo ${i + 1}`}
-                loading="lazy"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* INGRESSOS / TRANSPORTE */}
       <section id="ingressos" className="px-4 mx-auto max-w-6xl mt-16 grid sm:grid-cols-2 gap-4">
