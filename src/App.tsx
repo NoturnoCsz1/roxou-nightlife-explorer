@@ -31,6 +31,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import ParceirosList from "./pages/admin/ParceirosList";
 import ParceiroForm from "./pages/admin/ParceiroForm";
+import EstabelecimentosAudit from "./pages/admin/EstabelecimentosAudit";
 import EventosList from "./pages/admin/EventosList";
 import EventoForm from "./pages/admin/EventoForm";
 import EventoBulkForm from "./pages/admin/EventoBulkForm";
