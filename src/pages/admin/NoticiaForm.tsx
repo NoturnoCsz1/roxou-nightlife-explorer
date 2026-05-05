@@ -198,18 +198,32 @@ const NoticiaForm = () => {
       <div className="pointer-events-none absolute top-40 -left-10 w-72 h-72 bg-primary/15 blur-3xl rounded-full -z-10" />
 
       <div className="flex items-center gap-2 mb-5">
-        <Link to="/admin/noticias" className="text-muted-foreground hover:text-foreground">
+        <Link to={backTo} className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
           <h1 className="text-xl font-black font-display flex items-center gap-2">
             {editing ? "Editar notícia" : "Nova notícia"}
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
-              <Flame className="h-2.5 w-2.5" /> Expo 2026
-            </span>
+            {scope === "expo" ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
+                <Flame className="h-2.5 w-2.5" /> Expo 2026
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-primary/20 border border-primary/30 text-primary">
+                <Sparkles className="h-2.5 w-2.5" /> Roxou
+              </span>
+            )}
           </h1>
-          <p className="text-xs text-muted-foreground">Conteúdo do hot site /expo2026</p>
+          <p className="text-xs text-muted-foreground">
+            {scope === "expo" ? "Conteúdo do hot site /expo2026" : "Notícias da Roxou (bares, festas, baladas, restaurantes, shows)"}
+          </p>
         </div>
+        {!editing && (
+          <div className="ml-auto flex items-center gap-1 p-1 rounded-lg border border-border/60 bg-card/40">
+            <button type="button" onClick={() => setScope("roxou")} className={`px-2 py-1 rounded text-[11px] font-bold ${scope === "roxou" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Roxou</button>
+            <button type="button" onClick={() => setScope("expo")} className={`px-2 py-1 rounded text-[11px] font-bold ${scope === "expo" ? "bg-gradient-to-r from-orange-500 to-yellow-400 text-black" : "text-muted-foreground"}`}>Expo 2026</button>
+          </div>
+        )}
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); persist(false); }} className="space-y-5 max-w-3xl">
