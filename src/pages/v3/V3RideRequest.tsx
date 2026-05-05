@@ -353,7 +353,7 @@ export default function V3RideRequest() {
         origin_accuracy: originAccuracy,
         origin_source: originSource ?? "gps",
         // Destination — LOCKED to event
-        destination_address: event.address || event.venue_name || event.title,
+        destination_address: event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title,
         destination_lat: event.latitude,
         destination_lng: event.longitude,
         passengers_count: passengersCount,
