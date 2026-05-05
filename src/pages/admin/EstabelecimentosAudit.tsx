@@ -75,15 +75,10 @@ const EstabelecimentosAudit = () => {
 
     if (list.length) {
       const ids = list.map(p => p.id);
-      const [eventsRes, coordsRes] = await Promise.all([
-        supabase.from("events").select("partner_id").in("partner_id", ids),
-        supabase.from("events").select("partner_id, latitude, longitude").in("partner_id", ids).not("latitude", "is", null).limit(1000),
-      ]);
+      const { data: evRows } = await supabase.from("events").select("partner_id").in("partner_id", ids);
       const m: Record<string, Metrics> = {};
-      ids.forEach(id => { m[id] = { eventCount: 0, latitude: null, longitude: null }; });
-      (eventsRes.data || []).forEach(e => { if (e.partner_id) m[e.partner_id].eventCount++; });
-      // Coordenadas vivem em partners? Não. Estão em events. Para "missing_coordinates" usamos um campo
-      // dedicado se existir ou consideramos vazio. Aqui vamos buscar no próprio partner via campos extras:
+      ids.forEach(id => { m[id] = { eventCount: 0 }; });
+      (evRows || []).forEach(e => { if (e.partner_id) m[e.partner_id].eventCount++; });
       setMetrics(m);
     }
     setLoading(false);
