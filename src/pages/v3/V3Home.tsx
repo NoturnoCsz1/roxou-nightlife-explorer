@@ -578,13 +578,13 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       </div>
 
       {/* Bottom content — título mais leve, hierarquia respirada */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 pb-10 lg:px-12 lg:pb-14 space-y-4 lg:space-y-6 z-10 lg:max-w-3xl">
-        <div className="space-y-2.5 lg:space-y-3">
+      <div className="absolute bottom-0 left-0 right-0 p-5 pb-10 lg:px-10 lg:pb-9 space-y-4 lg:space-y-4 z-10 lg:max-w-2xl">
+        <div className="space-y-2.5 lg:space-y-2">
           <span className="inline-block text-[10px] lg:text-[11px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
           </span>
           <h1
-            className="font-display font-semibold text-[26px] lg:text-[44px] xl:text-[52px] leading-[1.1] lg:leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
+            className="font-display font-semibold text-[26px] lg:text-[34px] xl:text-[38px] leading-[1.1] lg:leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
             style={{ textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)" }}
           >
             {ev.title}
