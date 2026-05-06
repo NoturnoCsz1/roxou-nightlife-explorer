@@ -483,12 +483,16 @@ export default function V3RideRequest() {
             </div>
           )}
 
-          <div
-            ref={mapRef}
-            className={`w-full rounded-xl overflow-hidden border border-border/40 transition-all duration-300 ${
-              event?.latitude != null ? "h-[220px] opacity-100" : "h-0 opacity-0"
-            }`}
-          />
+          {event?.latitude != null && event?.longitude != null && (
+            <RoxouRideMap
+              originCoords={originCoords}
+              destinationCoords={{ lat: event.latitude, lng: event.longitude }}
+              onOriginChange={handleOriginPinChange}
+              destinationLabel={event.title}
+              originLabel="Seu ponto de embarque"
+              height={220}
+            />
+          )}
 
           <a
             href={originAddress && event.address
