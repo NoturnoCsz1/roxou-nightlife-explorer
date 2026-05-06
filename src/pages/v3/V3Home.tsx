@@ -326,10 +326,18 @@ export default function V3Home() {
                 isToday={!!heroIsToday}
                 todayCount={todayCount}
                 venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+                slides={heroEvents}
+                index={heroIdx}
+                onChange={setHeroIdx}
               />
             </div>
           </div>
         ) : <EmptyHero />}
+
+        {/* Eventos de hoje — logo abaixo do hero */}
+        {!isLoading && rawTodayEvents.length > 0 && (
+          <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        )}
       </div>
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
@@ -381,10 +389,8 @@ export default function V3Home() {
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
 
-      {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
-        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
-      ) : null}
+      {/* ══════ 1.5 HOJE — Já renderizado logo abaixo do hero ══════ */}
+
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
@@ -535,16 +541,35 @@ function FadeSection({ className, children }: { className?: string; children: Re
 }
 
 /* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
-function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
+function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange }: {
   ev: Ev; isToday: boolean; todayCount: number; venueRank?: number;
+  slides?: Ev[]; index?: number; onChange?: (i: number) => void;
 }) {
   const dayLabel = getDayLabel(ev.date_time);
   const momentumText = isToday && todayCount > 1
     ? `+${todayCount - 1} eventos rolando`
     : venueRank && venueRank <= 3 ? "Top venue da semana" : null;
 
+  const total = slides?.length || 0;
+  const cur = index ?? 0;
+  const go = (dir: number) => {
+    if (!onChange || total <= 1) return;
+    onChange((cur + dir + total) % total);
+  };
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+
   return (
-    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden">
+    <div
+      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden"
+      onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
+      onTouchEnd={(e) => {
+        const s = touchRef.current; if (!s) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - s.x; const dy = t.clientY - s.y;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+        touchRef.current = null;
+      }}
+    >
       {/* Background image with Ken Burns */}
       <SmartImage
         src={ev.image_url}
@@ -628,6 +653,39 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
           </Link>
         </div>
       </div>
+
+      {/* Carousel controls */}
+      {total > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Anterior"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); go(-1); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            aria-label="Próximo"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); go(1); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+            {slides!.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Ir para slide ${i + 1}`}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange?.(i); }}
+                className={`h-1.5 rounded-full transition-all ${i === cur ? "w-6 bg-primary" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
