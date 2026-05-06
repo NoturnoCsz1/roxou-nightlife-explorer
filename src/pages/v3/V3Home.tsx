@@ -331,32 +331,38 @@ export default function V3Home() {
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
       <div className="hidden lg:block">
-        <CommandCenter
-          hero={hero}
-          heroIsToday={!!heroIsToday}
-          heroEvents={heroEvents}
-          heroIdx={heroIdx}
-          setHeroIdx={setHeroIdx}
-          weeklyHighlight={weeklyHighlight}
-          todayEvents={rawTodayEvents}
-          todayCount={todayCount}
-          trending={trending}
-          featured={featured}
-          weekEvents={weekEvents}
-          trendingIdSet={trendingIdSet}
-          partnerRankMap={partnerRankMap}
-          venueRanks={venueRanks}
-          featuredPartners={featuredPartners as any[]}
-          events={events}
-        />
+        {isLoading ? (
+          <DesktopHomeSkeleton />
+        ) : (
+          <CommandCenter
+            hero={hero}
+            heroIsToday={!!heroIsToday}
+            heroEvents={heroEvents}
+            heroIdx={heroIdx}
+            setHeroIdx={setHeroIdx}
+            weeklyHighlight={weeklyHighlight}
+            todayEvents={rawTodayEvents}
+            todayCount={todayCount}
+            trending={trending}
+            featured={featured}
+            weekEvents={weekEvents}
+            trendingIdSet={trendingIdSet}
+            partnerRankMap={partnerRankMap}
+            venueRanks={venueRanks}
+            featuredPartners={featuredPartners as any[]}
+            events={events}
+          />
+        )}
       </div>
 
-      {/* ══════ HUB DE NOTÍCIAS / EXPO — visível em mobile e desktop ══════ */}
-      <div className="max-w-3xl mx-auto">
-        <LatestNewsSection variant="trending" limit={6} />
-        <ExpoHighlightBanner />
-        <MostViewedNews />
-      </div>
+      {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
+      {!isLoading && (
+        <div className="max-w-3xl mx-auto min-h-[200px]">
+          <LatestNewsSection variant="trending" limit={6} />
+          <ExpoHighlightBanner />
+          <MostViewedNews />
+        </div>
+      )}
 
       <div className="space-y-1 lg:hidden">
 
@@ -1386,6 +1392,28 @@ function VenueRankSkeleton() {
         {[0,1,2,3].map(i => <div key={i} className="h-32 rounded-xl bg-card border border-border/30 animate-pulse" />)}
       </div>
     </section>
+  );
+}
+
+function DesktopHomeSkeleton() {
+  return (
+    <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
+      <div className="space-y-6 min-w-0">
+        <div className="h-[600px] rounded-3xl bg-card/60 border border-border/30 animate-pulse" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-40 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+          <div className="h-40 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[0,1,2].map(i => <div key={i} className="h-56 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />)}
+        </div>
+      </div>
+      <aside className="space-y-4">
+        <div className="h-48 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+        <div className="h-64 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+        <div className="h-40 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+      </aside>
+    </div>
   );
 }
 
