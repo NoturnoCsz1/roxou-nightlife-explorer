@@ -544,7 +544,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
     : venueRank && venueRank <= 3 ? "Top venue da semana" : null;
 
   return (
-    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-[600px] lg:min-h-[600px] lg:max-h-[600px] overflow-hidden">
+    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden">
       {/* Background image with Ken Burns */}
       <SmartImage
         src={ev.image_url}
