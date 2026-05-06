@@ -609,7 +609,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
             {ev.category}
           </span>
           <h1
-            className="font-display font-semibold text-[26px] lg:text-[34px] xl:text-[38px] leading-[1.1] lg:leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
+            className="mt-3 max-w-[85%] lg:max-w-[720px] font-display font-semibold text-[24px] md:text-[32px] lg:text-[38px] xl:text-[40px] leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
             style={{ textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)" }}
           >
             {ev.title}
