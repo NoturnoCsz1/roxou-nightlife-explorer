@@ -110,6 +110,7 @@ function parseMapsUrl(url: string): { lat: number; lng: number } | null {
     }
   }
   return null;
+}
 
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
 function computeFlags(e: Establishment): FlagKey[] {
