@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, Calenda
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
+import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
 
 function getOperatingStatus(type?: string | null) {
   const hour = new Date().getHours();
@@ -180,6 +181,26 @@ export default function V3LocalDetail() {
             <MapPin className="w-4 h-4 text-primary shrink-0" />
             <span className="flex-1">{partner.address}</span>
           </a>
+        )}
+
+        {partner.latitude != null && partner.longitude != null && (
+          <div className="space-y-2">
+            <h2 className="font-display font-bold text-base text-foreground">Localização</h2>
+            <RoxouVenueMap
+              lat={Number(partner.latitude)}
+              lng={Number(partner.longitude)}
+              name={partner.name}
+              address={partner.address}
+              height={220}
+            />
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${partner.latitude},${partner.longitude}`}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+            >
+              <Navigation className="w-3.5 h-3.5" /> Como chegar
+            </a>
+          </div>
         )}
 
         {/* Events */}

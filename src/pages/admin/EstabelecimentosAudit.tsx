@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search, ExternalLink, MapPin, Instagram as InstagramIcon, CheckCircle2,
-  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X,
+  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
+import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
 
 type Status = "draft" | "ativo" | "destaque" | "oficial" | "bloqueado";
 
@@ -133,6 +134,7 @@ const EstabelecimentosAudit = () => {
   };
   const [aiBusy, setAiBusy] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<Record<string, SingleAI>>({});
+  const [mapModal, setMapModal] = useState<Establishment | null>(null);
   const [globalAI, setGlobalAI] = useState<GlobalAI | null>(null);
   const [globalBusy, setGlobalBusy] = useState(false);
 
@@ -568,6 +570,14 @@ const EstabelecimentosAudit = () => {
                     {busy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
                     Geocodificar endereço
                   </button>
+                  {e.latitude != null && e.longitude != null && (
+                    <button
+                      onClick={() => setMapModal(e)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                    >
+                      <MapIcon className="h-3 w-3" /> Ver no mapa
+                    </button>
+                  )}
                   <button
                     disabled={aiBusy === e.id}
                     onClick={() => analyzeOne(e)}
@@ -662,6 +672,41 @@ const EstabelecimentosAudit = () => {
               </div>
             );
           })}
+        </div>
+      )}
+      {mapModal && mapModal.latitude != null && mapModal.longitude != null && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setMapModal(null)}
+        >
+          <div
+            className="bg-card border border-border/40 rounded-2xl p-4 w-full max-w-lg space-y-3"
+            onClick={(ev) => ev.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-sm">{mapModal.name}</h3>
+                <p className="text-[11px] text-muted-foreground">{mapModal.address || "—"}</p>
+              </div>
+              <button onClick={() => setMapModal(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <RoxouVenueMap
+              lat={Number(mapModal.latitude)}
+              lng={Number(mapModal.longitude)}
+              name={mapModal.name}
+              address={mapModal.address}
+              height={320}
+            />
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${mapModal.latitude},${mapModal.longitude}`}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            >
+              <ExternalLink className="h-3 w-3" /> Abrir no Google Maps
+            </a>
+          </div>
         </div>
       )}
     </div>
