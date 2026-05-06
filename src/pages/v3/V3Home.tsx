@@ -331,32 +331,38 @@ export default function V3Home() {
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
       <div className="hidden lg:block">
-        <CommandCenter
-          hero={hero}
-          heroIsToday={!!heroIsToday}
-          heroEvents={heroEvents}
-          heroIdx={heroIdx}
-          setHeroIdx={setHeroIdx}
-          weeklyHighlight={weeklyHighlight}
-          todayEvents={rawTodayEvents}
-          todayCount={todayCount}
-          trending={trending}
-          featured={featured}
-          weekEvents={weekEvents}
-          trendingIdSet={trendingIdSet}
-          partnerRankMap={partnerRankMap}
-          venueRanks={venueRanks}
-          featuredPartners={featuredPartners as any[]}
-          events={events}
-        />
+        {isLoading ? (
+          <DesktopHomeSkeleton />
+        ) : (
+          <CommandCenter
+            hero={hero}
+            heroIsToday={!!heroIsToday}
+            heroEvents={heroEvents}
+            heroIdx={heroIdx}
+            setHeroIdx={setHeroIdx}
+            weeklyHighlight={weeklyHighlight}
+            todayEvents={rawTodayEvents}
+            todayCount={todayCount}
+            trending={trending}
+            featured={featured}
+            weekEvents={weekEvents}
+            trendingIdSet={trendingIdSet}
+            partnerRankMap={partnerRankMap}
+            venueRanks={venueRanks}
+            featuredPartners={featuredPartners as any[]}
+            events={events}
+          />
+        )}
       </div>
 
-      {/* ══════ HUB DE NOTÍCIAS / EXPO — visível em mobile e desktop ══════ */}
-      <div className="max-w-3xl mx-auto">
-        <LatestNewsSection variant="trending" limit={6} />
-        <ExpoHighlightBanner />
-        <MostViewedNews />
-      </div>
+      {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
+      {!isLoading && (
+        <div className="max-w-3xl mx-auto min-h-[200px]">
+          <LatestNewsSection variant="trending" limit={6} />
+          <ExpoHighlightBanner />
+          <MostViewedNews />
+        </div>
+      )}
 
       <div className="space-y-1 lg:hidden">
 
