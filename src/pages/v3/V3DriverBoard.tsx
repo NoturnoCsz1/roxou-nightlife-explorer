@@ -216,7 +216,7 @@ export default function V3DriverBoard() {
                         <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
                         {destApprox && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                            Confirmar ponto no chat
+                            Destino aproximado
                           </span>
                         )}
                       </div>
