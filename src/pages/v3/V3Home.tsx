@@ -28,6 +28,9 @@ import V3VibeChips from "@/components/v3/V3VibeChips";
 import SmartImage from "@/components/v3/SmartImage";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { User as UserIcon } from "lucide-react";
+import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
+import ExpoHighlightBanner from "@/components/v3/home/ExpoHighlightBanner";
+import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
