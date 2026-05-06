@@ -69,6 +69,19 @@ Deno.serve(async (req) => {
         .replace(/\bPraca\b/gi, "Praça")
         .replace(/\bRod\.?\b/gi, "Rodovia")
         .replace(/\bEstr\.?\b/gi, "Estrada");
+
+    // Normalize abbreviated city names (Pres. Prudente, P. Prudente, etc.)
+    const normalizeCity = (s: string) =>
+      s
+        .replace(/\bPres(idente)?\.?\s+Prudente\b/gi, "Presidente Prudente")
+        .replace(/\bP\.\s*Prudente\b/gi, "Presidente Prudente")
+        .replace(/(^|[,\s])Prudente\b(?!\s*\w)/gi, "$1Presidente Prudente");
+
+    // Remove embedded city from the address string so we can append the canonical one
+    const stripEmbeddedCity = (s: string, cityCanonical: string) => {
+      const cityRegex = new RegExp(`[,\\s-]+${cityCanonical.replace(/\s+/g, "\\s+")}\\b.*$`, "i");
+      return s.replace(cityRegex, "").replace(/[,\s-]+$/, "").trim();
+    };
     // Strip apostrophes / weird chars from establishment NAME query only
     const sanitizeName = (s: string) =>
       s.replace(/[''`´]/g, "").replace(/[^\w\sáéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ.&-]/g, " ").replace(/\s+/g, " ").trim();
