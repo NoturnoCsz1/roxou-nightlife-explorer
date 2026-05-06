@@ -68,6 +68,7 @@ import V3Contato from "./pages/v3/V3Contato";
 import PertoDeMim from "./pages/PertoDeMim";
 import RemoverDados from "./pages/RemoverDados";
 import CadastroMotorista from "./pages/CadastroMotorista";
+import PedirCaronaGate from "./components/PedirCaronaGate";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*)
 import LegacyIndex from "./pages/Index";
@@ -132,8 +133,8 @@ const App = () => (
           <Route path="/manutencao" element={<Maintenance />} />
           <Route path="/remover-dados" element={<RemoverDados />} />
           <Route path="/cadastro-motorista" element={<CadastroMotorista />} />
-          {/* /pedir-carona deixou de ser fluxo público — redireciona para a agenda */}
-          <Route path="/pedir-carona" element={<Navigate to="/agenda" replace />} />
+          {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
+          <Route path="/pedir-carona" element={<PedirCaronaGate />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
           {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
