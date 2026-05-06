@@ -360,23 +360,27 @@ export default function V3RideRequest() {
     let originApproximate = false;
 
     if (manualOriginAddress.trim()) {
+      resolvedOriginAddr = manualOriginAddress.trim();
+      resolvedOriginSource = "fallback_address";
+      resolvedOriginAccuracy = null;
       const geo = await geocodeAddress(manualOriginAddress.trim());
       if (geo) {
         resolvedOrigin = geo;
-        resolvedOriginAddr = manualOriginAddress.trim();
-        resolvedOriginSource = "fallback_address";
-        resolvedOriginAccuracy = null;
-        originApproximate = true;
+        originApproximate = false;
       } else {
-        toast.error("Não conseguimos localizar o endereço de embarque. Ajuste no mapa ou tente outro endereço.");
-        return;
+        // Não bloqueia: salva como texto, sem coordenadas
+        resolvedOrigin = null;
+        originApproximate = true;
+        toast.message("Endereço salvo como texto. O motorista combinará o ponto exato no chat.");
       }
     } else if (originAccuracy != null && originAccuracy > 1000) {
       toast.error("GPS com baixa precisão. Ajuste o pin no mapa ou digite o endereço de embarque.");
       return;
     }
 
-    if (!resolvedOrigin) { toast.error("Confirme sua origem (GPS, mapa ou endereço)"); return; }
+    if (!resolvedOrigin && !resolvedOriginAddr) {
+      toast.error("Confirme sua origem (GPS, mapa ou endereço)"); return;
+    }
 
     // Resolve destination (event coords or manual)
     let resolvedDestLat = event.latitude ?? destCoords?.lat ?? null;
@@ -384,19 +388,24 @@ export default function V3RideRequest() {
     let resolvedDestAddr =
       event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title;
 
+    let destApproximate = false;
     if ((resolvedDestLat == null || resolvedDestLng == null)) {
       if (!manualDestAddress.trim()) {
         toast.error("Confirme o endereço do destino para continuar.");
         return;
       }
-      const geo = await geocodeAddress(manualDestAddress.trim());
-      if (!geo) {
-        toast.error("Não conseguimos localizar o endereço do destino. Tente outro endereço.");
-        return;
-      }
-      resolvedDestLat = geo.lat;
-      resolvedDestLng = geo.lng;
       resolvedDestAddr = manualDestAddress.trim();
+      const geo = await geocodeAddress(manualDestAddress.trim());
+      if (geo) {
+        resolvedDestLat = geo.lat;
+        resolvedDestLng = geo.lng;
+      } else {
+        // Não bloqueia: salva endereço textual
+        resolvedDestLat = null;
+        resolvedDestLng = null;
+        destApproximate = true;
+        toast.message("Endereço de destino salvo como texto. Será confirmado no chat com o motorista.");
+      }
     }
 
     if (!whatsapp.trim() || !/^\(\d{2}\) \d{4,5}-\d{4}$/.test(whatsapp)) {
@@ -435,14 +444,16 @@ export default function V3RideRequest() {
         event_name: event.title,
         venue_name: event.venue_name,
         event_date: rideTimestamp,
-        pickup_address: resolvedOriginAddr || `${resolvedOrigin.lat.toFixed(6)}, ${resolvedOrigin.lng.toFixed(6)}`,
-        origin_lat: resolvedOrigin.lat,
-        origin_lng: resolvedOrigin.lng,
+        pickup_address: resolvedOriginAddr || (resolvedOrigin ? `${resolvedOrigin.lat.toFixed(6)}, ${resolvedOrigin.lng.toFixed(6)}` : null),
+        origin_lat: resolvedOrigin?.lat ?? null,
+        origin_lng: resolvedOrigin?.lng ?? null,
         origin_accuracy: resolvedOriginAccuracy,
         origin_source: resolvedOriginSource ?? (originApproximate ? "fallback_address" : "gps"),
+        pickup_is_approximate: originApproximate || !resolvedOrigin,
         destination_address: resolvedDestAddr,
         destination_lat: resolvedDestLat,
         destination_lng: resolvedDestLng,
+        destination_is_approximate: destApproximate || resolvedDestLat == null || resolvedDestLng == null,
         passengers_count: passengersCount,
         seats_available: Math.min(4, Math.max(1, passengersCount)),
         price_note: priceNote || "Valor final combinado no chat",
@@ -629,7 +640,7 @@ export default function V3RideRequest() {
               className="h-11 rounded-xl bg-card border-border/40 text-sm"
             />
             <p className="text-[10px] text-muted-foreground">
-              Use se o GPS estiver impreciso. O endereço será priorizado sobre o pin do mapa.
+              Use se o GPS estiver impreciso. Se não conseguirmos validar automaticamente, o endereço será enviado ao motorista para confirmação no chat.
             </p>
           </div>
 

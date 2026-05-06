@@ -172,17 +172,33 @@ export default function V3DriverBoard() {
                     const raw = req.pickup_address?.trim() || "";
                     const isRawCoord = /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(raw);
                     const display = !raw || isRawCoord ? "Localização aproximada no mapa" : raw;
+                    const approx = (req as any).pickup_is_approximate === true || (req.origin_lat == null || req.origin_lng == null);
                     return (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <MapPin className="w-3.5 h-3.5 text-primary" />
+                      <div className="flex items-start gap-2 text-xs text-muted-foreground flex-wrap">
+                        <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
                         <span>Embarque: {display}</span>
+                        {approx && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+                            Confirmar ponto no chat
+                          </span>
+                        )}
                       </div>
                     );
                   })()}
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
-                    <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
-                  </div>
+                  {(() => {
+                    const destApprox = (req as any).destination_is_approximate === true || (req.destination_lat == null || req.destination_lng == null);
+                    return (
+                      <div className="flex items-start gap-2 text-xs text-muted-foreground flex-wrap">
+                        <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
+                        <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
+                        {destApprox && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+                            Confirmar ponto no chat
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {req.event_date && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="w-3.5 h-3.5" />
