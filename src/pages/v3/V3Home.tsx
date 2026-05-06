@@ -291,11 +291,14 @@ export default function V3Home() {
   }, [events, trendingIds, vibeFilter]);
 
   // Destaque da Semana — prioriza evento featured com vídeo POV
+  // Curadoria Roxou / Destaque da Semana — apenas Festas, Shows e Baladas
   const weeklyHighlight = useMemo(() => {
-    const candidates = events.filter(e => !usedIds.has(e.id));
+    const ALLOWED = new Set(["festa", "show", "balada"]);
+    const candidates = events.filter(e => !usedIds.has(e.id) && ALLOWED.has(e.category));
     return candidates.find(e => e.featured && e.video_url) ||
-           candidates.find(e => e.video_url) ||
            candidates.find(e => e.featured) ||
+           candidates.find(e => e.video_url) ||
+           candidates[0] ||
            null;
   }, [events, usedIds]);
   if (weeklyHighlight) usedIds.add(weeklyHighlight.id);
@@ -541,7 +544,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
     : venueRank && venueRank <= 3 ? "Top venue da semana" : null;
 
   return (
-    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-[600px] lg:min-h-[600px] lg:max-h-[600px] overflow-hidden">
+    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden">
       {/* Background image with Ken Burns */}
       <SmartImage
         src={ev.image_url}
@@ -575,13 +578,13 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
       </div>
 
       {/* Bottom content — título mais leve, hierarquia respirada */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 pb-10 lg:px-12 lg:pb-14 space-y-4 lg:space-y-6 z-10 lg:max-w-3xl">
-        <div className="space-y-2.5 lg:space-y-3">
+      <div className="absolute bottom-0 left-0 right-0 p-5 pb-10 lg:px-10 lg:pb-9 space-y-4 lg:space-y-4 z-10 lg:max-w-2xl">
+        <div className="space-y-2.5 lg:space-y-2">
           <span className="inline-block text-[10px] lg:text-[11px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
           </span>
           <h1
-            className="font-display font-semibold text-[26px] lg:text-[44px] xl:text-[52px] leading-[1.1] lg:leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
+            className="font-display font-semibold text-[26px] lg:text-[34px] xl:text-[38px] leading-[1.1] lg:leading-[1.05] line-clamp-2 tracking-[-0.01em] text-foreground"
             style={{ textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)" }}
           >
             {ev.title}
@@ -610,16 +613,16 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
         </div>
 
         {/* CTAs */}
-        <div className="flex gap-2 lg:gap-3 pt-3">
+        <div className="flex gap-2 lg:gap-2.5 pt-2 lg:pt-1">
           <Link
             to={`/evento/${ev.slug}`}
-            className="inline-flex items-center gap-1.5 px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 px-5 lg:px-5 py-2.5 lg:py-2 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-[13px] font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
             Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
             to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 px-4 lg:px-5 py-2.5 lg:py-3 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-sm font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 lg:px-4 py-2.5 lg:py-2 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-[13px] font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
           >
             <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary/80" /> Como vou?
           </Link>
@@ -935,7 +938,21 @@ function CommandCenter({
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
   venueRanks: VenueRank[]; featuredPartners: any[]; events: Ev[];
 }) {
-  const mainEvents = [...trending, ...featured, ...todayEvents, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 10);
+  // Evita duplicar eventos já mostrados na timeline de hoje, no hero ou no spotlight
+  const excludeIds = new Set<string>();
+  todayEvents.forEach(e => excludeIds.add(e.id));
+  if (hero) excludeIds.add(hero.id);
+  if (weeklyHighlight) excludeIds.add(weeklyHighlight.id);
+  const mainPool = [...trending, ...featured, ...weekEvents].filter((e, i, arr) =>
+    arr.findIndex(x => x.id === e.id) === i && !excludeIds.has(e.id)
+  );
+  // Embaralhamento estável por dia para variar a curadoria sem mudar a cada render
+  const seed = TODAY_KEY.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const mainEvents = mainPool
+    .map((e, i) => ({ e, k: ((i + 1) * 9301 + seed * 49297) % 233280 }))
+    .sort((a, b) => a.k - b.k)
+    .map(x => x.e)
+    .slice(0, 10);
 
   if (!todayEvents.length && !mainEvents.length && !hero) return null;
 
