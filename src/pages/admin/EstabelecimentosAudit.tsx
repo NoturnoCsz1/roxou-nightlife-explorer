@@ -215,26 +215,38 @@ const EstabelecimentosAudit = () => {
     toast.success("Instagram marcado como validado");
   }
 
-  async function generateCoordinates(e: Establishment) {
-    if (!e.address?.trim()) { toast.error("Cadastre o endereço primeiro"); return; }
-    setBusy(e.id);
+  async function geocodeOne(e: Establishment): Promise<{ ok: boolean; error?: string }> {
+    if (!e.address?.trim()) return { ok: false, error: "Sem endereço" };
+    const norm = (s: string) => s.replace(/\s+/g, " ").replace(/,\s*,+/g, ",").replace(/^[,\s]+|[,\s]+$/g, "").trim();
+    const address = norm(e.address);
+    const neighborhood = e.neighborhood ? norm(e.neighborhood) : "";
+    const city = norm(e.city || "Presidente Prudente");
     try {
       const { data, error } = await supabase.functions.invoke("geocode-address", {
-        body: { address: e.address, city: e.city },
+        body: { address, neighborhood, city, name: e.name },
       });
-      if (error || !data?.latitude) throw new Error(data?.error || "Não encontrado");
+      if (error || !data?.latitude) {
+        return { ok: false, error: data?.error || error?.message || "Endereço não encontrado" };
+      }
       const { error: updErr } = await supabase
         .from("partners")
         .update({ latitude: data.latitude, longitude: data.longitude })
         .eq("id", e.id);
-      if (updErr) throw updErr;
+      if (updErr) return { ok: false, error: updErr.message };
       setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: data.latitude, longitude: data.longitude } : p));
-      toast.success(`Coordenadas salvas: ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`);
+      return { ok: true };
     } catch (err: any) {
-      toast.error(err.message || "Falha no geocoding");
-    } finally {
-      setBusy(null);
+      return { ok: false, error: err.message || "Falha no geocoding" };
     }
+  }
+
+  async function generateCoordinates(e: Establishment) {
+    if (!e.address?.trim()) { toast.error("Cadastre o endereço primeiro"); return; }
+    setBusy(e.id);
+    const res = await geocodeOne(e);
+    setBusy(null);
+    if (res.ok) toast.success("Coordenadas salvas");
+    else toast.error(`${e.name}: ${res.error}. Revise o endereço ou tente simplificar.`);
   }
 
   return (
@@ -258,11 +270,18 @@ const EstabelecimentosAudit = () => {
               const targets = items.filter(e => e.address && (e.latitude == null || e.longitude == null));
               if (!targets.length) { toast.message("Nada a geocodificar"); return; }
               toast.message(`Geocodificando ${targets.length}...`);
+              let ok = 0; const failed: { name: string; error: string }[] = [];
               for (const e of targets) {
-                await generateCoordinates(e);
+                const r = await geocodeOne(e);
+                if (r.ok) ok++; else failed.push({ name: e.name, error: r.error || "?" });
                 await new Promise(r => setTimeout(r, 250));
               }
-              toast.success("Lote concluído");
+              if (failed.length === 0) {
+                toast.success(`${ok} atualizado(s)`);
+              } else {
+                console.warn("Geocode failures:", failed);
+                toast.error(`${ok} ok · ${failed.length} falharam: ${failed.slice(0, 3).map(f => f.name).join(", ")}${failed.length > 3 ? "..." : ""}`);
+              }
             }}
             className="rounded-lg bg-secondary/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
           >
@@ -273,6 +292,7 @@ const EstabelecimentosAudit = () => {
           </Link>
         </div>
       </div>
+
 
       {globalAI && (
         <div className="rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-card p-3 space-y-2 relative">
