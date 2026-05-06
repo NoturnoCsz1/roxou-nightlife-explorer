@@ -296,12 +296,13 @@ const EstabelecimentosAudit = () => {
       if (cityF && e.city !== cityF) return false;
       if (categoryF && e.type !== categoryF) return false;
       if (errorsOnly && computeFlags(e).length === 0) return false;
+      if (noCoordsOnly && e.latitude != null && e.longitude != null) return false;
       return true;
     });
     if (orderBy === "events_desc") arr = [...arr].sort((a, b) => (metrics[b.id]?.eventCount || 0) - (metrics[a.id]?.eventCount || 0));
     if (orderBy === "events_asc") arr = [...arr].sort((a, b) => (metrics[a.id]?.eventCount || 0) - (metrics[b.id]?.eventCount || 0));
     return arr;
-  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, orderBy, metrics]);
+  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, noCoordsOnly, orderBy, metrics]);
 
   const stats = useMemo(() => {
     const total = items.length;
