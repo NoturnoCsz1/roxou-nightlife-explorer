@@ -108,6 +108,7 @@ export default function V3RideRequest() {
   const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [originConfirmed, setOriginConfirmed] = useState(false);
 
   // (Leaflet map handles markers reactively from state)
 
@@ -221,9 +222,10 @@ export default function V3RideRequest() {
     setOriginCoords(c);
     setOriginSource("manual_pin_adjustment");
     setOriginAccuracy(null);
+    setOriginConfirmed(false);
     const addr = await reverseGeocode(c.lat, c.lng);
     setOriginAddress(addr);
-    toast.success("Ponto de embarque ajustado");
+    toast.success("Pin ajustado — confirme o ponto");
   };
 
   const useMyLocation = () => {
@@ -240,6 +242,7 @@ export default function V3RideRequest() {
         setOriginCoords({ lat: latitude, lng: longitude });
         setOriginAccuracy(accuracy ?? null);
         setOriginSource("gps");
+        setOriginConfirmed(false);
         const addr = await reverseGeocode(latitude, longitude);
         setOriginAddress(addr);
         
@@ -302,7 +305,7 @@ export default function V3RideRequest() {
         venue_name: event.venue_name,
         event_date: rideTimestamp,
         // Origin (GPS-first)
-        pickup_address: originAddress,
+        pickup_address: originAddress || `${originCoords.lat.toFixed(6)}, ${originCoords.lng.toFixed(6)}`,
         origin_lat: originCoords.lat,
         origin_lng: originCoords.lng,
         origin_accuracy: originAccuracy,
@@ -464,22 +467,52 @@ export default function V3RideRequest() {
           )}
 
           {originCoords && (
-            <div className="rounded-2xl border border-border/40 bg-card/40 p-3 space-y-1">
+            <div className={`rounded-2xl border p-3 space-y-2 ${
+              originConfirmed
+                ? "border-primary/50 bg-primary/10"
+                : "border-border/40 bg-card/40"
+            }`}>
               <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary/80 font-bold">
                 <Navigation className="w-3 h-3" />
-                {originSource === "gps" && "GPS"}
-                {originSource === "manual_pin_adjustment" && "Pin ajustado manualmente"}
-                {originSource === "fallback_address" && "Endereço informado"}
+                {originConfirmed ? "Ponto confirmado" : "Ponto de embarque selecionado"}
                 {originAccuracy != null && originSource === "gps" && (
                   <span className="text-muted-foreground normal-case font-normal">
                     · precisão ~{Math.round(originAccuracy)}m
                   </span>
                 )}
               </div>
-              <p className="text-xs text-foreground">{originAddress || "Endereço aproximado..."}</p>
-              <p className="text-[10px] text-muted-foreground">
-                Confira no mapa abaixo. Arraste o pin 📍 para ajustar o ponto exato de embarque.
+              <p className="text-xs text-foreground break-words">
+                {originAddress || `Lat: ${originCoords.lat.toFixed(5)}, Lng: ${originCoords.lng.toFixed(5)}`}
               </p>
+              <p className="text-[10px] text-muted-foreground leading-snug">
+                O endereço exibido pode ser aproximado. Confira o pin no mapa e arraste para o ponto exato.
+              </p>
+
+              {originAccuracy != null && originAccuracy > 100 && !originConfirmed && (
+                <div className="flex items-start gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>GPS com baixa precisão. Ajuste o pin manualmente para evitar erro no embarque.</span>
+                </div>
+              )}
+
+              {!originConfirmed ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setOriginConfirmed(true);
+                    toast.success("Ponto de embarque confirmado");
+                  }}
+                  className="w-full h-9 rounded-xl gap-1.5 text-xs"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirmar este ponto
+                </Button>
+              ) : (
+                <div className="flex items-center gap-1.5 text-[11px] text-primary">
+                  <Lock className="w-3 h-3" /> Ponto travado para envio
+                </div>
+              )}
             </div>
           )}
 
