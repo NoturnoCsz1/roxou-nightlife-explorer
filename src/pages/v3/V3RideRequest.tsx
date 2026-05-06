@@ -792,13 +792,16 @@ export default function V3RideRequest() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Valor / rachada</Label>
+            <Label className="text-xs text-muted-foreground">Valor sugerido</Label>
             <Input
               value={priceNote}
               onChange={(e) => setPriceNote(e.target.value.slice(0, 80))}
-              placeholder="Ex: R$ 20 por pessoa ou combinar"
+              placeholder="Ex: R$ 20 por pessoa (a combinar)"
               className="h-11 rounded-xl bg-card border-border/40 text-sm"
             />
+            <p className="text-[10px] text-muted-foreground">
+              O valor final pode ser combinado diretamente entre passageiro e motorista.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -814,11 +817,11 @@ export default function V3RideRequest() {
 
         <Button
           type="submit"
-          disabled={loading || windowClosed || !originCoords}
+          disabled={loading || windowClosed || (!originCoords && !manualOriginAddress.trim())}
           className="w-full h-12 rounded-xl font-semibold text-sm gap-2"
         >
           <Send className="w-4 h-4" />
-          {loading ? "Enviando..." : !originCoords ? "Capture seu GPS para continuar" : "Publicar pedido"}
+          {loading ? "Enviando..." : (!originCoords && !manualOriginAddress.trim()) ? "Informe origem (GPS ou endereço)" : "Publicar pedido"}
         </Button>
       </form>
     </div>
