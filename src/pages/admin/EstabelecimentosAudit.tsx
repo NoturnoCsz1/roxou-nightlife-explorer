@@ -2,8 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search, ExternalLink, MapPin, Instagram as InstagramIcon, CheckCircle2,
-  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon,
+  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon, RefreshCw,
 } from "lucide-react";
+
+const FLAG_LABELS: Record<string, string> = {
+  missing_address: "sem endereço",
+  missing_instagram: "sem instagram",
+  missing_coordinates: "sem coordenadas",
+  missing_category: "sem categoria",
+};
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
@@ -347,12 +354,21 @@ const EstabelecimentosAudit = () => {
     if (error) { toast.error("Falha ao salvar"); return; }
     setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: lat, longitude: lng } : p));
     toast.success("Coordenadas salvas");
+    await reloadOne(e.id);
+  }
+
+  async function reloadOne(id: string) {
+    const { data, error } = await supabase.from("partners").select("*").eq("id", id).maybeSingle();
+    if (error || !data) return;
+    setItems(prev => prev.map(p => p.id === id ? ({ ...p, ...(data as any) }) : p));
   }
 
   async function generateCoordinates(e: Establishment) {
     if (!e.address?.trim()) { toast.error("Cadastre o endereço primeiro"); return; }
     setBusy(e.id);
     const res = await geocodeOne(e);
+    // ensure local state reflects the persisted record
+    await reloadOne(e.id);
     setBusy(null);
     if (res.ok) toast.success(res.formatted ? `Salvo: ${res.formatted}` : "Coordenadas salvas");
     else {
@@ -538,8 +554,12 @@ const EstabelecimentosAudit = () => {
                       {e.instagram_validated && <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />}
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${meta.cls}`}>{meta.label}</span>
                       {flags.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                          <AlertTriangle className="h-3 w-3" /> Dados incompletos
+                        <span
+                          title={flags.map(f => FLAG_LABELS[f] || f).join(", ")}
+                          className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-destructive/10 text-destructive"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          Dados incompletos: {flags.map(f => FLAG_LABELS[f] || f).join(", ")}
                         </span>
                       )}
                     </div>
@@ -561,7 +581,7 @@ const EstabelecimentosAudit = () => {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {flags.map(f => (
                           <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">
-                            {f.replace("missing_", "sem ").replace("_", " ")}
+                            {FLAG_LABELS[f] || f}
                           </span>
                         ))}
                       </div>
@@ -641,6 +661,12 @@ const EstabelecimentosAudit = () => {
                     className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
                   >
                     <MapPin className="h-3 w-3" /> Coordenadas manuais
+                  </button>
+                  <button
+                    onClick={() => reloadOne(e.id)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Recarregar dados
                   </button>
                   <a
                     href={`/local/${e.slug}`}
