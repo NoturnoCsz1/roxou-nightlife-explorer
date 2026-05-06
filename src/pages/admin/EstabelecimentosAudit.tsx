@@ -25,6 +25,8 @@ interface Establishment {
   instagram_validated: boolean | null;
   latitude: number | null;
   longitude: number | null;
+  maps_place_id?: string | null;
+  formatted_address?: string | null;
   updated_at: string | null;
   created_at: string;
 }
@@ -223,17 +225,26 @@ const EstabelecimentosAudit = () => {
     const city = norm(e.city || "Presidente Prudente");
     try {
       const { data, error } = await supabase.functions.invoke("geocode-address", {
-        body: { address, neighborhood, city, name: e.name },
+        body: { address, neighborhood, city, state: "SP", country: "Brasil", name: e.name },
       });
-      if (error || !data?.latitude) {
-        return { ok: false, error: data?.error || error?.message || "Endereço não encontrado" };
+      if (error || data?.ok === false || !data?.latitude || !data?.longitude) {
+        const message = data?.status === "REQUEST_DENIED"
+          ? "Geocoding indisponível no momento. Verifique a chave/API do Google Maps."
+          : "Endereço não encontrado. Revise o endereço ou tente simplificar.";
+        return { ok: false, error: data?.error ? message : (error?.message || message) };
       }
+      const payload = {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        maps_place_id: data.place_id || null,
+        formatted_address: data.formatted_address || null,
+      };
       const { error: updErr } = await supabase
         .from("partners")
-        .update({ latitude: data.latitude, longitude: data.longitude })
+        .update(payload as any)
         .eq("id", e.id);
       if (updErr) return { ok: false, error: updErr.message };
-      setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: data.latitude, longitude: data.longitude } : p));
+      setItems(prev => prev.map(p => p.id === e.id ? { ...p, ...payload } : p));
       return { ok: true };
     } catch (err: any) {
       return { ok: false, error: err.message || "Falha no geocoding" };
@@ -246,7 +257,7 @@ const EstabelecimentosAudit = () => {
     const res = await geocodeOne(e);
     setBusy(null);
     if (res.ok) toast.success("Coordenadas salvas");
-    else toast.error(`${e.name}: ${res.error}. Revise o endereço ou tente simplificar.`);
+    else toast.error(`${e.name}: ${res.error || "Endereço não encontrado. Revise o endereço ou tente simplificar."}`);
   }
 
   return (
