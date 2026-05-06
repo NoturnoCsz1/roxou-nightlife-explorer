@@ -787,6 +787,7 @@ export type Database = {
           city: string
           created_at: string
           featured_home: boolean
+          formatted_address: string | null
           full_description: string | null
           id: string
           instagram: string | null
@@ -794,6 +795,7 @@ export type Database = {
           latitude: number | null
           logo_url: string | null
           longitude: number | null
+          maps_place_id: string | null
           name: string
           neighborhood: string | null
           short_description: string | null
@@ -810,6 +812,7 @@ export type Database = {
           city?: string
           created_at?: string
           featured_home?: boolean
+          formatted_address?: string | null
           full_description?: string | null
           id?: string
           instagram?: string | null
@@ -817,6 +820,7 @@ export type Database = {
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          maps_place_id?: string | null
           name: string
           neighborhood?: string | null
           short_description?: string | null
@@ -833,6 +837,7 @@ export type Database = {
           city?: string
           created_at?: string
           featured_home?: boolean
+          formatted_address?: string | null
           full_description?: string | null
           id?: string
           instagram?: string | null
@@ -840,6 +845,7 @@ export type Database = {
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          maps_place_id?: string | null
           name?: string
           neighborhood?: string | null
           short_description?: string | null
