@@ -75,7 +75,7 @@ export default function LatestNewsSection({
         </Link>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+      <div className="w-full max-w-full flex gap-3 overflow-x-auto overflow-y-visible pb-2 pr-8 scroll-px-4 scrollbar-hide snap-x snap-mandatory">
         {items.map((n) => {
           const href =
             n.source === "expo" ? `/expo2026/noticia/${n.slug}` : `/noticia/${n.slug}`;
@@ -86,7 +86,7 @@ export default function LatestNewsSection({
             <Link
               key={`${n.source}-${n.id}`}
               to={href}
-              className="snap-start shrink-0 w-[78%] sm:w-[58%] md:w-[42%] lg:w-[300px] xl:w-[320px] rounded-2xl overflow-hidden bg-card border border-border/40 hover:border-primary/40 transition-all group"
+              className="snap-start shrink-0 w-[78%] sm:w-[58%] md:w-[42%] lg:w-[280px] xl:w-[300px] rounded-2xl overflow-hidden bg-card border border-border/40 hover:border-primary/40 transition-all group"
             >
               <div className="relative aspect-[16/10] bg-secondary overflow-hidden">
                 <SmartImage
