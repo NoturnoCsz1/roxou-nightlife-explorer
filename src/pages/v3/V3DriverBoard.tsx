@@ -4,10 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, ShieldCheck, WalletCards } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, ShieldCheck, WalletCards, Flag, Activity } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
+import ReportDialog from "@/components/v3/ReportDialog";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 import type { Tables } from "@/integrations/supabase/types";
+
+function timeAgoPt(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const diffSec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (diffSec < 60) return "agora";
+  const m = Math.floor(diffSec / 60);
+  if (m < 60) return `há ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return `há ${d} d`;
+}
 
 type RideRequest = Tables<"ride_requests">;
 type RideOffer = Tables<"ride_offers">;
