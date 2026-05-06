@@ -222,9 +222,10 @@ export default function V3RideRequest() {
     setOriginCoords(c);
     setOriginSource("manual_pin_adjustment");
     setOriginAccuracy(null);
+    setOriginConfirmed(false);
     const addr = await reverseGeocode(c.lat, c.lng);
     setOriginAddress(addr);
-    toast.success("Ponto de embarque ajustado");
+    toast.success("Pin ajustado — confirme o ponto");
   };
 
   const useMyLocation = () => {
