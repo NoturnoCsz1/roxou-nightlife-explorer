@@ -64,7 +64,7 @@ function FitAll({ points }: { points: LatLng[] }) {
 }
 
 export default function RoxouNearbyEventsMap({
-  userLocation, events, height = 360, showCTAs = true, heatmap = false,
+  userLocation, events, height = 360, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
 }: Props) {
   const navigate = useNavigate();
 
