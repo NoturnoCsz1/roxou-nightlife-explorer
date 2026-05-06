@@ -181,8 +181,11 @@ export default function V3Layout() {
 
 
       {/* Bottom Nav — apenas Mobile */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5 lg:hidden">
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+      <nav
+        className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5 lg:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-1">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
             const isProfile = to === "/perfil";
             const active = to === "/"
