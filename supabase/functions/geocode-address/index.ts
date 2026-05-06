@@ -43,15 +43,13 @@ Deno.serve(async (req) => {
     }
 
     // 2. Validar input
-    const { address, city } = await req.json();
-    if (!address || typeof address !== "string" || address.length < 5 || address.length > 300) {
+    const body = await req.json();
+    const address: string | undefined = body?.address;
+    const city: string | undefined = body?.city;
+    const neighborhood: string | undefined = body?.neighborhood;
+    const name: string | undefined = body?.name;
+    if (!address || typeof address !== "string" || address.length < 3 || address.length > 300) {
       return new Response(JSON.stringify({ error: "Endereço inválido" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (city && (typeof city !== "string" || city.length > 100)) {
-      return new Response(JSON.stringify({ error: "Cidade inválida" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -65,25 +63,49 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Geocoding
-    const query = [address, city, "Brasil"].filter(Boolean).join(", ");
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=br&key=${apiKey}`;
-    const r = await fetch(url);
-    const data = await r.json();
+    const norm = (s?: string) =>
+      (s || "").replace(/\s+/g, " ").replace(/,\s*,+/g, ",").replace(/^[,\s]+|[,\s]+$/g, "").trim();
 
-    if (data.status !== "OK" || !data.results?.length) {
-      return new Response(JSON.stringify({ error: "Endereço não encontrado", status: data.status }), {
+    const cityFinal = norm(city) || "Presidente Prudente";
+    const addrNoNeighborhood = norm(address).replace(/\s*-\s*[^,]*$/, "");
+
+    const candidates = [
+      [norm(address), norm(neighborhood), cityFinal, "SP", "Brasil"],
+      [norm(address), cityFinal, "SP", "Brasil"],
+      [addrNoNeighborhood, cityFinal, "SP", "Brasil"],
+      [norm(name), cityFinal, "SP", "Brasil"],
+    ]
+      .map((parts) => parts.filter(Boolean).join(", "))
+      .filter((q, i, a) => q.length > 4 && a.indexOf(q) === i);
+
+    let result: any = null;
+    let lastStatus = "ZERO_RESULTS";
+    let usedQuery = "";
+    for (const query of candidates) {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=br&key=${apiKey}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      lastStatus = data.status;
+      if (data.status === "OK" && data.results?.length) {
+        result = data.results[0];
+        usedQuery = query;
+        break;
+      }
+    }
+
+    if (!result) {
+      return new Response(JSON.stringify({ error: "Endereço não encontrado", status: lastStatus, tried: candidates }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const result = data.results[0];
     return new Response(JSON.stringify({
       latitude: result.geometry.location.lat,
       longitude: result.geometry.location.lng,
       formatted_address: result.formatted_address,
       place_id: result.place_id,
+      used_query: usedQuery,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
