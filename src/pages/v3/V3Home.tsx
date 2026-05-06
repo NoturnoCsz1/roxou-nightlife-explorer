@@ -1334,7 +1334,7 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
         } ${timeline ? "min-h-[178px]" : isLg ? "w-[260px] min-h-[320px]" : "w-[190px] min-h-[260px]"}`}
         style={{
           boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 15px hsl(var(--primary) / 0.18), 0 14px 36px rgba(0,0,0,0.5)",
+            "inset 0 1px 0 rgba(255,255,255,0.05), 0 0 8px hsl(var(--primary) / 0.10), 0 8px 24px rgba(0,0,0,0.4)",
         }}
       >
         <Link to={`/evento/${ev.slug}`} className="absolute inset-0 block">
@@ -1349,11 +1349,11 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/10" />
             {/* Inner ring shadow */}
             <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none group-hover:ring-primary/60 transition-colors" />
-            <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary/95 text-[8px] font-extrabold text-primary-foreground uppercase tracking-[0.12em]">
+            <span className="absolute top-2 left-2 px-2 py-1 rounded-full bg-primary/95 text-[10px] font-bold text-primary-foreground uppercase tracking-wide">
               {getDayLabel(ev.date_time)}
             </span>
             {live && (
-              <span className="absolute top-10 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-300">
+              <span className="absolute top-10 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_hsl(142_71%_45%)]" />
                 {(ev as any).aura_pick ? "🤖 Aura ao vivo" : "🔥 Rolando agora"}
               </span>
@@ -1366,24 +1366,33 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
                 e.stopPropagation();
                 toggleSave(ev.id);
               }}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/65 backdrop-blur-md border border-border/40 flex items-center justify-center transition-all active:scale-90"
+              className="absolute top-2 right-2 w-10 h-10 rounded-full bg-background/55 backdrop-blur-sm border border-border/30 flex items-center justify-center transition-all active:scale-90"
             >
               <Heart className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-foreground"}`} />
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
-            <h3 className={`font-display font-black text-foreground line-clamp-2 leading-tight ${isLg || timeline ? "text-xl" : "text-base"}`}>{ev.title}</h3>
-            <div className="flex items-center gap-2 text-[11px] font-bold text-foreground/90">
-              <Clock className="w-3.5 h-3.5 text-accent drop-shadow-[0_0_8px_hsl(var(--accent)/0.8)]" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 lg:p-5 space-y-1.5">
+            <h3
+              className="font-display font-semibold text-foreground line-clamp-2 break-words tracking-normal"
+              style={{ fontSize: "clamp(16px, 1.8vw, 24px)", lineHeight: "1.08", maxWidth: "85%" }}
+            >
+              {ev.title}
+            </h3>
+            <div className="flex items-center gap-2 text-xs lg:text-sm font-medium text-foreground/85">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15">
+                <Clock className="w-3.5 h-3.5 text-accent" />
+              </span>
               <span className="capitalize">{fmtDateFull(ev.date_time)}</span>
             </div>
             {ev.venue_name && (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-primary shrink-0 drop-shadow-[0_0_8px_hsl(var(--primary)/0.8)]" />
-                <span className="text-[11px] font-semibold text-foreground/85 truncate">{ev.venue_name}</span>
+              <div className="flex items-center gap-2 text-xs lg:text-sm text-foreground/80">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary/15">
+                  <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                </span>
+                <span className="font-medium truncate">{ev.venue_name}</span>
               </div>
             )}
-            {badge && <span className="inline-block text-[9px] font-bold text-accent">{badge}</span>}
+            {badge && <span className="inline-block text-[10px] font-bold text-accent">{badge}</span>}
           </div>
         </Link>
         <div className="absolute bottom-3 right-3 z-10">
@@ -1394,10 +1403,10 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
               e.stopPropagation();
               setDrawerOpen(true);
             }}
-            className="flex items-center justify-center gap-1 rounded-full px-3 py-2 text-[10px] font-extrabold uppercase tracking-wider text-white v3-neon-hover"
+            className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-full text-sm font-bold text-white v3-neon-hover"
             style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.95), hsl(var(--v3-neon-soft) / 0.95))" }}
           >
-            <Sparkles className="w-3 h-3" />
+            <Sparkles className="w-4 h-4" />
             Reservar
           </button>
         </div>
