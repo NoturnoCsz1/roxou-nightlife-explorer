@@ -179,6 +179,7 @@ const EstabelecimentosAudit = () => {
   const [cityF, setCityF] = useState<string>("");
   const [categoryF, setCategoryF] = useState<string>("");
   const [errorsOnly, setErrorsOnly] = useState(false);
+  const [noCoordsOnly, setNoCoordsOnly] = useState(false);
   const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState<Record<string, { lat: string; lng: string; url: string }>>({});
@@ -295,12 +296,13 @@ const EstabelecimentosAudit = () => {
       if (cityF && e.city !== cityF) return false;
       if (categoryF && e.type !== categoryF) return false;
       if (errorsOnly && computeFlags(e).length === 0) return false;
+      if (noCoordsOnly && e.latitude != null && e.longitude != null) return false;
       return true;
     });
     if (orderBy === "events_desc") arr = [...arr].sort((a, b) => (metrics[b.id]?.eventCount || 0) - (metrics[a.id]?.eventCount || 0));
     if (orderBy === "events_asc") arr = [...arr].sort((a, b) => (metrics[a.id]?.eventCount || 0) - (metrics[b.id]?.eventCount || 0));
     return arr;
-  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, orderBy, metrics]);
+  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, noCoordsOnly, orderBy, metrics]);
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -412,8 +414,7 @@ const EstabelecimentosAudit = () => {
     setBusy(null);
     if (res.ok) toast.success(res.formatted ? `Salvo: ${res.formatted}` : "Coordenadas salvas");
     else {
-      const triedStr = res.tried?.slice(0, 2).join(" · ") || "";
-      toast.error(`${e.name}: ${res.error}${triedStr ? ` Tentativas: ${triedStr}` : ""}`);
+      toast.error("Não foi possível encontrar automaticamente. Use Buscar no Google Maps ou preencha as coordenadas manualmente.");
     }
   }
 
@@ -433,28 +434,7 @@ const EstabelecimentosAudit = () => {
             {globalBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             Análise IA da base
           </button>
-          <button
-            onClick={async () => {
-              const targets = items.filter(e => e.address && (e.latitude == null || e.longitude == null));
-              if (!targets.length) { toast.message("Nada a geocodificar"); return; }
-              toast.message(`Geocodificando ${targets.length}...`);
-              let ok = 0; const failed: { name: string; error: string }[] = [];
-              for (const e of targets) {
-                const r = await geocodeOne(e);
-                if (r.ok) ok++; else failed.push({ name: e.name, error: r.error || "?" });
-                await new Promise(r => setTimeout(r, 250));
-              }
-              if (failed.length === 0) {
-                toast.success(`${ok} atualizado(s)`);
-              } else {
-                console.warn("Geocode failures:", failed);
-                toast.error(`${ok} ok · ${failed.length} falharam: ${failed.slice(0, 3).map(f => f.name).join(", ")}${failed.length > 3 ? "..." : ""}`);
-              }
-            }}
-            className="rounded-lg bg-secondary/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
-          >
-            Geocodificar faltantes
-          </button>
+          {/* Bulk geocoding desativado — usar fluxo manual por card. */}
           <Link to="/admin/parceiros/novo" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
             Novo
           </Link>
@@ -569,6 +549,10 @@ const EstabelecimentosAudit = () => {
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
             <input type="checkbox" checked={errorsOnly} onChange={e => setErrorsOnly(e.target.checked)} />
             Apenas com erro
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={noCoordsOnly} onChange={e => setNoCoordsOnly(e.target.checked)} />
+            Somente sem coordenadas
           </label>
         </div>
       </div>
