@@ -1395,6 +1395,28 @@ function VenueRankSkeleton() {
   );
 }
 
+function DesktopHomeSkeleton() {
+  return (
+    <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
+      <div className="space-y-6 min-w-0">
+        <div className="h-[600px] rounded-3xl bg-card/60 border border-border/30 animate-pulse" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-40 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+          <div className="h-40 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[0,1,2].map(i => <div key={i} className="h-56 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />)}
+        </div>
+      </div>
+      <aside className="space-y-4">
+        <div className="h-48 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+        <div className="h-64 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+        <div className="h-40 rounded-2xl bg-card/60 border border-border/30 animate-pulse" />
+      </aside>
+    </div>
+  );
+}
+
 /* ─── CONTENT RAIL — refined spacing ─── */
 function Rail({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   const { ref, visible } = useScrollFadeIn();
