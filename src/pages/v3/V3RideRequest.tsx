@@ -336,13 +336,69 @@ export default function V3RideRequest() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventLoading, eventError]);
 
+  const geocodeAddress = async (addr: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      await loadGoogleMaps();
+      const g = (window as any).google;
+      const geocoder = new g.maps.Geocoder();
+      const res = await geocoder.geocode({ address: `${addr}, Brasil` });
+      const loc = res?.results?.[0]?.geometry?.location;
+      if (loc) return { lat: loc.lat(), lng: loc.lng() };
+    } catch {}
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!event) { toast.error("Evento inválido"); return; }
-    if (event.latitude == null || event.longitude == null) {
-      toast.error("Evento sem localização cadastrada"); return;
+
+    // Resolve origin (GPS or manual address)
+    let resolvedOrigin = originCoords;
+    let resolvedOriginAddr = originAddress;
+    let resolvedOriginSource = originSource;
+    let resolvedOriginAccuracy = originAccuracy;
+    let originApproximate = false;
+
+    if (manualOriginAddress.trim()) {
+      const geo = await geocodeAddress(manualOriginAddress.trim());
+      if (geo) {
+        resolvedOrigin = geo;
+        resolvedOriginAddr = manualOriginAddress.trim();
+        resolvedOriginSource = "fallback_address";
+        resolvedOriginAccuracy = null;
+        originApproximate = true;
+      } else {
+        toast.error("Não conseguimos localizar o endereço de embarque. Ajuste no mapa ou tente outro endereço.");
+        return;
+      }
+    } else if (originAccuracy != null && originAccuracy > 1000) {
+      toast.error("GPS com baixa precisão. Ajuste o pin no mapa ou digite o endereço de embarque.");
+      return;
     }
-    if (!originCoords) { toast.error("Capture sua localização de embarque (GPS)"); return; }
+
+    if (!resolvedOrigin) { toast.error("Confirme sua origem (GPS, mapa ou endereço)"); return; }
+
+    // Resolve destination (event coords or manual)
+    let resolvedDestLat = event.latitude ?? destCoords?.lat ?? null;
+    let resolvedDestLng = event.longitude ?? destCoords?.lng ?? null;
+    let resolvedDestAddr =
+      event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title;
+
+    if ((resolvedDestLat == null || resolvedDestLng == null)) {
+      if (!manualDestAddress.trim()) {
+        toast.error("Confirme o endereço do destino para continuar.");
+        return;
+      }
+      const geo = await geocodeAddress(manualDestAddress.trim());
+      if (!geo) {
+        toast.error("Não conseguimos localizar o endereço do destino. Tente outro endereço.");
+        return;
+      }
+      resolvedDestLat = geo.lat;
+      resolvedDestLng = geo.lng;
+      resolvedDestAddr = manualDestAddress.trim();
+    }
+
     if (!whatsapp.trim() || !/^\(\d{2}\) \d{4,5}-\d{4}$/.test(whatsapp)) {
       toast.error("Informe um WhatsApp válido (XX) XXXXX-XXXX"); return;
     }
@@ -379,19 +435,17 @@ export default function V3RideRequest() {
         event_name: event.title,
         venue_name: event.venue_name,
         event_date: rideTimestamp,
-        // Origin (GPS-first)
-        pickup_address: originAddress || `${originCoords.lat.toFixed(6)}, ${originCoords.lng.toFixed(6)}`,
-        origin_lat: originCoords.lat,
-        origin_lng: originCoords.lng,
-        origin_accuracy: originAccuracy,
-        origin_source: originSource ?? "gps",
-        // Destination — LOCKED to event
-        destination_address: event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title,
-        destination_lat: event.latitude,
-        destination_lng: event.longitude,
+        pickup_address: resolvedOriginAddr || `${resolvedOrigin.lat.toFixed(6)}, ${resolvedOrigin.lng.toFixed(6)}`,
+        origin_lat: resolvedOrigin.lat,
+        origin_lng: resolvedOrigin.lng,
+        origin_accuracy: resolvedOriginAccuracy,
+        origin_source: resolvedOriginSource ?? (originApproximate ? "fallback_address" : "gps"),
+        destination_address: resolvedDestAddr,
+        destination_lat: resolvedDestLat,
+        destination_lng: resolvedDestLng,
         passengers_count: passengersCount,
         seats_available: Math.min(4, Math.max(1, passengersCount)),
-        price_note: priceNote || "Rachada combinada no chat",
+        price_note: priceNote || "Valor final combinado no chat",
         notes: notes?.trim() || null,
         status: "open",
       } as any);
