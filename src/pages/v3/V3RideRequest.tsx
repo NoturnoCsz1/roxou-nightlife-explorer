@@ -205,9 +205,12 @@ export default function V3RideRequest() {
           } catch {}
         }
         if (destLat == null || destLng == null) {
-          setEventError("Este estabelecimento ainda não tem localização cadastrada. Valide as coordenadas no admin.");
+          // Não bloquear: permitir destino manual
+          setDestIsApproximate(true);
+          if (destAddress) setManualDestAddress(destAddress);
           return;
         }
+        setDestCoords({ lat: destLat, lng: destLng });
         setEvent((prev) => prev ? { ...prev, latitude: destLat!, longitude: destLng! } : prev);
       } catch (e) {
         console.error(e);
