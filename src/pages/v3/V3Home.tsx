@@ -351,6 +351,12 @@ export default function V3Home() {
         />
       </div>
 
+      {/* ══════ HUB DE NOTÍCIAS / EXPO — visível em mobile e desktop ══════ */}
+      <div className="max-w-3xl mx-auto">
+        <LatestNewsSection variant="trending" limit={6} />
+        <ExpoHighlightBanner />
+        <MostViewedNews />
+      </div>
 
       <div className="space-y-1 lg:hidden">
 
@@ -365,15 +371,6 @@ export default function V3Home() {
 
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
-
-      {/* ══════ 1.5a AGORA EM PRUDENTE — notícias trending ══════ */}
-      <LatestNewsSection variant="trending" limit={6} />
-
-      {/* ══════ 1.5b BANNER EXPO 2026 ══════ */}
-      <ExpoHighlightBanner />
-
-      {/* ══════ 1.5c MAIS ACESSADAS DA SEMANA ══════ */}
-      <MostViewedNews />
 
       {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
       {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
