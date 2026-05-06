@@ -108,6 +108,7 @@ export default function V3RideRequest() {
   const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [originConfirmed, setOriginConfirmed] = useState(false);
 
   // (Leaflet map handles markers reactively from state)
 
