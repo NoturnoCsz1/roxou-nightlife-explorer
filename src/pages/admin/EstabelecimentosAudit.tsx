@@ -550,6 +550,10 @@ const EstabelecimentosAudit = () => {
             <input type="checkbox" checked={errorsOnly} onChange={e => setErrorsOnly(e.target.checked)} />
             Apenas com erro
           </label>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+            <input type="checkbox" checked={noCoordsOnly} onChange={e => setNoCoordsOnly(e.target.checked)} />
+            Somente sem coordenadas
+          </label>
         </div>
       </div>
 
