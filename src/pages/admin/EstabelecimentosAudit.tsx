@@ -673,6 +673,7 @@ const EstabelecimentosAudit = () => {
             );
           })}
         </div>
+      )}
       {mapModal && mapModal.latitude != null && mapModal.longitude != null && (
         <div
           className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
