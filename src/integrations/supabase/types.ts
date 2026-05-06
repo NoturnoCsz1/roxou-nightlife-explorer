@@ -1141,6 +1141,7 @@ export type Database = {
           accepted_offer_id: string | null
           created_at: string
           destination_address: string | null
+          destination_is_approximate: boolean
           destination_lat: number | null
           destination_lng: number | null
           event_date: string | null
@@ -1155,6 +1156,7 @@ export type Database = {
           passenger_id: string | null
           passengers_count: number
           pickup_address: string | null
+          pickup_is_approximate: boolean
           price_note: string | null
           seats_available: number
           status: string
@@ -1166,6 +1168,7 @@ export type Database = {
           accepted_offer_id?: string | null
           created_at?: string
           destination_address?: string | null
+          destination_is_approximate?: boolean
           destination_lat?: number | null
           destination_lng?: number | null
           event_date?: string | null
@@ -1180,6 +1183,7 @@ export type Database = {
           passenger_id?: string | null
           passengers_count?: number
           pickup_address?: string | null
+          pickup_is_approximate?: boolean
           price_note?: string | null
           seats_available?: number
           status?: string
@@ -1191,6 +1195,7 @@ export type Database = {
           accepted_offer_id?: string | null
           created_at?: string
           destination_address?: string | null
+          destination_is_approximate?: boolean
           destination_lat?: number | null
           destination_lng?: number | null
           event_date?: string | null
@@ -1205,6 +1210,7 @@ export type Database = {
           passenger_id?: string | null
           passengers_count?: number
           pickup_address?: string | null
+          pickup_is_approximate?: boolean
           price_note?: string | null
           seats_available?: number
           status?: string
