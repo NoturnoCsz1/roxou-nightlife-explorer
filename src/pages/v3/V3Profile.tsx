@@ -8,7 +8,7 @@ import { useSavedPartners } from "@/hooks/useSavedPartners";
 import {
   User, LogOut, Car, Bookmark, ChevronRight, Shield, Mail, Phone,
   CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck,
-  Pencil, LockKeyhole,
+  Pencil, LockKeyhole, Bot, PiggyBank,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
