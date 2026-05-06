@@ -149,7 +149,7 @@ const App = () => (
             <Route path="evento/:slug" element={<V3EventDetail />} />
             <Route path="local/:slug" element={<V3LocalDetail />} />
             <Route path="transporte" element={<V3Transport />} />
-            <Route path="pedir-carona" element={<V3RideRequest />} />
+            {/* pedir-carona desativado do fluxo público (redirecionado em rota raiz) */}
             <Route path="motorista" element={<V3DriverBoard />} />
             <Route path="chat/:requestId" element={<V3Chat />} />
             <Route path="meus-pedidos" element={<V3MyRides />} />
