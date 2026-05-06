@@ -7,15 +7,15 @@ import AuraAvatar from "@/components/v3/AuraAvatar";
 
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
-  { to: "/ia", icon: Bot, label: "Aura" },
+  { to: "/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/transporte", icon: Car, label: "Caronas" },
+  { to: "/perto-de-mim", icon: MapPin, label: "Perto" },
   { to: "/perfil", icon: User, label: "Perfil" },
 ];
 
-const DESKTOP_ITEMS = [
-  { to: "/agenda", icon: CalendarDays, label: "Agenda" },
+const DESKTOP_EXTRA_ITEMS = [
+  { to: "/ia", icon: Bot, label: "Aura" },
   { to: "/economize", icon: PiggyBank, label: "Economize" },
-  { to: "/perto-de-mim", icon: MapPin, label: "Perto de mim" },
 ];
 
 export default function V3Layout() {
@@ -31,7 +31,7 @@ export default function V3Layout() {
   const driverItem = isDriver
     ? { to: "/motorista", icon: Shield, label: "Área do motorista" }
     : { to: "/cadastro-motorista", icon: BadgeCheck, label: "Quero ser motorista" };
-  const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS, driverItem];
+  const allDesktopItems = [...NAV_ITEMS.filter(i => i.to !== "/perfil"), ...DESKTOP_EXTRA_ITEMS, driverItem];
 
   const displayName = profile?.display_name?.trim() || user?.email?.split("@")[0] || "Visitante";
   const nickname = (profile as any)?.nickname?.trim() || null;
@@ -181,8 +181,11 @@ export default function V3Layout() {
 
 
       {/* Bottom Nav — apenas Mobile */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5 lg:hidden">
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+      <nav
+        className="fixed bottom-0 inset-x-0 z-50 v3-glass-strong border-t border-white/5 lg:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-1">
           {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
             const isProfile = to === "/perfil";
             const active = to === "/"

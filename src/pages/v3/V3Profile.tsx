@@ -8,7 +8,7 @@ import { useSavedPartners } from "@/hooks/useSavedPartners";
 import {
   User, LogOut, Car, Bookmark, ChevronRight, Shield, Mail, Phone,
   CalendarDays, Clock, MapPin, Sparkles, Heart, BadgeCheck,
-  Pencil, LockKeyhole,
+  Pencil, LockKeyhole, Bot, PiggyBank,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -196,6 +196,41 @@ export default function V3Profile() {
             </div>
           </div>
           <span className="text-[11px] font-semibold text-primary">Abrir</span>
+        </Link>
+      </div>
+
+      {/* ── Quick Links — extras só mobile (no desktop ficam na sidebar) ── */}
+      <div className="lg:hidden px-4 mt-3 grid grid-cols-3 gap-2">
+        <Link to="/ia" className="flex flex-col items-center gap-1 rounded-2xl v3-glass border border-white/5 px-2 py-3 hover:border-primary/40 transition-colors">
+          <Bot className="h-4 w-4 text-primary" />
+          <span className="text-[11px] font-semibold text-foreground">Aura</span>
+        </Link>
+        <Link to="/economize" className="flex flex-col items-center gap-1 rounded-2xl v3-glass border border-white/5 px-2 py-3 hover:border-primary/40 transition-colors">
+          <PiggyBank className="h-4 w-4 text-primary" />
+          <span className="text-[11px] font-semibold text-foreground">Economize</span>
+        </Link>
+        <Link to="/meus-pedidos" className="flex flex-col items-center gap-1 rounded-2xl v3-glass border border-white/5 px-2 py-3 hover:border-primary/40 transition-colors">
+          <Car className="h-4 w-4 text-primary" />
+          <span className="text-[11px] font-semibold text-foreground">Meus pedidos</span>
+        </Link>
+        <Link
+          to={isDriver ? "/motorista" : "/cadastro-motorista"}
+          className="col-span-3 flex items-center justify-between gap-2 rounded-2xl v3-glass border border-primary/20 px-4 py-3 hover:border-primary/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/15 grid place-items-center text-primary">
+              {isDriver ? <Shield className="h-4 w-4" /> : <BadgeCheck className="h-4 w-4" />}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">
+                {isDriver ? "Área do motorista" : "Quero ser motorista parceiro"}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {isDriver ? "Painel de pedidos disponíveis" : "Cadastre-se e receba pedidos"}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary" />
         </Link>
       </div>
 
