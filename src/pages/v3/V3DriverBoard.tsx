@@ -168,15 +168,20 @@ export default function V3DriverBoard() {
                   <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
                 </div>
                 <div className="space-y-1.5">
-                  {req.pickup_address && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="w-3.5 h-3.5 text-primary" />
-                      <span>De: {req.pickup_address}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const raw = req.pickup_address?.trim() || "";
+                    const isRawCoord = /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(raw);
+                    const display = !raw || isRawCoord ? "Localização aproximada no mapa" : raw;
+                    return (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin className="w-3.5 h-3.5 text-primary" />
+                        <span>Embarque: {display}</span>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <MapPin className="w-3.5 h-3.5 text-primary" />
-                    <span>Para: {req.destination_address || req.venue_name || "—"}</span>
+                    <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
                   </div>
                   {req.event_date && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
