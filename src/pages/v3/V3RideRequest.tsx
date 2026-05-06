@@ -233,38 +233,99 @@ export default function V3RideRequest() {
     toast.success("Pin ajustado — confirme o ponto");
   };
 
+  const stopWatch = () => {
+    if (watchIdRef.current != null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    if (watchTimeoutRef.current) {
+      clearTimeout(watchTimeoutRef.current);
+      watchTimeoutRef.current = null;
+    }
+    setGpsRefining(false);
+    setGeoLoading(false);
+  };
+
   const useMyLocation = () => {
     if (!navigator.geolocation) {
       setGeoError("Geolocalização não suportada neste navegador");
       toast.error("Geolocalização não suportada");
       return;
     }
+    // Reset
+    stopWatch();
+    bestAccuracyRef.current = Infinity;
+    setGpsAttempts(0);
     setGeoLoading(true);
+    setGpsRefining(true);
     setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
+    setOriginConfirmed(false);
+
+    let firstFix = false;
+
+    const id = navigator.geolocation.watchPosition(
       async (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        setOriginCoords({ lat: latitude, lng: longitude });
-        setOriginAccuracy(accuracy ?? null);
-        setOriginSource("gps");
-        setOriginConfirmed(false);
-        const addr = await reverseGeocode(latitude, longitude);
-        setOriginAddress(addr);
-        
-        setGeoLoading(false);
-        toast.success("Localização capturada via GPS");
+        setGpsAttempts((n) => n + 1);
+
+        // Keep only the best (lowest) accuracy reading
+        if (accuracy != null && accuracy < bestAccuracyRef.current) {
+          bestAccuracyRef.current = accuracy;
+          setOriginCoords({ lat: latitude, lng: longitude });
+          setOriginAccuracy(accuracy);
+          setOriginSource("gps");
+
+          // Reverse geocode only on first fix or when meaningfully better
+          if (!firstFix) {
+            firstFix = true;
+            setGeoLoading(false);
+            reverseGeocode(latitude, longitude).then(setOriginAddress);
+          }
+        }
+
+        // Stop early if very accurate
+        if (accuracy != null && accuracy <= 25) {
+          stopWatch();
+          if (firstFix) reverseGeocode(latitude, longitude).then(setOriginAddress);
+          toast.success(`GPS preciso (~${Math.round(accuracy)}m)`);
+        }
       },
       (err) => {
-        setGeoLoading(false);
         const msg = err.code === err.PERMISSION_DENIED
           ? "Permissão de localização negada. Ative no navegador para continuar."
           : (err.message || "Não foi possível obter sua localização");
         setGeoError(msg);
-        toast.error(msg);
+        if (!firstFix) {
+          toast.error(msg);
+          stopWatch();
+        }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
+    watchIdRef.current = id;
+
+    // Hard cap: 12s of refinement
+    watchTimeoutRef.current = setTimeout(() => {
+      stopWatch();
+      if (bestAccuracyRef.current === Infinity) {
+        setGeoError("Não foi possível obter localização. Ajuste o pin manualmente no mapa.");
+        toast.error("GPS indisponível — ajuste o pin no mapa");
+      } else if (bestAccuracyRef.current > 100) {
+        toast.warning("GPS com baixa precisão — ajuste o pin no mapa");
+      } else {
+        toast.success(`Localização refinada (~${Math.round(bestAccuracyRef.current)}m)`);
+      }
+    }, 12000);
   };
+
+  // Auto-start GPS refinement when entering the page
+  useEffect(() => {
+    if (!eventLoading && !eventError && !originCoords) {
+      useMyLocation();
+    }
+    return () => stopWatch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventLoading, eventError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
