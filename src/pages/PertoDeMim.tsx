@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,21 +8,34 @@ import RoxouNearbyEventsMap, { type NearbyEvent } from "@/components/maps/RoxouN
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 import SEO from "@/components/SEO";
 
-// Apenas referência visual no mapa quando o GPS ainda não foi confirmado.
+// Apenas referência visual quando GPS ainda não foi confirmado.
 const PP_REFERENCE: LatLng = { lat: -22.1207, lng: -51.3889 };
+const ACCURACY_THRESHOLD_M = 1000;
+const STORAGE_KEY = "roxou:manualLocation";
 
 export default function PertoDeMim() {
   const navigate = useNavigate();
-  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
-  const [manualLocation, setManualLocation] = useState<LatLng | null>(null);
-  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [gpsLocation, setGpsLocation] = useState<LatLng | null>(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
+  const [manualLocation, setManualLocation] = useState<LatLng | null>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.lat === "number" && typeof parsed?.lng === "number") return parsed;
+    } catch {}
+    return null;
+  });
+  const [selectionMode, setSelectionMode] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [requesting, setRequesting] = useState(false);
   const [events, setEvents] = useState<NearbyEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Localização real (GPS) ou escolhida manualmente. NUNCA o fallback.
-  const realLocation: LatLng | null = userLocation || manualLocation;
+  // GPS só é "real" se accuracy <= ACCURACY_THRESHOLD_M.
+  const gpsIsAccurate = gpsLocation != null && gpsAccuracy != null && gpsAccuracy <= ACCURACY_THRESHOLD_M;
+  // Manual sempre vence se existir; senão só GPS preciso.
+  const realLocation: LatLng | null = manualLocation || (gpsIsAccurate ? gpsLocation : null);
   const isUsingFallback = !realLocation;
 
   const requestGeolocation = () => {
@@ -35,19 +48,19 @@ export default function PertoDeMim() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        // Logs temporários
         // eslint-disable-next-line no-console
-        console.log("[PertoDeMim] geo success", { latitude, longitude, accuracy, isUsingFallback: false });
-        setUserLocation({ lat: latitude, lng: longitude });
-        setLocationAccuracy(accuracy);
+        console.log("[PertoDeMim] geo success", { latitude, longitude, accuracy });
+        setGpsLocation({ lat: latitude, lng: longitude });
+        setGpsAccuracy(accuracy);
         setRequesting(false);
+        if (accuracy > ACCURACY_THRESHOLD_M) {
+          toast.warning(`GPS impreciso (±${Math.round(accuracy)}m). Escolha sua localização manualmente.`);
+        }
       },
       (err) => {
         // eslint-disable-next-line no-console
         console.warn("[PertoDeMim] geo error", { code: err.code, message: err.message });
-        setGeoError(
-          "Não conseguimos acessar sua localização real. Ative a permissão de localização do navegador ou escolha sua posição manualmente no mapa."
-        );
+        setGeoError("Não conseguimos acessar sua localização. Ative o GPS ou escolha manualmente no mapa.");
         setRequesting(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -55,7 +68,7 @@ export default function PertoDeMim() {
   };
 
   useEffect(() => {
-    requestGeolocation();
+    if (!manualLocation) requestGeolocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -91,13 +104,8 @@ export default function PertoDeMim() {
           const lng = e.longitude ?? (e.partner_id ? partnerMap[e.partner_id]?.lng : null);
           if (lat == null || lng == null) return null;
           return {
-            id: e.id,
-            title: e.title,
-            slug: e.slug,
-            venue_name: e.venue_name,
-            date_time: e.date_time,
-            lat,
-            lng,
+            id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name,
+            date_time: e.date_time, lat, lng,
           } as NearbyEvent;
         })
         .filter(Boolean) as NearbyEvent[];
@@ -107,7 +115,6 @@ export default function PertoDeMim() {
     })();
   }, []);
 
-  // Distância só com localização real. Sem fallback.
   const sorted = realLocation
     ? [...events]
         .map((e) => ({ e, d: haversineKm(realLocation, { lat: e.lat, lng: e.lng }) }))
@@ -115,10 +122,18 @@ export default function PertoDeMim() {
         .slice(0, 30)
     : events.slice(0, 30).map((e) => ({ e, d: null as number | null }));
 
-  // O ponto do usuário só aparece se houver localização real.
-  // O centro do mapa pode ser apenas referência (PP) quando ainda não temos GPS.
-  const mapUserLocation = realLocation;
-  const mapCenter = realLocation || PP_REFERENCE;
+  const handleMapClick = (loc: LatLng) => {
+    setManualLocation(loc);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loc)); } catch {}
+    setSelectionMode(false);
+    toast.success("Localização manual definida.");
+  };
+
+  const clearManualLocation = () => {
+    setManualLocation(null);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    toast.info("Localização manual removida.");
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -137,7 +152,7 @@ export default function PertoDeMim() {
             <h1 className="font-display font-bold text-lg">Rolês perto de você</h1>
             <p className="text-[11px] text-muted-foreground flex items-center gap-1">
               <MapPin className="w-3 h-3" />
-              {realLocation ? "Sua localização" : "Localização não confirmada"}
+              {manualLocation ? "Localização manual" : gpsIsAccurate ? "Sua localização (GPS)" : "Localização não confirmada"}
             </p>
           </div>
         </div>
@@ -148,11 +163,21 @@ export default function PertoDeMim() {
           <p className="text-center text-sm text-muted-foreground py-12">Carregando rolês...</p>
         ) : (
           <>
-            {/* Avisos de localização */}
-            {isUsingFallback && (
+            {selectionMode && (
+              <div className="rounded-2xl border border-primary/40 bg-primary/10 p-3 text-[12px] text-foreground flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <p>Toque no mapa para marcar sua localização.</p>
+              </div>
+            )}
+
+            {isUsingFallback && !selectionMode && (
               <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-100 flex gap-2">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <p>Mapa centralizado em Presidente Prudente apenas como referência. Confirme sua localização para ver eventos próximos.</p>
+                <p>
+                  {gpsLocation && !gpsIsAccurate
+                    ? `Sua localização está muito imprecisa (±${Math.round(gpsAccuracy!)}m). Ative o GPS do celular ou escolha sua localização manualmente no mapa.`
+                    : "Mapa centralizado em Presidente Prudente apenas como referência. Confirme sua localização para ver eventos próximos."}
+                </p>
               </div>
             )}
 
@@ -162,18 +187,13 @@ export default function PertoDeMim() {
               </div>
             )}
 
-            {realLocation && locationAccuracy != null && locationAccuracy > 1000 && (
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-100 flex gap-2">
-                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <p>Sua localização parece imprecisa (±{Math.round(locationAccuracy)}m). Tente ativar o GPS do celular ou escolher manualmente no mapa.</p>
-              </div>
-            )}
-
             <RoxouNearbyEventsMap
-              userLocation={mapUserLocation}
+              userLocation={realLocation}
               events={sorted.map((s) => s.e)}
               height={340}
               heatmap
+              selectionMode={selectionMode}
+              onMapClick={handleMapClick}
             />
 
             <div className="grid grid-cols-2 gap-2">
@@ -187,15 +207,25 @@ export default function PertoDeMim() {
                 {requesting ? "Buscando..." : "Usar minha localização"}
               </Button>
               <Button
-                variant="outline"
+                variant={selectionMode ? "default" : "outline"}
                 className="rounded-xl gap-2"
-                onClick={() => {
-                  toast.info("Toque longo no mapa para escolher (em breve). Por ora, use 'Usar minha localização'.");
-                }}
+                onClick={() => setSelectionMode((v) => !v)}
               >
-                <MapPin className="w-4 h-4" /> Escolher no mapa
+                <MapPin className="w-4 h-4" />
+                {selectionMode ? "Cancelar" : "Escolher no mapa"}
               </Button>
             </div>
+
+            {manualLocation && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full rounded-xl gap-2 text-xs text-muted-foreground"
+                onClick={clearManualLocation}
+              >
+                <X className="w-3.5 h-3.5" /> Limpar localização manual
+              </Button>
+            )}
 
             <section className="space-y-2">
               <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mt-2">
