@@ -134,6 +134,7 @@ const EstabelecimentosAudit = () => {
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
+  const [manualOpen, setManualOpen] = useState<Record<string, { lat: string; lng: string; url: string }>>({});
 
   // AI audit state
   type SingleAI = {
