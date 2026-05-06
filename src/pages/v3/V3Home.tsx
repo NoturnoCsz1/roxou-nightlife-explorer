@@ -28,6 +28,9 @@ import V3VibeChips from "@/components/v3/V3VibeChips";
 import SmartImage from "@/components/v3/SmartImage";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { User as UserIcon } from "lucide-react";
+import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
+import ExpoHighlightBanner from "@/components/v3/home/ExpoHighlightBanner";
+import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
 /* ───── helpers ───── */
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
@@ -363,6 +366,15 @@ export default function V3Home() {
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
 
+      {/* ══════ 1.5a AGORA EM PRUDENTE — notícias trending ══════ */}
+      <LatestNewsSection variant="trending" limit={6} />
+
+      {/* ══════ 1.5b BANNER EXPO 2026 ══════ */}
+      <ExpoHighlightBanner />
+
+      {/* ══════ 1.5c MAIS ACESSADAS DA SEMANA ══════ */}
+      <MostViewedNews />
+
       {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
       {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
         <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
@@ -480,6 +492,9 @@ export default function V3Home() {
           ))}
         </Rail>
       ) : null}
+      {/* ══════ 9.5 ÚLTIMAS NOTÍCIAS ══════ */}
+      <LatestNewsSection variant="latest" limit={6} />
+
       {/* Footer institucional V3 */}
       <FadeSection className="px-4 pt-6 pb-2">
         <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-muted-foreground">
