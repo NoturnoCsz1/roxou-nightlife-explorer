@@ -41,6 +41,54 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   bloqueado:  { label: "Bloqueado",  cls: "bg-destructive/10 text-destructive" },
 };
 
+let mapsLoadPromise: Promise<void> | null = null;
+let mapsApiKey: string | null = null;
+
+async function loadGoogleMapsForGeocode(): Promise<void> {
+  if ((window as any).google?.maps?.Geocoder) return;
+  if (mapsLoadPromise) return mapsLoadPromise;
+  mapsLoadPromise = (async () => {
+    if (!mapsApiKey) {
+      const { data, error } = await supabase.functions.invoke("maps-key");
+      if (error || !data?.key) throw new Error("Falha ao carregar Google Maps");
+      mapsApiKey = data.key;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=geocoding&language=pt-BR&loading=async`;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Falha ao carregar Google Maps"));
+      document.head.appendChild(script);
+    });
+  })();
+  return mapsLoadPromise;
+}
+
+async function geocodeInBrowser(candidates: string[]) {
+  await loadGoogleMapsForGeocode();
+  const google = (window as any).google;
+  const geocoder = new google.maps.Geocoder();
+  for (const address of candidates) {
+    try {
+      const response = await geocoder.geocode({ address, region: "BR", componentRestrictions: { country: "BR" } });
+      const result = response.results?.[0];
+      const loc = result?.geometry?.location;
+      if (loc) {
+        return {
+          latitude: loc.lat(),
+          longitude: loc.lng(),
+          formatted_address: result.formatted_address || address,
+          place_id: result.place_id || null,
+        };
+      }
+    } catch (_) {
+      // Try next candidate.
+    }
+  }
+  return null;
+}
+
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
 function computeFlags(e: Establishment): FlagKey[] {
   const f: FlagKey[] = [];
