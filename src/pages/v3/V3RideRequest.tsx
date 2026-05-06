@@ -617,6 +617,29 @@ export default function V3RideRequest() {
             <p className="text-[11px] text-destructive">{geoError}</p>
           )}
 
+          {/* Fallback: manual pickup address */}
+          <div className="space-y-2 rounded-2xl border border-border/40 bg-card/30 p-3">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5" /> Ou digite o endereço de embarque
+            </Label>
+            <Input
+              value={manualOriginAddress}
+              onChange={(e) => setManualOriginAddress(e.target.value.slice(0, 200))}
+              placeholder="Ex: Rua, número, bairro"
+              className="h-11 rounded-xl bg-card border-border/40 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Use se o GPS estiver impreciso. O endereço será priorizado sobre o pin do mapa.
+            </p>
+          </div>
+
+          {originAccuracy != null && originAccuracy > 1000 && !manualOriginAddress.trim() && (
+            <div className="flex items-start gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>GPS com baixa precisão. Ajuste o ponto manualmente ou digite o endereço de embarque.</span>
+            </div>
+          )}
+
           {originCoords && (
             <div className={`rounded-2xl border p-3 space-y-2 ${
               originConfirmed
