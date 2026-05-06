@@ -628,6 +628,21 @@ const EstabelecimentosAudit = () => {
                     Analisar com IA
                   </button>
                   <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([e.name, e.address, e.city || "Presidente Prudente", "SP"].filter(Boolean).join(", "))}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Buscar no Google Maps
+                  </a>
+                  <button
+                    onClick={() => setManualOpen(prev => prev[e.id]
+                      ? (() => { const n = { ...prev }; delete n[e.id]; return n; })()
+                      : { ...prev, [e.id]: { lat: e.latitude?.toString() || "", lng: e.longitude?.toString() || "", url: "" } })}
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                  >
+                    <MapPin className="h-3 w-3" /> Coordenadas manuais
+                  </button>
+                  <a
                     href={`/local/${e.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -636,6 +651,64 @@ const EstabelecimentosAudit = () => {
                     <ExternalLink className="h-3 w-3" /> Ver página
                   </a>
                 </div>
+
+                {manualOpen[e.id] && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 space-y-2">
+                    <p className="text-[10px] uppercase tracking-wide text-primary font-bold">Coordenadas manuais</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text" inputMode="decimal" placeholder="Latitude (-22.1234)"
+                        value={manualOpen[e.id].lat}
+                        onChange={ev => setManualOpen(p => ({ ...p, [e.id]: { ...p[e.id], lat: ev.target.value } }))}
+                        className="rounded-md border border-border/40 bg-card px-2 py-1 text-[11px] outline-none"
+                      />
+                      <input
+                        type="text" inputMode="decimal" placeholder="Longitude (-51.1234)"
+                        value={manualOpen[e.id].lng}
+                        onChange={ev => setManualOpen(p => ({ ...p, [e.id]: { ...p[e.id], lng: ev.target.value } }))}
+                        className="rounded-md border border-border/40 bg-card px-2 py-1 text-[11px] outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text" placeholder="Cole o link do Google Maps"
+                        value={manualOpen[e.id].url}
+                        onChange={ev => {
+                          const v = ev.target.value;
+                          const parsed = parseMapsUrl(v);
+                          setManualOpen(p => ({
+                            ...p,
+                            [e.id]: parsed
+                              ? { lat: parsed.lat.toString(), lng: parsed.lng.toString(), url: v }
+                              : { ...p[e.id], url: v },
+                          }));
+                          if (parsed) toast.success("Coordenadas extraídas do link");
+                        }}
+                        className="flex-1 rounded-md border border-border/40 bg-card px-2 py-1 text-[11px] outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        disabled={busy === e.id}
+                        onClick={async () => {
+                          const lat = parseFloat(manualOpen[e.id].lat.replace(",", "."));
+                          const lng = parseFloat(manualOpen[e.id].lng.replace(",", "."));
+                          await saveManualCoords(e, lat, lng);
+                          setManualOpen(p => { const n = { ...p }; delete n[e.id]; return n; });
+                        }}
+                        className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                      >
+                        Salvar coordenadas
+                      </button>
+                      <button
+                        onClick={() => setManualOpen(p => { const n = { ...p }; delete n[e.id]; return n; })}
+                        className="rounded-md bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {aiResult[e.id] && (() => {
                   const r = aiResult[e.id];
