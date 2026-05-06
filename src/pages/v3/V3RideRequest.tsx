@@ -16,6 +16,7 @@ import {
   RIDE_EXPIRED_MESSAGE, toSaoPauloTimestamp,
 } from "@/lib/rideTimeRules";
 import { maskWhatsappBR } from "@/lib/v3Validation";
+import RoxouRideMap from "@/components/maps/RoxouRideMap";
 
 function toLocalDatetime(iso: string): string {
   if (!iso) return "";
@@ -108,11 +109,7 @@ export default function V3RideRequest() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Map refs
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const originMarker = useRef<any>(null);
-  const destMarker = useRef<any>(null);
+  // (Leaflet map handles markers reactively from state)
 
   // Load event by eventId — destination is LOCKED to this
   useEffect(() => {
@@ -200,22 +197,6 @@ export default function V3RideRequest() {
           return;
         }
         setEvent((prev) => prev ? { ...prev, latitude: destLat!, longitude: destLng! } : prev);
-
-        // Init map
-        if (!mapRef.current) return;
-        mapInstance.current = new g.maps.Map(mapRef.current, {
-          center: { lat: destLat, lng: destLng },
-          zoom: 14,
-          disableDefaultUI: true,
-          zoomControl: true,
-          styles: MAP_STYLES,
-        });
-        destMarker.current = new g.maps.Marker({
-          position: { lat: destLat, lng: destLng },
-          map: mapInstance.current,
-          label: { text: "🎯", fontSize: "18px" },
-          title: event.title,
-        });
       } catch (e) {
         console.error(e);
       }
@@ -236,39 +217,13 @@ export default function V3RideRequest() {
     }
   };
 
-  const placeOriginMarker = async (lat: number, lng: number) => {
-    await loadGoogleMaps();
-    const g = (window as any).google;
-    if (!mapInstance.current) return;
-    if (!originMarker.current) {
-      originMarker.current = new g.maps.Marker({
-        position: { lat, lng },
-        map: mapInstance.current,
-        draggable: true,
-        label: { text: "📍", fontSize: "18px" },
-        title: "Seu ponto de embarque (arraste para ajustar)",
-      });
-      originMarker.current.addListener("dragend", async (e: any) => {
-        const p = e.latLng;
-        const newLat = p.lat();
-        const newLng = p.lng();
-        setOriginCoords({ lat: newLat, lng: newLng });
-        setOriginSource("manual_pin_adjustment");
-        setOriginAccuracy(null);
-        const addr = await reverseGeocode(newLat, newLng);
-        setOriginAddress(addr);
-        toast.success("Ponto de embarque ajustado");
-      });
-    } else {
-      originMarker.current.setPosition({ lat, lng });
-    }
-    // Fit bounds to include both
-    if (event?.latitude != null && event?.longitude != null) {
-      const bounds = new g.maps.LatLngBounds();
-      bounds.extend({ lat, lng });
-      bounds.extend({ lat: event.latitude, lng: event.longitude });
-      mapInstance.current.fitBounds(bounds, 80);
-    }
+  const handleOriginPinChange = async (c: { lat: number; lng: number }) => {
+    setOriginCoords(c);
+    setOriginSource("manual_pin_adjustment");
+    setOriginAccuracy(null);
+    const addr = await reverseGeocode(c.lat, c.lng);
+    setOriginAddress(addr);
+    toast.success("Ponto de embarque ajustado");
   };
 
   const useMyLocation = () => {
