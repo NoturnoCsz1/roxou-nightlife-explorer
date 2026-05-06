@@ -253,7 +253,7 @@ export default function V3DriverBoard() {
                       ) : (
                         <Check className="w-3.5 h-3.5" />
                       )}
-                      {closed ? "Encerrado" : "Aceitar corrida"}
+                      {closed ? "Encerrado" : "Tenho interesse"}
                     </Button>
                   )}
                 </div>
