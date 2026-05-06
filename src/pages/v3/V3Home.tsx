@@ -326,10 +326,18 @@ export default function V3Home() {
                 isToday={!!heroIsToday}
                 todayCount={todayCount}
                 venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+                slides={heroEvents}
+                index={heroIdx}
+                onChange={setHeroIdx}
               />
             </div>
           </div>
         ) : <EmptyHero />}
+
+        {/* Eventos de hoje — logo abaixo do hero */}
+        {!isLoading && rawTodayEvents.length > 0 && (
+          <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        )}
       </div>
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
