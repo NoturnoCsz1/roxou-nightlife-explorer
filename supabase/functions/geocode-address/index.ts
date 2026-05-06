@@ -59,24 +59,61 @@ Deno.serve(async (req) => {
     const norm = (s?: string) =>
       (s || "").replace(/\s+/g, " ").replace(/,\s*,+/g, ",").replace(/^[,\s]+|[,\s]+$/g, "").trim();
 
+    // Expand common BR abbreviations
+    const expandAbbr = (s: string) =>
+      s
+        .replace(/\bAv\.?\b/gi, "Avenida")
+        .replace(/\bR\.?\b/gi, "Rua")
+        .replace(/\bPq\.?\b/gi, "Parque")
+        .replace(/\bPça\.?\b/gi, "Praça")
+        .replace(/\bPraca\b/gi, "Praça")
+        .replace(/\bRod\.?\b/gi, "Rodovia")
+        .replace(/\bEstr\.?\b/gi, "Estrada");
+    // Strip apostrophes / weird chars from establishment NAME query only
+    const sanitizeName = (s: string) =>
+      s.replace(/[''`´]/g, "").replace(/[^\w\sáéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ.&-]/g, " ").replace(/\s+/g, " ").trim();
+    // Strip number from "Rua X, 123" -> "Rua X"
+    const stripNumber = (s: string) => s.replace(/,\s*\d+\w*\s*$/, "").replace(/\s+\d+\w*$/, "").trim();
+
     const cityFinal = norm(city) || "Presidente Prudente";
     const stateFinal = norm(state) || "SP";
     const countryFinal = norm(country) || "Brasil";
-    const addrNoNeighborhood = norm(address).replace(/\s*-\s*[^,]*$/, "");
+    const addressN = norm(address);
+    const addrNoNeighborhood = addressN.replace(/\s*-\s*[^,]*$/, "").trim();
+    const addrExpanded = expandAbbr(addressN);
+    const addrNoNumber = stripNumber(addrNoNeighborhood);
+    const nbh = norm(neighborhood);
+    const nameSan = sanitizeName(norm(name) || "");
 
-    const candidates = [
-      [norm(address), norm(neighborhood), cityFinal, stateFinal, countryFinal],
-      [norm(address), cityFinal, stateFinal, countryFinal],
+    const rawCandidates: string[][] = [
+      // A) full address + city/state/country
+      [addressN, cityFinal, stateFinal, countryFinal],
+      // A2) full + neighborhood
+      [addressN, nbh, cityFinal, stateFinal, countryFinal],
+      // B) without neighborhood after hyphen
       [addrNoNeighborhood, cityFinal, stateFinal, countryFinal],
-      [norm(name), cityFinal, stateFinal, countryFinal],
-    ]
+      // B2) expanded abbreviations
+      [expandAbbr(addrNoNeighborhood), cityFinal, stateFinal, countryFinal],
+      [addrExpanded, cityFinal, stateFinal, countryFinal],
+      // C) without number
+      [addrNoNumber, cityFinal, stateFinal, countryFinal],
+      [expandAbbr(addrNoNumber), cityFinal, stateFinal, countryFinal],
+      // D) name + city
+      [nameSan, cityFinal, stateFinal, countryFinal],
+      // E) neighborhood + city
+      [nbh, cityFinal, stateFinal, countryFinal],
+    ];
+
+    const candidates = rawCandidates
       .map((parts) => parts.filter(Boolean).join(", "))
       .filter((q, i, a) => q.length > 4 && a.indexOf(q) === i);
 
     let result: any = null;
     let lastStatus = "ZERO_RESULTS";
     let usedQuery = "";
+    const tried: string[] = [];
     for (const query of candidates) {
+      tried.push(query);
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&language=pt-BR&region=br&components=${encodeURIComponent("country:BR")}&key=${apiKey}`;
       const r = await fetch(url);
       const data = await r.json();
@@ -90,7 +127,7 @@ Deno.serve(async (req) => {
     }
 
     if (!result) {
-      return json({ ok: false, error: "Endereço não encontrado", status: lastStatus, tried: candidates });
+      return json({ ok: false, error: "Endereço não encontrado", status: lastStatus, tried });
     }
 
     return json({
@@ -100,6 +137,8 @@ Deno.serve(async (req) => {
       formatted_address: result.formatted_address,
       place_id: result.place_id,
       used_query: usedQuery,
+      tried,
+      partial_match: !!result.partial_match,
     });
   } catch (e) {
     return json({ ok: false, error: String(e) }, 500);

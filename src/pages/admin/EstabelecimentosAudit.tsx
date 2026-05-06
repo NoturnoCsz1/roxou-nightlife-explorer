@@ -90,6 +90,28 @@ async function geocodeInBrowser(candidates: string[]) {
   return null;
 }
 
+/** Extract lat/lng from a Google Maps URL. Supports @lat,lng / !3dLAT!4dLNG / q=lat,lng / ?ll=lat,lng */
+function parseMapsUrl(url: string): { lat: number; lng: number } | null {
+  if (!url) return null;
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /\/(-?\d+\.\d+),(-?\d+\.\d+)/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) {
+      const lat = parseFloat(m[1]); const lng = parseFloat(m[2]);
+      if (isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        return { lat, lng };
+      }
+    }
+  }
+  return null;
+}
+
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
 function computeFlags(e: Establishment): FlagKey[] {
   const f: FlagKey[] = [];
@@ -112,6 +134,7 @@ const EstabelecimentosAudit = () => {
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
+  const [manualOpen, setManualOpen] = useState<Record<string, { lat: string; lng: string; url: string }>>({});
 
   // AI audit state
   type SingleAI = {
@@ -267,7 +290,7 @@ const EstabelecimentosAudit = () => {
     toast.success("Instagram marcado como validado");
   }
 
-  async function geocodeOne(e: Establishment): Promise<{ ok: boolean; error?: string }> {
+  async function geocodeOne(e: Establishment): Promise<{ ok: boolean; error?: string; tried?: string[]; formatted?: string }> {
     if (!e.address?.trim()) return { ok: false, error: "Sem endereço" };
     const norm = (s: string) => s.replace(/\s+/g, " ").replace(/,\s*,+/g, ",").replace(/^[,\s]+|[,\s]+$/g, "").trim();
     const address = norm(e.address);
@@ -291,7 +314,7 @@ const EstabelecimentosAudit = () => {
         result = await geocodeInBrowser(candidates);
       }
       if (!result?.latitude || !result?.longitude) {
-        return { ok: false, error: "Endereço não encontrado. Revise o endereço ou tente simplificar." };
+        return { ok: false, error: "Endereço não encontrado.", tried: data?.tried || candidates };
       }
       const payload = {
         latitude: result.latitude,
@@ -305,10 +328,25 @@ const EstabelecimentosAudit = () => {
         .eq("id", e.id);
       if (updErr) return { ok: false, error: updErr.message };
       setItems(prev => prev.map(p => p.id === e.id ? { ...p, ...payload } : p));
-      return { ok: true };
+      return { ok: true, formatted: result.formatted_address };
     } catch (err: any) {
       return { ok: false, error: err.message || "Falha no geocoding" };
     }
+  }
+
+  async function saveManualCoords(e: Establishment, lat: number, lng: number) {
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      toast.error("Coordenadas inválidas"); return;
+    }
+    setBusy(e.id);
+    const { error } = await supabase
+      .from("partners")
+      .update({ latitude: lat, longitude: lng } as any)
+      .eq("id", e.id);
+    setBusy(null);
+    if (error) { toast.error("Falha ao salvar"); return; }
+    setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: lat, longitude: lng } : p));
+    toast.success("Coordenadas salvas");
   }
 
   async function generateCoordinates(e: Establishment) {
@@ -316,8 +354,11 @@ const EstabelecimentosAudit = () => {
     setBusy(e.id);
     const res = await geocodeOne(e);
     setBusy(null);
-    if (res.ok) toast.success("Coordenadas salvas");
-    else toast.error(`${e.name}: ${res.error || "Endereço não encontrado. Revise o endereço ou tente simplificar."}`);
+    if (res.ok) toast.success(res.formatted ? `Salvo: ${res.formatted}` : "Coordenadas salvas");
+    else {
+      const triedStr = res.tried?.slice(0, 2).join(" · ") || "";
+      toast.error(`${e.name}: ${res.error}${triedStr ? ` Tentativas: ${triedStr}` : ""}`);
+    }
   }
 
   return (
@@ -587,6 +628,21 @@ const EstabelecimentosAudit = () => {
                     Analisar com IA
                   </button>
                   <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([e.name, e.address, e.city || "Presidente Prudente", "SP"].filter(Boolean).join(", "))}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                  >
+                    <ExternalLink className="h-3 w-3" /> Buscar no Google Maps
+                  </a>
+                  <button
+                    onClick={() => setManualOpen(prev => prev[e.id]
+                      ? (() => { const n = { ...prev }; delete n[e.id]; return n; })()
+                      : { ...prev, [e.id]: { lat: e.latitude?.toString() || "", lng: e.longitude?.toString() || "", url: "" } })}
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                  >
+                    <MapPin className="h-3 w-3" /> Coordenadas manuais
+                  </button>
+                  <a
                     href={`/local/${e.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -595,6 +651,64 @@ const EstabelecimentosAudit = () => {
                     <ExternalLink className="h-3 w-3" /> Ver página
                   </a>
                 </div>
+
+                {manualOpen[e.id] && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-2.5 space-y-2">
+                    <p className="text-[10px] uppercase tracking-wide text-primary font-bold">Coordenadas manuais</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text" inputMode="decimal" placeholder="Latitude (-22.1234)"
+                        value={manualOpen[e.id].lat}
+                        onChange={ev => setManualOpen(p => ({ ...p, [e.id]: { ...p[e.id], lat: ev.target.value } }))}
+                        className="rounded-md border border-border/40 bg-card px-2 py-1 text-[11px] outline-none"
+                      />
+                      <input
+                        type="text" inputMode="decimal" placeholder="Longitude (-51.1234)"
+                        value={manualOpen[e.id].lng}
+                        onChange={ev => setManualOpen(p => ({ ...p, [e.id]: { ...p[e.id], lng: ev.target.value } }))}
+                        className="rounded-md border border-border/40 bg-card px-2 py-1 text-[11px] outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text" placeholder="Cole o link do Google Maps"
+                        value={manualOpen[e.id].url}
+                        onChange={ev => {
+                          const v = ev.target.value;
+                          const parsed = parseMapsUrl(v);
+                          setManualOpen(p => ({
+                            ...p,
+                            [e.id]: parsed
+                              ? { lat: parsed.lat.toString(), lng: parsed.lng.toString(), url: v }
+                              : { ...p[e.id], url: v },
+                          }));
+                          if (parsed) toast.success("Coordenadas extraídas do link");
+                        }}
+                        className="flex-1 rounded-md border border-border/40 bg-card px-2 py-1 text-[11px] outline-none"
+                      />
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        disabled={busy === e.id}
+                        onClick={async () => {
+                          const lat = parseFloat(manualOpen[e.id].lat.replace(",", "."));
+                          const lng = parseFloat(manualOpen[e.id].lng.replace(",", "."));
+                          await saveManualCoords(e, lat, lng);
+                          setManualOpen(p => { const n = { ...p }; delete n[e.id]; return n; });
+                        }}
+                        className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                      >
+                        Salvar coordenadas
+                      </button>
+                      <button
+                        onClick={() => setManualOpen(p => { const n = { ...p }; delete n[e.id]; return n; })}
+                        className="rounded-md bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {aiResult[e.id] && (() => {
                   const r = aiResult[e.id];
