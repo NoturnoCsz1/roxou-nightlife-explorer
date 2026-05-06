@@ -7,15 +7,15 @@ import AuraAvatar from "@/components/v3/AuraAvatar";
 
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
-  { to: "/ia", icon: Bot, label: "Aura" },
+  { to: "/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/transporte", icon: Car, label: "Caronas" },
+  { to: "/perto-de-mim", icon: MapPin, label: "Perto" },
   { to: "/perfil", icon: User, label: "Perfil" },
 ];
 
-const DESKTOP_ITEMS = [
-  { to: "/agenda", icon: CalendarDays, label: "Agenda" },
+const DESKTOP_EXTRA_ITEMS = [
+  { to: "/ia", icon: Bot, label: "Aura" },
   { to: "/economize", icon: PiggyBank, label: "Economize" },
-  { to: "/perto-de-mim", icon: MapPin, label: "Perto de mim" },
 ];
 
 export default function V3Layout() {
