@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,17 @@ interface Props {
   height?: number | string;
   showCTAs?: boolean;
   heatmap?: boolean;
+  selectionMode?: boolean;
+  onMapClick?: (loc: LatLng) => void;
+}
+
+function ClickHandler({ onClick }: { onClick: (loc: LatLng) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
 }
 
 const EVENT_ICON = L.divIcon({
