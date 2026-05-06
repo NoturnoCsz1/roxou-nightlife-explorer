@@ -4,10 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, ShieldCheck, WalletCards } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, ShieldCheck, WalletCards, Flag, Activity } from "lucide-react";
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
+import ReportDialog from "@/components/v3/ReportDialog";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 import type { Tables } from "@/integrations/supabase/types";
+
+function timeAgoPt(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const diffSec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (diffSec < 60) return "agora";
+  const m = Math.floor(diffSec / 60);
+  if (m < 60) return `há ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return `há ${d} d`;
+}
 
 type RideRequest = Tables<"ride_requests">;
 type RideOffer = Tables<"ride_offers">;
@@ -164,8 +177,15 @@ export default function V3DriverBoard() {
                 {req.event_name && (
                   <p className="font-display font-semibold text-sm text-foreground">{req.event_name}</p>
                 )}
-                <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
-                  <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
+                    <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
+                  </div>
+                  {!closed && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-300">
+                      <Activity className="w-3 h-3" /> Pedido ativo · {timeAgoPt(req.created_at)}
+                    </span>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   {(() => {
@@ -178,9 +198,12 @@ export default function V3DriverBoard() {
                         <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
                         <span>Embarque: {display}</span>
                         {approx && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                            Confirmar ponto no chat
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+                              Ponto aproximado
+                            </span>
+                            <span className="text-[10px] text-amber-300/80">Confirmar local exato no chat</span>
+                          </>
                         )}
                       </div>
                     );
@@ -193,7 +216,7 @@ export default function V3DriverBoard() {
                         <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
                         {destApprox && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                            Confirmar ponto no chat
+                            Destino aproximado
                           </span>
                         )}
                       </div>
@@ -272,6 +295,13 @@ export default function V3DriverBoard() {
                       {closed ? "Encerrado" : "Tenho interesse"}
                     </Button>
                   )}
+                </div>
+                <div className="flex justify-end pt-1">
+                  <ReportDialog
+                    rideRequestId={req.id}
+                    targetUserId={req.passenger_id}
+                    reportType="passenger"
+                  />
                 </div>
               </div>
             );

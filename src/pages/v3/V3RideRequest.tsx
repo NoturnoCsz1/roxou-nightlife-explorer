@@ -109,6 +109,7 @@ export default function V3RideRequest() {
   const [passengersCount, setPassengersCount] = useState(1);
   const [priceNote, setPriceNote] = useState("Valor final combinado no chat");
   const [notes, setNotes] = useState("");
+  const [receiveProposals, setReceiveProposals] = useState(true);
   // Manual destination (used when event has no coords)
   const [manualDestAddress, setManualDestAddress] = useState("");
   const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -438,7 +439,7 @@ export default function V3RideRequest() {
         } as any).eq("user_id", user.id);
       }
 
-      const { error } = await supabase.from("ride_requests").insert({
+      const { data: inserted, error } = await supabase.from("ride_requests").insert({
         passenger_id: user.id,
         event_id: event.id,
         event_name: event.title,
@@ -458,12 +459,20 @@ export default function V3RideRequest() {
         seats_available: Math.min(4, Math.max(1, passengersCount)),
         price_note: priceNote || "Valor final combinado no chat",
         notes: notes?.trim() || null,
+        receive_transport_proposals: receiveProposals,
         status: "open",
-      } as any);
+      } as any).select("id").maybeSingle();
       if (error) throw error;
 
       setSuccess(true);
       toast.success("Pedido de carona enviado com sucesso");
+
+      // Notify drivers (best-effort, opt-in only)
+      if (receiveProposals && inserted?.id) {
+        supabase.functions.invoke("notify-drivers-new-ride", {
+          body: { ride_request_id: inserted.id },
+        }).catch(() => { /* silent */ });
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar pedido");
     } finally {
@@ -824,6 +833,21 @@ export default function V3RideRequest() {
               className="rounded-xl bg-card border-border/40 text-sm min-h-[80px] resize-none"
             />
           </div>
+
+          <label className="flex items-start gap-2 text-xs text-foreground/90 rounded-2xl border border-border/40 bg-card/30 p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={receiveProposals}
+              onChange={(e) => setReceiveProposals(e.target.checked)}
+              className="mt-0.5 accent-primary"
+            />
+            <span>
+              Continuar recebendo propostas de motoristas para este pedido.
+              <span className="block text-[10px] text-muted-foreground mt-0.5">
+                Você pode desativar a qualquer momento em "Minhas caronas".
+              </span>
+            </span>
+          </label>
         </section>
 
         <Button

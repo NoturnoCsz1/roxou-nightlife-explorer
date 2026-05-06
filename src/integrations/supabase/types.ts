@@ -1144,6 +1144,7 @@ export type Database = {
           destination_is_approximate: boolean
           destination_lat: number | null
           destination_lng: number | null
+          drivers_notified_at: string | null
           event_date: string | null
           event_id: string | null
           event_name: string | null
@@ -1158,6 +1159,7 @@ export type Database = {
           pickup_address: string | null
           pickup_is_approximate: boolean
           price_note: string | null
+          receive_transport_proposals: boolean
           seats_available: number
           status: string
           updated_at: string
@@ -1171,6 +1173,7 @@ export type Database = {
           destination_is_approximate?: boolean
           destination_lat?: number | null
           destination_lng?: number | null
+          drivers_notified_at?: string | null
           event_date?: string | null
           event_id?: string | null
           event_name?: string | null
@@ -1185,6 +1188,7 @@ export type Database = {
           pickup_address?: string | null
           pickup_is_approximate?: boolean
           price_note?: string | null
+          receive_transport_proposals?: boolean
           seats_available?: number
           status?: string
           updated_at?: string
@@ -1198,6 +1202,7 @@ export type Database = {
           destination_is_approximate?: boolean
           destination_lat?: number | null
           destination_lng?: number | null
+          drivers_notified_at?: string | null
           event_date?: string | null
           event_id?: string | null
           event_name?: string | null
@@ -1212,6 +1217,7 @@ export type Database = {
           pickup_address?: string | null
           pickup_is_approximate?: boolean
           price_note?: string | null
+          receive_transport_proposals?: boolean
           seats_available?: number
           status?: string
           updated_at?: string
