@@ -107,7 +107,7 @@ export default function V3RideRequest() {
   // Form
   const [eventDate, setEventDate] = useState("");
   const [passengersCount, setPassengersCount] = useState(1);
-  const [priceNote, setPriceNote] = useState("Valor final combinado no chat");
+  const [priceNote, setPriceNote] = useState("Valor a combinar no chat");
   const [notes, setNotes] = useState("");
   const [receiveProposals, setReceiveProposals] = useState(true);
   // Manual destination (used when event has no coords)
@@ -457,7 +457,7 @@ export default function V3RideRequest() {
         destination_is_approximate: destApproximate || resolvedDestLat == null || resolvedDestLng == null,
         passengers_count: passengersCount,
         seats_available: Math.min(4, Math.max(1, passengersCount)),
-        price_note: priceNote || "Valor final combinado no chat",
+        price_note: priceNote || "Valor a combinar no chat",
         notes: notes?.trim() || null,
         receive_transport_proposals: receiveProposals,
         status: "open",
