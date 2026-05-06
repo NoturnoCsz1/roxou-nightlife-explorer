@@ -271,21 +271,31 @@ const EstabelecimentosAudit = () => {
     const address = norm(e.address);
     const neighborhood = e.neighborhood ? norm(e.neighborhood) : "";
     const city = norm(e.city || "Presidente Prudente");
+    const addrNoNeighborhood = address.replace(/\s*-\s*[^,]*$/, "");
+    const candidates = [
+      [address, neighborhood, city, "SP", "Brasil"],
+      [address, city, "SP", "Brasil"],
+      [addrNoNeighborhood, city, "SP", "Brasil"],
+      [e.name, city, "SP", "Brasil"],
+    ]
+      .map(parts => parts.filter(Boolean).map(String).join(", "))
+      .filter((q, i, arr) => q.length > 4 && arr.indexOf(q) === i);
     try {
       const { data, error } = await supabase.functions.invoke("geocode-address", {
         body: { address, neighborhood, city, state: "SP", country: "Brasil", name: e.name },
       });
-      if (error || data?.ok === false || !data?.latitude || !data?.longitude) {
-        const message = data?.status === "REQUEST_DENIED"
-          ? "Geocoding indisponível no momento. Verifique a chave/API do Google Maps."
-          : "Endereço não encontrado. Revise o endereço ou tente simplificar.";
-        return { ok: false, error: data?.error ? message : (error?.message || message) };
+      let result = data?.ok !== false && data?.latitude && data?.longitude ? data : null;
+      if (!result && (data?.status === "REQUEST_DENIED" || error)) {
+        result = await geocodeInBrowser(candidates);
+      }
+      if (!result?.latitude || !result?.longitude) {
+        return { ok: false, error: "Endereço não encontrado. Revise o endereço ou tente simplificar." };
       }
       const payload = {
-        latitude: data.latitude,
-        longitude: data.longitude,
-        maps_place_id: data.place_id || null,
-        formatted_address: data.formatted_address || null,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        maps_place_id: result.place_id || null,
+        formatted_address: result.formatted_address || null,
       };
       const { error: updErr } = await supabase
         .from("partners")
