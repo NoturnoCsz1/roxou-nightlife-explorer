@@ -179,6 +179,7 @@ const EstabelecimentosAudit = () => {
   const [cityF, setCityF] = useState<string>("");
   const [categoryF, setCategoryF] = useState<string>("");
   const [errorsOnly, setErrorsOnly] = useState(false);
+  const [noCoordsOnly, setNoCoordsOnly] = useState(false);
   const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState<Record<string, { lat: string; lng: string; url: string }>>({});
