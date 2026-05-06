@@ -694,7 +694,7 @@ export default function V3RideRequest() {
             </div>
           )}
 
-          {event?.latitude != null && event?.longitude != null && (
+          {(event?.latitude != null && event?.longitude != null) ? (
             <RoxouRideMap
               originCoords={originCoords}
               destinationCoords={{ lat: event.latitude, lng: event.longitude }}
@@ -703,7 +703,16 @@ export default function V3RideRequest() {
               originLabel="Seu ponto de embarque"
               height={220}
             />
-          )}
+          ) : destCoords ? (
+            <RoxouRideMap
+              originCoords={originCoords}
+              destinationCoords={destCoords}
+              onOriginChange={handleOriginPinChange}
+              destinationLabel={event.title}
+              originLabel="Seu ponto de embarque"
+              height={220}
+            />
+          ) : null}
 
           <a
             href={originAddress && event.address
