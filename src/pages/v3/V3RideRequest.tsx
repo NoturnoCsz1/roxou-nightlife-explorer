@@ -98,6 +98,11 @@ export default function V3RideRequest() {
   const [originSource, setOriginSource] = useState<"gps" | "manual_pin_adjustment" | "fallback_address" | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [gpsRefining, setGpsRefining] = useState(false);
+  const [gpsAttempts, setGpsAttempts] = useState(0);
+  const watchIdRef = useRef<number | null>(null);
+  const watchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bestAccuracyRef = useRef<number>(Infinity);
 
   // Form
   const [eventDate, setEventDate] = useState("");
