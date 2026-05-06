@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
@@ -15,19 +15,23 @@ const NAV_ITEMS = [
 const DESKTOP_ITEMS = [
   { to: "/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/economize", icon: PiggyBank, label: "Economize" },
+  { to: "/perto-de-mim", icon: MapPin, label: "Perto de mim" },
 ];
 
 export default function V3Layout() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
-  const { profile } = useV3Profile();
+  const { profile, isDriver } = useV3Profile();
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
     navigate(user ? "/perfil" : "/auth");
   };
 
-  const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS];
+  const driverItem = isDriver
+    ? { to: "/motorista", icon: Shield, label: "Área do motorista" }
+    : { to: "/cadastro-motorista", icon: BadgeCheck, label: "Quero ser motorista" };
+  const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS, driverItem];
 
   const displayName = profile?.display_name?.trim() || user?.email?.split("@")[0] || "Visitante";
   const nickname = (profile as any)?.nickname?.trim() || null;
