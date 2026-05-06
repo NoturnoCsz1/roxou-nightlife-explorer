@@ -102,6 +102,7 @@ export default function RoxouNearbyEventsMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitAll points={allPoints} />
+        {selectionMode && onMapClick && <ClickHandler onClick={onMapClick} />}
 
         {heatCircles.map((c, i) => (
           <Circle
