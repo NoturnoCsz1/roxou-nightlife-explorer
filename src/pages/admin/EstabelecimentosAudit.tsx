@@ -2,8 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search, ExternalLink, MapPin, Instagram as InstagramIcon, CheckCircle2,
-  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon,
+  AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon, RefreshCw,
 } from "lucide-react";
+
+const FLAG_LABELS: Record<string, string> = {
+  missing_address: "sem endereço",
+  missing_instagram: "sem instagram",
+  missing_coordinates: "sem coordenadas",
+  missing_category: "sem categoria",
+};
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
