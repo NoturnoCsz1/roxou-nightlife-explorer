@@ -938,7 +938,21 @@ function CommandCenter({
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
   venueRanks: VenueRank[]; featuredPartners: any[]; events: Ev[];
 }) {
-  const mainEvents = [...trending, ...featured, ...todayEvents, ...weekEvents].filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i).slice(0, 10);
+  // Evita duplicar eventos já mostrados na timeline de hoje, no hero ou no spotlight
+  const excludeIds = new Set<string>();
+  todayEvents.forEach(e => excludeIds.add(e.id));
+  if (hero) excludeIds.add(hero.id);
+  if (weeklyHighlight) excludeIds.add(weeklyHighlight.id);
+  const mainPool = [...trending, ...featured, ...weekEvents].filter((e, i, arr) =>
+    arr.findIndex(x => x.id === e.id) === i && !excludeIds.has(e.id)
+  );
+  // Embaralhamento estável por dia para variar a curadoria sem mudar a cada render
+  const seed = TODAY_KEY.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const mainEvents = mainPool
+    .map((e, i) => ({ e, k: ((i + 1) * 9301 + seed * 49297) % 233280 }))
+    .sort((a, b) => a.k - b.k)
+    .map(x => x.e)
+    .slice(0, 10);
 
   if (!todayEvents.length && !mainEvents.length && !hero) return null;
 
