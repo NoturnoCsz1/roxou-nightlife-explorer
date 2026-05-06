@@ -414,8 +414,7 @@ const EstabelecimentosAudit = () => {
     setBusy(null);
     if (res.ok) toast.success(res.formatted ? `Salvo: ${res.formatted}` : "Coordenadas salvas");
     else {
-      const triedStr = res.tried?.slice(0, 2).join(" · ") || "";
-      toast.error(`${e.name}: ${res.error}${triedStr ? ` Tentativas: ${triedStr}` : ""}`);
+      toast.error("Não foi possível encontrar automaticamente. Use Buscar no Google Maps ou preencha as coordenadas manualmente.");
     }
   }
 
