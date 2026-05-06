@@ -439,7 +439,7 @@ export default function V3RideRequest() {
         } as any).eq("user_id", user.id);
       }
 
-      const { error } = await supabase.from("ride_requests").insert({
+      const { data: inserted, error } = await supabase.from("ride_requests").insert({
         passenger_id: user.id,
         event_id: event.id,
         event_name: event.title,
@@ -459,12 +459,20 @@ export default function V3RideRequest() {
         seats_available: Math.min(4, Math.max(1, passengersCount)),
         price_note: priceNote || "Valor final combinado no chat",
         notes: notes?.trim() || null,
+        receive_transport_proposals: receiveProposals,
         status: "open",
-      } as any);
+      } as any).select("id").maybeSingle();
       if (error) throw error;
 
       setSuccess(true);
       toast.success("Pedido de carona enviado com sucesso");
+
+      // Notify drivers (best-effort, opt-in only)
+      if (receiveProposals && inserted?.id) {
+        supabase.functions.invoke("notify-drivers-new-ride", {
+          body: { ride_request_id: inserted.id },
+        }).catch(() => { /* silent */ });
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro ao criar pedido");
     } finally {
