@@ -107,8 +107,14 @@ export default function V3RideRequest() {
   // Form
   const [eventDate, setEventDate] = useState("");
   const [passengersCount, setPassengersCount] = useState(1);
-  const [priceNote, setPriceNote] = useState("Rachada combinada no chat");
+  const [priceNote, setPriceNote] = useState("Valor final combinado no chat");
   const [notes, setNotes] = useState("");
+  // Manual destination (used when event has no coords)
+  const [manualDestAddress, setManualDestAddress] = useState("");
+  const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [destIsApproximate, setDestIsApproximate] = useState(false);
+  // Manual origin address (fallback when GPS is bad)
+  const [manualOriginAddress, setManualOriginAddress] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
