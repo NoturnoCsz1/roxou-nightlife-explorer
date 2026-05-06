@@ -267,7 +267,7 @@ const EstabelecimentosAudit = () => {
     toast.success("Instagram marcado como validado");
   }
 
-  async function geocodeOne(e: Establishment): Promise<{ ok: boolean; error?: string }> {
+  async function geocodeOne(e: Establishment): Promise<{ ok: boolean; error?: string; tried?: string[]; formatted?: string }> {
     if (!e.address?.trim()) return { ok: false, error: "Sem endereço" };
     const norm = (s: string) => s.replace(/\s+/g, " ").replace(/,\s*,+/g, ",").replace(/^[,\s]+|[,\s]+$/g, "").trim();
     const address = norm(e.address);
@@ -291,7 +291,7 @@ const EstabelecimentosAudit = () => {
         result = await geocodeInBrowser(candidates);
       }
       if (!result?.latitude || !result?.longitude) {
-        return { ok: false, error: "Endereço não encontrado. Revise o endereço ou tente simplificar." };
+        return { ok: false, error: "Endereço não encontrado.", tried: data?.tried || candidates };
       }
       const payload = {
         latitude: result.latitude,
@@ -305,10 +305,25 @@ const EstabelecimentosAudit = () => {
         .eq("id", e.id);
       if (updErr) return { ok: false, error: updErr.message };
       setItems(prev => prev.map(p => p.id === e.id ? { ...p, ...payload } : p));
-      return { ok: true };
+      return { ok: true, formatted: result.formatted_address };
     } catch (err: any) {
       return { ok: false, error: err.message || "Falha no geocoding" };
     }
+  }
+
+  async function saveManualCoords(e: Establishment, lat: number, lng: number) {
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      toast.error("Coordenadas inválidas"); return;
+    }
+    setBusy(e.id);
+    const { error } = await supabase
+      .from("partners")
+      .update({ latitude: lat, longitude: lng } as any)
+      .eq("id", e.id);
+    setBusy(null);
+    if (error) { toast.error("Falha ao salvar"); return; }
+    setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: lat, longitude: lng } : p));
+    toast.success("Coordenadas salvas");
   }
 
   async function generateCoordinates(e: Establishment) {
@@ -316,8 +331,11 @@ const EstabelecimentosAudit = () => {
     setBusy(e.id);
     const res = await geocodeOne(e);
     setBusy(null);
-    if (res.ok) toast.success("Coordenadas salvas");
-    else toast.error(`${e.name}: ${res.error || "Endereço não encontrado. Revise o endereço ou tente simplificar."}`);
+    if (res.ok) toast.success(res.formatted ? `Salvo: ${res.formatted}` : "Coordenadas salvas");
+    else {
+      const triedStr = res.tried?.slice(0, 2).join(" · ") || "";
+      toast.error(`${e.name}: ${res.error}${triedStr ? ` Tentativas: ${triedStr}` : ""}`);
+    }
   }
 
   return (
