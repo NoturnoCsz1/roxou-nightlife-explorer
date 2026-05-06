@@ -389,10 +389,8 @@ export default function V3Home() {
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
 
-      {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
-      {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
-        <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
-      ) : null}
+      {/* ══════ 1.5 HOJE — Já renderizado logo abaixo do hero ══════ */}
+
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
