@@ -88,10 +88,11 @@ Deno.serve(async (req) => {
     // Strip number from "Rua X, 123" -> "Rua X"
     const stripNumber = (s: string) => s.replace(/,\s*\d+\w*\s*$/, "").replace(/\s+\d+\w*$/, "").trim();
 
-    const cityFinal = norm(city) || "Presidente Prudente";
+    const cityFinal = norm(normalizeCity(city || "")) || "Presidente Prudente";
     const stateFinal = norm(state) || "SP";
     const countryFinal = norm(country) || "Brasil";
-    const addressN = norm(address);
+    const addressNormalizedCity = normalizeCity(norm(address));
+    const addressN = stripEmbeddedCity(addressNormalizedCity, cityFinal);
     const addrNoNeighborhood = addressN.replace(/\s*-\s*[^,]*$/, "").trim();
     const addrExpanded = expandAbbr(addressN);
     const addrNoNumber = stripNumber(addrNoNeighborhood);
