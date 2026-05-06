@@ -190,8 +190,11 @@ export default function V3DriverBoard() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <WalletCards className="w-3.5 h-3.5" />
-                    <span>{(req as any).price_note || "Rachada a combinar"}</span>
+                    <span>Valor sugerido: {(req as any).price_note || "a combinar com o passageiro"}</span>
                   </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    A Roxou apenas conecta passageiros e motoristas. O valor e os detalhes devem ser combinados entre as partes.
+                  </p>
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
                   {Array.from({ length: 4 }).map((_, i) => {
