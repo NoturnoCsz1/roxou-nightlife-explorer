@@ -541,16 +541,35 @@ function FadeSection({ className, children }: { className?: string; children: Re
 }
 
 /* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
-function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
+function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange }: {
   ev: Ev; isToday: boolean; todayCount: number; venueRank?: number;
+  slides?: Ev[]; index?: number; onChange?: (i: number) => void;
 }) {
   const dayLabel = getDayLabel(ev.date_time);
   const momentumText = isToday && todayCount > 1
     ? `+${todayCount - 1} eventos rolando`
     : venueRank && venueRank <= 3 ? "Top venue da semana" : null;
 
+  const total = slides?.length || 0;
+  const cur = index ?? 0;
+  const go = (dir: number) => {
+    if (!onChange || total <= 1) return;
+    onChange((cur + dir + total) % total);
+  };
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+
   return (
-    <div className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden">
+    <div
+      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden"
+      onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
+      onTouchEnd={(e) => {
+        const s = touchRef.current; if (!s) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - s.x; const dy = t.clientY - s.y;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+        touchRef.current = null;
+      }}
+    >
       {/* Background image with Ken Burns */}
       <SmartImage
         src={ev.image_url}
