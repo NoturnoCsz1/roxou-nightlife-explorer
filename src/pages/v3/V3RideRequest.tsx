@@ -360,23 +360,27 @@ export default function V3RideRequest() {
     let originApproximate = false;
 
     if (manualOriginAddress.trim()) {
+      resolvedOriginAddr = manualOriginAddress.trim();
+      resolvedOriginSource = "fallback_address";
+      resolvedOriginAccuracy = null;
       const geo = await geocodeAddress(manualOriginAddress.trim());
       if (geo) {
         resolvedOrigin = geo;
-        resolvedOriginAddr = manualOriginAddress.trim();
-        resolvedOriginSource = "fallback_address";
-        resolvedOriginAccuracy = null;
-        originApproximate = true;
+        originApproximate = false;
       } else {
-        toast.error("Não conseguimos localizar o endereço de embarque. Ajuste no mapa ou tente outro endereço.");
-        return;
+        // Não bloqueia: salva como texto, sem coordenadas
+        resolvedOrigin = null;
+        originApproximate = true;
+        toast.message("Endereço salvo como texto. O motorista combinará o ponto exato no chat.");
       }
     } else if (originAccuracy != null && originAccuracy > 1000) {
       toast.error("GPS com baixa precisão. Ajuste o pin no mapa ou digite o endereço de embarque.");
       return;
     }
 
-    if (!resolvedOrigin) { toast.error("Confirme sua origem (GPS, mapa ou endereço)"); return; }
+    if (!resolvedOrigin && !resolvedOriginAddr) {
+      toast.error("Confirme sua origem (GPS, mapa ou endereço)"); return;
+    }
 
     // Resolve destination (event coords or manual)
     let resolvedDestLat = event.latitude ?? destCoords?.lat ?? null;
