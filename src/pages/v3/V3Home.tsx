@@ -1191,9 +1191,9 @@ function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
           {events.length} rolês
         </span>
       </div>
-      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pr-2 scrollbar-hide">
+      <div className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 pr-5 scrollbar-hide [scroll-padding-right:1.25rem]">
         {events.map((ev) => (
-          <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px]" />
+          <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px] snap-start rounded-3xl overflow-hidden" />
         ))}
       </div>
     </section>
