@@ -65,6 +65,7 @@ import V3Economize from "./pages/v3/V3Economize";
 import V3AIChat from "./pages/v3/V3AIChat";
 import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
+import PertoDeMim from "./pages/PertoDeMim";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*)
 import LegacyIndex from "./pages/Index";
@@ -153,6 +154,7 @@ const App = () => (
             <Route path="ia" element={<V3AIChat />} />
             <Route path="sobre" element={<V3Sobre />} />
             <Route path="contato" element={<V3Contato />} />
+            <Route path="perto-de-mim" element={<PertoDeMim />} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
 
