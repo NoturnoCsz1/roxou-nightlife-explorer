@@ -366,6 +366,15 @@ export default function V3Home() {
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
 
+      {/* ══════ 1.5a AGORA EM PRUDENTE — notícias trending ══════ */}
+      <LatestNewsSection variant="trending" limit={6} />
+
+      {/* ══════ 1.5b BANNER EXPO 2026 ══════ */}
+      <ExpoHighlightBanner />
+
+      {/* ══════ 1.5c MAIS ACESSADAS DA SEMANA ══════ */}
+      <MostViewedNews />
+
       {/* ══════ 1.5 HOJE — Timeline da Noite (logo após busca/chips) ══════ */}
       {isLoading ? <RailSkeleton count={3} /> : rawTodayEvents.length > 0 ? (
         <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
