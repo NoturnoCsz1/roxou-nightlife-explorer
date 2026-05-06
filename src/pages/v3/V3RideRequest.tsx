@@ -242,7 +242,7 @@ export default function V3RideRequest() {
         setOriginSource("gps");
         const addr = await reverseGeocode(latitude, longitude);
         setOriginAddress(addr);
-        await placeOriginMarker(latitude, longitude);
+        
         setGeoLoading(false);
         toast.success("Localização capturada via GPS");
       },
