@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,22 +8,55 @@ import RoxouNearbyEventsMap, { type NearbyEvent } from "@/components/maps/RoxouN
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 import SEO from "@/components/SEO";
 
-const PP_FALLBACK: LatLng = { lat: -22.1207, lng: -51.3889 };
+// Apenas referência visual no mapa quando o GPS ainda não foi confirmado.
+const PP_REFERENCE: LatLng = { lat: -22.1207, lng: -51.3889 };
 
 export default function PertoDeMim() {
   const navigate = useNavigate();
-  const [userLoc, setUserLoc] = useState<LatLng | null>(null);
+  const [userLocation, setUserLocation] = useState<LatLng | null>(null);
+  const [manualLocation, setManualLocation] = useState<LatLng | null>(null);
+  const [locationAccuracy, setLocationAccuracy] = useState<number | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState(false);
   const [events, setEvents] = useState<NearbyEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [geoDenied, setGeoDenied] = useState(false);
+
+  // Localização real (GPS) ou escolhida manualmente. NUNCA o fallback.
+  const realLocation: LatLng | null = userLocation || manualLocation;
+  const isUsingFallback = !realLocation;
+
+  const requestGeolocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Geolocalização não suportada neste navegador.");
+      return;
+    }
+    setRequesting(true);
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        // Logs temporários
+        // eslint-disable-next-line no-console
+        console.log("[PertoDeMim] geo success", { latitude, longitude, accuracy, isUsingFallback: false });
+        setUserLocation({ lat: latitude, lng: longitude });
+        setLocationAccuracy(accuracy);
+        setRequesting(false);
+      },
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[PertoDeMim] geo error", { code: err.code, message: err.message });
+        setGeoError(
+          "Não conseguimos acessar sua localização real. Ative a permissão de localização do navegador ou escolha sua posição manualmente no mapa."
+        );
+        setRequesting(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
 
   useEffect(() => {
-    if (!navigator.geolocation) { setGeoDenied(true); return; }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => { setGeoDenied(true); toast.message("Localização não disponível, mostrando rolês de Presidente Prudente."); },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-    );
+    requestGeolocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -39,19 +72,33 @@ export default function PertoDeMim() {
         .limit(150);
 
       const list = evts || [];
-      const partnerIds = [...new Set(list.filter(e => e.partner_id && (e.latitude == null || e.longitude == null)).map(e => e.partner_id!))];
-      let partnerMap: Record<string, { lat: number | null; lng: number | null }> = {};
+      const partnerIds = [
+        ...new Set(
+          list.filter((e) => e.partner_id && (e.latitude == null || e.longitude == null)).map((e) => e.partner_id!)
+        ),
+      ];
+      const partnerMap: Record<string, { lat: number | null; lng: number | null }> = {};
       if (partnerIds.length > 0) {
         const { data: ps } = await supabase.from("partners").select("id,latitude,longitude").in("id", partnerIds);
-        (ps || []).forEach(p => { partnerMap[p.id] = { lat: (p as any).latitude, lng: (p as any).longitude }; });
+        (ps || []).forEach((p) => {
+          partnerMap[p.id] = { lat: (p as any).latitude, lng: (p as any).longitude };
+        });
       }
 
       const mapped: NearbyEvent[] = list
-        .map(e => {
+        .map((e) => {
           const lat = e.latitude ?? (e.partner_id ? partnerMap[e.partner_id]?.lat : null);
           const lng = e.longitude ?? (e.partner_id ? partnerMap[e.partner_id]?.lng : null);
           if (lat == null || lng == null) return null;
-          return { id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name, date_time: e.date_time, lat, lng } as NearbyEvent;
+          return {
+            id: e.id,
+            title: e.title,
+            slug: e.slug,
+            venue_name: e.venue_name,
+            date_time: e.date_time,
+            lat,
+            lng,
+          } as NearbyEvent;
         })
         .filter(Boolean) as NearbyEvent[];
 
@@ -60,22 +107,37 @@ export default function PertoDeMim() {
     })();
   }, []);
 
-  const center = userLoc || (geoDenied ? PP_FALLBACK : null);
-  const sorted = center
-    ? [...events].map(e => ({ e, d: haversineKm(center, { lat: e.lat, lng: e.lng }) })).sort((a, b) => a.d - b.d).slice(0, 30)
-    : events.slice(0, 30).map(e => ({ e, d: 0 }));
+  // Distância só com localização real. Sem fallback.
+  const sorted = realLocation
+    ? [...events]
+        .map((e) => ({ e, d: haversineKm(realLocation, { lat: e.lat, lng: e.lng }) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 30)
+    : events.slice(0, 30).map((e) => ({ e, d: null as number | null }));
+
+  // O ponto do usuário só aparece se houver localização real.
+  // O centro do mapa pode ser apenas referência (PP) quando ainda não temos GPS.
+  const mapUserLocation = realLocation;
+  const mapCenter = realLocation || PP_REFERENCE;
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <SEO title="Rolês perto de você | ROXOU" description="Encontre eventos, festas e shows próximos da sua localização." canonical="https://roxou.com.br/perto-de-mim" />
+      <SEO
+        title="Rolês perto de você | ROXOU"
+        description="Encontre eventos, festas e shows próximos da sua localização."
+        canonical="https://roxou.com.br/perto-de-mim"
+      />
 
       <header className="sticky top-0 z-40 glass border-b border-border/30">
         <div className="mx-auto max-w-md px-4 py-3 flex items-center gap-3">
-          <Link to="/" className="p-2 -ml-2 rounded-xl hover:bg-card"><ArrowLeft className="w-5 h-5 text-muted-foreground" /></Link>
+          <Link to="/" className="p-2 -ml-2 rounded-xl hover:bg-card">
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+          </Link>
           <div>
             <h1 className="font-display font-bold text-lg">Rolês perto de você</h1>
             <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> {userLoc ? "Sua localização" : "Presidente Prudente"}
+              <MapPin className="w-3 h-3" />
+              {realLocation ? "Sua localização" : "Localização não confirmada"}
             </p>
           </div>
         </div>
@@ -86,22 +148,54 @@ export default function PertoDeMim() {
           <p className="text-center text-sm text-muted-foreground py-12">Carregando rolês...</p>
         ) : (
           <>
-            <RoxouNearbyEventsMap userLocation={center} events={sorted.map(s => s.e)} height={340} heatmap />
+            {/* Avisos de localização */}
+            {isUsingFallback && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-100 flex gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p>Mapa centralizado em Presidente Prudente apenas como referência. Confirme sua localização para ver eventos próximos.</p>
+              </div>
+            )}
 
-            {geoDenied && (
+            {geoError && (
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-[12px] text-destructive-foreground">
+                {geoError}
+              </div>
+            )}
+
+            {realLocation && locationAccuracy != null && locationAccuracy > 1000 && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-100 flex gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p>Sua localização parece imprecisa (±{Math.round(locationAccuracy)}m). Tente ativar o GPS do celular ou escolher manualmente no mapa.</p>
+              </div>
+            )}
+
+            <RoxouNearbyEventsMap
+              userLocation={mapUserLocation}
+              events={sorted.map((s) => s.e)}
+              height={340}
+              heatmap
+            />
+
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
-                className="w-full rounded-xl gap-2"
+                className="rounded-xl gap-2"
+                disabled={requesting}
+                onClick={requestGeolocation}
+              >
+                <Crosshair className="w-4 h-4" />
+                {requesting ? "Buscando..." : "Usar minha localização"}
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-xl gap-2"
                 onClick={() => {
-                  navigator.geolocation.getCurrentPosition(
-                    (pos) => { setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGeoDenied(false); },
-                    () => toast.error("Permissão negada")
-                  );
+                  toast.info("Toque longo no mapa para escolher (em breve). Por ora, use 'Usar minha localização'.");
                 }}
               >
-                <Crosshair className="w-4 h-4" /> Usar minha localização
+                <MapPin className="w-4 h-4" /> Escolher no mapa
               </Button>
-            )}
+            </div>
 
             <section className="space-y-2">
               <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mt-2">
@@ -120,18 +214,24 @@ export default function PertoDeMim() {
                         {new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                       </p>
                     </div>
-                    {center && (
+                    {d != null && (
                       <span className="text-[10px] rounded-lg bg-primary/10 border border-primary/30 px-2 py-1 text-primary font-semibold whitespace-nowrap">
                         {d.toFixed(1)} km
                       </span>
                     )}
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button size="sm" className="rounded-lg text-[11px] h-8" onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}>Ver</Button>
-                    <Button size="sm" variant="outline" className="rounded-lg text-[11px] h-8" onClick={() => navigate(`/pedir-carona?eventId=${e.id}`)}>Carona</Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      size="sm"
+                      className="rounded-lg text-[11px] h-8"
+                      onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}
+                    >
+                      Ver
+                    </Button>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`}
-                      target="_blank" rel="noopener noreferrer"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1 rounded-lg border border-border/40 text-[11px] font-medium h-8 hover:border-primary/40"
                     >
                       <Navigation className="w-3 h-3" /> Ir
