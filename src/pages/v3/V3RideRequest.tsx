@@ -640,7 +640,7 @@ export default function V3RideRequest() {
               className="h-11 rounded-xl bg-card border-border/40 text-sm"
             />
             <p className="text-[10px] text-muted-foreground">
-              Use se o GPS estiver impreciso. O endereço será priorizado sobre o pin do mapa.
+              Use se o GPS estiver impreciso. Se não conseguirmos validar automaticamente, o endereço será enviado ao motorista para confirmação no chat.
             </p>
           </div>
 
