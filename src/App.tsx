@@ -66,6 +66,7 @@ import V3AIChat from "./pages/v3/V3AIChat";
 import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
 import PertoDeMim from "./pages/PertoDeMim";
+import RemoverDados from "./pages/RemoverDados";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*)
 import LegacyIndex from "./pages/Index";
@@ -128,6 +129,7 @@ const App = () => (
 
           {/* ========= ROXOU V3 (raiz pública) ========= */}
           <Route path="/manutencao" element={<Maintenance />} />
+          <Route path="/remover-dados" element={<RemoverDados />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
           {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
