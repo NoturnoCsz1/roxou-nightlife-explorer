@@ -90,6 +90,27 @@ async function geocodeInBrowser(candidates: string[]) {
   return null;
 }
 
+/** Extract lat/lng from a Google Maps URL. Supports @lat,lng / !3dLAT!4dLNG / q=lat,lng / ?ll=lat,lng */
+function parseMapsUrl(url: string): { lat: number; lng: number } | null {
+  if (!url) return null;
+  const patterns = [
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+    /[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /\/(-?\d+\.\d+),(-?\d+\.\d+)/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) {
+      const lat = parseFloat(m[1]); const lng = parseFloat(m[2]);
+      if (isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        return { lat, lng };
+      }
+    }
+  }
+  return null;
+
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
 function computeFlags(e: Establishment): FlagKey[] {
   const f: FlagKey[] = [];
