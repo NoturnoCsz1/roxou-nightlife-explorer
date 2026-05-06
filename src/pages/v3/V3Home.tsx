@@ -757,7 +757,7 @@ function CategoryBentoCard({
         <Icon className="w-4.5 h-4.5 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.8)]" />
       </div>
       <div className="absolute bottom-4 left-4 right-4">
-        <span className="font-display text-xl font-black uppercase tracking-wide text-foreground v3-neon-text leading-none">
+        <span className="font-display text-[17px] font-black uppercase tracking-wide text-foreground v3-neon-text leading-tight line-clamp-2 break-words">
           {label}
         </span>
       </div>
