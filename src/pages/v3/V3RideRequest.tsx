@@ -109,6 +109,7 @@ export default function V3RideRequest() {
   const [passengersCount, setPassengersCount] = useState(1);
   const [priceNote, setPriceNote] = useState("Valor final combinado no chat");
   const [notes, setNotes] = useState("");
+  const [receiveProposals, setReceiveProposals] = useState(true);
   // Manual destination (used when event has no coords)
   const [manualDestAddress, setManualDestAddress] = useState("");
   const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(null);
