@@ -613,16 +613,16 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank }: {
         </div>
 
         {/* CTAs */}
-        <div className="flex gap-2 lg:gap-3 pt-3">
+        <div className="flex gap-2 lg:gap-2.5 pt-2 lg:pt-1">
           <Link
             to={`/evento/${ev.slug}`}
-            className="inline-flex items-center gap-1.5 px-5 lg:px-6 py-2.5 lg:py-3 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 px-5 lg:px-5 py-2.5 lg:py-2 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-[13px] font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
             Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
             to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 px-4 lg:px-5 py-2.5 lg:py-3 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-sm font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 lg:px-4 py-2.5 lg:py-2 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-[13px] font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
           >
             <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary/80" /> Como vou?
           </Link>
