@@ -107,8 +107,14 @@ export default function V3RideRequest() {
   // Form
   const [eventDate, setEventDate] = useState("");
   const [passengersCount, setPassengersCount] = useState(1);
-  const [priceNote, setPriceNote] = useState("Rachada combinada no chat");
+  const [priceNote, setPriceNote] = useState("Valor final combinado no chat");
   const [notes, setNotes] = useState("");
+  // Manual destination (used when event has no coords)
+  const [manualDestAddress, setManualDestAddress] = useState("");
+  const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [destIsApproximate, setDestIsApproximate] = useState(false);
+  // Manual origin address (fallback when GPS is bad)
+  const [manualOriginAddress, setManualOriginAddress] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -199,9 +205,12 @@ export default function V3RideRequest() {
           } catch {}
         }
         if (destLat == null || destLng == null) {
-          setEventError("Este estabelecimento ainda não tem localização cadastrada. Valide as coordenadas no admin.");
+          // Não bloquear: permitir destino manual
+          setDestIsApproximate(true);
+          if (destAddress) setManualDestAddress(destAddress);
           return;
         }
+        setDestCoords({ lat: destLat, lng: destLng });
         setEvent((prev) => prev ? { ...prev, latitude: destLat!, longitude: destLng! } : prev);
       } catch (e) {
         console.error(e);
@@ -327,13 +336,69 @@ export default function V3RideRequest() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventLoading, eventError]);
 
+  const geocodeAddress = async (addr: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      await loadGoogleMaps();
+      const g = (window as any).google;
+      const geocoder = new g.maps.Geocoder();
+      const res = await geocoder.geocode({ address: `${addr}, Brasil` });
+      const loc = res?.results?.[0]?.geometry?.location;
+      if (loc) return { lat: loc.lat(), lng: loc.lng() };
+    } catch {}
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!event) { toast.error("Evento inválido"); return; }
-    if (event.latitude == null || event.longitude == null) {
-      toast.error("Evento sem localização cadastrada"); return;
+
+    // Resolve origin (GPS or manual address)
+    let resolvedOrigin = originCoords;
+    let resolvedOriginAddr = originAddress;
+    let resolvedOriginSource = originSource;
+    let resolvedOriginAccuracy = originAccuracy;
+    let originApproximate = false;
+
+    if (manualOriginAddress.trim()) {
+      const geo = await geocodeAddress(manualOriginAddress.trim());
+      if (geo) {
+        resolvedOrigin = geo;
+        resolvedOriginAddr = manualOriginAddress.trim();
+        resolvedOriginSource = "fallback_address";
+        resolvedOriginAccuracy = null;
+        originApproximate = true;
+      } else {
+        toast.error("Não conseguimos localizar o endereço de embarque. Ajuste no mapa ou tente outro endereço.");
+        return;
+      }
+    } else if (originAccuracy != null && originAccuracy > 1000) {
+      toast.error("GPS com baixa precisão. Ajuste o pin no mapa ou digite o endereço de embarque.");
+      return;
     }
-    if (!originCoords) { toast.error("Capture sua localização de embarque (GPS)"); return; }
+
+    if (!resolvedOrigin) { toast.error("Confirme sua origem (GPS, mapa ou endereço)"); return; }
+
+    // Resolve destination (event coords or manual)
+    let resolvedDestLat = event.latitude ?? destCoords?.lat ?? null;
+    let resolvedDestLng = event.longitude ?? destCoords?.lng ?? null;
+    let resolvedDestAddr =
+      event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title;
+
+    if ((resolvedDestLat == null || resolvedDestLng == null)) {
+      if (!manualDestAddress.trim()) {
+        toast.error("Confirme o endereço do destino para continuar.");
+        return;
+      }
+      const geo = await geocodeAddress(manualDestAddress.trim());
+      if (!geo) {
+        toast.error("Não conseguimos localizar o endereço do destino. Tente outro endereço.");
+        return;
+      }
+      resolvedDestLat = geo.lat;
+      resolvedDestLng = geo.lng;
+      resolvedDestAddr = manualDestAddress.trim();
+    }
+
     if (!whatsapp.trim() || !/^\(\d{2}\) \d{4,5}-\d{4}$/.test(whatsapp)) {
       toast.error("Informe um WhatsApp válido (XX) XXXXX-XXXX"); return;
     }
@@ -370,19 +435,17 @@ export default function V3RideRequest() {
         event_name: event.title,
         venue_name: event.venue_name,
         event_date: rideTimestamp,
-        // Origin (GPS-first)
-        pickup_address: originAddress || `${originCoords.lat.toFixed(6)}, ${originCoords.lng.toFixed(6)}`,
-        origin_lat: originCoords.lat,
-        origin_lng: originCoords.lng,
-        origin_accuracy: originAccuracy,
-        origin_source: originSource ?? "gps",
-        // Destination — LOCKED to event
-        destination_address: event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title,
-        destination_lat: event.latitude,
-        destination_lng: event.longitude,
+        pickup_address: resolvedOriginAddr || `${resolvedOrigin.lat.toFixed(6)}, ${resolvedOrigin.lng.toFixed(6)}`,
+        origin_lat: resolvedOrigin.lat,
+        origin_lng: resolvedOrigin.lng,
+        origin_accuracy: resolvedOriginAccuracy,
+        origin_source: resolvedOriginSource ?? (originApproximate ? "fallback_address" : "gps"),
+        destination_address: resolvedDestAddr,
+        destination_lat: resolvedDestLat,
+        destination_lng: resolvedDestLng,
         passengers_count: passengersCount,
         seats_available: Math.min(4, Math.max(1, passengersCount)),
-        price_note: priceNote || "Rachada combinada no chat",
+        price_note: priceNote || "Valor final combinado no chat",
         notes: notes?.trim() || null,
         status: "open",
       } as any);
@@ -508,7 +571,23 @@ export default function V3RideRequest() {
               <Lock className="w-3 h-3" /> O destino é travado no evento selecionado pela Roxou.
             </p>
           </div>
+          {(event.latitude == null || event.longitude == null) && !destCoords && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+              <div className="flex items-start gap-1.5 text-[11px] text-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>Não encontramos a localização exata do destino. Confirme o endereço manualmente para continuar.</span>
+              </div>
+              <Label className="text-xs text-muted-foreground">Endereço do destino</Label>
+              <Input
+                value={manualDestAddress}
+                onChange={(e) => setManualDestAddress(e.target.value.slice(0, 200))}
+                placeholder="Ex: Rua, número, bairro"
+                className="h-11 rounded-xl bg-card border-border/40 text-sm"
+              />
+            </div>
+          )}
         </section>
+
 
         {/* Step 2 — Origin via GPS */}
         <section className="rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl p-4 space-y-3 shadow-[0_0_30px_-15px_hsl(var(--primary)/0.4)]">
@@ -536,6 +615,29 @@ export default function V3RideRequest() {
 
           {geoError && (
             <p className="text-[11px] text-destructive">{geoError}</p>
+          )}
+
+          {/* Fallback: manual pickup address */}
+          <div className="space-y-2 rounded-2xl border border-border/40 bg-card/30 p-3">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5" /> Ou digite o endereço de embarque
+            </Label>
+            <Input
+              value={manualOriginAddress}
+              onChange={(e) => setManualOriginAddress(e.target.value.slice(0, 200))}
+              placeholder="Ex: Rua, número, bairro"
+              className="h-11 rounded-xl bg-card border-border/40 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Use se o GPS estiver impreciso. O endereço será priorizado sobre o pin do mapa.
+            </p>
+          </div>
+
+          {originAccuracy != null && originAccuracy > 1000 && !manualOriginAddress.trim() && (
+            <div className="flex items-start gap-1.5 rounded-xl border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>GPS com baixa precisão. Ajuste o ponto manualmente ou digite o endereço de embarque.</span>
+            </div>
           )}
 
           {originCoords && (
@@ -592,7 +694,7 @@ export default function V3RideRequest() {
             </div>
           )}
 
-          {event?.latitude != null && event?.longitude != null && (
+          {(event?.latitude != null && event?.longitude != null) ? (
             <RoxouRideMap
               originCoords={originCoords}
               destinationCoords={{ lat: event.latitude, lng: event.longitude }}
@@ -601,7 +703,16 @@ export default function V3RideRequest() {
               originLabel="Seu ponto de embarque"
               height={220}
             />
-          )}
+          ) : destCoords ? (
+            <RoxouRideMap
+              originCoords={originCoords}
+              destinationCoords={destCoords}
+              onOriginChange={handleOriginPinChange}
+              destinationLabel={event.title}
+              originLabel="Seu ponto de embarque"
+              height={220}
+            />
+          ) : null}
 
           <a
             href={originAddress && event.address
@@ -681,13 +792,16 @@ export default function V3RideRequest() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Valor / rachada</Label>
+            <Label className="text-xs text-muted-foreground">Valor sugerido</Label>
             <Input
               value={priceNote}
               onChange={(e) => setPriceNote(e.target.value.slice(0, 80))}
-              placeholder="Ex: R$ 20 por pessoa ou combinar"
+              placeholder="Ex: R$ 20 por pessoa (a combinar)"
               className="h-11 rounded-xl bg-card border-border/40 text-sm"
             />
+            <p className="text-[10px] text-muted-foreground">
+              O valor final pode ser combinado diretamente entre passageiro e motorista.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -703,11 +817,11 @@ export default function V3RideRequest() {
 
         <Button
           type="submit"
-          disabled={loading || windowClosed || !originCoords}
+          disabled={loading || windowClosed || (!originCoords && !manualOriginAddress.trim())}
           className="w-full h-12 rounded-xl font-semibold text-sm gap-2"
         >
           <Send className="w-4 h-4" />
-          {loading ? "Enviando..." : !originCoords ? "Capture seu GPS para continuar" : "Publicar pedido"}
+          {loading ? "Enviando..." : (!originCoords && !manualOriginAddress.trim()) ? "Informe origem (GPS ou endereço)" : "Publicar pedido"}
         </Button>
       </form>
     </div>

@@ -168,15 +168,20 @@ export default function V3DriverBoard() {
                   <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
                 </div>
                 <div className="space-y-1.5">
-                  {req.pickup_address && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MapPin className="w-3.5 h-3.5 text-primary" />
-                      <span>De: {req.pickup_address}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    const raw = req.pickup_address?.trim() || "";
+                    const isRawCoord = /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(raw);
+                    const display = !raw || isRawCoord ? "Localização aproximada no mapa" : raw;
+                    return (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin className="w-3.5 h-3.5 text-primary" />
+                        <span>Embarque: {display}</span>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <MapPin className="w-3.5 h-3.5 text-primary" />
-                    <span>Para: {req.destination_address || req.venue_name || "—"}</span>
+                    <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
                   </div>
                   {req.event_date && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -190,8 +195,11 @@ export default function V3DriverBoard() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <WalletCards className="w-3.5 h-3.5" />
-                    <span>{(req as any).price_note || "Rachada a combinar"}</span>
+                    <span>Valor sugerido: {(req as any).price_note || "a combinar com o passageiro"}</span>
                   </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    A Roxou apenas conecta passageiros e motoristas. O valor e os detalhes devem ser combinados entre as partes.
+                  </p>
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
                   {Array.from({ length: 4 }).map((_, i) => {
@@ -245,7 +253,7 @@ export default function V3DriverBoard() {
                       ) : (
                         <Check className="w-3.5 h-3.5" />
                       )}
-                      {closed ? "Encerrado" : "Aceitar corrida"}
+                      {closed ? "Encerrado" : "Tenho interesse"}
                     </Button>
                   )}
                 </div>
