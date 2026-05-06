@@ -433,28 +433,7 @@ const EstabelecimentosAudit = () => {
             {globalBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             Análise IA da base
           </button>
-          <button
-            onClick={async () => {
-              const targets = items.filter(e => e.address && (e.latitude == null || e.longitude == null));
-              if (!targets.length) { toast.message("Nada a geocodificar"); return; }
-              toast.message(`Geocodificando ${targets.length}...`);
-              let ok = 0; const failed: { name: string; error: string }[] = [];
-              for (const e of targets) {
-                const r = await geocodeOne(e);
-                if (r.ok) ok++; else failed.push({ name: e.name, error: r.error || "?" });
-                await new Promise(r => setTimeout(r, 250));
-              }
-              if (failed.length === 0) {
-                toast.success(`${ok} atualizado(s)`);
-              } else {
-                console.warn("Geocode failures:", failed);
-                toast.error(`${ok} ok · ${failed.length} falharam: ${failed.slice(0, 3).map(f => f.name).join(", ")}${failed.length > 3 ? "..." : ""}`);
-              }
-            }}
-            className="rounded-lg bg-secondary/60 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
-          >
-            Geocodificar faltantes
-          </button>
+          {/* Bulk geocoding desativado — usar fluxo manual por card. */}
           <Link to="/admin/parceiros/novo" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
             Novo
           </Link>
