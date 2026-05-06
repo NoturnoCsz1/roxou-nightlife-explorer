@@ -354,6 +354,13 @@ const EstabelecimentosAudit = () => {
     if (error) { toast.error("Falha ao salvar"); return; }
     setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: lat, longitude: lng } : p));
     toast.success("Coordenadas salvas");
+    await reloadOne(e.id);
+  }
+
+  async function reloadOne(id: string) {
+    const { data, error } = await supabase.from("partners").select("*").eq("id", id).maybeSingle();
+    if (error || !data) return;
+    setItems(prev => prev.map(p => p.id === id ? ({ ...p, ...(data as any) }) : p));
   }
 
   async function generateCoordinates(e: Establishment) {
