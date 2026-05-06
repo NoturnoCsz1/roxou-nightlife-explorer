@@ -31,7 +31,7 @@ export default function V3Layout() {
   const driverItem = isDriver
     ? { to: "/motorista", icon: Shield, label: "Área do motorista" }
     : { to: "/cadastro-motorista", icon: BadgeCheck, label: "Quero ser motorista" };
-  const allDesktopItems = [...NAV_ITEMS, ...DESKTOP_ITEMS, driverItem];
+  const allDesktopItems = [...NAV_ITEMS.filter(i => i.to !== "/perfil"), ...DESKTOP_EXTRA_ITEMS, driverItem];
 
   const displayName = profile?.display_name?.trim() || user?.email?.split("@")[0] || "Visitante";
   const nickname = (profile as any)?.nickname?.trim() || null;
