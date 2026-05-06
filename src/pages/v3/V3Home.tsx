@@ -1071,6 +1071,7 @@ const DESKTOP_CATEGORIES = [
   { key: "bar", label: "Bares", icon: Beer },
   { key: "festival", label: "Festivais", icon: Music },
   { key: "gastrobar", label: "Gastrobar", icon: Zap },
+  { key: "restaurante", label: "Restaurantes", icon: Utensils },
 ];
 
 function DesktopCategoriesPanel() {
