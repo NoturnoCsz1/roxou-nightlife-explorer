@@ -34,10 +34,25 @@ const Footer = () => (
         <div>
           <h3 className="font-bold text-foreground mb-2">ROXOU</h3>
           <ul className="space-y-1.5 text-muted-foreground">
-            <li><Link to="/indica" className="hover:text-primary transition-colors">Indicar evento</Link></li>
+            <li><Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link></li>
+            <li><Link to="/contato" className="hover:text-primary transition-colors">Contato</Link></li>
+            <li><Link to="/cadastro-motorista" className="hover:text-primary transition-colors">Seja motorista</Link></li>
             <li><Link to="/" className="hover:text-primary transition-colors">Página inicial</Link></li>
           </ul>
         </div>
+      </nav>
+
+      {/* Links legais obrigatórios */}
+      <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-4 text-[11px] text-muted-foreground">
+        <Link to="/privacy" className="hover:text-primary transition-colors">Privacidade</Link>
+        <span className="opacity-40">·</span>
+        <Link to="/terms" className="hover:text-primary transition-colors">Termos</Link>
+        <span className="opacity-40">·</span>
+        <Link to="/remover-dados" className="hover:text-primary transition-colors">Remover dados</Link>
+        <span className="opacity-40">·</span>
+        <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
+        <span className="opacity-40">·</span>
+        <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
       </nav>
 
       <div className="border-t border-border/20 pt-4 md:flex md:items-center md:justify-between text-center">

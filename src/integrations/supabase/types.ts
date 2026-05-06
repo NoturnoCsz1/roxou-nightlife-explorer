@@ -263,6 +263,141 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_applications: {
+        Row: {
+          accepted_connection_only: boolean
+          accepted_data_removal: boolean
+          accepted_privacy: boolean
+          accepted_terms: boolean
+          admin_notes: string | null
+          apps_experience: string[] | null
+          attends_events: boolean | null
+          availability: string[] | null
+          city: string
+          cpf: string
+          created_at: string
+          declared_truthful: boolean
+          driver_status: string
+          email: string
+          face_photo_url: string | null
+          full_name: string
+          id: string
+          neighborhood: string | null
+          receive_driver_lead_emails: boolean
+          regions: string | null
+          understood_suspension: boolean
+          updated_at: string
+          user_id: string | null
+          vehicle_color: string | null
+          vehicle_good_condition: boolean | null
+          vehicle_model: string | null
+          vehicle_photo_url: string | null
+          vehicle_plate: string | null
+          vehicle_year: string | null
+          whatsapp: string
+        }
+        Insert: {
+          accepted_connection_only?: boolean
+          accepted_data_removal?: boolean
+          accepted_privacy?: boolean
+          accepted_terms?: boolean
+          admin_notes?: string | null
+          apps_experience?: string[] | null
+          attends_events?: boolean | null
+          availability?: string[] | null
+          city: string
+          cpf: string
+          created_at?: string
+          declared_truthful?: boolean
+          driver_status?: string
+          email: string
+          face_photo_url?: string | null
+          full_name: string
+          id?: string
+          neighborhood?: string | null
+          receive_driver_lead_emails?: boolean
+          regions?: string | null
+          understood_suspension?: boolean
+          updated_at?: string
+          user_id?: string | null
+          vehicle_color?: string | null
+          vehicle_good_condition?: boolean | null
+          vehicle_model?: string | null
+          vehicle_photo_url?: string | null
+          vehicle_plate?: string | null
+          vehicle_year?: string | null
+          whatsapp: string
+        }
+        Update: {
+          accepted_connection_only?: boolean
+          accepted_data_removal?: boolean
+          accepted_privacy?: boolean
+          accepted_terms?: boolean
+          admin_notes?: string | null
+          apps_experience?: string[] | null
+          attends_events?: boolean | null
+          availability?: string[] | null
+          city?: string
+          cpf?: string
+          created_at?: string
+          declared_truthful?: boolean
+          driver_status?: string
+          email?: string
+          face_photo_url?: string | null
+          full_name?: string
+          id?: string
+          neighborhood?: string | null
+          receive_driver_lead_emails?: boolean
+          regions?: string | null
+          understood_suspension?: boolean
+          updated_at?: string
+          user_id?: string | null
+          vehicle_color?: string | null
+          vehicle_good_condition?: boolean | null
+          vehicle_model?: string | null
+          vehicle_photo_url?: string | null
+          vehicle_plate?: string | null
+          vehicle_year?: string | null
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      driver_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          report_type: string
+          reported_user_id: string | null
+          reporter_id: string | null
+          ride_request_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          report_type: string
+          reported_user_id?: string | null
+          reporter_id?: string | null
+          ride_request_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          report_type?: string
+          reported_user_id?: string | null
+          reporter_id?: string | null
+          ride_request_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       eventou_imports: {
         Row: {
           address: string | null

@@ -67,6 +67,7 @@ import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
 import PertoDeMim from "./pages/PertoDeMim";
 import RemoverDados from "./pages/RemoverDados";
+import CadastroMotorista from "./pages/CadastroMotorista";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*)
 import LegacyIndex from "./pages/Index";
@@ -130,6 +131,9 @@ const App = () => (
           {/* ========= ROXOU V3 (raiz pública) ========= */}
           <Route path="/manutencao" element={<Maintenance />} />
           <Route path="/remover-dados" element={<RemoverDados />} />
+          <Route path="/cadastro-motorista" element={<CadastroMotorista />} />
+          {/* /pedir-carona deixou de ser fluxo público — redireciona para a agenda */}
+          <Route path="/pedir-carona" element={<Navigate to="/agenda" replace />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
 
           {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
@@ -145,7 +149,7 @@ const App = () => (
             <Route path="evento/:slug" element={<V3EventDetail />} />
             <Route path="local/:slug" element={<V3LocalDetail />} />
             <Route path="transporte" element={<V3Transport />} />
-            <Route path="pedir-carona" element={<V3RideRequest />} />
+            {/* pedir-carona desativado do fluxo público (redirecionado em rota raiz) */}
             <Route path="motorista" element={<V3DriverBoard />} />
             <Route path="chat/:requestId" element={<V3Chat />} />
             <Route path="meus-pedidos" element={<V3MyRides />} />
