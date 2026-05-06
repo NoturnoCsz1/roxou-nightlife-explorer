@@ -672,6 +672,14 @@ function BentoGrid() {
         "radial-gradient(circle at 30% 30%, hsl(var(--v3-neon) / 0.34), transparent 28%), radial-gradient(circle at 80% 80%, hsl(var(--v3-neon-soft) / 0.28), transparent 28%), linear-gradient(135deg, hsl(var(--card) / 0.92), hsl(var(--secondary) / 0.78))",
       texture: "bar",
     },
+    {
+      categoryKey: "gastrobar",
+      label: "Gastrobar",
+      icon: Zap,
+      background:
+        "radial-gradient(circle at 22% 30%, hsl(var(--accent) / 0.32), transparent 28%), radial-gradient(circle at 82% 72%, hsl(var(--primary) / 0.26), transparent 28%), linear-gradient(135deg, hsl(var(--secondary) / 0.92), hsl(var(--card) / 0.82))",
+      texture: "bar",
+    },
   ] as const;
 
   return (
@@ -749,7 +757,7 @@ function CategoryBentoCard({
         <Icon className="w-4.5 h-4.5 text-primary drop-shadow-[0_0_10px_hsl(var(--primary)/0.8)]" />
       </div>
       <div className="absolute bottom-4 left-4 right-4">
-        <span className="font-display text-xl font-black uppercase tracking-wide text-foreground v3-neon-text leading-none">
+        <span className="font-display text-[17px] font-black uppercase tracking-wide text-foreground v3-neon-text leading-tight line-clamp-2 break-words">
           {label}
         </span>
       </div>
@@ -1071,6 +1079,7 @@ const DESKTOP_CATEGORIES = [
   { key: "bar", label: "Bares", icon: Beer },
   { key: "festival", label: "Festivais", icon: Music },
   { key: "gastrobar", label: "Gastrobar", icon: Zap },
+  { key: "restaurante", label: "Restaurantes", icon: Utensils },
 ];
 
 function DesktopCategoriesPanel() {
@@ -1190,9 +1199,9 @@ function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
           {events.length} rolês
         </span>
       </div>
-      <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pr-2 scrollbar-hide">
+      <div className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 pr-5 scrollbar-hide [scroll-padding-right:1.25rem]">
         {events.map((ev) => (
-          <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px]" />
+          <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px] snap-start rounded-3xl overflow-hidden" />
         ))}
       </div>
     </section>
