@@ -129,7 +129,10 @@ export default function CadastroMotorista() {
         }
         return;
       }
-      toast.success("Cadastro enviado para análise.");
+      toast.success("Cadastro enviado para análise da equipe Roxou.", {
+        description: "A aprovação será feita pela equipe Roxou no painel administrativo.",
+        duration: 6000,
+      });
       navigate("/perfil");
     } finally {
       setSubmitting(false);
