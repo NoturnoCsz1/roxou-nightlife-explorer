@@ -520,12 +520,18 @@ export default function V3RideRequest() {
           <Button
             type="button"
             onClick={useMyLocation}
-            disabled={geoLoading}
+            disabled={geoLoading && !originCoords}
             className="w-full h-11 rounded-xl gap-2"
             variant={originCoords ? "outline" : "default"}
           >
-            <Crosshair className="w-4 h-4" />
-            {geoLoading ? "Capturando GPS..." : originCoords ? "Recapturar localização" : "Usar minha localização (GPS)"}
+            <Crosshair className={`w-4 h-4 ${gpsRefining ? "animate-pulse" : ""}`} />
+            {gpsRefining && !originCoords
+              ? "Capturando GPS..."
+              : gpsRefining && originCoords
+                ? `Melhorando precisão (~${Math.round(originAccuracy ?? 0)}m)...`
+                : originCoords
+                  ? "Melhorar precisão"
+                  : "Usar minha localização (GPS)"}
           </Button>
 
           {geoError && (
@@ -538,14 +544,18 @@ export default function V3RideRequest() {
                 ? "border-primary/50 bg-primary/10"
                 : "border-border/40 bg-card/40"
             }`}>
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary/80 font-bold">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary/80 font-bold flex-wrap">
                 <Navigation className="w-3 h-3" />
                 {originConfirmed ? "Ponto confirmado" : "Ponto de embarque selecionado"}
-                {originAccuracy != null && originSource === "gps" && (
-                  <span className="text-muted-foreground normal-case font-normal">
-                    · precisão ~{Math.round(originAccuracy)}m
-                  </span>
-                )}
+                {originAccuracy != null && originSource === "gps" && (() => {
+                  const a = originAccuracy;
+                  const color = a <= 30 ? "text-emerald-400" : a <= 100 ? "text-amber-400" : "text-destructive";
+                  return (
+                    <span className={`normal-case font-bold ${color}`}>
+                      · ~{Math.round(a)}m {gpsRefining && "(refinando...)"}
+                    </span>
+                  );
+                })()}
               </div>
               <p className="text-xs text-foreground break-words">
                 {originAddress || `Lat: ${originCoords.lat.toFixed(5)}, Lng: ${originCoords.lng.toFixed(5)}`}
