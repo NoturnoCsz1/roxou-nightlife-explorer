@@ -25,6 +25,8 @@ interface Establishment {
   instagram_validated: boolean | null;
   latitude: number | null;
   longitude: number | null;
+  maps_place_id?: string | null;
+  formatted_address?: string | null;
   updated_at: string | null;
   created_at: string;
 }
@@ -38,6 +40,54 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   oficial:    { label: "Oficial",    cls: "bg-primary/15 text-primary" },
   bloqueado:  { label: "Bloqueado",  cls: "bg-destructive/10 text-destructive" },
 };
+
+let mapsLoadPromise: Promise<void> | null = null;
+let mapsApiKey: string | null = null;
+
+async function loadGoogleMapsForGeocode(): Promise<void> {
+  if ((window as any).google?.maps?.Geocoder) return;
+  if (mapsLoadPromise) return mapsLoadPromise;
+  mapsLoadPromise = (async () => {
+    if (!mapsApiKey) {
+      const { data, error } = await supabase.functions.invoke("maps-key");
+      if (error || !data?.key) throw new Error("Falha ao carregar Google Maps");
+      mapsApiKey = data.key;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=geocoding&language=pt-BR&loading=async`;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Falha ao carregar Google Maps"));
+      document.head.appendChild(script);
+    });
+  })();
+  return mapsLoadPromise;
+}
+
+async function geocodeInBrowser(candidates: string[]) {
+  await loadGoogleMapsForGeocode();
+  const google = (window as any).google;
+  const geocoder = new google.maps.Geocoder();
+  for (const address of candidates) {
+    try {
+      const response = await geocoder.geocode({ address, region: "BR", componentRestrictions: { country: "BR" } });
+      const result = response.results?.[0];
+      const loc = result?.geometry?.location;
+      if (loc) {
+        return {
+          latitude: loc.lat(),
+          longitude: loc.lng(),
+          formatted_address: result.formatted_address || address,
+          place_id: result.place_id || null,
+        };
+      }
+    } catch (_) {
+      // Try next candidate.
+    }
+  }
+  return null;
+}
 
 type FlagKey = "missing_address" | "missing_instagram" | "missing_coordinates" | "missing_category";
 function computeFlags(e: Establishment): FlagKey[] {
@@ -221,19 +271,38 @@ const EstabelecimentosAudit = () => {
     const address = norm(e.address);
     const neighborhood = e.neighborhood ? norm(e.neighborhood) : "";
     const city = norm(e.city || "Presidente Prudente");
+    const addrNoNeighborhood = address.replace(/\s*-\s*[^,]*$/, "");
+    const candidates = [
+      [address, neighborhood, city, "SP", "Brasil"],
+      [address, city, "SP", "Brasil"],
+      [addrNoNeighborhood, city, "SP", "Brasil"],
+      [e.name, city, "SP", "Brasil"],
+    ]
+      .map(parts => parts.filter(Boolean).map(String).join(", "))
+      .filter((q, i, arr) => q.length > 4 && arr.indexOf(q) === i);
     try {
       const { data, error } = await supabase.functions.invoke("geocode-address", {
-        body: { address, neighborhood, city, name: e.name },
+        body: { address, neighborhood, city, state: "SP", country: "Brasil", name: e.name },
       });
-      if (error || !data?.latitude) {
-        return { ok: false, error: data?.error || error?.message || "Endereço não encontrado" };
+      let result = data?.ok !== false && data?.latitude && data?.longitude ? data : null;
+      if (!result && (data?.status === "REQUEST_DENIED" || error)) {
+        result = await geocodeInBrowser(candidates);
       }
+      if (!result?.latitude || !result?.longitude) {
+        return { ok: false, error: "Endereço não encontrado. Revise o endereço ou tente simplificar." };
+      }
+      const payload = {
+        latitude: result.latitude,
+        longitude: result.longitude,
+        maps_place_id: result.place_id || null,
+        formatted_address: result.formatted_address || null,
+      };
       const { error: updErr } = await supabase
         .from("partners")
-        .update({ latitude: data.latitude, longitude: data.longitude })
+        .update(payload as any)
         .eq("id", e.id);
       if (updErr) return { ok: false, error: updErr.message };
-      setItems(prev => prev.map(p => p.id === e.id ? { ...p, latitude: data.latitude, longitude: data.longitude } : p));
+      setItems(prev => prev.map(p => p.id === e.id ? { ...p, ...payload } : p));
       return { ok: true };
     } catch (err: any) {
       return { ok: false, error: err.message || "Falha no geocoding" };
@@ -246,7 +315,7 @@ const EstabelecimentosAudit = () => {
     const res = await geocodeOne(e);
     setBusy(null);
     if (res.ok) toast.success("Coordenadas salvas");
-    else toast.error(`${e.name}: ${res.error}. Revise o endereço ou tente simplificar.`);
+    else toast.error(`${e.name}: ${res.error || "Endereço não encontrado. Revise o endereço ou tente simplificar."}`);
   }
 
   return (
