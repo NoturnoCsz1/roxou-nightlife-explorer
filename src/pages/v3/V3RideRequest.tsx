@@ -242,6 +242,7 @@ export default function V3RideRequest() {
         setOriginCoords({ lat: latitude, lng: longitude });
         setOriginAccuracy(accuracy ?? null);
         setOriginSource("gps");
+        setOriginConfirmed(false);
         const addr = await reverseGeocode(latitude, longitude);
         setOriginAddress(addr);
         
