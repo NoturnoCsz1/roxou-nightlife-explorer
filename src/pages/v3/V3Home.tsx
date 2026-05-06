@@ -1334,7 +1334,7 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
         } ${timeline ? "min-h-[178px]" : isLg ? "w-[260px] min-h-[320px]" : "w-[190px] min-h-[260px]"}`}
         style={{
           boxShadow:
-            "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 15px hsl(var(--primary) / 0.18), 0 14px 36px rgba(0,0,0,0.5)",
+            "inset 0 1px 0 rgba(255,255,255,0.05), 0 0 8px hsl(var(--primary) / 0.10), 0 8px 24px rgba(0,0,0,0.4)",
         }}
       >
         <Link to={`/evento/${ev.slug}`} className="absolute inset-0 block">
