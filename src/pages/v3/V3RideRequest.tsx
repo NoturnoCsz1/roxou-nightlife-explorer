@@ -388,19 +388,24 @@ export default function V3RideRequest() {
     let resolvedDestAddr =
       event.address || event.partner?.address || event.venue_name || event.partner?.name || event.title;
 
+    let destApproximate = false;
     if ((resolvedDestLat == null || resolvedDestLng == null)) {
       if (!manualDestAddress.trim()) {
         toast.error("Confirme o endereço do destino para continuar.");
         return;
       }
-      const geo = await geocodeAddress(manualDestAddress.trim());
-      if (!geo) {
-        toast.error("Não conseguimos localizar o endereço do destino. Tente outro endereço.");
-        return;
-      }
-      resolvedDestLat = geo.lat;
-      resolvedDestLng = geo.lng;
       resolvedDestAddr = manualDestAddress.trim();
+      const geo = await geocodeAddress(manualDestAddress.trim());
+      if (geo) {
+        resolvedDestLat = geo.lat;
+        resolvedDestLng = geo.lng;
+      } else {
+        // Não bloqueia: salva endereço textual
+        resolvedDestLat = null;
+        resolvedDestLng = null;
+        destApproximate = true;
+        toast.message("Endereço de destino salvo como texto. Será confirmado no chat com o motorista.");
+      }
     }
 
     if (!whatsapp.trim() || !/^\(\d{2}\) \d{4,5}-\d{4}$/.test(whatsapp)) {
