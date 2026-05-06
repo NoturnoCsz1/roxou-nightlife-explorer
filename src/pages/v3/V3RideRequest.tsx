@@ -305,7 +305,7 @@ export default function V3RideRequest() {
         venue_name: event.venue_name,
         event_date: rideTimestamp,
         // Origin (GPS-first)
-        pickup_address: originAddress,
+        pickup_address: originAddress || `${originCoords.lat.toFixed(6)}, ${originCoords.lng.toFixed(6)}`,
         origin_lat: originCoords.lat,
         origin_lng: originCoords.lng,
         origin_accuracy: originAccuracy,
