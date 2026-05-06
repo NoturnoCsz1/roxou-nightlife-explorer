@@ -129,7 +129,10 @@ export default function CadastroMotorista() {
         }
         return;
       }
-      toast.success("Cadastro enviado para análise.");
+      toast.success("Cadastro enviado para análise da equipe Roxou.", {
+        description: "A aprovação será feita pela equipe Roxou no painel administrativo.",
+        duration: 6000,
+      });
       navigate("/perfil");
     } finally {
       setSubmitting(false);
@@ -279,8 +282,8 @@ export default function CadastroMotorista() {
             {submitting ? "Enviando..." : "Enviar cadastro"}
           </Button>
 
-          <p className="text-[11px] text-muted-foreground text-center">
-            Cadastro enviado para análise. A Roxou irá revisar suas informações e poderá aprovar, solicitar ajustes ou recusar o cadastro.
+          <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+            Seu cadastro será enviado para análise. A aprovação será feita pela equipe Roxou no painel administrativo. Você não poderá acessar a área do motorista até ser aprovado.
           </p>
         </form>
       </main>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,17 @@ interface Props {
   height?: number | string;
   showCTAs?: boolean;
   heatmap?: boolean;
+  selectionMode?: boolean;
+  onMapClick?: (loc: LatLng) => void;
+}
+
+function ClickHandler({ onClick }: { onClick: (loc: LatLng) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+  return null;
 }
 
 const EVENT_ICON = L.divIcon({
@@ -53,7 +64,7 @@ function FitAll({ points }: { points: LatLng[] }) {
 }
 
 export default function RoxouNearbyEventsMap({
-  userLocation, events, height = 360, showCTAs = true, heatmap = false,
+  userLocation, events, height = 360, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
 }: Props) {
   const navigate = useNavigate();
 
@@ -91,6 +102,7 @@ export default function RoxouNearbyEventsMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitAll points={allPoints} />
+        {selectionMode && onMapClick && <ClickHandler onClick={onMapClick} />}
 
         {heatCircles.map((c, i) => (
           <Circle

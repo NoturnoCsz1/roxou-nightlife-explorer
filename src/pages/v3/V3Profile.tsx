@@ -181,6 +181,24 @@ export default function V3Profile() {
         <StatBentoCard to="/meus-pedidos" icon={Car} label="Caronas" value={rides.length} tone="show" className="col-span-2 lg:col-span-1 min-h-[92px] lg:min-h-[118px]" />
       </div>
 
+      <div className="px-4 lg:px-6 lg:max-w-5xl lg:mx-auto mt-3">
+        <Link
+          to="/perto-de-mim"
+          className="flex items-center justify-between gap-2 rounded-2xl v3-glass border border-primary/20 px-4 py-3 hover:border-primary/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/15 grid place-items-center text-primary">
+              <MapPin className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">Rolês perto de você</p>
+              <p className="text-[11px] text-muted-foreground">Eventos próximos da sua localização</p>
+            </div>
+          </div>
+          <span className="text-[11px] font-semibold text-primary">Abrir</span>
+        </Link>
+      </div>
+
       <div className="px-4 lg:px-6 lg:max-w-5xl lg:mx-auto space-y-4 lg:space-y-6">
 
       {/* ── Security + Followed Partners — side-by-side on desktop ── */}
