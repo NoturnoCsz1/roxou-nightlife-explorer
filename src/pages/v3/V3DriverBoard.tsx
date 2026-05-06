@@ -230,11 +230,26 @@ export default function V3DriverBoard() {
                   )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Users className="w-3.5 h-3.5" />
-                    <span>{(req as any).seats_available || req.passengers_count} vaga{((req as any).seats_available || req.passengers_count) > 1 ? "s" : ""} disponível{((req as any).seats_available || req.passengers_count) > 1 ? "eis" : ""}</span>
+                    <span>Solicitação ativa</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <WalletCards className="w-3.5 h-3.5" />
-                    <span>Valor sugerido: {(req as any).price_note || "a combinar com o passageiro"}</span>
+                    <span>
+                      {(() => {
+                        const note = ((req as any).price_note || "").trim();
+                        const placeholders = [
+                          "",
+                          "a combinar com o passageiro",
+                          "valor final combinado no chat",
+                          "combinado no chat",
+                          "a combinar",
+                        ];
+                        if (placeholders.includes(note.toLowerCase())) {
+                          return "Valor a combinar no chat";
+                        }
+                        return `Valor sugerido: ${note}`;
+                      })()}
+                    </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground italic">
                     A Roxou apenas conecta passageiros e motoristas. O valor e os detalhes devem ser combinados entre as partes.
