@@ -360,6 +360,8 @@ const EstabelecimentosAudit = () => {
     if (!e.address?.trim()) { toast.error("Cadastre o endereço primeiro"); return; }
     setBusy(e.id);
     const res = await geocodeOne(e);
+    // ensure local state reflects the persisted record
+    await reloadOne(e.id);
     setBusy(null);
     if (res.ok) toast.success(res.formatted ? `Salvo: ${res.formatted}` : "Coordenadas salvas");
     else {
