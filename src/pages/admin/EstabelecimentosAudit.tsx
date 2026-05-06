@@ -554,8 +554,12 @@ const EstabelecimentosAudit = () => {
                       {e.instagram_validated && <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />}
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${meta.cls}`}>{meta.label}</span>
                       {flags.length > 0 && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                          <AlertTriangle className="h-3 w-3" /> Dados incompletos
+                        <span
+                          title={flags.map(f => FLAG_LABELS[f] || f).join(", ")}
+                          className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-destructive/10 text-destructive"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          Dados incompletos: {flags.map(f => FLAG_LABELS[f] || f).join(", ")}
                         </span>
                       )}
                     </div>
@@ -577,7 +581,7 @@ const EstabelecimentosAudit = () => {
                       <div className="flex flex-wrap gap-1 mt-1">
                         {flags.map(f => (
                           <span key={f} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">
-                            {f.replace("missing_", "sem ").replace("_", " ")}
+                            {FLAG_LABELS[f] || f}
                           </span>
                         ))}
                       </div>
