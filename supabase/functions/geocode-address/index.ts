@@ -71,11 +71,34 @@ Deno.serve(async (req) => {
         .replace(/\bEstr\.?\b/gi, "Estrada");
 
     // Normalize abbreviated city names (Pres. Prudente, P. Prudente, etc.)
-    const normalizeCity = (s: string) =>
-      s
+    const normalizeCity = (s: string) => {
+      let out = s
         .replace(/\bPres(idente)?\.?\s+Prudente\b/gi, "Presidente Prudente")
-        .replace(/\bP\.\s*Prudente\b/gi, "Presidente Prudente")
-        .replace(/(^|[,\s])Prudente\b(?!\s*\w)/gi, "$1Presidente Prudente");
+        .replace(/\bP\.\s*Prudente\b/gi, "Presidente Prudente");
+      // Only expand bare "Prudente" if "Presidente Prudente" not already present
+      if (!/Presidente\s+Prudente/i.test(out)) {
+        out = out.replace(/(^|[,\s])Prudente\b(?!\s*\w)/gi, "$1Presidente Prudente");
+      }
+      return out;
+    };
+
+    // Remove duplicated city tokens like "Presidente Presidente Prudente"
+    const cleanDuplicateCity = (s: string) =>
+      s
+        .replace(/Presidente(\s+Presidente)+\s+Prudente/gi, "Presidente Prudente")
+        .replace(/(Presidente\s+Prudente)(\s+Presidente\s+Prudente)+/gi, "$1")
+        .replace(/\s+,/g, ",")
+        .replace(/,\s*,+/g, ",")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    // Strip CEP (00000-000 or 00000000) and trailing "- SP" / state suffixes
+    const stripCepAndState = (s: string) =>
+      s
+        .replace(/\b\d{5}-?\d{3}\b/g, "")
+        .replace(/\s*-\s*SP\b/gi, "")
+        .replace(/[,\s-]+$/g, "")
+        .trim();
 
     // Remove embedded city from the address string so we can append the canonical one
     const stripEmbeddedCity = (s: string, cityCanonical: string) => {
@@ -91,7 +114,8 @@ Deno.serve(async (req) => {
     const cityFinal = norm(normalizeCity(city || "")) || "Presidente Prudente";
     const stateFinal = norm(state) || "SP";
     const countryFinal = norm(country) || "Brasil";
-    const addressNormalizedCity = normalizeCity(norm(address));
+    const addressClean = stripCepAndState(norm(address));
+    const addressNormalizedCity = normalizeCity(addressClean);
     const addressN = stripEmbeddedCity(addressNormalizedCity, cityFinal);
     const addrNoNeighborhood = addressN.replace(/\s*-\s*[^,]*$/, "").trim();
     const addrExpanded = expandAbbr(addressN);
@@ -119,7 +143,7 @@ Deno.serve(async (req) => {
     ];
 
     const candidates = rawCandidates
-      .map((parts) => parts.filter(Boolean).join(", "))
+      .map((parts) => cleanDuplicateCity(parts.filter(Boolean).join(", ")))
       .filter((q, i, a) => q.length > 4 && a.indexOf(q) === i);
 
     let result: any = null;
