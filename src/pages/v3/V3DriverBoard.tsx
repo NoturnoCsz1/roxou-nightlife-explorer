@@ -198,9 +198,12 @@ export default function V3DriverBoard() {
                         <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
                         <span>Embarque: {display}</span>
                         {approx && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
-                            Confirmar ponto no chat
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+                              Ponto aproximado
+                            </span>
+                            <span className="text-[10px] text-amber-300/80">Confirmar local exato no chat</span>
+                          </>
                         )}
                       </div>
                     );
