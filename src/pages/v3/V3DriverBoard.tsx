@@ -296,6 +296,13 @@ export default function V3DriverBoard() {
                     </Button>
                   )}
                 </div>
+                <div className="flex justify-end pt-1">
+                  <ReportDialog
+                    rideRequestId={req.id}
+                    targetUserId={req.passenger_id}
+                    reportType="passenger"
+                  />
+                </div>
               </div>
             );
           })}
