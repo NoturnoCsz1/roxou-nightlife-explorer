@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -98,6 +98,11 @@ export default function V3RideRequest() {
   const [originSource, setOriginSource] = useState<"gps" | "manual_pin_adjustment" | "fallback_address" | null>(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [gpsRefining, setGpsRefining] = useState(false);
+  const [gpsAttempts, setGpsAttempts] = useState(0);
+  const watchIdRef = useRef<number | null>(null);
+  const watchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bestAccuracyRef = useRef<number>(Infinity);
 
   // Form
   const [eventDate, setEventDate] = useState("");
@@ -228,38 +233,99 @@ export default function V3RideRequest() {
     toast.success("Pin ajustado — confirme o ponto");
   };
 
+  const stopWatch = () => {
+    if (watchIdRef.current != null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    if (watchTimeoutRef.current) {
+      clearTimeout(watchTimeoutRef.current);
+      watchTimeoutRef.current = null;
+    }
+    setGpsRefining(false);
+    setGeoLoading(false);
+  };
+
   const useMyLocation = () => {
     if (!navigator.geolocation) {
       setGeoError("Geolocalização não suportada neste navegador");
       toast.error("Geolocalização não suportada");
       return;
     }
+    // Reset
+    stopWatch();
+    bestAccuracyRef.current = Infinity;
+    setGpsAttempts(0);
     setGeoLoading(true);
+    setGpsRefining(true);
     setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
+    setOriginConfirmed(false);
+
+    let firstFix = false;
+
+    const id = navigator.geolocation.watchPosition(
       async (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        setOriginCoords({ lat: latitude, lng: longitude });
-        setOriginAccuracy(accuracy ?? null);
-        setOriginSource("gps");
-        setOriginConfirmed(false);
-        const addr = await reverseGeocode(latitude, longitude);
-        setOriginAddress(addr);
-        
-        setGeoLoading(false);
-        toast.success("Localização capturada via GPS");
+        setGpsAttempts((n) => n + 1);
+
+        // Keep only the best (lowest) accuracy reading
+        if (accuracy != null && accuracy < bestAccuracyRef.current) {
+          bestAccuracyRef.current = accuracy;
+          setOriginCoords({ lat: latitude, lng: longitude });
+          setOriginAccuracy(accuracy);
+          setOriginSource("gps");
+
+          // Reverse geocode only on first fix or when meaningfully better
+          if (!firstFix) {
+            firstFix = true;
+            setGeoLoading(false);
+            reverseGeocode(latitude, longitude).then(setOriginAddress);
+          }
+        }
+
+        // Stop early if very accurate
+        if (accuracy != null && accuracy <= 25) {
+          stopWatch();
+          if (firstFix) reverseGeocode(latitude, longitude).then(setOriginAddress);
+          toast.success(`GPS preciso (~${Math.round(accuracy)}m)`);
+        }
       },
       (err) => {
-        setGeoLoading(false);
         const msg = err.code === err.PERMISSION_DENIED
           ? "Permissão de localização negada. Ative no navegador para continuar."
           : (err.message || "Não foi possível obter sua localização");
         setGeoError(msg);
-        toast.error(msg);
+        if (!firstFix) {
+          toast.error(msg);
+          stopWatch();
+        }
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
     );
+    watchIdRef.current = id;
+
+    // Hard cap: 12s of refinement
+    watchTimeoutRef.current = setTimeout(() => {
+      stopWatch();
+      if (bestAccuracyRef.current === Infinity) {
+        setGeoError("Não foi possível obter localização. Ajuste o pin manualmente no mapa.");
+        toast.error("GPS indisponível — ajuste o pin no mapa");
+      } else if (bestAccuracyRef.current > 100) {
+        toast.warning("GPS com baixa precisão — ajuste o pin no mapa");
+      } else {
+        toast.success(`Localização refinada (~${Math.round(bestAccuracyRef.current)}m)`);
+      }
+    }, 12000);
   };
+
+  // Auto-start GPS refinement when entering the page
+  useEffect(() => {
+    if (!eventLoading && !eventError && !originCoords) {
+      useMyLocation();
+    }
+    return () => stopWatch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventLoading, eventError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -454,12 +520,18 @@ export default function V3RideRequest() {
           <Button
             type="button"
             onClick={useMyLocation}
-            disabled={geoLoading}
+            disabled={geoLoading && !originCoords}
             className="w-full h-11 rounded-xl gap-2"
             variant={originCoords ? "outline" : "default"}
           >
-            <Crosshair className="w-4 h-4" />
-            {geoLoading ? "Capturando GPS..." : originCoords ? "Recapturar localização" : "Usar minha localização (GPS)"}
+            <Crosshair className={`w-4 h-4 ${gpsRefining ? "animate-pulse" : ""}`} />
+            {gpsRefining && !originCoords
+              ? "Capturando GPS..."
+              : gpsRefining && originCoords
+                ? `Melhorando precisão (~${Math.round(originAccuracy ?? 0)}m)...`
+                : originCoords
+                  ? "Melhorar precisão"
+                  : "Usar minha localização (GPS)"}
           </Button>
 
           {geoError && (
@@ -472,14 +544,18 @@ export default function V3RideRequest() {
                 ? "border-primary/50 bg-primary/10"
                 : "border-border/40 bg-card/40"
             }`}>
-              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary/80 font-bold">
+              <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary/80 font-bold flex-wrap">
                 <Navigation className="w-3 h-3" />
                 {originConfirmed ? "Ponto confirmado" : "Ponto de embarque selecionado"}
-                {originAccuracy != null && originSource === "gps" && (
-                  <span className="text-muted-foreground normal-case font-normal">
-                    · precisão ~{Math.round(originAccuracy)}m
-                  </span>
-                )}
+                {originAccuracy != null && originSource === "gps" && (() => {
+                  const a = originAccuracy;
+                  const color = a <= 30 ? "text-emerald-400" : a <= 100 ? "text-amber-400" : "text-destructive";
+                  return (
+                    <span className={`normal-case font-bold ${color}`}>
+                      · ~{Math.round(a)}m {gpsRefining && "(refinando...)"}
+                    </span>
+                  );
+                })()}
               </div>
               <p className="text-xs text-foreground break-words">
                 {originAddress || `Lat: ${originCoords.lat.toFixed(5)}, Lng: ${originCoords.lng.toFixed(5)}`}
