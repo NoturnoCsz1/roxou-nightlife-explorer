@@ -291,11 +291,14 @@ export default function V3Home() {
   }, [events, trendingIds, vibeFilter]);
 
   // Destaque da Semana — prioriza evento featured com vídeo POV
+  // Curadoria Roxou / Destaque da Semana — apenas Festas, Shows e Baladas
   const weeklyHighlight = useMemo(() => {
-    const candidates = events.filter(e => !usedIds.has(e.id));
+    const ALLOWED = new Set(["festa", "show", "balada"]);
+    const candidates = events.filter(e => !usedIds.has(e.id) && ALLOWED.has(e.category));
     return candidates.find(e => e.featured && e.video_url) ||
-           candidates.find(e => e.video_url) ||
            candidates.find(e => e.featured) ||
+           candidates.find(e => e.video_url) ||
+           candidates[0] ||
            null;
   }, [events, usedIds]);
   if (weeklyHighlight) usedIds.add(weeklyHighlight.id);
