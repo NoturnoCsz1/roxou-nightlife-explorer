@@ -584,36 +584,36 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
       <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
 
       {/* Top badges — AUTHORITY COUNTER */}
-      <div className="absolute top-20 lg:top-8 left-4 lg:left-10 right-4 lg:right-10 flex items-center gap-2 z-10">
-        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
-          {isToday ? <Flame className="w-3.5 h-3.5 text-primary-foreground" /> : <Sparkles className="w-3.5 h-3.5 text-primary-foreground" />}
-          <span className="text-[10px] lg:text-xs font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
+      <div className="absolute top-20 lg:top-8 left-4 lg:left-10 right-4 lg:right-10 flex items-center gap-1.5 z-10">
+        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
+          {isToday ? <Flame className="w-3 h-3 text-primary-foreground" /> : <Sparkles className="w-3 h-3 text-primary-foreground" />}
+          <span className="text-[10px] font-extrabold text-primary-foreground uppercase tracking-[0.15em]">{dayLabel}</span>
         </span>
         {todayCount > 0 && (
-          <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full v3-glass-strong border border-accent/40 v3-pulse-glow">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full v3-glass-strong border border-accent/40 v3-pulse-glow">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-70 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent shadow-[0_0_10px_hsl(var(--accent))]" />
             </span>
-            <span className="text-[10px] lg:text-xs font-black text-foreground uppercase tracking-[0.18em]">
+            <span className="text-[10px] font-black text-foreground uppercase tracking-[0.18em]">
               <span className="text-accent">{todayCount}</span> {todayCount === 1 ? "evento" : "eventos"} hoje
             </span>
           </span>
         )}
       </div>
 
-      {/* Bottom content — título mais leve, hierarquia respirada */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 pb-10 lg:px-10 lg:pb-9 space-y-4 lg:space-y-4 z-10 lg:max-w-2xl">
-        <div className="space-y-2.5 lg:space-y-2">
-          <span className="inline-block text-[10px] lg:text-[11px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
+      {/* Bottom content — compacto e premium */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-6 lg:pb-7 space-y-3 z-10 lg:max-w-2xl">
+        <div className="space-y-2">
+          <span className="inline-block text-[10px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
           </span>
           <h1
-            className="mt-4 font-display font-semibold line-clamp-2 break-words tracking-normal text-foreground"
+            className="mt-5 font-display font-semibold line-clamp-2 break-words tracking-normal text-foreground"
             style={{
-              fontSize: "clamp(22px, 2.2vw, 34px)",
-              lineHeight: "1.08",
-              maxWidth: "620px",
+              fontSize: "clamp(18px, 1.6vw, 26px)",
+              lineHeight: "1.12",
+              maxWidth: "520px",
               textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)",
             }}
           >
@@ -622,39 +622,39 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
         </div>
 
         {/* Info row with neon icons */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-0.5">
           {ev.venue_name && (
             <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <MapPin className="w-3 h-3 lg:w-4 lg:h-4 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.8)]" />
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                <MapPin className="w-3.5 h-3.5 text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.8)]" />
               </div>
-              <span className="text-sm lg:text-base font-bold text-foreground/95 truncate max-w-[180px] lg:max-w-[320px]">{ev.venue_name}</span>
+              <span className="text-xs lg:text-sm font-bold text-foreground/95 truncate max-w-[180px] lg:max-w-[280px]">{ev.venue_name}</span>
               {venueRank && venueRank <= 3 && (
-                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-[8px] lg:text-[10px] font-bold text-primary">#{venueRank}</span>
+                <span className="px-1.5 py-0.5 rounded bg-primary/20 text-[9px] font-bold text-primary">#{venueRank}</span>
               )}
             </div>
           )}
           <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 lg:w-8 lg:h-8 rounded-full bg-accent/20 flex items-center justify-center">
-              <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-accent drop-shadow-[0_0_6px_hsl(var(--accent)/0.8)]" />
+            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5 text-accent drop-shadow-[0_0_6px_hsl(var(--accent)/0.8)]" />
             </div>
-            <span className="text-xs lg:text-base font-semibold text-foreground/85 capitalize">{fmtDateFull(ev.date_time)}</span>
+            <span className="text-xs lg:text-sm font-semibold text-foreground/85 capitalize">{fmtDateFull(ev.date_time)}</span>
           </div>
         </div>
 
         {/* CTAs */}
-        <div className="flex gap-2 lg:gap-2.5 pt-2 lg:pt-1">
+        <div className="flex gap-2 pt-1">
           <Link
             to={`/evento/${ev.slug}`}
-            className="inline-flex items-center gap-1.5 px-5 lg:px-5 py-2.5 lg:py-2 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-[12px] lg:text-[13px] font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
             Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
             to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 px-4 lg:px-4 py-2.5 lg:py-2 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-[12px] lg:text-[13px] font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-sm font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
           >
-            <Car className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-primary/80" /> Como vou?
+            <Car className="w-4 h-4 text-primary/80" /> Como vou?
           </Link>
         </div>
       </div>
@@ -666,17 +666,17 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
             type="button"
             aria-label="Anterior"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); go(-1); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             type="button"
             aria-label="Próximo"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); go(1); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
             {slides!.map((_, i) => (
@@ -685,7 +685,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
                 type="button"
                 aria-label={`Ir para slide ${i + 1}`}
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange?.(i); }}
-                className={`h-1.5 rounded-full transition-all ${i === cur ? "w-6 bg-primary" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+                className={`h-1.5 rounded-full transition-all ${i === cur ? "w-5 bg-primary" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
               />
             ))}
           </div>
