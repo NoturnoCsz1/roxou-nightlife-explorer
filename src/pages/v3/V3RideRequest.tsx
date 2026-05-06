@@ -571,7 +571,23 @@ export default function V3RideRequest() {
               <Lock className="w-3 h-3" /> O destino é travado no evento selecionado pela Roxou.
             </p>
           </div>
+          {(event.latitude == null || event.longitude == null) && !destCoords && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+              <div className="flex items-start gap-1.5 text-[11px] text-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span>Não encontramos a localização exata do destino. Confirme o endereço manualmente para continuar.</span>
+              </div>
+              <Label className="text-xs text-muted-foreground">Endereço do destino</Label>
+              <Input
+                value={manualDestAddress}
+                onChange={(e) => setManualDestAddress(e.target.value.slice(0, 200))}
+                placeholder="Ex: Rua, número, bairro"
+                className="h-11 rounded-xl bg-card border-border/40 text-sm"
+              />
+            </div>
+          )}
         </section>
+
 
         {/* Step 2 — Origin via GPS */}
         <section className="rounded-3xl border border-border/40 bg-card/40 backdrop-blur-xl p-4 space-y-3 shadow-[0_0_30px_-15px_hsl(var(--primary)/0.4)]">
