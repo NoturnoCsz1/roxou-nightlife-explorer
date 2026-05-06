@@ -114,7 +114,8 @@ Deno.serve(async (req) => {
     const cityFinal = norm(normalizeCity(city || "")) || "Presidente Prudente";
     const stateFinal = norm(state) || "SP";
     const countryFinal = norm(country) || "Brasil";
-    const addressNormalizedCity = normalizeCity(norm(address));
+    const addressClean = stripCepAndState(norm(address));
+    const addressNormalizedCity = normalizeCity(addressClean);
     const addressN = stripEmbeddedCity(addressNormalizedCity, cityFinal);
     const addrNoNeighborhood = addressN.replace(/\s*-\s*[^,]*$/, "").trim();
     const addrExpanded = expandAbbr(addressN);
@@ -142,7 +143,7 @@ Deno.serve(async (req) => {
     ];
 
     const candidates = rawCandidates
-      .map((parts) => parts.filter(Boolean).join(", "))
+      .map((parts) => cleanDuplicateCity(parts.filter(Boolean).join(", ")))
       .filter((q, i, a) => q.length > 4 && a.indexOf(q) === i);
 
     let result: any = null;
