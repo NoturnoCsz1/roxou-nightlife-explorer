@@ -662,6 +662,12 @@ const EstabelecimentosAudit = () => {
                   >
                     <MapPin className="h-3 w-3" /> Coordenadas manuais
                   </button>
+                  <button
+                    onClick={() => reloadOne(e.id)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Recarregar dados
+                  </button>
                   <a
                     href={`/local/${e.slug}`}
                     target="_blank"
