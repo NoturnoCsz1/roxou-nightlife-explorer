@@ -1379,10 +1379,21 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
               <Heart className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-foreground"}`} />
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 lg:p-4 space-y-1.5">
+          <div
+            className="absolute bottom-0 left-0 right-0 p-3 lg:p-4 space-y-1.5"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 40%, transparent 100%)",
+            }}
+          >
             <h3
-              className="font-display font-semibold text-foreground line-clamp-2 break-words tracking-normal"
-              style={{ fontSize: "clamp(13px, 1.2vw, 18px)", lineHeight: "1.05", maxWidth: "70%" }}
+              className="font-display font-medium text-foreground line-clamp-2 break-words tracking-normal"
+              style={{
+                fontSize: "clamp(11px, 1vw, 15px)",
+                lineHeight: "1.15",
+                maxWidth: "75%",
+                textShadow: "0 2px 10px rgba(0,0,0,0.95), 0 0 18px rgba(0,0,0,0.65)",
+              }}
             >
               {ev.title}
             </h3>
