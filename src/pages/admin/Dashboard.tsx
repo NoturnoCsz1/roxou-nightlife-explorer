@@ -7,6 +7,7 @@ import { fetchAllRows } from "@/lib/supabaseFetchAll";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import AnalyticsHero from "@/components/admin/AnalyticsHero";
 
 /* Softer glass card base used across the dashboard */
 const GLASS = "rounded-2xl border border-border/20 bg-card/40 backdrop-blur-xl shadow-[0_4px_24px_-12px_hsl(var(--primary)/0.15)]";
