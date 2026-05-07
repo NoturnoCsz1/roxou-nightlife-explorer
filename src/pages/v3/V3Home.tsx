@@ -579,8 +579,16 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
       {/* Cinematic overlays */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15 lg:hidden" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent lg:hidden" />
+      {/* Desktop cinematic side overlay — flyer breathes on the right */}
+      <div
+        className="absolute inset-0 hidden lg:block"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.15) 100%)",
+        }}
+      />
       <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
 
       {/* Top badges — AUTHORITY COUNTER */}
