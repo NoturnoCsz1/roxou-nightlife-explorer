@@ -1224,11 +1224,25 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
           <Gem className="h-4 w-4 text-accent" />
           <h2 className="font-display text-base font-black text-foreground">Parceiros destaque</h2>
         </div>
-        <Link to="/parceiros" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
+        <Link
+          to="/parceiros"
+          className="group inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:text-accent transition-colors"
+        >
+          Explorar parceiros
+          <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+        </Link>
       </div>
       <div className="space-y-2">
         {list.map((p: any) => (
-          <Link key={p.id} to={`/local/${p.slug}`} className="group flex items-center gap-3 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
+          <Link
+            key={p.id}
+            to={`/local/${p.slug}`}
+            className={`group flex items-center gap-3 rounded-xl border bg-background/20 p-2 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 ${
+              p.verified_partner
+                ? "border-primary/25 hover:shadow-[0_0_18px_-4px_hsl(var(--primary)/0.45)]"
+                : "border-white/[0.05]"
+            }`}
+          >
             <div className="h-10 w-10 rounded-lg overflow-hidden bg-secondary/40 flex items-center justify-center shrink-0">
               {p.logo_url ? <img src={p.logo_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" /> : <span className="text-sm font-black text-primary">{p.name?.[0]}</span>}
             </div>
@@ -1238,7 +1252,7 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
               </p>
               <p className="text-[10px] text-muted-foreground truncate capitalize">{p.type}</p>
             </div>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
           </Link>
         ))}
       </div>
