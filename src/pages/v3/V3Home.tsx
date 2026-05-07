@@ -560,7 +560,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
 
   return (
     <div
-      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden"
+      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-[460px] lg:max-h-[560px] lg:aspect-auto overflow-hidden"
       onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
       onTouchEnd={(e) => {
         const s = touchRef.current; if (!s) return;
