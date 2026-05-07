@@ -560,7 +560,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
 
   return (
     <div
-      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-0 lg:max-h-none lg:aspect-[21/9] overflow-hidden"
+      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-[460px] lg:max-h-[560px] lg:aspect-auto overflow-hidden"
       onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
       onTouchEnd={(e) => {
         const s = touchRef.current; if (!s) return;
@@ -579,8 +579,16 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
       {/* Cinematic overlays */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15 lg:hidden" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent lg:hidden" />
+      {/* Desktop cinematic side overlay — flyer breathes on the right */}
+      <div
+        className="absolute inset-0 hidden lg:block"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.15) 100%)",
+        }}
+      />
       <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-44 bg-primary/15 blur-[100px] rounded-full" />
 
       {/* Top badges — AUTHORITY COUNTER */}
@@ -603,7 +611,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
       </div>
 
       {/* Bottom content — compacto e premium */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-6 lg:pb-7 space-y-3 z-10 lg:max-w-2xl">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-10 lg:pb-10 space-y-3 lg:space-y-4 z-10 lg:max-w-[55%]">
         <div className="space-y-2">
           <span className="inline-block text-[10px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
@@ -611,7 +619,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           <h1
             className="mt-5 font-display font-semibold line-clamp-2 break-words tracking-normal text-foreground"
             style={{
-              fontSize: "clamp(18px, 1.6vw, 26px)",
+              fontSize: "clamp(18px, 1.4vw, 22px)",
               lineHeight: "1.12",
               maxWidth: "520px",
               textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)",
@@ -1216,11 +1224,25 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
           <Gem className="h-4 w-4 text-accent" />
           <h2 className="font-display text-base font-black text-foreground">Parceiros destaque</h2>
         </div>
-        <Link to="/parceiros" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
+        <Link
+          to="/parceiros"
+          className="group inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:text-accent transition-colors"
+        >
+          Explorar parceiros
+          <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+        </Link>
       </div>
       <div className="space-y-2">
         {list.map((p: any) => (
-          <Link key={p.id} to={`/local/${p.slug}`} className="group flex items-center gap-3 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
+          <Link
+            key={p.id}
+            to={`/local/${p.slug}`}
+            className={`group flex items-center gap-3 rounded-xl border bg-background/20 p-2 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 ${
+              p.verified_partner
+                ? "border-primary/25 hover:shadow-[0_0_18px_-4px_hsl(var(--primary)/0.45)]"
+                : "border-white/[0.05]"
+            }`}
+          >
             <div className="h-10 w-10 rounded-lg overflow-hidden bg-secondary/40 flex items-center justify-center shrink-0">
               {p.logo_url ? <img src={p.logo_url} alt={p.name} loading="lazy" className="w-full h-full object-cover" /> : <span className="text-sm font-black text-primary">{p.name?.[0]}</span>}
             </div>
@@ -1230,7 +1252,7 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
               </p>
               <p className="text-[10px] text-muted-foreground truncate capitalize">{p.type}</p>
             </div>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
           </Link>
         ))}
       </div>
@@ -1349,15 +1371,15 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/10" />
             {/* Inner ring shadow */}
             <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none group-hover:ring-primary/60 transition-colors" />
-            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-primary/95 text-[9px] font-bold text-primary-foreground uppercase tracking-wide">
-              {getDayLabel(ev.date_time)}
-            </span>
             {live && (
-              <span className="absolute top-10 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/45 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300 backdrop-blur-md z-10">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_hsl(142_71%_45%)]" />
-                {(ev as any).aura_pick ? "🤖 Aura ao vivo" : "🔥 Rolando agora"}
+                Começou
               </span>
             )}
+            <span className={`absolute ${live ? "top-9" : "top-2"} left-2 px-1.5 py-0.5 rounded-full bg-primary/95 text-[9px] font-bold text-primary-foreground uppercase tracking-wide`}>
+              {getDayLabel(ev.date_time)}
+            </span>
             <button
               type="button"
               aria-label={saved ? "Remover dos favoritos" : "Favoritar evento"}
@@ -1371,10 +1393,21 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
               <Heart className={`w-4 h-4 ${saved ? "text-primary fill-primary" : "text-foreground"}`} />
             </button>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 p-3 lg:p-4 space-y-1.5">
+          <div
+            className="absolute bottom-0 left-0 right-0 p-3 lg:p-4 space-y-1.5"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 40%, transparent 100%)",
+            }}
+          >
             <h3
-              className="font-display font-semibold text-foreground line-clamp-2 break-words tracking-normal"
-              style={{ fontSize: "clamp(13px, 1.2vw, 18px)", lineHeight: "1.05", maxWidth: "70%" }}
+              className="font-display font-medium text-foreground line-clamp-2 break-words tracking-normal"
+              style={{
+                fontSize: "clamp(11px, 1vw, 15px)",
+                lineHeight: "1.15",
+                maxWidth: "75%",
+                textShadow: "0 2px 10px rgba(0,0,0,0.95), 0 0 18px rgba(0,0,0,0.65)",
+              }}
             >
               {ev.title}
             </h3>
