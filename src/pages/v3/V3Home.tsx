@@ -611,7 +611,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
       </div>
 
       {/* Bottom content — compacto e premium */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-6 lg:pb-7 space-y-3 z-10 lg:max-w-2xl">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-10 lg:pb-10 space-y-3 lg:space-y-4 z-10 lg:max-w-[55%]">
         <div className="space-y-2">
           <span className="inline-block text-[10px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
