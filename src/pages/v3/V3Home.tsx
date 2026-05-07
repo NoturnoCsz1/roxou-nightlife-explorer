@@ -619,7 +619,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           <h1
             className="mt-5 font-display font-semibold line-clamp-2 break-words tracking-normal text-foreground"
             style={{
-              fontSize: "clamp(18px, 1.6vw, 26px)",
+              fontSize: "clamp(18px, 1.4vw, 22px)",
               lineHeight: "1.12",
               maxWidth: "520px",
               textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)",
