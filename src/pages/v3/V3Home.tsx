@@ -1357,15 +1357,15 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/10" />
             {/* Inner ring shadow */}
             <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-3xl pointer-events-none group-hover:ring-primary/60 transition-colors" />
-            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-primary/95 text-[9px] font-bold text-primary-foreground uppercase tracking-wide">
-              {getDayLabel(ev.date_time)}
-            </span>
             {live && (
-              <span className="absolute top-10 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-400/45 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300 backdrop-blur-md z-10">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_hsl(142_71%_45%)]" />
-                {(ev as any).aura_pick ? "🤖 Aura ao vivo" : "🔥 Rolando agora"}
+                Começou
               </span>
             )}
+            <span className={`absolute ${live ? "top-9" : "top-2"} left-2 px-1.5 py-0.5 rounded-full bg-primary/95 text-[9px] font-bold text-primary-foreground uppercase tracking-wide`}>
+              {getDayLabel(ev.date_time)}
+            </span>
             <button
               type="button"
               aria-label={saved ? "Remover dos favoritos" : "Favoritar evento"}
