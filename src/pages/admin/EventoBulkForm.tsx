@@ -249,15 +249,21 @@ const EventoBulkForm = () => {
       const f = readyForm as EventFormData | null;
       if (f && f.title && f.title.length > 3) {
         try {
+          const previousDescs = items
+            .map((x) => x.form.description)
+            .filter((d): d is string => !!d && d.length > 30)
+            .slice(-5);
           const descResp = await supabase.functions.invoke("generate-description", {
             body: {
               title: f.title,
               venue_name: f.venue_name || "",
+              address: f.address || "",
               date_time: f.date_time || "",
               category: f.category || "festa",
               sub_category: (f as any)._sub || "",
               image_url: f.image_url || "",
               seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
+              previous_descriptions: previousDescs,
             },
           });
           if (!descResp.error && descResp.data) {
