@@ -578,6 +578,7 @@ export default function V3Home() {
         </div>
       </FadeSection>
       </div>
+      </HomeBelowFoldBoundary>
     </div>
   );
 }
