@@ -35,6 +35,33 @@ const GENRE_KEYWORDS: Record<string, string[]> = {
 
 const NATIONAL_VENUE_KEYWORDS = ["recinto de exposição", "recinto de exposicoes", "parque de exposições", "parque de exposicoes", "arena", "estádio", "estadio", "ginasio", "ginásio", "anfiteatro"];
 
+// 🧠 Memória de gênero por estabelecimento (Prudente / interior SP)
+// Usada como FALLBACK quando o parceiro não está cadastrado como verificado.
+// Chave: trecho normalizado (sem acento, lowercase). Match por includes nos dois sentidos.
+const VENUE_GENRE_MEMORY: Array<{ keys: string[]; sub: string; cat?: string }> = [
+  { keys: ["vo laura", "vó laura"], sub: "sertanejo", cat: "bar" },
+  { keys: ["agrobar"], sub: "sertanejo", cat: "bar" },
+  { keys: ["espetinho do rafa", "espetinho rafa"], sub: "mpb", cat: "espetinho" },
+  { keys: ["arapuca"], sub: "sertanejo", cat: "bar" },
+  { keys: ["bar do tio"], sub: "pagode_samba", cat: "bar" },
+  { keys: ["colina"], sub: "pagode_samba", cat: "bar" },
+  { keys: ["fabrica"], sub: "eletronica", cat: "balada" },
+  { keys: ["gastrobar"], sub: "eletronica", cat: "bar" },
+];
+
+function lookupVenueMemory(venueName: string | null | undefined): { sub: string; cat?: string; matched: string } | null {
+  const v = normText(venueName || "");
+  if (!v || v.length < 3) return null;
+  for (const entry of VENUE_GENRE_MEMORY) {
+    for (const k of entry.keys) {
+      if (v.includes(k) || k.includes(v)) {
+        return { sub: entry.sub, cat: entry.cat, matched: k };
+      }
+    }
+  }
+  return null;
+}
+
 const WEEKDAY_NAMES = [
   ["domingo", "dom"],
   ["segunda", "seg", "segunda-feira"],
