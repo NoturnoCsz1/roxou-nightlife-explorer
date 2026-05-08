@@ -1288,7 +1288,8 @@ function DesktopCategoriesPanel() {
 }
 
 function DesktopWeekPanel({ events }: { events: Ev[] }) {
-  if (!events.length) return null;
+  const list = safeEvents(events);
+  if (!list.length) return null;
   return (
     <div className="rounded-3xl v3-glass p-4">
       <div className="flex items-center justify-between mb-3">
@@ -1299,7 +1300,7 @@ function DesktopWeekPanel({ events }: { events: Ev[] }) {
         <Link to="/agenda" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
       </div>
       <div className="space-y-2">
-        {(events ?? []).slice(0, 5).map(ev => (
+        {list.slice(0, 5).map(ev => (
           <Link key={ev.id} to={`/evento/${ev.slug}`} className="group flex gap-2.5 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
             <div className="flex flex-col items-center justify-center rounded-lg bg-primary/10 px-2 py-1 min-w-[42px]">
               <span className="text-[8px] font-black uppercase text-primary">{format(new Date(ev.date_time), "MMM", { locale: ptBR })}</span>
@@ -1363,6 +1364,7 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
 }
 
 function NowPanel({ events }: { events: Ev[] }) {
+  const list = safeEvents(events);
   return (
     <div className="rounded-3xl v3-glass-strong p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -1370,7 +1372,7 @@ function NowPanel({ events }: { events: Ev[] }) {
         <h2 className="font-display text-base font-black text-foreground">O que está rolando agora</h2>
       </div>
       <div className="space-y-3">
-        {(events ?? []).map(ev => (
+        {list.map(ev => (
           <Link key={ev.id} to={`/evento/${ev.slug}`} className="group flex gap-3 rounded-2xl border border-border/25 bg-background/25 p-2 transition-all hover:border-primary/40 hover:bg-primary/10">
             <SmartImage
               src={ev.image_url}
@@ -1392,6 +1394,7 @@ function NowPanel({ events }: { events: Ev[] }) {
 function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
   events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>;
 }) {
+  const list = safeEvents(events);
   return (
     <section className="rounded-3xl v3-glass p-5">
       <div className="mb-4 flex items-end justify-between gap-4">
@@ -1400,11 +1403,11 @@ function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
           <h2 className="font-display text-2xl font-black uppercase text-foreground">Carrossel da noite</h2>
         </div>
         <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase text-primary">
-          {events.length} rolês
+          {list.length} rolês
         </span>
       </div>
       <div className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 pr-5 scrollbar-hide [scroll-padding-right:1.25rem]">
-        {(events ?? []).map((ev) => (
+        {list.map((ev) => (
           <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px] snap-start rounded-3xl overflow-hidden" />
         ))}
       </div>
@@ -1443,6 +1446,7 @@ function TodayEmptyState({ error, loading }: { error?: boolean; loading?: boolea
 function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false }: {
   events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>; compact?: boolean;
 }) {
+  const list = safeEvents(events);
   return (
     <FadeSection className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
       <div className="mb-3 flex items-end justify-between">
@@ -1453,7 +1457,7 @@ function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false 
       </div>
       <div className="relative space-y-3 pl-12">
         <div className="absolute left-5 top-3 bottom-3 w-px bg-gradient-to-b from-primary/10 via-primary/75 to-accent/10 shadow-[0_0_15px_hsl(var(--primary)/0.45)]" />
-        {(events ?? []).map((ev) => (
+        {list.map((ev) => (
           <div key={ev.id} className="relative">
             <div className="absolute -left-12 top-5 z-10 rounded-full border border-primary/35 bg-background px-2 py-1 text-[10px] font-black text-primary shadow-[0_0_15px_hsl(var(--primary)/0.35)]">
               {fmtTime(ev.date_time)}
