@@ -785,31 +785,31 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           </div>
         </div>
 
-        {/* CTAs */}
+        {/* CTAs — unified pill style */}
         <div className="flex gap-2 pt-1">
           <Link
             to={`/evento/${ev.slug}`}
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary/90 hover:bg-primary text-primary-foreground text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
             Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
             to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-background/40 backdrop-blur-md border border-white/10 text-foreground/90 text-sm font-medium hover:border-primary/40 hover:text-foreground transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
           >
-            <Car className="w-4 h-4 text-primary/80" /> Como vou?
+            <Car className="w-4 h-4 text-primary-foreground" /> Como vou?
           </Link>
         </div>
       </div>
 
-      {/* Carousel controls */}
+      {/* Carousel controls — minimalist purple chevrons */}
       {total > 1 && (
         <>
           <button
             type="button"
             aria-label="Anterior"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); go(-1); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-background/20 backdrop-blur-md border border-primary/30 flex items-center justify-center text-primary hover:bg-primary/15 hover:border-primary/60 active:scale-95 transition"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -817,7 +817,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
             type="button"
             aria-label="Próximo"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); go(1); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-background/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-foreground/90 hover:bg-background/60 active:scale-95 transition"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-background/20 backdrop-blur-md border border-primary/30 flex items-center justify-center text-primary hover:bg-primary/15 hover:border-primary/60 active:scale-95 transition"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
