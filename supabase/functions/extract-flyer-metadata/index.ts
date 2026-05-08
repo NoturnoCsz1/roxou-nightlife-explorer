@@ -543,6 +543,25 @@ serve(async (req) => {
       .trim()
       .toUpperCase();
 
+    // ============== 🎯 Score final de confiança da IA ==============
+    // high  : admin_feedback OR (DNA verificado) OR (memória + texto concordam)
+    // medium: apenas um sinal (memória OU texto)
+    // low   : conflito ou nenhum sinal além do palpite da IA
+    const detectedFinal = detectGenreFromText(fullText);
+    let aiConfidence: "high" | "medium" | "low" = "medium";
+    if (admin_feedback_applied || verifiedMatch) {
+      aiConfidence = "high";
+    } else {
+      const venueMem = lookupVenueMemory(parsed.venue_name);
+      const memSub = venueMem?.sub;
+      const textSub = detectedFinal.sub;
+      if (memSub && textSub && memSub === textSub) aiConfidence = "high";
+      else if (memSub && textSub && memSub !== textSub) aiConfidence = "low";
+      else if (!memSub && !textSub) aiConfidence = String(parsed.genre_confidence || "low").toLowerCase() === "high" ? "medium" : "low";
+      else aiConfidence = "medium";
+    }
+    const needsReview = aiConfidence === "low" || genre_needs_review || date_needs_review;
+
     return new Response(JSON.stringify({
       title,
       date_iso: dateIso,
@@ -556,11 +575,14 @@ serve(async (req) => {
       sub_category: sub,
       genre_needs_review,
       genre_confidence: genreConf,
+      ai_confidence: aiConfidence,
+      needs_review: needsReview,
       opportunity_tags: Array.from(tags).filter((t) => ["open_bar", "double_drink", "entrada_free", "promocao"].includes(t)),
       ticket_url: null,
       confidence: parsed.confidence || "medium",
       category_override_reason,
       dna_applied,
+      admin_feedback_applied,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
