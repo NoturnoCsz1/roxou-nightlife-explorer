@@ -747,18 +747,18 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
       </div>
 
       {/* Bottom content — compacto e premium */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-10 lg:pb-10 space-y-3 lg:space-y-4 z-10 lg:max-w-[55%]">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-10 lg:pb-10 space-y-3 lg:space-y-4 z-10 max-w-[88%] sm:max-w-[80%] lg:max-w-[55%]">
         <div className="space-y-2">
           <span className="inline-block text-[10px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
           </span>
           <h1
-            className="mt-5 font-display font-semibold line-clamp-2 break-words tracking-normal text-foreground"
+            className="mt-2 font-display font-semibold line-clamp-3 lg:line-clamp-2 break-words [text-wrap:balance] tracking-normal text-foreground overflow-hidden"
             style={{
-              fontSize: "clamp(18px, 1.4vw, 22px)",
-              lineHeight: "1.12",
-              maxWidth: "520px",
-              textShadow: "0 2px 24px hsl(var(--v3-neon) / 0.18)",
+              fontSize: "clamp(17px, 4.6vw, 22px)",
+              lineHeight: "1.15",
+              hyphens: "auto",
+              textShadow: "0 2px 12px rgba(0,0,0,0.65), 0 1px 4px rgba(0,0,0,0.55)",
             }}
           >
             {ev.title}
