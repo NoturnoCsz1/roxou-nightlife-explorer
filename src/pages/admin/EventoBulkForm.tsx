@@ -78,6 +78,12 @@ function formatDateForInput(iso: string | null): string {
   return "";
 }
 
+type AdminFeedback = {
+  venue_name: string | null;
+  corrected_category: string | null;
+  corrected_sub_category: string | null;
+};
+
 const EventoBulkForm = () => {
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
@@ -89,6 +95,7 @@ const EventoBulkForm = () => {
   const [dragOver, setDragOver] = useState(false);
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
   const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
+  const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,6 +103,16 @@ const EventoBulkForm = () => {
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => setPartners(data || []));
   }, [cityFilter]);
+
+  // Load admin correction memory (learning from past edits)
+  useEffect(() => {
+    supabase
+      .from("ai_event_feedback_memory" as any)
+      .select("venue_name, corrected_category, corrected_sub_category")
+      .order("created_at", { ascending: false })
+      .limit(500)
+      .then(({ data }) => setAdminFeedback((data as any) || []));
+  }, []);
 
   // Load existing slugs from DB for duplicate detection
   useEffect(() => {
