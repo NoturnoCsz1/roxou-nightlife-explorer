@@ -83,40 +83,46 @@ export default function V3Home() {
   const futureCutoffISO = new Date(now.getTime() - LIVE_TOLERANCE_MS).toISOString();
 
   /* ─── EVENTS (apenas futuros / em andamento) ─── */
-  const { data: events = [], isLoading: loadingEvents } = useQuery<Ev[]>({
+  const { data: events = [], isLoading: loadingEvents, error: eventsError } = useQuery<Ev[]>({
     queryKey: ["v3-events", TODAY_KEY],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("events")
           .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .order("date_time", { ascending: true })
         .limit(80);
+      if (error) {
+        console.error("[V3Home] erro ao carregar eventos", error);
+        throw error;
+      }
       return (data as Ev[]) || [];
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
-  const { data: rawTodayEvents = [] } = useQuery<Ev[]>({
+  const { data: rawTodayEvents = [], isLoading: loadingToday, error: todayError } = useQuery<Ev[]>({
     queryKey: ["v3-today-events", TODAY_KEY],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("events")
         .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .lt("date_time", TODAY_END)
         .order("date_time", { ascending: true });
+      if (error) {
+        console.error("[V3Home] erro ao carregar eventos de hoje", error);
+        throw error;
+      }
       return (data as Ev[]) || [];
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   /* ─── TRENDING (views last 24h) ─── */
