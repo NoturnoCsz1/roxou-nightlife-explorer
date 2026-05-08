@@ -54,6 +54,7 @@ const EventoForm = () => {
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const originalSnapshot = useRef<{ category: string; sub_category: string | null; description: string | null; venue_name: string | null } | null>(null);
 
   async function reprocessFlyerWithAi() {
     if (!form.image_url) {
