@@ -1,4 +1,4 @@
-import { useState, useMemo, ReactNode, useEffect, useRef } from "react";
+import { Component, useState, useMemo, ReactNode, useEffect, useRef } from "react";
 import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,15 +33,29 @@ import ExpoHighlightBanner from "@/components/v3/home/ExpoHighlightBanner";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
 /* ───── helpers ───── */
-const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
-const fmtDateFull = (d: string) => format(new Date(d), "EEE, d MMM · HH'h'mm", { locale: ptBR });
+const isValidDate = (d: Date) => !Number.isNaN(d.getTime());
+const toSafeDate = (d?: string | null) => {
+  const parsed = new Date(d || "");
+  return isValidDate(parsed) ? parsed : null;
+};
+const fmtTime = (d?: string | null) => {
+  const parsed = toSafeDate(d);
+  return parsed ? format(parsed, "HH'h'mm", { locale: ptBR }) : "Horário a confirmar";
+};
+const fmtDateFull = (d?: string | null) => {
+  const parsed = toSafeDate(d);
+  return parsed ? format(parsed, "EEE, d MMM · HH'h'mm", { locale: ptBR }) : "Data a confirmar";
+};
 const isEventLive = (d: string) => {
-  const start = new Date(d).getTime();
+  const parsed = toSafeDate(d);
+  if (!parsed) return false;
+  const start = parsed.getTime();
   const now = Date.now();
   return now >= start && now <= start + 4 * 60 * 60 * 1000;
 };
-const getDayLabel = (d: string) => {
-  const dt = new Date(d);
+const getDayLabel = (d?: string | null) => {
+  const dt = toSafeDate(d);
+  if (!dt) return "EM BREVE";
   if (isTodayFn(dt)) return "HOJE";
   if (isTomorrowSP(dt)) return "AMANHÃ";
   return format(dt, "EEEE", { locale: ptBR }).toUpperCase();
@@ -53,6 +67,26 @@ interface Ev {
   sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
   video_url?: string | null;
 }
+
+const normalizeEvent = (event: any): Ev | null => {
+  if (!event?.id) return null;
+  return {
+    id: String(event.id),
+    slug: event.slug ? String(event.slug) : String(event.id),
+    title: event.title ? String(event.title) : "Evento Roxou",
+    image_url: event.image_url || null,
+    date_time: event.date_time || "",
+    venue_name: event.venue_name || null,
+    category: event.category ? String(event.category) : "evento",
+    sub_category: event.sub_category || null,
+    featured: Boolean(event.featured),
+    partner_id: event.partner_id || null,
+    ticket_url: event.ticket_url || null,
+    video_url: event.video_url || null,
+  };
+};
+
+const safeEvents = (events?: any[] | null) => (Array.isArray(events) ? events.map(normalizeEvent).filter(Boolean) as Ev[] : []);
 
 const VIBE_FILTERS = [
   { key: "bombando", label: "🔥 Bombando" },
