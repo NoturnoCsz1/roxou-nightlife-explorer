@@ -1107,10 +1107,14 @@ function CommandCenter({
 }) {
   // Evita duplicar eventos já mostrados na timeline de hoje, no hero ou no spotlight
   const excludeIds = new Set<string>();
-  todayEvents.forEach(e => excludeIds.add(e.id));
+  const safeToday = safeEvents(todayEvents);
+  const safeTrending = safeEvents(trending);
+  const safeFeatured = safeEvents(featured);
+  const safeWeekEvents = safeEvents(weekEvents);
+  safeToday.forEach(e => excludeIds.add(e.id));
   if (hero) excludeIds.add(hero.id);
   if (weeklyHighlight) excludeIds.add(weeklyHighlight.id);
-  const mainPool = [...trending, ...featured, ...weekEvents].filter((e, i, arr) =>
+  const mainPool = [...safeTrending, ...safeFeatured, ...safeWeekEvents].filter((e, i, arr) =>
     arr.findIndex(x => x.id === e.id) === i && !excludeIds.has(e.id)
   );
   // Embaralhamento estável por dia para variar a curadoria sem mudar a cada render
@@ -1121,7 +1125,7 @@ function CommandCenter({
     .map(x => x.e)
     .slice(0, 10);
 
-  if (!todayEvents.length && !mainEvents.length && !hero) return null;
+  if (!safeToday.length && !mainEvents.length && !hero) return <HomeDataFallback />;
 
   return (
     <FadeSection className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
@@ -1136,24 +1140,24 @@ function CommandCenter({
               todayCount={todayCount}
               venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
             />
-            {heroEvents.length > 1 && (
+            {(heroEvents ?? []).length > 1 && (
               <>
                 <button
                   aria-label="Slide anterior"
-                  onClick={() => setHeroIdx((heroIdx - 1 + heroEvents.length) % heroEvents.length)}
+                  onClick={() => setHeroIdx((heroIdx - 1 + (heroEvents ?? []).length) % (heroEvents ?? []).length)}
                   className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   aria-label="Próximo slide"
-                  onClick={() => setHeroIdx((heroIdx + 1) % heroEvents.length)}
+                  onClick={() => setHeroIdx((heroIdx + 1) % (heroEvents ?? []).length)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                  {heroEvents.map((_, i) => (
+                  {(heroEvents ?? []).map((_, i) => (
                     <button
                       key={i}
                       aria-label={`Slide ${i + 1}`}
@@ -1177,8 +1181,8 @@ function CommandCenter({
 
         <V3VibeChips className="!py-0 -mx-0" />
 
-        {Array.isArray(todayEvents) && todayEvents.length > 0 ? (
-          <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        {safeToday.length > 0 ? (
+          <TodayTimeline events={safeToday} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
         ) : (
           <TodayEmptyState />
         )}
