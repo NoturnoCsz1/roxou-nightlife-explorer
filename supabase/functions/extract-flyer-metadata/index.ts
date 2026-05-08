@@ -409,6 +409,27 @@ serve(async (req) => {
       }
     }
 
+    // ============== 🧠 Memória de gênero por venue (fallback sem DNA) ==============
+    if (!verifiedMatch) {
+      const memory = lookupVenueMemory(parsed.venue_name);
+      if (memory) {
+        const detected = detectGenreFromText(fullText);
+        const strongOverride = detected.confidence === "high" && detected.sub && detected.sub !== memory.sub;
+        if (!strongOverride) {
+          if (GENRE_SUBS.has(memory.sub)) {
+            sub = memory.sub;
+            category_override_reason = `${category_override_reason ? category_override_reason + " | " : ""}🧠 Memória do local "${parsed.venue_name}" → gênero ${memory.sub}`;
+          }
+          if (memory.cat && ["bar","balada","festa","espetinho","restaurante","lounge","show"].includes(memory.cat)) {
+            cat = memory.cat;
+          }
+        } else if (detected.sub) {
+          sub = detected.sub;
+          category_override_reason = `${category_override_reason ? category_override_reason + " | " : ""}🧠 Memória do local sobreposta por gênero forte (${detected.sub})`;
+        }
+      }
+    }
+
     // ============== 🎤 BAR vs SHOW (recinto / nacional) ==============
     if (cat === "bar" || cat === "festa") {
       if (NATIONAL_VENUE_KEYWORDS.some((k) => fullText.includes(k))) {
