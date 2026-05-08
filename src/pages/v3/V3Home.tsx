@@ -1,4 +1,4 @@
-import { useState, useMemo, ReactNode, useEffect, useRef } from "react";
+import { Component, useState, useMemo, ReactNode, useEffect, useRef } from "react";
 import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,15 +33,29 @@ import ExpoHighlightBanner from "@/components/v3/home/ExpoHighlightBanner";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
 /* ───── helpers ───── */
-const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
-const fmtDateFull = (d: string) => format(new Date(d), "EEE, d MMM · HH'h'mm", { locale: ptBR });
+const isValidDate = (d: Date) => !Number.isNaN(d.getTime());
+const toSafeDate = (d?: string | null) => {
+  const parsed = new Date(d || "");
+  return isValidDate(parsed) ? parsed : null;
+};
+const fmtTime = (d?: string | null) => {
+  const parsed = toSafeDate(d);
+  return parsed ? format(parsed, "HH'h'mm", { locale: ptBR }) : "Horário a confirmar";
+};
+const fmtDateFull = (d?: string | null) => {
+  const parsed = toSafeDate(d);
+  return parsed ? format(parsed, "EEE, d MMM · HH'h'mm", { locale: ptBR }) : "Data a confirmar";
+};
 const isEventLive = (d: string) => {
-  const start = new Date(d).getTime();
+  const parsed = toSafeDate(d);
+  if (!parsed) return false;
+  const start = parsed.getTime();
   const now = Date.now();
   return now >= start && now <= start + 4 * 60 * 60 * 1000;
 };
-const getDayLabel = (d: string) => {
-  const dt = new Date(d);
+const getDayLabel = (d?: string | null) => {
+  const dt = toSafeDate(d);
+  if (!dt) return "EM BREVE";
   if (isTodayFn(dt)) return "HOJE";
   if (isTomorrowSP(dt)) return "AMANHÃ";
   return format(dt, "EEEE", { locale: ptBR }).toUpperCase();
@@ -53,6 +67,26 @@ interface Ev {
   sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
   video_url?: string | null;
 }
+
+const normalizeEvent = (event: any): Ev | null => {
+  if (!event?.id) return null;
+  return {
+    id: String(event.id),
+    slug: event.slug ? String(event.slug) : String(event.id),
+    title: event.title ? String(event.title) : "Evento Roxou",
+    image_url: event.image_url || null,
+    date_time: event.date_time || "",
+    venue_name: event.venue_name || null,
+    category: event.category ? String(event.category) : "evento",
+    sub_category: event.sub_category || null,
+    featured: Boolean(event.featured),
+    partner_id: event.partner_id || null,
+    ticket_url: event.ticket_url || null,
+    video_url: event.video_url || null,
+  };
+};
+
+const safeEvents = (events?: any[] | null) => (Array.isArray(events) ? events.map(normalizeEvent).filter(Boolean) as Ev[] : []);
 
 const VIBE_FILTERS = [
   { key: "bombando", label: "🔥 Bombando" },
@@ -97,7 +131,7 @@ export default function V3Home() {
         console.error("[V3Home] erro ao carregar eventos", error);
         throw error;
       }
-      return (data as Ev[]) || [];
+      return safeEvents(data);
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -118,7 +152,7 @@ export default function V3Home() {
         console.error("[V3Home] erro ao carregar eventos de hoje", error);
         throw error;
       }
-      return (data as Ev[]) || [];
+      return safeEvents(data);
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -216,7 +250,7 @@ export default function V3Home() {
         .slice(0, Math.max(0, 8 - pinned.length));
 
       const ordered = [...pinned, ...rest];
-      const rankMap = new Map(venueRanks.map((v, i) => [v.id, i + 1]));
+      const rankMap = new Map((venueRanks ?? []).map((v, i) => [v.id, i + 1]));
       return ordered.map((p: any) => ({ ...p, _rank: rankMap.get(p.id) || 0 }));
     },
     enabled: venueRanks !== undefined,
@@ -224,16 +258,17 @@ export default function V3Home() {
 
   /* ─── DEDUPLICATION ─── */
   const heroEvents = useMemo(() => {
-    const feat = events.filter(e => e.featured);
-    const rest = events.filter(e => !e.featured);
-    const trendMap = new Map(trendingIds.map(t => [t.id, t.views]));
+    const list = safeEvents(events);
+    const feat = list.filter(e => e.featured);
+    const rest = list.filter(e => !e.featured);
+    const trendMap = new Map((trendingIds ?? []).map(t => [t.id, t.views]));
     rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
     const combined = [...feat, ...rest];
     let unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
     // Fallback: complete with random future events when there are fewer than 4 highlights
     if (unique.length < 4) {
       const usedIds = new Set(unique.map(e => e.id));
-      const pool = events.filter(e => !usedIds.has(e.id));
+      const pool = list.filter(e => !usedIds.has(e.id));
       // Fisher-Yates shuffle (stable per render via slice)
       const shuffled = pool.slice();
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -247,52 +282,58 @@ export default function V3Home() {
 
   const [heroIdx, setHeroIdx] = useState(0);
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
-  const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
-  const todayCount = rawTodayEvents.length;
+  const heroDate = hero ? toSafeDate(hero.date_time) : null;
+  const heroIsToday = heroDate ? isTodayFn(heroDate) : false;
+  const todayCount = safeEvents(rawTodayEvents).length;
+  const hasHomeDataError = Boolean(eventsError || todayError);
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
-    heroEvents.forEach(e => s.add(e.id));
+    (heroEvents ?? []).forEach(e => s.add(e.id));
     return s;
   }, [heroEvents]);
 
   const trending = useMemo(() => {
-    const idSet = new Set(trendingIds.map(t => t.id));
-    const result = events.filter(e => idSet.has(e.id) && !usedIds.has(e.id)).slice(0, 8);
+    const idSet = new Set((trendingIds ?? []).map(t => t.id));
+    const result = safeEvents(events).filter(e => idSet.has(e.id) && !usedIds.has(e.id)).slice(0, 8);
     result.forEach(e => usedIds.add(e.id));
     return result;
   }, [events, trendingIds, usedIds]);
 
   const todayEvents = useMemo(
-    () => rawTodayEvents.filter(e => !usedIds.has(e.id))
+    () => safeEvents(rawTodayEvents).filter(e => !usedIds.has(e.id))
       .slice(0, 12).map(e => { usedIds.add(e.id); return e; }),
     [rawTodayEvents, usedIds],
   );
 
   const featured = useMemo(
-    () => events.filter(e => e.featured && !usedIds.has(e.id))
+    () => safeEvents(events).filter(e => e.featured && !usedIds.has(e.id))
       .slice(0, 8).map(e => { usedIds.add(e.id); return e; }),
     [events, usedIds],
   );
 
   const weekEvents = useMemo(
-    () => events.filter(e => !usedIds.has(e.id) && isAfter(new Date(e.date_time), addDays(today, 1)) && isAfter(addDays(today, 7), new Date(e.date_time)))
+    () => safeEvents(events).filter(e => {
+      const dt = toSafeDate(e.date_time);
+      return !!dt && !usedIds.has(e.id) && isAfter(dt, addDays(today, 1)) && isAfter(addDays(today, 7), dt);
+    })
       .slice(0, 12),
     [events, today, usedIds],
   );
 
   const filtered = useMemo(
-    () => (catFilter ? events.filter(e => e.category === catFilter) : []),
+    () => (catFilter ? safeEvents(events).filter(e => e.category === catFilter) : []),
     [events, catFilter],
   );
 
   const vibeFiltered = useMemo(() => {
-    const trendSet = new Set(trendingIds.map(t => t.id));
+    const list = safeEvents(events);
+    const trendSet = new Set((trendingIds ?? []).map(t => t.id));
     const musicSubs = new Set(["show", "sertanejo", "rock", "pagode", "mpb", "pop_rock", "samba"]);
-    if (vibeFilter === "bombando") return events.filter(e => trendSet.has(e.id));
-    if (vibeFilter === "musica") return events.filter(e => e.category === "show" || musicSubs.has(e.sub_category || ""));
-    if (vibeFilter === "happy") return events.filter(e => ["bar", "gastrobar", "restaurante"].includes(e.category));
-    if (vibeFilter === "grandes") return events.filter(e => ["festival", "festa"].includes(e.category));
+    if (vibeFilter === "bombando") return list.filter(e => trendSet.has(e.id));
+    if (vibeFilter === "musica") return list.filter(e => e.category === "show" || musicSubs.has(e.sub_category || ""));
+    if (vibeFilter === "happy") return list.filter(e => ["bar", "gastrobar", "restaurante"].includes(e.category));
+    if (vibeFilter === "grandes") return list.filter(e => ["festival", "festa"].includes(e.category));
     return [];
   }, [events, trendingIds, vibeFilter]);
 
@@ -300,7 +341,7 @@ export default function V3Home() {
   // Curadoria Roxou / Destaque da Semana — apenas Festas, Shows e Baladas
   const weeklyHighlight = useMemo(() => {
     const ALLOWED = new Set(["festa", "show", "balada"]);
-    const candidates = events.filter(e => !usedIds.has(e.id) && ALLOWED.has(e.category));
+    const candidates = safeEvents(events).filter(e => !usedIds.has(e.id) && ALLOWED.has(e.category));
     return candidates.find(e => e.featured && e.video_url) ||
            candidates.find(e => e.featured) ||
            candidates.find(e => e.video_url) ||
@@ -314,11 +355,11 @@ export default function V3Home() {
 
   const partnerRankMap = useMemo(() => {
     const m = new Map<string, number>();
-    venueRanks.forEach((v, i) => m.set(v.id, i + 1));
+    (venueRanks ?? []).forEach((v, i) => m.set(v.id, i + 1));
     return m;
   }, [venueRanks]);
 
-  const trendingIdSet = useMemo(() => new Set(trendingIds.map(t => t.id)), [trendingIds]);
+  const trendingIdSet = useMemo(() => new Set((trendingIds ?? []).map(t => t.id)), [trendingIds]);
 
   return (
     <div>
@@ -341,43 +382,47 @@ export default function V3Home() {
         ) : <EmptyHero />}
 
         {/* Eventos de hoje — logo abaixo do hero */}
-        {!isLoading && (
-          Array.isArray(rawTodayEvents) && rawTodayEvents.length > 0 ? (
-            <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
-          ) : (
-            <TodayEmptyState error={!!todayError || !!eventsError} loading={loadingToday} />
-          )
-        )}
+        <HomeBelowFoldBoundary>
+          {hasHomeDataError ? (
+            <HomeDataFallback />
+          ) : !isLoading ? (
+            <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+          ) : null}
+        </HomeBelowFoldBoundary>
       </div>
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
       <div className="hidden lg:block">
-        {isLoading ? (
-          <DesktopHomeSkeleton />
-        ) : (
-          <CommandCenter
-            hero={hero}
-            heroIsToday={!!heroIsToday}
-            heroEvents={heroEvents}
-            heroIdx={heroIdx}
-            setHeroIdx={setHeroIdx}
-            weeklyHighlight={weeklyHighlight}
-            todayEvents={rawTodayEvents}
-            todayCount={todayCount}
-            trending={trending}
-            featured={featured}
-            weekEvents={weekEvents}
-            trendingIdSet={trendingIdSet}
-            partnerRankMap={partnerRankMap}
-            venueRanks={venueRanks}
-            featuredPartners={featuredPartners as any[]}
-            events={events}
-          />
-        )}
+        <HomeBelowFoldBoundary>
+          {hasHomeDataError ? (
+            <div className="mx-auto max-w-7xl px-6 py-6"><HomeDataFallback /></div>
+          ) : isLoading ? (
+            <DesktopHomeSkeleton />
+          ) : (
+            <CommandCenter
+              hero={hero}
+              heroIsToday={!!heroIsToday}
+              heroEvents={heroEvents ?? []}
+              heroIdx={heroIdx}
+              setHeroIdx={setHeroIdx}
+              weeklyHighlight={weeklyHighlight}
+              todayEvents={safeEvents(rawTodayEvents)}
+              todayCount={todayCount}
+              trending={trending ?? []}
+              featured={featured ?? []}
+              weekEvents={weekEvents ?? []}
+              trendingIdSet={trendingIdSet}
+              partnerRankMap={partnerRankMap}
+              venueRanks={venueRanks ?? []}
+              featuredPartners={(featuredPartners as any[]) ?? []}
+              events={events ?? []}
+            />
+          )}
+        </HomeBelowFoldBoundary>
       </div>
 
       {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
-      {!isLoading && (
+      {!isLoading && !hasHomeDataError && (
         <div className="max-w-3xl mx-auto min-h-[200px]">
           <LatestNewsSection variant="trending" limit={6} />
           <ExpoHighlightBanner />
@@ -385,16 +430,17 @@ export default function V3Home() {
         </div>
       )}
 
+      <HomeBelowFoldBoundary>
       <div className="space-y-1 lg:hidden">
 
       {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
       <div className="px-4 pt-4">
         <V3SearchBar
-          events={events as any}
-          fallbackEvent={(featured[0] || events[0]) as any}
+          events={safeEvents(events) as any}
+          fallbackEvent={(featured[0] || safeEvents(events)[0]) as any}
           placeholder="Buscar evento, local, vibe..."
         />
-      </div>
+       </div>
 
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
@@ -412,9 +458,9 @@ export default function V3Home() {
 
       <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
 
-      {vibeFilter && vibeFiltered.length > 0 && (
+      {vibeFilter && (vibeFiltered ?? []).length > 0 && (
         <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
-          {vibeFiltered.slice(0, 12).map(e => (
+          {(vibeFiltered ?? []).slice(0, 12).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
           ))}
         </Rail>
@@ -423,25 +469,25 @@ export default function V3Home() {
       {/* ══════ 3. CATEGORIES (filtro fino) ══════ */}
       <CategoryChips selected={catFilter} onSelect={setCatFilter} />
 
-      {catFilter && filtered.length > 0 && (
+      {catFilter && (filtered ?? []).length > 0 && (
         <Rail title={catFilter}>
-          {filtered.slice(0, 12).map(e => (
+          {(filtered ?? []).slice(0, 12).map(e => (
             <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
           ))}
         </Rail>
       )}
 
       {/* ══════ 4. EM ALTA AGORA ══════ */}
-      {loadingTrending ? <RailSkeleton count={3} /> : trending.length > 0 ? (
+      {loadingTrending ? <RailSkeleton count={3} /> : (trending ?? []).length > 0 ? (
         <Rail title="🔥 Em alta agora" subtitle="Mais acessados nas últimas 24h">
-          {trending.map(e => (
+          {(trending ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
       ) : null}
 
       {/* ══════ 5. LOCAIS EM ALTA ══════ */}
-      {loadingVenues ? <VenueRankSkeleton /> : venueRanks.length > 0 ? (
+      {loadingVenues ? <VenueRankSkeleton /> : (venueRanks ?? []).length > 0 ? (
         <FadeSection className="px-4 pt-6 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center neon-glow">
@@ -453,19 +499,19 @@ export default function V3Home() {
             </div>
           </div>
 
-          {venueRanks[0] && <VenueSpotlight v={venueRanks[0]} maxViews={maxViews} />}
+          {(venueRanks ?? [])[0] && <VenueSpotlight v={(venueRanks ?? [])[0]} maxViews={maxViews} />}
 
-          {venueRanks.length > 1 && (
+          {(venueRanks ?? []).length > 1 && (
             <div className="grid grid-cols-2 gap-2 mt-3">
-              {venueRanks.slice(1, 5).map((v, i) => (
+              {(venueRanks ?? []).slice(1, 5).map((v, i) => (
                 <VenueRankCard key={v.id} v={v} rank={i + 2} maxViews={maxViews} />
               ))}
             </div>
           )}
 
-          {venueRanks.length > 5 && (
+          {(venueRanks ?? []).length > 5 && (
             <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
-              {venueRanks.slice(5).map((v, i) => (
+              {(venueRanks ?? []).slice(5).map((v, i) => (
                 <Link key={v.id} to={`/local/${v.slug}`}
                   className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
                   <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
@@ -482,7 +528,7 @@ export default function V3Home() {
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
-      {(featuredPartners as any[]).length > 0 && (
+      {((featuredPartners as any[]) ?? []).length > 0 && (
         <FadeSection className="px-4 pt-5 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <Gem className="w-5 h-5 text-accent" />
@@ -490,7 +536,7 @@ export default function V3Home() {
           </div>
           <p className="text-[11px] text-muted-foreground mb-3">Quem está movimentando a cena</p>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
-            {(featuredPartners as any[]).map(p => (
+            {((featuredPartners as any[]) ?? []).map(p => (
               <FeaturedPartnerCard key={p.id} p={p} />
             ))}
           </div>
@@ -498,18 +544,18 @@ export default function V3Home() {
       )}
 
       {/* ══════ 8. EVENTOS PREMIUM ══════ */}
-      {featured.length > 0 && (
+      {(featured ?? []).length > 0 && (
         <Rail title="⭐ Eventos premium" subtitle="Destaque">
-          {featured.map(e => (
+          {(featured ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
       )}
 
       {/* ══════ 9. ESTA SEMANA — fluid carousel ══════ */}
-      {isLoading ? <RailSkeleton count={4} /> : weekEvents.length > 0 ? (
+      {isLoading ? <RailSkeleton count={4} /> : (weekEvents ?? []).length > 0 ? (
         <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
-          {weekEvents.map(e => (
+          {(weekEvents ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
@@ -532,6 +578,7 @@ export default function V3Home() {
         </div>
       </FadeSection>
       </div>
+      </HomeBelowFoldBoundary>
     </div>
   );
 }
@@ -539,6 +586,45 @@ export default function V3Home() {
 /* ═══════════════════════════════════════════════════════════════
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════ */
+
+class HomeBelowFoldBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error("[V3Home] erro ao renderizar área abaixo do hero", error);
+  }
+
+  render() {
+    if (this.state.hasError) return <HomeDataFallback />;
+    return this.props.children;
+  }
+}
+
+function HomeDataFallback() {
+  return (
+    <section className="px-4 py-6">
+      <div className="rounded-3xl border border-primary/20 bg-card/70 px-5 py-6 text-center shadow-[0_0_28px_-16px_hsl(var(--primary))]">
+        <p className="font-display text-base font-black text-foreground">Não foi possível carregar os eventos agora.</p>
+        <Link to="/agenda" className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-xs font-black uppercase tracking-wide text-primary-foreground transition-transform active:scale-95">
+          Ver agenda <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function TodaySection({ loading, error, events, partnerRankMap, trendingIdSet }: {
+  loading?: boolean; error?: unknown; events?: Ev[] | null;
+  partnerRankMap: Map<string, number>; trendingIdSet: Set<string>;
+}) {
+  const list = safeEvents(events);
+  if (loading || error || list.length === 0) return <TodayEmptyState error={!!error} loading={loading} />;
+  return <TodayTimeline events={list} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />;
+}
 
 /* ─── FADE SECTION WRAPPER ─── */
 function FadeSection({ className, children }: { className?: string; children: ReactNode }) {
@@ -697,7 +783,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
             <ChevronRight className="w-4 h-4" />
           </button>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-            {slides!.map((_, i) => (
+            {(slides ?? []).map((_, i) => (
               <button
                 key={i}
                 type="button"
@@ -1021,10 +1107,14 @@ function CommandCenter({
 }) {
   // Evita duplicar eventos já mostrados na timeline de hoje, no hero ou no spotlight
   const excludeIds = new Set<string>();
-  todayEvents.forEach(e => excludeIds.add(e.id));
+  const safeToday = safeEvents(todayEvents);
+  const safeTrending = safeEvents(trending);
+  const safeFeatured = safeEvents(featured);
+  const safeWeekEvents = safeEvents(weekEvents);
+  safeToday.forEach(e => excludeIds.add(e.id));
   if (hero) excludeIds.add(hero.id);
   if (weeklyHighlight) excludeIds.add(weeklyHighlight.id);
-  const mainPool = [...trending, ...featured, ...weekEvents].filter((e, i, arr) =>
+  const mainPool = [...safeTrending, ...safeFeatured, ...safeWeekEvents].filter((e, i, arr) =>
     arr.findIndex(x => x.id === e.id) === i && !excludeIds.has(e.id)
   );
   // Embaralhamento estável por dia para variar a curadoria sem mudar a cada render
@@ -1035,10 +1125,10 @@ function CommandCenter({
     .map(x => x.e)
     .slice(0, 10);
 
-  if (!todayEvents.length && !mainEvents.length && !hero) return null;
+  if (!safeToday.length && !mainEvents.length && !hero) return <HomeDataFallback />;
 
   return (
-    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
+    <section className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
 
       {/* CENTER — Hero, Search, Today Timeline, Weekly Spotlight, feed */}
       <section className="min-w-0 space-y-6">
@@ -1050,24 +1140,24 @@ function CommandCenter({
               todayCount={todayCount}
               venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
             />
-            {heroEvents.length > 1 && (
+            {(heroEvents ?? []).length > 1 && (
               <>
                 <button
                   aria-label="Slide anterior"
-                  onClick={() => setHeroIdx((heroIdx - 1 + heroEvents.length) % heroEvents.length)}
+                  onClick={() => setHeroIdx((heroIdx - 1 + (heroEvents ?? []).length) % (heroEvents ?? []).length)}
                   className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   aria-label="Próximo slide"
-                  onClick={() => setHeroIdx((heroIdx + 1) % heroEvents.length)}
+                  onClick={() => setHeroIdx((heroIdx + 1) % (heroEvents ?? []).length)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                  {heroEvents.map((_, i) => (
+                  {(heroEvents ?? []).map((_, i) => (
                     <button
                       key={i}
                       aria-label={`Slide ${i + 1}`}
@@ -1091,8 +1181,8 @@ function CommandCenter({
 
         <V3VibeChips className="!py-0 -mx-0" />
 
-        {Array.isArray(todayEvents) && todayEvents.length > 0 ? (
-          <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        {safeToday.length > 0 ? (
+          <TodayTimeline events={safeToday} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
         ) : (
           <TodayEmptyState />
         )}
@@ -1118,7 +1208,7 @@ function CommandCenter({
         <DesktopWeekPanel events={weekEvents} />
         <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
       </aside>
-    </FadeSection>
+    </section>
   );
 }
 
@@ -1198,7 +1288,8 @@ function DesktopCategoriesPanel() {
 }
 
 function DesktopWeekPanel({ events }: { events: Ev[] }) {
-  if (!events.length) return null;
+  const list = safeEvents(events);
+  if (!list.length) return null;
   return (
     <div className="rounded-3xl v3-glass p-4">
       <div className="flex items-center justify-between mb-3">
@@ -1209,7 +1300,7 @@ function DesktopWeekPanel({ events }: { events: Ev[] }) {
         <Link to="/agenda" className="text-[10px] font-bold text-primary hover:underline">Ver tudo</Link>
       </div>
       <div className="space-y-2">
-        {events.slice(0, 5).map(ev => (
+        {list.slice(0, 5).map(ev => (
           <Link key={ev.id} to={`/evento/${ev.slug}`} className="group flex gap-2.5 rounded-xl border border-border/20 bg-background/20 p-2 hover:border-primary/40 hover:bg-primary/5 transition-all">
             <div className="flex flex-col items-center justify-center rounded-lg bg-primary/10 px-2 py-1 min-w-[42px]">
               <span className="text-[8px] font-black uppercase text-primary">{format(new Date(ev.date_time), "MMM", { locale: ptBR })}</span>
@@ -1273,6 +1364,7 @@ function DesktopFeaturedPartnersPanel({ partners, ranks }: { partners: any[]; ra
 }
 
 function NowPanel({ events }: { events: Ev[] }) {
+  const list = safeEvents(events);
   return (
     <div className="rounded-3xl v3-glass-strong p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -1280,7 +1372,7 @@ function NowPanel({ events }: { events: Ev[] }) {
         <h2 className="font-display text-base font-black text-foreground">O que está rolando agora</h2>
       </div>
       <div className="space-y-3">
-        {events.map(ev => (
+        {list.map(ev => (
           <Link key={ev.id} to={`/evento/${ev.slug}`} className="group flex gap-3 rounded-2xl border border-border/25 bg-background/25 p-2 transition-all hover:border-primary/40 hover:bg-primary/10">
             <SmartImage
               src={ev.image_url}
@@ -1302,6 +1394,7 @@ function NowPanel({ events }: { events: Ev[] }) {
 function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
   events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>;
 }) {
+  const list = safeEvents(events);
   return (
     <section className="rounded-3xl v3-glass p-5">
       <div className="mb-4 flex items-end justify-between gap-4">
@@ -1310,11 +1403,11 @@ function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
           <h2 className="font-display text-2xl font-black uppercase text-foreground">Carrossel da noite</h2>
         </div>
         <span className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase text-primary">
-          {events.length} rolês
+          {list.length} rolês
         </span>
       </div>
       <div className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 pr-5 scrollbar-hide [scroll-padding-right:1.25rem]">
-        {events.map((ev) => (
+        {list.map((ev) => (
           <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px] snap-start rounded-3xl overflow-hidden" />
         ))}
       </div>
@@ -1353,8 +1446,9 @@ function TodayEmptyState({ error, loading }: { error?: boolean; loading?: boolea
 function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false }: {
   events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>; compact?: boolean;
 }) {
+  const list = safeEvents(events);
   return (
-    <FadeSection className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
+    <section className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
       <div className="mb-3 flex items-end justify-between">
         <div>
           <h2 className="font-display font-black text-lg text-foreground uppercase tracking-wide">⚡ Hoje</h2>
@@ -1363,7 +1457,7 @@ function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false 
       </div>
       <div className="relative space-y-3 pl-12">
         <div className="absolute left-5 top-3 bottom-3 w-px bg-gradient-to-b from-primary/10 via-primary/75 to-accent/10 shadow-[0_0_15px_hsl(var(--primary)/0.45)]" />
-        {events.map((ev) => (
+        {list.map((ev) => (
           <div key={ev.id} className="relative">
             <div className="absolute -left-12 top-5 z-10 rounded-full border border-primary/35 bg-background px-2 py-1 text-[10px] font-black text-primary shadow-[0_0_15px_hsl(var(--primary)/0.35)]">
               {fmtTime(ev.date_time)}
@@ -1372,7 +1466,7 @@ function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false 
           </div>
         ))}
       </div>
-    </FadeSection>
+    </section>
   );
 }
 
