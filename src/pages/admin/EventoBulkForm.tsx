@@ -235,7 +235,9 @@ const EventoBulkForm = () => {
               venue_name: f.venue_name || "",
               date_time: f.date_time || "",
               category: f.category || "festa",
+              sub_category: (f as any)._sub || "",
               image_url: f.image_url || "",
+              seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
             },
           });
           if (!descResp.error && descResp.data) {
