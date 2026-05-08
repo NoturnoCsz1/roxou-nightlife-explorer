@@ -341,8 +341,12 @@ export default function V3Home() {
         ) : <EmptyHero />}
 
         {/* Eventos de hoje — logo abaixo do hero */}
-        {!isLoading && rawTodayEvents.length > 0 && (
-          <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        {!isLoading && (
+          Array.isArray(rawTodayEvents) && rawTodayEvents.length > 0 ? (
+            <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+          ) : (
+            <TodayEmptyState error={!!todayError || !!eventsError} loading={loadingToday} />
+          )
         )}
       </div>
 
