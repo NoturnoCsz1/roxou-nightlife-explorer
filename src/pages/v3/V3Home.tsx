@@ -499,9 +499,9 @@ export default function V3Home() {
             </div>
           </div>
 
-          {venueRanks[0] && <VenueSpotlight v={venueRanks[0]} maxViews={maxViews} />}
+          {(venueRanks ?? [])[0] && <VenueSpotlight v={(venueRanks ?? [])[0]} maxViews={maxViews} />}
 
-          {venueRanks.length > 1 && (
+          {(venueRanks ?? []).length > 1 && (
             <div className="grid grid-cols-2 gap-2 mt-3">
               {(venueRanks ?? []).slice(1, 5).map((v, i) => (
                 <VenueRankCard key={v.id} v={v} rank={i + 2} maxViews={maxViews} />
@@ -509,7 +509,7 @@ export default function V3Home() {
             </div>
           )}
 
-          {venueRanks.length > 5 && (
+          {(venueRanks ?? []).length > 5 && (
             <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
               {(venueRanks ?? []).slice(5).map((v, i) => (
                 <Link key={v.id} to={`/local/${v.slug}`}
