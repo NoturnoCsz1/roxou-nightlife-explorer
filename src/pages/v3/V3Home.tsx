@@ -366,35 +366,37 @@ export default function V3Home() {
     <div>
       {/* ══════ MOBILE: IMMERSIVE HERO ══════ */}
       <div className="lg:hidden">
-        {isLoading ? <HeroSkeleton /> : hero ? (
-          <div className="relative group -mt-14">
-            <div className="relative">
-              <ImmersiveHero
-                ev={hero}
-                isToday={!!heroIsToday}
-                todayCount={todayCount}
-                venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
-                slides={heroEvents}
-                index={heroIdx}
-                onChange={setHeroIdx}
-              />
+        <HomeSectionBoundary name="Hero mobile" fallback={<EmptyHero />}>
+          {isLoading ? <HeroSkeleton /> : hero ? (
+            <div className="relative group -mt-14">
+              <div className="relative">
+                <ImmersiveHero
+                  ev={hero}
+                  isToday={!!heroIsToday}
+                  todayCount={todayCount}
+                  venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
+                  slides={heroEvents}
+                  index={heroIdx}
+                  onChange={setHeroIdx}
+                />
+              </div>
             </div>
-          </div>
-        ) : <EmptyHero />}
+          ) : <EmptyHero />}
+        </HomeSectionBoundary>
 
         {/* Eventos de hoje — logo abaixo do hero */}
-        <HomeBelowFoldBoundary>
+        <HomeSectionBoundary name="Eventos de Hoje (mobile)">
           {hasHomeDataError ? (
             <HomeDataFallback />
           ) : !isLoading ? (
             <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
           ) : null}
-        </HomeBelowFoldBoundary>
+        </HomeSectionBoundary>
       </div>
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
       <div className="hidden lg:block">
-        <HomeBelowFoldBoundary>
+        <HomeSectionBoundary name="CommandCenter desktop" fallback={<div className="mx-auto max-w-7xl px-6 py-6"><HomeDataFallback /></div>}>
           {hasHomeDataError ? (
             <div className="mx-auto max-w-7xl px-6 py-6"><HomeDataFallback /></div>
           ) : isLoading ? (
@@ -419,167 +421,204 @@ export default function V3Home() {
               events={events ?? []}
             />
           )}
-        </HomeBelowFoldBoundary>
+        </HomeSectionBoundary>
       </div>
 
       {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
       {!isLoading && !hasHomeDataError && (
         <div className="max-w-3xl mx-auto min-h-[200px]">
-          <LatestNewsSection variant="trending" limit={6} />
-          <ExpoHighlightBanner />
-          <MostViewedNews />
+          <HomeSectionBoundary name="Notícias trending" silent>
+            <LatestNewsSection variant="trending" limit={6} />
+          </HomeSectionBoundary>
+          <HomeSectionBoundary name="Expo highlight" silent>
+            <ExpoHighlightBanner />
+          </HomeSectionBoundary>
+          <HomeSectionBoundary name="Notícias mais vistas" silent>
+            <MostViewedNews />
+          </HomeSectionBoundary>
         </div>
       )}
 
-      <HomeBelowFoldBoundary>
       <div className="space-y-1 lg:hidden">
 
       {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
-      <div className="px-4 pt-4">
-        <V3SearchBar
-          events={safeEvents(events) as any}
-          fallbackEvent={(featured[0] || safeEvents(events)[0]) as any}
-          placeholder="Buscar evento, local, vibe..."
-        />
-       </div>
+      <HomeSectionBoundary name="Search bar" silent>
+        <div className="px-4 pt-4">
+          <V3SearchBar
+            events={safeEvents(events) as any}
+            fallbackEvent={(featured[0] || safeEvents(events)[0]) as any}
+            placeholder="Buscar evento, local, vibe..."
+          />
+         </div>
+      </HomeSectionBoundary>
 
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
-      <V3VibeChips />
+      <HomeSectionBoundary name="Vibe chips" silent>
+        <V3VibeChips />
+      </HomeSectionBoundary>
 
       {/* ══════ 1.5 HOJE — Já renderizado logo abaixo do hero ══════ */}
 
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
-      {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
+      <HomeSectionBoundary name="Destaque da semana" silent>
+        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
+      </HomeSectionBoundary>
 
-      <AIHomeWidget />
+      <HomeSectionBoundary name="AI widget" silent>
+        <AIHomeWidget />
+      </HomeSectionBoundary>
 
       {/* ══════ 2. BENTO GRID — Transport + Categories ══════ */}
-      <BentoGrid />
+      <HomeSectionBoundary name="Bento grid">
+        <BentoGrid />
+      </HomeSectionBoundary>
 
-      <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
+      <HomeSectionBoundary name="Vibe selector" silent>
+        <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
+      </HomeSectionBoundary>
 
-      {vibeFilter && (vibeFiltered ?? []).length > 0 && (
-        <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
-          {(vibeFiltered ?? []).slice(0, 12).map(e => (
-            <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
-          ))}
-        </Rail>
-      )}
+      <HomeSectionBoundary name="Vibe filtered rail" silent>
+        {vibeFilter && (vibeFiltered ?? []).length > 0 && (
+          <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
+            {(vibeFiltered ?? []).slice(0, 12).map(e => (
+              <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
+            ))}
+          </Rail>
+        )}
+      </HomeSectionBoundary>
 
       {/* ══════ 3. CATEGORIES (filtro fino) ══════ */}
-      <CategoryChips selected={catFilter} onSelect={setCatFilter} />
+      <HomeSectionBoundary name="Category chips" silent>
+        <CategoryChips selected={catFilter} onSelect={setCatFilter} />
+      </HomeSectionBoundary>
 
-      {catFilter && (filtered ?? []).length > 0 && (
-        <Rail title={catFilter}>
-          {(filtered ?? []).slice(0, 12).map(e => (
-            <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
-          ))}
-        </Rail>
-      )}
+      <HomeSectionBoundary name="Category filtered rail" silent>
+        {catFilter && (filtered ?? []).length > 0 && (
+          <Rail title={catFilter}>
+            {(filtered ?? []).slice(0, 12).map(e => (
+              <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
+            ))}
+          </Rail>
+        )}
+      </HomeSectionBoundary>
 
       {/* ══════ 4. EM ALTA AGORA ══════ */}
-      {loadingTrending ? <RailSkeleton count={3} /> : (trending ?? []).length > 0 ? (
-        <Rail title="🔥 Em alta agora" subtitle="Mais acessados nas últimas 24h">
-          {(trending ?? []).map(e => (
-            <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
-          ))}
-        </Rail>
-      ) : null}
+      <HomeSectionBoundary name="Em alta agora" silent>
+        {loadingTrending ? <RailSkeleton count={3} /> : (trending ?? []).length > 0 ? (
+          <Rail title="🔥 Em alta agora" subtitle="Mais acessados nas últimas 24h">
+            {(trending ?? []).map(e => (
+              <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
+            ))}
+          </Rail>
+        ) : null}
+      </HomeSectionBoundary>
 
       {/* ══════ 5. LOCAIS EM ALTA ══════ */}
-      {loadingVenues ? <VenueRankSkeleton /> : (venueRanks ?? []).length > 0 ? (
-        <FadeSection className="px-4 pt-6 pb-3">
-          <div className="flex items-center gap-2 mb-0.5">
-            <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center neon-glow">
-              <Crown className="w-4 h-4 text-primary-foreground" />
+      <HomeSectionBoundary name="Locais em alta" silent>
+        {loadingVenues ? <VenueRankSkeleton /> : (venueRanks ?? []).length > 0 ? (
+          <FadeSection className="px-4 pt-6 pb-3">
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center neon-glow">
+                <Crown className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">Locais em alta</h2>
+                <p className="text-[10px] text-muted-foreground -mt-0.5">Ranking semanal · Os mais acessados no Roxou</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">Locais em alta</h2>
-              <p className="text-[10px] text-muted-foreground -mt-0.5">Ranking semanal · Os mais acessados no Roxou</p>
-            </div>
-          </div>
 
-          {(venueRanks ?? [])[0] && <VenueSpotlight v={(venueRanks ?? [])[0]} maxViews={maxViews} />}
+            {(venueRanks ?? [])[0] && <VenueSpotlight v={(venueRanks ?? [])[0]} maxViews={maxViews} />}
 
-          {(venueRanks ?? []).length > 1 && (
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              {(venueRanks ?? []).slice(1, 5).map((v, i) => (
-                <VenueRankCard key={v.id} v={v} rank={i + 2} maxViews={maxViews} />
-              ))}
-            </div>
-          )}
+            {(venueRanks ?? []).length > 1 && (
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {(venueRanks ?? []).slice(1, 5).map((v, i) => (
+                  <VenueRankCard key={v.id} v={v} rank={i + 2} maxViews={maxViews} />
+                ))}
+              </div>
+            )}
 
-          {(venueRanks ?? []).length > 5 && (
-            <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
-              {(venueRanks ?? []).slice(5).map((v, i) => (
-                <Link key={v.id} to={`/local/${v.slug}`}
-                  className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
-                  <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
-                  <div className="w-6 h-6 rounded-md overflow-hidden bg-secondary shrink-0">
-                    {v.logo_url ? <img src={v.logo_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-muted-foreground flex items-center justify-center h-full">{v.name[0]}</span>}
-                  </div>
-                  <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">{v.name}</span>
-                  <span className="text-[9px] text-muted-foreground">{v.views}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </FadeSection>
-      ) : null}
+            {(venueRanks ?? []).length > 5 && (
+              <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
+                {(venueRanks ?? []).slice(5).map((v, i) => (
+                  <Link key={v.id} to={`/local/${v.slug}`}
+                    className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
+                    <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
+                    <div className="w-6 h-6 rounded-md overflow-hidden bg-secondary shrink-0">
+                      {v.logo_url ? <img src={v.logo_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-muted-foreground flex items-center justify-center h-full">{v.name[0]}</span>}
+                    </div>
+                    <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">{v.name}</span>
+                    <span className="text-[9px] text-muted-foreground">{v.views}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </FadeSection>
+        ) : null}
+      </HomeSectionBoundary>
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
-      {((featuredPartners as any[]) ?? []).length > 0 && (
-        <FadeSection className="px-4 pt-5 pb-3">
-          <div className="flex items-center gap-2 mb-0.5">
-            <Gem className="w-5 h-5 text-accent" />
-            <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">Parceiros em destaque</h2>
-          </div>
-          <p className="text-[11px] text-muted-foreground mb-3">Quem está movimentando a cena</p>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
-            {((featuredPartners as any[]) ?? []).map(p => (
-              <FeaturedPartnerCard key={p.id} p={p} />
-            ))}
-          </div>
-        </FadeSection>
-      )}
+      <HomeSectionBoundary name="Parceiros em destaque" silent>
+        {((featuredPartners as any[]) ?? []).length > 0 && (
+          <FadeSection className="px-4 pt-5 pb-3">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Gem className="w-5 h-5 text-accent" />
+              <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">Parceiros em destaque</h2>
+            </div>
+            <p className="text-[11px] text-muted-foreground mb-3">Quem está movimentando a cena</p>
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
+              {((featuredPartners as any[]) ?? []).map(p => (
+                <FeaturedPartnerCard key={p.id} p={p} />
+              ))}
+            </div>
+          </FadeSection>
+        )}
+      </HomeSectionBoundary>
 
       {/* ══════ 8. EVENTOS PREMIUM ══════ */}
-      {(featured ?? []).length > 0 && (
-        <Rail title="⭐ Eventos premium" subtitle="Destaque">
-          {(featured ?? []).map(e => (
-            <PremiumEventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
-          ))}
-        </Rail>
-      )}
+      <HomeSectionBoundary name="Eventos premium" silent>
+        {(featured ?? []).length > 0 && (
+          <Rail title="⭐ Eventos premium" subtitle="Destaque">
+            {(featured ?? []).map(e => (
+              <PremiumEventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
+            ))}
+          </Rail>
+        )}
+      </HomeSectionBoundary>
 
       {/* ══════ 9. ESTA SEMANA — fluid carousel ══════ */}
-      {isLoading ? <RailSkeleton count={4} /> : (weekEvents ?? []).length > 0 ? (
-        <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
-          {(weekEvents ?? []).map(e => (
-            <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
-          ))}
-        </Rail>
-      ) : null}
+      <HomeSectionBoundary name="Esta semana" silent>
+        {isLoading ? <RailSkeleton count={4} /> : (weekEvents ?? []).length > 0 ? (
+          <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
+            {(weekEvents ?? []).map(e => (
+              <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
+            ))}
+          </Rail>
+        ) : null}
+      </HomeSectionBoundary>
+
       {/* ══════ 9.5 ÚLTIMAS NOTÍCIAS ══════ */}
-      <LatestNewsSection variant="latest" limit={6} />
+      <HomeSectionBoundary name="Últimas notícias" silent>
+        <LatestNewsSection variant="latest" limit={6} />
+      </HomeSectionBoundary>
 
       {/* Footer institucional V3 */}
-      <FadeSection className="px-4 pt-6 pb-2">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-muted-foreground">
-          <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
-          <span className="opacity-30">·</span>
-          <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
-          <span className="opacity-30">·</span>
-          <Link to="/privacy" className="hover:text-primary transition-colors">Privacidade</Link>
-          <span className="opacity-30">·</span>
-          <Link to="/terms" className="hover:text-primary transition-colors">Termos</Link>
-          <span className="opacity-30">·</span>
-          <Link to="/remover-dados" className="hover:text-primary transition-colors">Remover dados</Link>
-        </div>
-      </FadeSection>
+      <HomeSectionBoundary name="Footer V3" silent>
+        <FadeSection className="px-4 pt-6 pb-2">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-muted-foreground">
+            <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
+            <span className="opacity-30">·</span>
+            <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
+            <span className="opacity-30">·</span>
+            <Link to="/privacy" className="hover:text-primary transition-colors">Privacidade</Link>
+            <span className="opacity-30">·</span>
+            <Link to="/terms" className="hover:text-primary transition-colors">Termos</Link>
+            <span className="opacity-30">·</span>
+            <Link to="/remover-dados" className="hover:text-primary transition-colors">Remover dados</Link>
+          </div>
+        </FadeSection>
+      </HomeSectionBoundary>
       </div>
-      </HomeBelowFoldBoundary>
     </div>
   );
 }
