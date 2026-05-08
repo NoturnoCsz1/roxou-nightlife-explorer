@@ -244,7 +244,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { image_url, current_year, verified_partners = [] } = await req.json();
+    const { image_url, current_year, verified_partners = [], admin_feedback = [] } = await req.json();
     if (!image_url) {
       return new Response(JSON.stringify({ error: "image_url required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
