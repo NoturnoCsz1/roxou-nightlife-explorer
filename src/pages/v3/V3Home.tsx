@@ -586,6 +586,45 @@ export default function V3Home() {
    SUB-COMPONENTS
    ═══════════════════════════════════════════════════════════════ */
 
+class HomeBelowFoldBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown) {
+    console.error("[V3Home] erro ao renderizar área abaixo do hero", error);
+  }
+
+  render() {
+    if (this.state.hasError) return <HomeDataFallback />;
+    return this.props.children;
+  }
+}
+
+function HomeDataFallback() {
+  return (
+    <section className="px-4 py-6">
+      <div className="rounded-3xl border border-primary/20 bg-card/70 px-5 py-6 text-center shadow-[0_0_28px_-16px_hsl(var(--primary))]">
+        <p className="font-display text-base font-black text-foreground">Não foi possível carregar os eventos agora.</p>
+        <Link to="/agenda" className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-xs font-black uppercase tracking-wide text-primary-foreground transition-transform active:scale-95">
+          Ver agenda <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function TodaySection({ loading, error, events, partnerRankMap, trendingIdSet }: {
+  loading?: boolean; error?: unknown; events?: Ev[] | null;
+  partnerRankMap: Map<string, number>; trendingIdSet: Set<string>;
+}) {
+  const list = safeEvents(events);
+  if (loading || error || list.length === 0) return <TodayEmptyState error={!!error} loading={loading} />;
+  return <TodayTimeline events={list} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />;
+}
+
 /* ─── FADE SECTION WRAPPER ─── */
 function FadeSection({ className, children }: { className?: string; children: ReactNode }) {
   const { ref, visible } = useScrollFadeIn();
