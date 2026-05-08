@@ -1091,8 +1091,10 @@ function CommandCenter({
 
         <V3VibeChips className="!py-0 -mx-0" />
 
-        {todayEvents.length > 0 && (
+        {Array.isArray(todayEvents) && todayEvents.length > 0 ? (
           <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        ) : (
+          <TodayEmptyState />
         )}
 
         {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
