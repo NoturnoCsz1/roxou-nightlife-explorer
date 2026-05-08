@@ -131,7 +131,7 @@ export default function V3Home() {
         console.error("[V3Home] erro ao carregar eventos", error);
         throw error;
       }
-      return (data as Ev[]) || [];
+      return safeEvents(data);
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -152,7 +152,7 @@ export default function V3Home() {
         console.error("[V3Home] erro ao carregar eventos de hoje", error);
         throw error;
       }
-      return (data as Ev[]) || [];
+      return safeEvents(data);
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -250,7 +250,7 @@ export default function V3Home() {
         .slice(0, Math.max(0, 8 - pinned.length));
 
       const ordered = [...pinned, ...rest];
-      const rankMap = new Map(venueRanks.map((v, i) => [v.id, i + 1]));
+      const rankMap = new Map((venueRanks ?? []).map((v, i) => [v.id, i + 1]));
       return ordered.map((p: any) => ({ ...p, _rank: rankMap.get(p.id) || 0 }));
     },
     enabled: venueRanks !== undefined,
@@ -258,16 +258,17 @@ export default function V3Home() {
 
   /* ─── DEDUPLICATION ─── */
   const heroEvents = useMemo(() => {
-    const feat = events.filter(e => e.featured);
-    const rest = events.filter(e => !e.featured);
-    const trendMap = new Map(trendingIds.map(t => [t.id, t.views]));
+    const list = safeEvents(events);
+    const feat = list.filter(e => e.featured);
+    const rest = list.filter(e => !e.featured);
+    const trendMap = new Map((trendingIds ?? []).map(t => [t.id, t.views]));
     rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
     const combined = [...feat, ...rest];
     let unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
     // Fallback: complete with random future events when there are fewer than 4 highlights
     if (unique.length < 4) {
       const usedIds = new Set(unique.map(e => e.id));
-      const pool = events.filter(e => !usedIds.has(e.id));
+      const pool = list.filter(e => !usedIds.has(e.id));
       // Fisher-Yates shuffle (stable per render via slice)
       const shuffled = pool.slice();
       for (let i = shuffled.length - 1; i > 0; i--) {
