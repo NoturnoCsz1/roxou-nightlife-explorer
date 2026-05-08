@@ -429,16 +429,18 @@ export default function V3Home() {
         </div>
       )}
 
+      <HomeBelowFoldBoundary>
       <div className="space-y-1 lg:hidden">
 
       {/* ══════ 1.4 SEARCH BAR — abaixo do hero ══════ */}
       <div className="px-4 pt-4">
         <V3SearchBar
-          events={events as any}
-          fallbackEvent={(featured[0] || events[0]) as any}
+          events={safeEvents(events) as any}
+          fallbackEvent={(featured[0] || safeEvents(events)[0]) as any}
           placeholder="Buscar evento, local, vibe..."
         />
-      </div>
+       </div>
+      </HomeBelowFoldBoundary>
 
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
