@@ -19,6 +19,8 @@ export type AdminEventFormInput = {
   image_hash?: string;
   _sub?: string;
   opportunity_tags?: string[];
+  ai_confidence?: string;
+  needs_review?: boolean;
 };
 
 interface BuildEventPayloadOptions {
