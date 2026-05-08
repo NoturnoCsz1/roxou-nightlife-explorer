@@ -78,11 +78,46 @@ function pickFromBank(bank: string[], seed: number): string {
   return bank[idx];
 }
 
+// 🔁 Similaridade simples por Jaccard de tokens (palavras com 4+ letras)
+function tokenize(s: string): Set<string> {
+  return new Set(
+    String(s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/[^a-z0-9 ]+/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4),
+  );
+}
+function jaccard(a: string, b: string): number {
+  const A = tokenize(a); const B = tokenize(b);
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  for (const x of A) if (B.has(x)) inter++;
+  const union = A.size + B.size - inter;
+  return union ? inter / union : 0;
+}
+
+async function callAI(messages: any[], tools: any[], temperature: number, apiKey: string) {
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages, tools,
+      tool_choice: { type: "function", function: { name: "gerar_copy_evento" } },
+      temperature,
+    }),
+  });
+  return r;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { title, venue_name, date_time, category, sub_category, image_url, attractions, seed_index, neighborhood } = await req.json();
+    const { title, venue_name, date_time, category, sub_category, image_url, attractions, seed_index, neighborhood, address, previous_descriptions = [] } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
