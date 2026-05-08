@@ -35,6 +35,33 @@ const GENRE_KEYWORDS: Record<string, string[]> = {
 
 const NATIONAL_VENUE_KEYWORDS = ["recinto de exposição", "recinto de exposicoes", "parque de exposições", "parque de exposicoes", "arena", "estádio", "estadio", "ginasio", "ginásio", "anfiteatro"];
 
+// 🧠 Memória de gênero por estabelecimento (Prudente / interior SP)
+// Usada como FALLBACK quando o parceiro não está cadastrado como verificado.
+// Chave: trecho normalizado (sem acento, lowercase). Match por includes nos dois sentidos.
+const VENUE_GENRE_MEMORY: Array<{ keys: string[]; sub: string; cat?: string }> = [
+  { keys: ["vo laura", "vó laura"], sub: "sertanejo", cat: "bar" },
+  { keys: ["agrobar"], sub: "sertanejo", cat: "bar" },
+  { keys: ["espetinho do rafa", "espetinho rafa"], sub: "mpb", cat: "espetinho" },
+  { keys: ["arapuca"], sub: "sertanejo", cat: "bar" },
+  { keys: ["bar do tio"], sub: "pagode_samba", cat: "bar" },
+  { keys: ["colina"], sub: "pagode_samba", cat: "bar" },
+  { keys: ["fabrica"], sub: "eletronica", cat: "balada" },
+  { keys: ["gastrobar"], sub: "eletronica", cat: "bar" },
+];
+
+function lookupVenueMemory(venueName: string | null | undefined): { sub: string; cat?: string; matched: string } | null {
+  const v = normText(venueName || "");
+  if (!v || v.length < 3) return null;
+  for (const entry of VENUE_GENRE_MEMORY) {
+    for (const k of entry.keys) {
+      if (v.includes(k) || k.includes(v)) {
+        return { sub: entry.sub, cat: entry.cat, matched: k };
+      }
+    }
+  }
+  return null;
+}
+
 const WEEKDAY_NAMES = [
   ["domingo", "dom"],
   ["segunda", "seg", "segunda-feira"],
@@ -378,6 +405,27 @@ serve(async (req) => {
             }
             break;
           }
+        }
+      }
+    }
+
+    // ============== 🧠 Memória de gênero por venue (fallback sem DNA) ==============
+    if (!verifiedMatch) {
+      const memory = lookupVenueMemory(parsed.venue_name);
+      if (memory) {
+        const detected = detectGenreFromText(fullText);
+        const strongOverride = detected.confidence === "high" && detected.sub && detected.sub !== memory.sub;
+        if (!strongOverride) {
+          if (GENRE_SUBS.has(memory.sub)) {
+            sub = memory.sub;
+            category_override_reason = `${category_override_reason ? category_override_reason + " | " : ""}🧠 Memória do local "${parsed.venue_name}" → gênero ${memory.sub}`;
+          }
+          if (memory.cat && ["bar","balada","festa","espetinho","restaurante","lounge","show"].includes(memory.cat)) {
+            cat = memory.cat;
+          }
+        } else if (detected.sub) {
+          sub = detected.sub;
+          category_override_reason = `${category_override_reason ? category_override_reason + " | " : ""}🧠 Memória do local sobreposta por gênero forte (${detected.sub})`;
         }
       }
     }
