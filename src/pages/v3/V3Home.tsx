@@ -440,7 +440,6 @@ export default function V3Home() {
           placeholder="Buscar evento, local, vibe..."
         />
        </div>
-      </HomeBelowFoldBoundary>
 
       {/* ══════ 1.4b EXPLORAR POR VIBE — chips de conversão (linha única) ══════ */}
       <V3VibeChips />
