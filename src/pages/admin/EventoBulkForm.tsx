@@ -237,6 +237,8 @@ const EventoBulkForm = () => {
             verification_source: "instagram",
             opportunity_tags: data.opportunity_tags || [],
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
+            ...(data.ai_confidence ? { ai_confidence: data.ai_confidence } as any : {}),
+            ...(typeof data.needs_review === "boolean" ? { needs_review: data.needs_review } as any : {}),
           };
           readyForm = next;
           return { ...it, form: next, status: "ready", categoryWarning };
