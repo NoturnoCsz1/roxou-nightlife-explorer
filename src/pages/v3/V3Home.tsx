@@ -283,51 +283,56 @@ export default function V3Home() {
   const [heroIdx, setHeroIdx] = useState(0);
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
-  const todayCount = rawTodayEvents.length;
+  const todayCount = safeEvents(rawTodayEvents).length;
+  const hasHomeDataError = Boolean(eventsError || todayError);
 
   const usedIds = useMemo(() => {
     const s = new Set<string>();
-    heroEvents.forEach(e => s.add(e.id));
+    (heroEvents ?? []).forEach(e => s.add(e.id));
     return s;
   }, [heroEvents]);
 
   const trending = useMemo(() => {
-    const idSet = new Set(trendingIds.map(t => t.id));
-    const result = events.filter(e => idSet.has(e.id) && !usedIds.has(e.id)).slice(0, 8);
+    const idSet = new Set((trendingIds ?? []).map(t => t.id));
+    const result = safeEvents(events).filter(e => idSet.has(e.id) && !usedIds.has(e.id)).slice(0, 8);
     result.forEach(e => usedIds.add(e.id));
     return result;
   }, [events, trendingIds, usedIds]);
 
   const todayEvents = useMemo(
-    () => rawTodayEvents.filter(e => !usedIds.has(e.id))
+    () => safeEvents(rawTodayEvents).filter(e => !usedIds.has(e.id))
       .slice(0, 12).map(e => { usedIds.add(e.id); return e; }),
     [rawTodayEvents, usedIds],
   );
 
   const featured = useMemo(
-    () => events.filter(e => e.featured && !usedIds.has(e.id))
+    () => safeEvents(events).filter(e => e.featured && !usedIds.has(e.id))
       .slice(0, 8).map(e => { usedIds.add(e.id); return e; }),
     [events, usedIds],
   );
 
   const weekEvents = useMemo(
-    () => events.filter(e => !usedIds.has(e.id) && isAfter(new Date(e.date_time), addDays(today, 1)) && isAfter(addDays(today, 7), new Date(e.date_time)))
+    () => safeEvents(events).filter(e => {
+      const dt = toSafeDate(e.date_time);
+      return !!dt && !usedIds.has(e.id) && isAfter(dt, addDays(today, 1)) && isAfter(addDays(today, 7), dt);
+    })
       .slice(0, 12),
     [events, today, usedIds],
   );
 
   const filtered = useMemo(
-    () => (catFilter ? events.filter(e => e.category === catFilter) : []),
+    () => (catFilter ? safeEvents(events).filter(e => e.category === catFilter) : []),
     [events, catFilter],
   );
 
   const vibeFiltered = useMemo(() => {
-    const trendSet = new Set(trendingIds.map(t => t.id));
+    const list = safeEvents(events);
+    const trendSet = new Set((trendingIds ?? []).map(t => t.id));
     const musicSubs = new Set(["show", "sertanejo", "rock", "pagode", "mpb", "pop_rock", "samba"]);
-    if (vibeFilter === "bombando") return events.filter(e => trendSet.has(e.id));
-    if (vibeFilter === "musica") return events.filter(e => e.category === "show" || musicSubs.has(e.sub_category || ""));
-    if (vibeFilter === "happy") return events.filter(e => ["bar", "gastrobar", "restaurante"].includes(e.category));
-    if (vibeFilter === "grandes") return events.filter(e => ["festival", "festa"].includes(e.category));
+    if (vibeFilter === "bombando") return list.filter(e => trendSet.has(e.id));
+    if (vibeFilter === "musica") return list.filter(e => e.category === "show" || musicSubs.has(e.sub_category || ""));
+    if (vibeFilter === "happy") return list.filter(e => ["bar", "gastrobar", "restaurante"].includes(e.category));
+    if (vibeFilter === "grandes") return list.filter(e => ["festival", "festa"].includes(e.category));
     return [];
   }, [events, trendingIds, vibeFilter]);
 
@@ -335,7 +340,7 @@ export default function V3Home() {
   // Curadoria Roxou / Destaque da Semana — apenas Festas, Shows e Baladas
   const weeklyHighlight = useMemo(() => {
     const ALLOWED = new Set(["festa", "show", "balada"]);
-    const candidates = events.filter(e => !usedIds.has(e.id) && ALLOWED.has(e.category));
+    const candidates = safeEvents(events).filter(e => !usedIds.has(e.id) && ALLOWED.has(e.category));
     return candidates.find(e => e.featured && e.video_url) ||
            candidates.find(e => e.featured) ||
            candidates.find(e => e.video_url) ||
@@ -349,11 +354,11 @@ export default function V3Home() {
 
   const partnerRankMap = useMemo(() => {
     const m = new Map<string, number>();
-    venueRanks.forEach((v, i) => m.set(v.id, i + 1));
+    (venueRanks ?? []).forEach((v, i) => m.set(v.id, i + 1));
     return m;
   }, [venueRanks]);
 
-  const trendingIdSet = useMemo(() => new Set(trendingIds.map(t => t.id)), [trendingIds]);
+  const trendingIdSet = useMemo(() => new Set((trendingIds ?? []).map(t => t.id)), [trendingIds]);
 
   return (
     <div>
