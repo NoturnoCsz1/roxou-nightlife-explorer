@@ -1128,7 +1128,7 @@ function CommandCenter({
   if (!safeToday.length && !mainEvents.length && !hero) return <HomeDataFallback />;
 
   return (
-    <FadeSection className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
+    <section className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
 
       {/* CENTER — Hero, Search, Today Timeline, Weekly Spotlight, feed */}
       <section className="min-w-0 space-y-6">
@@ -1208,7 +1208,7 @@ function CommandCenter({
         <DesktopWeekPanel events={weekEvents} />
         <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
       </aside>
-    </FadeSection>
+    </section>
   );
 }
 
@@ -1448,7 +1448,7 @@ function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false 
 }) {
   const list = safeEvents(events);
   return (
-    <FadeSection className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
+    <section className={compact ? "h-full" : "px-4 pt-5 pb-3"}>
       <div className="mb-3 flex items-end justify-between">
         <div>
           <h2 className="font-display font-black text-lg text-foreground uppercase tracking-wide">⚡ Hoje</h2>
@@ -1466,7 +1466,7 @@ function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false 
           </div>
         ))}
       </div>
-    </FadeSection>
+    </section>
   );
 }
 
