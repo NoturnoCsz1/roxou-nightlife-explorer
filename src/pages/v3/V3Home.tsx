@@ -1320,6 +1320,34 @@ function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
   );
 }
 
+function TodayEmptyState({ error, loading }: { error?: boolean; loading?: boolean }) {
+  return (
+    <section className="px-4 pt-6 pb-3">
+      <div className="mb-3">
+        <h2 className="font-display font-black text-lg text-foreground uppercase tracking-wide">⚡ Hoje</h2>
+        <p className="text-[10px] text-muted-foreground">Timeline da noite em sequência</p>
+      </div>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+        {loading ? (
+          <p className="text-xs text-muted-foreground">Carregando rolês de hoje…</p>
+        ) : error ? (
+          <>
+            <p className="text-sm font-semibold text-foreground">Não foi possível carregar os eventos agora.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Verifique sua conexão e tente novamente em instantes.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-foreground">Hoje ainda não temos eventos publicados.</p>
+            <Link to="/agenda" className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-4 py-2 text-[11px] font-black uppercase text-primary hover:bg-primary/25">
+              Ver agenda completa
+            </Link>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function TodayTimeline({ events, partnerRankMap, trendingIdSet, compact = false }: {
   events: Ev[]; partnerRankMap: Map<string, number>; trendingIdSet: Set<string>; compact?: boolean;
 }) {
