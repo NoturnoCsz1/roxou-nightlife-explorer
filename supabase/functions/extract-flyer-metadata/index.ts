@@ -409,8 +409,28 @@ serve(async (req) => {
       }
     }
 
-    // ============== 🧠 Memória de gênero por venue (fallback sem DNA) ==============
-    if (!verifiedMatch) {
+    // ============== 🎓 Aprendizado: correções salvas pelo admin (PRIORIDADE MÁXIMA) ==============
+    let admin_feedback_applied: string | null = null;
+    if (Array.isArray(admin_feedback) && admin_feedback.length && parsed.venue_name) {
+      const vn = normText(parsed.venue_name);
+      const fbMatch = admin_feedback.find((f: any) => {
+        const fv = normText(f?.venue_name);
+        return fv && fv.length >= 3 && (vn.includes(fv) || fv.includes(vn));
+      });
+      if (fbMatch) {
+        if (fbMatch.corrected_sub_category && ALLOWED_SUBS.includes(fbMatch.corrected_sub_category)) {
+          sub = fbMatch.corrected_sub_category;
+        }
+        if (fbMatch.corrected_category && ALLOWED_CATEGORIES.includes(fbMatch.corrected_category)) {
+          cat = fbMatch.corrected_category;
+        }
+        admin_feedback_applied = `🎓 Correção aprendida do admin para "${parsed.venue_name}" → ${cat}/${sub}`;
+        category_override_reason = `${category_override_reason ? category_override_reason + " | " : ""}${admin_feedback_applied}`;
+      }
+    }
+
+    // ============== 🧠 Memória de gênero por venue (fallback sem DNA / sem feedback) ==============
+    if (!verifiedMatch && !admin_feedback_applied) {
       const memory = lookupVenueMemory(parsed.venue_name);
       if (memory) {
         const detected = detectGenreFromText(fullText);
