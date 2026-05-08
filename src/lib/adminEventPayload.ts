@@ -51,6 +51,8 @@ export function buildEventPayload(
     ticket_url: form.ticket_url || null,
     sub_category: form._sub || null,
     opportunity_tags: form.opportunity_tags || [],
+    ai_confidence: form.ai_confidence || "medium",
+    needs_review: Boolean(form.needs_review),
   };
 
   if (options.city) {
