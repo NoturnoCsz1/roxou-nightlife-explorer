@@ -414,7 +414,7 @@ export default function V3Home() {
               trendingIdSet={trendingIdSet}
               partnerRankMap={partnerRankMap}
               venueRanks={venueRanks ?? []}
-              featuredPartners={featuredPartners as any[] ?? []}
+              featuredPartners={(featuredPartners as any[]) ?? []}
               events={events ?? []}
             />
           )}
@@ -458,7 +458,7 @@ export default function V3Home() {
 
       <VibeSelector selected={vibeFilter} onSelect={setVibeFilter} />
 
-      {vibeFilter && vibeFiltered.length > 0 && (
+      {vibeFilter && (vibeFiltered ?? []).length > 0 && (
         <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
           {(vibeFiltered ?? []).slice(0, 12).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
@@ -469,7 +469,7 @@ export default function V3Home() {
       {/* ══════ 3. CATEGORIES (filtro fino) ══════ */}
       <CategoryChips selected={catFilter} onSelect={setCatFilter} />
 
-      {catFilter && filtered.length > 0 && (
+      {catFilter && (filtered ?? []).length > 0 && (
         <Rail title={catFilter}>
           {(filtered ?? []).slice(0, 12).map(e => (
             <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
@@ -478,7 +478,7 @@ export default function V3Home() {
       )}
 
       {/* ══════ 4. EM ALTA AGORA ══════ */}
-      {loadingTrending ? <RailSkeleton count={3} /> : trending.length > 0 ? (
+      {loadingTrending ? <RailSkeleton count={3} /> : (trending ?? []).length > 0 ? (
         <Rail title="🔥 Em alta agora" subtitle="Mais acessados nas últimas 24h">
           {(trending ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
@@ -487,7 +487,7 @@ export default function V3Home() {
       ) : null}
 
       {/* ══════ 5. LOCAIS EM ALTA ══════ */}
-      {loadingVenues ? <VenueRankSkeleton /> : venueRanks.length > 0 ? (
+      {loadingVenues ? <VenueRankSkeleton /> : (venueRanks ?? []).length > 0 ? (
         <FadeSection className="px-4 pt-6 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center neon-glow">
@@ -528,7 +528,7 @@ export default function V3Home() {
       ) : null}
 
       {/* ══════ 7. PARCEIROS EM DESTAQUE ══════ */}
-      {(featuredPartners as any[]).length > 0 && (
+      {((featuredPartners as any[]) ?? []).length > 0 && (
         <FadeSection className="px-4 pt-5 pb-3">
           <div className="flex items-center gap-2 mb-0.5">
             <Gem className="w-5 h-5 text-accent" />
@@ -544,7 +544,7 @@ export default function V3Home() {
       )}
 
       {/* ══════ 8. EVENTOS PREMIUM ══════ */}
-      {featured.length > 0 && (
+      {(featured ?? []).length > 0 && (
         <Rail title="⭐ Eventos premium" subtitle="Destaque">
           {(featured ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
@@ -553,7 +553,7 @@ export default function V3Home() {
       )}
 
       {/* ══════ 9. ESTA SEMANA — fluid carousel ══════ */}
-      {isLoading ? <RailSkeleton count={4} /> : weekEvents.length > 0 ? (
+      {isLoading ? <RailSkeleton count={4} /> : (weekEvents ?? []).length > 0 ? (
         <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
           {(weekEvents ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
