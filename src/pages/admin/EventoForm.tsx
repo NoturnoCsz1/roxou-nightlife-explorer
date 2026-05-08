@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
