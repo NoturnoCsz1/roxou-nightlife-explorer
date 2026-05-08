@@ -381,43 +381,47 @@ export default function V3Home() {
         ) : <EmptyHero />}
 
         {/* Eventos de hoje — logo abaixo do hero */}
-        {!isLoading && (
-          Array.isArray(rawTodayEvents) && rawTodayEvents.length > 0 ? (
-            <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
-          ) : (
-            <TodayEmptyState error={!!todayError || !!eventsError} loading={loadingToday} />
-          )
-        )}
+        <HomeBelowFoldBoundary>
+          {hasHomeDataError ? (
+            <HomeDataFallback />
+          ) : !isLoading ? (
+            <TodaySection loading={loadingToday} error={todayError} events={rawTodayEvents ?? []} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+          ) : null}
+        </HomeBelowFoldBoundary>
       </div>
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
       <div className="hidden lg:block">
-        {isLoading ? (
-          <DesktopHomeSkeleton />
-        ) : (
-          <CommandCenter
-            hero={hero}
-            heroIsToday={!!heroIsToday}
-            heroEvents={heroEvents}
-            heroIdx={heroIdx}
-            setHeroIdx={setHeroIdx}
-            weeklyHighlight={weeklyHighlight}
-            todayEvents={rawTodayEvents}
-            todayCount={todayCount}
-            trending={trending}
-            featured={featured}
-            weekEvents={weekEvents}
-            trendingIdSet={trendingIdSet}
-            partnerRankMap={partnerRankMap}
-            venueRanks={venueRanks}
-            featuredPartners={featuredPartners as any[]}
-            events={events}
-          />
-        )}
+        <HomeBelowFoldBoundary>
+          {hasHomeDataError ? (
+            <div className="mx-auto max-w-7xl px-6 py-6"><HomeDataFallback /></div>
+          ) : isLoading ? (
+            <DesktopHomeSkeleton />
+          ) : (
+            <CommandCenter
+              hero={hero}
+              heroIsToday={!!heroIsToday}
+              heroEvents={heroEvents ?? []}
+              heroIdx={heroIdx}
+              setHeroIdx={setHeroIdx}
+              weeklyHighlight={weeklyHighlight}
+              todayEvents={rawTodayEvents ?? []}
+              todayCount={todayCount}
+              trending={trending ?? []}
+              featured={featured ?? []}
+              weekEvents={weekEvents ?? []}
+              trendingIdSet={trendingIdSet}
+              partnerRankMap={partnerRankMap}
+              venueRanks={venueRanks ?? []}
+              featuredPartners={featuredPartners as any[] ?? []}
+              events={events ?? []}
+            />
+          )}
+        </HomeBelowFoldBoundary>
       </div>
 
       {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
-      {!isLoading && (
+      {!isLoading && !hasHomeDataError && (
         <div className="max-w-3xl mx-auto min-h-[200px]">
           <LatestNewsSection variant="trending" limit={6} />
           <ExpoHighlightBanner />
