@@ -83,40 +83,46 @@ export default function V3Home() {
   const futureCutoffISO = new Date(now.getTime() - LIVE_TOLERANCE_MS).toISOString();
 
   /* ─── EVENTS (apenas futuros / em andamento) ─── */
-  const { data: events = [], isLoading: loadingEvents } = useQuery<Ev[]>({
+  const { data: events = [], isLoading: loadingEvents, error: eventsError } = useQuery<Ev[]>({
     queryKey: ["v3-events", TODAY_KEY],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("events")
           .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .order("date_time", { ascending: true })
         .limit(80);
+      if (error) {
+        console.error("[V3Home] erro ao carregar eventos", error);
+        throw error;
+      }
       return (data as Ev[]) || [];
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
-  const { data: rawTodayEvents = [] } = useQuery<Ev[]>({
+  const { data: rawTodayEvents = [], isLoading: loadingToday, error: todayError } = useQuery<Ev[]>({
     queryKey: ["v3-today-events", TODAY_KEY],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("events")
         .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .lt("date_time", TODAY_END)
         .order("date_time", { ascending: true });
+      if (error) {
+        console.error("[V3Home] erro ao carregar eventos de hoje", error);
+        throw error;
+      }
       return (data as Ev[]) || [];
     },
-    staleTime: 0,
-    gcTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   /* ─── TRENDING (views last 24h) ─── */
@@ -335,8 +341,12 @@ export default function V3Home() {
         ) : <EmptyHero />}
 
         {/* Eventos de hoje — logo abaixo do hero */}
-        {!isLoading && rawTodayEvents.length > 0 && (
-          <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        {!isLoading && (
+          Array.isArray(rawTodayEvents) && rawTodayEvents.length > 0 ? (
+            <TodayTimeline events={rawTodayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+          ) : (
+            <TodayEmptyState error={!!todayError || !!eventsError} loading={loadingToday} />
+          )
         )}
       </div>
 
@@ -1081,8 +1091,10 @@ function CommandCenter({
 
         <V3VibeChips className="!py-0 -mx-0" />
 
-        {todayEvents.length > 0 && (
+        {Array.isArray(todayEvents) && todayEvents.length > 0 ? (
           <TodayTimeline events={todayEvents} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+        ) : (
+          <TodayEmptyState />
         )}
 
         {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
@@ -1305,6 +1317,34 @@ function DesktopTodayCarousel({ events, partnerRankMap, trendingIdSet }: {
         {events.map((ev) => (
           <PremiumEventCard key={ev.id} ev={ev} size="lg" isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className="!w-[280px] snap-start rounded-3xl overflow-hidden" />
         ))}
+      </div>
+    </section>
+  );
+}
+
+function TodayEmptyState({ error, loading }: { error?: boolean; loading?: boolean }) {
+  return (
+    <section className="px-4 pt-6 pb-3">
+      <div className="mb-3">
+        <h2 className="font-display font-black text-lg text-foreground uppercase tracking-wide">⚡ Hoje</h2>
+        <p className="text-[10px] text-muted-foreground">Timeline da noite em sequência</p>
+      </div>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+        {loading ? (
+          <p className="text-xs text-muted-foreground">Carregando rolês de hoje…</p>
+        ) : error ? (
+          <>
+            <p className="text-sm font-semibold text-foreground">Não foi possível carregar os eventos agora.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Verifique sua conexão e tente novamente em instantes.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-foreground">Hoje ainda não temos eventos publicados.</p>
+            <Link to="/agenda" className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-4 py-2 text-[11px] font-black uppercase text-primary hover:bg-primary/25">
+              Ver agenda completa
+            </Link>
+          </>
+        )}
       </div>
     </section>
   );
