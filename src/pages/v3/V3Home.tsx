@@ -753,12 +753,11 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
             {ev.category}
           </span>
           <h1
-            className="mt-2 font-display font-semibold line-clamp-3 lg:line-clamp-2 break-words [text-wrap:balance] tracking-normal text-foreground overflow-hidden"
+            className="mt-2 font-display font-bold line-clamp-2 break-words [text-wrap:balance] tracking-tight text-foreground overflow-hidden"
             style={{
-              fontSize: "clamp(17px, 4.6vw, 22px)",
-              lineHeight: "1.15",
-              hyphens: "auto",
-              textShadow: "0 2px 12px rgba(0,0,0,0.65), 0 1px 4px rgba(0,0,0,0.55)",
+              fontSize: "clamp(20px, 5.2vw, 28px)",
+              lineHeight: "1.1",
+              textShadow: "0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.55)",
             }}
           >
             {ev.title}
