@@ -315,7 +315,9 @@ const EventoBulkForm = () => {
           venue_name: it.form.venue_name,
           date_time: it.form.date_time,
           category: it.form.category,
+          sub_category: (it.form as any)._sub || "",
           image_url: it.form.image_url,
+          seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
         },
       });
       if (error) throw error;
