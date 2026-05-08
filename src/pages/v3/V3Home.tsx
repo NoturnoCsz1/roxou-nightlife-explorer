@@ -282,7 +282,8 @@ export default function V3Home() {
 
   const [heroIdx, setHeroIdx] = useState(0);
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
-  const heroIsToday = hero && isTodayFn(new Date(hero.date_time));
+  const heroDate = hero ? toSafeDate(hero.date_time) : null;
+  const heroIsToday = heroDate ? isTodayFn(heroDate) : false;
   const todayCount = safeEvents(rawTodayEvents).length;
   const hasHomeDataError = Boolean(eventsError || todayError);
 
@@ -385,7 +386,7 @@ export default function V3Home() {
           {hasHomeDataError ? (
             <HomeDataFallback />
           ) : !isLoading ? (
-            <TodaySection loading={loadingToday} error={todayError} events={rawTodayEvents ?? []} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+            <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
           ) : null}
         </HomeBelowFoldBoundary>
       </div>
@@ -405,7 +406,7 @@ export default function V3Home() {
               heroIdx={heroIdx}
               setHeroIdx={setHeroIdx}
               weeklyHighlight={weeklyHighlight}
-              todayEvents={rawTodayEvents ?? []}
+              todayEvents={safeEvents(rawTodayEvents)}
               todayCount={todayCount}
               trending={trending ?? []}
               featured={featured ?? []}
