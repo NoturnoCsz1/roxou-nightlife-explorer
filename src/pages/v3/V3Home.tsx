@@ -460,7 +460,7 @@ export default function V3Home() {
 
       {vibeFilter && vibeFiltered.length > 0 && (
         <Rail title={VIBE_FILTERS.find(v => v.key === vibeFilter)?.label || "Vibe"} subtitle="Seleção por intenção">
-          {vibeFiltered.slice(0, 12).map(e => (
+          {(vibeFiltered ?? []).slice(0, 12).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
           ))}
         </Rail>
@@ -471,7 +471,7 @@ export default function V3Home() {
 
       {catFilter && filtered.length > 0 && (
         <Rail title={catFilter}>
-          {filtered.slice(0, 12).map(e => (
+          {(filtered ?? []).slice(0, 12).map(e => (
             <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
           ))}
         </Rail>
@@ -480,7 +480,7 @@ export default function V3Home() {
       {/* ══════ 4. EM ALTA AGORA ══════ */}
       {loadingTrending ? <RailSkeleton count={3} /> : trending.length > 0 ? (
         <Rail title="🔥 Em alta agora" subtitle="Mais acessados nas últimas 24h">
-          {trending.map(e => (
+          {(trending ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" isTrending partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
@@ -503,7 +503,7 @@ export default function V3Home() {
 
           {venueRanks.length > 1 && (
             <div className="grid grid-cols-2 gap-2 mt-3">
-              {venueRanks.slice(1, 5).map((v, i) => (
+              {(venueRanks ?? []).slice(1, 5).map((v, i) => (
                 <VenueRankCard key={v.id} v={v} rank={i + 2} maxViews={maxViews} />
               ))}
             </div>
@@ -511,7 +511,7 @@ export default function V3Home() {
 
           {venueRanks.length > 5 && (
             <div className="flex gap-2 overflow-x-auto mt-3 pb-1 scrollbar-hide">
-              {venueRanks.slice(5).map((v, i) => (
+              {(venueRanks ?? []).slice(5).map((v, i) => (
                 <Link key={v.id} to={`/local/${v.slug}`}
                   className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
                   <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
@@ -536,7 +536,7 @@ export default function V3Home() {
           </div>
           <p className="text-[11px] text-muted-foreground mb-3">Quem está movimentando a cena</p>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
-            {(featuredPartners as any[]).map(p => (
+            {((featuredPartners as any[]) ?? []).map(p => (
               <FeaturedPartnerCard key={p.id} p={p} />
             ))}
           </div>
@@ -546,7 +546,7 @@ export default function V3Home() {
       {/* ══════ 8. EVENTOS PREMIUM ══════ */}
       {featured.length > 0 && (
         <Rail title="⭐ Eventos premium" subtitle="Destaque">
-          {featured.map(e => (
+          {(featured ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} size="lg" premium partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
@@ -555,7 +555,7 @@ export default function V3Home() {
       {/* ══════ 9. ESTA SEMANA — fluid carousel ══════ */}
       {isLoading ? <RailSkeleton count={4} /> : weekEvents.length > 0 ? (
         <Rail title="📅 Esta semana" subtitle="Próximos 7 dias">
-          {weekEvents.map(e => (
+          {(weekEvents ?? []).map(e => (
             <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} />
           ))}
         </Rail>
