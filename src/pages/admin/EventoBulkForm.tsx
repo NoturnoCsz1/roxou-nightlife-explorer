@@ -192,6 +192,7 @@ const EventoBulkForm = () => {
               type: p.type,
               sub_category: p.sub_category,
             })),
+          admin_feedback: adminFeedback,
         },
       });
       if (extractResp.error) throw extractResp.error;
