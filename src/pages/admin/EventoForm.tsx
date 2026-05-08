@@ -206,6 +206,12 @@ const EventoForm = () => {
       _sub: (data as any).sub_category || data.category,
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
+    originalSnapshot.current = {
+      category: data.category,
+      sub_category: (data as any).sub_category || null,
+      description: data.description || null,
+      venue_name: data.venue_name || null,
+    };
   }
 
   function handleChange(key: string, value: string | boolean) {
