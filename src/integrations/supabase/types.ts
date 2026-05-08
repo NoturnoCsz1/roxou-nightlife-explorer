@@ -95,6 +95,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_event_feedback_memory: {
+        Row: {
+          corrected_category: string | null
+          corrected_description: string | null
+          corrected_sub_category: string | null
+          created_at: string
+          id: string
+          original_category: string | null
+          original_description: string | null
+          original_sub_category: string | null
+          venue_name: string | null
+        }
+        Insert: {
+          corrected_category?: string | null
+          corrected_description?: string | null
+          corrected_sub_category?: string | null
+          created_at?: string
+          id?: string
+          original_category?: string | null
+          original_description?: string | null
+          original_sub_category?: string | null
+          venue_name?: string | null
+        }
+        Update: {
+          corrected_category?: string | null
+          corrected_description?: string | null
+          corrected_sub_category?: string | null
+          created_at?: string
+          id?: string
+          original_category?: string | null
+          original_description?: string | null
+          original_sub_category?: string | null
+          venue_name?: string | null
+        }
+        Relationships: []
+      }
       ai_message_usage: {
         Row: {
           created_at: string
@@ -461,6 +497,7 @@ export type Database = {
       events: {
         Row: {
           address: string | null
+          ai_confidence: string
           aura_pick: boolean
           category: string
           city: string
@@ -475,6 +512,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           maps_place_id: string | null
+          needs_review: boolean
           opportunity_tags: string[]
           partner_id: string | null
           slug: string
@@ -488,6 +526,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_confidence?: string
           aura_pick?: boolean
           category?: string
           city?: string
@@ -502,6 +541,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           maps_place_id?: string | null
+          needs_review?: boolean
           opportunity_tags?: string[]
           partner_id?: string | null
           slug: string
@@ -515,6 +555,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_confidence?: string
           aura_pick?: boolean
           category?: string
           city?: string
@@ -529,6 +570,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           maps_place_id?: string | null
+          needs_review?: boolean
           opportunity_tags?: string[]
           partner_id?: string | null
           slug?: string

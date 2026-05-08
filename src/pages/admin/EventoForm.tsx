@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +54,7 @@ const EventoForm = () => {
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const originalSnapshot = useRef<{ category: string; sub_category: string | null; description: string | null; venue_name: string | null } | null>(null);
 
   async function reprocessFlyerWithAi() {
     if (!form.image_url) {
@@ -205,6 +206,12 @@ const EventoForm = () => {
       _sub: (data as any).sub_category || data.category,
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
+    originalSnapshot.current = {
+      category: data.category,
+      sub_category: (data as any).sub_category || null,
+      description: data.description || null,
+      venue_name: data.venue_name || null,
+    };
   }
 
   function handleChange(key: string, value: string | boolean) {
@@ -288,6 +295,20 @@ const EventoForm = () => {
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);
         if (error) throw error;
+        // 🎓 Salva memória de aprendizado se admin corrigiu categoria/gênero/descrição
+        const orig = originalSnapshot.current;
+        const newSub = (form as any)._sub || null;
+        if (orig && (orig.category !== form.category || orig.sub_category !== newSub || (orig.description || "") !== (form.description || ""))) {
+          await supabase.from("ai_event_feedback_memory" as any).insert({
+            venue_name: form.venue_name || orig.venue_name,
+            original_category: orig.category,
+            corrected_category: form.category,
+            original_sub_category: orig.sub_category,
+            corrected_sub_category: newSub,
+            original_description: orig.description,
+            corrected_description: form.description || null,
+          });
+        }
         toast.success("Evento atualizado!");
       } else {
         const { data: inserted, error } = await supabase.from("events").insert(payload).select("id").single();

@@ -78,11 +78,46 @@ function pickFromBank(bank: string[], seed: number): string {
   return bank[idx];
 }
 
+// 🔁 Similaridade simples por Jaccard de tokens (palavras com 4+ letras)
+function tokenize(s: string): Set<string> {
+  return new Set(
+    String(s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/[^a-z0-9 ]+/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4),
+  );
+}
+function jaccard(a: string, b: string): number {
+  const A = tokenize(a); const B = tokenize(b);
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  for (const x of A) if (B.has(x)) inter++;
+  const union = A.size + B.size - inter;
+  return union ? inter / union : 0;
+}
+
+async function callAI(messages: any[], tools: any[], temperature: number, apiKey: string) {
+  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages, tools,
+      tool_choice: { type: "function", function: { name: "gerar_copy_evento" } },
+      temperature,
+    }),
+  });
+  return r;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { title, venue_name, date_time, category, sub_category, image_url, attractions, seed_index, neighborhood } = await req.json();
+    const { title, venue_name, date_time, category, sub_category, image_url, attractions, seed_index, neighborhood, address, previous_descriptions = [] } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -153,32 +188,19 @@ ${personaBlock}
 
 🎯 chamada_site: até 60 caracteres, gatilho mental forte, ESPECÍFICA do evento. NUNCA "Nome + Data" cru.`;
 
-    const eventInfo = [
+    const buildEventInfo = (extraNote?: string) => [
       `Título: ${title}`,
       attractions && `Atrações: ${attractions}`,
       dt && `Data: ${weekday}, ${dateStr}`,
       timeStr && `Horário: ${timeStr}`,
       venue_name && `Local: ${venue_name}`,
+      address && `Endereço: ${address}`,
       neighborhood && `Bairro/região: ${neighborhood}`,
       category && `Categoria: ${category}`,
       sub_category && `Gênero musical: ${sub_category}`,
       `Seed de variação: ${seed} (use isto pra alternar abertura/CTA entre eventos)`,
+      extraNote || "",
     ].filter(Boolean).join("\n");
-
-    const userText = `Gere a chamada e a descrição rica para este evento da ROXOU. Use APENAS os dados abaixo (não invente nada). Cada evento precisa de personalidade própria — não repita molde:\n\n${eventInfo}${image_url ? "\n\nUm flyer foi enviado em anexo — extraia atrações e promoções visíveis." : ""}`;
-
-    const messages: any[] = [{ role: "system", content: systemPrompt }];
-    if (image_url) {
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: userText },
-          { type: "image_url", image_url: { url: image_url } },
-        ],
-      });
-    } else {
-      messages.push({ role: "user", content: userText });
-    }
 
     const tools = [{
       type: "function",
@@ -188,14 +210,8 @@ ${personaBlock}
         parameters: {
           type: "object",
           properties: {
-            chamada_site: {
-              type: "string",
-              description: "Título forte e chamativo de até 60 caracteres com gatilho mental.",
-            },
-            descricao_rica: {
-              type: "string",
-              description: "Descrição em HTML simples (p, strong, ul, li) com Hype + Checklist + CTA.",
-            },
+            chamada_site: { type: "string", description: "Título forte e chamativo de até 60 caracteres com gatilho mental." },
+            descricao_rica: { type: "string", description: "Descrição em HTML simples (p, strong, ul, li) com Hype + Checklist + CTA." },
           },
           required: ["chamada_site", "descricao_rica"],
           additionalProperties: false,
@@ -203,52 +219,6 @@ ${personaBlock}
       },
     }];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages,
-        tools,
-        tool_choice: { type: "function", function: { name: "gerar_copy_evento" } },
-        temperature: 0.85,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em instantes." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos esgotados. Adicione créditos em Settings > Workspace > Usage." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error(`AI API error: ${response.status} - ${err}`);
-    }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    let chamada_site = "";
-    let descricao_rica = "";
-
-    if (toolCall?.function?.arguments) {
-      try {
-        const args = JSON.parse(toolCall.function.arguments);
-        chamada_site = (args.chamada_site || "").trim();
-        descricao_rica = (args.descricao_rica || "").trim();
-      } catch (e) {
-        console.error("Failed to parse tool args:", e);
-      }
-    }
-
-    // Strip any markdown fences and keep only allowed tags
     const cleanHtml = (html: string) => {
       let out = html
         .replace(/^```(?:html)?\s*/i, "")
@@ -256,21 +226,69 @@ ${personaBlock}
         .replace(/^<html[^>]*>|<\/html>$/gi, "")
         .replace(/^<body[^>]*>|<\/body>$/gi, "")
         .trim();
-      // Drop disallowed tags (keep p, strong, em, ul, ol, li, br)
       out = out.replace(/<(?!\/?(?:p|strong|em|ul|ol|li|br)\b)[^>]+>/gi, "");
       return out.trim();
     };
-    descricao_rica = cleanHtml(descricao_rica);
     const bannedCopy = /\b(?:imperd[ií]vel|sexta insana|s[áa]bado imperd[ií]vel|rol[êe] imperd[ií]vel|noite imperd[ií]vel|programaç[ãa]o imperd[ií]vel)\b/gi;
-    descricao_rica = descricao_rica.replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
-    chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
 
-    // Fallback for legacy callers: keep `description` field populated.
+    async function generateOnce(extraNote: string, temp: number): Promise<{ chamada_site: string; descricao_rica: string; status: number }> {
+      const userText = `Gere a chamada e a descrição rica para este evento da ROXOU. Use APENAS os dados abaixo (não invente nada). Cada evento precisa de personalidade própria — não repita molde:\n\n${buildEventInfo(extraNote)}${image_url ? "\n\nUm flyer foi enviado em anexo — extraia atrações e promoções visíveis." : ""}`;
+      const messages: any[] = [{ role: "system", content: systemPrompt }];
+      if (image_url) {
+        messages.push({ role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: image_url } }] });
+      } else {
+        messages.push({ role: "user", content: userText });
+      }
+      const response = await callAI(messages, tools, temp, LOVABLE_API_KEY);
+      if (!response.ok) {
+        return { chamada_site: "", descricao_rica: "", status: response.status };
+      }
+      const data = await response.json();
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      let chamada_site = "";
+      let descricao_rica = "";
+      if (toolCall?.function?.arguments) {
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          chamada_site = (args.chamada_site || "").trim();
+          descricao_rica = (args.descricao_rica || "").trim();
+        } catch (e) { console.error("parse tool args", e); }
+      }
+      descricao_rica = cleanHtml(descricao_rica).replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
+      chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
+      return { chamada_site, descricao_rica, status: 200 };
+    }
+
+    let attempt = await generateOnce("", 0.85);
+    if (attempt.status === 429) {
+      return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em instantes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (attempt.status === 402) {
+      return new Response(JSON.stringify({ error: "Créditos esgotados. Adicione créditos em Settings > Workspace > Usage." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // 🔁 Bloqueio anti-repetição: compara com descrições anteriores do lote.
+    let regenerated = false;
+    if (Array.isArray(previous_descriptions) && previous_descriptions.length && attempt.descricao_rica) {
+      const maxSim = previous_descriptions.reduce((acc: number, prev: string) => Math.max(acc, jaccard(attempt.descricao_rica, prev || "")), 0);
+      if (maxSim > 0.55) {
+        const altSeed = pickFromBank(HOOK_BANK, seed + 7);
+        const altCta = pickFromBank(CTA_BANK, seed + 11);
+        const note = `⚠️ ATENÇÃO: as últimas descrições do lote ficaram parecidas. Use estrutura DIFERENTE. Abertura inspirada em "${altSeed}". CTA inspirado em "${altCta}". Mude ordem das frases, evite repetir verbos do bloco anterior.`;
+        const retry = await generateOnce(note, 0.95);
+        if (retry.descricao_rica) {
+          attempt = retry;
+          regenerated = true;
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
-        chamada_site,
-        descricao_rica,
-        description: descricao_rica, // backwards compatibility
+        chamada_site: attempt.chamada_site,
+        descricao_rica: attempt.descricao_rica,
+        description: attempt.descricao_rica,
+        regenerated_for_uniqueness: regenerated,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

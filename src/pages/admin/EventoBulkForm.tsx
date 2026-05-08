@@ -78,6 +78,12 @@ function formatDateForInput(iso: string | null): string {
   return "";
 }
 
+type AdminFeedback = {
+  venue_name: string | null;
+  corrected_category: string | null;
+  corrected_sub_category: string | null;
+};
+
 const EventoBulkForm = () => {
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
@@ -89,6 +95,7 @@ const EventoBulkForm = () => {
   const [dragOver, setDragOver] = useState(false);
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
   const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
+  const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,6 +103,16 @@ const EventoBulkForm = () => {
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => setPartners(data || []));
   }, [cityFilter]);
+
+  // Load admin correction memory (learning from past edits)
+  useEffect(() => {
+    supabase
+      .from("ai_event_feedback_memory" as any)
+      .select("venue_name, corrected_category, corrected_sub_category")
+      .order("created_at", { ascending: false })
+      .limit(500)
+      .then(({ data }) => setAdminFeedback((data as any) || []));
+  }, []);
 
   // Load existing slugs from DB for duplicate detection
   useEffect(() => {
@@ -175,6 +192,7 @@ const EventoBulkForm = () => {
               type: p.type,
               sub_category: p.sub_category,
             })),
+          admin_feedback: adminFeedback,
         },
       });
       if (extractResp.error) throw extractResp.error;
@@ -219,6 +237,8 @@ const EventoBulkForm = () => {
             verification_source: "instagram",
             opportunity_tags: data.opportunity_tags || [],
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
+            ...(data.ai_confidence ? { ai_confidence: data.ai_confidence } as any : {}),
+            ...(typeof data.needs_review === "boolean" ? { needs_review: data.needs_review } as any : {}),
           };
           readyForm = next;
           return { ...it, form: next, status: "ready", categoryWarning };
@@ -229,15 +249,21 @@ const EventoBulkForm = () => {
       const f = readyForm as EventFormData | null;
       if (f && f.title && f.title.length > 3) {
         try {
+          const previousDescs = items
+            .map((x) => x.form.description)
+            .filter((d): d is string => !!d && d.length > 30)
+            .slice(-5);
           const descResp = await supabase.functions.invoke("generate-description", {
             body: {
               title: f.title,
               venue_name: f.venue_name || "",
+              address: f.address || "",
               date_time: f.date_time || "",
               category: f.category || "festa",
               sub_category: (f as any)._sub || "",
               image_url: f.image_url || "",
               seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
+              previous_descriptions: previousDescs,
             },
           });
           if (!descResp.error && descResp.data) {
