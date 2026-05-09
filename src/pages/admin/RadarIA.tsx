@@ -488,31 +488,57 @@ const RadarIA = () => {
                     </details>
                   )}
 
-                  {/* Actions */}
-                  {ev && (
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                      <button
-                        onClick={() => approve(ev.id)}
-                        disabled={acting === ev.id || ev.status === "published"}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
-                      </button>
-                      <Link
-                        to={`/admin/eventos/${ev.id}/editar`}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25"
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Editar
-                      </Link>
-                      <button
-                        onClick={() => ignore(ev.id)}
-                        disabled={acting === ev.id || ev.status === "archived"}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 disabled:opacity-40"
-                      >
-                        <XCircle className="h-3.5 w-3.5" /> Ignorar
-                      </button>
-                    </div>
+                  {/* Archive metadata */}
+                  {c.scan.hidden_from_radar && c.scan.archive_reason && (
+                    <p className="text-[10px] italic text-muted-foreground/70">
+                      Arquivado: {c.scan.archive_reason} • {formatDate(c.scan.archived_at)}
+                    </p>
                   )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                    {ev && (
+                      <>
+                        <button
+                          onClick={() => approve(ev.id, c.scan.id)}
+                          disabled={acting === ev.id || ev.status === "published"}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
+                        </button>
+                        <Link
+                          to={`/admin/eventos/${ev.id}/editar`}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Editar
+                        </Link>
+                        <button
+                          onClick={() => ignore(ev.id, c.scan.id)}
+                          disabled={acting === ev.id || ev.status === "archived"}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 disabled:opacity-40"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Ignorar
+                        </button>
+                      </>
+                    )}
+                    {c.scan.hidden_from_radar ? (
+                      <button
+                        onClick={() => unarchiveScan(c.scan.id)}
+                        disabled={acting === c.scan.id}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-300 text-xs font-bold hover:bg-cyan-500/20 disabled:opacity-40"
+                      >
+                        <ArchiveRestore className="h-3.5 w-3.5" /> Restaurar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => archiveScan(c.scan.id)}
+                        disabled={acting === c.scan.id}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-600/20 text-zinc-300 text-xs font-bold hover:bg-zinc-600/30 disabled:opacity-40"
+                      >
+                        <Archive className="h-3.5 w-3.5" /> Arquivar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
