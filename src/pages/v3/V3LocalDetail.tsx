@@ -2,12 +2,43 @@ import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation, Share2, Flame, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
 import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
 import { trackEvent } from "@/lib/analytics";
+import SEO from "@/components/SEO";
+import { toast } from "sonner";
+
+const TOP_WEEK_THRESHOLD = 100;
+
+async function sharePartner(partner: { id: string; name: string; slug: string; city?: string | null; short_description?: string | null }) {
+  const url = `https://roxou.com.br/v3/local/${partner.slug}`;
+  const title = `${partner.name} | Roxou`;
+  const text = partner.short_description || `Veja o ${partner.name}${partner.city ? ` em ${partner.city}` : ""} na Roxou.`;
+  try {
+    trackEvent({
+      event_type: "share_click",
+      venue_id: partner.id,
+      metadata: { slug: partner.slug, name: partner.name, channel: "share" },
+    });
+  } catch {}
+  try {
+    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+      await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ title, text, url });
+      return;
+    }
+  } catch {
+    // user canceled or unsupported — fall through to copy
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copiado!");
+  } catch {
+    toast.error("Não foi possível compartilhar");
+  }
+}
 
 function getOperatingStatus(type?: string | null) {
   const hour = new Date().getHours();
@@ -103,9 +134,82 @@ export default function V3LocalDetail() {
     : null;
   const instagramUrl = partner.instagram ? `https://instagram.com/${partner.instagram.replace("@", "")}` : null;
   const whatsappUrl = partner.whatsapp ? `https://wa.me/55${cleanPhone(partner.whatsapp)}` : null;
+  const isTopWeek = viewCount >= TOP_WEEK_THRESHOLD;
+  const canonical = `https://roxou.com.br/v3/local/${partner.slug}`;
+  const seoTitle = `${partner.name}${partner.city ? ` em ${partner.city}` : ""} | Roxou`;
+  const seoDescription = partner.short_description
+    ? partner.short_description
+    : `Veja próximos eventos, localização, Instagram e informações do ${partner.name}${partner.city ? ` em ${partner.city}` : ""} na Roxou.`;
+  const seoKeywords = [
+    partner.name,
+    partner.city,
+    partner.type,
+    "eventos",
+    "balada",
+    "bar",
+    "restaurante",
+    "Roxou",
+  ].filter(Boolean).join(", ");
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        name: partner.name,
+        description: seoDescription,
+        url: canonical,
+        ...(partner.logo_url ? { image: partner.logo_url, logo: partner.logo_url } : {}),
+        ...(partner.address || partner.city
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: partner.address || undefined,
+                addressLocality: partner.city || undefined,
+                addressRegion: "SP",
+                addressCountry: "BR",
+              },
+            }
+          : {}),
+        ...(partner.latitude != null && partner.longitude != null
+          ? { geo: { "@type": "GeoCoordinates", latitude: Number(partner.latitude), longitude: Number(partner.longitude) } }
+          : {}),
+        ...(partner.whatsapp ? { telephone: partner.whatsapp } : {}),
+        ...(partner.instagram ? { sameAs: [`https://instagram.com/${partner.instagram.replace("@", "")}`] } : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://roxou.com.br/" },
+          ...(partner.city ? [{ "@type": "ListItem", position: 2, name: partner.city, item: `https://roxou.com.br/cidade/${encodeURIComponent(String(partner.city).toLowerCase())}` }] : []),
+          { "@type": "ListItem", position: partner.city ? 3 : 2, name: partner.name, item: canonical },
+        ],
+      },
+    ],
+  };
 
   return (
     <div className="pb-8">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        canonical={canonical}
+        ogImage={partner.logo_url || undefined}
+        keywords={seoKeywords}
+        jsonLd={jsonLd}
+      />
+      {/* Breadcrumb */}
+      <nav aria-label="breadcrumb" className="px-4 pt-3 text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+        <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+        {partner.city && (
+          <>
+            <ChevronRight className="w-3 h-3 opacity-60" />
+            <span className="truncate">{partner.city}</span>
+          </>
+        )}
+        <ChevronRight className="w-3 h-3 opacity-60" />
+        <span className="text-foreground/80 truncate">{partner.name}</span>
+      </nav>
+
       {/* Header — refined composition */}
       <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
         <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
@@ -124,7 +228,14 @@ export default function V3LocalDetail() {
               <h1 className="font-display font-bold text-xl text-foreground truncate">{partner.name}</h1>
               {partner.verified_partner && <BadgeCheck className="w-5 h-5 text-accent shrink-0" />}
             </div>
-            <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
+              {isTopWeek && (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30 backdrop-blur-sm">
+                  <Flame className="w-2.5 h-2.5" /> Top da semana
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-3 mt-1.5">
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Eye className="w-3 h-3" /> {viewCount}
@@ -242,6 +353,14 @@ export default function V3LocalDetail() {
               {followed ? "Seguindo" : "Seguir"}
             </button>
           )}
+          <button
+            onClick={() => sharePartner(partner)}
+            aria-label="Compartilhar"
+            className={`${user ? "" : "flex-1 "}flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold bg-card border border-border/40 text-foreground hover:border-primary/40 transition-all`}
+          >
+            <Share2 className="w-3.5 h-3.5 text-primary" />
+            Compartilhar
+          </button>
         </div>
 
         {partner.address && (
