@@ -109,7 +109,7 @@ const RadarIA = () => {
       return;
     }
 
-    const scanRows = (scans || []) as ScanRow[];
+    const scanRows = ((scans || []) as unknown) as ScanRow[];
     const eventIds = Array.from(new Set([
       ...scanRows.map((s) => s.event_id).filter(Boolean),
       ...scanRows.map((s) => s.duplicate_of_event_id).filter(Boolean),
