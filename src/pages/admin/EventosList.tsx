@@ -608,8 +608,15 @@ const EventosList = () => {
         : isDraft && !cl.complete
           ? "border-destructive/40 bg-white/5"
           : "border-border/40 bg-white/5";
+    const isFocused = triageMode && focusedId === e.id;
+    const compactPad = triageMode ? "p-2" : "p-3";
+    const focusRing = isFocused ? "ring-2 ring-primary/70 shadow-[0_0_22px_hsl(var(--primary)/0.5)]" : "";
     return (
-      <div key={e.id} className={`flex items-center gap-2 rounded-2xl border p-3 backdrop-blur-xl transition-all hover:bg-white/[0.07] hover:-translate-y-0.5 ${borderClass}`}>
+      <div
+        key={e.id}
+        onClick={() => triageMode && setFocusedId(e.id)}
+        className={`flex items-center gap-2 rounded-2xl border ${compactPad} backdrop-blur-xl transition-all hover:bg-white/[0.07] hover:-translate-y-0.5 ${borderClass} ${focusRing}`}
+      >
         <button onClick={() => toggleSelect(e.id)} className="shrink-0" title="Selecionar">
           {selectedIds.has(e.id)
             ? <CheckSquare className="h-4 w-4 text-primary" />
