@@ -186,6 +186,42 @@ export default function V3LocalDetail() {
     "restaurante",
     "Roxou",
   ].filter(Boolean).join(", ");
+  // FAQ derivada de dados reais (sem inventar). Inclui apenas itens com resposta válida.
+  const faqs: { q: string; a: string }[] = [];
+  if (partner.address || partner.city) {
+    faqs.push({
+      q: `Onde fica ${partner.name}?`,
+      a: [partner.address, partner.city].filter(Boolean).join(", "),
+    });
+  }
+  if (partner.whatsapp || instagramUrl) {
+    const canais: string[] = [];
+    if (partner.whatsapp) canais.push(`WhatsApp ${partner.whatsapp}`);
+    if (instagramUrl) canais.push(`Instagram @${partner.instagram!.replace("@", "")}`);
+    faqs.push({
+      q: `Como reservar no ${partner.name}?`,
+      a: `Você pode entrar em contato pelos canais oficiais: ${canais.join(" ou ")}.`,
+    });
+  }
+  if (events.length > 0) {
+    faqs.push({
+      q: `Quais eventos acontecem no ${partner.name}?`,
+      a: `Atualmente há ${events.length} ${events.length === 1 ? "evento confirmado" : "eventos confirmados"} no ${partner.name}. Veja a agenda completa nesta página.`,
+    });
+  }
+  if (partner.instagram) {
+    faqs.push({
+      q: `O ${partner.name} tem Instagram?`,
+      a: `Sim, o Instagram oficial é @${partner.instagram.replace("@", "")}.`,
+    });
+  }
+  if (mapsUrl) {
+    faqs.push({
+      q: `Como chegar ao ${partner.name}?`,
+      a: `Use o botão "Como Chegar" desta página para abrir a rota direta no Google Maps${partner.address ? ` até ${partner.address}` : ""}.`,
+    });
+  }
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -220,6 +256,16 @@ export default function V3LocalDetail() {
           { "@type": "ListItem", position: partner.city ? 3 : 2, name: partner.name, item: canonical },
         ],
       },
+      ...(faqs.length > 0
+        ? [{
+            "@type": "FAQPage",
+            mainEntity: faqs.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          }]
+        : []),
     ],
   };
 
@@ -499,6 +545,9 @@ export default function V3LocalDetail() {
         {relatedPartners.length > 0 && (
           <RelatedPartnersSection partners={relatedPartners} currentPartner={{ id: partner.id, name: partner.name }} />
         )}
+
+        {/* FAQ */}
+        {faqs.length > 0 && <FaqSection faqs={faqs} />}
       </div>
 
       {/* Sticky mobile CTA — premium glass bar */}
@@ -741,6 +790,35 @@ function RelatedPartnersSection({
               <p className="text-[10px] text-muted-foreground truncate">{p.city}</p>
             </div>
           </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * FaqSection — accordion leve usando <details>/<summary> (sem libs novas).
+ * Glass premium Roxou. Conteúdo derivado apenas de dados reais do parceiro.
+ */
+function FaqSection({ faqs }: { faqs: { q: string; a: string }[] }) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="font-display font-bold text-base text-foreground">Perguntas frequentes</h2>
+        <p className="text-[11px] text-muted-foreground">Tudo o que você precisa saber sobre este local</p>
+      </div>
+      <div className="rounded-2xl v3-glass border border-border/40 divide-y divide-border/30 overflow-hidden">
+        {faqs.map((f, i) => (
+          <details
+            key={i}
+            className="group px-3.5 py-3 open:bg-primary/5 transition-colors [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none">
+              <span className="text-xs font-bold text-foreground flex-1">{f.q}</span>
+              <ChevronRight className="w-4 h-4 text-primary shrink-0 transition-transform duration-200 group-open:rotate-90" />
+            </summary>
+            <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">{f.a}</p>
+          </details>
         ))}
       </div>
     </div>
