@@ -342,21 +342,21 @@ const InstagramAdmin = () => {
             <div className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">Antes de conectar: vincule o Instagram a uma Página do Facebook</h3>
+                <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">Antes de autorizar a Meta: prepare a conta Instagram</h3>
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                A API da Meta exige que <strong className="text-foreground">@roxou.pp</strong> esteja vinculado a uma <strong className="text-foreground">Página do Facebook</strong> e configurado como conta <strong className="text-foreground">Business/Creator</strong>. Sem esse vínculo, o Radar IA não consegue baixar flyers nem usar Business Discovery (erro Meta nº 100/10).
+                A API da Meta exige que <strong className="text-foreground">@roxou.pp</strong> seja uma conta <strong className="text-foreground">Business/Creator</strong> vinculada a uma Página administrada pelo mesmo usuário Meta que você for autorizar. Esta autorização é exclusiva da automação Instagram da Roxou — <strong className="text-foreground">não substitui</strong> o login dos usuários do app, que continua via Google/e-mail.
               </p>
               <ol className="text-[11px] text-muted-foreground space-y-1 pl-4 list-decimal">
                 <li>No app Instagram → Configurações → Conta → <strong>Mudar para Profissional</strong> (Business).</li>
-                <li>No Facebook, crie ou abra uma <strong>Página</strong> (ex: "Roxou PP").</li>
+                <li>No Facebook, abra/crie uma <strong>Página</strong> administrada pelo mesmo usuário (ex: "Roxou PP").</li>
                 <li>Na Página → Configurações → <strong>Instagram vinculado</strong> → conecte @roxou.pp.</li>
-                <li>Volte aqui e clique em <strong>Conectar Instagram</strong> com o login do Facebook dono da Página.</li>
+                <li>Volte aqui e clique em <strong>Autorizar Meta</strong> usando o usuário Meta admin da Página.</li>
               </ol>
             </div>
             <div className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
               <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Link2 className="h-3.5 w-3.5" /> Conta Conectada
+                <Link2 className="h-3.5 w-3.5" /> Conta Instagram conectada
               </h2>
               {account ? (
                 <div className="space-y-2">
@@ -382,34 +382,38 @@ const InstagramAdmin = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">Nenhuma conta conectada.</p>
+                  <p className="text-xs text-muted-foreground">Nenhuma conta Instagram conectada à automação Meta.</p>
                   <button
                     onClick={handleConnect}
                     disabled={connecting}
                     className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50 transition"
                   >
                     {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Instagram className="h-3.5 w-3.5" />}
-                    Conectar Instagram
+                    Autorizar Meta · Conectar Instagram
                   </button>
+                  <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                    Esta autorização é exclusiva da automação Instagram da Roxou (publicação, insights, Radar IA). O login dos usuários do app continua via Google/e-mail.
+                  </p>
                 </div>
               )}
 
-              {/* Botão Testar Conexão */}
+              {/* Botão Testar Conexão Meta */}
               <div className="pt-2 border-t border-border/30">
+                <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Permissões da Meta</h3>
                 <button
                   onClick={handleTestConnection}
                   disabled={testing}
                   className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 px-4 py-2 text-xs font-semibold text-primary transition disabled:opacity-50"
                 >
                   {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                  {testing ? "Testando..." : "Testar conexão e permissões"}
+                  {testing ? "Testando..." : "Testar conexão Meta"}
                 </button>
 
                 {testResult && (
                   <div className="mt-3 space-y-2">
                     <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold ${testResult.ok ? "bg-green-400/10 text-green-400" : "bg-destructive/10 text-destructive"}`}>
                       {testResult.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-                      {testResult.ok ? "Tudo certo — Radar IA pronto para uso" : "Conexão incompleta — corrija os itens abaixo"}
+                      {testResult.ok ? "Conexão Meta validada — automação pronta" : "Conexão Meta incompleta — corrija os itens abaixo"}
                     </div>
                     {testResult.stage === "no_account" && (
                       <p className="text-[11px] text-muted-foreground">{testResult.message}</p>
