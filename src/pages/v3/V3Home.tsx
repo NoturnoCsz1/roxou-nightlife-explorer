@@ -555,7 +555,7 @@ export default function V3Home() {
                     className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
                     <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
                     <div className="w-6 h-6 rounded-md overflow-hidden bg-secondary shrink-0">
-                      {v.logo_url ? <img src={v.logo_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-muted-foreground flex items-center justify-center h-full">{v.name[0]}</span>}
+                      {v.logo_url ? <img src={v.logo_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-muted-foreground flex items-center justify-center h-full">{v.name[0]}</span>}
                     </div>
                     <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">{v.name}</span>
                     <span className="text-[9px] text-muted-foreground">{v.views}</span>
