@@ -100,6 +100,8 @@ export default function V3RideRequest() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [gpsRefining, setGpsRefining] = useState(false);
   const [gpsAttempts, setGpsAttempts] = useState(0);
+  const [gpsBlocked, setGpsBlocked] = useState<null | "denied" | "unavailable" | "timeout" | "unknown">(null);
+  const [gpsAutoTried, setGpsAutoTried] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const watchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bestAccuracyRef = useRef<number>(Infinity);
