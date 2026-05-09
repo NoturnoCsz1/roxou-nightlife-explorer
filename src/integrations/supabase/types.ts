@@ -2010,6 +2010,48 @@ export type Database = {
           },
         ]
       }
+      security_reports: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          evidence: string | null
+          id: string
+          reporter_id: string | null
+          severity: string
+          status: string
+          target_message_id: string | null
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          reporter_id?: string | null
+          severity?: string
+          status?: string
+          target_message_id?: string | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          reporter_id?: string | null
+          severity?: string
+          status?: string
+          target_message_id?: string | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_alerts: {
         Row: {
           context: Json | null
@@ -2097,6 +2139,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_risk_scores: {
+        Row: {
+          badge: string
+          computed_at: string
+          score: number
+          signals: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          badge?: string
+          computed_at?: string
+          score?: number
+          signals?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          badge?: string
+          computed_at?: string
+          score?: number
+          signals?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -2190,6 +2259,7 @@ export type Database = {
       archive_old_radar_scans: { Args: never; Returns: number }
       cleanup_event_live_presence: { Args: never; Returns: number }
       community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
+      compute_user_risk_score: { Args: { _user_id: string }; Returns: number }
       count_event_live_presence: {
         Args: { _event_id: string }
         Returns: number
