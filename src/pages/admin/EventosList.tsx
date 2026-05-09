@@ -379,7 +379,59 @@ const EventosList = () => {
     }
   }
 
-  // 🕒 Trava de timezone — sempre comparamos via São Paulo (sv-SE → YYYY-MM-DD), nunca via toISOString puro.
+  // === Aprovação rápida ===
+  async function handleQuickApprove(e: EventRow, opts?: { featured?: boolean; auraPick?: boolean }) {
+    const cl = getChecklist(e);
+    if (!cl.complete) {
+      toast.error("Evento incompleto: preencha título, data, local, descrição e flyer.");
+      return;
+    }
+    const patch: Record<string, unknown> = { status: "published" };
+    if (opts?.featured) patch.featured = true;
+    if (opts?.auraPick) patch.aura_pick = true;
+    const { error } = await supabase.from("events").update(patch).eq("id", e.id);
+    if (error) { toast.error("Falha ao aprovar"); return; }
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, ...(patch as Partial<EventRow>) } : x));
+    const labels: string[] = ["Aprovado"];
+    if (opts?.featured) labels.push("destaque");
+    if (opts?.auraPick) labels.push("Aura Pick");
+    toast.success(`✓ ${labels.join(" + ")}`);
+  }
+
+  async function handleArchive(e: EventRow) {
+    const { error } = await supabase.from("events").update({ status: "archived" }).eq("id", e.id);
+    if (error) { toast.error("Falha ao arquivar"); return; }
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "archived" } : x));
+    toast.success("🗃 Arquivado");
+  }
+
+  async function handleBulkApprove(opts?: { featured?: boolean; auraPick?: boolean }) {
+    const ids = Array.from(selectedIds);
+    const ready = events.filter(e => ids.includes(e.id) && getChecklist(e).complete && e.status !== "published");
+    if (ready.length === 0) {
+      toast.error("Nenhum dos selecionados está pronto para aprovação.");
+      return;
+    }
+    const patch: Record<string, unknown> = { status: "published" };
+    if (opts?.featured) patch.featured = true;
+    if (opts?.auraPick) patch.aura_pick = true;
+    const readyIds = ready.map(e => e.id);
+    const { error } = await supabase.from("events").update(patch).in("id", readyIds);
+    if (error) { toast.error("Erro ao aprovar em lote"); return; }
+    setEvents(prev => prev.map(e => readyIds.includes(e.id) ? { ...e, ...(patch as Partial<EventRow>) } : e));
+    setSelectedIds(new Set());
+    toast.success(`✓ ${ready.length} evento(s) aprovado(s)${opts?.featured ? " + destaque" : ""}${opts?.auraPick ? " + Aura" : ""}`);
+  }
+
+  async function handleBulkArchive() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("events").update({ status: "archived" }).in("id", ids);
+    if (error) { toast.error("Erro ao arquivar"); return; }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "archived" } : e));
+    setSelectedIds(new Set());
+    toast.success(`🗃 ${ids.length} arquivado(s)`);
+  }
   const spDateStr = (d: Date) =>
     new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Sao_Paulo" }).format(d);
   const todayStr = spDateStr(new Date());
