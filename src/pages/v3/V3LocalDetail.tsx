@@ -186,6 +186,42 @@ export default function V3LocalDetail() {
     "restaurante",
     "Roxou",
   ].filter(Boolean).join(", ");
+  // FAQ derivada de dados reais (sem inventar). Inclui apenas itens com resposta válida.
+  const faqs: { q: string; a: string }[] = [];
+  if (partner.address || partner.city) {
+    faqs.push({
+      q: `Onde fica ${partner.name}?`,
+      a: [partner.address, partner.city].filter(Boolean).join(", "),
+    });
+  }
+  if (partner.whatsapp || instagramUrl) {
+    const canais: string[] = [];
+    if (partner.whatsapp) canais.push(`WhatsApp ${partner.whatsapp}`);
+    if (instagramUrl) canais.push(`Instagram @${partner.instagram!.replace("@", "")}`);
+    faqs.push({
+      q: `Como reservar no ${partner.name}?`,
+      a: `Você pode entrar em contato pelos canais oficiais: ${canais.join(" ou ")}.`,
+    });
+  }
+  if (events.length > 0) {
+    faqs.push({
+      q: `Quais eventos acontecem no ${partner.name}?`,
+      a: `Atualmente há ${events.length} ${events.length === 1 ? "evento confirmado" : "eventos confirmados"} no ${partner.name}. Veja a agenda completa nesta página.`,
+    });
+  }
+  if (partner.instagram) {
+    faqs.push({
+      q: `O ${partner.name} tem Instagram?`,
+      a: `Sim, o Instagram oficial é @${partner.instagram.replace("@", "")}.`,
+    });
+  }
+  if (mapsUrl) {
+    faqs.push({
+      q: `Como chegar ao ${partner.name}?`,
+      a: `Use o botão "Como Chegar" desta página para abrir a rota direta no Google Maps${partner.address ? ` até ${partner.address}` : ""}.`,
+    });
+  }
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -220,6 +256,16 @@ export default function V3LocalDetail() {
           { "@type": "ListItem", position: partner.city ? 3 : 2, name: partner.name, item: canonical },
         ],
       },
+      ...(faqs.length > 0
+        ? [{
+            "@type": "FAQPage",
+            mainEntity: faqs.map((f) => ({
+              "@type": "Question",
+              name: f.q,
+              acceptedAnswer: { "@type": "Answer", text: f.a },
+            })),
+          }]
+        : []),
     ],
   };
 
