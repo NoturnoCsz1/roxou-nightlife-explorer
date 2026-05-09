@@ -658,14 +658,7 @@ function HomeDataFallback() {
   );
 }
 
-function TodaySection({ loading, error, events, partnerRankMap, trendingIdSet }: {
-  loading?: boolean; error?: unknown; events?: Ev[] | null;
-  partnerRankMap: Map<string, number>; trendingIdSet: Set<string>;
-}) {
-  const list = safeEvents(events);
-  if (loading || error || list.length === 0) return <TodayEmptyState error={!!error} loading={loading} />;
-  return <TodayTimeline events={list} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />;
-}
+/* TodaySection extraído para src/components/v3/home/TodaySection.tsx */
 
 /* ─── FADE SECTION WRAPPER ─── */
 function FadeSection({ className, children }: { className?: string; children: ReactNode }) {
