@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
 import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
+import { trackEvent } from "@/lib/analytics";
 
 function getOperatingStatus(type?: string | null) {
   const hour = new Date().getHours();
