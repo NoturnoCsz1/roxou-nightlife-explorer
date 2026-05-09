@@ -739,7 +739,15 @@ function NextEventCard({ event }: { event: { id: string; slug: string; title: st
     >
       <div className="flex items-center gap-3">
         {event.image_url && (
-          <img src={event.image_url} alt="" loading="lazy" decoding="async" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+          <img
+            src={optimizedImageUrl(event.image_url, 192, 75) || event.image_url}
+            srcSet={optimizedSrcSet(event.image_url, [112, 224, 336], 75)}
+            sizes="56px"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="w-14 h-14 rounded-xl object-cover shrink-0"
+          />
         )}
         <div className="flex-1 min-w-0">
           <div className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-primary mb-0.5">
