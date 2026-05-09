@@ -299,7 +299,7 @@ export default function V3LocalDetail() {
         </Link>
         <div className="px-4 pb-4 flex items-end gap-3.5 w-full">
           {partner.logo_url ? (
-            <img src={partner.logo_url} alt={partner.name} className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg" />
+            <img src={partner.logo_url} alt={partner.name} fetchPriority="high" decoding="async" className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg" />
           ) : (
             <div className="w-[68px] h-[68px] rounded-xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
               {partner.name[0]}
@@ -560,7 +560,7 @@ export default function V3LocalDetail() {
         >
           <div className="mx-3 mb-3 rounded-2xl v3-glass border border-primary/30 shadow-[0_8px_32px_-8px_hsl(var(--primary)/0.5)] backdrop-blur-xl px-3 py-2.5 flex items-center gap-2.5">
             {partner.logo_url ? (
-              <img src={partner.logo_url} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+              <img src={partner.logo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-xl object-cover shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-base font-display font-bold text-primary shrink-0">
                 {partner.name[0]}
@@ -715,7 +715,7 @@ function NextEventCard({ event }: { event: { id: string; slug: string; title: st
     >
       <div className="flex items-center gap-3">
         {event.image_url && (
-          <img src={event.image_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+          <img src={event.image_url} alt="" loading="lazy" decoding="async" className="w-14 h-14 rounded-xl object-cover shrink-0" />
         )}
         <div className="flex-1 min-w-0">
           <div className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-primary mb-0.5">

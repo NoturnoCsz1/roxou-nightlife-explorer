@@ -114,7 +114,7 @@ export default function V3Layout() {
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-display font-bold text-primary-foreground shrink-0 overflow-hidden">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt={displayName} decoding="async" className="w-full h-full object-cover" />
                 ) : (
                   initial
                 )}

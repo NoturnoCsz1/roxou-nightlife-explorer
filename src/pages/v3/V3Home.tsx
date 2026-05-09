@@ -555,7 +555,7 @@ export default function V3Home() {
                     className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border/30 hover:border-primary/20 transition-all">
                     <span className="text-[10px] font-bold text-muted-foreground">#{i + 6}</span>
                     <div className="w-6 h-6 rounded-md overflow-hidden bg-secondary shrink-0">
-                      {v.logo_url ? <img src={v.logo_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-muted-foreground flex items-center justify-center h-full">{v.name[0]}</span>}
+                      {v.logo_url ? <img src={v.logo_url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-muted-foreground flex items-center justify-center h-full">{v.name[0]}</span>}
                     </div>
                     <span className="text-[10px] font-semibold text-foreground whitespace-nowrap">{v.name}</span>
                     <span className="text-[9px] text-muted-foreground">{v.views}</span>
@@ -704,6 +704,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
         src={ev.image_url}
         alt={ev.title}
         loading="eager"
+        fetchPriority="high"
         wrapperClassName="absolute inset-0 w-full h-full"
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
@@ -1256,7 +1257,7 @@ function DesktopProfilePanel() {
       className="flex items-center gap-3 rounded-2xl border border-border/20 bg-background/30 p-3 transition-all hover:border-primary/40 hover:bg-primary/10"
     >
       <div className="h-10 w-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
-        {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <UserIcon className="h-5 w-5 text-primary" />}
+        {avatar ? <img src={avatar} alt="" decoding="async" className="h-full w-full object-cover" /> : <UserIcon className="h-5 w-5 text-primary" />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-black text-foreground truncate">{displayName}</p>

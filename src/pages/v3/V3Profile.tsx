@@ -112,7 +112,7 @@ export default function V3Profile() {
       <div className="relative lg:max-w-5xl lg:mx-auto lg:px-6 lg:pt-6">
         <div className="relative aspect-[21/9] lg:aspect-auto lg:h-[400px] w-full overflow-hidden bg-secondary lg:rounded-3xl">
           {coverUrl ? (
-            <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
+            <img src={coverUrl} alt="Capa" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/35 via-accent/15 to-background" />
           )}
@@ -138,7 +138,7 @@ export default function V3Profile() {
               >
                 <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-secondary flex items-center justify-center">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                    <img src={profile.avatar_url} alt="" decoding="async" className="h-full w-full object-cover" />
                   ) : (
                     <User className="h-10 w-10 lg:h-16 lg:w-16 text-primary" />
                   )}
@@ -272,7 +272,7 @@ export default function V3Profile() {
                 className="group w-[78px] shrink-0 text-center">
                 <div className="mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full border border-border/50 bg-secondary transition-all group-hover:border-primary/50 group-hover:shadow-[0_0_22px_hsl(var(--primary)/0.25)]">
                   {p.logo_url ? (
-                    <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" />
+                    <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-primary font-bold text-lg">{p.name[0]}</div>
                   )}
