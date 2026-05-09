@@ -714,6 +714,42 @@ function ReviewRow({
           ⚠️ Verifique a categoria: {item.categoryWarning}
         </div>
       )}
+      {!isDuplicate && smartDup && smartDup.level !== "none" && (
+        <div
+          className={`border-b px-3 py-1.5 text-[10px] font-semibold flex items-start gap-1.5 ${
+            smartDup.level === "almost_certain"
+              ? "bg-destructive/10 border-destructive/30 text-destructive"
+              : smartDup.level === "strong"
+              ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
+              : "bg-amber-500/10 border-amber-500/30 text-amber-500"
+          }`}
+        >
+          <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            {smartDup.level === "almost_certain" && "🚨 Duplicado detectado"}
+            {smartDup.level === "strong" && "⚠ Forte suspeita de duplicado"}
+            {smartDup.level === "possible" && "⚠ Possível duplicado"}
+            {" — "}
+            <span className="font-bold">{smartDup.duplicate_score}/100</span>
+            {smartDup.matched_event_title && (
+              <>
+                {" • similar a: "}
+                <span className="font-bold truncate">{smartDup.matched_event_title}</span>
+                {smartDup.matched_event_date && (
+                  <span className="opacity-75">
+                    {" ("}{smartDup.matched_event_date.slice(0, 10)}{")"}
+                  </span>
+                )}
+              </>
+            )}
+            {smartDup.matched_fields.length > 0 && (
+              <div className="opacity-80 font-normal mt-0.5">
+                Coincidências: {smartDup.matched_fields.join(" • ")}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex items-stretch gap-2 p-2">
         {/* thumb */}
         <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-secondary/40">
