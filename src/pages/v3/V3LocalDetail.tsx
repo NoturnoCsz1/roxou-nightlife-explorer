@@ -58,6 +58,14 @@ export default function V3LocalDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { isFollowed, toggleFollow } = useSavedPartners();
+  const [showStickyCta, setShowStickyCta] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowStickyCta(window.scrollY > 120);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const { data: partner } = useQuery({
     queryKey: ["v3-partner", slug],
