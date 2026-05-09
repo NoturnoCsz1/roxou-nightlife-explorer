@@ -71,7 +71,7 @@ export default function V3Parceiros() {
             <div className="relative flex items-center gap-4">
               <div className="h-20 w-20 flex-none rounded-xl bg-card/80 ring-1 ring-white/10 overflow-hidden flex items-center justify-center">
                 {spotlight.logo_url ? (
-                  <img src={spotlight.logo_url} alt={spotlight.name} className="h-full w-full object-cover" />
+                  <img src={spotlight.logo_url} alt={spotlight.name} fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-2xl font-black text-primary">{spotlight.name[0]}</span>
                 )}
