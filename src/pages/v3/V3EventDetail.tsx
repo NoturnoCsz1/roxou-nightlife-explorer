@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
+import EventPresence from "@/components/v3/EventPresence";
 import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -125,6 +126,8 @@ export default function V3EventDetail() {
           <Sparkles className="w-4 h-4" />
           Reservar agora
         </Button>
+
+        <EventPresence eventId={event.id} />
 
         <ReservationDrawer
           open={drawerOpen}
