@@ -545,6 +545,9 @@ export default function V3LocalDetail() {
         {relatedPartners.length > 0 && (
           <RelatedPartnersSection partners={relatedPartners} currentPartner={{ id: partner.id, name: partner.name }} />
         )}
+
+        {/* FAQ */}
+        {faqs.length > 0 && <FaqSection faqs={faqs} />}
       </div>
 
       {/* Sticky mobile CTA — premium glass bar */}
