@@ -15,6 +15,7 @@ interface ReservationDrawerProps {
   venueName?: string | null;
   eventDate?: string | null;
   imageUrl?: string | null;
+  onTicketClick?: () => void;
 }
 
 /**
