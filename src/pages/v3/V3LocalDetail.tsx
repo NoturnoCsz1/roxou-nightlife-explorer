@@ -439,6 +439,7 @@ export default function V3LocalDetail() {
         {events.length > 0 && (
           <div>
             <h2 className="font-display font-bold text-base text-foreground mb-3">📅 Próximos eventos</h2>
+            <NextEventCard event={events[0]} />
             <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
               {events.map((e) => (
                 <EventCardV3 key={e.id} id={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
