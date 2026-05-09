@@ -34,22 +34,22 @@ import ExpoShows from "./pages/expo/ExpoShows";
 import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
 import ExpoIngressos from "./pages/expo/ExpoIngressos";
 
-// Admin
+// Admin (lazy — rotas privadas/raras)
 import AdminLayout from "./components/admin/AdminLayout";
-import AdminLogin from "./pages/admin/AdminLogin";
-import Dashboard from "./pages/admin/Dashboard";
-import ParceirosList from "./pages/admin/ParceirosList";
-import ParceiroForm from "./pages/admin/ParceiroForm";
-import EstabelecimentosAudit from "./pages/admin/EstabelecimentosAudit";
-import EventosList from "./pages/admin/EventosList";
-import EventoForm from "./pages/admin/EventoForm";
-import EventoBulkForm from "./pages/admin/EventoBulkForm";
-import Sugestoes from "./pages/admin/Sugestoes";
-import EventouAdmin from "./pages/admin/EventouAdmin";
-import InstagramAdminPage from "./pages/admin/InstagramAdmin";
-import Editores from "./pages/admin/Editores";
-import NoticiasList from "./pages/admin/NoticiasList";
-import NoticiaForm from "./pages/admin/NoticiaForm";
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const ParceirosList = lazy(() => import("./pages/admin/ParceirosList"));
+const ParceiroForm = lazy(() => import("./pages/admin/ParceiroForm"));
+const EstabelecimentosAudit = lazy(() => import("./pages/admin/EstabelecimentosAudit"));
+const EventosList = lazy(() => import("./pages/admin/EventosList"));
+const EventoForm = lazy(() => import("./pages/admin/EventoForm"));
+const EventoBulkForm = lazy(() => import("./pages/admin/EventoBulkForm"));
+const Sugestoes = lazy(() => import("./pages/admin/Sugestoes"));
+const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
+const InstagramAdminPage = lazy(() => import("./pages/admin/InstagramAdmin"));
+const Editores = lazy(() => import("./pages/admin/Editores"));
+const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
+const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
 
 // V3 (padrão)
 import V3Layout from "./components/v3/V3Layout";
