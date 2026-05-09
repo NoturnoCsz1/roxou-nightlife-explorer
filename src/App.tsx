@@ -1,8 +1,17 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+/** Fallback leve para rotas lazy. */
+const LazyFallback = () => (
+  <div className="min-h-[40vh] flex items-center justify-center">
+    <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
+  </div>
+);
+const L = (el: React.ReactNode) => <Suspense fallback={<LazyFallback />}>{el}</Suspense>;
 
 /** Redireciona /v3/* (rotas legadas) para o caminho equivalente na raiz. */
 function RedirectV3() {
