@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
+import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 
 interface ReservationDrawerProps {
   open: boolean;
