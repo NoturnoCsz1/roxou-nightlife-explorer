@@ -1,8 +1,17 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+/** Fallback leve para rotas lazy. */
+const LazyFallback = () => (
+  <div className="min-h-[40vh] flex items-center justify-center">
+    <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
+  </div>
+);
+const L = (el: React.ReactNode) => <Suspense fallback={<LazyFallback />}>{el}</Suspense>;
 
 /** Redireciona /v3/* (rotas legadas) para o caminho equivalente na raiz. */
 function RedirectV3() {
@@ -15,32 +24,33 @@ import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
 
-import Expo2026 from "./pages/Expo2026";
-import Expo2026Contato from "./pages/Expo2026Contato";
-import Contato from "./pages/Contato";
-import ExpoNoticia from "./pages/ExpoNoticia";
-import RoxouNoticias from "./pages/RoxouNoticias";
-import RoxouNoticia from "./pages/RoxouNoticia";
-import ExpoShows from "./pages/expo/ExpoShows";
-import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
-import ExpoIngressos from "./pages/expo/ExpoIngressos";
+// Hot site Expo / Notícias (lazy — rotas raras)
+const Expo2026 = lazy(() => import("./pages/Expo2026"));
+const Expo2026Contato = lazy(() => import("./pages/Expo2026Contato"));
+const Contato = lazy(() => import("./pages/Contato"));
+const ExpoNoticia = lazy(() => import("./pages/ExpoNoticia"));
+const RoxouNoticias = lazy(() => import("./pages/RoxouNoticias"));
+const RoxouNoticia = lazy(() => import("./pages/RoxouNoticia"));
+const ExpoShows = lazy(() => import("./pages/expo/ExpoShows"));
+const ExpoProgramacao = lazy(() => import("./pages/expo/ExpoProgramacao"));
+const ExpoIngressos = lazy(() => import("./pages/expo/ExpoIngressos"));
 
-// Admin
+// Admin (lazy — rotas privadas/raras)
 import AdminLayout from "./components/admin/AdminLayout";
-import AdminLogin from "./pages/admin/AdminLogin";
-import Dashboard from "./pages/admin/Dashboard";
-import ParceirosList from "./pages/admin/ParceirosList";
-import ParceiroForm from "./pages/admin/ParceiroForm";
-import EstabelecimentosAudit from "./pages/admin/EstabelecimentosAudit";
-import EventosList from "./pages/admin/EventosList";
-import EventoForm from "./pages/admin/EventoForm";
-import EventoBulkForm from "./pages/admin/EventoBulkForm";
-import Sugestoes from "./pages/admin/Sugestoes";
-import EventouAdmin from "./pages/admin/EventouAdmin";
-import InstagramAdminPage from "./pages/admin/InstagramAdmin";
-import Editores from "./pages/admin/Editores";
-import NoticiasList from "./pages/admin/NoticiasList";
-import NoticiaForm from "./pages/admin/NoticiaForm";
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const ParceirosList = lazy(() => import("./pages/admin/ParceirosList"));
+const ParceiroForm = lazy(() => import("./pages/admin/ParceiroForm"));
+const EstabelecimentosAudit = lazy(() => import("./pages/admin/EstabelecimentosAudit"));
+const EventosList = lazy(() => import("./pages/admin/EventosList"));
+const EventoForm = lazy(() => import("./pages/admin/EventoForm"));
+const EventoBulkForm = lazy(() => import("./pages/admin/EventoBulkForm"));
+const Sugestoes = lazy(() => import("./pages/admin/Sugestoes"));
+const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
+const InstagramAdminPage = lazy(() => import("./pages/admin/InstagramAdmin"));
+const Editores = lazy(() => import("./pages/admin/Editores"));
+const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
+const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
 
 // V3 (padrão)
 import V3Layout from "./components/v3/V3Layout";
@@ -65,21 +75,21 @@ import V3Economize from "./pages/v3/V3Economize";
 import V3AIChat from "./pages/v3/V3AIChat";
 import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
-import PertoDeMim from "./pages/PertoDeMim";
-import RemoverDados from "./pages/RemoverDados";
-import CadastroMotorista from "./pages/CadastroMotorista";
+const PertoDeMim = lazy(() => import("./pages/PertoDeMim"));
+const RemoverDados = lazy(() => import("./pages/RemoverDados"));
+const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 import PedirCaronaGate from "./components/PedirCaronaGate";
 
-// Legacy v2 (arquivado em /archive/legacy-v2/*)
-import LegacyIndex from "./pages/Index";
-import LegacyEventDetail from "./pages/EventDetail";
-import LegacyHoje from "./pages/Hoje";
-import LegacySemana from "./pages/Semana";
-import LegacyCategorias from "./pages/Categorias";
-import LegacySalvos from "./pages/Salvos";
-import LegacyIndica from "./pages/Indica";
-import LegacyLocalDetail from "./pages/LocalDetail";
-import LegacyLocalEventos from "./pages/LocalEventos";
+// Legacy v2 (arquivado em /archive/legacy-v2/*) — lazy
+const LegacyIndex = lazy(() => import("./pages/Index"));
+const LegacyEventDetail = lazy(() => import("./pages/EventDetail"));
+const LegacyHoje = lazy(() => import("./pages/Hoje"));
+const LegacySemana = lazy(() => import("./pages/Semana"));
+const LegacyCategorias = lazy(() => import("./pages/Categorias"));
+const LegacySalvos = lazy(() => import("./pages/Salvos"));
+const LegacyIndica = lazy(() => import("./pages/Indica"));
+const LegacyLocalDetail = lazy(() => import("./pages/LocalDetail"));
+const LegacyLocalEventos = lazy(() => import("./pages/LocalEventos"));
 
 const queryClient = new QueryClient();
 
@@ -91,25 +101,25 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* ========= ADMIN (central única de comando) ========= */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={L(<AdminLogin />)} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="parceiros" element={<ParceirosList />} />
-            <Route path="parceiros/novo" element={<ParceiroForm />} />
-            <Route path="parceiros/:id/editar" element={<ParceiroForm />} />
-            <Route path="estabelecimentos" element={<EstabelecimentosAudit />} />
-            <Route path="eventos" element={<EventosList />} />
-            <Route path="eventos/novo" element={<EventoForm />} />
-            <Route path="eventos/novo/lote" element={<EventoBulkForm />} />
-            <Route path="eventos/:id/editar" element={<EventoForm />} />
-            <Route path="sugestoes" element={<Sugestoes />} />
-            <Route path="eventou" element={<EventouAdmin />} />
-            <Route path="instagram" element={<InstagramAdminPage />} />
-            <Route path="editores" element={<Editores />} />
-            <Route path="noticias" element={<NoticiasList />} />
-            <Route path="noticias/novo" element={<NoticiaForm />} />
-            <Route path="noticias/:id/editar" element={<NoticiaForm />} />
+            <Route path="dashboard" element={L(<Dashboard />)} />
+            <Route path="parceiros" element={L(<ParceirosList />)} />
+            <Route path="parceiros/novo" element={L(<ParceiroForm />)} />
+            <Route path="parceiros/:id/editar" element={L(<ParceiroForm />)} />
+            <Route path="estabelecimentos" element={L(<EstabelecimentosAudit />)} />
+            <Route path="eventos" element={L(<EventosList />)} />
+            <Route path="eventos/novo" element={L(<EventoForm />)} />
+            <Route path="eventos/novo/lote" element={L(<EventoBulkForm />)} />
+            <Route path="eventos/:id/editar" element={L(<EventoForm />)} />
+            <Route path="sugestoes" element={L(<Sugestoes />)} />
+            <Route path="eventou" element={L(<EventouAdmin />)} />
+            <Route path="instagram" element={L(<InstagramAdminPage />)} />
+            <Route path="editores" element={L(<Editores />)} />
+            <Route path="noticias" element={L(<NoticiasList />)} />
+            <Route path="noticias/novo" element={L(<NoticiaForm />)} />
+            <Route path="noticias/:id/editar" element={L(<NoticiaForm />)} />
           </Route>
 
           {/* ========= AUTH ========= */}
@@ -117,22 +127,22 @@ const App = () => (
           <Route path="/auth/*" element={<V3Auth />} />
 
           {/* ========= HOT SITE EXPO 2026 ========= */}
-          <Route path="/expo2026" element={<Expo2026 />} />
-          <Route path="/expo2026/contato" element={<Expo2026Contato />} />
-          <Route path="/contato" element={<Contato />} />
-          <Route path="/expo2026/shows" element={<ExpoShows />} />
-          <Route path="/expo2026/programacao" element={<ExpoProgramacao />} />
-          <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
-          <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
+          <Route path="/expo2026" element={L(<Expo2026 />)} />
+          <Route path="/expo2026/contato" element={L(<Expo2026Contato />)} />
+          <Route path="/contato" element={L(<Contato />)} />
+          <Route path="/expo2026/shows" element={L(<ExpoShows />)} />
+          <Route path="/expo2026/programacao" element={L(<ExpoProgramacao />)} />
+          <Route path="/expo2026/ingressos" element={L(<ExpoIngressos />)} />
+          <Route path="/expo2026/noticia/:slug" element={L(<ExpoNoticia />)} />
 
           {/* ========= NOTÍCIAS ROXOU ========= */}
-          <Route path="/noticias" element={<RoxouNoticias />} />
-          <Route path="/noticia/:slug" element={<RoxouNoticia />} />
+          <Route path="/noticias" element={L(<RoxouNoticias />)} />
+          <Route path="/noticia/:slug" element={L(<RoxouNoticia />)} />
 
           {/* ========= ROXOU V3 (raiz pública) ========= */}
           <Route path="/manutencao" element={<Maintenance />} />
-          <Route path="/remover-dados" element={<RemoverDados />} />
-          <Route path="/cadastro-motorista" element={<CadastroMotorista />} />
+          <Route path="/remover-dados" element={L(<RemoverDados />)} />
+          <Route path="/cadastro-motorista" element={L(<CadastroMotorista />)} />
           {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
           <Route path="/pedir-carona" element={<PedirCaronaGate />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
@@ -161,21 +171,21 @@ const App = () => (
             <Route path="ia" element={<V3AIChat />} />
             <Route path="sobre" element={<V3Sobre />} />
             <Route path="contato" element={<V3Contato />} />
-            <Route path="perto-de-mim" element={<PertoDeMim />} />
+            <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
 
           {/* ========= LEGACY V2 (arquivado, NoIndex) ========= */}
           <Route path="/archive/legacy-v2" element={<LegacyArchiveLayout />}>
-            <Route index element={<LegacyIndex />} />
-            <Route path="evento/:slug" element={<LegacyEventDetail />} />
-            <Route path="hoje" element={<LegacyHoje />} />
-            <Route path="semana" element={<LegacySemana />} />
-            <Route path="categorias" element={<LegacyCategorias />} />
-            <Route path="salvos" element={<LegacySalvos />} />
-            <Route path="indica" element={<LegacyIndica />} />
-            <Route path="local/:slug" element={<LegacyLocalDetail />} />
-            <Route path="local/:slug/eventos" element={<LegacyLocalEventos />} />
+            <Route index element={L(<LegacyIndex />)} />
+            <Route path="evento/:slug" element={L(<LegacyEventDetail />)} />
+            <Route path="hoje" element={L(<LegacyHoje />)} />
+            <Route path="semana" element={L(<LegacySemana />)} />
+            <Route path="categorias" element={L(<LegacyCategorias />)} />
+            <Route path="salvos" element={L(<LegacySalvos />)} />
+            <Route path="indica" element={L(<LegacyIndica />)} />
+            <Route path="local/:slug" element={L(<LegacyLocalDetail />)} />
+            <Route path="local/:slug/eventos" element={L(<LegacyLocalEventos />)} />
           </Route>
 
           {/* Catch-all: admins logados acessam app completo (testes V3);
