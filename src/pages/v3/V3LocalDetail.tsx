@@ -483,6 +483,7 @@ export default function V3LocalDetail() {
         )}
 
         <AuraVenueInsights partner={partner} events={events} />
+        <AuraVenuePricing partner={partner} events={events} />
 
         {partner.latitude != null && partner.longitude != null && (
           <div className="space-y-2">
