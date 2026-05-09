@@ -35,6 +35,11 @@ import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/H
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 
+// Wrapper que injeta PremiumEventCard (definido abaixo neste arquivo) no TodayTimeline extraído.
+const TodayTimeline = (props: Omit<React.ComponentProps<typeof TodayTimelineRaw>, "Card">) => (
+  <TodayTimelineRaw {...props} Card={PremiumEventCard} />
+);
+
 /* ───── helpers ───── */
 const isValidDate = (d: Date) => !Number.isNaN(d.getTime());
 const toSafeDate = (d?: string | null) => {
