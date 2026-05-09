@@ -555,8 +555,8 @@ const EventosList = () => {
       if (extraFilter === "em-alta") return e.aura_badge === "em_alta" || e.aura_badge === "viralizando" || e.aura_badge === "bombando";
       if (extraFilter === "detectados-hoje") return spDateStr(new Date(e.created_at)) === todayStr;
       if (extraFilter === "arquivados") return e.status === "archived";
-      if (extraFilter === "prontos") return e.status === "draft" && getChecklist(e).complete;
-      if (extraFilter === "revisar") return e.status === "draft" && (needsReview(e) || !getChecklist(e).complete);
+      if (extraFilter === "prontos") return e.status !== "published" && e.status !== "archived" && getChecklist(e).complete;
+      if (extraFilter === "revisar") return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
       return true;
     });
 
