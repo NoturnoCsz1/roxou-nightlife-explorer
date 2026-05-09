@@ -795,3 +795,32 @@ function RelatedPartnersSection({
     </div>
   );
 }
+
+/**
+ * FaqSection — accordion leve usando <details>/<summary> (sem libs novas).
+ * Glass premium Roxou. Conteúdo derivado apenas de dados reais do parceiro.
+ */
+function FaqSection({ faqs }: { faqs: { q: string; a: string }[] }) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="font-display font-bold text-base text-foreground">Perguntas frequentes</h2>
+        <p className="text-[11px] text-muted-foreground">Tudo o que você precisa saber sobre este local</p>
+      </div>
+      <div className="rounded-2xl v3-glass border border-border/40 divide-y divide-border/30 overflow-hidden">
+        {faqs.map((f, i) => (
+          <details
+            key={i}
+            className="group px-3.5 py-3 open:bg-primary/5 transition-colors [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary className="flex items-center justify-between gap-3 cursor-pointer list-none">
+              <span className="text-xs font-bold text-foreground flex-1">{f.q}</span>
+              <ChevronRight className="w-4 h-4 text-primary shrink-0 transition-transform duration-200 group-open:rotate-90" />
+            </summary>
+            <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
