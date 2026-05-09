@@ -134,9 +134,82 @@ export default function V3LocalDetail() {
     : null;
   const instagramUrl = partner.instagram ? `https://instagram.com/${partner.instagram.replace("@", "")}` : null;
   const whatsappUrl = partner.whatsapp ? `https://wa.me/55${cleanPhone(partner.whatsapp)}` : null;
+  const isTopWeek = viewCount >= TOP_WEEK_THRESHOLD;
+  const canonical = `https://roxou.com.br/v3/local/${partner.slug}`;
+  const seoTitle = `${partner.name}${partner.city ? ` em ${partner.city}` : ""} | Roxou`;
+  const seoDescription = partner.short_description
+    ? partner.short_description
+    : `Veja próximos eventos, localização, Instagram e informações do ${partner.name}${partner.city ? ` em ${partner.city}` : ""} na Roxou.`;
+  const seoKeywords = [
+    partner.name,
+    partner.city,
+    partner.type,
+    "eventos",
+    "balada",
+    "bar",
+    "restaurante",
+    "Roxou",
+  ].filter(Boolean).join(", ");
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        name: partner.name,
+        description: seoDescription,
+        url: canonical,
+        ...(partner.logo_url ? { image: partner.logo_url, logo: partner.logo_url } : {}),
+        ...(partner.address || partner.city
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: partner.address || undefined,
+                addressLocality: partner.city || undefined,
+                addressRegion: "SP",
+                addressCountry: "BR",
+              },
+            }
+          : {}),
+        ...(partner.latitude != null && partner.longitude != null
+          ? { geo: { "@type": "GeoCoordinates", latitude: Number(partner.latitude), longitude: Number(partner.longitude) } }
+          : {}),
+        ...(partner.whatsapp ? { telephone: partner.whatsapp } : {}),
+        ...(partner.instagram ? { sameAs: [`https://instagram.com/${partner.instagram.replace("@", "")}`] } : {}),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://roxou.com.br/" },
+          ...(partner.city ? [{ "@type": "ListItem", position: 2, name: partner.city, item: `https://roxou.com.br/cidade/${encodeURIComponent(String(partner.city).toLowerCase())}` }] : []),
+          { "@type": "ListItem", position: partner.city ? 3 : 2, name: partner.name, item: canonical },
+        ],
+      },
+    ],
+  };
 
   return (
     <div className="pb-8">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        canonical={canonical}
+        ogImage={partner.logo_url || undefined}
+        keywords={seoKeywords}
+        jsonLd={jsonLd}
+      />
+      {/* Breadcrumb */}
+      <nav aria-label="breadcrumb" className="px-4 pt-3 text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+        <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+        {partner.city && (
+          <>
+            <ChevronRight className="w-3 h-3 opacity-60" />
+            <span className="truncate">{partner.city}</span>
+          </>
+        )}
+        <ChevronRight className="w-3 h-3 opacity-60" />
+        <span className="text-foreground/80 truncate">{partner.name}</span>
+      </nav>
+
       {/* Header — refined composition */}
       <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
         <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
