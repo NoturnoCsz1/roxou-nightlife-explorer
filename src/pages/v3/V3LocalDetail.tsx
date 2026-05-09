@@ -205,7 +205,23 @@ export default function V3LocalDetail() {
           )}
           {whatsappUrl && (
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-              onClick={() => import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name))}
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "whatsapp_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: whatsappUrl,
+                      channel: "whatsapp",
+                    },
+                  });
+                } catch {}
+                import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
+              }}
               className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
               <MessageCircle className="w-4 h-4 text-primary" /> Reservar
             </a>
