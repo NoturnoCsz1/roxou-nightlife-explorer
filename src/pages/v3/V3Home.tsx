@@ -36,6 +36,7 @@ import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
+import ExpoCountdownPill from "@/components/v3/home/ExpoCountdownPill";
 
 // Wrapper que injeta PremiumEventCard (definido abaixo neste arquivo) no TodayTimeline extraído.
 const TodayTimeline = (props: Omit<React.ComponentProps<typeof TodayTimelineRaw>, "Card">) => (
