@@ -585,3 +585,69 @@ function InstagramFeedPlaceholder({ handle, partnerId }: { handle: string; partn
     </div>
   );
 }
+
+/**
+ * NextEventCard — bloco premium de urgência mostrando o próximo evento do local.
+ * Usa apenas dados já carregados em `events[0]`. Timezone America/Sao_Paulo via dateUtils.
+ */
+function NextEventCard({ event }: { event: { id: string; slug: string; title: string; date_time: string; image_url?: string | null } }) {
+  const date = getEventDateSP(event.date_time);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!date) return null;
+
+  const diffMs = date.getTime() - now.getTime();
+  const isLive = diffMs <= 0 && diffMs > -6 * 60 * 60 * 1000; // janela de 6h "rolando agora"
+  const isPast = diffMs <= -6 * 60 * 60 * 1000;
+  if (isPast) return null;
+
+  let whenLabel: string;
+  if (isTodaySP(date)) whenLabel = `Hoje às ${formatTime(date)}`;
+  else if (isTomorrowSP(date)) whenLabel = `Amanhã às ${formatTime(date)}`;
+  else {
+    const dow = formatWeekdaySP(date).slice(0, 3).toUpperCase().replace(".", "");
+    whenLabel = `${dow} • ${formatTime(date)}`;
+  }
+
+  let countdown: string;
+  if (isLive) {
+    countdown = "Rolando agora 🔥";
+  } else {
+    const totalMin = Math.max(0, Math.floor(diffMs / 60_000));
+    const days = Math.floor(totalMin / (60 * 24));
+    const hours = Math.floor((totalMin % (60 * 24)) / 60);
+    const mins = totalMin % 60;
+    if (days > 0) countdown = `Começa em: ${days}d ${String(hours).padStart(2, "0")}h`;
+    else if (hours > 0) countdown = `Começa em: ${String(hours).padStart(2, "0")}h ${String(mins).padStart(2, "0")}m`;
+    else countdown = `Começa em: ${mins}m`;
+  }
+
+  return (
+    <Link
+      to={`/v3/evento/${event.slug}`}
+      className="block mb-3 rounded-2xl v3-glass border border-primary/30 shadow-[0_8px_24px_-12px_hsl(var(--primary)/0.45)] backdrop-blur-xl px-3.5 py-3 hover:border-primary/50 transition-all"
+    >
+      <div className="flex items-center gap-3">
+        {event.image_url && (
+          <img src={event.image_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-primary mb-0.5">
+            <Flame className="w-3 h-3" /> Próximo evento
+          </div>
+          <p className="text-sm font-bold text-foreground truncate">{event.title}</p>
+          <p className="text-[11px] text-muted-foreground">{whenLabel}</p>
+          <p className={`text-[11px] font-bold mt-0.5 ${isLive ? "text-primary" : "text-foreground/80"}`}>{countdown}</p>
+        </div>
+        <span className="px-3 py-2 rounded-xl gradient-primary text-primary-foreground text-[11px] font-extrabold shrink-0 neon-glow">
+          Ver evento
+        </span>
+      </div>
+    </Link>
+  );
+}
