@@ -640,7 +640,14 @@ function InstagramFeedPlaceholder({ handle, partnerId }: { handle: string; partn
           {posts.slice(0, 9).map(post => (
             <a key={post.id} href={post.permalink} target="_blank" rel="noopener noreferrer"
               className="aspect-square rounded-lg overflow-hidden relative group">
-              <img src={post.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+              <img
+                src={optimizedImageUrl(post.image_url, 320, 70) || post.image_url}
+                srcSet={optimizedSrcSet(post.image_url, [240, 480], 70)}
+                sizes="(max-width: 640px) 30vw, 200px"
+                alt=""
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                 <Instagram className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
