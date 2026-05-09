@@ -733,6 +733,7 @@ export default function V3RideRequest() {
               <MapPin className="w-3.5 h-3.5" /> Ou digite o endereço de embarque
             </Label>
             <Input
+              id="manual-origin-input"
               value={manualOriginAddress}
               onChange={(e) => setManualOriginAddress(e.target.value.slice(0, 200))}
               placeholder="Ex: Rua, número, bairro"
