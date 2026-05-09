@@ -24,6 +24,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import AuraCreateEventModal from "@/components/admin/AuraCreateEventModal";
+import { AIConfidenceBadge } from "@/components/admin/AIConfidenceBadges";
 
 interface EventRow {
   id: string;
