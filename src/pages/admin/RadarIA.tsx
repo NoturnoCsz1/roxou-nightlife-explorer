@@ -122,12 +122,11 @@ const RadarIA = () => {
 
   async function load() {
     setLoading(true);
-    // Pull recent scans (only ones with structured data)
     const { data: scans, error } = await supabase
       .from("instagram_scans" as any)
       .select("*")
       .order("last_seen_at", { ascending: false })
-      .limit(300);
+      .limit(500);
 
     if (error) {
       toast.error(`Erro: ${error.message}`);
@@ -156,19 +155,32 @@ const RadarIA = () => {
       duplicateOf: scan.duplicate_of_event_id ? eventsMap.get(scan.duplicate_of_event_id) || null : null,
     }));
 
-    // Counts per filter
+    // Counts (visíveis vs arquivados)
+    const visible = allCards.filter((c) => !c.scan.hidden_from_radar);
+    const archived = allCards.filter((c) => c.scan.hidden_from_radar);
+    const dupsDetected = allCards.filter((c) =>
+      c.scan.status === "possible_duplicate" || c.scan.status === "skipped_duplicate"
+    );
+
     const c: Record<FilterKey, number> = {
-      novo: 0, possible_duplicate: 0, approved: 0, published: 0, ignored: 0, all: allCards.length,
+      novo: 0, possible_duplicate: 0, approved: 0, published: 0, ignored: 0,
+      duplicates_detected: dupsDetected.length,
+      archived: archived.length,
+      history: allCards.length,
+      all: visible.length,
     };
-    for (const card of allCards) {
+    for (const card of visible) {
       const cat = categorize(card);
-      if (cat) c[cat]++;
+      if (cat && cat in c) (c as any)[cat]++;
     }
     setCounts(c);
 
-    const filtered = filter === "all"
-      ? allCards
-      : allCards.filter((card) => categorize(card) === filter);
+    let filtered: Card[];
+    if (filter === "history") filtered = allCards;
+    else if (filter === "archived") filtered = archived;
+    else if (filter === "duplicates_detected") filtered = dupsDetected;
+    else if (filter === "all") filtered = visible;
+    else filtered = visible.filter((card) => categorize(card) === filter);
 
     setCards(filtered);
     setLoading(false);
@@ -203,26 +215,66 @@ const RadarIA = () => {
     load();
   }
 
-  async function approve(eventId: string) {
+  async function archiveScan(scanId: string, reason = "manual") {
+    setActing(scanId);
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({ hidden_from_radar: true, archived_at: new Date().toISOString(), archive_reason: reason })
+      .eq("id", scanId);
+    setActing(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Arquivado."); load(); }
+  }
+
+  async function unarchiveScan(scanId: string) {
+    setActing(scanId);
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({ hidden_from_radar: false, archived_at: null, archive_reason: null })
+      .eq("id", scanId);
+    setActing(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Restaurado."); load(); }
+  }
+
+  async function runRetention() {
+    const t = toast.loading("Aplicando retenção inteligente...");
+    const { data, error } = await supabase.rpc("archive_old_radar_scans");
+    toast.dismiss(t);
+    if (error) toast.error(error.message);
+    else { toast.success(`${data ?? 0} itens arquivados automaticamente`); load(); }
+  }
+
+  async function approve(eventId: string, scanId: string) {
     setActing(eventId);
     const { error } = await supabase
       .from("events")
       .update({ status: "published", needs_review: false })
       .eq("id", eventId);
+    if (!error) {
+      await supabase.from("instagram_scans" as any)
+        .update({ first_published_at: new Date().toISOString() })
+        .eq("id", scanId)
+        .is("first_published_at", null);
+    }
     setActing(null);
     if (error) toast.error(error.message);
     else { toast.success("Evento publicado!"); load(); }
   }
 
-  async function ignore(eventId: string) {
+  async function ignore(eventId: string, scanId: string) {
     setActing(eventId);
     const { error } = await supabase
       .from("events")
       .update({ status: "archived", needs_review: false })
       .eq("id", eventId);
+    if (!error) {
+      await archiveScan(scanId, "ignorado manualmente");
+      return;
+    }
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Ignorado."); load(); }
+  }
   }
 
   return (
