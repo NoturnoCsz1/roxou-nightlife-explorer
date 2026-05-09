@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import EventPresence from "@/components/v3/EventPresence";
+import { EventLivePresence } from "@/components/v3/EventLivePresence";
 import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -127,6 +128,9 @@ export default function V3EventDetail() {
           Reservar agora
         </Button>
 
+        <div className="flex items-center gap-2 flex-wrap">
+          <EventLivePresence eventId={event.id} />
+        </div>
         <EventPresence eventId={event.id} />
 
         <ReservationDrawer
