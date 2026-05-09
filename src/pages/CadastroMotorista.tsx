@@ -240,7 +240,7 @@ export default function CadastroMotorista() {
   if (step === "review") {
     return (
       <div className="min-h-screen bg-background pb-24">
-        <SEO title="Revisar cadastro | Roxou" canonical="https://roxou.com.br/cadastro-motorista" />
+        <SEO title="Revisar cadastro | Roxou" description="Revise e envie seu cadastro de motorista parceiro Roxou." canonical="https://roxou.com.br/cadastro-motorista" />
         <header className="sticky top-0 z-40 glass border-b border-border/30">
           <div className="mx-auto max-w-2xl px-4 py-3 flex items-center gap-3">
             <button onClick={() => setStep("form")} className="p-2 -ml-2 rounded-xl hover:bg-card">
