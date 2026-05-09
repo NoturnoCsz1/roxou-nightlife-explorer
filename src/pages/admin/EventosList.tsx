@@ -435,7 +435,23 @@ const EventosList = () => {
     setSelectedIds(new Set());
     toast.success(`🗃 ${ids.length} arquivado(s)`);
   }
-  const spDateStr = (d: Date) =>
+
+  async function handleApproveAllSafe(visibleSafeIds: string[]) {
+    if (visibleSafeIds.length === 0) {
+      toast.error("Nenhum evento seguro encontrado nos filtros atuais.");
+      return;
+    }
+    setPublishing(true);
+    const { error } = await supabase
+      .from("events")
+      .update({ status: "published" })
+      .in("id", visibleSafeIds);
+    setPublishing(false);
+    if (error) { toast.error("Erro ao publicar em lote"); return; }
+    setEvents(prev => prev.map(e => visibleSafeIds.includes(e.id) ? { ...e, status: "published" } : e));
+    setBulkSafeOpen(false);
+    toast.success(`✅ ${visibleSafeIds.length} evento(s) seguros publicados`);
+  }
     new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Sao_Paulo" }).format(d);
   const todayStr = spDateStr(new Date());
   const weekEndStr = (() => {
