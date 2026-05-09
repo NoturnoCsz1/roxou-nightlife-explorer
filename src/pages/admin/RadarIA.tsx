@@ -17,9 +17,24 @@ import {
   ShieldCheck,
   AlertTriangle,
   ScanLine,
+  Archive,
+  ArchiveRestore,
+  Repeat2,
+  History,
+  Pin,
+  Ban,
 } from "lucide-react";
 
-type FilterKey = "novo" | "possible_duplicate" | "approved" | "published" | "ignored" | "all";
+type FilterKey =
+  | "novo"
+  | "possible_duplicate"
+  | "approved"
+  | "published"
+  | "ignored"
+  | "duplicates_detected"
+  | "archived"
+  | "history"
+  | "all";
 
 interface ScanRow {
   id: string;
@@ -39,6 +54,12 @@ interface ScanRow {
   scan_count: number;
   last_seen_at: string;
   created_at: string;
+  archived_at: string | null;
+  archive_reason: string | null;
+  hidden_from_radar: boolean;
+  first_published_at: string | null;
+  last_reposted_at: string | null;
+  repost_count: number;
 }
 
 interface EventRow {
@@ -83,8 +104,13 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "approved", label: "Aprovado" },
   { key: "published", label: "Já publicado" },
   { key: "ignored", label: "Ignorado" },
+  { key: "duplicates_detected", label: "Duplicados detectados" },
+  { key: "archived", label: "Arquivados" },
+  { key: "history", label: "Histórico" },
   { key: "all", label: "Todos" },
 ];
+
+const HIDDEN_AWARE_FILTERS: FilterKey[] = ["archived", "history", "all", "duplicates_detected"];
 
 const RadarIA = () => {
   const [cards, setCards] = useState<Card[]>([]);
