@@ -247,6 +247,23 @@ export default function V3LocalDetail() {
         {partner.address && (
           <a href={mapsUrl || "#"}
             target="_blank" rel="noopener noreferrer"
+            onClick={() => {
+              try {
+                trackEvent({
+                  event_type: "maps_click",
+                  venue_id: partner.id,
+                  city: partner.city || null,
+                  category: partner.type || null,
+                  metadata: {
+                    slug: partner.slug,
+                    name: partner.name,
+                    target_url: mapsUrl,
+                    channel: "maps",
+                    address: partner.address,
+                  },
+                });
+              } catch {}
+            }}
             className="flex items-center gap-2 p-3.5 rounded-xl bg-card border border-border/40 text-sm text-muted-foreground hover:border-primary/30 transition-colors">
             <MapPin className="w-4 h-4 text-primary shrink-0" />
             <span className="flex-1">{partner.address}</span>
