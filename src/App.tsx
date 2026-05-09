@@ -101,25 +101,25 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* ========= ADMIN (central única de comando) ========= */}
-          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/login" element={L(<AdminLogin />)} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="parceiros" element={<ParceirosList />} />
-            <Route path="parceiros/novo" element={<ParceiroForm />} />
-            <Route path="parceiros/:id/editar" element={<ParceiroForm />} />
-            <Route path="estabelecimentos" element={<EstabelecimentosAudit />} />
-            <Route path="eventos" element={<EventosList />} />
-            <Route path="eventos/novo" element={<EventoForm />} />
-            <Route path="eventos/novo/lote" element={<EventoBulkForm />} />
-            <Route path="eventos/:id/editar" element={<EventoForm />} />
-            <Route path="sugestoes" element={<Sugestoes />} />
-            <Route path="eventou" element={<EventouAdmin />} />
-            <Route path="instagram" element={<InstagramAdminPage />} />
-            <Route path="editores" element={<Editores />} />
-            <Route path="noticias" element={<NoticiasList />} />
-            <Route path="noticias/novo" element={<NoticiaForm />} />
-            <Route path="noticias/:id/editar" element={<NoticiaForm />} />
+            <Route path="dashboard" element={L(<Dashboard />)} />
+            <Route path="parceiros" element={L(<ParceirosList />)} />
+            <Route path="parceiros/novo" element={L(<ParceiroForm />)} />
+            <Route path="parceiros/:id/editar" element={L(<ParceiroForm />)} />
+            <Route path="estabelecimentos" element={L(<EstabelecimentosAudit />)} />
+            <Route path="eventos" element={L(<EventosList />)} />
+            <Route path="eventos/novo" element={L(<EventoForm />)} />
+            <Route path="eventos/novo/lote" element={L(<EventoBulkForm />)} />
+            <Route path="eventos/:id/editar" element={L(<EventoForm />)} />
+            <Route path="sugestoes" element={L(<Sugestoes />)} />
+            <Route path="eventou" element={L(<EventouAdmin />)} />
+            <Route path="instagram" element={L(<InstagramAdminPage />)} />
+            <Route path="editores" element={L(<Editores />)} />
+            <Route path="noticias" element={L(<NoticiasList />)} />
+            <Route path="noticias/novo" element={L(<NoticiaForm />)} />
+            <Route path="noticias/:id/editar" element={L(<NoticiaForm />)} />
           </Route>
 
           {/* ========= AUTH ========= */}
@@ -127,22 +127,22 @@ const App = () => (
           <Route path="/auth/*" element={<V3Auth />} />
 
           {/* ========= HOT SITE EXPO 2026 ========= */}
-          <Route path="/expo2026" element={<Expo2026 />} />
-          <Route path="/expo2026/contato" element={<Expo2026Contato />} />
-          <Route path="/contato" element={<Contato />} />
-          <Route path="/expo2026/shows" element={<ExpoShows />} />
-          <Route path="/expo2026/programacao" element={<ExpoProgramacao />} />
-          <Route path="/expo2026/ingressos" element={<ExpoIngressos />} />
-          <Route path="/expo2026/noticia/:slug" element={<ExpoNoticia />} />
+          <Route path="/expo2026" element={L(<Expo2026 />)} />
+          <Route path="/expo2026/contato" element={L(<Expo2026Contato />)} />
+          <Route path="/contato" element={L(<Contato />)} />
+          <Route path="/expo2026/shows" element={L(<ExpoShows />)} />
+          <Route path="/expo2026/programacao" element={L(<ExpoProgramacao />)} />
+          <Route path="/expo2026/ingressos" element={L(<ExpoIngressos />)} />
+          <Route path="/expo2026/noticia/:slug" element={L(<ExpoNoticia />)} />
 
           {/* ========= NOTÍCIAS ROXOU ========= */}
-          <Route path="/noticias" element={<RoxouNoticias />} />
-          <Route path="/noticia/:slug" element={<RoxouNoticia />} />
+          <Route path="/noticias" element={L(<RoxouNoticias />)} />
+          <Route path="/noticia/:slug" element={L(<RoxouNoticia />)} />
 
           {/* ========= ROXOU V3 (raiz pública) ========= */}
           <Route path="/manutencao" element={<Maintenance />} />
-          <Route path="/remover-dados" element={<RemoverDados />} />
-          <Route path="/cadastro-motorista" element={<CadastroMotorista />} />
+          <Route path="/remover-dados" element={L(<RemoverDados />)} />
+          <Route path="/cadastro-motorista" element={L(<CadastroMotorista />)} />
           {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
           <Route path="/pedir-carona" element={<PedirCaronaGate />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
@@ -171,21 +171,21 @@ const App = () => (
             <Route path="ia" element={<V3AIChat />} />
             <Route path="sobre" element={<V3Sobre />} />
             <Route path="contato" element={<V3Contato />} />
-            <Route path="perto-de-mim" element={<PertoDeMim />} />
+            <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
 
           {/* ========= LEGACY V2 (arquivado, NoIndex) ========= */}
           <Route path="/archive/legacy-v2" element={<LegacyArchiveLayout />}>
-            <Route index element={<LegacyIndex />} />
-            <Route path="evento/:slug" element={<LegacyEventDetail />} />
-            <Route path="hoje" element={<LegacyHoje />} />
-            <Route path="semana" element={<LegacySemana />} />
-            <Route path="categorias" element={<LegacyCategorias />} />
-            <Route path="salvos" element={<LegacySalvos />} />
-            <Route path="indica" element={<LegacyIndica />} />
-            <Route path="local/:slug" element={<LegacyLocalDetail />} />
-            <Route path="local/:slug/eventos" element={<LegacyLocalEventos />} />
+            <Route index element={L(<LegacyIndex />)} />
+            <Route path="evento/:slug" element={L(<LegacyEventDetail />)} />
+            <Route path="hoje" element={L(<LegacyHoje />)} />
+            <Route path="semana" element={L(<LegacySemana />)} />
+            <Route path="categorias" element={L(<LegacyCategorias />)} />
+            <Route path="salvos" element={L(<LegacySalvos />)} />
+            <Route path="indica" element={L(<LegacyIndica />)} />
+            <Route path="local/:slug" element={L(<LegacyLocalDetail />)} />
+            <Route path="local/:slug/eventos" element={L(<LegacyLocalEventos />)} />
           </Route>
 
           {/* Catch-all: admins logados acessam app completo (testes V3);
