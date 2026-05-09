@@ -1661,7 +1661,6 @@ function Rail({ title, subtitle, children }: { title: string; subtitle?: string;
 /* (CategoryChips is imported from shared component) */
 
 /* ─── QUICK FILTER TABS — Hoje · 7 dias · Expo 2026 ─── */
-const EXPO_DATE = new Date("2026-09-10T20:00:00-03:00");
 
 function QuickFilterTabs({ todayCount, weekCount }: { todayCount: number; weekCount: number }) {
   const tabs = [
