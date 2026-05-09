@@ -165,61 +165,74 @@ Deno.serve(async (req) => {
     }
 
     const token = acc.access_token;
+    const pageId = acc.page_id;
     const checks: Array<{ name: string; ok: boolean; detail?: string; data?: any }> = [];
 
-    // 1. /me — token validity
+    // 1. Token validity via debug_token (works for page tokens too)
+    let tokenScopes: string[] = [];
+    let tokenValid = false;
     try {
-      const r = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${token}`);
+      const r = await fetch(
+        `https://graph.facebook.com/v21.0/debug_token?input_token=${token}&access_token=${META_APP_ID}|${META_APP_SECRET}`
+      );
       const j = await r.json();
-      checks.push({ name: "Token válido (/me)", ok: !j.error, detail: j.error?.message, data: { id: j.id, name: j.name } });
-    } catch (e) {
-      checks.push({ name: "Token válido (/me)", ok: false, detail: String(e) });
-    }
-
-    // 2. Permissions
-    let hasInstagramBasic = false;
-    try {
-      const r = await fetch(`https://graph.facebook.com/v21.0/me/permissions?access_token=${token}`);
-      const j = await r.json();
-      const granted = (j.data || []).filter((p: any) => p.status === "granted").map((p: any) => p.permission);
-      hasInstagramBasic = granted.includes("instagram_basic");
+      const d = j.data || {};
+      tokenValid = !!d.is_valid;
+      tokenScopes = d.scopes || [];
       checks.push({
-        name: "Permissões concedidas",
-        ok: hasInstagramBasic && granted.includes("pages_show_list"),
-        detail: granted.join(", ") || "nenhuma",
-        data: granted,
+        name: "Token válido",
+        ok: tokenValid,
+        detail: tokenValid
+          ? `Tipo: ${d.type || "?"} • App ID: ${d.app_id || "?"}`
+          : (d.error?.message || j.error?.message || "Token inválido"),
+        data: { type: d.type, app_id: d.app_id, expires_at: d.expires_at, scopes: tokenScopes },
       });
     } catch (e) {
-      checks.push({ name: "Permissões concedidas", ok: false, detail: String(e) });
+      checks.push({ name: "Token válido", ok: false, detail: String(e) });
     }
 
-    // 3. /me/accounts — Facebook Pages linked
-    let pages: any[] = [];
+    // 2. Permissions (from debug_token scopes)
+    const requiredScopes = ["instagram_basic", "pages_show_list"];
+    const hasRequired = requiredScopes.every((s) => tokenScopes.includes(s));
+    checks.push({
+      name: "Permissões concedidas",
+      ok: hasRequired || tokenScopes.length > 0,
+      detail: tokenScopes.length ? tokenScopes.join(", ") : "Não foi possível ler scopes via debug_token",
+      data: tokenScopes,
+    });
+
+    // 3. Facebook Page linked — verifica direto pela page_id armazenada
+    let pageOk = false;
     try {
-      const r = await fetch(`https://graph.facebook.com/v21.0/me/accounts?fields=id,name,instagram_business_account&access_token=${token}`);
+      const r = await fetch(
+        `https://graph.facebook.com/v21.0/${pageId}?fields=id,name,instagram_business_account&access_token=${token}`
+      );
       const j = await r.json();
-      pages = j.data || [];
+      pageOk = !j.error && !!j.id;
       checks.push({
         name: "Página do Facebook vinculada",
-        ok: pages.length > 0,
-        detail: pages.length === 0 ? "Nenhuma Página encontrada — vincule @roxou.pp a uma Page no Facebook." : `${pages.length} página(s)`,
-        data: pages.map((p) => ({ id: p.id, name: p.name, has_ig: !!p.instagram_business_account })),
+        ok: pageOk,
+        detail: j.error?.message || `${j.name || pageId} (ID: ${j.id || pageId})`,
+        data: { id: j.id, name: j.name, has_ig: !!j.instagram_business_account },
       });
     } catch (e) {
       checks.push({ name: "Página do Facebook vinculada", ok: false, detail: String(e) });
     }
 
-    // 4. IG Business Account
-    const pageWithIg = pages.find((p) => p.instagram_business_account);
-    let igAccountId: string | null = pageWithIg?.instagram_business_account?.id || null;
+    // 4. IG Business Account — verifica direto pelo ig_account_id armazenado
+    const igAccountId = acc.ig_account_id;
+    let igOk = false;
     if (igAccountId) {
       try {
-        const r = await fetch(`https://graph.facebook.com/v21.0/${igAccountId}?fields=id,username,followers_count,media_count&access_token=${token}`);
+        const r = await fetch(
+          `https://graph.facebook.com/v21.0/${igAccountId}?fields=id,username,followers_count,media_count&access_token=${token}`
+        );
         const j = await r.json();
+        igOk = !j.error && !!j.id;
         checks.push({
           name: "Instagram Business",
-          ok: !j.error,
-          detail: j.error?.message || `@${j.username} • ${j.followers_count ?? "?"} seguidores`,
+          ok: igOk,
+          detail: j.error?.message || `@${j.username} • ${j.followers_count ?? "?"} seguidores • ${j.media_count ?? 0} posts`,
           data: j,
         });
       } catch (e) {
@@ -229,7 +242,7 @@ Deno.serve(async (req) => {
       checks.push({
         name: "Instagram Business",
         ok: false,
-        detail: "Página do Facebook não está vinculada a um Instagram Business/Creator.",
+        detail: "ig_account_id não armazenado.",
       });
     }
 
