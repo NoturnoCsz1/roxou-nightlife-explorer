@@ -112,7 +112,7 @@ export default function V3Profile() {
       <div className="relative lg:max-w-5xl lg:mx-auto lg:px-6 lg:pt-6">
         <div className="relative aspect-[21/9] lg:aspect-auto lg:h-[400px] w-full overflow-hidden bg-secondary lg:rounded-3xl">
           {coverUrl ? (
-            <img src={coverUrl} alt="Capa" className="w-full h-full object-cover" />
+            <img src={coverUrl} alt="Capa" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/35 via-accent/15 to-background" />
           )}
