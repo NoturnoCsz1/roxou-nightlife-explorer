@@ -275,7 +275,6 @@ const RadarIA = () => {
     setActing(null);
     if (error) toast.error(error.message);
   }
-  }
 
   return (
     <div className="space-y-6">
