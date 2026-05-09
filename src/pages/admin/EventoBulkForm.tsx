@@ -11,6 +11,11 @@ import EventFormBlock, { emptyEventForm, slugify, type EventFormData } from "@/c
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { sha256File } from "@/lib/imageHash";
+import {
+  findPossibleDuplicateEvent,
+  type DuplicateResult,
+  type ExistingEvent,
+} from "@/lib/eventDuplicateValidator";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
@@ -151,6 +156,52 @@ const EventoBulkForm = () => {
     return dup;
   }
   const duplicateIds = getDuplicateSet();
+
+  /**
+   * Validação inteligente (aditiva): score 0–100 por item, comparando
+   * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
+   */
+  const smartDuplicates = (() => {
+    const map = new Map<string, DuplicateResult>();
+    if (!dbEvents.length) return map;
+    const existing: ExistingEvent[] = dbEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      date_time: e.date_time,
+      venue_name: e.venue_name,
+      image_hash: e.image_hash,
+      slug: e.slug,
+    }));
+    for (const it of items) {
+      if (!it.form.title || !it.form.date_time) continue;
+      const result = findPossibleDuplicateEvent(
+        {
+          id: undefined,
+          title: it.form.title,
+          date_time: it.form.date_time,
+          venue_name: it.form.venue_name,
+          address: it.form.address,
+          instagram: it.form.instagram,
+          partner_id: it.form.partner_id || null,
+          image_hash: it.form.image_hash,
+        },
+        existing,
+      );
+      if (result.level !== "none") {
+        map.set(it.localId, result);
+        // Log discreto, sem quebrar fluxo
+        console.warn("[DuplicateEventCheck]", {
+          localId: it.localId,
+          title: it.form.title,
+          score: result.duplicate_score,
+          level: result.level,
+          matched: result.matched_event_title,
+          fields: result.matched_fields,
+        });
+      }
+    }
+    return map;
+  })();
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
     setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
@@ -576,6 +627,7 @@ const EventoBulkForm = () => {
               item={it}
               partners={partners}
               isDuplicate={duplicateIds.has(it.localId)}
+              smartDup={smartDuplicates.get(it.localId)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
@@ -627,6 +679,7 @@ interface ReviewRowProps {
   item: BulkItem;
   partners: Partner[];
   isDuplicate?: boolean;
+  smartDup?: DuplicateResult;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
@@ -637,7 +690,7 @@ interface ReviewRowProps {
 }
 
 function ReviewRow({
-  index, item, partners, isDuplicate, onPartnerChange, onChangeForm,
+  index, item, partners, isDuplicate, smartDup, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
@@ -659,6 +712,42 @@ function ReviewRow({
         <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
           <AlertCircle className="h-3 w-3" />
           ⚠️ Verifique a categoria: {item.categoryWarning}
+        </div>
+      )}
+      {!isDuplicate && smartDup && smartDup.level !== "none" && (
+        <div
+          className={`border-b px-3 py-1.5 text-[10px] font-semibold flex items-start gap-1.5 ${
+            smartDup.level === "almost_certain"
+              ? "bg-destructive/10 border-destructive/30 text-destructive"
+              : smartDup.level === "strong"
+              ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
+              : "bg-amber-500/10 border-amber-500/30 text-amber-500"
+          }`}
+        >
+          <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            {smartDup.level === "almost_certain" && "🚨 Duplicado detectado"}
+            {smartDup.level === "strong" && "⚠ Forte suspeita de duplicado"}
+            {smartDup.level === "possible" && "⚠ Possível duplicado"}
+            {" — "}
+            <span className="font-bold">{smartDup.duplicate_score}/100</span>
+            {smartDup.matched_event_title && (
+              <>
+                {" • similar a: "}
+                <span className="font-bold truncate">{smartDup.matched_event_title}</span>
+                {smartDup.matched_event_date && (
+                  <span className="opacity-75">
+                    {" ("}{smartDup.matched_event_date.slice(0, 10)}{")"}
+                  </span>
+                )}
+              </>
+            )}
+            {smartDup.matched_fields.length > 0 && (
+              <div className="opacity-80 font-normal mt-0.5">
+                Coincidências: {smartDup.matched_fields.join(" • ")}
+              </div>
+            )}
+          </div>
         </div>
       )}
       <div className="flex items-stretch gap-2 p-2">
