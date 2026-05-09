@@ -75,21 +75,21 @@ import V3Economize from "./pages/v3/V3Economize";
 import V3AIChat from "./pages/v3/V3AIChat";
 import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
-import PertoDeMim from "./pages/PertoDeMim";
-import RemoverDados from "./pages/RemoverDados";
-import CadastroMotorista from "./pages/CadastroMotorista";
+const PertoDeMim = lazy(() => import("./pages/PertoDeMim"));
+const RemoverDados = lazy(() => import("./pages/RemoverDados"));
+const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 import PedirCaronaGate from "./components/PedirCaronaGate";
 
-// Legacy v2 (arquivado em /archive/legacy-v2/*)
-import LegacyIndex from "./pages/Index";
-import LegacyEventDetail from "./pages/EventDetail";
-import LegacyHoje from "./pages/Hoje";
-import LegacySemana from "./pages/Semana";
-import LegacyCategorias from "./pages/Categorias";
-import LegacySalvos from "./pages/Salvos";
-import LegacyIndica from "./pages/Indica";
-import LegacyLocalDetail from "./pages/LocalDetail";
-import LegacyLocalEventos from "./pages/LocalEventos";
+// Legacy v2 (arquivado em /archive/legacy-v2/*) — lazy
+const LegacyIndex = lazy(() => import("./pages/Index"));
+const LegacyEventDetail = lazy(() => import("./pages/EventDetail"));
+const LegacyHoje = lazy(() => import("./pages/Hoje"));
+const LegacySemana = lazy(() => import("./pages/Semana"));
+const LegacyCategorias = lazy(() => import("./pages/Categorias"));
+const LegacySalvos = lazy(() => import("./pages/Salvos"));
+const LegacyIndica = lazy(() => import("./pages/Indica"));
+const LegacyLocalDetail = lazy(() => import("./pages/LocalDetail"));
+const LegacyLocalEventos = lazy(() => import("./pages/LocalEventos"));
 
 const queryClient = new QueryClient();
 
