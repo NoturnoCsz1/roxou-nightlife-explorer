@@ -16,3 +16,9 @@ verify_jwt = false
 
 [functions.partner-instagram-sync]
 verify_jwt = false
+
+[functions.aura-home-curation]
+verify_jwt = false
+
+[functions.aura-autoreels-generate]
+verify_jwt = false
