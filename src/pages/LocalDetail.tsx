@@ -24,6 +24,9 @@ interface Partner {
   instagram: string | null;
   whatsapp: string | null;
   verified_partner: boolean;
+  instagram_profile_picture_url?: string | null;
+  instagram_followers_count?: number | null;
+  aura_partner_summary?: string | null;
 }
 
 const LocalDetail = () => {
