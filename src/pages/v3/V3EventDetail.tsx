@@ -135,6 +135,25 @@ export default function V3EventDetail() {
           venueName={event.venue_name}
           eventDate={event.date_time}
           imageUrl={event.image_url}
+          onTicketClick={() => {
+            try {
+              trackEvent({
+                event_type: "ticket_click",
+                event_id: event.id,
+                venue_id: event.partner_id || null,
+                category: event.category || null,
+                city: event.city || null,
+                metadata: {
+                  slug: event.slug,
+                  title: event.title,
+                  venue_name: event.venue_name,
+                  ticket_url: event.ticket_url,
+                },
+              });
+            } catch {
+              // fire-and-forget; nunca bloqueia navegação
+            }
+          }}
         />
         {/* Description */}
         {event.description && (
