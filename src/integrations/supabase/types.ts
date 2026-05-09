@@ -319,6 +319,7 @@ export type Database = {
           full_name: string
           id: string
           neighborhood: string | null
+          plate_photo_url: string | null
           receive_driver_lead_emails: boolean
           regions: string | null
           understood_suspension: boolean
@@ -329,6 +330,7 @@ export type Database = {
           vehicle_model: string | null
           vehicle_photo_url: string | null
           vehicle_plate: string | null
+          vehicle_type: string | null
           vehicle_year: string | null
           whatsapp: string
         }
@@ -351,6 +353,7 @@ export type Database = {
           full_name: string
           id?: string
           neighborhood?: string | null
+          plate_photo_url?: string | null
           receive_driver_lead_emails?: boolean
           regions?: string | null
           understood_suspension?: boolean
@@ -361,6 +364,7 @@ export type Database = {
           vehicle_model?: string | null
           vehicle_photo_url?: string | null
           vehicle_plate?: string | null
+          vehicle_type?: string | null
           vehicle_year?: string | null
           whatsapp: string
         }
@@ -383,6 +387,7 @@ export type Database = {
           full_name?: string
           id?: string
           neighborhood?: string | null
+          plate_photo_url?: string | null
           receive_driver_lead_emails?: boolean
           regions?: string | null
           understood_suspension?: boolean
@@ -393,6 +398,7 @@ export type Database = {
           vehicle_model?: string | null
           vehicle_photo_url?: string | null
           vehicle_plate?: string | null
+          vehicle_type?: string | null
           vehicle_year?: string | null
           whatsapp?: string
         }
