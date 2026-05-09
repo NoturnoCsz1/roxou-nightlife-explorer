@@ -159,20 +159,69 @@ export default function V3LocalDetail() {
         <div className="grid grid-cols-3 gap-2">
           {mapsUrl && (
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "maps_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: mapsUrl,
+                      channel: "maps",
+                      address: partner.address,
+                    },
+                  });
+                } catch {}
+              }}
               className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
               <Navigation className="w-4 h-4 text-primary" /> Como Chegar
             </a>
           )}
           {instagramUrl && (
             <a href={instagramUrl} target="_blank" rel="noopener noreferrer"
-              onClick={() => import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name))}
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "instagram_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: instagramUrl,
+                      channel: "instagram",
+                    },
+                  });
+                } catch {}
+                import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
+              }}
               className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
               <Instagram className="w-4 h-4 text-primary" /> Instagram
             </a>
           )}
           {whatsappUrl && (
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-              onClick={() => import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name))}
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "whatsapp_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: whatsappUrl,
+                      channel: "whatsapp",
+                    },
+                  });
+                } catch {}
+                import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
+              }}
               className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
               <MessageCircle className="w-4 h-4 text-primary" /> Reservar
             </a>
@@ -198,6 +247,23 @@ export default function V3LocalDetail() {
         {partner.address && (
           <a href={mapsUrl || "#"}
             target="_blank" rel="noopener noreferrer"
+            onClick={() => {
+              try {
+                trackEvent({
+                  event_type: "maps_click",
+                  venue_id: partner.id,
+                  city: partner.city || null,
+                  category: partner.type || null,
+                  metadata: {
+                    slug: partner.slug,
+                    name: partner.name,
+                    target_url: mapsUrl,
+                    channel: "maps",
+                    address: partner.address,
+                  },
+                });
+              } catch {}
+            }}
             className="flex items-center gap-2 p-3.5 rounded-xl bg-card border border-border/40 text-sm text-muted-foreground hover:border-primary/30 transition-colors">
             <MapPin className="w-4 h-4 text-primary shrink-0" />
             <span className="flex-1">{partner.address}</span>
@@ -217,6 +283,23 @@ export default function V3LocalDetail() {
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${partner.latitude},${partner.longitude}`}
               target="_blank" rel="noopener noreferrer"
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "maps_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: `https://www.google.com/maps/dir/?api=1&destination=${partner.latitude},${partner.longitude}`,
+                      channel: "maps",
+                      address: partner.address,
+                    },
+                  });
+                } catch {}
+              }}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
             >
               <Navigation className="w-3.5 h-3.5" /> Como chegar
