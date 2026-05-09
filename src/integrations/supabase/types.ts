@@ -230,6 +230,105 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_daily_summary: {
+        Row: {
+          aura_clicks: number
+          clicks: number
+          como_vou_clicks: number
+          event_id: string | null
+          id: string
+          instagram_clicks: number
+          saves: number
+          summary_date: string
+          ticket_clicks: number
+          unique_sessions: number
+          updated_at: string
+          venue_id: string | null
+          views: number
+          whatsapp_clicks: number
+        }
+        Insert: {
+          aura_clicks?: number
+          clicks?: number
+          como_vou_clicks?: number
+          event_id?: string | null
+          id?: string
+          instagram_clicks?: number
+          saves?: number
+          summary_date: string
+          ticket_clicks?: number
+          unique_sessions?: number
+          updated_at?: string
+          venue_id?: string | null
+          views?: number
+          whatsapp_clicks?: number
+        }
+        Update: {
+          aura_clicks?: number
+          clicks?: number
+          como_vou_clicks?: number
+          event_id?: string | null
+          id?: string
+          instagram_clicks?: number
+          saves?: number
+          summary_date?: string
+          ticket_clicks?: number
+          unique_sessions?: number
+          updated_at?: string
+          venue_id?: string | null
+          views?: number
+          whatsapp_clicks?: number
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          category: string | null
+          city: string | null
+          created_at: string
+          device_type: string | null
+          event_id: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          referrer: string | null
+          session_id: string | null
+          source_page: string | null
+          user_id: string | null
+          venue_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_id?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          referrer?: string | null
+          session_id?: string | null
+          source_page?: string | null
+          user_id?: string | null
+          venue_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          device_type?: string | null
+          event_id?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          referrer?: string | null
+          session_id?: string | null
+          source_page?: string | null
+          user_id?: string | null
+          venue_id?: string | null
+        }
+        Relationships: []
+      }
       automation_logs: {
         Row: {
           created_at: string
