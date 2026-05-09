@@ -801,6 +801,33 @@ export type Database = {
         }
         Relationships: []
       }
+      event_live_presence: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          last_seen_at: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          last_seen_at?: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          last_seen_at?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       event_presence: {
         Row: {
           created_at: string
@@ -2161,7 +2188,12 @@ export type Database = {
     }
     Functions: {
       archive_old_radar_scans: { Args: never; Returns: number }
+      cleanup_event_live_presence: { Args: never; Returns: number }
       community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
+      count_event_live_presence: {
+        Args: { _event_id: string }
+        Returns: number
+      }
       expire_stale_ride_requests: { Args: never; Returns: number }
       has_role: {
         Args: {
