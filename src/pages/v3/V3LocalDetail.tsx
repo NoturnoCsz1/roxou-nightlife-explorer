@@ -10,6 +10,7 @@ import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
 import { trackEvent } from "@/lib/analytics";
 import SEO from "@/components/SEO";
 import { toast } from "sonner";
+import { isTodaySP, isTomorrowSP, formatTime, formatWeekdaySP, getEventDateSP } from "@/lib/dateUtils";
 
 const TOP_WEEK_THRESHOLD = 100;
 
