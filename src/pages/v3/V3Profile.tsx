@@ -138,7 +138,7 @@ export default function V3Profile() {
               >
                 <div className="h-full w-full overflow-hidden rounded-[1.25rem] bg-secondary flex items-center justify-center">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                    <img src={profile.avatar_url} alt="" decoding="async" className="h-full w-full object-cover" />
                   ) : (
                     <User className="h-10 w-10 lg:h-16 lg:w-16 text-primary" />
                   )}
