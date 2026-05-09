@@ -11,6 +11,11 @@ import EventFormBlock, { emptyEventForm, slugify, type EventFormData } from "@/c
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { sha256File } from "@/lib/imageHash";
+import {
+  findPossibleDuplicateEvent,
+  type DuplicateResult,
+  type ExistingEvent,
+} from "@/lib/eventDuplicateValidator";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
