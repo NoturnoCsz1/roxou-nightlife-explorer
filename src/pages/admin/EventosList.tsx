@@ -44,6 +44,8 @@ interface EventRow {
   verification_source: string | null;
   ai_confidence?: string | null;
   needs_review?: boolean | null;
+  aura_badge?: string | null;
+  aura_score?: number | null;
 }
 
 function getQualityScore(e: EventRow): number {
@@ -60,7 +62,7 @@ function getQualityScore(e: EventRow): number {
 export const getEventEditPath = (id: string) => `/admin/eventos/${id}/editar`;
 
 type OriginFilter = "todos" | "ai" | "manual";
-type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos";
+type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos" | "em-alta" | "detectados-hoje" | "arquivados";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
@@ -166,7 +168,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
