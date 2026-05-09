@@ -341,4 +341,31 @@ function StatusBadge({ status }: { status: "active" | "inactive" | "dormant" }) 
   );
 }
 
+function IgSyncBadge({ partner }: { partner: Partner }) {
+  const p = partner as any;
+  if (!p.instagram && !p.instagram_username) return null;
+  const status = p.instagram_sync_status as string | null;
+  if (status === "synced") {
+    return (
+      <span className="flex items-center gap-1 rounded-full bg-green-400/10 text-green-400 px-1.5 py-0.5 text-[9px] font-semibold">
+        <Instagram className="h-2.5 w-2.5" /> IG sync
+        {p.aura_partner_summary && <Sparkles className="h-2.5 w-2.5" />}
+      </span>
+    );
+  }
+  if (status === "not_found" || status === "private" || status === "no_permission" || status === "error") {
+    const label = status === "not_found" ? "IG ?" : status === "private" ? "Privado" : "Sem perm.";
+    return (
+      <span className="flex items-center gap-1 rounded-full bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 text-[9px] font-semibold">
+        <AlertTriangle className="h-2.5 w-2.5" /> {label}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-secondary/60 text-muted-foreground px-1.5 py-0.5 text-[9px] font-semibold">
+      <Instagram className="h-2.5 w-2.5" /> Não sincronizado
+    </span>
+  );
+}
+
 export default ParceirosList;
