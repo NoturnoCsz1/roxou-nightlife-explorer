@@ -704,6 +704,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
         src={ev.image_url}
         alt={ev.title}
         loading="eager"
+        fetchPriority="high"
         wrapperClassName="absolute inset-0 w-full h-full"
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
