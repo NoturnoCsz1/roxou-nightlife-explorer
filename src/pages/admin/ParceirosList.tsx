@@ -33,6 +33,25 @@ const ParceirosList = () => {
   const [deleteTarget, setDeleteTarget] = useState<Partner | null>(null);
   const [hasLinkedEvents, setHasLinkedEvents] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive" | "dormant">("");
+  const [syncingAll, setSyncingAll] = useState(false);
+
+  async function handleSyncAll() {
+    setSyncingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("partner-instagram-sync", {
+        body: { all: true, stale_hours: 24 },
+      });
+      if (error) throw error;
+      const s = (data as any)?.summary;
+      if (s) toast.success(`Sync: ${s.synced}/${s.total} ok • ${s.not_found} não encontrados • ${s.no_permission} sem permissão`);
+      else toast.success("Sincronização concluída");
+      loadPartners();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar");
+    } finally {
+      setSyncingAll(false);
+    }
+  }
 
   useEffect(() => {
     loadPartners();
