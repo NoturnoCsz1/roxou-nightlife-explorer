@@ -494,6 +494,11 @@ export default function V3LocalDetail() {
             </div>
           )}
         </div>
+
+        {/* Related partners — cross-sell */}
+        {relatedPartners.length > 0 && (
+          <RelatedPartnersSection partners={relatedPartners} currentPartner={{ id: partner.id, name: partner.name }} />
+        )}
       </div>
 
       {/* Sticky mobile CTA — premium glass bar */}
