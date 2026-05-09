@@ -634,9 +634,42 @@ const EventosList = () => {
             )}
           </div>
         </div>
-        <div className="flex items-center shrink-0 ml-2 gap-0.5">
+        <div className="flex items-center shrink-0 ml-2 gap-0.5 flex-wrap justify-end">
           {isDraft && (
             <>
+              {/* Aprovação rápida */}
+              <button
+                onClick={() => handleQuickApprove(e)}
+                disabled={!cl.complete}
+                className="inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                title={cl.complete ? "Aprovar (publicar)" : "Faltam dados para aprovar"}
+              >
+                <Check className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Aprovar</span>
+              </button>
+              <button
+                onClick={() => handleQuickApprove(e, { featured: true })}
+                disabled={!cl.complete}
+                className="inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2 py-1.5 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 disabled:opacity-40 transition"
+                title="Aprovar e destacar"
+              >
+                <Flame className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => handleQuickApprove(e, { auraPick: true })}
+                disabled={!cl.complete}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/25 disabled:opacity-40 transition"
+                title="Aprovar e marcar como Aura Pick"
+              >
+                <Bot className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => handleArchive(e)}
+                className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2 py-1.5 text-[10px] font-bold uppercase text-muted-foreground hover:bg-secondary/70 transition"
+                title="Arquivar"
+              >
+                🗃
+              </button>
               <button
                 onClick={() => regenerateTitle(e)}
                 disabled={!!busy}
@@ -644,7 +677,6 @@ const EventosList = () => {
                 title="Gerar título com IA"
               >
                 {busy === "title" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
-                <span className="hidden sm:inline">Gerar Título</span>
               </button>
               <button
                 onClick={() => regenerateDescription(e)}
@@ -653,7 +685,6 @@ const EventosList = () => {
                 title="Gerar legenda rica"
               >
                 {busy === "desc" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Wand2 className="h-4 w-4 text-primary" />}
-                <span className="hidden sm:inline">Gerar Legenda</span>
               </button>
             </>
           )}
