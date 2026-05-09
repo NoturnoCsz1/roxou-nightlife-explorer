@@ -6,7 +6,7 @@ import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, Calenda
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
-import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
+import LazyVenueMap from "@/components/maps/LazyVenueMap";
 import { trackEvent } from "@/lib/analytics";
 import SEO from "@/components/SEO";
 import { toast } from "sonner";
