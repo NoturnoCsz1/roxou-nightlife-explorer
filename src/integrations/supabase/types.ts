@@ -362,6 +362,178 @@ export type Database = {
         }
         Relationships: []
       }
+      community_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_deleted: boolean
+          is_flagged: boolean
+          message: string
+          reply_to_id: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_flagged?: boolean
+          message: string
+          reply_to_id?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_flagged?: boolean
+          message?: string
+          reply_to_id?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "community_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "community_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_presence: {
+        Row: {
+          last_seen: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          last_seen?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          last_seen?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_presence_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "community_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_reports: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reason: string
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reason: string
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reason?: string
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "community_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_rooms: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          partner_id: string | null
+          slug: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          partner_id?: string | null
+          slug: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          partner_id?: string | null
+          slug?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      community_user_states: {
+        Row: {
+          created_at: string
+          id: string
+          is_banned: boolean
+          is_muted: boolean
+          mute_until: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_banned?: boolean
+          is_muted?: boolean
+          mute_until?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_banned?: boolean
+          is_muted?: boolean
+          mute_until?: string | null
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_generations: {
         Row: {
           created_at: string
@@ -1706,6 +1878,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
       expire_stale_ride_requests: { Args: never; Returns: number }
       has_role: {
         Args: {
