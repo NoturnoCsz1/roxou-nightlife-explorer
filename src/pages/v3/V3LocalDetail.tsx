@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
 import LazyVenueMap from "@/components/maps/LazyVenueMap";
+import AuraVenueInsights from "@/components/v3/local/AuraVenueInsights";
 import { trackEvent } from "@/lib/analytics";
 import SEO from "@/components/SEO";
 import { toast } from "sonner";
