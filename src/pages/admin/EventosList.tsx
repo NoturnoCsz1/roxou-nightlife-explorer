@@ -468,6 +468,9 @@ const EventosList = () => {
       if (extraFilter === "destaques") return e.featured;
       if (extraFilter === "sem-imagem") return !e.image_url;
       if (extraFilter === "incompletos") return getQualityScore(e) < 100;
+      if (extraFilter === "em-alta") return e.aura_badge === "em_alta" || e.aura_badge === "viralizando" || e.aura_badge === "bombando";
+      if (extraFilter === "detectados-hoje") return spDateStr(new Date(e.created_at)) === todayStr;
+      if (extraFilter === "arquivados") return e.status === "archived";
       return true;
     });
 
