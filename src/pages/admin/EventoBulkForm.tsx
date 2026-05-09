@@ -679,6 +679,7 @@ interface ReviewRowProps {
   item: BulkItem;
   partners: Partner[];
   isDuplicate?: boolean;
+  smartDup?: DuplicateResult;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
@@ -689,7 +690,7 @@ interface ReviewRowProps {
 }
 
 function ReviewRow({
-  index, item, partners, isDuplicate, onPartnerChange, onChangeForm,
+  index, item, partners, isDuplicate, smartDup, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
