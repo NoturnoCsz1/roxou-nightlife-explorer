@@ -299,7 +299,7 @@ export default function V3LocalDetail() {
         </Link>
         <div className="px-4 pb-4 flex items-end gap-3.5 w-full">
           {partner.logo_url ? (
-            <img src={partner.logo_url} alt={partner.name} className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg" />
+            <img src={partner.logo_url} alt={partner.name} fetchPriority="high" decoding="async" className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg" />
           ) : (
             <div className="w-[68px] h-[68px] rounded-xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
               {partner.name[0]}
