@@ -127,6 +127,33 @@ export default function V3LocalDetail() {
     enabled: !!partner?.id,
   });
 
+  /* related partners — same city + same type, fallback to same city */
+  const { data: relatedPartners = [] } = useQuery({
+    queryKey: ["v3-partner-related", partner?.id, partner?.city, partner?.type],
+    queryFn: async () => {
+      const base = supabase
+        .from("partners")
+        .select("id, name, slug, type, city, logo_url, verified_partner")
+        .eq("active", true)
+        .eq("city", partner!.city)
+        .neq("id", partner!.id)
+        .limit(4);
+      const { data: same } = await base.eq("type", partner!.type);
+      if (same && same.length >= 4) return same;
+      const need = 4 - (same?.length || 0);
+      const { data: others } = await supabase
+        .from("partners")
+        .select("id, name, slug, type, city, logo_url, verified_partner")
+        .eq("active", true)
+        .eq("city", partner!.city)
+        .neq("id", partner!.id)
+        .neq("type", partner!.type)
+        .limit(need);
+      return [...(same || []), ...(others || [])];
+    },
+    enabled: !!partner?.id && !!partner?.city,
+  });
+
   if (!partner) {
     return (
       <div className="p-8 text-center">
@@ -467,6 +494,11 @@ export default function V3LocalDetail() {
             </div>
           )}
         </div>
+
+        {/* Related partners — cross-sell */}
+        {relatedPartners.length > 0 && (
+          <RelatedPartnersSection partners={relatedPartners} currentPartner={{ id: partner.id, name: partner.name }} />
+        )}
       </div>
 
       {/* Sticky mobile CTA — premium glass bar */}
@@ -649,5 +681,68 @@ function NextEventCard({ event }: { event: { id: string; slug: string; title: st
         </span>
       </div>
     </Link>
+  );
+}
+
+/**
+ * RelatedPartnersSection — cross-sell de locais parecidos.
+ * Horizontal scroll mobile, grid 4 colunas no desktop.
+ */
+function RelatedPartnersSection({
+  partners,
+  currentPartner,
+}: {
+  partners: Array<{ id: string; name: string; slug: string; type: string; city: string; logo_url: string | null; verified_partner: boolean | null }>;
+  currentPartner: { id: string; name: string };
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="font-display font-bold text-base text-foreground">Locais parecidos</h2>
+        <p className="text-[11px] text-muted-foreground">Outros lugares que combinam com essa vibe</p>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide lg:grid lg:grid-cols-4 lg:overflow-visible">
+        {partners.map((p) => (
+          <Link
+            key={p.id}
+            to={`/v3/local/${p.slug}`}
+            onClick={() => {
+              try {
+                trackEvent({
+                  event_type: "venue_click",
+                  venue_id: p.id,
+                  city: p.city || null,
+                  category: p.type || null,
+                  source_page: "local_detail_related",
+                  metadata: {
+                    current_venue_id: currentPartner.id,
+                    current_venue_name: currentPartner.name,
+                    target_venue_name: p.name,
+                    target_slug: p.slug,
+                  },
+                });
+              } catch {}
+            }}
+            className="shrink-0 w-[160px] lg:w-auto rounded-2xl v3-glass border border-border/40 hover:border-primary/40 transition-all overflow-hidden"
+          >
+            <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 via-card to-accent/5 flex items-center justify-center">
+              {p.logo_url ? (
+                <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <span className="text-3xl font-display font-bold text-primary/40">{p.name[0]}</span>
+              )}
+            </div>
+            <div className="p-2.5">
+              <div className="flex items-center gap-1">
+                <p className="text-xs font-bold text-foreground truncate flex-1">{p.name}</p>
+                {p.verified_partner && <BadgeCheck className="w-3.5 h-3.5 text-accent shrink-0" />}
+              </div>
+              <p className="text-[10px] text-primary capitalize">{p.type}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{p.city}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
