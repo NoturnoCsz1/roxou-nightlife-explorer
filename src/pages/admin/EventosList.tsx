@@ -62,7 +62,7 @@ function getQualityScore(e: EventRow): number {
 export const getEventEditPath = (id: string) => `/admin/eventos/${id}/editar`;
 
 type OriginFilter = "todos" | "ai" | "manual";
-type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos" | "em-alta" | "detectados-hoje" | "arquivados";
+type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos" | "em-alta" | "detectados-hoje" | "arquivados" | "prontos" | "revisar";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
@@ -123,6 +123,9 @@ const EventosList = () => {
   const [quickEdits, setQuickEdits] = useState<Record<string, { title: string; date_time: string; venue_name?: string }>>({});
   const [visibleCount, setVisibleCount] = useState(80);
   const [auraModalOpen, setAuraModalOpen] = useState(false);
+  const [triageMode, setTriageMode] = useState(false);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [bulkSafeOpen, setBulkSafeOpen] = useState(false);
 
   const isAiOrigin = (e: EventRow) => {
     const src = (e.verification_source || "").toLowerCase();
@@ -471,6 +474,8 @@ const EventosList = () => {
       if (extraFilter === "em-alta") return e.aura_badge === "em_alta" || e.aura_badge === "viralizando" || e.aura_badge === "bombando";
       if (extraFilter === "detectados-hoje") return spDateStr(new Date(e.created_at)) === todayStr;
       if (extraFilter === "arquivados") return e.status === "archived";
+      if (extraFilter === "prontos") return e.status === "draft" && getChecklist(e).complete;
+      if (extraFilter === "revisar") return e.status === "draft" && (needsReview(e) || !getChecklist(e).complete);
       return true;
     });
 
