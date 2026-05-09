@@ -647,9 +647,16 @@ export default function V3RideRequest() {
             Onde te buscar?
           </div>
 
+          {!originCoords && !gpsRefining && (
+            <div className="rounded-2xl border border-border/40 bg-card/30 p-3 text-[11px] text-muted-foreground leading-snug">
+              Para encontrar motoristas próximos, precisamos da sua localização.
+              Se aparecer "Este site não pode pedir permissões", feche balões flutuantes (Uber, Messenger, picture-in-picture) e tente novamente.
+            </div>
+          )}
+
           <Button
             type="button"
-            onClick={useMyLocation}
+            onClick={() => useMyLocation()}
             disabled={geoLoading && !originCoords}
             className="w-full h-11 rounded-xl gap-2"
             variant={originCoords ? "outline" : "default"}
@@ -661,10 +668,62 @@ export default function V3RideRequest() {
                 ? `Melhorando precisão (~${Math.round(originAccuracy ?? 0)}m)...`
                 : originCoords
                   ? "Melhorar precisão"
-                  : "Usar minha localização (GPS)"}
+                  : "Permitir localização"}
           </Button>
 
-          {geoError && (
+          {gpsBlocked && !originCoords && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2 text-[12px] text-amber-100">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-300" />
+                <div className="space-y-1">
+                  <p className="font-semibold">Tivemos dificuldade para acessar sua localização.</p>
+                  <p className="text-[11px] opacity-90">
+                    Se você estiver com o balão do Uber, Messenger ou outro app flutuante aberto,
+                    feche a sobreposição e tente novamente. O Android bloqueia permissões enquanto há apps sobrepostos na tela.
+                  </p>
+                  {gpsBlocked === "denied" && (
+                    <p className="text-[11px] opacity-90">
+                      Você também pode liberar a permissão nas configurações do navegador para este site.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-xl h-9 text-[11px]"
+                  onClick={() => useMyLocation()}
+                >
+                  Tentar novamente
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl h-9 text-[11px]"
+                  onClick={() => {
+                    setGpsBlocked(null);
+                    setGeoError(null);
+                    document.getElementById("manual-origin-input")?.focus();
+                  }}
+                >
+                  Inserir endereço manual
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl h-9 text-[11px]"
+                  onClick={() => useMyLocation({ highAccuracy: false })}
+                >
+                  Localização aproximada
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {geoError && !gpsBlocked && (
             <p className="text-[11px] text-destructive">{geoError}</p>
           )}
 
