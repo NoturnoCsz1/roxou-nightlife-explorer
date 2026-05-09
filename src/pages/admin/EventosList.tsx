@@ -926,8 +926,8 @@ const EventosList = () => {
             Aprovar todos seguros
           </button>
           <span className="text-[10px] text-muted-foreground inline-flex items-center gap-2">
-            <span className="text-green-400 font-bold">{draftsReady}</span> seguros
-            <span className="text-yellow-400 font-bold">{draftsAttention}</span> p/ revisar
+            <span className="text-green-400 font-bold">{readyInFiltered}</span> seguros
+            <span className="text-yellow-400 font-bold">{reviewInFiltered}</span> p/ revisar
           </span>
           {triageMode && (
             <span className="text-[10px] text-primary/80 ml-auto hidden md:inline">
