@@ -35,6 +35,7 @@ import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/H
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
+import FadeSection from "@/components/v3/home/FadeSection";
 
 // Wrapper que injeta PremiumEventCard (definido abaixo neste arquivo) no TodayTimeline extraído.
 const TodayTimeline = (props: Omit<React.ComponentProps<typeof TodayTimelineRaw>, "Card">) => (
@@ -666,16 +667,6 @@ function HomeDataFallback() {
 }
 
 /* TodaySection extraído para src/components/v3/home/TodaySection.tsx */
-
-/* ─── FADE SECTION WRAPPER ─── */
-function FadeSection({ className, children }: { className?: string; children: ReactNode }) {
-  const { ref, visible } = useScrollFadeIn();
-  return (
-    <section ref={ref} className={`transition-all duration-500 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} ${className || ""}`}>
-      {children}
-    </section>
-  );
-}
 
 /* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
 function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange }: {
