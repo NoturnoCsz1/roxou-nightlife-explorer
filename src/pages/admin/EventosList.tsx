@@ -1060,6 +1060,37 @@ const EventosList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Aprovar todos seguros */}
+      <AlertDialog open={bulkSafeOpen} onOpenChange={setBulkSafeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aprovar todos os eventos seguros?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {(() => {
+                const safe = filtered.filter(e => e.status === "draft" && getChecklist(e).complete);
+                return (
+                  <>
+                    A Aura encontrou <strong className="text-green-400">{safe.length}</strong> rascunho(s) completo(s) nos filtros atuais (título, data futura, local, descrição rica e flyer). Eles serão publicados em lote.
+                  </>
+                );
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const safeIds = filtered.filter(e => e.status === "draft" && getChecklist(e).complete).map(e => e.id);
+                handleApproveAllSafe(safeIds);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Publicar agora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
