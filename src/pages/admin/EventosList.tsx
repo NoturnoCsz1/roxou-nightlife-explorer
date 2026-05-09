@@ -785,11 +785,14 @@ const EventosList = () => {
         </div>
         <div className="flex flex-wrap gap-1.5">
           {([
-            { key: "todos", label: "Todos", icon: null },
-            { key: "aura", label: "🤖 Aura", icon: Bot },
-            { key: "destaques", label: "🔥 Destaques", icon: Flame },
-            { key: "sem-imagem", label: "Sem imagem", icon: ImageIcon },
-            { key: "incompletos", label: "Incompletos", icon: AlertTriangle },
+            { key: "todos", label: "Todos" },
+            { key: "aura", label: "🤖 Aura" },
+            { key: "destaques", label: "🔥 Destaques" },
+            { key: "em-alta", label: "🚀 Em alta" },
+            { key: "detectados-hoje", label: "📅 Hoje" },
+            { key: "sem-imagem", label: "Sem imagem" },
+            { key: "incompletos", label: "Incompletos" },
+            { key: "arquivados", label: "🗃 Arquivados" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
