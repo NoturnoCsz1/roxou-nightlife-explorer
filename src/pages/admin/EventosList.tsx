@@ -386,12 +386,12 @@ const EventosList = () => {
       toast.error("Evento incompleto: preencha título, data, local, descrição e flyer.");
       return;
     }
-    const patch: Record<string, unknown> = { status: "published" };
+    const patch: { status: string; featured?: boolean; aura_pick?: boolean } = { status: "published" };
     if (opts?.featured) patch.featured = true;
     if (opts?.auraPick) patch.aura_pick = true;
     const { error } = await supabase.from("events").update(patch).eq("id", e.id);
     if (error) { toast.error("Falha ao aprovar"); return; }
-    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, ...(patch as Partial<EventRow>) } : x));
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, ...patch } : x));
     const labels: string[] = ["Aprovado"];
     if (opts?.featured) labels.push("destaque");
     if (opts?.auraPick) labels.push("Aura Pick");
@@ -412,13 +412,13 @@ const EventosList = () => {
       toast.error("Nenhum dos selecionados está pronto para aprovação.");
       return;
     }
-    const patch: Record<string, unknown> = { status: "published" };
+    const patch: { status: string; featured?: boolean; aura_pick?: boolean } = { status: "published" };
     if (opts?.featured) patch.featured = true;
     if (opts?.auraPick) patch.aura_pick = true;
     const readyIds = ready.map(e => e.id);
     const { error } = await supabase.from("events").update(patch).in("id", readyIds);
     if (error) { toast.error("Erro ao aprovar em lote"); return; }
-    setEvents(prev => prev.map(e => readyIds.includes(e.id) ? { ...e, ...(patch as Partial<EventRow>) } : e));
+    setEvents(prev => prev.map(e => readyIds.includes(e.id) ? { ...e, ...patch } : e));
     setSelectedIds(new Set());
     toast.success(`✓ ${ready.length} evento(s) aprovado(s)${opts?.featured ? " + destaque" : ""}${opts?.auraPick ? " + Aura" : ""}`);
   }
