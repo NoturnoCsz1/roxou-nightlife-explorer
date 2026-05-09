@@ -275,7 +275,6 @@ const ParceirosList = () => {
                   )}
                   <IgSyncBadge partner={p} />
                 </div>
-                </div>
 
                 {/* Quick actions */}
                 <div className="flex items-center gap-1.5 pt-1 border-t border-border/20">
