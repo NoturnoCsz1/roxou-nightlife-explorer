@@ -175,30 +175,49 @@ const EventosList = () => {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
 
-      const drafts = filtered.filter(x => x.status === "draft");
-      if (drafts.length === 0) return;
-      const currentIdx = focusedId ? drafts.findIndex(x => x.id === focusedId) : -1;
+      // Triage works across ALL filtered events (drafts, published, archived…)
+      const list = filtered;
+      if (list.length === 0) return;
+      const currentIdx = focusedId ? list.findIndex(x => x.id === focusedId) : -1;
       const idx = currentIdx >= 0 ? currentIdx : 0;
-      const cur = drafts[idx];
+      const cur = list[idx];
       const k = ev.key.toLowerCase();
 
       if (k === "arrowright") {
         ev.preventDefault();
-        const next = drafts[Math.min(idx + 1, drafts.length - 1)];
+        const next = list[Math.min(idx + 1, list.length - 1)];
         if (next) setFocusedId(next.id);
       } else if (k === "arrowleft") {
         ev.preventDefault();
-        const prev = drafts[Math.max(idx - 1, 0)];
+        const prev = list[Math.max(idx - 1, 0)];
         if (prev) setFocusedId(prev.id);
       } else if (k === "a" && cur) {
         ev.preventDefault();
+        if (cur.status === "published") { toast.info("Já publicado"); return; }
         handleQuickApprove(cur);
       } else if (k === "d" && cur) {
         ev.preventDefault();
-        handleQuickApprove(cur, { featured: true });
+        // Toggle destaque mesmo em publicados
+        if (cur.status === "published") {
+          supabase.from("events").update({ featured: !cur.featured }).eq("id", cur.id).then(({ error }) => {
+            if (error) { toast.error("Falha ao alternar destaque"); return; }
+            setEvents(prev => prev.map(x => x.id === cur.id ? { ...x, featured: !cur.featured } : x));
+            toast.success(cur.featured ? "Destaque removido" : "🔥 Destaque ativado");
+          });
+        } else {
+          handleQuickApprove(cur, { featured: true });
+        }
       } else if (k === "u" && cur) {
         ev.preventDefault();
-        handleQuickApprove(cur, { auraPick: true });
+        if (cur.status === "published") {
+          supabase.from("events").update({ aura_pick: !cur.aura_pick }).eq("id", cur.id).then(({ error }) => {
+            if (error) { toast.error("Falha ao alternar Aura"); return; }
+            setEvents(prev => prev.map(x => x.id === cur.id ? { ...x, aura_pick: !cur.aura_pick } : x));
+            toast.success(cur.aura_pick ? "Aura Pick removido" : "🤖 Aura Pick");
+          });
+        } else {
+          handleQuickApprove(cur, { auraPick: true });
+        }
       } else if (k === "x" && cur) {
         ev.preventDefault();
         handleArchive(cur);
@@ -536,8 +555,8 @@ const EventosList = () => {
       if (extraFilter === "em-alta") return e.aura_badge === "em_alta" || e.aura_badge === "viralizando" || e.aura_badge === "bombando";
       if (extraFilter === "detectados-hoje") return spDateStr(new Date(e.created_at)) === todayStr;
       if (extraFilter === "arquivados") return e.status === "archived";
-      if (extraFilter === "prontos") return e.status === "draft" && getChecklist(e).complete;
-      if (extraFilter === "revisar") return e.status === "draft" && (needsReview(e) || !getChecklist(e).complete);
+      if (extraFilter === "prontos") return e.status !== "published" && e.status !== "archived" && getChecklist(e).complete;
+      if (extraFilter === "revisar") return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
       return true;
     });
 
@@ -586,6 +605,9 @@ const EventosList = () => {
   const draftsReady = draftEvents.filter(e => getChecklist(e).complete).length;
   const draftsAttention = draftEvents.length - draftsReady;
   const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status === "draft").length;
+  // Triage counters across the entire current filter (all tabs)
+  const readyInFiltered = filtered.filter(e => e.status !== "published" && e.status !== "archived" && getChecklist(e).complete).length;
+  const reviewInFiltered = filtered.filter(e => e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete)).length;
 
   const ChecklistDot = ({ ok, label }: { ok: boolean; label: string }) => (
     <span
@@ -907,8 +929,8 @@ const EventosList = () => {
             Aprovar todos seguros
           </button>
           <span className="text-[10px] text-muted-foreground inline-flex items-center gap-2">
-            <span className="text-green-400 font-bold">{draftsReady}</span> seguros
-            <span className="text-yellow-400 font-bold">{draftsAttention}</span> p/ revisar
+            <span className="text-green-400 font-bold">{readyInFiltered}</span> seguros
+            <span className="text-yellow-400 font-bold">{reviewInFiltered}</span> p/ revisar
           </span>
           {triageMode && (
             <span className="text-[10px] text-primary/80 ml-auto hidden md:inline">
@@ -1120,10 +1142,10 @@ const EventosList = () => {
             <AlertDialogTitle>Aprovar todos os eventos seguros?</AlertDialogTitle>
             <AlertDialogDescription>
               {(() => {
-                const safe = filtered.filter(e => e.status === "draft" && getChecklist(e).complete);
+                const safe = filtered.filter(e => e.status !== "published" && e.status !== "archived" && getChecklist(e).complete);
                 return (
                   <>
-                    A Aura encontrou <strong className="text-green-400">{safe.length}</strong> rascunho(s) completo(s) nos filtros atuais (título, data futura, local, descrição rica e flyer). Eles serão publicados em lote.
+                    A Aura encontrou <strong className="text-green-400">{safe.length}</strong> evento(s) completo(s) nos filtros atuais (título, data futura, local, descrição rica e flyer). Eles serão publicados em lote.
                   </>
                 );
               })()}
@@ -1133,7 +1155,7 @@ const EventosList = () => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                const safeIds = filtered.filter(e => e.status === "draft" && getChecklist(e).complete).map(e => e.id);
+                const safeIds = filtered.filter(e => e.status !== "published" && e.status !== "archived" && getChecklist(e).complete).map(e => e.id);
                 handleApproveAllSafe(safeIds);
               }}
               className="bg-green-600 hover:bg-green-700"
