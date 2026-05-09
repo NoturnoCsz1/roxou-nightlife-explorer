@@ -51,6 +51,7 @@ const InstagramAdminPage = lazy(() => import("./pages/admin/InstagramAdmin"));
 const RadarIA = lazy(() => import("./pages/admin/RadarIA"));
 const AutoReels = lazy(() => import("./pages/admin/AutoReels"));
 const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
+const AuraCommand = lazy(() => import("./pages/admin/AuraCommand"));
 const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
 const Editores = lazy(() => import("./pages/admin/Editores"));
 const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
