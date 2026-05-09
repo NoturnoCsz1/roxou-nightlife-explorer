@@ -350,6 +350,13 @@ export default function V3LocalDetail() {
           <p className="text-sm text-muted-foreground leading-relaxed">{partner.short_description}</p>
         )}
 
+        <AuraVenueRankingBadges
+          partner={partner}
+          events={events}
+          viewCount={viewCount}
+          followerCount={followerCount}
+        />
+
         <div className="rounded-2xl v3-glass p-3 flex items-center gap-2 border border-border/40">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
             <Clock className="w-4 h-4 text-primary" />
