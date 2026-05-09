@@ -1,121 +1,101 @@
-# Refatoração Admin de Eventos — Central de Inteligência da Aura
+# Aura Operational Engine — Fase 1 (segura)
 
-Refatoração grande, vou dividir em **3 fases independentes** que entregam valor isoladamente. Cada fase pode ser aprovada/pausada sem quebrar o que já existe.
+## Princípio
 
-> **Não toco em:** Radar IA, eventos publicados, SEO/slugs, analytics, timezone, Aura Ranking, OAuth/Instagram, feed home, lógica atual de publicação.
+A maior parte do "cérebro" já existe na Roxou e está funcionando:
 
----
+- **Aura Ranking** (cron 15min) → `aura_score`, `trending_score`, `hype_score`, `aura_badge` em `events`
+- **Radar IA** (cron 13h/18h) → `instagram_scans` + drafts auto-discovery
+- **Partner Aura Sync** (cron 4h) → `aura_partner_score`, `aura_partner_summary`, `aura_partner_tags`
+- **AutoReels Queue** → `auto_reels_queue` com prompts CapCut/Kling/Runway/Veo
+- **Security/Moderation** → `security_reports`, `user_risk_scores`, `community_user_states`, `flag_message_on_report`
+- **Analytics** → `analytics_events`, `analytics_daily_summary`, `event_live_presence`, `aura_home_logs`
 
-## FASE 1 — Aprovação Rápida + Filtros + Badges (entrega imediata)
+Construir tudo de novo seria duplicação e quebraria o que está em produção. **Fase 1 = unificar, ler, mostrar.** Fase 2 = automação ativa, só depois que a Fase 1 estiver no ar.
 
-**Onde:** `src/pages/admin/EventosList.tsx` (sem renomear rota — `/admin/events` continua funcional).
+## O que esta fase entrega
 
-### Mudanças
-- **Cards inline** com ações sem modal: `Aprovar`, `Aprovar + Destaque`, `Aprovar + Aura Pick`, `Ignorar`, `Arquivar` (botões compactos no rodapé do card).
-- **Preview inline:** flyer (thumb 80×80), título, data formatada SP, local, categoria, badge de confiança IA, badge de origem (`manual`, `radar_ia`, `instagram`, `parceiro`, `auto_discovery`).
-- **Badges visuais** lendo colunas existentes:
-  - 🤖 `verification_source = 'auto_discovery'`
-  - 🔥 `aura_badge = 'em_alta'` / 🚀 `viralizando` / ⭐ `escolha_aura`
-  - ⚠️ `needs_review = true`
-  - 📌 `status = 'published'` (com `aura_score > 0`)
-  - 🗃 `status = 'archived'`
-  - 👀 `ai_confidence = 'low'` ou OCR vazio
-- **Seleção múltipla** + barra de ações em lote: aprovar / arquivar / ignorar / marcar Aura Pick.
-- **Filtros novos** (chips no topo): Alta/Média/Baixa confiança, Aura Picks, Em alta, Detectados hoje, Sem categoria, Sem local, Sem data, OCR incompleto, Possíveis duplicados (`status = 'draft'` + match no `dedupe_key`), Repostados (cruzando `instagram_scans.repost_count > 0`).
-- **Atalhos de teclado:** `A` aprova, `D` destaca, `I` ignora, `←/→` navega cards, `Shift+Click` seleciona range.
-- **Visual** dark/neon, mantém layout atual; só adiciona componentes.
+### 1. Painel `/admin/aura` (Aura Command Center)
 
-### Arquivos
-- Edita: `src/pages/admin/EventosList.tsx`
-- Cria: `src/components/admin/EventApprovalCard.tsx`, `src/components/admin/EventBulkBar.tsx`, `src/components/admin/EventFilterChips.tsx`
+Página única, mobile-first, Visual Rich. Lê dados que já existem — zero processamento pesado no client. Seções:
 
-**Sem migration nesta fase.** Tudo já existe no schema.
+- **KPIs ao vivo** (top): eventos publicados, em alta agora, presença ao vivo total, parceiros ativos, alertas abertos, drafts seguros prontos pra publicar.
+- **🔥 Em alta agora** — top 8 eventos por `aura_score` futuro com badge (`em_alta` / `viralizando` / `bombando`).
+- **🚀 Crescendo rápido** — top 5 por `trending_score` nas últimas 24h (lê `analytics_daily_summary` dos últimos 2 dias).
+- **👀 Mais procurado / 💜 Mais salvo** — leitura direta de `analytics_daily_summary` (views, saves) últimos 7 dias.
+- **🤖 Decisões da Aura** — últimas N entradas de `aura_home_logs` + últimos `automation_logs` (cron Aura/Radar/Partner Sync).
+- **⚠ Riscos abertos** — top 5 `user_risk_scores` com badge `high`/`critical` + `security_reports` com `status=pending`.
+- **🏪 Parceiros em alta** — top 5 por `aura_partner_score`.
+- **🎬 Fila AutoReels** — `auto_reels_queue` status `pending` (count + 3 últimos).
+- **🛰 Radar hoje** — `instagram_scans` detectados hoje (count) + `repost_count` total.
 
----
+Tudo é leitura agregada. Nenhum write, nenhum risco para SEO/feed/realtime.
 
-## FASE 2 — Aba Rascunhos Premium + Linha do Tempo
+### 2. Tabela `aura_alerts`
 
-**Onde:** nova aba `/admin/events?tab=drafts` (sub-rota da mesma página, sem nova URL pública).
+Persistência leve de alertas operacionais que a Aura "observa". Não substitui nada — é uma view consolidada.
 
-### Mudanças
-- Tabs no topo: `Todos | Novos | Revisar OCR | Possíveis duplicados | Pendentes | Ignorados | Arquivados | Publicados auto`
-- Cada draft mostra:
-  - Preview maior (16:9)
-  - Confiança IA (alta/média/baixa) com cor
-  - `scan_count` + `repost_count` lidos de `instagram_scans` (join leve por `dedupe_key`)
-  - Mini-timeline horizontal: Detectado → Revisado → Aprovado → Publicado → Repostado (datas de `created_at`, `aura_score_updated_at`, `first_published_at`, `last_reposted_at`)
-  - OCR detectado, artistas detectados, score Aura, tags, gênero
-  - Lista de perfis IG que repostaram (de `instagram_scans.source_handle`)
+```text
+aura_alerts
+- id, created_at
+- kind: 'trending_spike' | 'viral' | 'risk_user' | 'spam_burst'
+       | 'partner_growth' | 'radar_repost' | 'security_critical'
+- severity: 'info' | 'warn' | 'critical'
+- entity_type: 'event' | 'partner' | 'user' | 'system'
+- entity_id (uuid, nullable)
+- title (text), body (text)
+- payload (jsonb)
+- resolved_at (timestamptz, nullable)
+- resolved_by (uuid, nullable)
+```
 
-### Arquivos
-- Edita: `src/pages/admin/EventosList.tsx` (tabs)
-- Cria: `src/components/admin/DraftCard.tsx`, `src/components/admin/EventTimeline.tsx`
+RLS: somente `admin` lê/escreve (via `has_role`).
 
-**Sem migration.** Tudo já está nas tabelas existentes.
+### 3. Edge function `aura-pulse` (cron 10 min)
 
----
+Função leve, idempotente, sem OCR nem IA generativa — só agregações SQL:
 
-## FASE 3 — Auditoria de Duplicados + Merge
+1. **Trending spike** — eventos com `trending_score` que pulou ≥ 1.5× em 1h → cria `aura_alerts` com kind `trending_spike` (idempotente: dedupe por `entity_id` nas últimas 2h).
+2. **Risk escalation** — `user_risk_scores.badge` virou `critical` → cria alert (1 por user/dia).
+3. **Spam burst** — `community_messages` com `is_flagged=true` > 10 nos últimos 30min → 1 alert.
+4. **Partner growth** — `aura_partner_score` subiu ≥ 15 pts vs snapshot anterior → alert.
+5. **Radar repost forte** — `instagram_scans.repost_count >= 3` recém-incrementado → alert.
 
-**A parte mais sensível.** Implementação **incremental e off-the-critical-path**.
+Cron via `pg_cron` + `pg_net` chamando a função a cada 10 minutos.
 
-### 3.1 Schema (migration)
-- `events.phash text` — perceptual hash da imagem (cache, gerado uma vez)
-- `events.fingerprint text` — chave normalizada `slug+venue+date_key+artistas_sorted` (cache)
-- `event_duplicate_candidates` — tabela com pares candidatos:
-  - `event_a_id`, `event_b_id`, `similarity_score numeric`, `signals jsonb` (motivos), `status text` (`pending`/`merged`/`kept_separate`/`ignored`), `created_at`
-  - RLS: admins manage
-- Trigger leve no `events` que apenas marca `phash IS NULL` para reprocessamento (não bloqueia).
+### 4. Sino "Aura" no `AdminLayout`
 
-### 3.2 Edge function `aura-event-audit` (nova)
-- Roda **sob demanda** via botão "Verificar duplicados" no admin.
-- Aceita `{ scope: 'all' | 'recent_30d' | 'event_id' }`.
-- Em batches de 50 eventos, calcula:
-  - **pHash** do flyer (DCT 8×8) usando WASM ou implementação JS pura no edge — armazena em `events.phash`. Se já existir, pula.
-  - **Fingerprint textual** (normaliza acentos, lowercase, remove stopwords).
-  - **Hamming distance** entre pHashes < 10 → candidato visual.
-  - **Levenshtein** título+venue + mesma data civil SP → candidato textual.
-  - **Gemini Flash** (Lovable AI) só para **top-N candidatos** (não todos): "esses 2 eventos são iguais?". Cache do veredito para não repetir.
-- Insere em `event_duplicate_candidates` com `status='pending'`.
-- Performance: rate-limit, cache, análise incremental (só processa eventos novos ou alterados).
+Pequeno indicador no header do admin: `🔔 Aura (n)` linkando para `/admin/aura`, contador de alertas não resolvidos. Realtime via `postgres_changes` em `aura_alerts`.
 
-### 3.3 UI de auditoria
-- Botão `Verificar duplicados` (header do admin de eventos).
-- Modal/drawer "Possíveis duplicados encontrados":
-  - Evento A (original) vs Evento B (suspeito) lado a lado
-  - Score, sinais (`pHash igual`, `título 92% similar`, `mesma data+local`, `Aura confirmou`)
-  - Origem dos dois flyers
-  - Ações: `Mesclar` / `Manter separados` / `Arquivar duplicado` / `Ignorar alerta`
+## O que NÃO faz nesta fase
 
-### 3.4 Mesclagem (RPC `merge_event_duplicates`)
-Função SQL `SECURITY DEFINER` que:
-1. Mantém `event_a_id` (original) — preserva slug/SEO/analytics.
-2. Soma `aura_score`, `repost_count`, copia `instagram_scans` do B → A (update FK lógico).
-3. Move `analytics_events`, `page_views` (update `event_id`).
-4. Move `event_presence` evitando violar UNIQUE (drop conflitos do B).
-5. `UPDATE events SET status='archived', dedupe_key = ... WHERE id = event_b_id`.
-6. Marca candidato como `merged`.
+(Para não quebrar nada e manter escopo executável)
 
-### Arquivos
-- Migration: nova tabela + colunas + RPC merge
-- Cria: `supabase/functions/aura-event-audit/index.ts`
-- Cria: `src/components/admin/DuplicateAuditModal.tsx`, `src/lib/imagePhash.ts` (helper client opcional)
-- Edita: `src/pages/admin/EventosList.tsx` (botão de auditoria)
+- **Não** cria recommendation engine personalizado por usuário (precisa de modelo de embeddings + tabela de eventos e horários por user — projeto à parte).
+- **Não** muda como Radar IA, Aura Ranking, AutoReels, Partner Sync funcionam hoje. Apenas lê os resultados.
+- **Não** mexe em SEO, slugs, feed home, OAuth, timezone, RLS de eventos públicos, realtime existente.
+- **Não** ativa autoban/captcha/shadowban automático — moderação ativa fica como Fase 2 com regras explícitas e auditoria.
+- **Não** gera descrições/hashtags/CTAs por IA aqui — isso já existe nos fluxos de admin atuais.
 
----
+## Tecnicamente
 
-## Como tocar sem quebrar
+- Migration: cria `aura_alerts`, índice em `(resolved_at, created_at desc)` e `(entity_type, entity_id)`, RLS admin-only via `has_role`.
+- Edge function `aura-pulse`: Deno + supabase service role, agregações em SQL, insere em `aura_alerts` com `ON CONFLICT DO NOTHING` por chave de dedupe (`kind|entity_id|date_bucket`).
+- Cron: `pg_cron` 10min via `supabase--insert` (não migration, contém URL/anon).
+- Página `src/pages/admin/AuraCommand.tsx` + rota em `App.tsx` + item "Aura" no `AdminLayout` (ícone Sparkles).
+- Hook `useAuraAlertsCount` para o sino.
 
-- Tudo é **aditivo**: novas colunas opcionais, novas tabelas, novos componentes. Nenhuma quebra de contrato.
-- Aprovação rápida usa os mesmos campos que já existem — nenhum status novo.
-- Merge é **manual** (admin clica), nunca automático.
-- Auditoria roda **sob demanda**, não em cron — não impacta custo/realtime.
-- Radar IA, Aura Ranking, OAuth, feed e SEO **não são tocados**.
+## Critérios de aceite
 
----
+- `/admin/aura` carrega em < 1s (queries paralelas, no SSR).
+- Nenhuma quebra em rotas públicas, Radar, feed home, eventos publicados ou realtime.
+- Cron `aura-pulse` rodando sem erros e gerando alertas com dedupe.
+- Sino do admin atualizando em realtime quando alert novo é criado.
 
-## Recomendação de execução
+## Próximas fases (não nesta)
 
-Sugiro implementar **só a Fase 1 agora** (entrega imediata, zero risco, sem migration). Depois você valida e libera Fase 2 e 3 separadamente.
+- F2: Aura recommendation feed (precisa de schema de comportamento por user).
+- F3: Aura moderation actions (mute/shadowban automático com auditoria).
+- F4: Aura content automation (gerar descrições/CTA/notifs em background).
 
-**Confirma que começo pela Fase 1?** Ou prefere que eu implemente as 3 de uma vez? Se for tudo de uma vez, vou precisar ~6–8 edições de arquivos + 1 migration + 1 edge function nova.
+Confirma seguir com essa Fase 1? Se sim, aplico migration + edge function + página + cron na próxima rodada.
