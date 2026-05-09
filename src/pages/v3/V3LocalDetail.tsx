@@ -472,8 +472,13 @@ export default function V3LocalDetail() {
                 <EventCardV3 key={e.id} id={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
                   dateTime={e.date_time} venueName={e.venue_name} category={e.category} />
               ))}
-            </div>
-          </div>
+        </div>
+
+        {/* Related partners — cross-sell */}
+        {relatedPartners.length > 0 && (
+          <RelatedPartnersSection partners={relatedPartners} currentPartner={{ id: partner.id, name: partner.name }} />
+        )}
+      </div>
         )}
 
         {/* Instagram Feed — Premium placeholder ready for real integration */}
