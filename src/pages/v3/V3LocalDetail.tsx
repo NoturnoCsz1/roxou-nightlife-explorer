@@ -808,7 +808,15 @@ function RelatedPartnersSection({
           >
             <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 via-card to-accent/5 flex items-center justify-center">
               {p.logo_url ? (
-                <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
+                <img
+                  src={optimizedImageUrl(p.logo_url, 320, 75) || p.logo_url}
+                  srcSet={optimizedSrcSet(p.logo_url, [240, 480], 75)}
+                  sizes="(max-width: 640px) 45vw, 240px"
+                  alt={p.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
               ) : (
                 <span className="text-3xl font-display font-bold text-primary/40">{p.name[0]}</span>
               )}
