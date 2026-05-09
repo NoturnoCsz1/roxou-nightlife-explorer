@@ -470,7 +470,7 @@ export default function V3Home() {
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       <HomeSectionBoundary name="Destaque da semana" silent>
-        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
+        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />}
       </HomeSectionBoundary>
 
       <HomeSectionBoundary name="AI widget" silent>
