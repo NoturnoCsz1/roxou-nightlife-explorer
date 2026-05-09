@@ -452,6 +452,7 @@ const EventosList = () => {
     setBulkSafeOpen(false);
     toast.success(`✅ ${visibleSafeIds.length} evento(s) seguros publicados`);
   }
+  const spDateStr = (d: Date) =>
     new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Sao_Paulo" }).format(d);
   const todayStr = spDateStr(new Date());
   const weekEndStr = (() => {
