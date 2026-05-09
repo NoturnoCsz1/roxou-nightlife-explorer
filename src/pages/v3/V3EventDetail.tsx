@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, MapPin, ArrowLeft, Bookmark, Sparkles } from "lucide-react";
@@ -32,6 +33,26 @@ export default function V3EventDetail() {
     },
     enabled: !!slug,
   });
+
+  useEffect(() => {
+    if (!event?.id) return;
+    try {
+      trackEvent({
+        event_type: "event_view",
+        event_id: event.id,
+        venue_id: event.partner_id || null,
+        category: event.category || null,
+        city: event.city || null,
+        metadata: {
+          slug: event.slug,
+          title: event.title,
+          venue_name: event.venue_name,
+        },
+      });
+    } catch {
+      // fire-and-forget; nunca quebra render
+    }
+  }, [event?.id]);
 
   if (isLoading) {
     return <V3DetailSkeleton />;
