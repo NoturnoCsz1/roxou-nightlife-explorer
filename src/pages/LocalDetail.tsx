@@ -149,19 +149,29 @@ const LocalDetail = () => {
         {/* Partner Info */}
         <div className="rounded-2xl bg-card p-5 card-shadow">
           <div className="flex items-start gap-4">
-            {partner.logo_url && (
-              <img src={partner.logo_url} alt={partner.name} className="h-16 w-16 rounded-xl object-cover" />
+            {(partner.logo_url || partner.instagram_profile_picture_url) && (
+              <img
+                src={partner.logo_url || partner.instagram_profile_picture_url || ""}
+                alt={partner.name}
+                className="h-16 w-16 rounded-xl object-cover"
+              />
             )}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg font-bold font-display text-foreground">{partner.name}</h2>
                 {partner.verified_partner && (
                   <span className="text-[10px] font-bold uppercase tracking-wider gradient-primary text-primary-foreground px-2 py-0.5 rounded-md">Verificado</span>
                 )}
+                {partner.aura_partner_summary && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded">✨ Aura</span>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground capitalize mt-0.5">{partner.type}</p>
-              {partner.short_description && (
-                <p className="text-sm text-muted-foreground mt-2">{partner.short_description}</p>
+              <p className="text-xs text-muted-foreground capitalize mt-0.5">
+                {partner.type}
+                {partner.instagram_followers_count ? ` • ${partner.instagram_followers_count.toLocaleString("pt-BR")} seguidores` : ""}
+              </p>
+              {(partner.short_description || partner.aura_partner_summary) && (
+                <p className="text-sm text-muted-foreground mt-2">{partner.short_description || partner.aura_partner_summary}</p>
               )}
             </div>
           </div>
