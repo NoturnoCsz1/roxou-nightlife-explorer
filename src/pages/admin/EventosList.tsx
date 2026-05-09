@@ -24,6 +24,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import AuraCreateEventModal from "@/components/admin/AuraCreateEventModal";
+import { AIConfidenceBadge } from "@/components/admin/AIConfidenceBadges";
 
 interface EventRow {
   id: string;
@@ -41,6 +42,8 @@ interface EventRow {
   partner_id: string | null;
   created_at: string;
   verification_source: string | null;
+  ai_confidence?: string | null;
+  needs_review?: boolean | null;
 }
 
 function getQualityScore(e: EventRow): number {
@@ -163,7 +166,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -547,6 +550,7 @@ const EventosList = () => {
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
+            <AIConfidenceBadge ai_confidence={e.ai_confidence} needs_review={e.needs_review} />
             <span
               title={`Qualidade: ${score}/100`}
               className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${score === 100 ? "bg-green-500/15 text-green-400" : score >= 75 ? "bg-yellow-400/10 text-yellow-400" : "bg-red-500/15 text-red-400"}`}
