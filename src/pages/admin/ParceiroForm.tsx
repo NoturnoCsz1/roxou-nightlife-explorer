@@ -154,6 +154,12 @@ const ParceiroForm = () => {
           {saving ? "Salvando..." : "Salvar"}
         </button>
       </form>
+
+      {isEdit && id && (
+        <div className="mt-5">
+          <PartnerInstagramAura partnerId={id} onApplied={loadPartner} />
+        </div>
+      )}
     </div>
   );
 };
