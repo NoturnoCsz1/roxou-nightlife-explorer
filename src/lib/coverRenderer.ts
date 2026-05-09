@@ -1211,6 +1211,50 @@ export async function renderStoryV3(
   ctx.fillText(badgeText, bx + bw / 2, by + bh / 2 + 1);
   ctx.restore();
 
+  // 5b) DIA DA SEMANA — pill glass discreto no canto superior direito
+  {
+    const wDate = new Date(event.date_time);
+    const weekdayFull = ["DOMINGO","SEGUNDA","TERÇA","QUARTA","QUINTA","SEXTA","SÁBADO"];
+    const weekdayText = weekdayFull[wDate.getDay()];
+    ctx.save();
+    ctx.font = "700 22px sans-serif";
+    const wTextW = ctx.measureText(weekdayText).width;
+    // Tracking simulado: aumenta padding lateral
+    const wpw = wTextW + 36;
+    const wph = 42;
+    const wpx = W - PAD - wpw;
+    const wpy = PAD + 16 + (52 - wph) / 2; // alinhado com badge AURA
+    // Garante não sobrepor o badge (gap mínimo de 16px)
+    const minLeft = bx + bw + 16;
+    const finalX = Math.max(wpx, minLeft);
+    if (finalX + wpw <= W - PAD) {
+      ctx.shadowColor = "rgba(255,255,255,0.08)";
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = "rgba(10,10,20,0.22)";
+      roundRect(ctx, finalX, wpy, wpw, wph, wph / 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, finalX, wpy, wpw, wph, wph / 2);
+      ctx.stroke();
+      // Texto com letter-spacing manual
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const letters = weekdayText.split("");
+      const spacing = 2.5;
+      const totalLetterW = letters.reduce((s, l) => s + ctx.measureText(l).width, 0) + spacing * (letters.length - 1);
+      let lx = finalX + (wpw - totalLetterW) / 2;
+      const ly = wpy + wph / 2 + 1;
+      letters.forEach((l) => {
+        ctx.fillText(l, lx, ly);
+        lx += ctx.measureText(l).width + spacing;
+      });
+    }
+    ctx.restore();
+  }
+
   // 6) TÍTULO — peso reduzido, hierarquia mais elegante
   const titleMaxW = W - PAD * 2;
   ctx.save();
@@ -1335,32 +1379,37 @@ export async function renderStoryV3(
   const ctaYpos = H - ctaH - 130;
 
   ctx.save();
-  // Halo neon premium
-  ctx.shadowColor = "rgba(168,85,247,0.55)";
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 4;
-  // Gradiente refinado horizontal Roxou
+  // Halo neon refinado — sombra mais difusa, menos arcade
+  ctx.shadowColor = "rgba(168,85,247,0.32)";
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 6;
+  // Gradiente sofisticado — roxo profundo, menos vibrante
   const ctaGrad = ctx.createLinearGradient(ctaX, ctaYpos, ctaX + ctaW, ctaYpos + ctaH);
   ctaGrad.addColorStop(0, "#A855F7");
   ctaGrad.addColorStop(0.5, "#9333EA");
-  ctaGrad.addColorStop(1, "#6D28D9");
+  ctaGrad.addColorStop(1, "#7E22CE");
   ctx.fillStyle = ctaGrad;
   roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 
-  // Inner highlight (glass top)
+  // Camada glass leve por cima — refina e suaviza saturação
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
+  ctx.fill();
+
+  // Inner highlight (glass top) — mais suave
   const innerGrad = ctx.createLinearGradient(0, ctaYpos, 0, ctaYpos + ctaH / 2);
-  innerGrad.addColorStop(0, "rgba(255,255,255,0.18)");
+  innerGrad.addColorStop(0, "rgba(255,255,255,0.12)");
   innerGrad.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = innerGrad;
   roundRect(ctx, ctaX + 2, ctaYpos + 2, ctaW - 4, ctaH / 2, ctaH / 2);
   ctx.fill();
 
-  // Borda glass branca
-  ctx.strokeStyle = "rgba(255,255,255,0.28)";
-  ctx.lineWidth = 1.4;
+  // Borda glass branca — mais discreta
+  ctx.strokeStyle = "rgba(255,255,255,0.20)";
+  ctx.lineWidth = 1.2;
   roundRect(ctx, ctaX + 1, ctaYpos + 1, ctaW - 2, ctaH - 2, (ctaH - 2) / 2);
   ctx.stroke();
 
