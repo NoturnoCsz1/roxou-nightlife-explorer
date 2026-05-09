@@ -283,6 +283,23 @@ export default function V3LocalDetail() {
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${partner.latitude},${partner.longitude}`}
               target="_blank" rel="noopener noreferrer"
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "maps_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: `https://www.google.com/maps/dir/?api=1&destination=${partner.latitude},${partner.longitude}`,
+                      channel: "maps",
+                      address: partner.address,
+                    },
+                  });
+                } catch {}
+              }}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
             >
               <Navigation className="w-3.5 h-3.5" /> Como chegar
