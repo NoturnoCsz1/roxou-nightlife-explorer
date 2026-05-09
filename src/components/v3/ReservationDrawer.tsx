@@ -131,7 +131,7 @@ function Body({
           href={ticketUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={onClose}
+          onClick={() => { try { onTicketClick?.(); } catch {} onClose(); }}
           className="w-full flex items-center gap-3 rounded-2xl p-4 v3-glass v3-neon-hover group"
         >
           <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
