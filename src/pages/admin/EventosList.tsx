@@ -832,6 +832,38 @@ const EventosList = () => {
             <CalendarDays className="h-3 w-3" /> Hoje: {totalTodayCount}
           </span>
         </div>
+
+        {/* Modo Triagem IA + Aprovar todos seguros */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setTriageMode(v => !v)}
+            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition border ${triageMode ? "bg-primary text-primary-foreground border-primary shadow-[0_0_18px_hsl(var(--primary)/0.45)]" : "bg-secondary/50 text-muted-foreground border-border/40 hover:bg-secondary"}`}
+            title="Ativa cards compactos + atalhos de teclado (A/D/U/X/R/←/→)"
+          >
+            <Bot className="h-3.5 w-3.5" />
+            {triageMode ? "Modo Triagem IA: ON" : "Modo Triagem IA"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkSafeOpen(true)}
+            disabled={publishing}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-green-500/40 bg-green-500/15 px-3 py-1.5 text-[11px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition"
+            title="Aprova de uma vez todos os rascunhos com checklist completo (sem flags críticas)"
+          >
+            <Check className="h-3.5 w-3.5" />
+            Aprovar todos seguros
+          </button>
+          <span className="text-[10px] text-muted-foreground inline-flex items-center gap-2">
+            <span className="text-green-400 font-bold">{draftsReady}</span> seguros
+            <span className="text-yellow-400 font-bold">{draftsAttention}</span> p/ revisar
+          </span>
+          {triageMode && (
+            <span className="text-[10px] text-primary/80 ml-auto hidden md:inline">
+              ⌨ A=aprovar · D=destaque · U=Aura · X=arquivar · ←→ navegar
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
             <option value="todos">Todas as datas</option>
