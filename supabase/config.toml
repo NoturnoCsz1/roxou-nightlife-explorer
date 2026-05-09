@@ -13,3 +13,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.automatic-event-hunter]
 verify_jwt = false
+
+[functions.partner-instagram-sync]
+verify_jwt = false
