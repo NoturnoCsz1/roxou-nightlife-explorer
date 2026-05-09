@@ -41,6 +41,8 @@ interface EventRow {
   partner_id: string | null;
   created_at: string;
   verification_source: string | null;
+  ai_confidence?: string | null;
+  needs_review?: boolean | null;
 }
 
 function getQualityScore(e: EventRow): number {
