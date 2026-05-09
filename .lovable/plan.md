@@ -1,94 +1,134 @@
-## Sincronização Automática de Parceiros via Instagram/Meta + Aura
+## Plano: Aura Ranking Engine + AutoReels IA
 
-Vou implementar a atualização automática dos perfis de parceiros usando a Meta Graph API (Business Discovery) já conectada, com enriquecimento por IA (Aura) gerando resumos, tags e score.
+Duas evoluções complementares que tornam a Roxou auto-curada e auto-produtora de conteúdo. Implementação em duas fases independentes.
 
-### 1. Schema (migration)
+---
 
-Adicionar à tabela `partners` (apenas se ainda não existirem):
-- `instagram_username`, `instagram_profile_url`, `instagram_id`, `instagram_name`
-- `instagram_bio`, `instagram_profile_picture_url`, `instagram_website`
-- `instagram_followers_count` (int), `instagram_media_count` (int)
-- `instagram_last_sync_at` (timestamptz), `instagram_sync_status` (text — `synced` | `not_found` | `private` | `no_permission` | `error` | `pending`)
-- `instagram_sync_error` (text), `instagram_raw_json` (jsonb)
-- `instagram_recent_posts` (jsonb) — top N posts públicos via Business Discovery
-- `aura_partner_score` (int), `aura_partner_tags` (text[]), `aura_partner_summary` (text)
-- `aura_suggestions` (jsonb) — sugestões NÃO aplicadas, para revisão admin
-- `aura_last_run_at` (timestamptz)
-- `manual_locked_fields` (text[]) — campos com edição manual protegida (ex: `short_description`, `full_description`, `logo_url`)
+### Fase 1 — Auto-Curadoria da Home (Aura Ranking Engine)
 
-Índice único parcial em `lower(instagram_username)` (apenas onde não nulo) para detectar duplicidade.
+**1.1 Banco de dados (migration)**
 
-### 2. Edge Function: `partner-instagram-sync`
+Adicionar em `events`:
+- `aura_score` numeric (0–100)
+- `trending_score` numeric
+- `hype_score` numeric
+- `aura_badge` text (`em_alta` | `viralizando` | `bombando` | `escolha_aura` | null)
+- `aura_score_updated_at` timestamptz
+- `aura_score_reason` jsonb (sinais usados)
 
-`supabase/functions/partner-instagram-sync/index.ts` (verify_jwt = false, validação interna).
+Nova tabela `aura_home_logs`:
+- `event_id`, `aura_score`, `trending_score`, `hype_score`, `badge`, `signals` jsonb, `created_at`
+- RLS: admin only
+
+**1.2 Edge Function `aura-home-curation`**
+
+Calcula scores combinando sinais já disponíveis:
+- views (`page_views` últimas 24h / 7d)
+- saves, clicks (`analytics_events`)
+- engajamento parceiro (`partners.instagram_followers_count`, `aura_partner_score`, `instagram_recent_posts`)
+- proximidade temporal do `date_time`
+- confiança do Radar (`ai_confidence`, `instagram_scans` relacionados)
+- crescimento recente (delta views 24h vs 7d)
+- `featured`/`aura_pick` manual = boost máximo (preserva controle humano)
+
+Fórmula:
+```
+aura_score = 0.35*engagement + 0.25*trending + 0.15*partner + 0.15*radar + 0.10*time
+trending_score = delta_views_24h / max(views_7d_avg, 1)
+hype_score = saves*3 + shares*5 + clicks*2 (normalizado)
+```
+
+Atribui badges automaticamente; eventos passados/sem sinal são despromovidos (não deletados).
+
+**1.3 Cron**
+
+`aura-home-curation-cron`: a cada 15 minutos via `pg_cron`/`pg_net`.
+
+**1.4 Frontend**
+
+- Hook `useAuraRanking` que ordena eventos por `aura_score` (com `aura_pick`/`featured` no topo).
+- Componente `AuraBadge` com 4 variantes (🔥 🚀 👀 🤖) — estilo neon Roxou.
+- Aplicar nos blocos da Home **sem alterar layout/filtros existentes** — apenas reordenação e badges sobrepostos nos cards.
+
+---
+
+### Fase 2 — Aura AutoReels IA
+
+**2.1 Banco de dados**
+
+Nova tabela `auto_reels_queue`:
+- `id`, `event_id`, `partner_id`
+- `status` (`pending` | `generated` | `approved` | `published` | `ignored`)
+- `style` (`universitario` | `premium` | `funk` | `pagode` | `eletronico` | `sertanejo` | `barzinho`)
+- `script_json` jsonb (`{title, hook, scenes[], captions[], cta, hashtags[], music_style, visual_style}`)
+- `generated_caption` text, `generated_hashtags` text[]
+- `suggested_audio` text, `video_prompt` text
+- `external_prompts` jsonb (`{capcut, kling, runway, veo, tiktok}`)
+- `preview_image_url` text (flyer do evento como referência)
+- `created_at`, `posted_at`, `created_by`
+- RLS: admin only
+
+**2.2 Edge Function `aura-autoreels-generate`**
+
+Input: `{ event_id, style? }`. Detecta estilo automaticamente pelo `sub_category`/`category` se não passado.
+
+Usa `google/gemini-2.5-flash` via Lovable AI Gateway com prompt estruturado (JSON output) que retorna o `script_json` completo + prompts específicos para CapCut/Kling/Runway/Veo/TikTok.
 
 Modos:
-- `{ partner_id }` — sincroniza um.
-- `{ all: true, stale_hours: 24 }` — sincroniza todos os parceiros com Instagram cuja última sync seja maior que N horas.
-- `{ cron: true }` — disparado pelo pg_cron diário.
+- `{ event_id }` — gera um
+- `{ auto: true, limit: 10 }` — gera para top N do `aura_score` que ainda não têm reel
 
-Fluxo por parceiro:
-1. Normaliza `instagram` → `instagram_username` (sem @, sem URL, lowercase).
-2. Pega token de `instagram_accounts` (conta Roxou conectada à Meta).
-3. Chama Business Discovery:
-   `GET /v21.0/{ig_account_id}?fields=business_discovery.username({user}){username,name,biography,profile_picture_url,followers_count,media_count,website,media.limit(6){id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,like_count,comments_count}}`
-4. Trata erros:
-   - 24/sub-código 2207013 → `not_found`
-   - código 100 c/ "private" → `private`
-   - 10/200 → `no_permission`
-   - outros → `error` + mensagem
-5. Salva campos `instagram_*` + `instagram_raw_json` + `instagram_recent_posts`.
-6. Chama Lovable AI (`google/gemini-2.5-flash`) com bio + 6 captions + tipo do parceiro → JSON estruturado:
-   ```
-   { summary, audience, vibe, tags[], category_guess, event_frequency, activity_score (0-100), best_day }
-   ```
-7. Grava em `aura_partner_summary`, `aura_partner_tags`, `aura_partner_score`, e o objeto completo em `aura_suggestions` (para revisão).
-8. Não sobrescreve campos listados em `manual_locked_fields`.
+**2.3 Painel admin `/admin/autoreels`**
 
-### 3. Cron diário
+- Lista da fila com filtros por status
+- Cards com: capa do evento, headline gerada, hook, cenas (timeline), legenda, hashtags
+- Ações: **Aprovar / Editar / Ignorar / Regenerar / Copiar prompt (CapCut/Kling/Runway/Veo)**
+- Preview da legenda pronta para colar no Instagram/TikTok
+- Estilo dark/neon Roxou
 
-Via `supabase--insert` (pg_cron + pg_net):
-`0 4 * * *` chamando `partner-instagram-sync` com `{ cron: true, stale_hours: 24 }`.
+**2.4 Botão "Gerar Reel IA"**
 
-### 4. Frontend Admin (`ParceirosList.tsx` + `ParceiroForm.tsx`)
+Adicionar em:
+- `RadarIA.tsx` (cards de scan aprovado)
+- Lista admin de eventos / form de evento
 
-**Lista**:
-- Botão global "Sincronizar Instagram (todos)" — chama edge function `{ all: true }`, mostra toast com contagem.
-- Auto-disparo silencioso ao abrir o admin (debounced) para parceiros com `instagram_last_sync_at` > 24h ou nulo.
-- Badge por parceiro: "✨ Atualizado pela Aura" / "📷 IG sincronizado" / "⚠️ Precisa revisar" / "🔒 Sem permissão".
+Chama a edge function e abre o item gerado em `/admin/autoreels`.
 
-**ParceiroForm — nova seção "Instagram / Aura"**:
-- Status da sincronização + última atualização (relativa).
-- Preview: avatar IG, name, bio, seguidores, media_count, link IG.
-- Grid de 6 últimos posts (thumb + permalink).
-- Card "Sugestões da Aura": resumo, tags, score, categoria sugerida, melhor dia.
-- Botões: "Sincronizar agora", "Aplicar sugestões" (move sugestões para campos finais respeitando `manual_locked_fields`), "Bloquear edição manual" (toggle por campo).
-- Alerta de duplicidade: ao salvar Instagram, valida se outro parceiro já usa.
+**2.5 Rota e nav**
 
-### 5. Frontend Público (`LocalDetail.tsx` / `V3LocalDetail.tsx`)
+- Adicionar rota `/admin/autoreels` em `App.tsx`
+- Item no `AdminLayout` sidebar
 
-- Quando `instagram_profile_picture_url` existir, usa como logo (fallback para `logo_url`).
-- Mostra `aura_partner_summary` em destaque com badge "✨ Atualizado pela Aura".
-- `@instagram` clicável + contagem de seguidores formatada (`12.3K`).
-- Seção "No Instagram" com últimos posts (`instagram_recent_posts`).
+---
 
-### 6. Visual
+### Restrições preservadas
 
-Mantém dark/neon Roxou: cards `bg-card border-border/40`, badges com `bg-primary/10 text-primary` e variantes (verde sync, amarelo revisar, vermelho sem permissão). Sem alterar UI pública existente além das novas seções opt-in.
+- **Não tocar**: OAuth Meta, `instagram-oauth`, `partner-instagram-sync`, `automatic-event-hunter`, login/auth, feed, insights, publicação existente
+- **Aura Pick manual** e `featured` mantêm prioridade máxima na ordenação
+- **Timezone** America/Sao_Paulo via helpers `@/lib/dateUtils`
+- Filtros de data e categorias da Home permanecem intactos
+- Layout público da Home não muda — apenas ordem dos cards e badge sobreposto
 
-### 7. Não toca em
-
-OAuth Meta, Radar IA, `instagram-publish`, `automatic-event-hunter`, login, eventos.
+---
 
 ### Arquivos
 
-- **Migration** — adicionar colunas `partners` + índice único parcial.
-- **Cron insert** (via `supabase--insert`).
-- **Nova edge function** `supabase/functions/partner-instagram-sync/index.ts`.
-- **`supabase/config.toml`** — registrar `verify_jwt = false`.
-- **Novo componente** `src/components/admin/PartnerInstagramAura.tsx`.
-- **Edita** `src/pages/admin/ParceirosList.tsx` (botão global + badges + auto-sync).
-- **Edita** `src/pages/admin/ParceiroForm.tsx` (insere seção).
-- **Edita** `src/pages/LocalDetail.tsx` e `src/pages/v3/V3LocalDetail.tsx` (visual público).
+**Criar:**
+- `supabase/migrations/<ts>_aura_ranking_autoreels.sql`
+- `supabase/functions/aura-home-curation/index.ts`
+- `supabase/functions/aura-autoreels-generate/index.ts`
+- `src/hooks/useAuraRanking.ts`
+- `src/components/AuraBadge.tsx`
+- `src/pages/admin/AutoReels.tsx`
+- `src/components/admin/AutoReelCard.tsx`
 
-Ao aprovar, executo migration + insert do cron e implemento todo o resto na sequência.
+**Editar:**
+- `src/App.tsx` (rota)
+- `src/components/admin/AdminLayout.tsx` (nav)
+- `src/integrations/supabase/types.ts` (auto)
+- Componentes da Home que listam eventos (apenas para aplicar ordenação + badge)
+- `src/pages/admin/RadarIA.tsx` (botão Gerar Reel)
+- `supabase/config.toml` (verify_jwt para as 2 novas funções)
+
+**Cron (insert):**
+- `aura-home-curation` a cada 15 min

@@ -329,6 +329,96 @@ export type Database = {
         }
         Relationships: []
       }
+      aura_home_logs: {
+        Row: {
+          aura_score: number | null
+          badge: string | null
+          created_at: string
+          event_id: string | null
+          hype_score: number | null
+          id: string
+          signals: Json | null
+          trending_score: number | null
+        }
+        Insert: {
+          aura_score?: number | null
+          badge?: string | null
+          created_at?: string
+          event_id?: string | null
+          hype_score?: number | null
+          id?: string
+          signals?: Json | null
+          trending_score?: number | null
+        }
+        Update: {
+          aura_score?: number | null
+          badge?: string | null
+          created_at?: string
+          event_id?: string | null
+          hype_score?: number | null
+          id?: string
+          signals?: Json | null
+          trending_score?: number | null
+        }
+        Relationships: []
+      }
+      auto_reels_queue: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          event_id: string | null
+          external_prompts: Json | null
+          generated_caption: string | null
+          generated_hashtags: string[] | null
+          id: string
+          partner_id: string | null
+          posted_at: string | null
+          preview_image_url: string | null
+          script_json: Json | null
+          status: string
+          style: string | null
+          suggested_audio: string | null
+          updated_at: string
+          video_prompt: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          external_prompts?: Json | null
+          generated_caption?: string | null
+          generated_hashtags?: string[] | null
+          id?: string
+          partner_id?: string | null
+          posted_at?: string | null
+          preview_image_url?: string | null
+          script_json?: Json | null
+          status?: string
+          style?: string | null
+          suggested_audio?: string | null
+          updated_at?: string
+          video_prompt?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          event_id?: string | null
+          external_prompts?: Json | null
+          generated_caption?: string | null
+          generated_hashtags?: string[] | null
+          id?: string
+          partner_id?: string | null
+          posted_at?: string | null
+          preview_image_url?: string | null
+          script_json?: Json | null
+          status?: string
+          style?: string | null
+          suggested_audio?: string | null
+          updated_at?: string
+          video_prompt?: string | null
+        }
+        Relationships: []
+      }
       automation_logs: {
         Row: {
           created_at: string
@@ -775,7 +865,11 @@ export type Database = {
         Row: {
           address: string | null
           ai_confidence: string
+          aura_badge: string | null
           aura_pick: boolean
+          aura_score: number | null
+          aura_score_reason: Json | null
+          aura_score_updated_at: string | null
           category: string
           city: string
           created_at: string
@@ -783,6 +877,7 @@ export type Database = {
           dedupe_key: string | null
           description: string | null
           featured: boolean
+          hype_score: number | null
           id: string
           image_hash: string | null
           image_url: string | null
@@ -798,6 +893,7 @@ export type Database = {
           sub_category: string | null
           ticket_url: string | null
           title: string
+          trending_score: number | null
           venue_name: string | null
           verification_source: string | null
           video_url: string | null
@@ -805,7 +901,11 @@ export type Database = {
         Insert: {
           address?: string | null
           ai_confidence?: string
+          aura_badge?: string | null
           aura_pick?: boolean
+          aura_score?: number | null
+          aura_score_reason?: Json | null
+          aura_score_updated_at?: string | null
           category?: string
           city?: string
           created_at?: string
@@ -813,6 +913,7 @@ export type Database = {
           dedupe_key?: string | null
           description?: string | null
           featured?: boolean
+          hype_score?: number | null
           id?: string
           image_hash?: string | null
           image_url?: string | null
@@ -828,6 +929,7 @@ export type Database = {
           sub_category?: string | null
           ticket_url?: string | null
           title: string
+          trending_score?: number | null
           venue_name?: string | null
           verification_source?: string | null
           video_url?: string | null
@@ -835,7 +937,11 @@ export type Database = {
         Update: {
           address?: string | null
           ai_confidence?: string
+          aura_badge?: string | null
           aura_pick?: boolean
+          aura_score?: number | null
+          aura_score_reason?: Json | null
+          aura_score_updated_at?: string | null
           category?: string
           city?: string
           created_at?: string
@@ -843,6 +949,7 @@ export type Database = {
           dedupe_key?: string | null
           description?: string | null
           featured?: boolean
+          hype_score?: number | null
           id?: string
           image_hash?: string | null
           image_url?: string | null
@@ -858,6 +965,7 @@ export type Database = {
           sub_category?: string | null
           ticket_url?: string | null
           title?: string
+          trending_score?: number | null
           venue_name?: string | null
           verification_source?: string | null
           video_url?: string | null

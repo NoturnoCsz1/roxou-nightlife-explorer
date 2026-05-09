@@ -49,6 +49,7 @@ const Sugestoes = lazy(() => import("./pages/admin/Sugestoes"));
 const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
 const InstagramAdminPage = lazy(() => import("./pages/admin/InstagramAdmin"));
 const RadarIA = lazy(() => import("./pages/admin/RadarIA"));
+const AutoReels = lazy(() => import("./pages/admin/AutoReels"));
 const Editores = lazy(() => import("./pages/admin/Editores"));
 const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
 const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
@@ -120,6 +121,7 @@ const App = () => (
             <Route path="eventou" element={L(<EventouAdmin />)} />
             <Route path="instagram" element={L(<InstagramAdminPage />)} />
             <Route path="radar-ia" element={L(<RadarIA />)} />
+            <Route path="autoreels" element={L(<AutoReels />)} />
             <Route path="editores" element={L(<Editores />)} />
             <Route path="noticias" element={L(<NoticiasList />)} />
             <Route path="noticias/novo" element={L(<NoticiaForm />)} />
