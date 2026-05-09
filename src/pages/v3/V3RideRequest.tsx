@@ -258,82 +258,111 @@ export default function V3RideRequest() {
     setGeoLoading(false);
   };
 
-  const useMyLocation = () => {
+  const useMyLocation = (opts?: { highAccuracy?: boolean; silent?: boolean }) => {
+    const highAccuracy = opts?.highAccuracy ?? true;
+    const silent = opts?.silent ?? false;
+
     if (!navigator.geolocation) {
-      setGeoError("Geolocalização não suportada neste navegador");
-      toast.error("Geolocalização não suportada");
+      setGeoError("Geolocalização não suportada neste navegador.");
+      setGpsBlocked("unavailable");
+      if (!silent) toast.error("Geolocalização não suportada");
       return;
     }
-    // Reset
     stopWatch();
     bestAccuracyRef.current = Infinity;
     setGpsAttempts(0);
     setGeoLoading(true);
     setGpsRefining(true);
     setGeoError(null);
+    setGpsBlocked(null);
     setOriginConfirmed(false);
 
     let firstFix = false;
+    let id: number;
 
-    const id = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        setGpsAttempts((n) => n + 1);
+    try {
+      id = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const { latitude, longitude, accuracy } = pos.coords;
+          setGpsAttempts((n) => n + 1);
 
-        // Keep only the best (lowest) accuracy reading
-        if (accuracy != null && accuracy < bestAccuracyRef.current) {
-          bestAccuracyRef.current = accuracy;
-          setOriginCoords({ lat: latitude, lng: longitude });
-          setOriginAccuracy(accuracy);
-          setOriginSource("gps");
+          if (accuracy != null && accuracy < bestAccuracyRef.current) {
+            bestAccuracyRef.current = accuracy;
+            setOriginCoords({ lat: latitude, lng: longitude });
+            setOriginAccuracy(accuracy);
+            setOriginSource("gps");
 
-          // Reverse geocode only on first fix or when meaningfully better
-          if (!firstFix) {
-            firstFix = true;
-            setGeoLoading(false);
-            reverseGeocode(latitude, longitude).then(setOriginAddress);
+            if (!firstFix) {
+              firstFix = true;
+              setGeoLoading(false);
+              reverseGeocode(latitude, longitude).then(setOriginAddress);
+            }
           }
-        }
 
-        // Stop early if very accurate
-        if (accuracy != null && accuracy <= 25) {
-          stopWatch();
-          if (firstFix) reverseGeocode(latitude, longitude).then(setOriginAddress);
-          toast.success(`GPS preciso (~${Math.round(accuracy)}m)`);
-        }
-      },
-      (err) => {
-        const msg = err.code === err.PERMISSION_DENIED
-          ? "Permissão de localização negada. Ative no navegador para continuar."
-          : (err.message || "Não foi possível obter sua localização");
-        setGeoError(msg);
-        if (!firstFix) {
-          toast.error(msg);
-          stopWatch();
-        }
-      },
-      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
-    );
-    watchIdRef.current = id;
+          if (accuracy != null && accuracy <= 25) {
+            stopWatch();
+            if (firstFix) reverseGeocode(latitude, longitude).then(setOriginAddress);
+            if (!silent) toast.success(`GPS preciso (~${Math.round(accuracy)}m)`);
+          }
+        },
+        (err) => {
+          // eslint-disable-next-line no-console
+          console.warn("[Ride GPS] falha ao obter localização", { code: err?.code, message: err?.message });
+          let kind: "denied" | "unavailable" | "timeout" | "unknown" = "unknown";
+          if (err.code === err.PERMISSION_DENIED) kind = "denied";
+          else if (err.code === err.POSITION_UNAVAILABLE) kind = "unavailable";
+          else if (err.code === err.TIMEOUT) kind = "timeout";
 
-    // Hard cap: 12s of refinement
+          if (!firstFix) {
+            // Timeout em alta precisão: tenta baixa precisão automaticamente uma vez
+            if (kind === "timeout" && highAccuracy) {
+              stopWatch();
+              useMyLocation({ highAccuracy: false, silent });
+              return;
+            }
+            setGpsBlocked(kind);
+            const friendly =
+              kind === "denied"
+                ? "Permissão de localização bloqueada."
+                : kind === "unavailable"
+                  ? "Não foi possível acessar o GPS agora."
+                  : kind === "timeout"
+                    ? "Tempo esgotado ao buscar localização."
+                    : "Falha ao acessar localização.";
+            setGeoError(friendly);
+            stopWatch();
+          }
+        },
+        { enableHighAccuracy: highAccuracy, timeout: highAccuracy ? 15000 : 20000, maximumAge: highAccuracy ? 0 : 30000 }
+      );
+      watchIdRef.current = id;
+    } catch (e: any) {
+      // eslint-disable-next-line no-console
+      console.warn("[Ride GPS] exceção ao chamar geolocation", e?.message);
+      setGpsBlocked("unknown");
+      setGeoError("Não foi possível solicitar localização. Feche balões/sobreposições de outros apps e tente novamente.");
+      stopWatch();
+      return;
+    }
+
     watchTimeoutRef.current = setTimeout(() => {
       stopWatch();
       if (bestAccuracyRef.current === Infinity) {
-        setGeoError("Não foi possível obter localização. Ajuste o pin manualmente no mapa.");
-        toast.error("GPS indisponível — ajuste o pin no mapa");
-      } else if (bestAccuracyRef.current > 100) {
+        setGeoError("Não foi possível obter localização. Use o endereço manual ou ajuste o pin no mapa.");
+        if (!silent) toast.error("GPS indisponível — use endereço manual");
+      } else if (bestAccuracyRef.current > 100 && !silent) {
         toast.warning("GPS com baixa precisão — ajuste o pin no mapa");
-      } else {
+      } else if (!silent && bestAccuracyRef.current <= 100) {
         toast.success(`Localização refinada (~${Math.round(bestAccuracyRef.current)}m)`);
       }
     }, 12000);
   };
 
-  // Auto-start GPS refinement when entering the page
+  // Auto-tenta uma vez silenciosamente; se falhar, mostra modal de orientação
   useEffect(() => {
-    if (!eventLoading && !eventError && !originCoords) {
-      useMyLocation();
+    if (!eventLoading && !eventError && !originCoords && !gpsAutoTried) {
+      setGpsAutoTried(true);
+      useMyLocation({ silent: true });
     }
     return () => stopWatch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
