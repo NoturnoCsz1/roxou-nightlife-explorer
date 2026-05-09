@@ -17,9 +17,24 @@ import {
   ShieldCheck,
   AlertTriangle,
   ScanLine,
+  Archive,
+  ArchiveRestore,
+  Repeat2,
+  History,
+  Pin,
+  Ban,
 } from "lucide-react";
 
-type FilterKey = "novo" | "possible_duplicate" | "approved" | "published" | "ignored" | "all";
+type FilterKey =
+  | "novo"
+  | "possible_duplicate"
+  | "approved"
+  | "published"
+  | "ignored"
+  | "duplicates_detected"
+  | "archived"
+  | "history"
+  | "all";
 
 interface ScanRow {
   id: string;
@@ -39,6 +54,12 @@ interface ScanRow {
   scan_count: number;
   last_seen_at: string;
   created_at: string;
+  archived_at: string | null;
+  archive_reason: string | null;
+  hidden_from_radar: boolean;
+  first_published_at: string | null;
+  last_reposted_at: string | null;
+  repost_count: number;
 }
 
 interface EventRow {
@@ -83,8 +104,13 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "approved", label: "Aprovado" },
   { key: "published", label: "Já publicado" },
   { key: "ignored", label: "Ignorado" },
+  { key: "duplicates_detected", label: "Duplicados detectados" },
+  { key: "archived", label: "Arquivados" },
+  { key: "history", label: "Histórico" },
   { key: "all", label: "Todos" },
 ];
+
+const HIDDEN_AWARE_FILTERS: FilterKey[] = ["archived", "history", "all", "duplicates_detected"];
 
 const RadarIA = () => {
   const [cards, setCards] = useState<Card[]>([]);
@@ -96,12 +122,11 @@ const RadarIA = () => {
 
   async function load() {
     setLoading(true);
-    // Pull recent scans (only ones with structured data)
     const { data: scans, error } = await supabase
       .from("instagram_scans" as any)
       .select("*")
       .order("last_seen_at", { ascending: false })
-      .limit(300);
+      .limit(500);
 
     if (error) {
       toast.error(`Erro: ${error.message}`);
@@ -130,19 +155,32 @@ const RadarIA = () => {
       duplicateOf: scan.duplicate_of_event_id ? eventsMap.get(scan.duplicate_of_event_id) || null : null,
     }));
 
-    // Counts per filter
+    // Counts (visíveis vs arquivados)
+    const visible = allCards.filter((c) => !c.scan.hidden_from_radar);
+    const archived = allCards.filter((c) => c.scan.hidden_from_radar);
+    const dupsDetected = allCards.filter((c) =>
+      c.scan.status === "possible_duplicate" || c.scan.status === "skipped_duplicate"
+    );
+
     const c: Record<FilterKey, number> = {
-      novo: 0, possible_duplicate: 0, approved: 0, published: 0, ignored: 0, all: allCards.length,
+      novo: 0, possible_duplicate: 0, approved: 0, published: 0, ignored: 0,
+      duplicates_detected: dupsDetected.length,
+      archived: archived.length,
+      history: allCards.length,
+      all: visible.length,
     };
-    for (const card of allCards) {
+    for (const card of visible) {
       const cat = categorize(card);
-      if (cat) c[cat]++;
+      if (cat && cat in c) (c as any)[cat]++;
     }
     setCounts(c);
 
-    const filtered = filter === "all"
-      ? allCards
-      : allCards.filter((card) => categorize(card) === filter);
+    let filtered: Card[];
+    if (filter === "history") filtered = allCards;
+    else if (filter === "archived") filtered = archived;
+    else if (filter === "duplicates_detected") filtered = dupsDetected;
+    else if (filter === "all") filtered = visible;
+    else filtered = visible.filter((card) => categorize(card) === filter);
 
     setCards(filtered);
     setLoading(false);
@@ -177,26 +215,65 @@ const RadarIA = () => {
     load();
   }
 
-  async function approve(eventId: string) {
+  async function archiveScan(scanId: string, reason = "manual") {
+    setActing(scanId);
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({ hidden_from_radar: true, archived_at: new Date().toISOString(), archive_reason: reason })
+      .eq("id", scanId);
+    setActing(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Arquivado."); load(); }
+  }
+
+  async function unarchiveScan(scanId: string) {
+    setActing(scanId);
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({ hidden_from_radar: false, archived_at: null, archive_reason: null })
+      .eq("id", scanId);
+    setActing(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Restaurado."); load(); }
+  }
+
+  async function runRetention() {
+    const t = toast.loading("Aplicando retenção inteligente...");
+    const { data, error } = await supabase.rpc("archive_old_radar_scans");
+    toast.dismiss(t);
+    if (error) toast.error(error.message);
+    else { toast.success(`${data ?? 0} itens arquivados automaticamente`); load(); }
+  }
+
+  async function approve(eventId: string, scanId: string) {
     setActing(eventId);
     const { error } = await supabase
       .from("events")
       .update({ status: "published", needs_review: false })
       .eq("id", eventId);
+    if (!error) {
+      await supabase.from("instagram_scans" as any)
+        .update({ first_published_at: new Date().toISOString() })
+        .eq("id", scanId)
+        .is("first_published_at", null);
+    }
     setActing(null);
     if (error) toast.error(error.message);
     else { toast.success("Evento publicado!"); load(); }
   }
 
-  async function ignore(eventId: string) {
+  async function ignore(eventId: string, scanId: string) {
     setActing(eventId);
     const { error } = await supabase
       .from("events")
       .update({ status: "archived", needs_review: false })
       .eq("id", eventId);
+    if (!error) {
+      await archiveScan(scanId, "ignorado manualmente");
+      return;
+    }
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Ignorado."); load(); }
   }
 
   return (
@@ -217,14 +294,22 @@ const RadarIA = () => {
               Duplicidade bloqueada por <code className="text-primary/80">media_id</code>, permalink e dedupe_key.
             </p>
           </div>
-          <button
-            onClick={triggerScan}
-            disabled={scanning}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 disabled:opacity-50 transition-all"
-          >
-            {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {scanning ? "Varrendo..." : "Disparar varredura agora"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={runRetention}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold hover:bg-muted/40"
+            >
+              <History className="h-4 w-4" /> Aplicar retenção
+            </button>
+            <button
+              onClick={triggerScan}
+              disabled={scanning}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {scanning ? "Varrendo..." : "Disparar varredura agora"}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -311,8 +396,28 @@ const RadarIA = () => {
                       </span>
                     )}
                     {cat === "ignored" && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                        Ignorado
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+                        <Ban className="h-3 w-3" /> Ignorado
+                      </span>
+                    )}
+                    {c.scan.repost_count > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 flex items-center gap-1">
+                        <Repeat2 className="h-3 w-3" /> Repostado ×{c.scan.repost_count}
+                      </span>
+                    )}
+                    {c.scan.first_published_at && cat !== "approved" && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40 flex items-center gap-1">
+                        <Pin className="h-3 w-3" /> Já publicado
+                      </span>
+                    )}
+                    {c.scan.scan_count > 1 && c.scan.repost_count === 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+                        ♻️ Reencontrado ×{c.scan.scan_count}
+                      </span>
+                    )}
+                    {c.scan.hidden_from_radar && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-zinc-600/30 text-zinc-300 border border-zinc-500/40 flex items-center gap-1">
+                        <Archive className="h-3 w-3" /> Arquivado
                       </span>
                     )}
                   </div>
@@ -391,31 +496,57 @@ const RadarIA = () => {
                     </details>
                   )}
 
-                  {/* Actions */}
-                  {ev && (
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                      <button
-                        onClick={() => approve(ev.id)}
-                        disabled={acting === ev.id || ev.status === "published"}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
-                      </button>
-                      <Link
-                        to={`/admin/eventos/${ev.id}/editar`}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25"
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Editar
-                      </Link>
-                      <button
-                        onClick={() => ignore(ev.id)}
-                        disabled={acting === ev.id || ev.status === "archived"}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 disabled:opacity-40"
-                      >
-                        <XCircle className="h-3.5 w-3.5" /> Ignorar
-                      </button>
-                    </div>
+                  {/* Archive metadata */}
+                  {c.scan.hidden_from_radar && c.scan.archive_reason && (
+                    <p className="text-[10px] italic text-muted-foreground/70">
+                      Arquivado: {c.scan.archive_reason} • {formatDate(c.scan.archived_at)}
+                    </p>
                   )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                    {ev && (
+                      <>
+                        <button
+                          onClick={() => approve(ev.id, c.scan.id)}
+                          disabled={acting === ev.id || ev.status === "published"}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
+                        </button>
+                        <Link
+                          to={`/admin/eventos/${ev.id}/editar`}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Editar
+                        </Link>
+                        <button
+                          onClick={() => ignore(ev.id, c.scan.id)}
+                          disabled={acting === ev.id || ev.status === "archived"}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 disabled:opacity-40"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Ignorar
+                        </button>
+                      </>
+                    )}
+                    {c.scan.hidden_from_radar ? (
+                      <button
+                        onClick={() => unarchiveScan(c.scan.id)}
+                        disabled={acting === c.scan.id}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-300 text-xs font-bold hover:bg-cyan-500/20 disabled:opacity-40"
+                      >
+                        <ArchiveRestore className="h-3.5 w-3.5" /> Restaurar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => archiveScan(c.scan.id)}
+                        disabled={acting === c.scan.id}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-600/20 text-zinc-300 text-xs font-bold hover:bg-zinc-600/30 disabled:opacity-40"
+                      >
+                        <Archive className="h-3.5 w-3.5" /> Arquivar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

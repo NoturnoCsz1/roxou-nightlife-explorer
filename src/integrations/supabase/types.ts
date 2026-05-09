@@ -1270,13 +1270,18 @@ export type Database = {
       instagram_scans: {
         Row: {
           ai_confidence: string | null
+          archive_reason: string | null
+          archived_at: string | null
           created_at: string
           dedupe_key: string | null
           duplicate_of_event_id: string | null
           event_id: string | null
           extracted_json: Json | null
+          first_published_at: string | null
+          hidden_from_radar: boolean
           id: string
           keywords: string[] | null
+          last_reposted_at: string | null
           last_seen_at: string
           media_id: string
           partner_id: string | null
@@ -1284,6 +1289,7 @@ export type Database = {
           raw_caption: string | null
           raw_ocr: string | null
           reason: string | null
+          repost_count: number
           scan_count: number
           source_handle: string | null
           status: string
@@ -1291,13 +1297,18 @@ export type Database = {
         }
         Insert: {
           ai_confidence?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
           created_at?: string
           dedupe_key?: string | null
           duplicate_of_event_id?: string | null
           event_id?: string | null
           extracted_json?: Json | null
+          first_published_at?: string | null
+          hidden_from_radar?: boolean
           id?: string
           keywords?: string[] | null
+          last_reposted_at?: string | null
           last_seen_at?: string
           media_id: string
           partner_id?: string | null
@@ -1305,6 +1316,7 @@ export type Database = {
           raw_caption?: string | null
           raw_ocr?: string | null
           reason?: string | null
+          repost_count?: number
           scan_count?: number
           source_handle?: string | null
           status?: string
@@ -1312,13 +1324,18 @@ export type Database = {
         }
         Update: {
           ai_confidence?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
           created_at?: string
           dedupe_key?: string | null
           duplicate_of_event_id?: string | null
           event_id?: string | null
           extracted_json?: Json | null
+          first_published_at?: string | null
+          hidden_from_radar?: boolean
           id?: string
           keywords?: string[] | null
+          last_reposted_at?: string | null
           last_seen_at?: string
           media_id?: string
           partner_id?: string | null
@@ -1326,6 +1343,7 @@ export type Database = {
           raw_caption?: string | null
           raw_ocr?: string | null
           reason?: string | null
+          repost_count?: number
           scan_count?: number
           source_handle?: string | null
           status?: string
@@ -2115,6 +2133,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_old_radar_scans: { Args: never; Returns: number }
       community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
       expire_stale_ride_requests: { Args: never; Returns: number }
       has_role: {
@@ -2124,6 +2143,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "passenger" | "driver" | "admin"
