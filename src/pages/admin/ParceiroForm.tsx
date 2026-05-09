@@ -4,6 +4,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
+import PartnerInstagramAura from "@/components/admin/PartnerInstagramAura";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 
