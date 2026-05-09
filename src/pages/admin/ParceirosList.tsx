@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, CheckCircle, Trash2, CalendarDays, Eye, ExternalLink, AlertTriangle } from "lucide-react";
+import { Plus, Search, CheckCircle, Trash2, CalendarDays, Eye, ExternalLink, AlertTriangle, RefreshCw, Sparkles, Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
@@ -33,6 +33,25 @@ const ParceirosList = () => {
   const [deleteTarget, setDeleteTarget] = useState<Partner | null>(null);
   const [hasLinkedEvents, setHasLinkedEvents] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive" | "dormant">("");
+  const [syncingAll, setSyncingAll] = useState(false);
+
+  async function handleSyncAll() {
+    setSyncingAll(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("partner-instagram-sync", {
+        body: { all: true, stale_hours: 24 },
+      });
+      if (error) throw error;
+      const s = (data as any)?.summary;
+      if (s) toast.success(`Sync: ${s.synced}/${s.total} ok • ${s.not_found} não encontrados • ${s.no_permission} sem permissão`);
+      else toast.success("Sincronização concluída");
+      loadPartners();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar");
+    } finally {
+      setSyncingAll(false);
+    }
+  }
 
   useEffect(() => {
     loadPartners();
@@ -138,14 +157,25 @@ const ParceirosList = () => {
 
   return (
     <div className="space-y-4 md:ml-44">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-lg font-bold text-foreground">Parceiros</h1>
-        <Link
-          to="/admin/parceiros/novo"
-          className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-        >
-          <Plus className="h-3.5 w-3.5" /> Novo
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handleSyncAll}
+            disabled={syncingAll}
+            className="flex items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/25 transition disabled:opacity-50"
+            title="Sincroniza Instagram e gera insights da Aura"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncingAll ? "animate-spin" : ""}`} />
+            {syncingAll ? "Sincronizando..." : "Sincronizar IG"}
+          </button>
+          <Link
+            to="/admin/parceiros/novo"
+            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo
+          </Link>
+        </div>
       </div>
 
       {/* Alert for dormant partners */}
@@ -229,7 +259,7 @@ const ParceirosList = () => {
                 </div>
 
                 {/* Metrics row */}
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
                     <CalendarDays className="h-3 w-3" />
                     {m.eventCount} evento{m.eventCount !== 1 ? "s" : ""}
@@ -243,6 +273,7 @@ const ParceirosList = () => {
                       Último: {new Date(m.lastEventDate).toLocaleDateString("pt-BR")}
                     </span>
                   )}
+                  <IgSyncBadge partner={p} />
                 </div>
 
                 {/* Quick actions */}
@@ -306,6 +337,33 @@ function StatusBadge({ status }: { status: "active" | "inactive" | "dormant" }) 
   return (
     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${c.cls}`}>
       {c.label}
+    </span>
+  );
+}
+
+function IgSyncBadge({ partner }: { partner: Partner }) {
+  const p = partner as any;
+  if (!p.instagram && !p.instagram_username) return null;
+  const status = p.instagram_sync_status as string | null;
+  if (status === "synced") {
+    return (
+      <span className="flex items-center gap-1 rounded-full bg-green-400/10 text-green-400 px-1.5 py-0.5 text-[9px] font-semibold">
+        <Instagram className="h-2.5 w-2.5" /> IG sync
+        {p.aura_partner_summary && <Sparkles className="h-2.5 w-2.5" />}
+      </span>
+    );
+  }
+  if (status === "not_found" || status === "private" || status === "no_permission" || status === "error") {
+    const label = status === "not_found" ? "IG ?" : status === "private" ? "Privado" : "Sem perm.";
+    return (
+      <span className="flex items-center gap-1 rounded-full bg-yellow-400/10 text-yellow-400 px-1.5 py-0.5 text-[9px] font-semibold">
+        <AlertTriangle className="h-2.5 w-2.5" /> {label}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-secondary/60 text-muted-foreground px-1.5 py-0.5 text-[9px] font-semibold">
+      <Instagram className="h-2.5 w-2.5" /> Não sincronizado
     </span>
   );
 }

@@ -1307,6 +1307,11 @@ export type Database = {
         Row: {
           active: boolean
           address: string | null
+          aura_last_run_at: string | null
+          aura_partner_score: number | null
+          aura_partner_summary: string | null
+          aura_partner_tags: string[] | null
+          aura_suggestions: Json | null
           city: string
           created_at: string
           featured_home: boolean
@@ -1314,10 +1319,25 @@ export type Database = {
           full_description: string | null
           id: string
           instagram: string | null
+          instagram_bio: string | null
+          instagram_followers_count: number | null
+          instagram_id: string | null
+          instagram_last_sync_at: string | null
+          instagram_media_count: number | null
+          instagram_name: string | null
+          instagram_profile_picture_url: string | null
+          instagram_profile_url: string | null
+          instagram_raw_json: Json | null
+          instagram_recent_posts: Json | null
+          instagram_sync_error: string | null
+          instagram_sync_status: string | null
+          instagram_username: string | null
           instagram_validated: boolean
+          instagram_website: string | null
           latitude: number | null
           logo_url: string | null
           longitude: number | null
+          manual_locked_fields: string[] | null
           maps_place_id: string | null
           name: string
           neighborhood: string | null
@@ -1332,6 +1352,11 @@ export type Database = {
         Insert: {
           active?: boolean
           address?: string | null
+          aura_last_run_at?: string | null
+          aura_partner_score?: number | null
+          aura_partner_summary?: string | null
+          aura_partner_tags?: string[] | null
+          aura_suggestions?: Json | null
           city?: string
           created_at?: string
           featured_home?: boolean
@@ -1339,10 +1364,25 @@ export type Database = {
           full_description?: string | null
           id?: string
           instagram?: string | null
+          instagram_bio?: string | null
+          instagram_followers_count?: number | null
+          instagram_id?: string | null
+          instagram_last_sync_at?: string | null
+          instagram_media_count?: number | null
+          instagram_name?: string | null
+          instagram_profile_picture_url?: string | null
+          instagram_profile_url?: string | null
+          instagram_raw_json?: Json | null
+          instagram_recent_posts?: Json | null
+          instagram_sync_error?: string | null
+          instagram_sync_status?: string | null
+          instagram_username?: string | null
           instagram_validated?: boolean
+          instagram_website?: string | null
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          manual_locked_fields?: string[] | null
           maps_place_id?: string | null
           name: string
           neighborhood?: string | null
@@ -1357,6 +1397,11 @@ export type Database = {
         Update: {
           active?: boolean
           address?: string | null
+          aura_last_run_at?: string | null
+          aura_partner_score?: number | null
+          aura_partner_summary?: string | null
+          aura_partner_tags?: string[] | null
+          aura_suggestions?: Json | null
           city?: string
           created_at?: string
           featured_home?: boolean
@@ -1364,10 +1409,25 @@ export type Database = {
           full_description?: string | null
           id?: string
           instagram?: string | null
+          instagram_bio?: string | null
+          instagram_followers_count?: number | null
+          instagram_id?: string | null
+          instagram_last_sync_at?: string | null
+          instagram_media_count?: number | null
+          instagram_name?: string | null
+          instagram_profile_picture_url?: string | null
+          instagram_profile_url?: string | null
+          instagram_raw_json?: Json | null
+          instagram_recent_posts?: Json | null
+          instagram_sync_error?: string | null
+          instagram_sync_status?: string | null
+          instagram_username?: string | null
           instagram_validated?: boolean
+          instagram_website?: string | null
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          manual_locked_fields?: string[] | null
           maps_place_id?: string | null
           name?: string
           neighborhood?: string | null
