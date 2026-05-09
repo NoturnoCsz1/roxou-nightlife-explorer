@@ -100,6 +100,8 @@ export default function V3RideRequest() {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [gpsRefining, setGpsRefining] = useState(false);
   const [gpsAttempts, setGpsAttempts] = useState(0);
+  const [gpsBlocked, setGpsBlocked] = useState<null | "denied" | "unavailable" | "timeout" | "unknown">(null);
+  const [gpsAutoTried, setGpsAutoTried] = useState(false);
   const watchIdRef = useRef<number | null>(null);
   const watchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bestAccuracyRef = useRef<number>(Infinity);
@@ -256,82 +258,111 @@ export default function V3RideRequest() {
     setGeoLoading(false);
   };
 
-  const useMyLocation = () => {
+  const useMyLocation = (opts?: { highAccuracy?: boolean; silent?: boolean }) => {
+    const highAccuracy = opts?.highAccuracy ?? true;
+    const silent = opts?.silent ?? false;
+
     if (!navigator.geolocation) {
-      setGeoError("Geolocalização não suportada neste navegador");
-      toast.error("Geolocalização não suportada");
+      setGeoError("Geolocalização não suportada neste navegador.");
+      setGpsBlocked("unavailable");
+      if (!silent) toast.error("Geolocalização não suportada");
       return;
     }
-    // Reset
     stopWatch();
     bestAccuracyRef.current = Infinity;
     setGpsAttempts(0);
     setGeoLoading(true);
     setGpsRefining(true);
     setGeoError(null);
+    setGpsBlocked(null);
     setOriginConfirmed(false);
 
     let firstFix = false;
+    let id: number;
 
-    const id = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const { latitude, longitude, accuracy } = pos.coords;
-        setGpsAttempts((n) => n + 1);
+    try {
+      id = navigator.geolocation.watchPosition(
+        async (pos) => {
+          const { latitude, longitude, accuracy } = pos.coords;
+          setGpsAttempts((n) => n + 1);
 
-        // Keep only the best (lowest) accuracy reading
-        if (accuracy != null && accuracy < bestAccuracyRef.current) {
-          bestAccuracyRef.current = accuracy;
-          setOriginCoords({ lat: latitude, lng: longitude });
-          setOriginAccuracy(accuracy);
-          setOriginSource("gps");
+          if (accuracy != null && accuracy < bestAccuracyRef.current) {
+            bestAccuracyRef.current = accuracy;
+            setOriginCoords({ lat: latitude, lng: longitude });
+            setOriginAccuracy(accuracy);
+            setOriginSource("gps");
 
-          // Reverse geocode only on first fix or when meaningfully better
-          if (!firstFix) {
-            firstFix = true;
-            setGeoLoading(false);
-            reverseGeocode(latitude, longitude).then(setOriginAddress);
+            if (!firstFix) {
+              firstFix = true;
+              setGeoLoading(false);
+              reverseGeocode(latitude, longitude).then(setOriginAddress);
+            }
           }
-        }
 
-        // Stop early if very accurate
-        if (accuracy != null && accuracy <= 25) {
-          stopWatch();
-          if (firstFix) reverseGeocode(latitude, longitude).then(setOriginAddress);
-          toast.success(`GPS preciso (~${Math.round(accuracy)}m)`);
-        }
-      },
-      (err) => {
-        const msg = err.code === err.PERMISSION_DENIED
-          ? "Permissão de localização negada. Ative no navegador para continuar."
-          : (err.message || "Não foi possível obter sua localização");
-        setGeoError(msg);
-        if (!firstFix) {
-          toast.error(msg);
-          stopWatch();
-        }
-      },
-      { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
-    );
-    watchIdRef.current = id;
+          if (accuracy != null && accuracy <= 25) {
+            stopWatch();
+            if (firstFix) reverseGeocode(latitude, longitude).then(setOriginAddress);
+            if (!silent) toast.success(`GPS preciso (~${Math.round(accuracy)}m)`);
+          }
+        },
+        (err) => {
+          // eslint-disable-next-line no-console
+          console.warn("[Ride GPS] falha ao obter localização", { code: err?.code, message: err?.message });
+          let kind: "denied" | "unavailable" | "timeout" | "unknown" = "unknown";
+          if (err.code === err.PERMISSION_DENIED) kind = "denied";
+          else if (err.code === err.POSITION_UNAVAILABLE) kind = "unavailable";
+          else if (err.code === err.TIMEOUT) kind = "timeout";
 
-    // Hard cap: 12s of refinement
+          if (!firstFix) {
+            // Timeout em alta precisão: tenta baixa precisão automaticamente uma vez
+            if (kind === "timeout" && highAccuracy) {
+              stopWatch();
+              useMyLocation({ highAccuracy: false, silent });
+              return;
+            }
+            setGpsBlocked(kind);
+            const friendly =
+              kind === "denied"
+                ? "Permissão de localização bloqueada."
+                : kind === "unavailable"
+                  ? "Não foi possível acessar o GPS agora."
+                  : kind === "timeout"
+                    ? "Tempo esgotado ao buscar localização."
+                    : "Falha ao acessar localização.";
+            setGeoError(friendly);
+            stopWatch();
+          }
+        },
+        { enableHighAccuracy: highAccuracy, timeout: highAccuracy ? 15000 : 20000, maximumAge: highAccuracy ? 0 : 30000 }
+      );
+      watchIdRef.current = id;
+    } catch (e: any) {
+      // eslint-disable-next-line no-console
+      console.warn("[Ride GPS] exceção ao chamar geolocation", e?.message);
+      setGpsBlocked("unknown");
+      setGeoError("Não foi possível solicitar localização. Feche balões/sobreposições de outros apps e tente novamente.");
+      stopWatch();
+      return;
+    }
+
     watchTimeoutRef.current = setTimeout(() => {
       stopWatch();
       if (bestAccuracyRef.current === Infinity) {
-        setGeoError("Não foi possível obter localização. Ajuste o pin manualmente no mapa.");
-        toast.error("GPS indisponível — ajuste o pin no mapa");
-      } else if (bestAccuracyRef.current > 100) {
+        setGeoError("Não foi possível obter localização. Use o endereço manual ou ajuste o pin no mapa.");
+        if (!silent) toast.error("GPS indisponível — use endereço manual");
+      } else if (bestAccuracyRef.current > 100 && !silent) {
         toast.warning("GPS com baixa precisão — ajuste o pin no mapa");
-      } else {
+      } else if (!silent && bestAccuracyRef.current <= 100) {
         toast.success(`Localização refinada (~${Math.round(bestAccuracyRef.current)}m)`);
       }
     }, 12000);
   };
 
-  // Auto-start GPS refinement when entering the page
+  // Auto-tenta uma vez silenciosamente; se falhar, mostra modal de orientação
   useEffect(() => {
-    if (!eventLoading && !eventError && !originCoords) {
-      useMyLocation();
+    if (!eventLoading && !eventError && !originCoords && !gpsAutoTried) {
+      setGpsAutoTried(true);
+      useMyLocation({ silent: true });
     }
     return () => stopWatch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -616,9 +647,16 @@ export default function V3RideRequest() {
             Onde te buscar?
           </div>
 
+          {!originCoords && !gpsRefining && (
+            <div className="rounded-2xl border border-border/40 bg-card/30 p-3 text-[11px] text-muted-foreground leading-snug">
+              Para encontrar motoristas próximos, precisamos da sua localização.
+              Se aparecer "Este site não pode pedir permissões", feche balões flutuantes (Uber, Messenger, picture-in-picture) e tente novamente.
+            </div>
+          )}
+
           <Button
             type="button"
-            onClick={useMyLocation}
+            onClick={() => useMyLocation()}
             disabled={geoLoading && !originCoords}
             className="w-full h-11 rounded-xl gap-2"
             variant={originCoords ? "outline" : "default"}
@@ -630,10 +668,62 @@ export default function V3RideRequest() {
                 ? `Melhorando precisão (~${Math.round(originAccuracy ?? 0)}m)...`
                 : originCoords
                   ? "Melhorar precisão"
-                  : "Usar minha localização (GPS)"}
+                  : "Permitir localização"}
           </Button>
 
-          {geoError && (
+          {gpsBlocked && !originCoords && (
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2 text-[12px] text-amber-100">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-300" />
+                <div className="space-y-1">
+                  <p className="font-semibold">Tivemos dificuldade para acessar sua localização.</p>
+                  <p className="text-[11px] opacity-90">
+                    Se você estiver com o balão do Uber, Messenger ou outro app flutuante aberto,
+                    feche a sobreposição e tente novamente. O Android bloqueia permissões enquanto há apps sobrepostos na tela.
+                  </p>
+                  {gpsBlocked === "denied" && (
+                    <p className="text-[11px] opacity-90">
+                      Você também pode liberar a permissão nas configurações do navegador para este site.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-xl h-9 text-[11px]"
+                  onClick={() => useMyLocation()}
+                >
+                  Tentar novamente
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl h-9 text-[11px]"
+                  onClick={() => {
+                    setGpsBlocked(null);
+                    setGeoError(null);
+                    document.getElementById("manual-origin-input")?.focus();
+                  }}
+                >
+                  Inserir endereço manual
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl h-9 text-[11px]"
+                  onClick={() => useMyLocation({ highAccuracy: false })}
+                >
+                  Localização aproximada
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {geoError && !gpsBlocked && (
             <p className="text-[11px] text-destructive">{geoError}</p>
           )}
 
@@ -643,6 +733,7 @@ export default function V3RideRequest() {
               <MapPin className="w-3.5 h-3.5" /> Ou digite o endereço de embarque
             </Label>
             <Input
+              id="manual-origin-input"
               value={manualOriginAddress}
               onChange={(e) => setManualOriginAddress(e.target.value.slice(0, 200))}
               placeholder="Ex: Rua, número, bairro"
