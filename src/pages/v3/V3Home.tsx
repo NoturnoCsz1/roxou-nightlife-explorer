@@ -1257,7 +1257,7 @@ function DesktopProfilePanel() {
       className="flex items-center gap-3 rounded-2xl border border-border/20 bg-background/30 p-3 transition-all hover:border-primary/40 hover:bg-primary/10"
     >
       <div className="h-10 w-10 rounded-full overflow-hidden bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30">
-        {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : <UserIcon className="h-5 w-5 text-primary" />}
+        {avatar ? <img src={avatar} alt="" decoding="async" className="h-full w-full object-cover" /> : <UserIcon className="h-5 w-5 text-primary" />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-black text-foreground truncate">{displayName}</p>
