@@ -550,6 +550,7 @@ const EventosList = () => {
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
+            <AIConfidenceBadge ai_confidence={e.ai_confidence} needs_review={e.needs_review} />
             <span
               title={`Qualidade: ${score}/100`}
               className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${score === 100 ? "bg-green-500/15 text-green-400" : score >= 75 ? "bg-yellow-400/10 text-yellow-400" : "bg-red-500/15 text-red-400"}`}
