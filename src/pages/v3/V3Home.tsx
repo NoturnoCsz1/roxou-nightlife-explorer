@@ -668,16 +668,6 @@ function HomeDataFallback() {
 
 /* TodaySection extraído para src/components/v3/home/TodaySection.tsx */
 
-/* ─── FADE SECTION WRAPPER ─── */
-function FadeSection({ className, children }: { className?: string; children: ReactNode }) {
-  const { ref, visible } = useScrollFadeIn();
-  return (
-    <section ref={ref} className={`transition-all duration-500 ease-out ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"} ${className || ""}`}>
-      {children}
-    </section>
-  );
-}
-
 /* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
 function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange }: {
   ev: Ev; isToday: boolean; todayCount: number; venueRank?: number;
