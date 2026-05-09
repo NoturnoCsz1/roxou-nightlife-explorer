@@ -127,6 +127,33 @@ export default function V3LocalDetail() {
     enabled: !!partner?.id,
   });
 
+  /* related partners — same city + same type, fallback to same city */
+  const { data: relatedPartners = [] } = useQuery({
+    queryKey: ["v3-partner-related", partner?.id, partner?.city, partner?.type],
+    queryFn: async () => {
+      const base = supabase
+        .from("partners")
+        .select("id, name, slug, type, city, logo_url, verified_partner")
+        .eq("active", true)
+        .eq("city", partner!.city)
+        .neq("id", partner!.id)
+        .limit(4);
+      const { data: same } = await base.eq("type", partner!.type);
+      if (same && same.length >= 4) return same;
+      const need = 4 - (same?.length || 0);
+      const { data: others } = await supabase
+        .from("partners")
+        .select("id, name, slug, type, city, logo_url, verified_partner")
+        .eq("active", true)
+        .eq("city", partner!.city)
+        .neq("id", partner!.id)
+        .neq("type", partner!.type)
+        .limit(need);
+      return [...(same || []), ...(others || [])];
+    },
+    enabled: !!partner?.id && !!partner?.city,
+  });
+
   if (!partner) {
     return (
       <div className="p-8 text-center">
