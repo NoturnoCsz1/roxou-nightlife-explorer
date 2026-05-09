@@ -242,6 +242,114 @@ const InstagramAdmin = () => {
     ? new Date(syncData.synced_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })
     : null;
 
+  const isOnline = !!account && syncStage === "ok";
+  const isTokenExpired = syncStage === "token_expired";
+
+  return (
+    <div className="space-y-4 md:ml-44">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <Instagram className="h-4 w-4 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-foreground">Instagram</h1>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                  isOnline
+                    ? "bg-green-500/10 border-green-500/30 text-green-400"
+                    : isTokenExpired
+                    ? "bg-destructive/10 border-destructive/30 text-destructive"
+                    : "bg-muted/20 border-border/30 text-muted-foreground"
+                }`}
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  {isOnline && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
+                      isOnline ? "bg-green-500" : isTokenExpired ? "bg-destructive" : "bg-muted-foreground"
+                    }`}
+                  ></span>
+                </span>
+                {isOnline ? "Meta sincronizada" : isTokenExpired ? "Reconectar Meta" : "Aguardando Meta"}
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {syncStage === "loading"
+                ? "Sincronizando com Meta…"
+                : lastSyncLabel
+                ? `Última sincronização automática: ${lastSyncLabel}`
+                : "Centro de operações de conteúdo ROXOU"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => syncInstagramData(false)}
+            disabled={syncing || !account}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/20 transition disabled:opacity-50"
+          >
+            {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            Sincronizar agora
+          </button>
+        </div>
+      </div>
+
+      {/* Token expirado / erro */}
+      {isTokenExpired && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3">
+          <div className="flex items-center gap-2 text-destructive">
+            <WifiOff className="h-4 w-4" />
+            <div>
+              <p className="text-xs font-bold">Token Meta expirado</p>
+              <p className="text-[10px] opacity-80">{syncError || "Reautorize para continuar a sincronização."}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleConnect}
+            className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-[11px] font-bold text-white"
+          >
+            Reconectar Meta
+          </button>
+        </div>
+      )}
+
+      {/* Quick metrics — dados reais da Meta */}
+      <div className="grid grid-cols-3 gap-2">
+        {syncStage === "loading" && !syncData ? (
+          <>
+            <MetricSkeleton />
+            <MetricSkeleton />
+            <MetricSkeleton />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              icon={Users}
+              label="Seguidores"
+              value={fmtNum(syncData?.metrics.followers || 0)}
+              hint={account ? `@${account.username}` : "—"}
+            />
+            <MetricCard
+              icon={Eye}
+              label="Alcance 7d"
+              value={fmtNum(syncData?.metrics.reach_7d || 0)}
+              hint={syncData ? `${fmtNum(syncData.metrics.impressions_7d)} impressões` : "—"}
+            />
+            <MetricCard
+              icon={Heart}
+              label="Engajamento"
+              value={fmtNum(syncData?.metrics.engagement_recent || 0)}
+              hint={syncData ? `${fmtNum(syncData.metrics.media_count)} posts` : "—"}
+            />
+          </>
+        )}
+      </div>
+
       {/* Tab navigation */}
       <div className="flex gap-1 overflow-x-auto pb-1">
         {TABS.map(t => {
