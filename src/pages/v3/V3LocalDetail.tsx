@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
 import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
+import { trackEvent } from "@/lib/analytics";
 
 function getOperatingStatus(type?: string | null) {
   const hour = new Date().getHours();
@@ -34,6 +36,25 @@ export default function V3LocalDetail() {
     },
     enabled: !!slug,
   });
+
+  useEffect(() => {
+    if (!partner?.id) return;
+    try {
+      trackEvent({
+        event_type: "venue_view",
+        venue_id: partner.id,
+        city: partner.city || null,
+        category: partner.type || null,
+        metadata: {
+          slug: partner.slug,
+          name: partner.name,
+          instagram: partner.instagram,
+        },
+      });
+    } catch {
+      // fire-and-forget; nunca quebra render
+    }
+  }, [partner?.id]);
 
   const { data: events = [] } = useQuery({
     queryKey: ["v3-partner-events", partner?.id],
