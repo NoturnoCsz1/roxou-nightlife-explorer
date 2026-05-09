@@ -74,7 +74,7 @@ export default function V3EventDetail() {
     <div className="pb-8">
       {/* Image */}
       <div className="relative h-[260px] overflow-hidden">
-        <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" />
+        <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" fetchPriority="high" decoding="async" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute top-4 left-4 right-4 flex justify-between">
           <Link to="/" className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
