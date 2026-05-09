@@ -1211,6 +1211,50 @@ export async function renderStoryV3(
   ctx.fillText(badgeText, bx + bw / 2, by + bh / 2 + 1);
   ctx.restore();
 
+  // 5b) DIA DA SEMANA — pill glass discreto no canto superior direito
+  {
+    const wDate = new Date(event.date_time);
+    const weekdayFull = ["DOMINGO","SEGUNDA","TERÇA","QUARTA","QUINTA","SEXTA","SÁBADO"];
+    const weekdayText = weekdayFull[wDate.getDay()];
+    ctx.save();
+    ctx.font = "700 22px sans-serif";
+    const wTextW = ctx.measureText(weekdayText).width;
+    // Tracking simulado: aumenta padding lateral
+    const wpw = wTextW + 36;
+    const wph = 42;
+    const wpx = W - PAD - wpw;
+    const wpy = PAD + 16 + (52 - wph) / 2; // alinhado com badge AURA
+    // Garante não sobrepor o badge (gap mínimo de 16px)
+    const minLeft = bx + bw + 16;
+    const finalX = Math.max(wpx, minLeft);
+    if (finalX + wpw <= W - PAD) {
+      ctx.shadowColor = "rgba(255,255,255,0.08)";
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = "rgba(10,10,20,0.22)";
+      roundRect(ctx, finalX, wpy, wpw, wph, wph / 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, finalX, wpy, wpw, wph, wph / 2);
+      ctx.stroke();
+      // Texto com letter-spacing manual
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const letters = weekdayText.split("");
+      const spacing = 2.5;
+      const totalLetterW = letters.reduce((s, l) => s + ctx.measureText(l).width, 0) + spacing * (letters.length - 1);
+      let lx = finalX + (wpw - totalLetterW) / 2;
+      const ly = wpy + wph / 2 + 1;
+      letters.forEach((l) => {
+        ctx.fillText(l, lx, ly);
+        lx += ctx.measureText(l).width + spacing;
+      });
+    }
+    ctx.restore();
+  }
+
   // 6) TÍTULO — peso reduzido, hierarquia mais elegante
   const titleMaxW = W - PAD * 2;
   ctx.save();
