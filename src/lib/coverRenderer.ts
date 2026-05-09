@@ -1379,32 +1379,37 @@ export async function renderStoryV3(
   const ctaYpos = H - ctaH - 130;
 
   ctx.save();
-  // Halo neon premium
-  ctx.shadowColor = "rgba(168,85,247,0.55)";
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 4;
-  // Gradiente refinado horizontal Roxou
+  // Halo neon refinado — sombra mais difusa, menos arcade
+  ctx.shadowColor = "rgba(168,85,247,0.32)";
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetY = 6;
+  // Gradiente sofisticado — roxo profundo, menos vibrante
   const ctaGrad = ctx.createLinearGradient(ctaX, ctaYpos, ctaX + ctaW, ctaYpos + ctaH);
   ctaGrad.addColorStop(0, "#A855F7");
   ctaGrad.addColorStop(0.5, "#9333EA");
-  ctaGrad.addColorStop(1, "#6D28D9");
+  ctaGrad.addColorStop(1, "#7E22CE");
   ctx.fillStyle = ctaGrad;
   roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.shadowOffsetY = 0;
 
-  // Inner highlight (glass top)
+  // Camada glass leve por cima — refina e suaviza saturação
+  ctx.fillStyle = "rgba(255,255,255,0.04)";
+  roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
+  ctx.fill();
+
+  // Inner highlight (glass top) — mais suave
   const innerGrad = ctx.createLinearGradient(0, ctaYpos, 0, ctaYpos + ctaH / 2);
-  innerGrad.addColorStop(0, "rgba(255,255,255,0.18)");
+  innerGrad.addColorStop(0, "rgba(255,255,255,0.12)");
   innerGrad.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = innerGrad;
   roundRect(ctx, ctaX + 2, ctaYpos + 2, ctaW - 4, ctaH / 2, ctaH / 2);
   ctx.fill();
 
-  // Borda glass branca
-  ctx.strokeStyle = "rgba(255,255,255,0.28)";
-  ctx.lineWidth = 1.4;
+  // Borda glass branca — mais discreta
+  ctx.strokeStyle = "rgba(255,255,255,0.20)";
+  ctx.lineWidth = 1.2;
   roundRect(ctx, ctaX + 1, ctaYpos + 1, ctaW - 2, ctaH - 2, (ctaH - 2) / 2);
   ctx.stroke();
 
