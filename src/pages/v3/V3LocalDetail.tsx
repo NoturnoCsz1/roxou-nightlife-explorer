@@ -37,6 +37,25 @@ export default function V3LocalDetail() {
     enabled: !!slug,
   });
 
+  useEffect(() => {
+    if (!partner?.id) return;
+    try {
+      trackEvent({
+        event_type: "venue_view",
+        venue_id: partner.id,
+        city: partner.city || null,
+        category: partner.type || null,
+        metadata: {
+          slug: partner.slug,
+          name: partner.name,
+          instagram: partner.instagram,
+        },
+      });
+    } catch {
+      // fire-and-forget; nunca quebra render
+    }
+  }, [partner?.id]);
+
   const { data: events = [] } = useQuery({
     queryKey: ["v3-partner-events", partner?.id],
     queryFn: async () => {
