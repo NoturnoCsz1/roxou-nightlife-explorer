@@ -175,30 +175,49 @@ const EventosList = () => {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
 
-      const drafts = filtered.filter(x => x.status === "draft");
-      if (drafts.length === 0) return;
-      const currentIdx = focusedId ? drafts.findIndex(x => x.id === focusedId) : -1;
+      // Triage works across ALL filtered events (drafts, published, archived…)
+      const list = filtered;
+      if (list.length === 0) return;
+      const currentIdx = focusedId ? list.findIndex(x => x.id === focusedId) : -1;
       const idx = currentIdx >= 0 ? currentIdx : 0;
-      const cur = drafts[idx];
+      const cur = list[idx];
       const k = ev.key.toLowerCase();
 
       if (k === "arrowright") {
         ev.preventDefault();
-        const next = drafts[Math.min(idx + 1, drafts.length - 1)];
+        const next = list[Math.min(idx + 1, list.length - 1)];
         if (next) setFocusedId(next.id);
       } else if (k === "arrowleft") {
         ev.preventDefault();
-        const prev = drafts[Math.max(idx - 1, 0)];
+        const prev = list[Math.max(idx - 1, 0)];
         if (prev) setFocusedId(prev.id);
       } else if (k === "a" && cur) {
         ev.preventDefault();
+        if (cur.status === "published") { toast.info("Já publicado"); return; }
         handleQuickApprove(cur);
       } else if (k === "d" && cur) {
         ev.preventDefault();
-        handleQuickApprove(cur, { featured: true });
+        // Toggle destaque mesmo em publicados
+        if (cur.status === "published") {
+          supabase.from("events").update({ featured: !cur.featured }).eq("id", cur.id).then(({ error }) => {
+            if (error) { toast.error("Falha ao alternar destaque"); return; }
+            setEvents(prev => prev.map(x => x.id === cur.id ? { ...x, featured: !cur.featured } : x));
+            toast.success(cur.featured ? "Destaque removido" : "🔥 Destaque ativado");
+          });
+        } else {
+          handleQuickApprove(cur, { featured: true });
+        }
       } else if (k === "u" && cur) {
         ev.preventDefault();
-        handleQuickApprove(cur, { auraPick: true });
+        if (cur.status === "published") {
+          supabase.from("events").update({ aura_pick: !cur.aura_pick }).eq("id", cur.id).then(({ error }) => {
+            if (error) { toast.error("Falha ao alternar Aura"); return; }
+            setEvents(prev => prev.map(x => x.id === cur.id ? { ...x, aura_pick: !cur.aura_pick } : x));
+            toast.success(cur.aura_pick ? "Aura Pick removido" : "🤖 Aura Pick");
+          });
+        } else {
+          handleQuickApprove(cur, { auraPick: true });
+        }
       } else if (k === "x" && cur) {
         ev.preventDefault();
         handleArchive(cur);
