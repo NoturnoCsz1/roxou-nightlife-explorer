@@ -167,6 +167,51 @@ const EventosList = () => {
     loadClickCounts();
   }, []);
 
+  // Atalhos de teclado (Modo Triagem)
+  useEffect(() => {
+    if (!triageMode) return;
+    const handler = (ev: KeyboardEvent) => {
+      const tag = (ev.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+
+      const drafts = filtered.filter(x => x.status === "draft");
+      if (drafts.length === 0) return;
+      const currentIdx = focusedId ? drafts.findIndex(x => x.id === focusedId) : -1;
+      const idx = currentIdx >= 0 ? currentIdx : 0;
+      const cur = drafts[idx];
+      const k = ev.key.toLowerCase();
+
+      if (k === "arrowright") {
+        ev.preventDefault();
+        const next = drafts[Math.min(idx + 1, drafts.length - 1)];
+        if (next) setFocusedId(next.id);
+      } else if (k === "arrowleft") {
+        ev.preventDefault();
+        const prev = drafts[Math.max(idx - 1, 0)];
+        if (prev) setFocusedId(prev.id);
+      } else if (k === "a" && cur) {
+        ev.preventDefault();
+        handleQuickApprove(cur);
+      } else if (k === "d" && cur) {
+        ev.preventDefault();
+        handleQuickApprove(cur, { featured: true });
+      } else if (k === "u" && cur) {
+        ev.preventDefault();
+        handleQuickApprove(cur, { auraPick: true });
+      } else if (k === "x" && cur) {
+        ev.preventDefault();
+        handleArchive(cur);
+      } else if (k === "r" && cur) {
+        ev.preventDefault();
+        navigate(getEventEditPath(cur.id));
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triageMode, focusedId, events, search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter]);
+
   async function loadEvents() {
     setLoading(true);
     let query = supabase
