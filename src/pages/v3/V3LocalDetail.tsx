@@ -481,6 +481,8 @@ export default function V3LocalDetail() {
           </a>
         )}
 
+        <AuraVenueInsights partner={partner} events={events} />
+
         {partner.latitude != null && partner.longitude != null && (
           <div className="space-y-2">
             <h2 className="font-display font-bold text-base text-foreground">Localização</h2>
