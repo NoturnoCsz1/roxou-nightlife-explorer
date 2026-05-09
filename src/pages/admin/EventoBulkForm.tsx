@@ -157,6 +157,52 @@ const EventoBulkForm = () => {
   }
   const duplicateIds = getDuplicateSet();
 
+  /**
+   * Validação inteligente (aditiva): score 0–100 por item, comparando
+   * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
+   */
+  const smartDuplicates = (() => {
+    const map = new Map<string, DuplicateResult>();
+    if (!dbEvents.length) return map;
+    const existing: ExistingEvent[] = dbEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      date_time: e.date_time,
+      venue_name: e.venue_name,
+      image_hash: e.image_hash,
+      slug: e.slug,
+    }));
+    for (const it of items) {
+      if (!it.form.title || !it.form.date_time) continue;
+      const result = findPossibleDuplicateEvent(
+        {
+          id: undefined,
+          title: it.form.title,
+          date_time: it.form.date_time,
+          venue_name: it.form.venue_name,
+          address: it.form.address,
+          instagram: it.form.instagram,
+          partner_id: it.form.partner_id || null,
+          image_hash: it.form.image_hash,
+        },
+        existing,
+      );
+      if (result.level !== "none") {
+        map.set(it.localId, result);
+        // Log discreto, sem quebrar fluxo
+        console.warn("[DuplicateEventCheck]", {
+          localId: it.localId,
+          title: it.form.title,
+          score: result.duplicate_score,
+          level: result.level,
+          matched: result.matched_event_title,
+          fields: result.matched_fields,
+        });
+      }
+    }
+    return map;
+  })();
+
   function patchItem(localId: string, patch: Partial<BulkItem>) {
     setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
   }
