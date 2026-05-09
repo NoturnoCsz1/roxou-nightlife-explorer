@@ -584,9 +584,24 @@ const EventosList = () => {
               placeholder="Local"
               className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground min-w-[100px]"
             />
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
-              {e.status === "published" ? "Publicado" : "Rascunho"}
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : e.status === "archived" ? "text-muted-foreground bg-muted/20" : "text-yellow-400 bg-yellow-400/10"}`}>
+              {e.status === "published" ? "Publicado" : e.status === "archived" ? "🗃 Arquivado" : "Rascunho"}
             </span>
+            {e.aura_badge === "em_alta" && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30 inline-flex items-center gap-0.5">
+                🔥 Em alta
+              </span>
+            )}
+            {e.aura_badge === "viralizando" && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30 inline-flex items-center gap-0.5">
+                🚀 Viralizando
+              </span>
+            )}
+            {e.aura_badge === "bombando" && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30 inline-flex items-center gap-0.5">
+                💥 Bombando
+              </span>
+            )}
             {e.aura_pick && (
               <span title="Aura recomenda este evento como destaque do dia" className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/25 text-primary border border-primary/40 inline-flex items-center gap-0.5">
                 <Bot className="h-2.5 w-2.5" /> Escolha da Aura
