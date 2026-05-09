@@ -196,7 +196,7 @@ export default function V3LocalDetail() {
   };
 
   return (
-    <div className="pb-8">
+    <div className={whatsappUrl ? "pb-8 lg:pb-8 [padding-bottom:calc(env(safe-area-inset-bottom)+88px)] lg:[padding-bottom:2rem]" : "pb-8"}>
       <SEO
         title={seoTitle}
         description={seoDescription}
