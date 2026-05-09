@@ -34,6 +34,7 @@ import MostViewedNews from "@/components/v3/home/MostViewedNews";
 import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
+import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 
 // Wrapper que injeta PremiumEventCard (definido abaixo neste arquivo) no TodayTimeline extraído.
 const TodayTimeline = (props: Omit<React.ComponentProps<typeof TodayTimelineRaw>, "Card">) => (
