@@ -48,6 +48,7 @@ const EventoBulkForm = lazy(() => import("./pages/admin/EventoBulkForm"));
 const Sugestoes = lazy(() => import("./pages/admin/Sugestoes"));
 const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
 const InstagramAdminPage = lazy(() => import("./pages/admin/InstagramAdmin"));
+const RadarIA = lazy(() => import("./pages/admin/RadarIA"));
 const Editores = lazy(() => import("./pages/admin/Editores"));
 const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
 const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
