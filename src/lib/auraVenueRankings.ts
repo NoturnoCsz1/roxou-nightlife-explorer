@@ -64,8 +64,15 @@ export function buildAuraVenueRankings(input: RankingInput): RankingBadge[] {
   const insights = buildAuraVenueInsights({ partner: input.partner, events: input.events });
   const pricing = buildAuraVenuePricing({ partner: input.partner, events: input.events });
 
-  const eventsToday = input.events.filter((e) => e.date_time && isTodaySP(e.date_time));
-  const eventsTomorrow = input.events.filter((e) => e.date_time && isTomorrowSP(e.date_time));
+  const toDate = (s?: string | null) => (s ? new Date(s) : null);
+  const eventsToday = input.events.filter((e) => {
+    const d = toDate(e.date_time);
+    return d && !Number.isNaN(d.getTime()) && isTodaySP(d);
+  });
+  const eventsTomorrow = input.events.filter((e) => {
+    const d = toDate(e.date_time);
+    return d && !Number.isNaN(d.getTime()) && isTomorrowSP(d);
+  });
 
   // 🔥 Em alta hoje
   if (eventsToday.length >= 1 || input.viewCount >= TRENDING_VIEW_THRESHOLD) {
