@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +58,14 @@ export default function V3LocalDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { isFollowed, toggleFollow } = useSavedPartners();
+  const [showStickyCta, setShowStickyCta] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowStickyCta(window.scrollY > 120);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const { data: partner } = useQuery({
     queryKey: ["v3-partner", slug],
@@ -188,7 +196,7 @@ export default function V3LocalDetail() {
   };
 
   return (
-    <div className="pb-8">
+    <div className={whatsappUrl ? "pb-8 lg:pb-8 [padding-bottom:calc(env(safe-area-inset-bottom)+88px)] lg:[padding-bottom:2rem]" : "pb-8"}>
       <SEO
         title={seoTitle}
         description={seoDescription}
@@ -458,6 +466,57 @@ export default function V3LocalDetail() {
           )}
         </div>
       </div>
+
+      {/* Sticky mobile CTA — premium glass bar */}
+      {whatsappUrl && (
+        <div
+          className={`lg:hidden fixed inset-x-0 bottom-0 z-40 transition-all duration-300 ease-out ${
+            showStickyCta ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+          }`}
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="mx-3 mb-3 rounded-2xl v3-glass border border-primary/30 shadow-[0_8px_32px_-8px_hsl(var(--primary)/0.5)] backdrop-blur-xl px-3 py-2.5 flex items-center gap-2.5">
+            {partner.logo_url ? (
+              <img src={partner.logo_url} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-base font-display font-bold text-primary shrink-0">
+                {partner.name[0]}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground truncate">{partner.name}</p>
+              <p className={`text-[10px] font-semibold ${operatingStatus.tone} truncate`}>{operatingStatus.label}</p>
+            </div>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                try {
+                  trackEvent({
+                    event_type: "whatsapp_click",
+                    venue_id: partner.id,
+                    city: partner.city || null,
+                    category: partner.type || null,
+                    metadata: {
+                      slug: partner.slug,
+                      name: partner.name,
+                      target_url: whatsappUrl,
+                      channel: "whatsapp",
+                      source: "sticky_cta",
+                    },
+                  });
+                } catch {}
+                import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl gradient-primary text-primary-foreground text-xs font-extrabold neon-glow shrink-0"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Reservar
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
