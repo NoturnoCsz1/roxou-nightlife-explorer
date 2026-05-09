@@ -86,7 +86,7 @@ function Body({
       <div className="flex items-center gap-3">
         {imageUrl && (
           <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 v3-glass">
-            <img src={imageUrl} alt={eventTitle} className="w-full h-full object-cover" />
+            <img src={imageUrl} alt={eventTitle} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           </div>
         )}
         <div className="min-w-0 flex-1">
