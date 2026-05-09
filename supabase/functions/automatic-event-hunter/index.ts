@@ -241,6 +241,8 @@ Deno.serve(async (req) => {
                 scan_count: (existingScan.scan_count || 1) + 1,
               })
               .eq("id", existingScan.id);
+            // Reencontro: se já está publicado, contabiliza repost
+            try { await supabase.rpc("record_radar_repost", { _scan_id: existingScan.id }); } catch {}
             stats.skipped_duplicate++;
             stats.updated_existing++;
             continue;
