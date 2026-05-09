@@ -33,6 +33,7 @@ import ExpoHighlightBanner from "@/components/v3/home/ExpoHighlightBanner";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
+import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 
 /* ───── helpers ───── */
 const isValidDate = (d: Date) => !Number.isNaN(d.getTime());
