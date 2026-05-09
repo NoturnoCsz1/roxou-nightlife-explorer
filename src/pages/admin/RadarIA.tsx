@@ -388,8 +388,28 @@ const RadarIA = () => {
                       </span>
                     )}
                     {cat === "ignored" && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                        Ignorado
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+                        <Ban className="h-3 w-3" /> Ignorado
+                      </span>
+                    )}
+                    {c.scan.repost_count > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 flex items-center gap-1">
+                        <Repeat2 className="h-3 w-3" /> Repostado ×{c.scan.repost_count}
+                      </span>
+                    )}
+                    {c.scan.first_published_at && cat !== "approved" && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40 flex items-center gap-1">
+                        <Pin className="h-3 w-3" /> Já publicado
+                      </span>
+                    )}
+                    {c.scan.scan_count > 1 && c.scan.repost_count === 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+                        ♻️ Reencontrado ×{c.scan.scan_count}
+                      </span>
+                    )}
+                    {c.scan.hidden_from_radar && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-zinc-600/30 text-zinc-300 border border-zinc-500/40 flex items-center gap-1">
+                        <Archive className="h-3 w-3" /> Arquivado
                       </span>
                     )}
                   </div>
