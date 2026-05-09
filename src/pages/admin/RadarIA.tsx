@@ -294,14 +294,22 @@ const RadarIA = () => {
               Duplicidade bloqueada por <code className="text-primary/80">media_id</code>, permalink e dedupe_key.
             </p>
           </div>
-          <button
-            onClick={triggerScan}
-            disabled={scanning}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 disabled:opacity-50 transition-all"
-          >
-            {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            {scanning ? "Varrendo..." : "Disparar varredura agora"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={runRetention}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold hover:bg-muted/40"
+            >
+              <History className="h-4 w-4" /> Aplicar retenção
+            </button>
+            <button
+              onClick={triggerScan}
+              disabled={scanning}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {scanning ? "Varrendo..." : "Disparar varredura agora"}
+            </button>
+          </div>
         </div>
       </div>
 
