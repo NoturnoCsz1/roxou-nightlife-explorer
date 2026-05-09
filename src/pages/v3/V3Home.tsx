@@ -390,7 +390,7 @@ export default function V3Home() {
           {hasHomeDataError ? (
             <HomeDataFallback />
           ) : !isLoading ? (
-            <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+            <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} Timeline={TodayTimeline} EmptyState={TodayEmptyState} />
           ) : null}
         </HomeSectionBoundary>
       </div>
