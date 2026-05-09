@@ -780,6 +780,7 @@ export type Database = {
           city: string
           created_at: string
           date_time: string
+          dedupe_key: string | null
           description: string | null
           featured: boolean
           id: string
@@ -809,6 +810,7 @@ export type Database = {
           city?: string
           created_at?: string
           date_time: string
+          dedupe_key?: string | null
           description?: string | null
           featured?: boolean
           id?: string
@@ -838,6 +840,7 @@ export type Database = {
           city?: string
           created_at?: string
           date_time?: string
+          dedupe_key?: string | null
           description?: string | null
           featured?: boolean
           id?: string
@@ -1155,6 +1158,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      instagram_scans: {
+        Row: {
+          ai_confidence: string | null
+          created_at: string
+          dedupe_key: string | null
+          duplicate_of_event_id: string | null
+          event_id: string | null
+          extracted_json: Json | null
+          id: string
+          keywords: string[] | null
+          last_seen_at: string
+          media_id: string
+          partner_id: string | null
+          permalink: string | null
+          raw_caption: string | null
+          raw_ocr: string | null
+          reason: string | null
+          scan_count: number
+          source_handle: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ai_confidence?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          duplicate_of_event_id?: string | null
+          event_id?: string | null
+          extracted_json?: Json | null
+          id?: string
+          keywords?: string[] | null
+          last_seen_at?: string
+          media_id: string
+          partner_id?: string | null
+          permalink?: string | null
+          raw_caption?: string | null
+          raw_ocr?: string | null
+          reason?: string | null
+          scan_count?: number
+          source_handle?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_confidence?: string | null
+          created_at?: string
+          dedupe_key?: string | null
+          duplicate_of_event_id?: string | null
+          event_id?: string | null
+          extracted_json?: Json | null
+          id?: string
+          keywords?: string[] | null
+          last_seen_at?: string
+          media_id?: string
+          partner_id?: string | null
+          permalink?: string | null
+          raw_caption?: string | null
+          raw_ocr?: string | null
+          reason?: string | null
+          scan_count?: number
+          source_handle?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       launch_signups: {
         Row: {
