@@ -272,7 +272,7 @@ export default function V3Profile() {
                 className="group w-[78px] shrink-0 text-center">
                 <div className="mx-auto mb-2 h-16 w-16 overflow-hidden rounded-full border border-border/50 bg-secondary transition-all group-hover:border-primary/50 group-hover:shadow-[0_0_22px_hsl(var(--primary)/0.25)]">
                   {p.logo_url ? (
-                    <img src={p.logo_url} alt={p.name} className="w-full h-full object-cover" />
+                    <img src={p.logo_url} alt={p.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-primary font-bold text-lg">{p.name[0]}</div>
                   )}
