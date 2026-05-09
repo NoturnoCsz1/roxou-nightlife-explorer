@@ -74,7 +74,7 @@ export default function AuraCommand() {
 
   async function load() {
     setLoading(true);
-    const todayIso = getStartOfTodaySP().toISOString();
+    const todayIso = getStartOfTodaySP();
 
     const [
       alertsRes,
