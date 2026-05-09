@@ -477,6 +477,57 @@ const InstagramAdmin = () => {
                 )}
               </div>
             </div>
+
+            {/* Feed real do Instagram (Meta API) */}
+            {account && (
+              <div className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <Instagram className="h-3.5 w-3.5" /> Feed @{account.username}
+                  </h2>
+                  {syncStage === "loading" && (
+                    <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando…
+                    </span>
+                  )}
+                </div>
+                {syncStage === "loading" && !syncData ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {Array.from({ length: 9 }).map((_, i) => (
+                      <div key={i} className="aspect-square rounded-sm bg-muted/20 animate-pulse" />
+                    ))}
+                  </div>
+                ) : syncData?.media?.length ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {syncData.media.slice(0, 9).map((m) => (
+                      <a
+                        key={m.id}
+                        href={m.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative aspect-square overflow-hidden rounded-sm bg-muted/10"
+                      >
+                        <img
+                          src={m.thumbnail_url || m.media_url}
+                          alt={m.caption?.slice(0, 40) || "post"}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-1.5 gap-2 text-white text-[9px] font-bold">
+                          <span className="inline-flex items-center gap-0.5"><Heart className="h-2.5 w-2.5" />{fmtNum(m.like_count || 0)}</span>
+                          <span className="inline-flex items-center gap-0.5"><MessageCircle className="h-2.5 w-2.5" />{fmtNum(m.comments_count || 0)}</span>
+                          <ExternalLink className="h-2.5 w-2.5 ml-auto" />
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground text-center py-4">
+                    Nenhum post sincronizado ainda. Clique em "Sincronizar agora".
+                  </p>
+                )}
+              </div>
+            )}
             </div>
           )}
 
