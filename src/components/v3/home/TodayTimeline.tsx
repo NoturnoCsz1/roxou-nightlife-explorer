@@ -2,7 +2,12 @@ import type { ComponentType } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toSafeDate } from "@/lib/dateUtils";
+import { isValid as isValidDate } from "date-fns";
+
+const toSafeDate = (d?: string | null) => {
+  const parsed = new Date(d || "");
+  return isValidDate(parsed) ? parsed : null;
+};
 
 /**
  * TodayTimeline + TodayEmptyState — extraídos de V3Home.tsx para reduzir
