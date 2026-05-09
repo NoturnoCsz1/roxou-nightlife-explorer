@@ -68,7 +68,7 @@ export default function V3Economize() {
             <article key={op.id} className={`rounded-3xl v3-glass p-4 overflow-hidden ${op.featured ? "v3-pulse-glow" : ""}`}>
               <div className="flex gap-3">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-secondary flex items-center justify-center">
-                  {op.image_url || op.partners?.logo_url ? <img src={op.image_url || op.partners.logo_url} alt={op.title} className="h-full w-full object-cover" /> : <BadgePercent className="h-7 w-7 text-primary" />}
+                  {op.image_url || op.partners?.logo_url ? <img src={op.image_url || op.partners.logo_url} alt={op.title} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : <BadgePercent className="h-7 w-7 text-primary" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 mb-1">
