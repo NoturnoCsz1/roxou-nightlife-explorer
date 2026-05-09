@@ -1119,13 +1119,13 @@ export async function renderStoryV3(
   const W = 1080, H = 1920;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d")!;
-  const PAD = 64;
+  const PAD = 80; // mais respiro lateral
 
-  // 1) Solid dark base
+  // 1) Solid dark base (fallback se não tiver imagem)
   ctx.fillStyle = STORY_BG;
   ctx.fillRect(0, 0, W, H);
 
-  // 2) Event flyer as MAIN BACKGROUND — protagonist, light blur (~15%)
+  // 2) FLYER COMO PROTAGONISTA — sem blur, contraste preservado
   if (event.image_url) {
     const img = await tryLoadImage(event.image_url);
     if (img) {
@@ -1135,56 +1135,74 @@ export async function renderStoryV3(
       if (imgR > canR) { sw = img.height * canR; sx = (img.width - sw) / 2; }
       else { sh = img.width / canR; sy = (img.height - sh) / 2; }
       ctx.save();
-      ctx.filter = "blur(3px) brightness(0.92)";
+      // Praticamente sem blur, brilho total — o flyer é o herói
+      ctx.filter = "blur(0.6px) brightness(1.0) saturate(1.05)";
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
       ctx.filter = "none";
       ctx.restore();
     }
   }
 
-  // 3) Vignette: gradient bottom-to-top (black 80% → transparent at top)
+  // 3) Gradiente cinematográfico apenas na BASE (preserva o centro/artista)
   const pg = ctx.createLinearGradient(0, H, 0, 0);
-  pg.addColorStop(0, "rgba(0,0,0,0.82)");
-  pg.addColorStop(0.35, "rgba(0,0,0,0.45)");
-  pg.addColorStop(0.7, "rgba(0,0,0,0.12)");
+  pg.addColorStop(0, "rgba(0,0,0,0.88)");
+  pg.addColorStop(0.30, "rgba(0,0,0,0.45)");
+  pg.addColorStop(0.60, "rgba(0,0,0,0.12)");
   pg.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = pg;
   ctx.fillRect(0, 0, W, H);
 
-  // Slight top darkening just behind badge
-  const tg = ctx.createLinearGradient(0, 0, 0, 280);
-  tg.addColorStop(0, "rgba(0,0,0,0.55)");
+  // Top fade muito leve só atrás do badge (não escurece o flyer)
+  const tg = ctx.createLinearGradient(0, 0, 0, 240);
+  tg.addColorStop(0, "rgba(0,0,0,0.42)");
   tg.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = tg;
-  ctx.fillRect(0, 0, W, 280);
+  ctx.fillRect(0, 0, W, 240);
+
+  // Vinheta cinematográfica suave nos cantos
+  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.75);
+  vg.addColorStop(0, "rgba(0,0,0,0)");
+  vg.addColorStop(1, "rgba(0,0,0,0.32)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Glow roxo cinematográfico discreto na base
+  const purpleGlow = ctx.createRadialGradient(W / 2, H - 200, 0, W / 2, H - 200, W * 0.7);
+  purpleGlow.addColorStop(0, "rgba(168,85,247,0.18)");
+  purpleGlow.addColorStop(1, "rgba(168,85,247,0)");
+  ctx.fillStyle = purpleGlow;
+  ctx.fillRect(0, 0, W, H);
 
   drawGrain(ctx, W, H);
 
-  // 4) Neon side frames — 2px vertical lines, #A855F7
+  // 4) Frames laterais neon — mais sutis
   ctx.save();
-  ctx.strokeStyle = "#A855F7";
-  ctx.lineWidth = 2;
-  ctx.shadowColor = "rgba(168,85,247,0.85)";
-  ctx.shadowBlur = 18;
+  ctx.strokeStyle = "rgba(168,85,247,0.85)";
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = "rgba(168,85,247,0.6)";
+  ctx.shadowBlur = 14;
   ctx.beginPath();
   ctx.moveTo(1, 0); ctx.lineTo(1, H);
   ctx.moveTo(W - 1, 0); ctx.lineTo(W - 1, H);
   ctx.stroke();
   ctx.restore();
 
-  // 5) Top badge — glass "💜 AURA INDICA", upper-left safe area
+  // 5) Badge superior "💜 AURA INDICA" — glass premium
   const badgeText = "💜 AURA INDICA";
   ctx.save();
-  ctx.font = "700 26px sans-serif";
-  const bw = ctx.measureText(badgeText).width + 44;
-  const bh = 56;
+  ctx.font = "700 24px sans-serif";
+  const bw = ctx.measureText(badgeText).width + 42;
+  const bh = 52;
   const bx = PAD;
-  const by = PAD + 24;
-  ctx.fillStyle = "rgba(20,10,35,0.55)";
+  const by = PAD + 16;
+  ctx.shadowColor = "rgba(168,85,247,0.4)";
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = "rgba(20,10,35,0.42)";
   roundRect(ctx, bx, by, bw, bh, bh / 2);
   ctx.fill();
-  ctx.strokeStyle = "rgba(168,85,247,0.7)";
-  ctx.lineWidth = 1.2;
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(168,85,247,0.55)";
+  ctx.lineWidth = 1;
   roundRect(ctx, bx, by, bw, bh, bh / 2);
   ctx.stroke();
   ctx.fillStyle = "#ffffff";
@@ -1193,43 +1211,49 @@ export async function renderStoryV3(
   ctx.fillText(badgeText, bx + bw / 2, by + bh / 2 + 1);
   ctx.restore();
 
-  // 6) Title — bottom-left area, dynamic font-size, max 3 lines, never clips
+  // 6) TÍTULO — peso reduzido, hierarquia mais elegante
   const titleMaxW = W - PAD * 2;
   ctx.save();
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
-  let titleSize = 96;
+  let titleSize = 78; // reduzido de 96
   let titleLines: string[] = [];
-  for (; titleSize >= 56; titleSize -= 4) {
-    ctx.font = `900 ${titleSize}px sans-serif`;
+  for (; titleSize >= 48; titleSize -= 4) {
+    ctx.font = `800 ${titleSize}px sans-serif`;
     const lines = wrapText(ctx, event.title, titleMaxW);
-    if (lines.length <= 3 && lines.every(l => ctx.measureText(l).width <= titleMaxW)) {
+    if (lines.length <= 2 && lines.every(l => ctx.measureText(l).width <= titleMaxW)) {
       titleLines = lines;
       break;
     }
   }
   if (!titleLines.length) {
-    ctx.font = `900 ${titleSize}px sans-serif`;
-    titleLines = wrapText(ctx, event.title, titleMaxW).slice(0, 3);
-    let last = titleLines[2] || "";
-    while (ctx.measureText(last + "…").width > titleMaxW && last.length > 4) last = last.slice(0, -2);
-    if (titleLines[2]) titleLines[2] = last.trim() + "…";
+    // Permite até 3 linhas mas com peso menor
+    for (titleSize = 64; titleSize >= 44; titleSize -= 3) {
+      ctx.font = `800 ${titleSize}px sans-serif`;
+      const lines = wrapText(ctx, event.title, titleMaxW);
+      if (lines.length <= 3) { titleLines = lines; break; }
+    }
+    if (!titleLines.length) {
+      ctx.font = `800 ${titleSize}px sans-serif`;
+      titleLines = wrapText(ctx, event.title, titleMaxW).slice(0, 3);
+      let last = titleLines[2] || "";
+      while (ctx.measureText(last + "…").width > titleMaxW && last.length > 4) last = last.slice(0, -2);
+      if (titleLines[2]) titleLines[2] = last.trim() + "…";
+    }
   }
-  const lineH = Math.round(titleSize * 1.08);
-  // Title positioned above info card + CTA stack
+  ctx.font = `800 ${titleSize}px sans-serif`;
+  const lineH = Math.round(titleSize * 1.05); // line-height mais apertado
   const titleBlockH = titleLines.length * lineH;
-  const titleY = H - 130 - 124 - 40 - 130 - titleBlockH; // CTA bottom margin + CTA + gap + infocard + gap
+  const titleY = H - 130 - 124 - 36 - 110 - 28 - titleBlockH;
+  // Sombra mais leve — não cria bloco escuro atrás do texto
   ctx.fillStyle = "#FFFFFF";
-  // Double-pass shadow for legibility on bright flyers
-  ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur = 28;
-  titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * lineH));
-  ctx.shadowColor = "rgba(0,0,0,0.55)";
-  ctx.shadowBlur = 8;
+  ctx.shadowColor = "rgba(0,0,0,0.65)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 2;
   titleLines.forEach((l, i) => ctx.fillText(l, PAD, titleY + i * lineH));
   ctx.restore();
 
-  // 7) Info card — single glass row, icons + text, left aligned
+  // 7) INFO CARD — glassmorphism premium, leve
   const d = new Date(event.date_time);
   const months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
   const weekdays = ["DOM","SEG","TER","QUA","QUI","SEX","SÁB"];
@@ -1243,28 +1267,32 @@ export async function renderStoryV3(
   ];
   if (event.venue_name) segments.push({ icon: "📍", text: event.venue_name });
 
-  const cardH = 78;
+  const cardH = 70; // mais leve
   const cardX = PAD;
-  const cardY = H - 130 - 124 - 40 - cardH; // above CTA
+  const cardY = H - 130 - 124 - 36 - cardH;
   const cardW = W - PAD * 2;
 
   ctx.save();
-  ctx.fillStyle = "rgba(15,10,25,0.55)";
-  roundRect(ctx, cardX, cardY, cardW, cardH, 18);
+  // Glow sutil atrás do card
+  ctx.shadowColor = "rgba(168,85,247,0.25)";
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = "rgba(10,5,20,0.32)";
+  roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.fill();
-  ctx.strokeStyle = "rgba(168,85,247,0.35)";
-  ctx.lineWidth = 1.2;
-  roundRect(ctx, cardX, cardY, cardW, cardH, 18);
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(255,255,255,0.10)";
+  ctx.lineWidth = 1;
+  roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.stroke();
   ctx.restore();
 
-  // Render segments with separators, auto-shrinking text if needed
+  // Texto do info card
   ctx.save();
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
   const ry = cardY + cardH / 2;
   const sepW = 18;
-  let textSize = 26;
+  let textSize = 24;
   const measure = (size: number) => {
     ctx.font = `600 ${size}px sans-serif`;
     let total = 0;
@@ -1275,7 +1303,6 @@ export async function renderStoryV3(
     return total;
   };
   while (textSize > 16 && measure(textSize) > cardW - 40) textSize -= 1;
-  // Truncate venue if still overflowing
   if (measure(textSize) > cardW - 40 && segments[2]) {
     while (measure(textSize) > cardW - 40 && segments[2].text.length > 6) {
       segments[2].text = segments[2].text.slice(0, -2);
@@ -1292,44 +1319,53 @@ export async function renderStoryV3(
     ctx.fillText(s.text, cx, ry);
     cx += ctx.measureText(s.text).width;
     if (i < segments.length - 1) {
-      ctx.fillStyle = "rgba(168,85,247,0.55)";
+      ctx.fillStyle = "rgba(168,85,247,0.45)";
       ctx.fillText("|", cx + 8, ry);
       cx += sepW + 16;
     }
   });
   ctx.restore();
 
-  // 8) CTA — radial purple→indigo gradient, neon glow, glass border
+  // 8) CTA — premium com glow neon roxo refinado
   const ctaText = "🔥 VEJA MAIS EM ROXOU.COM.BR";
   const safeW = W - PAD * 2;
-  const ctaW = Math.round(safeW * 0.85);
-  const ctaH = 124;
+  const ctaW = Math.round(safeW * 0.92);
+  const ctaH = 118;
   const ctaX = (W - ctaW) / 2;
   const ctaYpos = H - ctaH - 130;
 
   ctx.save();
-  // Strong neon halo
-  ctx.shadowColor = "rgba(168,85,247,0.6)";
-  ctx.shadowBlur = 25;
-  const rg = ctx.createRadialGradient(
-    ctaX + ctaW / 2, ctaYpos + ctaH / 2, ctaH * 0.2,
-    ctaX + ctaW / 2, ctaYpos + ctaH / 2, ctaW * 0.7
-  );
-  rg.addColorStop(0, "#9333EA");   // purple-600
-  rg.addColorStop(1, "#4338CA");   // indigo-700
-  ctx.fillStyle = rg;
+  // Halo neon premium
+  ctx.shadowColor = "rgba(168,85,247,0.55)";
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetY = 4;
+  // Gradiente refinado horizontal Roxou
+  const ctaGrad = ctx.createLinearGradient(ctaX, ctaYpos, ctaX + ctaW, ctaYpos + ctaH);
+  ctaGrad.addColorStop(0, "#A855F7");
+  ctaGrad.addColorStop(0.5, "#9333EA");
+  ctaGrad.addColorStop(1, "#6D28D9");
+  ctx.fillStyle = ctaGrad;
   roundRect(ctx, ctaX, ctaYpos, ctaW, ctaH, ctaH / 2);
   ctx.fill();
   ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
 
-  // Glass border 1.5px white @ 30%
-  ctx.strokeStyle = "rgba(255,255,255,0.3)";
-  ctx.lineWidth = 1.5;
+  // Inner highlight (glass top)
+  const innerGrad = ctx.createLinearGradient(0, ctaYpos, 0, ctaYpos + ctaH / 2);
+  innerGrad.addColorStop(0, "rgba(255,255,255,0.18)");
+  innerGrad.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = innerGrad;
+  roundRect(ctx, ctaX + 2, ctaYpos + 2, ctaW - 4, ctaH / 2, ctaH / 2);
+  ctx.fill();
+
+  // Borda glass branca
+  ctx.strokeStyle = "rgba(255,255,255,0.28)";
+  ctx.lineWidth = 1.4;
   roundRect(ctx, ctaX + 1, ctaYpos + 1, ctaW - 2, ctaH - 2, (ctaH - 2) / 2);
   ctx.stroke();
 
-  // CTA text — auto fit
-  let ctaSize = 40;
+  // Texto CTA
+  let ctaSize = 38;
   ctx.font = `900 ${ctaSize}px sans-serif`;
   while (ctx.measureText(ctaText).width > ctaW - 60 && ctaSize > 22) {
     ctaSize -= 1;
@@ -1338,13 +1374,15 @@ export async function renderStoryV3(
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 6;
   ctx.fillText(ctaText.toUpperCase(), W / 2, ctaYpos + ctaH / 2 + 2);
   ctx.restore();
 
-  // 9) Footer — roxou.com.br at 50% opacity
+  // 9) Footer
   ctx.save();
   ctx.font = "500 22px sans-serif";
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.textAlign = "center";
   ctx.textBaseline = "bottom";
   ctx.fillText("roxou.com.br", W / 2, H - 48);
