@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap, Pencil, Check, X } from "lucide-react";
+import { Instagram, Loader2, Link2, Send, FileText, CheckCircle2, XCircle, Plus, Copy, RefreshCw, AlertTriangle, Sparkles, Users, Eye, Heart, Calendar, Image as ImageIcon, Zap, MessageCircle, ExternalLink, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import InstagramContentGenerator from "@/components/admin/InstagramContentGenerator";
@@ -187,35 +187,63 @@ const InstagramAdmin = () => {
   const tokenExpiry = account?.token_expires_at ? new Date(account.token_expires_at) : null;
   const tokenExpiresSoon = tokenExpiry && tokenExpiry.getTime() - Date.now() < 7 * 86400000;
 
-  // Manual metrics (sem integração Meta) — persistidos em localStorage
-  const METRICS_KEY = "roxou:ig:manual-metrics";
-  const [manualMetrics, setManualMetrics] = useState<{ followers: number; reach: number; engagement: number; updatedAt: string | null }>(() => {
-    if (typeof window === "undefined") return { followers: 0, reach: 0, engagement: 0, updatedAt: null };
-    try {
-      const raw = localStorage.getItem(METRICS_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return { followers: 0, reach: 0, engagement: 0, updatedAt: null };
-  });
-  const [editMetrics, setEditMetrics] = useState(false);
-  const [draftMetrics, setDraftMetrics] = useState(manualMetrics);
+  // Sincronização automática com Meta API
+  const [syncing, setSyncing] = useState(false);
+  const [syncData, setSyncData] = useState<{
+    profile: { followers_count: number; media_count: number; profile_picture_url?: string; biography?: string; name?: string };
+    metrics: { followers: number; media_count: number; reach_7d: number; impressions_7d: number; profile_views_7d: number; engagement_recent: number };
+    media: Array<{ id: string; caption?: string; media_type: string; media_url?: string; thumbnail_url?: string; permalink?: string; timestamp: string; like_count?: number; comments_count?: number }>;
+    synced_at: string;
+  } | null>(null);
+  const [syncStage, setSyncStage] = useState<"idle" | "loading" | "ok" | "token_expired" | "error">("idle");
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const syncIntervalRef = useRef<number | null>(null);
 
-  function openEditMetrics() {
-    setDraftMetrics(manualMetrics);
-    setEditMetrics(true);
+  async function syncInstagramData(silent = false) {
+    if (!silent) setSyncing(true);
+    setSyncStage("loading");
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=sync`,
+        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+      );
+      const result = await res.json();
+      if (result.ok) {
+        setSyncData(result);
+        setSyncStage("ok");
+        setSyncError(null);
+        if (!silent) toast.success("Dados sincronizados com a Meta");
+      } else {
+        setSyncStage(result.stage === "token_expired" ? "token_expired" : "error");
+        setSyncError(result.message || "Falha ao sincronizar");
+        if (!silent) toast.error("Falha na sincronização", { description: result.message });
+      }
+    } catch (err: any) {
+      setSyncStage("error");
+      setSyncError(err.message);
+      if (!silent) toast.error("Erro ao sincronizar", { description: err.message });
+    } finally {
+      setSyncing(false);
+    }
   }
-  function saveMetrics() {
-    const next = {
-      followers: Number(draftMetrics.followers) || 0,
-      reach: Number(draftMetrics.reach) || 0,
-      engagement: Number(draftMetrics.engagement) || 0,
-      updatedAt: new Date().toISOString(),
+
+  // Auto-sync quando há conta ativa: imediato + a cada 5 min
+  useEffect(() => {
+    if (!account) return;
+    syncInstagramData(true);
+    syncIntervalRef.current = window.setInterval(() => syncInstagramData(true), 5 * 60 * 1000);
+    return () => {
+      if (syncIntervalRef.current) window.clearInterval(syncIntervalRef.current);
     };
-    setManualMetrics(next);
-    try { localStorage.setItem(METRICS_KEY, JSON.stringify(next)); } catch {}
-    setEditMetrics(false);
-    toast.success("Métricas atualizadas");
-  }
+  }, [account?.id]);
+
+  const fmtNum = (n: number) => (n || 0).toLocaleString("pt-BR");
+  const lastSyncLabel = syncData?.synced_at
+    ? new Date(syncData.synced_at).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })
+    : null;
+
+  const isOnline = !!account && syncStage === "ok";
+  const isTokenExpired = syncStage === "token_expired";
 
   return (
     <div className="space-y-4 md:ml-44">
@@ -228,89 +256,99 @@ const InstagramAdmin = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-foreground">Instagram</h1>
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 border border-green-500/30 px-2 py-0.5 text-[9px] font-bold text-green-400 uppercase tracking-wider">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                  isOnline
+                    ? "bg-green-500/10 border-green-500/30 text-green-400"
+                    : isTokenExpired
+                    ? "bg-destructive/10 border-destructive/30 text-destructive"
+                    : "bg-muted/20 border-border/30 text-muted-foreground"
+                }`}
+              >
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                  {isOnline && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
+                      isOnline ? "bg-green-500" : isTokenExpired ? "bg-destructive" : "bg-muted-foreground"
+                    }`}
+                  ></span>
                 </span>
-                Online & Automatizado
+                {isOnline ? "Meta sincronizada" : isTokenExpired ? "Reconectar Meta" : "Aguardando Meta"}
               </span>
             </div>
-            <p className="text-[10px] text-muted-foreground">Centro de operações de conteúdo ROXOU</p>
+            <p className="text-[10px] text-muted-foreground">
+              {syncStage === "loading"
+                ? "Sincronizando com Meta…"
+                : lastSyncLabel
+                ? `Última sincronização automática: ${lastSyncLabel}`
+                : "Centro de operações de conteúdo ROXOU"}
+            </p>
           </div>
         </div>
-        <button onClick={loadData} className="text-muted-foreground hover:text-foreground">
-          <RefreshCw className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Manual metrics bar */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-            <Pencil className="h-3 w-3" /> Modo manual ativo
-          </span>
-          {manualMetrics.updatedAt && (
-            <span className="text-[10px] text-muted-foreground">
-              Atualizado em {new Date(manualMetrics.updatedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-            </span>
-          )}
+          <button
+            onClick={() => syncInstagramData(false)}
+            disabled={syncing || !account}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/20 transition disabled:opacity-50"
+          >
+            {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            Sincronizar agora
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={openEditMetrics}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/20 transition"
-        >
-          <RefreshCw className="h-3 w-3" /> Atualizar dados
-        </button>
       </div>
 
-      {/* Quick metrics */}
-      <div className="grid grid-cols-3 gap-2">
-        <MetricCard icon={Users} label="Seguidores" value={manualMetrics.followers.toLocaleString("pt-BR")} hint={account ? `@${account.username}` : "Manual"} />
-        <MetricCard icon={Eye} label="Alcance 7d" value={manualMetrics.reach.toLocaleString("pt-BR")} hint="Manual" />
-        <MetricCard icon={Heart} label="Engajamento" value={manualMetrics.engagement.toLocaleString("pt-BR")} hint="Manual" />
-      </div>
-
-      {/* Edit metrics modal */}
-      {editMetrics && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={() => setEditMetrics(false)}>
-          <div className="w-full max-w-sm rounded-2xl border border-border/40 bg-card p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-foreground">Atualizar dados manuais</h3>
-              <button type="button" onClick={() => setEditMetrics(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {[
-                { key: "followers", label: "Seguidores" },
-                { key: "reach", label: "Alcance 7 dias" },
-                { key: "engagement", label: "Engajamento" },
-              ].map((f) => (
-                <div key={f.key} className="space-y-1">
-                  <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">{f.label}</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={(draftMetrics as any)[f.key]}
-                    onChange={(e) => setDraftMetrics({ ...draftMetrics, [f.key]: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-border/40 bg-background px-3 py-2 text-sm text-foreground focus:border-primary outline-none"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button type="button" onClick={() => setEditMetrics(false)} className="flex-1 rounded-lg border border-border/40 px-3 py-2 text-[12px] font-semibold text-muted-foreground hover:bg-secondary/40 transition">
-                Cancelar
-              </button>
-              <button type="button" onClick={saveMetrics} className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-primary-foreground hover:bg-primary/90 transition">
-                <Check className="h-3.5 w-3.5" /> Salvar
-              </button>
+      {/* Token expirado / erro */}
+      {isTokenExpired && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3">
+          <div className="flex items-center gap-2 text-destructive">
+            <WifiOff className="h-4 w-4" />
+            <div>
+              <p className="text-xs font-bold">Token Meta expirado</p>
+              <p className="text-[10px] opacity-80">{syncError || "Reautorize para continuar a sincronização."}</p>
             </div>
           </div>
+          <button
+            onClick={handleConnect}
+            className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-[11px] font-bold text-white"
+          >
+            Reconectar Meta
+          </button>
         </div>
       )}
+
+      {/* Quick metrics — dados reais da Meta */}
+      <div className="grid grid-cols-3 gap-2">
+        {syncStage === "loading" && !syncData ? (
+          <>
+            <MetricSkeleton />
+            <MetricSkeleton />
+            <MetricSkeleton />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              icon={Users}
+              label="Seguidores"
+              value={fmtNum(syncData?.metrics.followers || 0)}
+              hint={account ? `@${account.username}` : "—"}
+            />
+            <MetricCard
+              icon={Eye}
+              label="Alcance 7d"
+              value={fmtNum(syncData?.metrics.reach_7d || 0)}
+              hint={syncData ? `${fmtNum(syncData.metrics.impressions_7d)} impressões` : "—"}
+            />
+            <MetricCard
+              icon={Heart}
+              label="Engajamento"
+              value={fmtNum(syncData?.metrics.engagement_recent || 0)}
+              hint={syncData ? `${fmtNum(syncData.metrics.media_count)} posts` : "—"}
+            />
+          </>
+        )}
+      </div>
 
       {/* Tab navigation */}
       <div className="flex gap-1 overflow-x-auto pb-1">
@@ -439,6 +477,57 @@ const InstagramAdmin = () => {
                 )}
               </div>
             </div>
+
+            {/* Feed real do Instagram (Meta API) */}
+            {account && (
+              <div className="rounded-xl border border-border/40 bg-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <Instagram className="h-3.5 w-3.5" /> Feed @{account.username}
+                  </h2>
+                  {syncStage === "loading" && (
+                    <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Sincronizando…
+                    </span>
+                  )}
+                </div>
+                {syncStage === "loading" && !syncData ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {Array.from({ length: 9 }).map((_, i) => (
+                      <div key={i} className="aspect-square rounded-sm bg-muted/20 animate-pulse" />
+                    ))}
+                  </div>
+                ) : syncData?.media?.length ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {syncData.media.slice(0, 9).map((m) => (
+                      <a
+                        key={m.id}
+                        href={m.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative aspect-square overflow-hidden rounded-sm bg-muted/10"
+                      >
+                        <img
+                          src={m.thumbnail_url || m.media_url}
+                          alt={m.caption?.slice(0, 40) || "post"}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent opacity-0 group-hover:opacity-100 transition flex items-end p-1.5 gap-2 text-white text-[9px] font-bold">
+                          <span className="inline-flex items-center gap-0.5"><Heart className="h-2.5 w-2.5" />{fmtNum(m.like_count || 0)}</span>
+                          <span className="inline-flex items-center gap-0.5"><MessageCircle className="h-2.5 w-2.5" />{fmtNum(m.comments_count || 0)}</span>
+                          <ExternalLink className="h-2.5 w-2.5 ml-auto" />
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground text-center py-4">
+                    Nenhum post sincronizado ainda. Clique em "Sincronizar agora".
+                  </p>
+                )}
+              </div>
+            )}
             </div>
           )}
 
@@ -619,6 +708,16 @@ function MetricCard({ icon: Icon, label, value, hint }: { icon: typeof Users; la
       </div>
       <div className="mt-1 text-lg font-black text-foreground leading-none">{value}</div>
       {hint && <div className="text-[9px] text-muted-foreground mt-1 truncate">{hint}</div>}
+    </div>
+  );
+}
+
+function MetricSkeleton() {
+  return (
+    <div className="rounded-xl border border-border/40 bg-card p-3 animate-pulse">
+      <div className="h-2.5 w-16 rounded bg-muted/30" />
+      <div className="mt-2 h-5 w-20 rounded bg-muted/40" />
+      <div className="mt-2 h-2 w-12 rounded bg-muted/20" />
     </div>
   );
 }
