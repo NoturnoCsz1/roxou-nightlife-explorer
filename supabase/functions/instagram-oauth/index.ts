@@ -264,6 +264,116 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Action: sync — busca métricas reais e mídia recente da Meta API
+  if (action === "sync") {
+    const { data: acc } = await supabase
+      .from("instagram_accounts")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!acc) {
+      return new Response(
+        JSON.stringify({ ok: false, stage: "no_account", message: "Nenhuma conta conectada." }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = acc.access_token;
+    const igId = acc.ig_account_id;
+
+    try {
+      // Profile + métricas básicas
+      const profRes = await fetch(
+        `https://graph.facebook.com/v21.0/${igId}?fields=id,username,name,biography,profile_picture_url,followers_count,follows_count,media_count&access_token=${token}`
+      );
+      const profile = await profRes.json();
+      if (profile.error) throw new Error(profile.error.message);
+
+      // Mídia recente (últimos 12)
+      const mediaRes = await fetch(
+        `https://graph.facebook.com/v21.0/${igId}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=12&access_token=${token}`
+      );
+      const media = await mediaRes.json();
+
+      // Insights (alcance e engajamento últimos 7 dias)
+      let insights: any = null;
+      try {
+        const since = Math.floor((Date.now() - 7 * 86400000) / 1000);
+        const until = Math.floor(Date.now() / 1000);
+        const insRes = await fetch(
+          `https://graph.facebook.com/v21.0/${igId}/insights?metric=reach,impressions,profile_views&period=day&since=${since}&until=${until}&access_token=${token}`
+        );
+        insights = await insRes.json();
+      } catch (e) {
+        insights = { error: String(e) };
+      }
+
+      // Soma reach/impressions
+      let reach7d = 0;
+      let impressions7d = 0;
+      let profileViews7d = 0;
+      if (Array.isArray(insights?.data)) {
+        for (const m of insights.data) {
+          const sum = (m.values || []).reduce((s: number, v: any) => s + (Number(v.value) || 0), 0);
+          if (m.name === "reach") reach7d = sum;
+          if (m.name === "impressions") impressions7d = sum;
+          if (m.name === "profile_views") profileViews7d = sum;
+        }
+      }
+
+      // Engajamento aproximado: soma likes+comments dos últimos posts
+      let engagement = 0;
+      if (Array.isArray(media?.data)) {
+        for (const p of media.data) {
+          engagement += (Number(p.like_count) || 0) + (Number(p.comments_count) || 0);
+        }
+      }
+
+      const synced_at = new Date().toISOString();
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          synced_at,
+          account: {
+            id: acc.id,
+            username: profile.username || acc.username,
+            ig_account_id: igId,
+            token_expires_at: acc.token_expires_at,
+          },
+          profile: {
+            name: profile.name,
+            biography: profile.biography,
+            profile_picture_url: profile.profile_picture_url,
+            followers_count: profile.followers_count || 0,
+            follows_count: profile.follows_count || 0,
+            media_count: profile.media_count || 0,
+          },
+          metrics: {
+            followers: profile.followers_count || 0,
+            media_count: profile.media_count || 0,
+            reach_7d: reach7d,
+            impressions_7d: impressions7d,
+            profile_views_7d: profileViews7d,
+            engagement_recent: engagement,
+          },
+          media: media?.data || [],
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (err: any) {
+      const msg = String(err?.message || err);
+      const tokenExpired = /expired|invalid|OAuthException|access token/i.test(msg);
+      return new Response(
+        JSON.stringify({ ok: false, stage: tokenExpired ? "token_expired" : "error", message: msg }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+  }
+
   return new Response(JSON.stringify({ error: "Action inválida" }), {
     status: 400,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
