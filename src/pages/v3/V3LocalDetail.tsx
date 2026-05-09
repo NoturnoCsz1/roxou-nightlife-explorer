@@ -474,7 +474,7 @@ export default function V3LocalDetail() {
         {partner.latitude != null && partner.longitude != null && (
           <div className="space-y-2">
             <h2 className="font-display font-bold text-base text-foreground">Localização</h2>
-            <RoxouVenueMap
+            <LazyVenueMap
               lat={Number(partner.latitude)}
               lng={Number(partner.longitude)}
               name={partner.name}
