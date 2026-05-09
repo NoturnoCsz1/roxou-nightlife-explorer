@@ -661,4 +661,14 @@ function MetricCard({ icon: Icon, label, value, hint }: { icon: typeof Users; la
   );
 }
 
+function MetricSkeleton() {
+  return (
+    <div className="rounded-xl border border-border/40 bg-card p-3 animate-pulse">
+      <div className="h-2.5 w-16 rounded bg-muted/30" />
+      <div className="mt-2 h-5 w-20 rounded bg-muted/40" />
+      <div className="mt-2 h-2 w-12 rounded bg-muted/20" />
+    </div>
+  );
+}
+
 export default InstagramAdmin;
