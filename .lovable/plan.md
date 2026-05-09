@@ -1,134 +1,121 @@
-## Plano: Aura Ranking Engine + AutoReels IA
+# Refatoração Admin de Eventos — Central de Inteligência da Aura
 
-Duas evoluções complementares que tornam a Roxou auto-curada e auto-produtora de conteúdo. Implementação em duas fases independentes.
+Refatoração grande, vou dividir em **3 fases independentes** que entregam valor isoladamente. Cada fase pode ser aprovada/pausada sem quebrar o que já existe.
 
----
-
-### Fase 1 — Auto-Curadoria da Home (Aura Ranking Engine)
-
-**1.1 Banco de dados (migration)**
-
-Adicionar em `events`:
-- `aura_score` numeric (0–100)
-- `trending_score` numeric
-- `hype_score` numeric
-- `aura_badge` text (`em_alta` | `viralizando` | `bombando` | `escolha_aura` | null)
-- `aura_score_updated_at` timestamptz
-- `aura_score_reason` jsonb (sinais usados)
-
-Nova tabela `aura_home_logs`:
-- `event_id`, `aura_score`, `trending_score`, `hype_score`, `badge`, `signals` jsonb, `created_at`
-- RLS: admin only
-
-**1.2 Edge Function `aura-home-curation`**
-
-Calcula scores combinando sinais já disponíveis:
-- views (`page_views` últimas 24h / 7d)
-- saves, clicks (`analytics_events`)
-- engajamento parceiro (`partners.instagram_followers_count`, `aura_partner_score`, `instagram_recent_posts`)
-- proximidade temporal do `date_time`
-- confiança do Radar (`ai_confidence`, `instagram_scans` relacionados)
-- crescimento recente (delta views 24h vs 7d)
-- `featured`/`aura_pick` manual = boost máximo (preserva controle humano)
-
-Fórmula:
-```
-aura_score = 0.35*engagement + 0.25*trending + 0.15*partner + 0.15*radar + 0.10*time
-trending_score = delta_views_24h / max(views_7d_avg, 1)
-hype_score = saves*3 + shares*5 + clicks*2 (normalizado)
-```
-
-Atribui badges automaticamente; eventos passados/sem sinal são despromovidos (não deletados).
-
-**1.3 Cron**
-
-`aura-home-curation-cron`: a cada 15 minutos via `pg_cron`/`pg_net`.
-
-**1.4 Frontend**
-
-- Hook `useAuraRanking` que ordena eventos por `aura_score` (com `aura_pick`/`featured` no topo).
-- Componente `AuraBadge` com 4 variantes (🔥 🚀 👀 🤖) — estilo neon Roxou.
-- Aplicar nos blocos da Home **sem alterar layout/filtros existentes** — apenas reordenação e badges sobrepostos nos cards.
+> **Não toco em:** Radar IA, eventos publicados, SEO/slugs, analytics, timezone, Aura Ranking, OAuth/Instagram, feed home, lógica atual de publicação.
 
 ---
 
-### Fase 2 — Aura AutoReels IA
+## FASE 1 — Aprovação Rápida + Filtros + Badges (entrega imediata)
 
-**2.1 Banco de dados**
+**Onde:** `src/pages/admin/EventosList.tsx` (sem renomear rota — `/admin/events` continua funcional).
 
-Nova tabela `auto_reels_queue`:
-- `id`, `event_id`, `partner_id`
-- `status` (`pending` | `generated` | `approved` | `published` | `ignored`)
-- `style` (`universitario` | `premium` | `funk` | `pagode` | `eletronico` | `sertanejo` | `barzinho`)
-- `script_json` jsonb (`{title, hook, scenes[], captions[], cta, hashtags[], music_style, visual_style}`)
-- `generated_caption` text, `generated_hashtags` text[]
-- `suggested_audio` text, `video_prompt` text
-- `external_prompts` jsonb (`{capcut, kling, runway, veo, tiktok}`)
-- `preview_image_url` text (flyer do evento como referência)
-- `created_at`, `posted_at`, `created_by`
-- RLS: admin only
-
-**2.2 Edge Function `aura-autoreels-generate`**
-
-Input: `{ event_id, style? }`. Detecta estilo automaticamente pelo `sub_category`/`category` se não passado.
-
-Usa `google/gemini-2.5-flash` via Lovable AI Gateway com prompt estruturado (JSON output) que retorna o `script_json` completo + prompts específicos para CapCut/Kling/Runway/Veo/TikTok.
-
-Modos:
-- `{ event_id }` — gera um
-- `{ auto: true, limit: 10 }` — gera para top N do `aura_score` que ainda não têm reel
-
-**2.3 Painel admin `/admin/autoreels`**
-
-- Lista da fila com filtros por status
-- Cards com: capa do evento, headline gerada, hook, cenas (timeline), legenda, hashtags
-- Ações: **Aprovar / Editar / Ignorar / Regenerar / Copiar prompt (CapCut/Kling/Runway/Veo)**
-- Preview da legenda pronta para colar no Instagram/TikTok
-- Estilo dark/neon Roxou
-
-**2.4 Botão "Gerar Reel IA"**
-
-Adicionar em:
-- `RadarIA.tsx` (cards de scan aprovado)
-- Lista admin de eventos / form de evento
-
-Chama a edge function e abre o item gerado em `/admin/autoreels`.
-
-**2.5 Rota e nav**
-
-- Adicionar rota `/admin/autoreels` em `App.tsx`
-- Item no `AdminLayout` sidebar
-
----
-
-### Restrições preservadas
-
-- **Não tocar**: OAuth Meta, `instagram-oauth`, `partner-instagram-sync`, `automatic-event-hunter`, login/auth, feed, insights, publicação existente
-- **Aura Pick manual** e `featured` mantêm prioridade máxima na ordenação
-- **Timezone** America/Sao_Paulo via helpers `@/lib/dateUtils`
-- Filtros de data e categorias da Home permanecem intactos
-- Layout público da Home não muda — apenas ordem dos cards e badge sobreposto
-
----
+### Mudanças
+- **Cards inline** com ações sem modal: `Aprovar`, `Aprovar + Destaque`, `Aprovar + Aura Pick`, `Ignorar`, `Arquivar` (botões compactos no rodapé do card).
+- **Preview inline:** flyer (thumb 80×80), título, data formatada SP, local, categoria, badge de confiança IA, badge de origem (`manual`, `radar_ia`, `instagram`, `parceiro`, `auto_discovery`).
+- **Badges visuais** lendo colunas existentes:
+  - 🤖 `verification_source = 'auto_discovery'`
+  - 🔥 `aura_badge = 'em_alta'` / 🚀 `viralizando` / ⭐ `escolha_aura`
+  - ⚠️ `needs_review = true`
+  - 📌 `status = 'published'` (com `aura_score > 0`)
+  - 🗃 `status = 'archived'`
+  - 👀 `ai_confidence = 'low'` ou OCR vazio
+- **Seleção múltipla** + barra de ações em lote: aprovar / arquivar / ignorar / marcar Aura Pick.
+- **Filtros novos** (chips no topo): Alta/Média/Baixa confiança, Aura Picks, Em alta, Detectados hoje, Sem categoria, Sem local, Sem data, OCR incompleto, Possíveis duplicados (`status = 'draft'` + match no `dedupe_key`), Repostados (cruzando `instagram_scans.repost_count > 0`).
+- **Atalhos de teclado:** `A` aprova, `D` destaca, `I` ignora, `←/→` navega cards, `Shift+Click` seleciona range.
+- **Visual** dark/neon, mantém layout atual; só adiciona componentes.
 
 ### Arquivos
+- Edita: `src/pages/admin/EventosList.tsx`
+- Cria: `src/components/admin/EventApprovalCard.tsx`, `src/components/admin/EventBulkBar.tsx`, `src/components/admin/EventFilterChips.tsx`
 
-**Criar:**
-- `supabase/migrations/<ts>_aura_ranking_autoreels.sql`
-- `supabase/functions/aura-home-curation/index.ts`
-- `supabase/functions/aura-autoreels-generate/index.ts`
-- `src/hooks/useAuraRanking.ts`
-- `src/components/AuraBadge.tsx`
-- `src/pages/admin/AutoReels.tsx`
-- `src/components/admin/AutoReelCard.tsx`
+**Sem migration nesta fase.** Tudo já existe no schema.
 
-**Editar:**
-- `src/App.tsx` (rota)
-- `src/components/admin/AdminLayout.tsx` (nav)
-- `src/integrations/supabase/types.ts` (auto)
-- Componentes da Home que listam eventos (apenas para aplicar ordenação + badge)
-- `src/pages/admin/RadarIA.tsx` (botão Gerar Reel)
-- `supabase/config.toml` (verify_jwt para as 2 novas funções)
+---
 
-**Cron (insert):**
-- `aura-home-curation` a cada 15 min
+## FASE 2 — Aba Rascunhos Premium + Linha do Tempo
+
+**Onde:** nova aba `/admin/events?tab=drafts` (sub-rota da mesma página, sem nova URL pública).
+
+### Mudanças
+- Tabs no topo: `Todos | Novos | Revisar OCR | Possíveis duplicados | Pendentes | Ignorados | Arquivados | Publicados auto`
+- Cada draft mostra:
+  - Preview maior (16:9)
+  - Confiança IA (alta/média/baixa) com cor
+  - `scan_count` + `repost_count` lidos de `instagram_scans` (join leve por `dedupe_key`)
+  - Mini-timeline horizontal: Detectado → Revisado → Aprovado → Publicado → Repostado (datas de `created_at`, `aura_score_updated_at`, `first_published_at`, `last_reposted_at`)
+  - OCR detectado, artistas detectados, score Aura, tags, gênero
+  - Lista de perfis IG que repostaram (de `instagram_scans.source_handle`)
+
+### Arquivos
+- Edita: `src/pages/admin/EventosList.tsx` (tabs)
+- Cria: `src/components/admin/DraftCard.tsx`, `src/components/admin/EventTimeline.tsx`
+
+**Sem migration.** Tudo já está nas tabelas existentes.
+
+---
+
+## FASE 3 — Auditoria de Duplicados + Merge
+
+**A parte mais sensível.** Implementação **incremental e off-the-critical-path**.
+
+### 3.1 Schema (migration)
+- `events.phash text` — perceptual hash da imagem (cache, gerado uma vez)
+- `events.fingerprint text` — chave normalizada `slug+venue+date_key+artistas_sorted` (cache)
+- `event_duplicate_candidates` — tabela com pares candidatos:
+  - `event_a_id`, `event_b_id`, `similarity_score numeric`, `signals jsonb` (motivos), `status text` (`pending`/`merged`/`kept_separate`/`ignored`), `created_at`
+  - RLS: admins manage
+- Trigger leve no `events` que apenas marca `phash IS NULL` para reprocessamento (não bloqueia).
+
+### 3.2 Edge function `aura-event-audit` (nova)
+- Roda **sob demanda** via botão "Verificar duplicados" no admin.
+- Aceita `{ scope: 'all' | 'recent_30d' | 'event_id' }`.
+- Em batches de 50 eventos, calcula:
+  - **pHash** do flyer (DCT 8×8) usando WASM ou implementação JS pura no edge — armazena em `events.phash`. Se já existir, pula.
+  - **Fingerprint textual** (normaliza acentos, lowercase, remove stopwords).
+  - **Hamming distance** entre pHashes < 10 → candidato visual.
+  - **Levenshtein** título+venue + mesma data civil SP → candidato textual.
+  - **Gemini Flash** (Lovable AI) só para **top-N candidatos** (não todos): "esses 2 eventos são iguais?". Cache do veredito para não repetir.
+- Insere em `event_duplicate_candidates` com `status='pending'`.
+- Performance: rate-limit, cache, análise incremental (só processa eventos novos ou alterados).
+
+### 3.3 UI de auditoria
+- Botão `Verificar duplicados` (header do admin de eventos).
+- Modal/drawer "Possíveis duplicados encontrados":
+  - Evento A (original) vs Evento B (suspeito) lado a lado
+  - Score, sinais (`pHash igual`, `título 92% similar`, `mesma data+local`, `Aura confirmou`)
+  - Origem dos dois flyers
+  - Ações: `Mesclar` / `Manter separados` / `Arquivar duplicado` / `Ignorar alerta`
+
+### 3.4 Mesclagem (RPC `merge_event_duplicates`)
+Função SQL `SECURITY DEFINER` que:
+1. Mantém `event_a_id` (original) — preserva slug/SEO/analytics.
+2. Soma `aura_score`, `repost_count`, copia `instagram_scans` do B → A (update FK lógico).
+3. Move `analytics_events`, `page_views` (update `event_id`).
+4. Move `event_presence` evitando violar UNIQUE (drop conflitos do B).
+5. `UPDATE events SET status='archived', dedupe_key = ... WHERE id = event_b_id`.
+6. Marca candidato como `merged`.
+
+### Arquivos
+- Migration: nova tabela + colunas + RPC merge
+- Cria: `supabase/functions/aura-event-audit/index.ts`
+- Cria: `src/components/admin/DuplicateAuditModal.tsx`, `src/lib/imagePhash.ts` (helper client opcional)
+- Edita: `src/pages/admin/EventosList.tsx` (botão de auditoria)
+
+---
+
+## Como tocar sem quebrar
+
+- Tudo é **aditivo**: novas colunas opcionais, novas tabelas, novos componentes. Nenhuma quebra de contrato.
+- Aprovação rápida usa os mesmos campos que já existem — nenhum status novo.
+- Merge é **manual** (admin clica), nunca automático.
+- Auditoria roda **sob demanda**, não em cron — não impacta custo/realtime.
+- Radar IA, Aura Ranking, OAuth, feed e SEO **não são tocados**.
+
+---
+
+## Recomendação de execução
+
+Sugiro implementar **só a Fase 1 agora** (entrega imediata, zero risco, sem migration). Depois você valida e libera Fase 2 e 3 separadamente.
+
+**Confirma que começo pela Fase 1?** Ou prefere que eu implemente as 3 de uma vez? Se for tudo de uma vez, vou precisar ~6–8 edições de arquivos + 1 migration + 1 edge function nova.

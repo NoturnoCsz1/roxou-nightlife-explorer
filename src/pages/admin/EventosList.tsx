@@ -44,6 +44,8 @@ interface EventRow {
   verification_source: string | null;
   ai_confidence?: string | null;
   needs_review?: boolean | null;
+  aura_badge?: string | null;
+  aura_score?: number | null;
 }
 
 function getQualityScore(e: EventRow): number {
@@ -60,7 +62,7 @@ function getQualityScore(e: EventRow): number {
 export const getEventEditPath = (id: string) => `/admin/eventos/${id}/editar`;
 
 type OriginFilter = "todos" | "ai" | "manual";
-type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos";
+type ExtraFilter = "todos" | "aura" | "destaques" | "sem-imagem" | "incompletos" | "em-alta" | "detectados-hoje" | "arquivados";
 
 type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
 
@@ -166,7 +168,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review")
+      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -377,7 +379,59 @@ const EventosList = () => {
     }
   }
 
-  // 🕒 Trava de timezone — sempre comparamos via São Paulo (sv-SE → YYYY-MM-DD), nunca via toISOString puro.
+  // === Aprovação rápida ===
+  async function handleQuickApprove(e: EventRow, opts?: { featured?: boolean; auraPick?: boolean }) {
+    const cl = getChecklist(e);
+    if (!cl.complete) {
+      toast.error("Evento incompleto: preencha título, data, local, descrição e flyer.");
+      return;
+    }
+    const patch: { status: string; featured?: boolean; aura_pick?: boolean } = { status: "published" };
+    if (opts?.featured) patch.featured = true;
+    if (opts?.auraPick) patch.aura_pick = true;
+    const { error } = await supabase.from("events").update(patch).eq("id", e.id);
+    if (error) { toast.error("Falha ao aprovar"); return; }
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, ...patch } : x));
+    const labels: string[] = ["Aprovado"];
+    if (opts?.featured) labels.push("destaque");
+    if (opts?.auraPick) labels.push("Aura Pick");
+    toast.success(`✓ ${labels.join(" + ")}`);
+  }
+
+  async function handleArchive(e: EventRow) {
+    const { error } = await supabase.from("events").update({ status: "archived" }).eq("id", e.id);
+    if (error) { toast.error("Falha ao arquivar"); return; }
+    setEvents(prev => prev.map(x => x.id === e.id ? { ...x, status: "archived" } : x));
+    toast.success("🗃 Arquivado");
+  }
+
+  async function handleBulkApprove(opts?: { featured?: boolean; auraPick?: boolean }) {
+    const ids = Array.from(selectedIds);
+    const ready = events.filter(e => ids.includes(e.id) && getChecklist(e).complete && e.status !== "published");
+    if (ready.length === 0) {
+      toast.error("Nenhum dos selecionados está pronto para aprovação.");
+      return;
+    }
+    const patch: { status: string; featured?: boolean; aura_pick?: boolean } = { status: "published" };
+    if (opts?.featured) patch.featured = true;
+    if (opts?.auraPick) patch.aura_pick = true;
+    const readyIds = ready.map(e => e.id);
+    const { error } = await supabase.from("events").update(patch).in("id", readyIds);
+    if (error) { toast.error("Erro ao aprovar em lote"); return; }
+    setEvents(prev => prev.map(e => readyIds.includes(e.id) ? { ...e, ...patch } : e));
+    setSelectedIds(new Set());
+    toast.success(`✓ ${ready.length} evento(s) aprovado(s)${opts?.featured ? " + destaque" : ""}${opts?.auraPick ? " + Aura" : ""}`);
+  }
+
+  async function handleBulkArchive() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("events").update({ status: "archived" }).in("id", ids);
+    if (error) { toast.error("Erro ao arquivar"); return; }
+    setEvents(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "archived" } : e));
+    setSelectedIds(new Set());
+    toast.success(`🗃 ${ids.length} arquivado(s)`);
+  }
   const spDateStr = (d: Date) =>
     new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "America/Sao_Paulo" }).format(d);
   const todayStr = spDateStr(new Date());
@@ -414,6 +468,9 @@ const EventosList = () => {
       if (extraFilter === "destaques") return e.featured;
       if (extraFilter === "sem-imagem") return !e.image_url;
       if (extraFilter === "incompletos") return getQualityScore(e) < 100;
+      if (extraFilter === "em-alta") return e.aura_badge === "em_alta" || e.aura_badge === "viralizando" || e.aura_badge === "bombando";
+      if (extraFilter === "detectados-hoje") return spDateStr(new Date(e.created_at)) === todayStr;
+      if (extraFilter === "arquivados") return e.status === "archived";
       return true;
     });
 
@@ -527,9 +584,24 @@ const EventosList = () => {
               placeholder="Local"
               className="rounded border border-transparent bg-transparent px-1 py-0.5 text-[10px] text-muted-foreground outline-none transition hover:border-border/40 hover:bg-secondary/30 focus:border-primary/40 focus:text-foreground min-w-[100px]"
             />
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : "text-yellow-400 bg-yellow-400/10"}`}>
-              {e.status === "published" ? "Publicado" : "Rascunho"}
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${e.status === "published" ? "text-green-400 bg-green-400/10" : e.status === "archived" ? "text-muted-foreground bg-muted/20" : "text-yellow-400 bg-yellow-400/10"}`}>
+              {e.status === "published" ? "Publicado" : e.status === "archived" ? "🗃 Arquivado" : "Rascunho"}
             </span>
+            {e.aura_badge === "em_alta" && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30 inline-flex items-center gap-0.5">
+                🔥 Em alta
+              </span>
+            )}
+            {e.aura_badge === "viralizando" && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30 inline-flex items-center gap-0.5">
+                🚀 Viralizando
+              </span>
+            )}
+            {e.aura_badge === "bombando" && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30 inline-flex items-center gap-0.5">
+                💥 Bombando
+              </span>
+            )}
             {e.aura_pick && (
               <span title="Aura recomenda este evento como destaque do dia" className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/25 text-primary border border-primary/40 inline-flex items-center gap-0.5">
                 <Bot className="h-2.5 w-2.5" /> Escolha da Aura
@@ -577,9 +649,42 @@ const EventosList = () => {
             )}
           </div>
         </div>
-        <div className="flex items-center shrink-0 ml-2 gap-0.5">
+        <div className="flex items-center shrink-0 ml-2 gap-0.5 flex-wrap justify-end">
           {isDraft && (
             <>
+              {/* Aprovação rápida */}
+              <button
+                onClick={() => handleQuickApprove(e)}
+                disabled={!cl.complete}
+                className="inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                title={cl.complete ? "Aprovar (publicar)" : "Faltam dados para aprovar"}
+              >
+                <Check className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Aprovar</span>
+              </button>
+              <button
+                onClick={() => handleQuickApprove(e, { featured: true })}
+                disabled={!cl.complete}
+                className="inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2 py-1.5 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 disabled:opacity-40 transition"
+                title="Aprovar e destacar"
+              >
+                <Flame className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => handleQuickApprove(e, { auraPick: true })}
+                disabled={!cl.complete}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/25 disabled:opacity-40 transition"
+                title="Aprovar e marcar como Aura Pick"
+              >
+                <Bot className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => handleArchive(e)}
+                className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2 py-1.5 text-[10px] font-bold uppercase text-muted-foreground hover:bg-secondary/70 transition"
+                title="Arquivar"
+              >
+                🗃
+              </button>
               <button
                 onClick={() => regenerateTitle(e)}
                 disabled={!!busy}
@@ -587,7 +692,6 @@ const EventosList = () => {
                 title="Gerar título com IA"
               >
                 {busy === "title" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
-                <span className="hidden sm:inline">Gerar Título</span>
               </button>
               <button
                 onClick={() => regenerateDescription(e)}
@@ -596,7 +700,6 @@ const EventosList = () => {
                 title="Gerar legenda rica"
               >
                 {busy === "desc" ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Wand2 className="h-4 w-4 text-primary" />}
-                <span className="hidden sm:inline">Gerar Legenda</span>
               </button>
             </>
           )}
@@ -728,11 +831,14 @@ const EventosList = () => {
         </div>
         <div className="flex flex-wrap gap-1.5">
           {([
-            { key: "todos", label: "Todos", icon: null },
-            { key: "aura", label: "🤖 Aura", icon: Bot },
-            { key: "destaques", label: "🔥 Destaques", icon: Flame },
-            { key: "sem-imagem", label: "Sem imagem", icon: ImageIcon },
-            { key: "incompletos", label: "Incompletos", icon: AlertTriangle },
+            { key: "todos", label: "Todos" },
+            { key: "aura", label: "🤖 Aura" },
+            { key: "destaques", label: "🔥 Destaques" },
+            { key: "em-alta", label: "🚀 Em alta" },
+            { key: "detectados-hoje", label: "📅 Hoje" },
+            { key: "sem-imagem", label: "Sem imagem" },
+            { key: "incompletos", label: "Incompletos" },
+            { key: "arquivados", label: "🗃 Arquivados" },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -799,6 +905,57 @@ const EventosList = () => {
       </div>
       </div>
 
+      {/* Barra sticky de ações em lote */}
+      {selectedCount > 0 && (
+        <div className="sticky top-[140px] z-40 -mx-2 px-3 py-2 rounded-2xl border border-primary/40 bg-primary/10 backdrop-blur-xl flex items-center gap-2 flex-wrap shadow-[0_0_24px_hsl(var(--primary)/0.25)]">
+          <span className="text-xs font-bold text-primary inline-flex items-center gap-1">
+            <CheckSquare className="h-3.5 w-3.5" /> {selectedCount} selecionado(s)
+          </span>
+          <span className="text-[10px] text-muted-foreground">
+            {selectedReadyToPublish} pronto(s) p/ publicar
+          </span>
+          <span className="w-px h-4 bg-border/40" />
+          <button
+            onClick={() => handleBulkApprove()}
+            disabled={selectedReadyToPublish === 0 || publishing}
+            className="inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition"
+          >
+            <Check className="h-3 w-3" /> Aprovar
+          </button>
+          <button
+            onClick={() => handleBulkApprove({ featured: true })}
+            disabled={selectedReadyToPublish === 0}
+            className="inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 disabled:opacity-40 transition"
+          >
+            <Flame className="h-3 w-3" /> + Destaque
+          </button>
+          <button
+            onClick={() => handleBulkApprove({ auraPick: true })}
+            disabled={selectedReadyToPublish === 0}
+            className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/25 disabled:opacity-40 transition"
+          >
+            <Bot className="h-3 w-3" /> + Aura
+          </button>
+          <button
+            onClick={() => handleBulkAura(true)}
+            className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition"
+          >
+            🤖 Aura Pick
+          </button>
+          <button
+            onClick={() => handleBulkArchive()}
+            className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1 text-[10px] font-bold uppercase text-muted-foreground hover:bg-secondary/70 transition"
+          >
+            🗃 Arquivar
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
+          >
+            <X className="h-3 w-3" /> Limpar seleção
+          </button>
+        </div>
+      )}
       {loading ? (
         <p className="text-xs text-muted-foreground text-center py-8">Carregando...</p>
       ) : filtered.length === 0 ? (
