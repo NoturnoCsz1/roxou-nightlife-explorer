@@ -854,6 +854,8 @@ const EventosList = () => {
         <div className="flex flex-wrap gap-1.5">
           {([
             { key: "todos", label: "Todos" },
+            { key: "prontos", label: "✅ Prontos para publicar" },
+            { key: "revisar", label: "👀 Revisar" },
             { key: "aura", label: "🤖 Aura" },
             { key: "destaques", label: "🔥 Destaques" },
             { key: "em-alta", label: "🚀 Em alta" },
