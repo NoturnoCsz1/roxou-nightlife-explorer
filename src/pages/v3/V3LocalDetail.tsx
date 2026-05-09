@@ -6,7 +6,7 @@ import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, Calenda
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
-import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
+import LazyVenueMap from "@/components/maps/LazyVenueMap";
 import { trackEvent } from "@/lib/analytics";
 import SEO from "@/components/SEO";
 import { toast } from "sonner";
@@ -474,7 +474,7 @@ export default function V3LocalDetail() {
         {partner.latitude != null && partner.longitude != null && (
           <div className="space-y-2">
             <h2 className="font-display font-bold text-base text-foreground">Localização</h2>
-            <RoxouVenueMap
+            <LazyVenueMap
               lat={Number(partner.latitude)}
               lng={Number(partner.longitude)}
               name={partner.name}
