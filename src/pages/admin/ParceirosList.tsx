@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, CheckCircle, Trash2, CalendarDays, Eye, ExternalLink, AlertTriangle } from "lucide-react";
+import { Plus, Search, CheckCircle, Trash2, CalendarDays, Eye, ExternalLink, AlertTriangle, RefreshCw, Sparkles, Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { toast } from "sonner";
