@@ -569,7 +569,15 @@ export default function V3LocalDetail() {
         >
           <div className="mx-3 mb-3 rounded-2xl v3-glass border border-primary/30 shadow-[0_8px_32px_-8px_hsl(var(--primary)/0.5)] backdrop-blur-xl px-3 py-2.5 flex items-center gap-2.5">
             {partner.logo_url ? (
-              <img src={partner.logo_url} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+              <img
+                src={optimizedImageUrl(partner.logo_url, 96, 75) || partner.logo_url}
+                srcSet={optimizedSrcSet(partner.logo_url, [80, 160], 75)}
+                sizes="40px"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="w-10 h-10 rounded-xl object-cover shrink-0"
+              />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center text-base font-display font-bold text-primary shrink-0">
                 {partner.name[0]}
