@@ -24,15 +24,16 @@ import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
 
-import Expo2026 from "./pages/Expo2026";
-import Expo2026Contato from "./pages/Expo2026Contato";
-import Contato from "./pages/Contato";
-import ExpoNoticia from "./pages/ExpoNoticia";
-import RoxouNoticias from "./pages/RoxouNoticias";
-import RoxouNoticia from "./pages/RoxouNoticia";
-import ExpoShows from "./pages/expo/ExpoShows";
-import ExpoProgramacao from "./pages/expo/ExpoProgramacao";
-import ExpoIngressos from "./pages/expo/ExpoIngressos";
+// Hot site Expo / Notícias (lazy — rotas raras)
+const Expo2026 = lazy(() => import("./pages/Expo2026"));
+const Expo2026Contato = lazy(() => import("./pages/Expo2026Contato"));
+const Contato = lazy(() => import("./pages/Contato"));
+const ExpoNoticia = lazy(() => import("./pages/ExpoNoticia"));
+const RoxouNoticias = lazy(() => import("./pages/RoxouNoticias"));
+const RoxouNoticia = lazy(() => import("./pages/RoxouNoticia"));
+const ExpoShows = lazy(() => import("./pages/expo/ExpoShows"));
+const ExpoProgramacao = lazy(() => import("./pages/expo/ExpoProgramacao"));
+const ExpoIngressos = lazy(() => import("./pages/expo/ExpoIngressos"));
 
 // Admin (lazy — rotas privadas/raras)
 import AdminLayout from "./components/admin/AdminLayout";
