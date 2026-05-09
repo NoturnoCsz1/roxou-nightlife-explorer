@@ -1227,7 +1227,7 @@ function CommandCenter({
           <TodayEmptyState />
         )}
 
-        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} />}
+        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />}
 
         {mainEvents.length > 0 && (
           <div>
