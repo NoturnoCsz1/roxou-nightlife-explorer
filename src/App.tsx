@@ -57,6 +57,7 @@ import V3Layout from "./components/v3/V3Layout";
 import V3Auth from "./pages/v3/V3Auth";
 import V3Parceiros from "./pages/v3/V3Parceiros";
 import V3Rankings from "./pages/v3/V3Rankings";
+import V3Community from "./pages/v3/V3Community";
 import V3Home from "./pages/v3/V3Home";
 import V3Discover from "./pages/v3/V3Discover";
 import V3Agenda from "./pages/v3/V3Agenda";
@@ -174,6 +175,7 @@ const App = () => (
             <Route path="contato" element={<V3Contato />} />
             <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
             <Route path="rankings" element={<V3Rankings />} />
+            <Route path="comunidade" element={<V3Community />} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
 
