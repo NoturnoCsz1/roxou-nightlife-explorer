@@ -259,7 +259,7 @@ const ParceirosList = () => {
                 </div>
 
                 {/* Metrics row */}
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
                     <CalendarDays className="h-3 w-3" />
                     {m.eventCount} evento{m.eventCount !== 1 ? "s" : ""}
@@ -273,6 +273,8 @@ const ParceirosList = () => {
                       Último: {new Date(m.lastEventDate).toLocaleDateString("pt-BR")}
                     </span>
                   )}
+                  <IgSyncBadge partner={p} />
+                </div>
                 </div>
 
                 {/* Quick actions */}
