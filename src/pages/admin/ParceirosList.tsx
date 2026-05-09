@@ -157,14 +157,25 @@ const ParceirosList = () => {
 
   return (
     <div className="space-y-4 md:ml-44">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-lg font-bold text-foreground">Parceiros</h1>
-        <Link
-          to="/admin/parceiros/novo"
-          className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-        >
-          <Plus className="h-3.5 w-3.5" /> Novo
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handleSyncAll}
+            disabled={syncingAll}
+            className="flex items-center gap-1 rounded-lg bg-primary/15 px-2.5 py-1.5 text-[11px] font-semibold text-primary hover:bg-primary/25 transition disabled:opacity-50"
+            title="Sincroniza Instagram e gera insights da Aura"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncingAll ? "animate-spin" : ""}`} />
+            {syncingAll ? "Sincronizando..." : "Sincronizar IG"}
+          </button>
+          <Link
+            to="/admin/parceiros/novo"
+            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" /> Novo
+          </Link>
+        </div>
       </div>
 
       {/* Alert for dormant partners */}
