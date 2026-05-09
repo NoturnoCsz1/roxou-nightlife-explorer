@@ -605,6 +605,9 @@ const EventosList = () => {
   const draftsReady = draftEvents.filter(e => getChecklist(e).complete).length;
   const draftsAttention = draftEvents.length - draftsReady;
   const selectedReadyToPublish = events.filter(e => selectedIds.has(e.id) && getChecklist(e).complete && e.status === "draft").length;
+  // Triage counters across the entire current filter (all tabs)
+  const readyInFiltered = filtered.filter(e => e.status !== "published" && e.status !== "archived" && getChecklist(e).complete).length;
+  const reviewInFiltered = filtered.filter(e => e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete)).length;
 
   const ChecklistDot = ({ ok, label }: { ok: boolean; label: string }) => (
     <span
