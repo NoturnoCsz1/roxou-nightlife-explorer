@@ -2,12 +2,43 @@ import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation, Share2, Flame, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
 import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
 import { trackEvent } from "@/lib/analytics";
+import SEO from "@/components/SEO";
+import { toast } from "sonner";
+
+const TOP_WEEK_THRESHOLD = 100;
+
+async function sharePartner(partner: { id: string; name: string; slug: string; city?: string | null; short_description?: string | null }) {
+  const url = `https://roxou.com.br/v3/local/${partner.slug}`;
+  const title = `${partner.name} | Roxou`;
+  const text = partner.short_description || `Veja o ${partner.name}${partner.city ? ` em ${partner.city}` : ""} na Roxou.`;
+  try {
+    trackEvent({
+      event_type: "share_click",
+      venue_id: partner.id,
+      metadata: { slug: partner.slug, name: partner.name, channel: "share" },
+    });
+  } catch {}
+  try {
+    if (typeof navigator !== "undefined" && (navigator as Navigator & { share?: (d: ShareData) => Promise<void> }).share) {
+      await (navigator as Navigator & { share: (d: ShareData) => Promise<void> }).share({ title, text, url });
+      return;
+    }
+  } catch {
+    // user canceled or unsupported — fall through to copy
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copiado!");
+  } catch {
+    toast.error("Não foi possível compartilhar");
+  }
+}
 
 function getOperatingStatus(type?: string | null) {
   const hour = new Date().getHours();
