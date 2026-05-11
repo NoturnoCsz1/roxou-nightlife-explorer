@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv } from "lucide-react";
+import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv, Zap } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,10 +9,29 @@ import {
   groupMatchesByDate,
   sortMatchesByRelevance,
   isHighlightedMatch,
+  filterRelevantMatches,
+  formatMatchTime,
+  isPriorityTeam,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import auraJogosHero from "@/assets/aura-jogos-hero.jpg";
+
+const POPULAR_TEAMS = [
+  { label: "Corinthians", match: "corinthians", emoji: "🦅" },
+  { label: "Palmeiras", match: "palmeiras", emoji: "🐷" },
+  { label: "Flamengo", match: "flamengo", emoji: "🔴" },
+  { label: "São Paulo", match: "são paulo", emoji: "⚪" },
+  { label: "Santos", match: "santos", emoji: "⚓" },
+  { label: "Brasil", match: "brasil", emoji: "🇧🇷" },
+  { label: "Real Madrid", match: "real madrid", emoji: "👑" },
+  { label: "Barcelona", match: "barcelona", emoji: "🔵" },
+  { label: "PSG", match: "psg", emoji: "🗼" },
+];
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 
 type FilterKey = "hoje" | "amanha" | "semana" | "copa" | "brasil" | "internacional" | "live";
 
