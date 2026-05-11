@@ -252,6 +252,40 @@ export default function Jogos() {
           ))}
         </div>
 
+        {/* TIMES POPULARES */}
+        <section aria-label="Times populares">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> Times populares
+          </h2>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+            {POPULAR_TEAMS.map((t) => {
+              const active = teamFilter === t.match;
+              return (
+                <button
+                  key={t.match}
+                  onClick={() => handleTeamClick(t.match)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                    active
+                      ? "border-yellow-500/60 bg-gradient-to-r from-yellow-500/20 to-green-500/20 text-yellow-200 shadow-[0_0_18px_-6px_rgba(234,179,8,0.7)]"
+                      : "border-border/50 bg-card/50 hover:border-primary/50 hover:bg-card/70 text-foreground/80"
+                  }`}
+                >
+                  <span>{t.emoji}</span>
+                  {t.label}
+                </button>
+              );
+            })}
+            {teamFilter && (
+              <button
+                onClick={() => setTeamFilter(null)}
+                className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground underline"
+              >
+                limpar
+              </button>
+            )}
+          </div>
+        </section>
+
         {isError ? (
           <FallbackState />
         ) : isLoading ? (
@@ -262,6 +296,56 @@ export default function Jogos() {
           </div>
         ) : (
           <>
+            {/* 🔥 HOJE TEM — destaque do dia */}
+            {hojeTem && !teamFilter && (
+              <section aria-label="Destaque do dia">
+                <Link
+                  to={`/jogo/${hojeTem.slug}`}
+                  className="group relative block overflow-hidden rounded-3xl border border-yellow-500/40 bg-gradient-to-br from-emerald-950/80 via-background to-yellow-900/40 p-5 md:p-6 shadow-[0_0_45px_-12px_rgba(234,179,8,0.6)] hover:shadow-[0_0_60px_-8px_rgba(234,179,8,0.85)] hover:-translate-y-0.5 transition-all"
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
+                  <div className="relative flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                    <div className="inline-flex items-center gap-1.5 self-start rounded-full bg-orange-500/20 border border-orange-500/50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-orange-200 animate-glow-pulse">
+                      <Zap className="h-3 w-3" /> Hoje tem
+                    </div>
+
+                    <div className="flex-1 flex items-center gap-3 md:gap-4">
+                      {hojeTem.home_badge && (
+                        <img src={hojeTem.home_badge} alt={hojeTem.home_team} className="h-14 w-14 md:h-20 md:w-20 object-contain drop-shadow-[0_0_12px_rgba(234,179,8,0.4)]" loading="lazy" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display font-black text-base md:text-2xl leading-tight truncate">
+                          {hojeTem.home_team}
+                        </p>
+                        <p className="text-yellow-300/80 font-black text-sm my-0.5">×</p>
+                        <p className="font-display font-black text-base md:text-2xl leading-tight truncate">
+                          {hojeTem.away_team}
+                        </p>
+                      </div>
+                      {hojeTem.away_badge && (
+                        <img src={hojeTem.away_badge} alt={hojeTem.away_team} className="h-14 w-14 md:h-20 md:w-20 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.4)]" loading="lazy" />
+                      )}
+                    </div>
+
+                    <div className="flex flex-col items-start md:items-end gap-1.5">
+                      <p className="text-2xl md:text-3xl font-black text-yellow-300">
+                        {formatMatchTime(hojeTem.match_time)}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
+                        {hojeTem.league_label}
+                      </p>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300 font-semibold">
+                        <MapPin className="h-3 w-3" /> Presidente Prudente
+                      </span>
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-xs font-black shadow-[0_0_18px_-6px_hsl(var(--primary))] group-hover:scale-[1.03] transition">
+                        Ver onde assistir →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </section>
+            )}
+
             {/* MAIS BUSCADOS HOJE */}
             {maisBuscados.length > 0 && (
               <section>
