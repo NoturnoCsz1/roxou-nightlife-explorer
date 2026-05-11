@@ -84,8 +84,17 @@ export default function Jogos() {
 
   const hasCopa = useMemo(() => matches.some((m) => m.is_world_cup), [matches]);
 
+  // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam (ex: internacional/copa).
+  const relevantBase = useMemo(() => filterRelevantMatches(matches), [matches]);
+
   const filtered = useMemo<NormalizedMatch[]>(() => {
-    let list = matches;
+    // Para filtros amplos (hoje/amanha/semana/live) usa lista curada.
+    // Para filtros categóricos (copa/brasil/internacional) usa lista completa.
+    let list: NormalizedMatch[] =
+      filter === "copa" || filter === "brasil" || filter === "internacional"
+        ? matches
+        : relevantBase;
+
     if (filter === "hoje") list = list.filter((m) => m.raw_date === today);
     else if (filter === "amanha") list = list.filter((m) => m.raw_date === tomorrow);
     else if (filter === "semana") {
@@ -95,10 +104,19 @@ export default function Jogos() {
     else if (filter === "brasil") list = list.filter((m) => m.category === "brazil");
     else if (filter === "internacional") list = list.filter((m) => m.category === "international");
     else if (filter === "live") list = list.filter((m) => m.status === "live");
-    return list;
-  }, [matches, filter, today, tomorrow]);
 
-  const todays = sortMatchesByRelevance(matches.filter((m) => m.raw_date === today));
+    if (teamFilter) {
+      const t = norm(teamFilter);
+      list = list.filter((m) => norm(m.home_team).includes(t) || norm(m.away_team).includes(t));
+    }
+    return list;
+  }, [matches, relevantBase, filter, today, tomorrow, teamFilter]);
+
+  const todays = sortMatchesByRelevance(relevantBase.filter((m) => m.raw_date === today && m.status !== "finished"));
+
+  // "HOJE TEM" — jogo mais relevante do dia
+  const hojeTem = useMemo(() => todays[0] ?? null, [todays]);
+
   // "Mais buscados": só jogos de relevância alta, próximos 7 dias
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -108,6 +126,17 @@ export default function Jogos() {
   }, [matches]);
 
   const groups = groupMatchesByDate(filtered);
+
+  const scrollToProximos = () => {
+    document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleTeamClick = (team: string) => {
+    setTeamFilter((prev) => (prev === team ? null : team));
+    setFilter("semana");
+    setTimeout(scrollToProximos, 80);
+  };
+
 
   return (
     <div className="min-h-screen bg-background pb-24">
