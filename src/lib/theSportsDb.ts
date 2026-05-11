@@ -235,3 +235,149 @@ export function formatMatchTime(iso: string): string {
     timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit",
   }).format(new Date(iso));
 }
+
+/* ============================================================
+ * CURADORIA / RELEVÂNCIA
+ * Sistema de pontuação que prioriza jogos importantes para o
+ * público brasileiro/Prudente sobre listas genéricas da API.
+ * ============================================================ */
+
+export const PRIORITY_TEAMS = [
+  "Corinthians", "Palmeiras", "São Paulo", "Sao Paulo", "Santos",
+  "Flamengo", "Fluminense", "Vasco", "Botafogo", "Atlético Mineiro",
+  "Atletico Mineiro", "Cruzeiro", "Grêmio", "Gremio", "Internacional",
+  "Brasil", "Brazil", "Seleção Brasileira", "Selecao Brasileira",
+  "Barcelona", "Real Madrid", "PSG", "Paris Saint-Germain",
+  "Manchester City", "Manchester United", "Liverpool", "Chelsea",
+  "Arsenal", "Bayern", "Juventus", "Milan", "Inter",
+];
+
+const CLASSICS: Array<[string, string]> = [
+  ["Corinthians", "Palmeiras"],
+  ["São Paulo", "Santos"],
+  ["Sao Paulo", "Santos"],
+  ["Flamengo", "Fluminense"],
+  ["Flamengo", "Vasco"],
+  ["Flamengo", "Palmeiras"],
+  ["Grêmio", "Internacional"],
+  ["Gremio", "Internacional"],
+  ["Atlético Mineiro", "Cruzeiro"],
+  ["Atletico Mineiro", "Cruzeiro"],
+  ["Real Madrid", "Barcelona"],
+  ["Manchester City", "Liverpool"],
+  ["Manchester United", "Liverpool"],
+];
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+function teamMatches(team: string, list: string[]): boolean {
+  const t = norm(team);
+  return list.some((p) => {
+    const np = norm(p);
+    return t === np || t.includes(np) || np.includes(t);
+  });
+}
+
+export function isPriorityTeam(team: string): boolean {
+  return teamMatches(team, PRIORITY_TEAMS);
+}
+
+export function isClassico(home: string, away: string): boolean {
+  const h = norm(home);
+  const a = norm(away);
+  return CLASSICS.some(([x, y]) => {
+    const nx = norm(x);
+    const ny = norm(y);
+    return (h.includes(nx) && a.includes(ny)) || (h.includes(ny) && a.includes(nx));
+  });
+}
+
+/**
+ * Score de relevância (quanto maior, mais importante).
+ * - Ao vivo: +1000
+ * - Copa do Mundo: +800
+ * - Seleção Brasileira em campo: +700
+ * - Clássico: +500
+ * - Time prioritário em campo: +300 (cada lado)
+ * - Champions/Libertadores: +200
+ * - Brasileirão/Copa do Brasil: +120
+ * - Paulistão: +80
+ * - Internacional comum: +30
+ */
+export function getMatchRelevance(m: NormalizedMatch): number {
+  let score = 0;
+  if (m.status === "live") score += 1000;
+  if (m.is_world_cup) score += 800;
+
+  const seleção = isPriorityTeam("Brasil") &&
+    (teamMatches(m.home_team, ["Brasil", "Brazil"]) || teamMatches(m.away_team, ["Brasil", "Brazil"]));
+  if (seleção) score += 700;
+
+  if (isClassico(m.home_team, m.away_team)) score += 500;
+  if (isPriorityTeam(m.home_team)) score += 300;
+  if (isPriorityTeam(m.away_team)) score += 300;
+
+  switch (m.league_id) {
+    case "4481": // Libertadores
+    case "4482": // Champions
+      score += 200; break;
+    case "4351": // Brasileirão
+    case "4356": // Copa do Brasil
+      score += 120; break;
+    case "4480": // Paulistão
+      score += 80; break;
+    case "4335": // La Liga
+    case "4328": // Premier League
+    case "4334": // Ligue 1
+      score += 60; break;
+  }
+
+  // Penaliza jogos finalizados
+  if (m.status === "finished") score -= 400;
+  // Bônus leve para prioridade declarada da liga (1..9, menor = mais importante)
+  score += Math.max(0, 20 - m.priority * 2);
+
+  return score;
+}
+
+export type MatchBadge =
+  | { key: "live"; label: "AO VIVO"; icon: "🔴" }
+  | { key: "copa"; label: "COPA"; icon: "🏆" }
+  | { key: "classico"; label: "CLÁSSICO"; icon: "⚔️" }
+  | { key: "imperdivel"; label: "IMPERDÍVEL"; icon: "🔥" }
+  | { key: "destaque"; label: "DESTAQUE"; icon: "⭐" };
+
+/** Calcula badges visuais a partir do match. */
+export function getMatchBadges(m: NormalizedMatch): MatchBadge[] {
+  const badges: MatchBadge[] = [];
+  if (m.status === "live") badges.push({ key: "live", label: "AO VIVO", icon: "🔴" });
+  if (m.is_world_cup) badges.push({ key: "copa", label: "COPA", icon: "🏆" });
+  if (isClassico(m.home_team, m.away_team)) badges.push({ key: "classico", label: "CLÁSSICO", icon: "⚔️" });
+
+  const bothPriority = isPriorityTeam(m.home_team) && isPriorityTeam(m.away_team);
+  if (bothPriority && !badges.find((b) => b.key === "classico")) {
+    badges.push({ key: "imperdivel", label: "IMPERDÍVEL", icon: "🔥" });
+  }
+  if ((m.league_id === "4482" || m.league_id === "4481") && !badges.find((b) => b.key === "imperdivel")) {
+    badges.push({ key: "destaque", label: "DESTAQUE", icon: "⭐" });
+  }
+  return badges.slice(0, 3);
+}
+
+/** Ordena jogos pela relevância (desc) mantendo desempate por data. */
+export function sortMatchesByRelevance(list: NormalizedMatch[]): NormalizedMatch[] {
+  return [...list].sort((a, b) => {
+    const rb = getMatchRelevance(b) - getMatchRelevance(a);
+    if (rb !== 0) return rb;
+    return new Date(a.match_time).getTime() - new Date(b.match_time).getTime();
+  });
+}
+
+/** Limite mínimo para “Mais Buscados / Imperdíveis”. */
+export const RELEVANCE_HIGHLIGHT_THRESHOLD = 300;
+
+export function isHighlightedMatch(m: NormalizedMatch): boolean {
+  return getMatchRelevance(m) >= RELEVANCE_HIGHLIGHT_THRESHOLD;
+}
+
