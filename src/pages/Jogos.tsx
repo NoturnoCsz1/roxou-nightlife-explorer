@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv } from "lucide-react";
+import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv, Zap } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,10 +9,29 @@ import {
   groupMatchesByDate,
   sortMatchesByRelevance,
   isHighlightedMatch,
+  filterRelevantMatches,
+  formatMatchTime,
+  isPriorityTeam,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import auraJogosHero from "@/assets/aura-jogos-hero.jpg";
+
+const POPULAR_TEAMS = [
+  { label: "Corinthians", match: "corinthians", emoji: "🦅" },
+  { label: "Palmeiras", match: "palmeiras", emoji: "🐷" },
+  { label: "Flamengo", match: "flamengo", emoji: "🔴" },
+  { label: "São Paulo", match: "são paulo", emoji: "⚪" },
+  { label: "Santos", match: "santos", emoji: "⚓" },
+  { label: "Brasil", match: "brasil", emoji: "🇧🇷" },
+  { label: "Real Madrid", match: "real madrid", emoji: "👑" },
+  { label: "Barcelona", match: "barcelona", emoji: "🔵" },
+  { label: "PSG", match: "psg", emoji: "🗼" },
+];
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 
 type FilterKey = "hoje" | "amanha" | "semana" | "copa" | "brasil" | "internacional" | "live";
 
@@ -38,6 +57,7 @@ const tomorrowKeySP = () =>
 
 export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
+  const [teamFilter, setTeamFilter] = useState<string | null>(null);
 
   const { data: matches = [], isLoading, isError } = useQuery({
     queryKey: ["jogos-public"],
@@ -64,8 +84,17 @@ export default function Jogos() {
 
   const hasCopa = useMemo(() => matches.some((m) => m.is_world_cup), [matches]);
 
+  // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam (ex: internacional/copa).
+  const relevantBase = useMemo(() => filterRelevantMatches(matches), [matches]);
+
   const filtered = useMemo<NormalizedMatch[]>(() => {
-    let list = matches;
+    // Para filtros amplos (hoje/amanha/semana/live) usa lista curada.
+    // Para filtros categóricos (copa/brasil/internacional) usa lista completa.
+    let list: NormalizedMatch[] =
+      filter === "copa" || filter === "brasil" || filter === "internacional"
+        ? matches
+        : relevantBase;
+
     if (filter === "hoje") list = list.filter((m) => m.raw_date === today);
     else if (filter === "amanha") list = list.filter((m) => m.raw_date === tomorrow);
     else if (filter === "semana") {
@@ -75,10 +104,19 @@ export default function Jogos() {
     else if (filter === "brasil") list = list.filter((m) => m.category === "brazil");
     else if (filter === "internacional") list = list.filter((m) => m.category === "international");
     else if (filter === "live") list = list.filter((m) => m.status === "live");
-    return list;
-  }, [matches, filter, today, tomorrow]);
 
-  const todays = sortMatchesByRelevance(matches.filter((m) => m.raw_date === today));
+    if (teamFilter) {
+      const t = norm(teamFilter);
+      list = list.filter((m) => norm(m.home_team).includes(t) || norm(m.away_team).includes(t));
+    }
+    return list;
+  }, [matches, relevantBase, filter, today, tomorrow, teamFilter]);
+
+  const todays = sortMatchesByRelevance(relevantBase.filter((m) => m.raw_date === today && m.status !== "finished"));
+
+  // "HOJE TEM" — jogo mais relevante do dia
+  const hojeTem = useMemo(() => todays[0] ?? null, [todays]);
+
   // "Mais buscados": só jogos de relevância alta, próximos 7 dias
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
@@ -88,6 +126,17 @@ export default function Jogos() {
   }, [matches]);
 
   const groups = groupMatchesByDate(filtered);
+
+  const scrollToProximos = () => {
+    document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleTeamClick = (team: string) => {
+    setTeamFilter((prev) => (prev === team ? null : team));
+    setFilter("semana");
+    setTimeout(scrollToProximos, 80);
+  };
+
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -148,10 +197,7 @@ export default function Jogos() {
             </p>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => {
-                  setFilter("hoje");
-                  document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+                onClick={() => { setFilter("hoje"); scrollToProximos(); }}
                 className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
               >
                 <Calendar className="h-4 w-4" /> Ver jogos de hoje
@@ -165,20 +211,21 @@ export default function Jogos() {
             </div>
           </div>
 
-          {/* Aura */}
-          <div className="order-1 md:order-2 relative mx-auto md:mx-0">
-            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-yellow-400/30 via-green-500/20 to-primary/40 blur-2xl" />
-            <div className="relative h-40 w-40 md:h-64 md:w-64 rounded-2xl overflow-hidden ring-2 ring-yellow-500/40 shadow-[0_0_50px_-10px_rgba(234,179,8,0.7)]">
+          {/* Aura — flutuação + glow pulsante */}
+          <div className="order-1 md:order-2 relative mx-auto md:mx-0 animate-aura-float">
+            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-yellow-400/40 via-green-500/30 to-primary/50 blur-2xl animate-glow-pulse" />
+            <div className="relative h-44 w-44 md:h-72 md:w-72 rounded-3xl overflow-hidden ring-2 ring-yellow-500/50 shadow-[0_0_60px_-10px_rgba(234,179,8,0.75)]">
               <img
                 src={auraJogosHero}
                 alt="Aura — IA da Roxou com camisa do Brasil"
                 width={1024}
                 height={1024}
-                loading="lazy"
+                loading="eager"
+                fetchPriority="high"
                 decoding="async"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-top"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
               <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/70 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-yellow-300 border border-yellow-500/40">
                 <Sparkles className="h-3 w-3" /> Aura
               </span>
@@ -205,6 +252,40 @@ export default function Jogos() {
           ))}
         </div>
 
+        {/* TIMES POPULARES */}
+        <section aria-label="Times populares">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" /> Times populares
+          </h2>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+            {POPULAR_TEAMS.map((t) => {
+              const active = teamFilter === t.match;
+              return (
+                <button
+                  key={t.match}
+                  onClick={() => handleTeamClick(t.match)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${
+                    active
+                      ? "border-yellow-500/60 bg-gradient-to-r from-yellow-500/20 to-green-500/20 text-yellow-200 shadow-[0_0_18px_-6px_rgba(234,179,8,0.7)]"
+                      : "border-border/50 bg-card/50 hover:border-primary/50 hover:bg-card/70 text-foreground/80"
+                  }`}
+                >
+                  <span>{t.emoji}</span>
+                  {t.label}
+                </button>
+              );
+            })}
+            {teamFilter && (
+              <button
+                onClick={() => setTeamFilter(null)}
+                className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground underline"
+              >
+                limpar
+              </button>
+            )}
+          </div>
+        </section>
+
         {isError ? (
           <FallbackState />
         ) : isLoading ? (
@@ -215,6 +296,56 @@ export default function Jogos() {
           </div>
         ) : (
           <>
+            {/* 🔥 HOJE TEM — destaque do dia */}
+            {hojeTem && !teamFilter && (
+              <section aria-label="Destaque do dia">
+                <Link
+                  to={`/jogo/${hojeTem.slug}`}
+                  className="group relative block overflow-hidden rounded-3xl border border-yellow-500/40 bg-gradient-to-br from-emerald-950/80 via-background to-yellow-900/40 p-5 md:p-6 shadow-[0_0_45px_-12px_rgba(234,179,8,0.6)] hover:shadow-[0_0_60px_-8px_rgba(234,179,8,0.85)] hover:-translate-y-0.5 transition-all"
+                >
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
+                  <div className="relative flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+                    <div className="inline-flex items-center gap-1.5 self-start rounded-full bg-orange-500/20 border border-orange-500/50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-orange-200 animate-glow-pulse">
+                      <Zap className="h-3 w-3" /> Hoje tem
+                    </div>
+
+                    <div className="flex-1 flex items-center gap-3 md:gap-4">
+                      {hojeTem.home_badge && (
+                        <img src={hojeTem.home_badge} alt={hojeTem.home_team} className="h-14 w-14 md:h-20 md:w-20 object-contain drop-shadow-[0_0_12px_rgba(234,179,8,0.4)]" loading="lazy" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display font-black text-base md:text-2xl leading-tight truncate">
+                          {hojeTem.home_team}
+                        </p>
+                        <p className="text-yellow-300/80 font-black text-sm my-0.5">×</p>
+                        <p className="font-display font-black text-base md:text-2xl leading-tight truncate">
+                          {hojeTem.away_team}
+                        </p>
+                      </div>
+                      {hojeTem.away_badge && (
+                        <img src={hojeTem.away_badge} alt={hojeTem.away_team} className="h-14 w-14 md:h-20 md:w-20 object-contain drop-shadow-[0_0_12px_rgba(34,197,94,0.4)]" loading="lazy" />
+                      )}
+                    </div>
+
+                    <div className="flex flex-col items-start md:items-end gap-1.5">
+                      <p className="text-2xl md:text-3xl font-black text-yellow-300">
+                        {formatMatchTime(hojeTem.match_time)}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
+                        {hojeTem.league_label}
+                      </p>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-300 font-semibold">
+                        <MapPin className="h-3 w-3" /> Presidente Prudente
+                      </span>
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-1.5 text-xs font-black shadow-[0_0_18px_-6px_hsl(var(--primary))] group-hover:scale-[1.03] transition">
+                        Ver onde assistir →
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </section>
+            )}
+
             {/* MAIS BUSCADOS HOJE */}
             {maisBuscados.length > 0 && (
               <section>
