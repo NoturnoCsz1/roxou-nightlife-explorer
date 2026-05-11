@@ -197,10 +197,7 @@ export default function Jogos() {
             </p>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => {
-                  setFilter("hoje");
-                  document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
+                onClick={() => { setFilter("hoje"); scrollToProximos(); }}
                 className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
               >
                 <Calendar className="h-4 w-4" /> Ver jogos de hoje
@@ -214,20 +211,21 @@ export default function Jogos() {
             </div>
           </div>
 
-          {/* Aura */}
-          <div className="order-1 md:order-2 relative mx-auto md:mx-0">
-            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-yellow-400/30 via-green-500/20 to-primary/40 blur-2xl" />
-            <div className="relative h-40 w-40 md:h-64 md:w-64 rounded-2xl overflow-hidden ring-2 ring-yellow-500/40 shadow-[0_0_50px_-10px_rgba(234,179,8,0.7)]">
+          {/* Aura — flutuação + glow pulsante */}
+          <div className="order-1 md:order-2 relative mx-auto md:mx-0 animate-aura-float">
+            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-yellow-400/40 via-green-500/30 to-primary/50 blur-2xl animate-glow-pulse" />
+            <div className="relative h-44 w-44 md:h-72 md:w-72 rounded-3xl overflow-hidden ring-2 ring-yellow-500/50 shadow-[0_0_60px_-10px_rgba(234,179,8,0.75)]">
               <img
                 src={auraJogosHero}
                 alt="Aura — IA da Roxou com camisa do Brasil"
                 width={1024}
                 height={1024}
-                loading="lazy"
+                loading="eager"
+                fetchPriority="high"
                 decoding="async"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover object-top"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
               <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/70 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-yellow-300 border border-yellow-500/40">
                 <Sparkles className="h-3 w-3" /> Aura
               </span>
