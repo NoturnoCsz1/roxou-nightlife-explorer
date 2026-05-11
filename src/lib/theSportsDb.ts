@@ -374,10 +374,22 @@ export function sortMatchesByRelevance(list: NormalizedMatch[]): NormalizedMatch
   });
 }
 
-/** Limite mínimo para “Mais Buscados / Imperdíveis”. */
+/** Limite mínimo para "Mais Buscados / Imperdíveis". */
 export const RELEVANCE_HIGHLIGHT_THRESHOLD = 300;
+
+/** Limite mínimo para um jogo ser visível na página /jogos (esconde lixo da API). */
+export const MINIMUM_RELEVANCE_VISIBLE = 60;
 
 export function isHighlightedMatch(m: NormalizedMatch): boolean {
   return getMatchRelevance(m) >= RELEVANCE_HIGHLIGHT_THRESHOLD;
+}
+
+export function isVisibleMatch(m: NormalizedMatch): boolean {
+  return getMatchRelevance(m) >= MINIMUM_RELEVANCE_VISIBLE;
+}
+
+/** Filtra jogos com relevância suficiente para exibição pública. */
+export function filterRelevantMatches(list: NormalizedMatch[]): NormalizedMatch[] {
+  return list.filter(isVisibleMatch);
 }
 
