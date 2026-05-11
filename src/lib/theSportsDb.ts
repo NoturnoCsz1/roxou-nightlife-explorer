@@ -247,6 +247,7 @@ export const PRIORITY_TEAMS = [
   "Flamengo", "Fluminense", "Vasco", "Botafogo", "Atlético Mineiro",
   "Atletico Mineiro", "Cruzeiro", "Grêmio", "Gremio", "Internacional",
   "Brasil", "Brazil", "Seleção Brasileira", "Selecao Brasileira",
+  "Argentina", "Inter Miami",
   "Barcelona", "Real Madrid", "PSG", "Paris Saint-Germain",
   "Manchester City", "Manchester United", "Liverpool", "Chelsea",
   "Arsenal", "Bayern", "Juventus", "Milan", "Inter",
