@@ -57,6 +57,7 @@ const tomorrowKeySP = () =>
 
 export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
+  const [teamFilter, setTeamFilter] = useState<string | null>(null);
 
   const { data: matches = [], isLoading, isError } = useQuery({
     queryKey: ["jogos-public"],
