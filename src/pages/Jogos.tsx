@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, Radio, Beer, Calendar, MapPin } from "lucide-react";
+import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getFeaturedFootballEvents,
   groupMatchesByDate,
+  sortMatchesByRelevance,
+  isHighlightedMatch,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
+import auraJogosHero from "@/assets/aura-jogos-hero.jpg";
 
 type FilterKey = "hoje" | "amanha" | "semana" | "copa" | "brasil" | "internacional" | "live";
 
@@ -75,7 +78,15 @@ export default function Jogos() {
     return list;
   }, [matches, filter, today, tomorrow]);
 
-  const todays = matches.filter((m) => m.raw_date === today);
+  const todays = sortMatchesByRelevance(matches.filter((m) => m.raw_date === today));
+  // "Mais buscados": só jogos de relevância alta, próximos 7 dias
+  const maisBuscados = useMemo(() => {
+    const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    return sortMatchesByRelevance(
+      matches.filter((m) => isHighlightedMatch(m) && new Date(m.match_time).getTime() <= limit && m.status !== "finished"),
+    ).slice(0, 8);
+  }, [matches]);
+
   const groups = groupMatchesByDate(filtered);
 
   return (
@@ -109,25 +120,74 @@ export default function Jogos() {
         }}
       />
 
-      {/* HERO */}
+      {/* HERO PREMIUM */}
       <header className="relative overflow-hidden border-b border-border/40">
-        <div className={`absolute inset-0 ${hasCopa ? "bg-gradient-to-br from-emerald-950 via-background to-yellow-900/30" : "bg-gradient-to-br from-primary/20 via-background to-accent/10"}`} />
-        <div className="relative mx-auto max-w-5xl px-4 py-10 md:py-14">
-          {hasCopa && (
-            <div className="inline-flex items-center gap-1.5 mb-3 rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-1 text-xs font-bold text-yellow-300">
-              <Trophy className="h-3.5 w-3.5" /> Copa na Roxou
+        {/* Atmosfera de estádio */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/80 via-background to-yellow-900/30" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.25),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(34,197,94,0.18),transparent_60%)]" />
+        {/* grid de estádio sutil */}
+        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(0deg,transparent_24%,rgba(255,255,255,0.4)_25%,rgba(255,255,255,0.4)_26%,transparent_27%,transparent_74%,rgba(255,255,255,0.4)_75%,rgba(255,255,255,0.4)_76%,transparent_77%,transparent)] bg-[length:60px_60px]" />
+
+        <div className="relative mx-auto max-w-6xl px-4 py-10 md:py-16 grid md:grid-cols-[1fr_auto] gap-8 items-center">
+          {/* Texto */}
+          <div className="order-2 md:order-1">
+            <div className="inline-flex items-center gap-1.5 mb-4 rounded-full bg-yellow-500/15 border border-yellow-500/50 px-3 py-1.5 text-xs font-black text-yellow-300 shadow-[0_0_20px_-4px_rgba(234,179,8,0.5)]">
+              <Trophy className="h-3.5 w-3.5" /> COPA NA ROXOU
             </div>
-          )}
-          <h1 className="font-display font-black text-3xl md:text-5xl leading-tight">
-            Jogos na Roxou
-          </h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm md:text-base">
-            Veja os jogos de hoje, próximos confrontos e bares transmitindo futebol em Presidente Prudente.
-          </p>
+            <h1 className="font-display font-black text-3xl md:text-5xl leading-[1.05] mb-3">
+              <span className="block">JOGOS, TRANSMISSÕES E</span>
+              <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
+                BARES PARA ASSISTIR
+              </span>
+              <span className="block">FUTEBOL EM PRUDENTE</span>
+            </h1>
+            <p className="text-muted-foreground max-w-xl text-sm md:text-base mb-5">
+              Veja os principais jogos do dia, bares transmitindo e acompanhe a emoção da Copa, Brasileirão,
+              Libertadores e Champions na Roxou.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  setFilter("hoje");
+                  document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
+              >
+                <Calendar className="h-4 w-4" /> Ver jogos de hoje
+              </button>
+              <a
+                href="#bares-esportivos"
+                className="inline-flex items-center gap-2 rounded-full border border-yellow-500/50 bg-yellow-500/10 text-yellow-200 px-5 py-2.5 text-sm font-bold hover:bg-yellow-500/20 transition"
+              >
+                <Beer className="h-4 w-4" /> Ver bares esportivos
+              </a>
+            </div>
+          </div>
+
+          {/* Aura */}
+          <div className="order-1 md:order-2 relative mx-auto md:mx-0">
+            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-yellow-400/30 via-green-500/20 to-primary/40 blur-2xl" />
+            <div className="relative h-40 w-40 md:h-64 md:w-64 rounded-2xl overflow-hidden ring-2 ring-yellow-500/40 shadow-[0_0_50px_-10px_rgba(234,179,8,0.7)]">
+              <img
+                src={auraJogosHero}
+                alt="Aura — IA da Roxou com camisa do Brasil"
+                width={1024}
+                height={1024}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
+              <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/70 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-yellow-300 border border-yellow-500/40">
+                <Sparkles className="h-3 w-3" /> Aura
+              </span>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6 space-y-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
         {/* Filtros */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
           {FILTERS.map((f) => (
@@ -136,7 +196,7 @@ export default function Jogos() {
               onClick={() => setFilter(f.key)}
               className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-all ${
                 filter === f.key
-                  ? "bg-primary text-primary-foreground shadow-lg"
+                  ? "bg-primary text-primary-foreground shadow-[0_0_18px_-6px_hsl(var(--primary))]"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               }`}
             >
@@ -155,6 +215,23 @@ export default function Jogos() {
           </div>
         ) : (
           <>
+            {/* MAIS BUSCADOS HOJE */}
+            {maisBuscados.length > 0 && (
+              <section>
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-orange-400" /> Mais buscados
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">próximos 7 dias</span>
+                </h2>
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2 md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:mx-0 md:px-0 md:pb-0">
+                  {maisBuscados.map((m) => (
+                    <div key={m.external_id} className="w-[280px] shrink-0 md:w-auto">
+                      <MatchCard match={m} compact />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Destaque Copa */}
             {hasCopa && filter !== "copa" && (
               <section>
@@ -162,7 +239,7 @@ export default function Jogos() {
                   <Trophy className="h-5 w-5 text-yellow-400" /> Copa na Roxou
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {matches.filter((m) => m.is_world_cup).slice(0, 4).map((m) => (
+                  {sortMatchesByRelevance(matches.filter((m) => m.is_world_cup)).slice(0, 4).map((m) => (
                     <MatchCard key={m.external_id} match={m} />
                   ))}
                 </div>
@@ -173,7 +250,7 @@ export default function Jogos() {
             {filter !== "hoje" && todays.length > 0 && (
               <section>
                 <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
-                  <Radio className="h-5 w-5 text-primary" /> Jogos de Hoje
+                  <Radio className="h-5 w-5 text-primary" /> Jogos de hoje
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {todays.map((m) => <MatchCard key={m.external_id} match={m} />)}
@@ -182,9 +259,9 @@ export default function Jogos() {
             )}
 
             {/* Lista filtrada */}
-            <section>
+            <section id="proximos">
               <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" /> Próximos Jogos
+                <Calendar className="h-5 w-5 text-primary" /> Próximos jogos
               </h2>
               {groups.length === 0 ? (
                 <p className="text-muted-foreground text-sm py-8 text-center">
@@ -192,12 +269,12 @@ export default function Jogos() {
                 </p>
               ) : (
                 groups.map((g) => (
-                  <div key={g.dateKey} className="mb-5">
+                  <div key={g.dateKey} className="mb-6">
                     <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
                       {g.label}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {g.matches.map((m) => <MatchCard key={m.external_id} match={m} />)}
+                      {sortMatchesByRelevance(g.matches).map((m) => <MatchCard key={m.external_id} match={m} />)}
                     </div>
                   </div>
                 ))
@@ -206,36 +283,74 @@ export default function Jogos() {
           </>
         )}
 
-        {/* Bares transmitindo */}
-        <section>
+        {/* Bares premium */}
+        <section id="bares-esportivos">
           <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
             <Beer className="h-5 w-5 text-primary" /> Bares que transmitem futebol em Prudente
           </h2>
           {bars.length === 0 ? (
             <p className="text-muted-foreground text-sm">Em breve adicionaremos parceiros para você assistir os jogos.</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {bars.map((b: any) => (
                 <Link
                   key={b.id}
                   to={`/local/${b.slug}`}
-                  className="rounded-xl border border-border/40 bg-card/60 hover:border-primary/50 p-3 transition"
+                  className="group rounded-2xl border border-border/50 bg-card/60 hover:border-primary/60 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.55)] p-4 transition-all hover:-translate-y-0.5"
                 >
-                  <p className="font-semibold text-sm line-clamp-1">{b.name}</p>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="font-bold text-sm line-clamp-1">{b.name}</p>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">
+                      <Tv className="h-2.5 w-2.5" /> Transmite
+                    </span>
+                  </div>
                   {b.neighborhood && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1">
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> {b.neighborhood}
                     </p>
                   )}
+                  {b.type && (
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{b.type}</p>
+                  )}
+                  <span className="mt-3 inline-block text-[11px] font-bold text-primary group-hover:underline">
+                    Ver local →
+                  </span>
                 </Link>
               ))}
             </div>
           )}
         </section>
 
-        {/* FAQ */}
-        <section className="border-t border-border/40 pt-6">
-          <h2 className="font-display font-black text-xl mb-3">Perguntas frequentes</h2>
+        {/* SEO Footer */}
+        <section className="border-t border-border/40 pt-8">
+          <h2 className="font-display font-black text-2xl mb-3">
+            Onde assistir futebol em Presidente Prudente
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base max-w-3xl">
+            A Roxou reúne bares, pubs e restaurantes que transmitem os principais jogos de futebol em Presidente Prudente.
+            Veja onde assistir Brasileirão, Copa do Brasil, Libertadores, Champions League, Copa do Mundo e jogos da
+            Seleção Brasileira com a melhor curadoria local.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-5">
+            <Link to="/agenda" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Ver agenda de eventos
+            </Link>
+            <Link to="/indica" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Ver bares em Prudente
+            </Link>
+            <button
+              onClick={() => { setFilter("hoje"); document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth" }); }}
+              className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition"
+            >
+              Ver jogos de hoje
+            </button>
+            <a href="#bares-esportivos" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Ver locais esportivos
+            </a>
+          </div>
+
+          {/* FAQ */}
+          <h3 className="font-display font-black text-lg mt-8 mb-3">Perguntas frequentes</h3>
           <div className="space-y-3 text-sm">
             <details className="rounded-lg border border-border/40 bg-card/40 p-3">
               <summary className="cursor-pointer font-semibold">Os horários estão em qual fuso?</summary>
