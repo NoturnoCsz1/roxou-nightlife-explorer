@@ -2097,6 +2097,117 @@ export type Database = {
         }
         Relationships: []
       }
+      sports_match_venues: {
+        Row: {
+          created_at: string
+          id: string
+          is_featured: boolean
+          match_id: string
+          notes: string | null
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_featured?: boolean
+          match_id: string
+          notes?: string | null
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_featured?: boolean
+          match_id?: string
+          notes?: string | null
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sports_match_venues_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "sports_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sports_match_venues_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sports_matches: {
+        Row: {
+          away_badge: string | null
+          away_team: string
+          category: string | null
+          created_at: string
+          external_id: string | null
+          home_badge: string | null
+          home_team: string
+          id: string
+          is_featured: boolean
+          is_world_cup: boolean
+          league_id: string | null
+          league_label: string | null
+          league_name: string | null
+          match_time: string
+          season: string | null
+          slug: string
+          status: string
+          updated_at: string
+          venue_name: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          away_badge?: string | null
+          away_team: string
+          category?: string | null
+          created_at?: string
+          external_id?: string | null
+          home_badge?: string | null
+          home_team: string
+          id?: string
+          is_featured?: boolean
+          is_world_cup?: boolean
+          league_id?: string | null
+          league_label?: string | null
+          league_name?: string | null
+          match_time: string
+          season?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+          venue_name?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          away_badge?: string | null
+          away_team?: string
+          category?: string | null
+          created_at?: string
+          external_id?: string | null
+          home_badge?: string | null
+          home_team?: string
+          id?: string
+          is_featured?: boolean
+          is_world_cup?: boolean
+          league_id?: string | null
+          league_label?: string | null
+          league_name?: string | null
+          match_time?: string
+          season?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+          venue_name?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       system_alerts: {
         Row: {
           context: Json | null

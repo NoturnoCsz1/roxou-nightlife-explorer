@@ -37,6 +37,7 @@ import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import ExpoCountdownPill from "@/components/v3/home/ExpoCountdownPill";
+import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 
 // Wrapper que injeta PremiumEventCard (definido abaixo neste arquivo) no TodayTimeline extraído.
 const TodayTimeline = (props: Omit<React.ComponentProps<typeof TodayTimelineRaw>, "Card">) => (
@@ -437,6 +438,9 @@ export default function V3Home() {
       {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
       {!isLoading && !hasHomeDataError && (
         <div className="max-w-3xl mx-auto min-h-[200px]">
+          <HomeSectionBoundary name="Jogos na Roxou" silent>
+            <HomeJogosCard />
+          </HomeSectionBoundary>
           <HomeSectionBoundary name="Notícias trending" silent>
             <LatestNewsSection variant="trending" limit={6} />
           </HomeSectionBoundary>

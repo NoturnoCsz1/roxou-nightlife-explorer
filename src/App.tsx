@@ -83,6 +83,8 @@ import V3AIChat from "./pages/v3/V3AIChat";
 import V3Sobre from "./pages/v3/V3Sobre";
 import V3Contato from "./pages/v3/V3Contato";
 const PertoDeMim = lazy(() => import("./pages/PertoDeMim"));
+const Jogos = lazy(() => import("./pages/Jogos"));
+const JogoDetail = lazy(() => import("./pages/JogoDetail"));
 const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 import PedirCaronaGate from "./components/PedirCaronaGate";
@@ -158,6 +160,8 @@ const App = () => (
           {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
           <Route path="/pedir-carona" element={<PedirCaronaGate />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
+          <Route path="/jogos" element={L(<Jogos />)} />
+          <Route path="/jogo/:slug" element={L(<JogoDetail />)} />
 
           {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
           <Route path="/v3" element={<Navigate to="/" replace />} />
