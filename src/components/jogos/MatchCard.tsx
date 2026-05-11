@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Trophy, Radio, Beer, Clock, MapPin } from "lucide-react";
+import { Trophy, Radio, Beer, Clock } from "lucide-react";
 import { formatMatchTime, type NormalizedMatch } from "@/lib/theSportsDb";
 
 interface Props {
