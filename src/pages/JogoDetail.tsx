@@ -192,13 +192,12 @@ export default function JogoDetail() {
           )}
         </section>
 
-        {/* Chat placeholder */}
-        <section className="rounded-2xl border border-border/40 bg-card/40 p-4 text-center">
-          <p className="font-semibold text-sm">Chat Roxou em breve para membros cadastrados.</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Comente, vibre e combine de assistir junto.
-          </p>
-        </section>
+        {/* Chat Roxou do jogo */}
+        <FootballMatchChat
+          matchSlug={match.slug}
+          matchTitle={`${match.home_team} x ${match.away_team}`}
+        />
+
 
         {/* FAQ */}
         <section className="border-t border-border/40 pt-6">
