@@ -15,7 +15,25 @@ import {
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
+import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
 import auraJogosHero from "@/assets/aura-jogos-hero.jpg";
+
+/** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
+function PriorityMatchBlock({
+  match,
+  bars,
+}: {
+  match: NormalizedMatch;
+  bars: { id: string; name: string; slug: string; neighborhood?: string | null; type?: string | null }[];
+}) {
+  const showVenues = isHighlightedMatch(match) && match.status !== "finished";
+  return (
+    <div>
+      <MatchCard match={match} venuesCount={showVenues ? bars.length : 0} />
+      {showVenues && <MatchVenuesQuickList bars={bars} />}
+    </div>
+  );
+}
 
 const POPULAR_TEAMS = [
   { label: "Corinthians", match: "corinthians", emoji: "🦅" },
@@ -342,9 +360,10 @@ export default function Jogos() {
                       </span>
                     </div>
                   </div>
-                </Link>
-              </section>
-            )}
+                  </Link>
+                  <MatchVenuesQuickList bars={bars as any} title="Onde assistir esse jogo" />
+                </section>
+              )}
 
             {/* MAIS BUSCADOS HOJE */}
             {maisBuscados.length > 0 && (
@@ -371,7 +390,7 @@ export default function Jogos() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {sortMatchesByRelevance(matches.filter((m) => m.is_world_cup)).slice(0, 4).map((m) => (
-                    <MatchCard key={m.external_id} match={m} />
+                    <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />
                   ))}
                 </div>
               </section>
@@ -384,7 +403,7 @@ export default function Jogos() {
                   <Radio className="h-5 w-5 text-primary" /> Jogos de hoje
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {todays.map((m) => <MatchCard key={m.external_id} match={m} />)}
+                  {todays.map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />)}
                 </div>
               </section>
             )}
@@ -405,7 +424,7 @@ export default function Jogos() {
                       {g.label}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {sortMatchesByRelevance(g.matches).map((m) => <MatchCard key={m.external_id} match={m} />)}
+                      {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />)}
                     </div>
                   </div>
                 ))
