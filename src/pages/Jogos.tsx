@@ -16,7 +16,7 @@ import {
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
-import auraJogosHero from "@/assets/aura-jogos-hero.jpg";
+
 
 /** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
 function PriorityMatchBlock({
