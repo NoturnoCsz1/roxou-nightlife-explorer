@@ -360,9 +360,10 @@ export default function Jogos() {
                       </span>
                     </div>
                   </div>
-                </Link>
-              </section>
-            )}
+                  </Link>
+                  <MatchVenuesQuickList bars={bars as any} title="Onde assistir esse jogo" />
+                </section>
+              )}
 
             {/* MAIS BUSCADOS HOJE */}
             {maisBuscados.length > 0 && (
