@@ -1169,6 +1169,39 @@ export type Database = {
         }
         Relationships: []
       }
+      football_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_deleted: boolean
+          match_slug: string
+          message: string
+          moderation_status: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          match_slug: string
+          message: string
+          moderation_status?: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          match_slug?: string
+          message?: string
+          moderation_status?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       instagram_accounts: {
         Row: {
           access_token: string
