@@ -9,6 +9,7 @@ import {
   formatMatchTime,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
+import FootballMatchChat from "@/components/jogos/FootballMatchChat";
 
 export default function JogoDetail() {
   const { slug = "" } = useParams();
