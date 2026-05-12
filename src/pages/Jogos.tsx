@@ -196,20 +196,23 @@ export default function Jogos() {
         {/* grid de estádio sutil */}
         <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(0deg,transparent_24%,rgba(255,255,255,0.4)_25%,rgba(255,255,255,0.4)_26%,transparent_27%,transparent_74%,rgba(255,255,255,0.4)_75%,rgba(255,255,255,0.4)_76%,transparent_77%,transparent)] bg-[length:60px_60px]" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-10 md:py-16 grid md:grid-cols-[1fr_auto] gap-8 items-center">
+        <div className="relative mx-auto max-w-6xl px-4 py-10 md:py-16 grid md:grid-cols-[1.15fr_1fr] gap-6 md:gap-10 items-center">
           {/* Texto */}
-          <div className="order-2 md:order-1">
-            <div className="inline-flex items-center gap-1.5 mb-4 rounded-full bg-yellow-500/15 border border-yellow-500/50 px-3 py-1.5 text-xs font-black text-yellow-300 shadow-[0_0_20px_-4px_rgba(234,179,8,0.5)]">
+          <div className="order-2 md:order-1 max-w-[34ch] md:max-w-[28ch]">
+            <div className="inline-flex items-center gap-1.5 mb-4 rounded-full bg-yellow-500/15 border border-yellow-500/50 px-3 py-1.5 text-[11px] md:text-xs font-black text-yellow-300 shadow-[0_0_20px_-4px_rgba(234,179,8,0.5)]">
               <Trophy className="h-3.5 w-3.5" /> COPA NA ROXOU
             </div>
-            <h1 className="font-display font-black text-3xl md:text-5xl leading-[1.05] mb-3">
+            <h1
+              className="font-display font-black leading-[0.95] tracking-tight md:tracking-[-0.01em] mb-3 text-balance"
+              style={{ fontSize: "clamp(1.75rem, 6.2vw, 3.25rem)", wordBreak: "keep-all", hyphens: "none" }}
+            >
               <span className="block">JOGOS, TRANSMISSÕES E</span>
               <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
                 BARES PARA ASSISTIR
               </span>
               <span className="block">FUTEBOL EM PRUDENTE</span>
             </h1>
-            <p className="text-muted-foreground max-w-xl text-sm md:text-base mb-5">
+            <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance">
               Veja os principais jogos do dia, bares transmitindo e acompanhe a emoção da Copa, Brasileirão,
               Libertadores e Champions na Roxou.
             </p>
@@ -229,23 +232,46 @@ export default function Jogos() {
             </div>
           </div>
 
-          {/* Aura — flutuação + glow pulsante */}
-          <div className="order-1 md:order-2 relative mx-auto md:mx-0 animate-aura-float">
-            <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-yellow-400/40 via-green-500/30 to-primary/50 blur-2xl animate-glow-pulse" />
-            <div className="relative h-44 w-44 md:h-72 md:w-72 rounded-3xl overflow-hidden ring-2 ring-yellow-500/50 shadow-[0_0_60px_-10px_rgba(234,179,8,0.75)]">
-              <img
-                src={auraJogosHero}
-                alt="Aura — IA da Roxou com camisa do Brasil"
-                width={1024}
-                height={1024}
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-                className="h-full w-full object-cover object-top"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
+          {/* Visual cinematográfico — estádio Champions/Copa, sem IA genérica */}
+          <div className="order-1 md:order-2 relative mx-auto md:mx-0 w-full max-w-[420px]">
+            <div className="relative aspect-[4/3] md:aspect-[5/4] w-full rounded-3xl overflow-hidden ring-1 ring-yellow-500/30 shadow-[0_0_60px_-12px_rgba(234,179,8,0.55)]">
+              {/* Camada base — gramado + iluminação de estádio */}
+              <div className="absolute inset-0 bg-gradient-to-b from-emerald-900 via-emerald-950 to-background" />
+              {/* Spotlights superiores */}
+              <div className="absolute -top-10 left-1/4 h-40 w-40 rounded-full bg-yellow-300/40 blur-3xl animate-glow-pulse" />
+              <div className="absolute -top-10 right-1/4 h-40 w-40 rounded-full bg-green-300/30 blur-3xl animate-glow-pulse" />
+              {/* Fumaça verde/amarela */}
+              <div className="absolute bottom-0 left-0 h-1/2 w-2/3 bg-[radial-gradient(ellipse_at_bottom_left,rgba(234,179,8,0.45),transparent_70%)]" />
+              <div className="absolute bottom-0 right-0 h-1/2 w-2/3 bg-[radial-gradient(ellipse_at_bottom_right,rgba(34,197,94,0.45),transparent_70%)]" />
+              {/* Linhas de campo */}
+              <div className="absolute inset-x-0 bottom-0 h-1/2 [perspective:600px]">
+                <div
+                  className="absolute inset-0 opacity-30"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(90deg, rgba(255,255,255,0.18) 0 2px, transparent 2px 60px), repeating-linear-gradient(0deg, rgba(255,255,255,0.10) 0 1px, transparent 1px 30px)",
+                    transform: "rotateX(55deg) translateY(20%)",
+                    transformOrigin: "bottom",
+                  }}
+                />
+              </div>
+              {/* Bandeira BR estilizada (losango central) */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative animate-aura-float">
+                  <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-yellow-400/40 via-green-500/30 to-primary/40 blur-2xl animate-glow-pulse" />
+                  <div className="relative h-24 w-24 md:h-28 md:w-28 rotate-45 rounded-md bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.6)] flex items-center justify-center">
+                    <div className="h-12 w-12 md:h-14 md:w-14 -rotate-45 rounded-full bg-emerald-700 ring-4 ring-emerald-900/50 flex items-center justify-center">
+                      <Sparkles className="h-5 w-5 md:h-6 md:w-6 text-yellow-300" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Partículas */}
+              <div className="absolute inset-0 opacity-60 mix-blend-screen bg-[radial-gradient(circle_at_20%_80%,rgba(255,255,255,0.12)_1px,transparent_2px),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.10)_1px,transparent_2px),radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.08)_1px,transparent_2px)] bg-[length:120px_120px,180px_180px,90px_90px]" />
+              {/* Vinheta + label */}
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
               <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-background/70 backdrop-blur px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-yellow-300 border border-yellow-500/40">
-                <Sparkles className="h-3 w-3" /> Aura
+                <Sparkles className="h-3 w-3" /> Roxou Sports
               </span>
             </div>
           </div>
