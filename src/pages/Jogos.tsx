@@ -15,7 +15,25 @@ import {
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
+import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
 import auraJogosHero from "@/assets/aura-jogos-hero.jpg";
+
+/** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
+function PriorityMatchBlock({
+  match,
+  bars,
+}: {
+  match: NormalizedMatch;
+  bars: { id: string; name: string; slug: string; neighborhood?: string | null; type?: string | null }[];
+}) {
+  const showVenues = isHighlightedMatch(match) && match.status !== "finished";
+  return (
+    <div>
+      <MatchCard match={match} venuesCount={showVenues ? bars.length : 0} />
+      {showVenues && <MatchVenuesQuickList bars={bars} />}
+    </div>
+  );
+}
 
 const POPULAR_TEAMS = [
   { label: "Corinthians", match: "corinthians", emoji: "🦅" },
