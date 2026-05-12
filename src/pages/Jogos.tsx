@@ -390,7 +390,7 @@ export default function Jogos() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {sortMatchesByRelevance(matches.filter((m) => m.is_world_cup)).slice(0, 4).map((m) => (
-                    <MatchCard key={m.external_id} match={m} />
+                    <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />
                   ))}
                 </div>
               </section>
