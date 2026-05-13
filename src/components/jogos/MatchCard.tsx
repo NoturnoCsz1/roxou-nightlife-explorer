@@ -1,5 +1,6 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
-import { Radio, Beer, Clock } from "lucide-react";
+import { Radio, Beer, Clock, Tv, MessageCircle } from "lucide-react";
 import {
   formatMatchTime,
   getMatchBadges,
@@ -11,6 +12,8 @@ import {
 interface Props {
   match: NormalizedMatch;
   venuesCount?: number;
+  hasStream?: boolean;
+  hasActiveChat?: boolean;
   compact?: boolean;
 }
 
