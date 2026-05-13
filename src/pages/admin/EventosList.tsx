@@ -708,23 +708,11 @@ const EventosList = () => {
                 <Flame className="h-2.5 w-2.5" /> Destaque
               </span>
             )}
-            {isAiOrigin(e) && (
-              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-0.5">
-                <Bot className="h-2.5 w-2.5" /> Aura
-              </span>
-            )}
             {needsReview(e) && (
-              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5">
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5" title="Evento precisa revisão">
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
-            <AIConfidenceBadge ai_confidence={e.ai_confidence} needs_review={e.needs_review} />
-            <span
-              title={`Qualidade: ${score}/100`}
-              className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${score === 100 ? "bg-green-500/15 text-green-400" : score >= 75 ? "bg-yellow-400/10 text-yellow-400" : "bg-red-500/15 text-red-400"}`}
-            >
-              {score === 100 ? "✔" : score >= 75 ? "⚠" : "❌"} {score}
-            </span>
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
