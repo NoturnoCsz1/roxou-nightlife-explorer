@@ -77,9 +77,49 @@ const BRAZILIAN_TEAMS = [
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+// Sigla → canonical (espelha src/lib/theSportsDb.ts)
+const TEAM_SIGLAS: Record<string, string> = {
+  spfc: "sao paulo", sep: "palmeiras", scp: "palmeiras",
+  scc: "corinthians", crf: "flamengo", crvg: "vasco", bfr: "botafogo",
+  cam: "atletico mineiro", cap: "athletico paranaense",
+};
+const TEAM_PREFIX_SUFFIX = [
+  "esporte clube","futebol clube","sport club",
+  "fc","ec","sc","ac","cf","cd","cr","ca","fbc","afc",
+  "u20","u23","u17","sub20","sub23","sub17","feminino","feminina",
+];
+
+function normalizeTeamName(name: string | null | undefined): string {
+  if (!name) return "";
+  let s = String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[._\-/]/g, " ").replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ").trim();
+  const compact = s.replace(/\s+/g, "");
+  if (TEAM_SIGLAS[compact]) return TEAM_SIGLAS[compact];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const tok of TEAM_PREFIX_SUFFIX) {
+      const re1 = new RegExp(`^${tok}\\b\\s*`);
+      const re2 = new RegExp(`\\s*\\b${tok}$`);
+      if (re1.test(s)) { s = s.replace(re1, ""); changed = true; }
+      if (re2.test(s)) { s = s.replace(re2, ""); changed = true; }
+    }
+    s = s.replace(/\s+/g, " ").trim();
+  }
+  return s;
+}
+
+function isSameTeam(a: string, b: string): boolean {
+  const na = normalizeTeamName(a), nb = normalizeTeamName(b);
+  if (!na || !nb) return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
 function isBrazilianTeam(team: string): boolean {
   const t = norm(team);
-  return BRAZILIAN_TEAMS.some((p) => t === p || t.includes(p) || p.includes(t));
+  const n = normalizeTeamName(team);
+  return BRAZILIAN_TEAMS.some((p) => t === p || t.includes(p) || p.includes(t) || n === p || n.includes(p));
 }
 
 function normalizeLeague(rawName: string | null | undefined, fallback?: LeagueConfig): { label: string; category: Category; priority: number } {
