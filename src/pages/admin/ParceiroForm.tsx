@@ -170,6 +170,10 @@ const ParceiroForm = () => {
             <input type="checkbox" checked={form.featured_home} onChange={(e) => handleChange("featured_home", e.target.checked)} className="accent-primary" />
             ⭐ Destaque na Home
           </label>
+          <label className="flex items-center gap-1.5 text-xs">
+            <input type="checkbox" checked={form.supports_sports} onChange={(e) => handleChange("supports_sports", e.target.checked)} className="accent-primary" />
+            ⚽ Transmite futebol
+          </label>
         </div>
 
         <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50">
