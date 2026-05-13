@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Clock, MapPin, Beer, Radio, ArrowLeft, Youtube } from "lucide-react";
+import { Trophy, Clock, MapPin, Beer, Radio, ArrowLeft, Youtube, Tv, ExternalLink } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,6 +10,37 @@ import {
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import FootballMatchChat from "@/components/jogos/FootballMatchChat";
+import { trackMatchEvent, incrementMatchView } from "@/lib/matchTracking";
+
+interface StreamRow {
+  id: string;
+  stream_url: string;
+  stream_type: string;
+  is_official: boolean;
+}
+
+/** Converte URL do YouTube/Twitch em URL embed. Retorna null se não der. */
+function toEmbedUrl(url: string, type: string): string | null {
+  try {
+    const u = new URL(url);
+    if (type === "youtube" || u.hostname.includes("youtube") || u.hostname.includes("youtu.be")) {
+      const id =
+        u.hostname.includes("youtu.be") ? u.pathname.slice(1)
+        : u.searchParams.get("v")
+        ?? u.pathname.split("/").pop();
+      if (!id) return null;
+      return `https://www.youtube.com/embed/${id}`;
+    }
+    if (type === "twitch" || u.hostname.includes("twitch")) {
+      const channel = u.pathname.replace(/^\//, "").split("/")[0];
+      if (!channel) return null;
+      return `https://player.twitch.tv/?channel=${channel}&parent=${window.location.hostname}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default function JogoDetail() {
   const { slug = "" } = useParams();
@@ -25,7 +56,6 @@ export default function JogoDetail() {
     [matches, slug],
   );
 
-  // Tentar buscar registro local + bares vinculados (se existir o jogo salvo)
   const { data: localData } = useQuery({
     queryKey: ["jogo-local", slug],
     queryFn: async () => {
@@ -34,16 +64,30 @@ export default function JogoDetail() {
         .select("id, youtube_url")
         .eq("slug", slug)
         .maybeSingle();
-      if (!row) return { youtube_url: null as string | null, venues: [] as any[] };
-      const { data: links } = await supabase
-        .from("sports_match_venues")
-        .select("is_featured, notes, venue:partners(id, name, slug, neighborhood)")
-        .eq("match_id", row.id);
-      return { youtube_url: row.youtube_url ?? null, venues: links ?? [] };
+      if (!row) return { id: null as string | null, youtube_url: null as string | null, venues: [] as any[], streams: [] as StreamRow[] };
+      const [{ data: links }, { data: streams }] = await Promise.all([
+        supabase
+          .from("sports_match_venues")
+          .select("is_featured, notes, transmission_type, venue:partners(id, name, slug, neighborhood)")
+          .eq("match_id", row.id),
+        supabase
+          .from("sports_match_streams")
+          .select("id, stream_url, stream_type, is_official")
+          .eq("match_id", row.id)
+          .eq("is_active", true),
+      ]);
+      return { id: row.id, youtube_url: row.youtube_url ?? null, venues: links ?? [], streams: (streams ?? []) as StreamRow[] };
     },
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Tracking de view (uma vez por slug)
+  useEffect(() => {
+    if (!match) return;
+    incrementMatchView(match.slug);
+    trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "open" });
+  }, [match?.slug, match?.external_id]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
@@ -62,37 +106,77 @@ export default function JogoDetail() {
 
   const isCopa = match.is_world_cup;
   const isLive = match.status === "live";
-  const youtube = localData?.youtube_url || match.youtube_url || null;
   const venues = (localData?.venues ?? []) as any[];
+  const streams = (localData?.streams ?? []) as StreamRow[];
+  const fallbackYoutube = localData?.youtube_url || match.youtube_url || null;
+  const hasOfficialStream = streams.length > 0;
 
-  const title = `Onde assistir ${match.home_team} x ${match.away_team} em Presidente Prudente | Roxou`;
-  const description = `Veja horário, campeonato, transmissão oficial e bares que irão transmitir ${match.home_team} x ${match.away_team} em Presidente Prudente.`;
+  const matchLabel = `${match.home_team} x ${match.away_team}`;
+  const title = `Onde assistir ${matchLabel} hoje em Presidente Prudente | Roxou`;
+  const description = `Veja horário, transmissão oficial e bares que vão transmitir ${matchLabel} pelo ${match.league_label} em Presidente Prudente. Atualizado em tempo real.`;
+  const canonical = `https://roxou.com.br/jogo/${match.slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SportsEvent",
+        name: matchLabel,
+        startDate: match.match_time,
+        eventStatus: isLive
+          ? "https://schema.org/EventInProgress"
+          : "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/MixedEventAttendanceMode",
+        location: {
+          "@type": "Place",
+          name: match.venue_name || "Presidente Prudente",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Presidente Prudente",
+            addressRegion: "SP",
+            addressCountry: "BR",
+          },
+        },
+        competitor: [
+          { "@type": "SportsTeam", name: match.home_team, ...(match.home_badge ? { logo: match.home_badge } : {}) },
+          { "@type": "SportsTeam", name: match.away_team, ...(match.away_badge ? { logo: match.away_badge } : {}) },
+        ],
+        superEvent: { "@type": "SportsEvent", name: match.league_name },
+        url: canonical,
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: `Que horas é ${matchLabel}?`,
+            acceptedAnswer: { "@type": "Answer", text: `O jogo começa às ${formatMatchTime(match.match_time)} (horário de Brasília).` },
+          },
+          {
+            "@type": "Question",
+            name: `Onde assistir ${matchLabel} em Presidente Prudente?`,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: hasOfficialStream
+                ? "Há transmissão oficial cadastrada na Roxou e bares parceiros confirmados. Veja a lista completa nesta página."
+                : venues.length > 0
+                  ? "Veja na Roxou os bares parceiros que confirmaram transmissão deste jogo em Presidente Prudente."
+                  : "Acompanhe esta página: assim que confirmarmos bares ou transmissão oficial, eles aparecerão aqui.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: `Qual é o campeonato de ${matchLabel}?`,
+            acceptedAnswer: { "@type": "Answer", text: `Partida válida pelo ${match.league_label}.` },
+          },
+        ],
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <SEO
-        title={title}
-        description={description}
-        canonical={`https://roxou.com.br/jogo/${match.slug}`}
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "SportsEvent",
-          name: `${match.home_team} x ${match.away_team}`,
-          startDate: match.match_time,
-          eventStatus: isLive ? "https://schema.org/EventScheduled" : "https://schema.org/EventScheduled",
-          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-          location: {
-            "@type": "Place",
-            name: match.venue_name || "Presidente Prudente",
-            address: "Presidente Prudente, SP, Brasil",
-          },
-          competitor: [
-            { "@type": "SportsTeam", name: match.home_team },
-            { "@type": "SportsTeam", name: match.away_team },
-          ],
-          superEvent: { "@type": "SportsEvent", name: match.league_name },
-        }}
-      />
+      <SEO title={title} description={description} canonical={canonical} jsonLd={jsonLd} />
 
       <div className={`relative overflow-hidden border-b border-border/40 ${isCopa ? "bg-gradient-to-br from-emerald-950 via-background to-yellow-900/30" : "bg-gradient-to-br from-primary/20 via-background to-accent/10"}`}>
         <div className="mx-auto max-w-3xl px-4 py-8 md:py-12">
@@ -111,6 +195,8 @@ export default function JogoDetail() {
               </span>
             )}
           </div>
+
+          <h1 className="sr-only">Onde assistir {matchLabel} em Presidente Prudente</h1>
 
           <div className="grid grid-cols-3 items-center gap-3 my-6">
             <div className="flex flex-col items-center text-center">
@@ -138,27 +224,69 @@ export default function JogoDetail() {
       </div>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-8">
-        {/* Transmissão oficial */}
-        {youtube && (
-          <section>
-            <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
-              <Youtube className="h-5 w-5 text-red-500" /> Transmissão oficial
-            </h2>
+        {/* Assista agora */}
+        <section>
+          <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
+            <Tv className="h-5 w-5 text-emerald-400" /> Assista agora
+          </h2>
+
+          {hasOfficialStream ? (
+            <div className="space-y-3">
+              {streams.map((s) => {
+                const embed = toEmbedUrl(s.stream_url, s.stream_type);
+                return (
+                  <div key={s.id} className="rounded-2xl border border-emerald-500/40 bg-card/40 overflow-hidden">
+                    {embed && (
+                      <div className="aspect-video bg-black">
+                        <iframe
+                          src={embed}
+                          title={`Transmissão ${matchLabel}`}
+                          className="w-full h-full"
+                          allow="autoplay; encrypted-media; picture-in-picture"
+                          allowFullScreen
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2 p-3">
+                      <span className="text-[11px] uppercase font-black tracking-wider text-emerald-300">
+                        {s.stream_type === "twitch" ? "Twitch" : s.stream_type === "youtube" ? "YouTube" : s.stream_type} {s.is_official && "· Oficial"}
+                      </span>
+                      <a
+                        href={s.stream_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 text-xs transition"
+                      >
+                        Abrir transmissão <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : fallbackYoutube ? (
             <a
-              href={youtube}
+              href={fallbackYoutube}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
               className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 text-sm transition"
             >
               <Youtube className="h-4 w-4" /> Assistir no YouTube
             </a>
-          </section>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              Sem transmissão oficial disponível no momento.
+            </p>
+          )}
+        </section>
 
         {/* Bares */}
         <section>
           <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
-            <Beer className="h-5 w-5 text-primary" /> Bares transmitindo em Prudente
+            <Beer className="h-5 w-5 text-primary" /> Onde assistir em Presidente Prudente
           </h2>
           {venues.length === 0 ? (
             <p className="text-muted-foreground text-sm">
@@ -170,6 +298,14 @@ export default function JogoDetail() {
                 <Link
                   key={v.venue?.id}
                   to={`/local/${v.venue?.slug}`}
+                  onClick={() =>
+                    trackMatchEvent({
+                      matchExternalId: match.external_id,
+                      matchSlug: match.slug,
+                      action: "venue_click",
+                      partnerId: v.venue?.id,
+                    })
+                  }
                   className="rounded-xl border border-border/40 bg-card/60 hover:border-primary/50 p-3 transition"
                 >
                   <div className="flex items-center justify-between">
@@ -185,6 +321,11 @@ export default function JogoDetail() {
                       <MapPin className="h-3 w-3" /> {v.venue.neighborhood}
                     </p>
                   )}
+                  {v.transmission_type && (
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-300 mt-1">
+                      {v.transmission_type.replace(/_/g, " ")}
+                    </p>
+                  )}
                   {v.notes && <p className="text-[11px] text-muted-foreground mt-1">{v.notes}</p>}
                 </Link>
               ))}
@@ -193,18 +334,22 @@ export default function JogoDetail() {
         </section>
 
         {/* Chat Roxou do jogo */}
-        <FootballMatchChat
-          matchSlug={match.slug}
-          matchTitle={`${match.home_team} x ${match.away_team}`}
-        />
-
+        <div
+          onFocus={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "chat_open" })}
+          onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "chat_open" })}
+        >
+          <FootballMatchChat
+            matchSlug={match.slug}
+            matchTitle={matchLabel}
+          />
+        </div>
 
         {/* FAQ */}
         <section className="border-t border-border/40 pt-6">
           <h2 className="font-display font-black text-lg mb-3">Perguntas frequentes</h2>
           <div className="space-y-3 text-sm">
             <details className="rounded-lg border border-border/40 bg-card/40 p-3">
-              <summary className="cursor-pointer font-semibold">Que horas é {match.home_team} x {match.away_team}?</summary>
+              <summary className="cursor-pointer font-semibold">Que horas é {matchLabel}?</summary>
               <p className="text-muted-foreground mt-2">
                 O jogo está marcado para {formatMatchTime(match.match_time)} (horário de Brasília).
               </p>
@@ -212,8 +357,12 @@ export default function JogoDetail() {
             <details className="rounded-lg border border-border/40 bg-card/40 p-3">
               <summary className="cursor-pointer font-semibold">Onde posso assistir em Presidente Prudente?</summary>
               <p className="text-muted-foreground mt-2">
-                Confira a lista de bares parceiros acima. Caso ainda não esteja confirmado, volte mais perto do horário.
+                Confira a lista de bares parceiros acima e a transmissão oficial quando disponível.
               </p>
+            </details>
+            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
+              <summary className="cursor-pointer font-semibold">Qual o campeonato?</summary>
+              <p className="text-muted-foreground mt-2">{match.league_label}.</p>
             </details>
           </div>
         </section>
