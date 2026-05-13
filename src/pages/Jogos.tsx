@@ -682,6 +682,124 @@ export default function Jogos() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
+        {/* BUSCA GLOBAL */}
+        <section aria-label="Buscar jogos, times e campeonatos">
+          <label className="relative block">
+            <span className="sr-only">Buscar time, jogo ou campeonato</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.7)] pointer-events-none">
+              <Search className="h-5 w-5" />
+            </span>
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar time, jogo ou campeonato..."
+              autoComplete="off"
+              className="w-full h-12 md:h-12 rounded-2xl bg-card/60 border border-primary/30 pl-12 pr-12 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 outline-none focus:border-primary focus:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.7)] transition-all"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => { setSearchInput(""); setSearchTerm(""); }}
+                aria-label="Limpar busca"
+                className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full bg-secondary/80 hover:bg-secondary px-2.5 py-1 text-[11px] font-bold text-foreground/80"
+              >
+                <X className="h-3 w-3" /> Limpar
+              </button>
+            )}
+          </label>
+
+          {searchActive && (
+            <div className="mt-4 rounded-2xl border border-border/50 bg-card/40 p-4 space-y-5 animate-fade-in">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Resultados para: <span className="text-foreground normal-case">"{searchTerm}"</span>
+              </p>
+
+              {/* Campeonatos / tabelas */}
+              {searchResults.leagues.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/90 mb-2 flex items-center gap-1.5">
+                    <ListChecks className="h-3.5 w-3.5" /> Campeonatos e tabelas
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {searchResults.leagues.map((l) => (
+                      <Link
+                        key={l.label}
+                        to={l.to}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-primary/20 transition"
+                      >
+                        {l.kind === "tabela" ? <ListOrdered className="h-3 w-3" /> : l.kind === "resultados" ? <Trophy className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                        {l.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Times encontrados */}
+              {searchResults.times.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/90 mb-2 flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" /> Times encontrados
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {searchResults.times.map((t) => {
+                      const active = teamFilter === t.name;
+                      return (
+                        <button
+                          key={t.name}
+                          onClick={() => handleTeamClick(t.name)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                            active
+                              ? "border-yellow-500/60 bg-yellow-500/15 text-yellow-200"
+                              : "border-border/60 bg-card/60 hover:border-primary/50 text-foreground"
+                          }`}
+                        >
+                          {t.name}
+                          <span className="text-[10px] text-muted-foreground">({t.count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Jogos encontrados */}
+              {searchResults.jogos.length > 0 ? (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/90 mb-2 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" /> Jogos encontrados
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {searchResults.jogos.map((m) => (
+                      <MatchCard
+                        key={m.external_id}
+                        match={m}
+                        compact
+                        venuesCount={metaMap[m.slug]?.venuesCount}
+                        hasStream={metaMap[m.slug]?.hasStream}
+                        hasActiveChat={metaMap[m.slug]?.hasActiveChat}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                searchResults.times.length === 0 &&
+                searchResults.leagues.length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-sm font-medium text-foreground">
+                      Não encontramos jogos ou tabelas para essa busca.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tente outro time, confronto (ex.: "Santos x Corinthians") ou campeonato.
+                    </p>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </section>
+
         {/* Filtros */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
           {FILTERS.map((f) => (
