@@ -94,6 +94,68 @@ export const getWeekendRangeSP = () => {
   return { start: ymdToISO(sat.y, sat.m, sat.d), end: ymdToISO(monAfter.y, monAfter.m, monAfter.d) };
 };
 
+/* ============================================================
+ * Date keys (YYYY-MM-DD em SP) — usados em filtros de /jogos
+ * que comparam por dia civil sem tocar em UTC.
+ * ============================================================ */
+
+const fmtKey = (y: number, m: number, d: number) =>
+  `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+/** "YYYY-MM-DD" do dia atual em SP. */
+export const todayKeySP = (): string => {
+  const { y, m, d } = getSpParts(new Date());
+  return fmtKey(y, m, d);
+};
+
+/** "YYYY-MM-DD" de amanhã em SP. */
+export const tomorrowKeySP = (): string => {
+  const { y, m, d } = getSpParts(new Date());
+  const t = addDaysSP(y, m, d, 1);
+  return fmtKey(t.y, t.m, t.d);
+};
+
+/**
+ * Retorna { startKey, endKey, keys } cobrindo hoje + próximos 6 dias (7 dias
+ * inclusivos) em SP, sempre em formato YYYY-MM-DD.
+ */
+export const getWeekRangeSP = (): { startKey: string; endKey: string; keys: string[] } => {
+  const { y, m, d } = getSpParts(new Date());
+  const keys: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const t = addDaysSP(y, m, d, i);
+    keys.push(fmtKey(t.y, t.m, t.d));
+  }
+  return { startKey: keys[0], endKey: keys[keys.length - 1], keys };
+};
+
+/**
+ * Retorna os dias do "final de semana" relevante em SP.
+ * Regra: sexta + sábado + domingo.
+ *  - Se hoje é sexta/sáb/dom → retorna o restante do FDS atual (a partir de hoje).
+ *  - Se hoje é seg–qui → retorna a próxima sexta+sábado+domingo.
+ */
+export const getWeekendRangeSPKeys = (): { keys: string[]; startKey: string; endKey: string } => {
+  const { y, m, d, dow } = getSpParts(new Date());
+  // dow: 0=dom, 5=sex, 6=sáb
+  let toFri: number;
+  if (dow === 5) toFri = 0;       // sexta hoje
+  else if (dow === 6) toFri = -1;  // sábado → ontem foi sexta
+  else if (dow === 0) toFri = -2;  // domingo → sexta foi anteontem
+  else toFri = 5 - dow;            // seg(1)..qui(4) → próxima sexta
+  const fri = addDaysSP(y, m, d, toFri);
+  const friKey = fmtKey(fri.y, fri.m, fri.d);
+  const sat = addDaysSP(fri.y, fri.m, fri.d, 1);
+  const satKey = fmtKey(sat.y, sat.m, sat.d);
+  const sun = addDaysSP(fri.y, fri.m, fri.d, 2);
+  const sunKey = fmtKey(sun.y, sun.m, sun.d);
+  const today = fmtKey(y, m, d);
+  // Se hoje é sex/sáb/dom, exclui dias já passados do FDS atual
+  const all = [friKey, satKey, sunKey];
+  const keys = all.filter((k) => k >= today);
+  return { keys, startKey: keys[0] ?? friKey, endKey: keys[keys.length - 1] ?? sunKey };
+};
+
 /** Compara duas datas pelo dia civil em SP. */
 export const isSameDaySP = (a: Date, b: Date) => {
   const p1 = getSpParts(a), p2 = getSpParts(b);
