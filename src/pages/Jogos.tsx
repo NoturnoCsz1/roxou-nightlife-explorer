@@ -207,10 +207,10 @@ export default function Jogos() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <SEO
-        title="Jogos de hoje em Presidente Prudente | Roxou"
-        description="Confira jogos de hoje, Copa do Mundo, Brasileirão, Copa do Brasil, Libertadores, Champions League e bares transmitindo futebol em Presidente Prudente."
+        title="Jogos de Hoje e Onde Assistir Futebol em Presidente Prudente | Roxou"
+        description="Veja jogos de hoje, próximos jogos de times brasileiros, bares que transmitem futebol, placares, tabelas e transmissões oficiais em Presidente Prudente."
         canonical="https://roxou.com.br/jogos"
-        keywords="jogos hoje, copa do mundo, brasileirão, bares futebol prudente, presidente prudente"
+        keywords="jogos de hoje, futebol prudente, onde assistir futebol, brasileirão, libertadores, champions, copa do brasil, bares com futebol presidente prudente"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "FAQPage",
