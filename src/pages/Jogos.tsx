@@ -139,18 +139,25 @@ export default function Jogos() {
   const allSlugs = useMemo(() => Array.from(new Set(matches.map((m) => m.slug))), [matches]);
   const { data: metaMap = {} } = useMatchMeta(allSlugs);
 
-  // Views agregados (vindos de sports_matches) para "Mais buscados"
-  const { data: viewsMap = {} } = useQuery({
-    queryKey: ["sports-matches-views", allSlugs.slice().sort().join("|")],
+  // Enriquecimento premium (views, status live, highlights) para ranking de "Mais buscados"
+  type Enrich = { views: number; status: string | null; highlight: boolean };
+  const { data: enrichMap = {} } = useQuery({
+    queryKey: ["sports-matches-enrich", allSlugs.slice().sort().join("|")],
     enabled: allSlugs.length > 0,
     staleTime: 1000 * 60 * 5,
-    queryFn: async (): Promise<Record<string, number>> => {
+    queryFn: async (): Promise<Record<string, Enrich>> => {
       const { data } = await supabase
         .from("sports_matches")
-        .select("slug, views_count")
+        .select("slug, views_count, status, highlight_url")
         .in("slug", allSlugs);
-      const map: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => { map[r.slug] = r.views_count ?? 0; });
+      const map: Record<string, Enrich> = {};
+      (data ?? []).forEach((r: any) => {
+        map[r.slug] = {
+          views: r.views_count ?? 0,
+          status: r.status ?? null,
+          highlight: !!r.highlight_url,
+        };
+      });
       return map;
     },
   });
