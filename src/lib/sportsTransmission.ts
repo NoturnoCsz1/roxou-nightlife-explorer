@@ -140,17 +140,19 @@ export async function findMatchingSportsMatch(opts: {
   const teamSet = new Set(teams.map((t) => lower(t)));
   const scored = data
     .map((m) => {
-      const home = lower(m.home_team || "");
-      const away = lower(m.away_team || "");
-      // match by alias substring contains
+      // Bidirecional + normalizado: detecta home/away invertidos e siglas (SPFC, EC Juventude...)
       const matchTeam = (txt: string) => {
-        for (const t of teamSet) if (txt.includes(t) || t.includes(txt)) return true;
+        for (const t of teams) {
+          if (isSameTeam(txt, t)) return true;
+          const lt = lower(t);
+          const ltxt = lower(txt);
+          if (lt && (ltxt.includes(lt) || lt.includes(ltxt))) return true;
+        }
         return false;
       };
-      const hits = (matchTeam(home) ? 1 : 0) + (matchTeam(away) ? 1 : 0);
+      const hits = (matchTeam(m.home_team || "") ? 1 : 0) + (matchTeam(m.away_team || "") ? 1 : 0);
       const dt = Math.abs(new Date(m.match_time).getTime() - refMs);
       const dayDiff = dt / 86400_000;
-      // Score: cada time bate vale +5; mesmo dia +3; até 2 dias +1
       let score = hits * 5;
       if (dayDiff < 0.5) score += 4;
       else if (dayDiff < 1.5) score += 2;
