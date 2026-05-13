@@ -31,6 +31,7 @@ interface EventRow {
   title: string;
   slug: string;
   venue_name: string | null;
+  address: string | null;
   date_time: string;
   category: string;
   sub_category: string | null;
