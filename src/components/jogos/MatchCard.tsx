@@ -25,7 +25,7 @@ const BADGE_STYLES: Record<string, string> = {
   destaque: "bg-primary/20 text-primary border-primary/50",
 };
 
-export default function MatchCard({ match, venuesCount = 0, compact = false }: Props) {
+function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveChat = false, compact = false }: Props) {
   const isCopa = match.is_world_cup;
   const isLive = match.status === "live";
   const isFinished = match.status === "finished";
@@ -44,7 +44,6 @@ export default function MatchCard({ match, venuesCount = 0, compact = false }: P
       to={`/jogo/${match.slug}`}
       className={`group relative block rounded-2xl border ${themeClass} backdrop-blur-sm p-4 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01]`}
     >
-      {/* Top row: league + badges */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <span className={`text-[11px] font-bold uppercase tracking-wide ${isCopa ? "text-yellow-300" : hasPriorityTeam ? "text-primary" : "text-muted-foreground"}`}>
           {match.league_label}
@@ -59,6 +58,16 @@ export default function MatchCard({ match, venuesCount = 0, compact = false }: P
               {b.label}
             </span>
           ))}
+          {hasStream && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300">
+              <Tv className="h-2.5 w-2.5" /> Transmissão
+            </span>
+          )}
+          {hasActiveChat && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 px-2 py-0.5 text-[9px] font-black uppercase text-fuchsia-200">
+              <MessageCircle className="h-2.5 w-2.5" /> Chat ativo
+            </span>
+          )}
           {isFinished && !isLive && (
             <span className="rounded-full border border-muted/40 bg-muted/20 px-2 py-0.5 text-[9px] font-bold uppercase text-muted-foreground">
               Encerrado
@@ -67,7 +76,6 @@ export default function MatchCard({ match, venuesCount = 0, compact = false }: P
         </div>
       </div>
 
-      {/* Teams */}
       <div className="flex items-center gap-3 mb-3">
         <div className="flex-1 flex flex-col items-center text-center">
           {match.home_badge ? (
@@ -105,7 +113,7 @@ export default function MatchCard({ match, venuesCount = 0, compact = false }: P
           <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Beer className="h-3 w-3" />
             {venuesCount > 0
-              ? `🍺 ${venuesCount} ${venuesCount === 1 ? "bar transmite" : "bares transmitem"}`
+              ? `🍻 ${venuesCount} ${venuesCount === 1 ? "bar transmite" : "bares transmitem"}`
               : "Em breve onde assistir"}
           </span>
           <span className={`text-[11px] font-bold ${isCopa ? "text-yellow-300" : "text-primary"}`}>
@@ -116,3 +124,6 @@ export default function MatchCard({ match, venuesCount = 0, compact = false }: P
     </Link>
   );
 }
+
+const MatchCard = memo(MatchCardImpl);
+export default MatchCard;
