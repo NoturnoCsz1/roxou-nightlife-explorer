@@ -52,6 +52,7 @@ const RadarIA = lazy(() => import("./pages/admin/RadarIA"));
 const AutoReels = lazy(() => import("./pages/admin/AutoReels"));
 const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AuraCommand = lazy(() => import("./pages/admin/AuraCommand"));
+const JogosAdmin = lazy(() => import("./pages/admin/JogosAdmin"));
 const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
 const Editores = lazy(() => import("./pages/admin/Editores"));
 const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
@@ -129,6 +130,7 @@ const App = () => (
             <Route path="autoreels" element={L(<AutoReels />)} />
             <Route path="security" element={L(<AdminSecurity />)} />
             <Route path="aura" element={L(<AuraCommand />)} />
+            <Route path="jogos" element={L(<JogosAdmin />)} />
             <Route path="editores" element={L(<Editores />)} />
             <Route path="noticias" element={L(<NoticiasList />)} />
             <Route path="noticias/novo" element={L(<NoticiaForm />)} />

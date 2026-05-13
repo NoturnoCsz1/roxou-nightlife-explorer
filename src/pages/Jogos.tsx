@@ -16,21 +16,29 @@ import {
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
-// useMatchMeta disponível em '@/hooks/useMatchMeta' para badges (próxima iteração)
+import { useMatchMeta, type MatchMetaMap } from "@/hooks/useMatchMeta";
 
 
 /** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
 function PriorityMatchBlock({
   match,
   bars,
+  meta,
 }: {
   match: NormalizedMatch;
   bars: { id: string; name: string; slug: string; neighborhood?: string | null; type?: string | null }[];
+  meta?: MatchMetaMap[string];
 }) {
   const showVenues = isHighlightedMatch(match) && match.status !== "finished";
+  const venuesCount = meta?.venuesCount ?? (showVenues ? bars.length : 0);
   return (
     <div>
-      <MatchCard match={match} venuesCount={showVenues ? bars.length : 0} />
+      <MatchCard
+        match={match}
+        venuesCount={venuesCount}
+        hasStream={meta?.hasStream}
+        hasActiveChat={meta?.hasActiveChat}
+      />
       {showVenues && <MatchVenuesQuickList bars={bars} />}
     </div>
   );
@@ -103,12 +111,30 @@ export default function Jogos() {
 
   const hasCopa = useMemo(() => matches.some((m) => m.is_world_cup), [matches]);
 
-  // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam (ex: internacional/copa).
+  // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam.
   const relevantBase = useMemo(() => filterRelevantMatches(matches), [matches]);
 
+  // Slugs visíveis na página → busca metadata real (bares, stream, chat ativo)
+  const allSlugs = useMemo(() => Array.from(new Set(matches.map((m) => m.slug))), [matches]);
+  const { data: metaMap = {} } = useMatchMeta(allSlugs);
+
+  // Views agregados (vindos de sports_matches) para "Mais buscados"
+  const { data: viewsMap = {} } = useQuery({
+    queryKey: ["sports-matches-views", allSlugs.slice().sort().join("|")],
+    enabled: allSlugs.length > 0,
+    staleTime: 1000 * 60 * 5,
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data } = await supabase
+        .from("sports_matches")
+        .select("slug, views_count")
+        .in("slug", allSlugs);
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = r.views_count ?? 0; });
+      return map;
+    },
+  });
+
   const filtered = useMemo<NormalizedMatch[]>(() => {
-    // Para filtros amplos (hoje/amanha/semana/live) usa lista curada.
-    // Para filtros categóricos (copa/brasil/internacional) usa lista completa.
     let list: NormalizedMatch[] =
       filter === "copa" || filter === "brasil" || filter === "internacional"
         ? matches
@@ -136,13 +162,27 @@ export default function Jogos() {
   // "HOJE TEM" — jogo mais relevante do dia
   const hojeTem = useMemo(() => todays[0] ?? null, [todays]);
 
-  // "Mais buscados": só jogos de relevância alta, próximos 7 dias
+  // "Mais buscados": ordena por views reais quando existir; fallback p/ relevância.
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
-    return sortMatchesByRelevance(
-      matches.filter((m) => isHighlightedMatch(m) && new Date(m.match_time).getTime() <= limit && m.status !== "finished"),
-    ).slice(0, 8);
-  }, [matches]);
+    const candidates = matches.filter(
+      (m) => isHighlightedMatch(m) && new Date(m.match_time).getTime() <= limit && m.status !== "finished",
+    );
+    const totalViews = candidates.reduce((s, m) => s + (viewsMap[m.slug] ?? 0), 0);
+    const sorted = totalViews > 0
+      ? [...candidates].sort((a, b) => (viewsMap[b.slug] ?? 0) - (viewsMap[a.slug] ?? 0))
+      : sortMatchesByRelevance(candidates);
+    return sorted.slice(0, 8);
+  }, [matches, viewsMap]);
+
+  // KPI strip — números agregados
+  const kpis = useMemo(() => {
+    const liveCount = matches.filter((m) => m.status === "live").length;
+    const barsTransmitting = Object.values(metaMap).reduce((acc, m) => acc + (m?.venuesCount ?? 0), 0);
+    const activeChats = Object.values(metaMap).filter((m) => m?.hasActiveChat).length;
+    return { liveCount, barsTransmitting, activeChats };
+  }, [matches, metaMap]);
+
 
   const groups = groupMatchesByDate(filtered);
 
@@ -279,6 +319,33 @@ export default function Jogos() {
         </div>
       </header>
 
+      {/* KPI strip */}
+      {(kpis.liveCount > 0 || kpis.barsTransmitting > 0 || kpis.activeChats > 0) && (
+        <div className="border-b border-border/40 bg-card/30">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs md:text-sm font-bold">
+            {kpis.liveCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-red-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+                {kpis.liveCount} ao vivo
+              </span>
+            )}
+            {kpis.barsTransmitting > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-emerald-300">
+                🍻 {kpis.barsTransmitting} {kpis.barsTransmitting === 1 ? "bar transmitindo" : "bares transmitindo"}
+              </span>
+            )}
+            {kpis.activeChats > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-fuchsia-300">
+                💬 {kpis.activeChats} {kpis.activeChats === 1 ? "chat ativo" : "chats ativos"}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
         {/* Filtros */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
@@ -402,7 +469,13 @@ export default function Jogos() {
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2 md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:mx-0 md:px-0 md:pb-0">
                   {maisBuscados.map((m) => (
                     <div key={m.external_id} className="w-[280px] shrink-0 md:w-auto">
-                      <MatchCard match={m} compact />
+                      <MatchCard
+                        match={m}
+                        compact
+                        venuesCount={metaMap[m.slug]?.venuesCount}
+                        hasStream={metaMap[m.slug]?.hasStream}
+                        hasActiveChat={metaMap[m.slug]?.hasActiveChat}
+                      />
                     </div>
                   ))}
                 </div>
@@ -417,7 +490,7 @@ export default function Jogos() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {sortMatchesByRelevance(matches.filter((m) => m.is_world_cup)).slice(0, 4).map((m) => (
-                    <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />
+                    <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />
                   ))}
                 </div>
               </section>
@@ -430,7 +503,7 @@ export default function Jogos() {
                   <Radio className="h-5 w-5 text-primary" /> Jogos de hoje
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {todays.map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />)}
+                  {todays.map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />)}
                 </div>
               </section>
             )}
@@ -451,7 +524,7 @@ export default function Jogos() {
                       {g.label}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} />)}
+                      {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />)}
                     </div>
                   </div>
                 ))
