@@ -381,6 +381,72 @@ export default function Jogos() {
 
   const groups = groupMatchesByDate(filtered);
 
+  // ===== Resultados da busca global =====
+  const searchActive = searchTerm.length >= 2;
+  const searchResults = useMemo(() => {
+    if (!searchActive) {
+      return { jogos: [] as NormalizedMatch[], times: [] as { name: string; count: number }[], leagues: [] as LeagueSuggestion[] };
+    }
+    const termRaw = searchTerm;
+    const termNorm = norm(termRaw);
+
+    // Detectar confronto: "santos x corinthians", "palmeiras vs flamengo", "sao paulo - juventude"
+    const splitMatch = termRaw.match(/^(.+?)\s+(?:x|vs\.?|×|-)\s+(.+)$/i);
+    const confrontoTeams = splitMatch
+      ? [splitMatch[1].trim(), splitMatch[2].trim()].filter((t) => t.length >= 2)
+      : null;
+
+    // Filtra jogos
+    const jogos = matches.filter((m) => {
+      if (confrontoTeams && confrontoTeams.length === 2) {
+        return isSameMatch(m, confrontoTeams[0], confrontoTeams[1]);
+      }
+      // termo livre: time individual OU campeonato OU "team team" (sem separador)
+      const single =
+        isSameTeam(m.home_team, termRaw) ||
+        isSameTeam(m.away_team, termRaw) ||
+        norm(m.league_label || "").includes(termNorm) ||
+        norm(m.home_team).includes(termNorm) ||
+        norm(m.away_team).includes(termNorm);
+      if (single) return true;
+      // tentativa: dois tokens longos = possível confronto sem separador
+      const tokens = termRaw.split(/\s+/).filter((t) => t.length >= 3);
+      if (tokens.length >= 2) {
+        // tenta combinações de pares
+        for (let i = 0; i < tokens.length; i++) {
+          for (let j = i + 1; j < tokens.length; j++) {
+            if (isSameMatch(m, tokens[i], tokens[j])) return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    // Times encontrados (únicos, derivados dos próprios jogos carregados)
+    const teamMap = new Map<string, { name: string; count: number }>();
+    matches.forEach((m) => {
+      [m.home_team, m.away_team].forEach((t) => {
+        if (!t) return;
+        const matchedSingle = isSameTeam(t, termRaw) || norm(t).includes(termNorm);
+        if (matchedSingle) {
+          const key = normalizeTeamName(t) || norm(t);
+          const cur = teamMap.get(key);
+          if (cur) cur.count += 1;
+          else teamMap.set(key, { name: t, count: 1 });
+        }
+      });
+    });
+    const times = Array.from(teamMap.values()).sort((a, b) => b.count - a.count).slice(0, 8);
+
+    // Campeonatos / tabelas
+    const leagues = LEAGUE_SUGGESTIONS.filter((l) =>
+      l.terms.some((t) => termNorm.includes(t) || t.includes(termNorm)),
+    );
+
+    return { jogos: jogos.slice(0, 12), times, leagues };
+  }, [searchActive, searchTerm, matches]);
+
+
   const scrollToProximos = () => {
     document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
