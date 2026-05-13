@@ -278,6 +278,44 @@ export default function JogoDetail() {
           </section>
         )}
 
+        {/* Melhores momentos — quando jogo finalizado e há highlight */}
+        {isFinished && highlightUrl && (
+          <section>
+            <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
+              <Youtube className="h-5 w-5 text-red-500" /> Melhores momentos
+            </h2>
+            <div className="rounded-2xl border border-red-500/30 bg-card/40 overflow-hidden">
+              {highlightEmbed ? (
+                <div className="aspect-video bg-black">
+                  <iframe
+                    src={highlightEmbed}
+                    title={`Melhores momentos ${matchLabel}`}
+                    className="w-full h-full"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between gap-2 p-3">
+                <span className="text-[11px] uppercase font-black tracking-wider text-red-300">
+                  YouTube · Highlights
+                </span>
+                <a
+                  href={highlightUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 text-xs transition"
+                >
+                  Abrir no YouTube <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Assista agora */}
         <section>
           <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
