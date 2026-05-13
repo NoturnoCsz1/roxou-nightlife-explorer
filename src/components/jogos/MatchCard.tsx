@@ -118,14 +118,14 @@ function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveCha
 
       {!compact && (
         <div className="flex items-center justify-between pt-3 border-t border-border/40">
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <span className={`flex items-center gap-1 text-[11px] ${hasVenues ? "text-emerald-300 font-semibold" : "text-muted-foreground"}`}>
             <Beer className="h-3 w-3" />
-            {venuesCount > 0
+            {hasVenues
               ? `🍻 ${venuesCount} ${venuesCount === 1 ? "bar transmite" : "bares transmitem"}`
               : "Em breve onde assistir"}
           </span>
-          <span className={`text-[11px] font-bold ${isCopa ? "text-yellow-300" : "text-primary"}`}>
-            Ver onde assistir →
+          <span className={`text-[11px] font-bold ${isCopa ? "text-yellow-300" : hasVenues ? "text-emerald-300" : "text-primary"}`}>
+            {hasVenues ? "Onde assistir →" : "Ver onde assistir →"}
           </span>
         </div>
       )}
