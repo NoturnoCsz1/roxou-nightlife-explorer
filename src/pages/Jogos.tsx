@@ -319,6 +319,33 @@ export default function Jogos() {
         </div>
       </header>
 
+      {/* KPI strip */}
+      {(kpis.liveCount > 0 || kpis.barsTransmitting > 0 || kpis.activeChats > 0) && (
+        <div className="border-b border-border/40 bg-card/30">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs md:text-sm font-bold">
+            {kpis.liveCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-red-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+                {kpis.liveCount} ao vivo
+              </span>
+            )}
+            {kpis.barsTransmitting > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-emerald-300">
+                🍻 {kpis.barsTransmitting} {kpis.barsTransmitting === 1 ? "bar transmitindo" : "bares transmitindo"}
+              </span>
+            )}
+            {kpis.activeChats > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-fuchsia-300">
+                💬 {kpis.activeChats} {kpis.activeChats === 1 ? "chat ativo" : "chats ativos"}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
         {/* Filtros */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
