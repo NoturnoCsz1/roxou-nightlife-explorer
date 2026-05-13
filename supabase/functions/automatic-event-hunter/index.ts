@@ -695,6 +695,18 @@ Deno.serve(async (req) => {
             ai_confidence: cls.confidence,
           });
 
+          // 🏟️ Detecta transmissão de futebol e tenta vincular bar ao jogo
+          try {
+            await findMatchAndLink(supabase, {
+              eventId: inserted!.id,
+              partnerId: p.id,
+              text: `${ocrText}\n${m.caption || ""}\n${eventTitle}\n${venueName}`,
+              refIso: dt || null,
+            });
+          } catch (e: any) {
+            stats.errors.push(`sports-link ${handle}: ${e.message}`);
+          }
+
           stats.drafts_created++;
         }
       } catch (e: any) {
