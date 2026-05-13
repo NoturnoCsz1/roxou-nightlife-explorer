@@ -90,9 +90,47 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "live", label: "Ao vivo" },
 ];
 
+// ===== Busca: mapa de campeonatos/tabelas para sugestões rápidas =====
+type LeagueSuggestion = {
+  label: string;
+  to: string;
+  // termos (já normalizados sem acento, lowercase) que devem disparar a sugestão
+  terms: string[];
+  kind: "tabela" | "jogos" | "resultados";
+};
+const LEAGUE_SUGGESTIONS: LeagueSuggestion[] = [
+  { label: "Tabela do Brasileirão", to: "/tabela/brasileirao", kind: "tabela",
+    terms: ["brasileirao", "brasileiro", "serie a", "campeonato brasileiro", "tabela brasileirao", "tabela brasileiro"] },
+  { label: "Tabela da Libertadores", to: "/tabela/libertadores", kind: "tabela",
+    terms: ["libertadores", "copa libertadores", "tabela libertadores"] },
+  { label: "Tabela da Champions League", to: "/tabela/champions", kind: "tabela",
+    terms: ["champions", "champions league", "uefa champions", "ucl"] },
+  { label: "Jogos da Copa do Brasil", to: "/jogos", kind: "jogos",
+    terms: ["copa do brasil", "copa brasil", "cdb"] },
+  { label: "Jogos da Sul-Americana", to: "/jogos", kind: "jogos",
+    terms: ["sul americana", "sulamericana", "copa sul americana", "sudamericana"] },
+  { label: "Jogos da La Liga", to: "/jogos", kind: "jogos",
+    terms: ["la liga", "laliga", "espanhol", "campeonato espanhol"] },
+  { label: "Jogos da Premier League", to: "/jogos", kind: "jogos",
+    terms: ["premier", "premier league", "ingles", "campeonato ingles"] },
+  { label: "Jogos da Série B", to: "/jogos", kind: "jogos",
+    terms: ["serie b", "brasileirao serie b", "segundona"] },
+  { label: "Resultados recentes", to: "/resultados", kind: "resultados",
+    terms: ["resultado", "resultados", "placar", "placares"] },
+];
+
 export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce 250ms — evita re-render por tecla
+  useEffect(() => {
+    const t = setTimeout(() => setSearchTerm(searchInput.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
 
   const DEBUG = (import.meta as any).env?.VITE_JOGOS_DEBUG === "true";
 
