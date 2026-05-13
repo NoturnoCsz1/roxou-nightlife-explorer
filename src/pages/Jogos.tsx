@@ -582,13 +582,17 @@ export default function Jogos() {
           </>
         )}
 
-        {/* Bares premium */}
+        {/* Bares premium — APENAS curadoria real */}
         <section id="bares-esportivos">
           <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
             <Beer className="h-5 w-5 text-primary" /> Bares que transmitem futebol em Prudente
           </h2>
           {bars.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Em breve adicionaremos parceiros para você assistir os jogos.</p>
+            <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-8 text-center">
+              <Tv className="h-9 w-9 text-muted-foreground/60 mx-auto mb-3" />
+              <p className="font-semibold mb-1">Nenhum bar parceiro confirmou transmissão para os próximos jogos ainda.</p>
+              <p className="text-sm text-muted-foreground">Novos bares esportivos serão adicionados em breve.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {bars.map((b: any) => (
@@ -600,7 +604,7 @@ export default function Jogos() {
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <p className="font-bold text-sm line-clamp-1">{b.name}</p>
                     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">
-                      <Tv className="h-2.5 w-2.5" /> Transmite
+                      <Tv className="h-2.5 w-2.5" /> {b._matchLinked ? "Transmissão confirmada" : "Futebol ao vivo"}
                     </span>
                   </div>
                   {b.neighborhood && (
