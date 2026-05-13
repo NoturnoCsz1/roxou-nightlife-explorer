@@ -23,10 +23,13 @@ export interface LeagueConfig {
 export const FEATURED_LEAGUES: LeagueConfig[] = [
   { id: "4429", name: "FIFA World Cup",          label: "Copa do Mundo",     category: "world_cup",     priority: 1 },
   { id: "4351", name: "Brazilian Serie A",       label: "Brasileirão",       category: "brazil",        priority: 2 },
-  { id: "4356", name: "Copa do Brasil",          label: "Copa do Brasil",    category: "brazil",        priority: 3 },
-  { id: "4480", name: "Campeonato Paulista",     label: "Paulistão",         category: "brazil",        priority: 4 },
-  { id: "4481", name: "Copa Libertadores",       label: "Libertadores",      category: "international", priority: 5 },
-  { id: "4482", name: "UEFA Champions League",   label: "Champions League",  category: "international", priority: 6 },
+  // ATENÇÃO: IDs verificados via lookupleague.php (free key "3").
+  // 4480 = UEFA Champions League, 4481 = UEFA Europa League, 4482 = FA Cup, 4356 = Australian A-League.
+  // Os jogos da Copa do Brasil / Libertadores / Sul-Americana / Paulistão chegam via
+  // eventsday.php (sync-football-matches) e são reconhecidos pela normalização do strLeague.
+  { id: "4480", name: "UEFA Champions League",   label: "Champions League",  category: "international", priority: 4 },
+  { id: "4481", name: "UEFA Europa League",      label: "Europa League",     category: "international", priority: 6 },
+  { id: "4482", name: "FA Cup",                  label: "FA Cup",            category: "international", priority: 9 },
   { id: "4335", name: "Spanish La Liga",         label: "La Liga",           category: "international", priority: 7 },
   { id: "4328", name: "English Premier League", label: "Premier League",    category: "international", priority: 8 },
   { id: "4334", name: "French Ligue 1",          label: "Ligue 1",           category: "international", priority: 9 },
