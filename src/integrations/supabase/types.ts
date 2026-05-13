@@ -2353,6 +2353,7 @@ export type Database = {
           current_minute: string | null
           external_id: string | null
           finished_at: string | null
+          highlight_url: string | null
           home_badge: string | null
           home_score: number | null
           home_team: string
@@ -2384,6 +2385,7 @@ export type Database = {
           current_minute?: string | null
           external_id?: string | null
           finished_at?: string | null
+          highlight_url?: string | null
           home_badge?: string | null
           home_score?: number | null
           home_team: string
@@ -2415,6 +2417,7 @@ export type Database = {
           current_minute?: string | null
           external_id?: string | null
           finished_at?: string | null
+          highlight_url?: string | null
           home_badge?: string | null
           home_score?: number | null
           home_team?: string

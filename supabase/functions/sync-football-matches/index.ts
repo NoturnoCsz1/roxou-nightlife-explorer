@@ -13,7 +13,11 @@ const corsHeaders = {
 };
 
 const API_KEY = Deno.env.get("THESPORTSDB_API_KEY") || "3";
+const IS_PREMIUM = API_KEY !== "3" && API_KEY.length > 0;
 const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
+// V2 endpoints (premium): autorização via header X-API-KEY, sem key na URL.
+const V2_BASE = `https://www.thesportsdb.com/api/v2/json`;
+const V2_HEADERS: Record<string, string> = IS_PREMIUM ? { "X-API-KEY": API_KEY } : {};
 const SP_OFFSET = "-03:00";
 const DAYS_AHEAD = 7;
 
@@ -119,11 +123,11 @@ function inferStatus(strStatus?: string | null, isoTime?: string): string {
   return "scheduled";
 }
 
-async function safeFetch(url: string, timeoutMs = 10000): Promise<any | null> {
+async function safeFetch(url: string, timeoutMs = 10000, headers?: Record<string, string>): Promise<any | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    const r = await fetch(url, { signal: ctrl.signal });
+    const r = await fetch(url, { signal: ctrl.signal, headers });
     clearTimeout(t);
     if (!r.ok) return null;
     return await r.json();
@@ -152,12 +156,13 @@ Deno.serve(async (req) => {
 
   const stats: Record<string, number> = {
     fetched: 0, upserted: 0, errors: 0, skipped_non_soccer: 0,
-    br_force_included: 0, dropped_irrelevant: 0,
+    br_force_included: 0, dropped_irrelevant: 0, livescore_found: 0, highlights_found: 0,
   };
+  const endpointsCalled: string[] = [];
   const debugLeagues = new Map<string, number>();
 
-  // Coleta eventos: ligas whitelisted + eventsday para próximos N dias
-  const allEvents: Array<{ ev: any; fallback?: LeagueConfig }> = [];
+  // Coleta eventos: ligas whitelisted + eventsday para próximos N dias + livescore V2 (premium)
+  const allEvents: Array<{ ev: any; fallback?: LeagueConfig; isLive?: boolean }> = [];
 
   // 1) Whitelist: traz next + past de cada liga conhecida
   for (const lg of FEATURED_LEAGUES) {
@@ -165,6 +170,7 @@ Deno.serve(async (req) => {
       safeFetch(`${BASE_URL}/eventsnextleague.php?id=${lg.id}`),
       safeFetch(`${BASE_URL}/eventspastleague.php?id=${lg.id}`),
     ]);
+    endpointsCalled.push(`v1/eventsnextleague?id=${lg.id}`, `v1/eventspastleague?id=${lg.id}`);
     const events: any[] = [...(nextData?.events ?? []), ...(pastData?.events ?? [])];
     for (const ev of events) allEvents.push({ ev, fallback: lg });
   }
@@ -172,8 +178,24 @@ Deno.serve(async (req) => {
   // 2) eventsday por dia para os próximos N dias (pega Copa do Brasil, Libertadores etc.)
   for (const day of nextDates(DAYS_AHEAD)) {
     const data = await safeFetch(`${BASE_URL}/eventsday.php?d=${day}&s=Soccer`);
+    endpointsCalled.push(`v1/eventsday?d=${day}`);
     const events: any[] = data?.events ?? [];
     for (const ev of events) allEvents.push({ ev });
+  }
+
+  // 3) Livescore V2 (premium): jogos ao vivo agora — atualiza placar/status
+  if (IS_PREMIUM) {
+    const live = await safeFetch(`${V2_BASE}/livescore/soccer`, 12000, V2_HEADERS);
+    endpointsCalled.push(`v2/livescore/soccer`);
+    const liveEvents: any[] = live?.livescore ?? live?.events ?? [];
+    for (const ev of liveEvents) {
+      // V2 às vezes usa idLiveScore + idEvent / strHomeTeam etc.
+      if (ev?.idEvent && ev?.strHomeTeam && ev?.strAwayTeam) {
+        if (!ev.dateEvent && ev.strTimestamp) ev.dateEvent = String(ev.strTimestamp).slice(0, 10);
+        allEvents.push({ ev, isLive: true });
+        stats.livescore_found++;
+      }
+    }
   }
 
   stats.fetched = allEvents.length;
@@ -238,6 +260,7 @@ Deno.serve(async (req) => {
         season: ev.strSeason || null,
         venue_name: ev.strVenue || null,
         youtube_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : null,
+        highlight_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : (ev.strHighlight && /youtu/.test(ev.strHighlight) ? ev.strHighlight : null),
         status,
         home_score: Number.isFinite(home_score as number) ? home_score : null,
         away_score: Number.isFinite(away_score as number) ? away_score : null,
@@ -248,6 +271,7 @@ Deno.serve(async (req) => {
         priority: norm_.priority,
         last_synced_at: new Date().toISOString(),
       };
+      if (row.highlight_url) stats.highlights_found++;
 
       const { error } = await supabase
         .from("sports_matches")
@@ -260,13 +284,20 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Logs detalhados por liga (debug)
-  console.log("[sync-football-matches] stats:", JSON.stringify(stats));
   const leaguesObj: Record<string, number> = {};
   for (const [k, v] of debugLeagues.entries()) leaguesObj[k] = v;
-  console.log("[sync-football-matches] leagues:", JSON.stringify(leaguesObj));
 
-  return new Response(JSON.stringify({ ok: true, stats, leagues: leaguesObj }), {
+  const diagnostic = {
+    ok: true,
+    api_mode: IS_PREMIUM ? "premium" : "free",
+    endpoints_called: endpointsCalled.length,
+    stats,
+    leagues: leaguesObj,
+    timestamp: new Date().toISOString(),
+  };
+  console.log("[sync-football-matches]", JSON.stringify(diagnostic));
+
+  return new Response(JSON.stringify(diagnostic), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });

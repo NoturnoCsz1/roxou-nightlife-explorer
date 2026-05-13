@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 const API_KEY = Deno.env.get("THESPORTSDB_API_KEY") || "3";
+const IS_PREMIUM = API_KEY !== "3" && API_KEY.length > 0;
 const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
 
 interface LeagueCfg {
@@ -19,8 +20,9 @@ interface LeagueCfg {
 
 const LEAGUES: LeagueCfg[] = [
   { id: "4351", label: "Brasileirão",     slug: "brasileirao",  season: "2026" },
+  { id: "4395", label: "Brasileirão Série B", slug: "brasileirao-serie-b", season: "2026" },
   { id: "4481", label: "Libertadores",    slug: "libertadores", season: "2026" },
-  { id: "4482", label: "Champions League", slug: "champions",    season: "2025-2026" },
+  { id: "4480", label: "Champions League", slug: "champions",    season: "2025-2026" },
 ];
 
 async function safeFetch(url: string, timeoutMs = 12000): Promise<any | null> {
@@ -98,7 +100,16 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, stats, timestamp: new Date().toISOString() }), {
+  const diagnostic = {
+    ok: true,
+    api_mode: IS_PREMIUM ? "premium" : "free",
+    leagues_consulted: LEAGUES.length,
+    stats,
+    timestamp: new Date().toISOString(),
+  };
+  console.log("[sync-football-standings]", JSON.stringify(diagnostic));
+
+  return new Response(JSON.stringify(diagnostic), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
