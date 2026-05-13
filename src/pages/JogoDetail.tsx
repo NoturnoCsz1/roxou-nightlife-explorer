@@ -61,10 +61,10 @@ export default function JogoDetail() {
     queryFn: async () => {
       const { data: row } = await supabase
         .from("sports_matches")
-        .select("id, youtube_url")
+        .select("id, youtube_url, home_score, away_score, round_label, status, current_minute")
         .eq("slug", slug)
         .maybeSingle();
-      if (!row) return { id: null as string | null, youtube_url: null as string | null, venues: [] as any[], streams: [] as StreamRow[] };
+      if (!row) return { id: null as string | null, youtube_url: null as string | null, home_score: null as number | null, away_score: null as number | null, round_label: null as string | null, status: null as string | null, current_minute: null as string | null, venues: [] as any[], streams: [] as StreamRow[] };
       const [{ data: links }, { data: streams }] = await Promise.all([
         supabase
           .from("sports_match_venues")
@@ -76,7 +76,7 @@ export default function JogoDetail() {
           .eq("match_id", row.id)
           .eq("is_active", true),
       ]);
-      return { id: row.id, youtube_url: row.youtube_url ?? null, venues: links ?? [], streams: (streams ?? []) as StreamRow[] };
+      return { id: row.id, youtube_url: row.youtube_url ?? null, home_score: row.home_score, away_score: row.away_score, round_label: row.round_label, status: row.status, current_minute: row.current_minute, venues: links ?? [], streams: (streams ?? []) as StreamRow[] };
     },
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
