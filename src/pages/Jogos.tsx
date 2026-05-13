@@ -96,15 +96,33 @@ export default function Jogos() {
   });
 
   const { data: bars = [] } = useQuery({
-    queryKey: ["jogos-bares-prudente"],
+    queryKey: ["jogos-bares-prudente-sports"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("partners")
-        .select("id, name, slug, neighborhood, type")
-        .eq("city", "Presidente Prudente")
-        .in("type", ["bar", "restaurante", "boteco", "pub"])
-        .limit(12);
-      return data ?? [];
+      // Curadoria real: apenas parceiros com supports_sports = true
+      // OU vinculados a algum jogo em sports_match_venues.
+      const [{ data: flagged }, { data: linked }] = await Promise.all([
+        supabase
+          .from("partners")
+          .select("id, name, slug, neighborhood, type, supports_sports")
+          .eq("city", "Presidente Prudente")
+          .eq("active", true)
+          .eq("supports_sports", true)
+          .limit(24),
+        supabase
+          .from("sports_match_venues")
+          .select("venue_id, partners:venue_id(id, name, slug, neighborhood, type, city, active, supports_sports)")
+          .limit(50),
+      ]);
+      const map = new Map<string, any>();
+      (flagged ?? []).forEach((p: any) => map.set(p.id, { ...p, _matchLinked: false }));
+      (linked ?? []).forEach((row: any) => {
+        const p = row.partners;
+        if (!p || !p.active || p.city !== "Presidente Prudente") return;
+        if (map.has(p.id)) map.set(p.id, { ...map.get(p.id), _matchLinked: true });
+        else map.set(p.id, { ...p, _matchLinked: true });
+      });
+      // Match-linked primeiro
+      return Array.from(map.values()).sort((a, b) => Number(b._matchLinked) - Number(a._matchLinked)).slice(0, 12);
     },
     staleTime: 1000 * 60 * 15,
   });
