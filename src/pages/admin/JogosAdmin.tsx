@@ -263,6 +263,20 @@ export default function JogosAdmin() {
     }
   };
 
+  const [syncingStandings, setSyncingStandings] = useState(false);
+  const syncStandings = async () => {
+    setSyncingStandings(true);
+    try {
+      const { error } = await supabase.functions.invoke("sync-football-standings", { body: {} });
+      if (error) throw error;
+      toast.success("Tabelas sincronizadas");
+    } catch (e: any) {
+      toast.error(e.message ?? "Falha ao sincronizar tabelas");
+    } finally {
+      setSyncingStandings(false);
+    }
+  };
+
   const isLive = (m: MatchRow) => m.status?.toLowerCase() === "live" || m.status?.toLowerCase() === "in_play";
 
   return (
@@ -274,10 +288,16 @@ export default function JogosAdmin() {
           </h1>
           <p className="text-sm text-muted-foreground">Curadoria de partidas, bares parceiros e transmissões oficiais.</p>
         </div>
-        <Button onClick={sync} disabled={syncing} variant="outline">
-          {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Sincronizar agora
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button onClick={sync} disabled={syncing} variant="outline" size="sm">
+            {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Sincronizar jogos
+          </Button>
+          <Button onClick={syncStandings} disabled={syncingStandings} variant="outline" size="sm">
+            {syncingStandings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Sincronizar tabelas
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-[360px_1fr] gap-4">
