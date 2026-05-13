@@ -1614,6 +1614,7 @@ export type Database = {
           short_description: string | null
           slug: string
           status: string
+          supports_sports: boolean
           type: string
           updated_at: string
           verified_partner: boolean
@@ -1659,6 +1660,7 @@ export type Database = {
           short_description?: string | null
           slug: string
           status?: string
+          supports_sports?: boolean
           type?: string
           updated_at?: string
           verified_partner?: boolean
@@ -1704,6 +1706,7 @@ export type Database = {
           short_description?: string | null
           slug?: string
           status?: string
+          supports_sports?: boolean
           type?: string
           updated_at?: string
           verified_partner?: boolean
