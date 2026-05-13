@@ -2142,29 +2142,112 @@ export type Database = {
         }
         Relationships: []
       }
-      sports_match_venues: {
+      sports_match_events: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          match_external_id: string
+          match_slug: string | null
+          partner_id: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          match_external_id: string
+          match_slug?: string | null
+          partner_id?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          match_external_id?: string
+          match_slug?: string | null
+          partner_id?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      sports_match_streams: {
         Row: {
           created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_official: boolean
+          match_id: string
+          stream_type: string
+          stream_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_official?: boolean
+          match_id: string
+          stream_type?: string
+          stream_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_official?: boolean
+          match_id?: string
+          stream_type?: string
+          stream_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sports_match_streams_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "sports_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sports_match_venues: {
+        Row: {
+          confirmed_by_admin: boolean
+          created_at: string
+          created_by: string | null
           id: string
           is_featured: boolean
           match_id: string
           notes: string | null
+          transmission_type: string
           venue_id: string
         }
         Insert: {
+          confirmed_by_admin?: boolean
           created_at?: string
+          created_by?: string | null
           id?: string
           is_featured?: boolean
           match_id: string
           notes?: string | null
+          transmission_type?: string
           venue_id: string
         }
         Update: {
+          confirmed_by_admin?: boolean
           created_at?: string
+          created_by?: string | null
           id?: string
           is_featured?: boolean
           match_id?: string
           notes?: string | null
+          transmission_type?: string
           venue_id?: string
         }
         Relationships: [
@@ -2189,6 +2272,7 @@ export type Database = {
           away_badge: string | null
           away_team: string
           category: string | null
+          chat_count: number
           created_at: string
           external_id: string | null
           home_badge: string | null
@@ -2196,21 +2280,25 @@ export type Database = {
           id: string
           is_featured: boolean
           is_world_cup: boolean
+          last_synced_at: string
           league_id: string | null
           league_label: string | null
           league_name: string | null
           match_time: string
+          priority: number
           season: string | null
           slug: string
           status: string
           updated_at: string
           venue_name: string | null
+          views_count: number
           youtube_url: string | null
         }
         Insert: {
           away_badge?: string | null
           away_team: string
           category?: string | null
+          chat_count?: number
           created_at?: string
           external_id?: string | null
           home_badge?: string | null
@@ -2218,21 +2306,25 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_world_cup?: boolean
+          last_synced_at?: string
           league_id?: string | null
           league_label?: string | null
           league_name?: string | null
           match_time: string
+          priority?: number
           season?: string | null
           slug: string
           status?: string
           updated_at?: string
           venue_name?: string | null
+          views_count?: number
           youtube_url?: string | null
         }
         Update: {
           away_badge?: string | null
           away_team?: string
           category?: string | null
+          chat_count?: number
           created_at?: string
           external_id?: string | null
           home_badge?: string | null
@@ -2240,15 +2332,18 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_world_cup?: boolean
+          last_synced_at?: string
           league_id?: string | null
           league_label?: string | null
           league_name?: string | null
           match_time?: string
+          priority?: number
           season?: string | null
           slug?: string
           status?: string
           updated_at?: string
           venue_name?: string | null
+          views_count?: number
           youtube_url?: string | null
         }
         Relationships: []
@@ -2473,6 +2568,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_match_view: { Args: { _slug: string }; Returns: undefined }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
     }
     Enums: {
