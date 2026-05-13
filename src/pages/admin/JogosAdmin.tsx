@@ -597,6 +597,116 @@ export default function JogosAdmin() {
           )}
         </div>
       </div>
+
+      <SportsTransmissionReview />
+    </div>
+  );
+}
+
+// === Seção: possíveis transmissões detectadas ===
+function SportsTransmissionReview() {
+  const qc = useQueryClient();
+  const { data: pending = [], refetch } = useQuery({
+    queryKey: ["admin-jogos-transmission-review"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("events")
+        .select("id, title, date_time, partner_id, sports_match_id, sports_transmission_confidence, sports_transmission_source, venue_name, partners:partners(id,name,slug)")
+        .eq("is_sports_transmission" as any, true)
+        .order("date_time", { ascending: true })
+        .limit(50);
+      return (data ?? []) as any[];
+    },
+    staleTime: 60_000,
+  });
+
+  const matchIds = useMemo(
+    () => Array.from(new Set(pending.map((p) => p.sports_match_id).filter(Boolean))) as string[],
+    [pending],
+  );
+  const { data: matchMap = {} } = useQuery({
+    queryKey: ["admin-jogos-transmission-matches", matchIds.join(",")],
+    enabled: matchIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sports_matches")
+        .select("id, home_team, away_team, match_time, league_label")
+        .in("id", matchIds);
+      const map: Record<string, any> = {};
+      (data || []).forEach((m: any) => { map[m.id] = m; });
+      return map;
+    },
+  });
+
+  const confirm = useMutation({
+    mutationFn: async (ev: any) => {
+      if (!ev.partner_id || !ev.sports_match_id) throw new Error("Faltam parceiro ou jogo");
+      const { data: existing } = await supabase
+        .from("sports_match_venues").select("id")
+        .eq("match_id", ev.sports_match_id).eq("venue_id", ev.partner_id).maybeSingle();
+      if (existing) {
+        await supabase.from("sports_match_venues").update({ confirmed_by_admin: true, transmission_type: "telao" }).eq("id", existing.id);
+      } else {
+        await supabase.from("sports_match_venues").insert({
+          match_id: ev.sports_match_id, venue_id: ev.partner_id,
+          transmission_type: "telao", confirmed_by_admin: true,
+        });
+      }
+      await supabase.from("partners").update({ supports_sports: true }).eq("id", ev.partner_id);
+      await supabase.from("events").update({ sports_transmission_confidence: 0.95 } as any).eq("id", ev.id);
+    },
+    onSuccess: () => { toast.success("Vínculo confirmado"); refetch(); qc.invalidateQueries({ queryKey: ["admin-jogos-venues"] }); },
+    onError: (e: any) => toast.error(e.message ?? "Erro"),
+  });
+
+  const ignore = useMutation({
+    mutationFn: async (ev: any) => {
+      await supabase.from("events").update({
+        is_sports_transmission: false,
+        sports_match_id: null,
+        sports_transmission_confidence: null,
+      } as any).eq("id", ev.id);
+    },
+    onSuccess: () => { toast.success("Ignorado"); refetch(); },
+  });
+
+  if (!pending.length) return null;
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/40 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Tv className="h-4 w-4 text-primary" />
+        <h2 className="font-semibold text-sm">Possíveis transmissões detectadas ({pending.length})</h2>
+      </div>
+      <div className="space-y-2">
+        {pending.map((ev) => {
+          const m = ev.sports_match_id ? matchMap[ev.sports_match_id] : null;
+          const conf = ev.sports_transmission_confidence ?? 0;
+          const confLabel = conf >= 0.85 ? "alta" : conf >= 0.5 ? "média" : "baixa";
+          const partnerName = ev.partners?.name ?? ev.venue_name ?? "—";
+          return (
+            <div key={ev.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/40 px-3 py-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{ev.title}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  📍 {partnerName} · {fmt(ev.date_time)} · confiança {confLabel} · fonte: {ev.sports_transmission_source ?? "—"}
+                </p>
+                {m ? (
+                  <p className="text-xs text-primary/80 truncate">⚽ {m.home_team} × {m.away_team} · {m.league_label ?? ""} · {fmt(m.match_time)}</p>
+                ) : (
+                  <p className="text-xs text-amber-400/80">Sem jogo correspondente — busque manualmente.</p>
+                )}
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button size="sm" variant="default" disabled={!m || !ev.partner_id || confirm.isPending} onClick={() => confirm.mutate(ev)}>
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => ignore.mutate(ev)}>Ignorar</Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
