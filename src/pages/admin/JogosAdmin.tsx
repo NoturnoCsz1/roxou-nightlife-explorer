@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Trophy, RefreshCw, Plus, Trash2, Tv, Beer, Search, Loader2, Power } from "lucide-react";
+import { Trophy, RefreshCw, Plus, Trash2, Tv, Beer, Search, Loader2, Power, Radio, MessageCircle, CheckCircle2, Volume2, MonitorPlay, Sparkles } from "lucide-react";
+import { useMatchMeta } from "@/hooks/useMatchMeta";
 
 interface MatchRow {
   id: string;
@@ -25,7 +26,8 @@ interface VenueLink {
   venue_id: string;
   is_featured: boolean;
   transmission_type: string;
-  partners?: { name: string; slug: string } | null;
+  confirmed_by_admin?: boolean | null;
+  partners?: { name: string; slug: string; neighborhood?: string | null } | null;
 }
 
 interface StreamRow {
@@ -46,6 +48,52 @@ const fmt = (iso: string) =>
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(iso));
+
+const STREAM_LABELS: Record<string, string> = {
+  youtube: "YouTube",
+  twitch: "Twitch",
+  cazetv: "CazéTV",
+  other: "Outro",
+};
+
+const TRANSMISSION_LABELS: Record<string, string> = {
+  tv_aberta: "TV aberta",
+  tv_fechada: "TV fechada",
+  streaming: "Streaming",
+  telao: "Telão",
+};
+
+function detectStreamType(url: string): string | null {
+  const u = url.trim().toLowerCase();
+  if (!u) return null;
+  if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+  if (u.includes("twitch.tv")) return "twitch";
+  if (u.includes("cazetv") || u.includes("globoplay") || u.includes("sportv")) return "cazetv";
+  try {
+    new URL(url.trim());
+    return "other";
+  } catch {
+    return null;
+  }
+}
+
+function normalizeStreamUrl(url: string): string {
+  try {
+    const u = new URL(url.trim());
+    // Remove rastreios comuns
+    ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "feature", "si", "fbclid", "gclid"].forEach((p) =>
+      u.searchParams.delete(p),
+    );
+    // youtu.be/ID -> youtube.com/watch?v=ID
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace("/", "");
+      if (id) return `https://www.youtube.com/watch?v=${id}${u.search}`;
+    }
+    return u.toString();
+  } catch {
+    return url.trim();
+  }
+}
 
 export default function JogosAdmin() {
   const qc = useQueryClient();
@@ -83,7 +131,12 @@ export default function JogosAdmin() {
     );
   }, [matches, search]);
 
+  // Metadata reaproveitada (venuesCount, hasStream, hasActiveChat)
+  const slugs = useMemo(() => filtered.map((m) => m.slug), [filtered]);
+  const { data: metaMap = {} } = useMatchMeta(slugs);
+
   const selected = useMemo(() => matches.find((m) => m.id === selectedId) ?? null, [matches, selectedId]);
+  const selectedMeta = selected ? metaMap[selected.slug] : undefined;
 
   // Bares parceiros (Prudente)
   const { data: partners = [] } = useQuery({
@@ -107,7 +160,7 @@ export default function JogosAdmin() {
     queryFn: async () => {
       const { data } = await supabase
         .from("sports_match_venues")
-        .select("id, match_id, venue_id, is_featured, transmission_type, partners(name, slug)")
+        .select("id, match_id, venue_id, is_featured, transmission_type, confirmed_by_admin, partners(name, slug, neighborhood)")
         .eq("match_id", selectedId);
       return (data ?? []) as VenueLink[];
     },
@@ -154,19 +207,32 @@ export default function JogosAdmin() {
     onSuccess: () => refetchLinks(),
   });
 
+  const toggleConfirm = useMutation({
+    mutationFn: async (v: VenueLink) => {
+      await supabase.from("sports_match_venues").update({ confirmed_by_admin: !v.confirmed_by_admin }).eq("id", v.id);
+    },
+    onSuccess: () => refetchLinks(),
+  });
+
   const addStream = useMutation({
     mutationFn: async () => {
-      if (!selectedId || !streamUrl.trim()) return;
+      if (!selectedId) return;
+      const detected = detectStreamType(streamUrl);
+      if (!detected) {
+        throw new Error("Informe um link válido de transmissão.");
+      }
+      const finalType = detected !== "other" ? detected : streamType;
+      const normalized = normalizeStreamUrl(streamUrl);
       await supabase.from("sports_match_streams").insert({
         match_id: selectedId,
-        stream_url: streamUrl.trim(),
-        stream_type: streamType,
+        stream_url: normalized,
+        stream_type: finalType,
         is_official: true,
         is_active: true,
       });
     },
-    onSuccess: () => { setStreamUrl(""); refetchStreams(); toast.success("Stream adicionado"); },
-    onError: (e: any) => toast.error(e.message ?? "Erro ao adicionar stream"),
+    onSuccess: () => { setStreamUrl(""); refetchStreams(); toast.success("Transmissão adicionada"); },
+    onError: (e: any) => toast.error(e.message ?? "Informe um link válido de transmissão."),
   });
 
   const toggleStream = useMutation({
@@ -197,6 +263,8 @@ export default function JogosAdmin() {
     }
   };
 
+  const isLive = (m: MatchRow) => m.status?.toLowerCase() === "live" || m.status?.toLowerCase() === "in_play";
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -215,13 +283,13 @@ export default function JogosAdmin() {
       <div className="grid md:grid-cols-[360px_1fr] gap-4">
         {/* Lista */}
         <div className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/70 group-focus-within:text-primary transition-colors" />
             <Input
-              placeholder="Buscar por time ou liga…"
+              placeholder="Buscar time, campeonato ou partida..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 focus-visible:ring-primary/40 focus-visible:shadow-[0_0_0_3px_hsl(var(--primary)/0.15)] transition-shadow"
             />
           </div>
           <div className="rounded-xl border border-border/50 bg-card/40 max-h-[70vh] overflow-y-auto divide-y divide-border/40">
@@ -232,17 +300,45 @@ export default function JogosAdmin() {
                 Nenhum jogo nos próximos 14 dias. Clique em "Sincronizar agora".
               </p>
             ) : (
-              filtered.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setSelectedId(m.id)}
-                  className={`w-full text-left p-3 hover:bg-card/70 transition ${selectedId === m.id ? "bg-primary/10" : ""}`}
-                >
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{m.league_label}</p>
-                  <p className="font-bold text-sm leading-tight">{m.home_team} × {m.away_team}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">{fmt(m.match_time)} · 👁 {m.views_count}</p>
-                </button>
-              ))
+              filtered.map((m) => {
+                const meta = metaMap[m.slug];
+                const live = isLive(m);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedId(m.id)}
+                    className={`w-full text-left p-3 hover:bg-card/70 transition ${selectedId === m.id ? "bg-primary/10" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">{m.league_label}</p>
+                      {live && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 border border-red-500/40 px-1.5 py-0.5 text-[9px] font-black text-red-300 shadow-[0_0_10px_-2px_rgba(239,68,68,0.6)]">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+                          </span>
+                          AO VIVO
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-bold text-sm leading-tight">{m.home_team} × {m.away_team}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">{fmt(m.match_time)} · 👁 {m.views_count}</p>
+                    {meta && (meta.venuesCount > 0 || meta.hasStream || meta.hasActiveChat) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px] font-bold">
+                        {meta.venuesCount > 0 && (
+                          <span className="inline-flex items-center gap-0.5 text-emerald-300">🍻 {meta.venuesCount}</span>
+                        )}
+                        {meta.hasStream && (
+                          <span className="inline-flex items-center gap-0.5 text-yellow-300">📺 1</span>
+                        )}
+                        {meta.hasActiveChat && (
+                          <span className="inline-flex items-center gap-0.5 text-fuchsia-300">💬</span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
@@ -250,16 +346,84 @@ export default function JogosAdmin() {
         {/* Detalhe */}
         <div className="space-y-4">
           {!selected ? (
-            <div className="rounded-xl border border-dashed border-border/50 p-10 text-center text-muted-foreground">
-              Selecione um jogo na lista para curar bares e transmissões.
+            <div className="rounded-xl border border-dashed border-border/50 bg-card/20 p-12 text-center flex flex-col items-center justify-center gap-3 min-h-[300px]">
+              <div className="relative">
+                <div className="absolute inset-0 bg-yellow-500/20 blur-2xl rounded-full" />
+                <Trophy className="relative h-12 w-12 text-yellow-400/60" strokeWidth={1.5} />
+              </div>
+              <p className="text-sm text-muted-foreground/80 max-w-xs leading-relaxed">
+                Selecione uma partida para configurar bares parceiros, transmissões oficiais e experiência da torcida.
+              </p>
             </div>
           ) : (
             <>
-              <div className="rounded-xl border border-border/50 bg-card/40 p-4">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">{selected.league_label}</p>
-                <h2 className="font-display font-black text-xl">{selected.home_team} × {selected.away_team}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{fmt(selected.match_time)}</p>
-                <Badge variant="outline" className="mt-2">{selected.status}</Badge>
+              {/* Card jogo selecionado */}
+              <div className="rounded-xl border border-border/50 bg-gradient-to-br from-card/60 via-card/40 to-card/20 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{selected.league_label}</p>
+                  {isLive(selected) && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 border border-red-500/40 px-2 py-0.5 text-[10px] font-black text-red-300 shadow-[0_0_14px_-2px_rgba(239,68,68,0.6)]">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                      </span>
+                      AO VIVO
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-500/30 to-emerald-700/30 flex items-center justify-center text-sm font-black text-emerald-200 ring-1 ring-emerald-500/30 shrink-0">
+                      {selected.home_team.slice(0, 2).toUpperCase()}
+                    </div>
+                    <span className="font-display font-black text-base md:text-lg truncate">{selected.home_team}</span>
+                  </div>
+                  <span className="text-muted-foreground font-black">×</span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                    <span className="font-display font-black text-base md:text-lg truncate text-right">{selected.away_team}</span>
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-500/30 to-orange-600/30 flex items-center justify-center text-sm font-black text-yellow-200 ring-1 ring-yellow-500/30 shrink-0">
+                      {selected.away_team.slice(0, 2).toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-sm text-muted-foreground">{fmt(selected.match_time)}</p>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="outline" className="text-[10px] uppercase">{selected.status}</Badge>
+                  {selectedMeta?.hasStream && (
+                    <Badge className="text-[10px] bg-yellow-500/15 text-yellow-200 border border-yellow-500/40 hover:bg-yellow-500/25">
+                      📺 Stream oficial
+                    </Badge>
+                  )}
+                  {selectedMeta?.hasActiveChat && (
+                    <Badge className="text-[10px] bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/40 hover:bg-fuchsia-500/25">
+                      💬 Chat ativo
+                    </Badge>
+                  )}
+                  {(selectedMeta?.venuesCount ?? 0) > 0 && (
+                    <Badge className="text-[10px] bg-emerald-500/15 text-emerald-200 border border-emerald-500/40 hover:bg-emerald-500/25">
+                      🍻 {selectedMeta?.venuesCount} {selectedMeta?.venuesCount === 1 ? "bar" : "bares"}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* KPIs futuros (placeholder visual) */}
+                <div className="grid grid-cols-3 gap-2 pt-2 opacity-50">
+                  <div className="rounded-lg border border-dashed border-border/40 px-2 py-1.5 text-center">
+                    <p className="text-[9px] uppercase text-muted-foreground">Lotação</p>
+                    <p className="text-xs font-black">—</p>
+                  </div>
+                  <div className="rounded-lg border border-dashed border-border/40 px-2 py-1.5 text-center">
+                    <p className="text-[9px] uppercase text-muted-foreground">Torcida</p>
+                    <p className="text-xs font-black">—</p>
+                  </div>
+                  <div className="rounded-lg border border-dashed border-border/40 px-2 py-1.5 text-center">
+                    <p className="text-[9px] uppercase text-muted-foreground">Temperatura</p>
+                    <p className="text-xs font-black">—</p>
+                  </div>
+                </div>
               </div>
 
               {/* Streams */}
@@ -273,6 +437,7 @@ export default function JogosAdmin() {
                   >
                     <option value="youtube">YouTube</option>
                     <option value="twitch">Twitch</option>
+                    <option value="cazetv">CazéTV</option>
                     <option value="other">Outro</option>
                   </select>
                   <Input
@@ -286,14 +451,19 @@ export default function JogosAdmin() {
                   </Button>
                 </div>
                 {streams.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Nenhuma transmissão cadastrada.</p>
+                  <p className="text-xs text-muted-foreground">Nenhuma transmissão oficial cadastrada para esta partida.</p>
                 ) : (
                   <ul className="space-y-2">
                     {streams.map((s) => (
                       <li key={s.id} className="flex items-center gap-2 rounded-lg border border-border/40 p-2">
                         <Badge variant={s.is_active ? "default" : "secondary"} className="uppercase text-[10px]">
-                          {s.stream_type}
+                          {STREAM_LABELS[s.stream_type] ?? s.stream_type}
                         </Badge>
+                        {s.is_active && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-1.5 py-0.5 text-[9px] font-black text-emerald-300">
+                            <CheckCircle2 className="h-2.5 w-2.5" /> Oficial
+                          </span>
+                        )}
                         <a href={s.stream_url} target="_blank" rel="noreferrer" className="flex-1 text-xs truncate hover:underline">
                           {s.stream_url}
                         </a>
@@ -316,43 +486,84 @@ export default function JogosAdmin() {
                 {venueLinks.length === 0 ? (
                   <p className="text-xs text-muted-foreground">Nenhum bar vinculado ainda.</p>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul className="grid sm:grid-cols-2 gap-2">
                     {venueLinks.map((v) => (
-                      <li key={v.id} className="flex items-center gap-2 rounded-lg border border-border/40 p-2">
-                        <span className="font-semibold text-sm flex-1">{v.partners?.name ?? v.venue_id}</span>
-                        <select
-                          value={v.transmission_type}
-                          onChange={(e) => updateLink.mutate({ id: v.id, transmission_type: e.target.value })}
-                          className="rounded-md border border-border/50 bg-background px-2 py-1 text-xs"
-                        >
-                          <option value="tv_aberta">TV aberta</option>
-                          <option value="tv_fechada">TV fechada</option>
-                          <option value="streaming">Streaming</option>
-                          <option value="telao">Telão</option>
-                        </select>
-                        <Button size="sm" variant="ghost" onClick={() => unlinkVenue.mutate(v.id)}>
-                          <Trash2 className="h-4 w-4 text-red-400" />
-                        </Button>
+                      <li key={v.id} className="rounded-lg border border-border/40 bg-background/40 p-2.5 space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm truncate flex items-center gap-1">
+                              <Beer className="h-3 w-3 text-primary shrink-0" />
+                              {v.partners?.name ?? v.venue_id}
+                            </p>
+                            {v.partners?.neighborhood && (
+                              <p className="text-[10px] text-muted-foreground truncate">{v.partners.neighborhood}</p>
+                            )}
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => unlinkVenue.mutate(v.id)} className="h-7 w-7 p-0">
+                            <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <MonitorPlay className="h-3 w-3" />
+                            {TRANSMISSION_LABELS[v.transmission_type] ?? v.transmission_type}
+                          </span>
+                          {v.confirmed_by_admin && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-1.5 py-0.5 text-[9px] font-black text-emerald-300">
+                              <CheckCircle2 className="h-2.5 w-2.5" /> Confirmado
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={v.transmission_type}
+                            onChange={(e) => updateLink.mutate({ id: v.id, transmission_type: e.target.value })}
+                            className="flex-1 rounded-md border border-border/50 bg-background px-2 py-1 text-[11px]"
+                          >
+                            <option value="tv_aberta">TV aberta</option>
+                            <option value="tv_fechada">TV fechada</option>
+                            <option value="streaming">Streaming</option>
+                            <option value="telao">Telão</option>
+                          </select>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => toggleConfirm.mutate(v)}
+                            className="h-7 px-2 text-[10px]"
+                            title={v.confirmed_by_admin ? "Remover confirmação" : "Confirmar"}
+                          >
+                            <CheckCircle2 className={`h-3.5 w-3.5 ${v.confirmed_by_admin ? "text-emerald-400" : "text-muted-foreground"}`} />
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>
                 )}
 
-                <details className="rounded-lg border border-border/40 p-2">
-                  <summary className="cursor-pointer text-sm font-semibold">+ Vincular bar parceiro</summary>
+                <details className="rounded-lg border border-primary/30 bg-primary/5 p-2 hover:bg-primary/10 transition-colors group">
+                  <summary className="cursor-pointer text-sm font-bold flex items-center gap-2 text-primary">
+                    <Beer className="h-4 w-4" />
+                    Vincular bar parceiro
+                    <Plus className="h-3.5 w-3.5 ml-auto group-open:rotate-45 transition-transform" />
+                  </summary>
                   <div className="mt-2 max-h-60 overflow-y-auto space-y-1">
-                    {partners
-                      .filter((p: any) => !linkedVenueIds.has(p.id))
-                      .map((p: any) => (
-                        <button
-                          key={p.id}
-                          onClick={() => linkVenue.mutate(p.id)}
-                          className="w-full text-left rounded px-2 py-1 text-xs hover:bg-primary/10 transition"
-                        >
-                          <span className="font-semibold">{p.name}</span>
-                          {p.neighborhood && <span className="text-muted-foreground"> · {p.neighborhood}</span>}
-                        </button>
-                      ))}
+                    {partners.filter((p: any) => !linkedVenueIds.has(p.id)).length === 0 ? (
+                      <p className="text-xs text-muted-foreground p-2">Todos os bares já foram vinculados.</p>
+                    ) : (
+                      partners
+                        .filter((p: any) => !linkedVenueIds.has(p.id))
+                        .map((p: any) => (
+                          <button
+                            key={p.id}
+                            onClick={() => linkVenue.mutate(p.id)}
+                            className="w-full text-left rounded px-2 py-1.5 text-xs hover:bg-primary/15 transition flex items-center gap-2"
+                          >
+                            <Beer className="h-3 w-3 text-primary/70 shrink-0" />
+                            <span className="font-semibold">{p.name}</span>
+                            {p.neighborhood && <span className="text-muted-foreground"> · {p.neighborhood}</span>}
+                          </button>
+                        ))
+                    )}
                   </div>
                 </details>
               </div>
