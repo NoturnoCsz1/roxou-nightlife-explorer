@@ -61,10 +61,10 @@ export default function JogoDetail() {
     queryFn: async () => {
       const { data: row } = await supabase
         .from("sports_matches")
-        .select("id, youtube_url, home_score, away_score, round_label, status, current_minute")
+        .select("id, youtube_url, highlight_url, home_score, away_score, round_label, status, current_minute")
         .eq("slug", slug)
         .maybeSingle();
-      if (!row) return { id: null as string | null, youtube_url: null as string | null, home_score: null as number | null, away_score: null as number | null, round_label: null as string | null, status: null as string | null, current_minute: null as string | null, venues: [] as any[], streams: [] as StreamRow[] };
+      if (!row) return { id: null as string | null, youtube_url: null as string | null, highlight_url: null as string | null, home_score: null as number | null, away_score: null as number | null, round_label: null as string | null, status: null as string | null, current_minute: null as string | null, venues: [] as any[], streams: [] as StreamRow[] };
       const [{ data: links }, { data: streams }] = await Promise.all([
         supabase
           .from("sports_match_venues")
@@ -76,7 +76,7 @@ export default function JogoDetail() {
           .eq("match_id", row.id)
           .eq("is_active", true),
       ]);
-      return { id: row.id, youtube_url: row.youtube_url ?? null, home_score: row.home_score, away_score: row.away_score, round_label: row.round_label, status: row.status, current_minute: row.current_minute, venues: links ?? [], streams: (streams ?? []) as StreamRow[] };
+      return { id: row.id, youtube_url: row.youtube_url ?? null, highlight_url: (row as any).highlight_url ?? null, home_score: row.home_score, away_score: row.away_score, round_label: row.round_label, status: row.status, current_minute: row.current_minute, venues: links ?? [], streams: (streams ?? []) as StreamRow[] };
     },
     enabled: !!slug,
     staleTime: 1000 * 60 * 5,
@@ -116,6 +116,8 @@ export default function JogoDetail() {
   const venues = (localData?.venues ?? []) as any[];
   const streams = (localData?.streams ?? []) as StreamRow[];
   const fallbackYoutube = localData?.youtube_url || match.youtube_url || null;
+  const highlightUrl = localData?.highlight_url || null;
+  const highlightEmbed = isFinished && highlightUrl ? toEmbedUrl(highlightUrl, "youtube") : null;
   const hasOfficialStream = streams.length > 0;
 
   const matchLabel = `${match.home_team} x ${match.away_team}`;
@@ -273,6 +275,44 @@ export default function JogoDetail() {
               <Clock className="h-3 w-3 inline -mt-0.5 mr-1" />
               {formatMatchTime(match.match_time)} · {new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" }).format(new Date(match.match_time))}
             </p>
+          </section>
+        )}
+
+        {/* Melhores momentos — quando jogo finalizado e há highlight */}
+        {isFinished && highlightUrl && (
+          <section>
+            <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
+              <Youtube className="h-5 w-5 text-red-500" /> Melhores momentos
+            </h2>
+            <div className="rounded-2xl border border-red-500/30 bg-card/40 overflow-hidden">
+              {highlightEmbed ? (
+                <div className="aspect-video bg-black">
+                  <iframe
+                    src={highlightEmbed}
+                    title={`Melhores momentos ${matchLabel}`}
+                    className="w-full h-full"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between gap-2 p-3">
+                <span className="text-[11px] uppercase font-black tracking-wider text-red-300">
+                  YouTube · Highlights
+                </span>
+                <a
+                  href={highlightUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 text-xs transition"
+                >
+                  Abrir no YouTube <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            </div>
           </section>
         )}
 

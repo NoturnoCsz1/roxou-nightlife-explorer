@@ -139,18 +139,25 @@ export default function Jogos() {
   const allSlugs = useMemo(() => Array.from(new Set(matches.map((m) => m.slug))), [matches]);
   const { data: metaMap = {} } = useMatchMeta(allSlugs);
 
-  // Views agregados (vindos de sports_matches) para "Mais buscados"
-  const { data: viewsMap = {} } = useQuery({
-    queryKey: ["sports-matches-views", allSlugs.slice().sort().join("|")],
+  // Enriquecimento premium (views, status live, highlights) para ranking de "Mais buscados"
+  type Enrich = { views: number; status: string | null; highlight: boolean };
+  const { data: enrichMap = {} } = useQuery({
+    queryKey: ["sports-matches-enrich", allSlugs.slice().sort().join("|")],
     enabled: allSlugs.length > 0,
     staleTime: 1000 * 60 * 5,
-    queryFn: async (): Promise<Record<string, number>> => {
+    queryFn: async (): Promise<Record<string, Enrich>> => {
       const { data } = await supabase
         .from("sports_matches")
-        .select("slug, views_count")
+        .select("slug, views_count, status, highlight_url")
         .in("slug", allSlugs);
-      const map: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => { map[r.slug] = r.views_count ?? 0; });
+      const map: Record<string, Enrich> = {};
+      (data ?? []).forEach((r: any) => {
+        map[r.slug] = {
+          views: r.views_count ?? 0,
+          status: r.status ?? null,
+          highlight: !!r.highlight_url,
+        };
+      });
       return map;
     },
   });
@@ -183,18 +190,32 @@ export default function Jogos() {
   // "HOJE TEM" — jogo mais relevante do dia
   const hojeTem = useMemo(() => todays[0] ?? null, [todays]);
 
-  // "Mais buscados": ordena por views reais quando existir; fallback p/ relevância.
+  // "Mais buscados": mistura views reais + brasileiros + livescore + Copa do Brasil + highlights.
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
     const candidates = matches.filter(
-      (m) => isHighlightedMatch(m) && new Date(m.match_time).getTime() <= limit && m.status !== "finished",
+      (m) => new Date(m.match_time).getTime() <= limit && m.status !== "finished" && (
+        isHighlightedMatch(m) ||
+        isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team) ||
+        /copa do brasil|libertadores|brasileir/i.test(m.league_label || "")
+      ),
     );
-    const totalViews = candidates.reduce((s, m) => s + (viewsMap[m.slug] ?? 0), 0);
-    const sorted = totalViews > 0
-      ? [...candidates].sort((a, b) => (viewsMap[b.slug] ?? 0) - (viewsMap[a.slug] ?? 0))
-      : sortMatchesByRelevance(candidates);
+    const boost = (m: NormalizedMatch): number => {
+      const e = enrichMap[m.slug];
+      let s = (e?.views ?? 0) * 3;
+      if (isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team)) s += 40;
+      if (/copa do brasil/i.test(m.league_label || "")) s += 60;
+      if (/libertadores/i.test(m.league_label || "")) s += 50;
+      if (/brasileir/i.test(m.league_label || "")) s += 30;
+      if (e?.status === "live" || m.status === "live") s += 120;
+      if (e?.highlight) s += 25;
+      return s;
+    };
+    const sorted = [...candidates].sort((a, b) => boost(b) - boost(a));
+    // desempate por relevância base
+    if (sorted.every((m) => boost(m) === boost(sorted[0]))) return sortMatchesByRelevance(candidates).slice(0, 8);
     return sorted.slice(0, 8);
-  }, [matches, viewsMap]);
+  }, [matches, enrichMap]);
 
   // KPI strip — números agregados
   const kpis = useMemo(() => {
@@ -494,6 +515,32 @@ export default function Jogos() {
                           {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
                         </div>
                       </div>
+                      {(() => {
+                        const meta = metaMap[m.slug];
+                        const v = meta?.venuesCount ?? 0;
+                        const hs = meta?.hasStream;
+                        const hc = meta?.hasActiveChat;
+                        if (!v && !hs && !hc) return null;
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-red-500/20 text-[10px] font-bold">
+                            {v > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 text-emerald-300">
+                                🍻 {v} {v === 1 ? "bar" : "bares"}
+                              </span>
+                            )}
+                            {hs && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/40 px-2 py-0.5 text-purple-200">
+                                📺 Stream
+                              </span>
+                            )}
+                            {hc && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/40 px-2 py-0.5 text-fuchsia-300">
+                                💬 Chat ativo
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </Link>
                   ))}
                 </div>
