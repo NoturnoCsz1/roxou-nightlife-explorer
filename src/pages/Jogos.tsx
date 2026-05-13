@@ -169,7 +169,34 @@ export default function Jogos() {
   const hasCopa = useMemo(() => matches.some((m) => m.is_world_cup), [matches]);
 
   // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam.
-  const relevantBase = useMemo(() => filterRelevantMatches(matches), [matches]);
+  // Force-include adicional: jogos brasileiros/hoje/próximos 7 dias NUNCA somem,
+  // mesmo que API direta não retorne (ex.: Copa do Brasil sincronizada via DB).
+  const relevantBase = useMemo(() => {
+    const base = filterRelevantMatches(matches);
+    const baseSlugs = new Set(base.map((m) => m.slug));
+    const limit7d = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const forced = matches.filter((m) => {
+      if (baseSlugs.has(m.slug)) return false;
+      if (m.status === "finished") return false;
+      const t = new Date(m.match_time).getTime();
+      if (t > limit7d) return false;
+      const isBr = isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team);
+      const isToday = m.raw_date === today;
+      return isBr || isToday;
+    });
+    if (DEBUG) {
+      const target = matches.find(
+        (m) => /juventude/i.test(m.home_team + m.away_team) && /s[aã]o\s*paulo/i.test(m.home_team + m.away_team),
+      );
+      console.log("[jogos-debug] total:", matches.length,
+        "| brasileiros:", matches.filter((m) => isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team)).length,
+        "| hoje:", matches.filter((m) => m.raw_date === today).length,
+        "| Juventude x SP no array bruto:", !!target,
+        target ? { slug: target.slug, league: target.league_label, raw_date: target.raw_date, match_time: target.match_time } : null,
+        "| force-included extras:", forced.length);
+    }
+    return [...base, ...forced];
+  }, [matches, today, DEBUG]);
 
   // Slugs visíveis na página → busca metadata real (bares, stream, chat ativo)
   const allSlugs = useMemo(() => Array.from(new Set(matches.map((m) => m.slug))), [matches]);
