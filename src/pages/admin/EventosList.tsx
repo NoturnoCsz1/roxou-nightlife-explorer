@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, Bot, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Flame, Image as ImageIcon, Layers, Link2, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, Bot, CalendarDays, Check, CheckSquare, ChevronDown, Copy, ExternalLink, Flame, Layers, Link2, Loader2, MousePointerClick, Pencil, Plus, Search, Settings2, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,8 +23,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import AuraCreateEventModal from "@/components/admin/AuraCreateEventModal";
-import { AIConfidenceBadge } from "@/components/admin/AIConfidenceBadges";
 
 interface EventRow {
   id: string;
@@ -126,6 +126,15 @@ const EventosList = () => {
   const [triageMode, setTriageMode] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [bulkSafeOpen, setBulkSafeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"todos" | "hoje" | "rascunhos" | "problemas" | "destaques">("todos");
+  const [searchInput, setSearchInput] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Debounce de busca (250ms)
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const isAiOrigin = (e: EventRow) => {
     const src = (e.verification_source || "").toLowerCase();
@@ -558,11 +567,19 @@ const EventosList = () => {
       if (extraFilter === "prontos") return e.status !== "published" && e.status !== "archived" && getChecklist(e).complete;
       if (extraFilter === "revisar") return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
       return true;
+    })
+    .filter((e) => {
+      if (activeTab === "todos") return true;
+      if (activeTab === "hoje") return eventDayStr(e) === todayStr;
+      if (activeTab === "rascunhos") return e.status === "draft";
+      if (activeTab === "problemas") return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
+      if (activeTab === "destaques") return e.featured || e.aura_pick;
+      return true;
     });
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter]);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter, activeTab]);
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
@@ -622,7 +639,7 @@ const EventosList = () => {
     const cl = getChecklist(e);
     const busy = aiBusy[e.id];
     const isDraft = e.status === "draft";
-    const score = getQualityScore(e);
+    
     const borderClass = e.aura_pick
       ? "border-primary/60 bg-primary/5 shadow-[0_0_18px_rgba(168,85,247,0.25)]"
       : e.featured
@@ -708,23 +725,11 @@ const EventosList = () => {
                 <Flame className="h-2.5 w-2.5" /> Destaque
               </span>
             )}
-            {isAiOrigin(e) && (
-              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary inline-flex items-center gap-0.5">
-                <Bot className="h-2.5 w-2.5" /> Aura
-              </span>
-            )}
             {needsReview(e) && (
-              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5">
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5" title="Evento precisa revisão">
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
-            <AIConfidenceBadge ai_confidence={e.ai_confidence} needs_review={e.needs_review} />
-            <span
-              title={`Qualidade: ${score}/100`}
-              className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${score === 100 ? "bg-green-500/15 text-green-400" : score >= 75 ? "bg-yellow-400/10 text-yellow-400" : "bg-red-500/15 text-red-400"}`}
-            >
-              {score === 100 ? "✔" : score >= 75 ? "⚠" : "❌"} {score}
-            </span>
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
@@ -842,28 +847,49 @@ const EventosList = () => {
     );
   };
 
+  const hasActiveAdvanced =
+    !!activeCategory ||
+    activeDateFilter !== "todos" ||
+    onlyIncomplete ||
+    onlyNeedsReview ||
+    originFilter !== "todos" ||
+    extraFilter !== "todos";
+
+  const TABS: { key: typeof activeTab; label: string }[] = [
+    { key: "todos", label: "Todos" },
+    { key: "hoje", label: "Hoje" },
+    { key: "rascunhos", label: "Rascunhos" },
+    { key: "problemas", label: "Problemas" },
+    { key: "destaques", label: "Destaques" },
+  ];
+
   return (
     <div className="space-y-4 md:ml-44">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-foreground">Eventos</h1>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+      {/* HEADER limpo (Linear/Vercel/Notion) */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Eventos</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Gerencie, revise e publique eventos.</p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => setAuraModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary backdrop-blur-xl transition hover:bg-primary/20 hover:border-primary/60 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.5),0_0_18px_hsl(var(--primary)/0.35)]"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20"
             title="Cole texto e a Aura organiza o evento"
           >
-            <Bot className="h-3.5 w-3.5" /> Criar com Aura
+            <Bot className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Aura</span>
           </button>
           <Link
             to="/admin/eventos/novo/lote"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-foreground/90 backdrop-blur-xl transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 bg-secondary/40 px-3 py-1.5 text-xs font-semibold text-foreground/80 transition hover:bg-secondary/70"
+            title="Criar eventos em lote"
           >
-            <Layers className="h-3.5 w-3.5" /> Lote
+            <Layers className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Lote</span>
           </Link>
           <Link
             to="/admin/eventos/novo"
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-[0_0_0_1px_hsl(var(--primary)/0.4),0_0_18px_hsl(var(--primary)/0.35)] transition hover:bg-primary/90 hover:shadow-[0_0_0_1px_hsl(var(--primary)/0.6),0_0_28px_hsl(var(--primary)/0.55)]"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-[0_0_18px_hsl(var(--primary)/0.35)] transition hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" /> Novo
           </Link>
@@ -872,167 +898,222 @@ const EventosList = () => {
 
       <AuraCreateEventModal open={auraModalOpen} onClose={() => setAuraModalOpen(false)} />
 
-      {/* Drafts Counter */}
-      {draftEvents.length > 0 && (
-        <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-white/5 px-3 py-2 text-[11px] backdrop-blur-xl flex-wrap">
-          <span className="font-bold text-green-400 inline-flex items-center gap-1">
-            <Check className="h-3 w-3" /> {draftsReady} prontos para publicação
+      {/* Alerta operacional — só aparece se houver problema real */}
+      {reviewInFiltered > 0 && (
+        <button
+          type="button"
+          onClick={() => setActiveTab("problemas")}
+          className="w-full flex items-center justify-between gap-3 rounded-xl border border-yellow-400/30 bg-yellow-400/[0.06] px-3 py-2 text-left transition hover:bg-yellow-400/10"
+        >
+          <span className="inline-flex items-center gap-2 text-xs text-yellow-300/90">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <strong className="font-semibold">{reviewInFiltered}</strong> evento(s) precisam de revisão
           </span>
-          <span className="w-px h-4 bg-border/40" />
-          <span className="font-bold text-red-400 inline-flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" /> {draftsAttention} precisando de atenção
-          </span>
-          <span className="w-px h-4 bg-border/40" />
-          <button
-             onClick={() => { setActiveStatus("draft"); setOnlyIncomplete(!onlyIncomplete); }}
-            className={`text-[10px] font-bold uppercase px-2 py-1 rounded transition ${onlyIncomplete ? "bg-primary text-primary-foreground" : "bg-secondary/50 hover:bg-secondary text-muted-foreground"}`}
-          >
-             {onlyIncomplete ? "Mostrando incompletos" : "Mostrar apenas rascunhos incompletos"}
-          </button>
-        </div>
+          <span className="text-[10px] uppercase font-bold text-yellow-300/70">Abrir →</span>
+        </button>
       )}
 
-      <div className="sticky top-0 z-30 -mx-2 px-2 pt-2 pb-2 space-y-2 bg-background/85 backdrop-blur-xl border-b border-border/40">
-      <div className="rounded-2xl border border-border/40 bg-card/80 p-3 space-y-2 backdrop-blur-xl">
-        <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/70 px-3 py-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por título, slug, ID ou local..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase whitespace-nowrap rounded-md bg-primary/15 text-primary px-2 py-1">
-            <CalendarDays className="h-3 w-3" /> Hoje: {totalTodayCount}
-          </span>
-        </div>
+      {/* TOOLBAR sticky minimalista */}
+      <div className="sticky top-0 z-30 -mx-2 px-2 py-2 bg-background/85 backdrop-blur-xl border-b border-border/40 space-y-2">
+        <div className="flex items-center gap-2">
+          {/* Search com prioridade visual */}
+          <div className="flex-1 flex items-center gap-2 rounded-xl border border-border/40 bg-background/80 px-3 py-2 focus-within:border-primary/50 focus-within:shadow-[0_0_0_3px_hsl(var(--primary)/0.12)] transition">
+            <Search className="h-4 w-4 text-muted-foreground/70" />
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar por título, local ou parceiro..."
+              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+            />
+            {searchInput && (
+              <button onClick={() => setSearchInput("")} className="text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
-        {/* Modo Triagem IA + Aprovar todos seguros */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setTriageMode(v => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition border ${triageMode ? "bg-primary text-primary-foreground border-primary shadow-[0_0_18px_hsl(var(--primary)/0.45)]" : "bg-secondary/50 text-muted-foreground border-border/40 hover:bg-secondary"}`}
-            title="Ativa cards compactos + atalhos de teclado (A/D/U/X/R/←/→)"
+          {/* Status */}
+          <select
+            value={activeStatus ?? ""}
+            onChange={(e) => setActiveStatus(e.target.value || null)}
+            className="hidden sm:block rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50"
           >
-            <Bot className="h-3.5 w-3.5" />
-            {triageMode ? "Modo Triagem IA: ON" : "Modo Triagem IA"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setBulkSafeOpen(true)}
-            disabled={publishing}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-green-500/40 bg-green-500/15 px-3 py-1.5 text-[11px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition"
-            title="Aprova de uma vez todos os rascunhos com checklist completo (sem flags críticas)"
-          >
-            <Check className="h-3.5 w-3.5" />
-            Aprovar todos seguros
-          </button>
-          <span className="text-[10px] text-muted-foreground inline-flex items-center gap-2">
-            <span className="text-green-400 font-bold">{readyInFiltered}</span> seguros
-            <span className="text-yellow-400 font-bold">{reviewInFiltered}</span> p/ revisar
-          </span>
-          {triageMode && (
-            <span className="text-[10px] text-primary/80 ml-auto hidden md:inline">
-              ⌨ A=aprovar · D=destaque · U=Aura · X=arquivar · ←→ navegar
-            </span>
-          )}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
-            <option value="todos">Todas as datas</option>
-            <option value="hoje">Hoje</option>
-            <option value="semana">Próximos 7 dias</option>
-            <option value="futuros">Futuros</option>
-            <option value="passados">Passados</option>
+            <option value="">Status</option>
+            <option value="published">Publicados</option>
+            <option value="draft">Rascunhos</option>
+            <option value="archived">Arquivados</option>
           </select>
-          <select value={activePartner} onChange={(e) => setActivePartner(e.target.value)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
-            <option value="todos">Todos os parceiros</option>
+
+          {/* Parceiro */}
+          <select
+            value={activePartner}
+            onChange={(e) => setActivePartner(e.target.value)}
+            className="hidden md:block max-w-[160px] rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50 truncate"
+          >
+            <option value="todos">Parceiro</option>
             <option value="sem-parceiro">Sem parceiro</option>
             {partnerOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
           </select>
-          <select value={originFilter} onChange={(e) => setOriginFilter(e.target.value as OriginFilter)} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2 text-xs text-foreground outline-none focus:border-primary/50">
-            <option value="todos">Origem: Todas</option>
-            <option value="ai">Criados por IA</option>
-            <option value="manual">Criados Manualmente</option>
-          </select>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {([
-            { key: "todos", label: "Todos" },
-            { key: "prontos", label: "✅ Prontos para publicar" },
-            { key: "revisar", label: "👀 Revisar" },
-            { key: "aura", label: "🤖 Aura" },
-            { key: "destaques", label: "🔥 Destaques" },
-            { key: "em-alta", label: "🚀 Em alta" },
-            { key: "detectados-hoje", label: "📅 Hoje" },
-            { key: "sem-imagem", label: "Sem imagem" },
-            { key: "incompletos", label: "Incompletos" },
-            { key: "arquivados", label: "🗃 Arquivados" },
-          ] as const).map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setExtraFilter(key as ExtraFilter)}
-              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${extraFilter === key ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
-            >
-              {label}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setOnlyNeedsReview(!onlyNeedsReview)}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${onlyNeedsReview ? "bg-yellow-400/20 text-yellow-400 border border-yellow-400/40" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
-          >
-            <AlertTriangle className="h-3 w-3" /> Eventos com erro de IA
-          </button>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-        {[
-          { key: null, label: "Todos", count: events.length },
-          { key: "published", label: "Publicado", count: events.filter((e) => e.status === "published").length },
-          { key: "draft", label: "Rascunho", count: events.filter((e) => e.status === "draft").length },
-        ].map((s) => (
-          <button
-            key={s.key ?? "all"}
-            onClick={() => setActiveStatus(activeStatus === s.key ? null : s.key)}
-            className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
-              activeStatus === s.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            {s.label} <span className="ml-0.5 opacity-70">{s.count}</span>
-          </button>
-        ))}
-        <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
-        {categoryCounts.map((c) => (
-          <button
-            key={c.key}
-            onClick={() => setActiveCategory(activeCategory === c.key ? null : c.key)}
-            className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition ${
-              activeCategory === c.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            {c.label} <span className="ml-0.5 opacity-70">{c.count}</span>
-          </button>
-        ))}
-        {(search || activeCategory || activeStatus || activePartner !== "todos" || activeDateFilter !== "todos" || onlyIncomplete || onlyNeedsReview || originFilter !== "todos" || extraFilter !== "todos") && (
-          <>
-            <span className="w-px h-4 bg-border/40 shrink-0 mx-0.5" />
+          {/* Botão Filtros (drawer) */}
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className={`relative inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                  hasActiveAdvanced
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/40 bg-secondary/40 text-foreground/80 hover:bg-secondary/70"
+                }`}
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Filtros</span>
+                {hasActiveAdvanced && <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]" />}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md bg-card/95 backdrop-blur-xl border-l border-border/40 overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filtros avançados</SheetTitle>
+              </SheetHeader>
+
+              <div className="mt-6 space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Data</label>
+                  <select value={activeDateFilter} onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)} className="w-full rounded-lg border border-border/40 bg-background/80 px-3 py-2 text-sm">
+                    <option value="todos">Todas as datas</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Próximos 7 dias</option>
+                    <option value="futuros">Futuros</option>
+                    <option value="passados">Passados</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Categoria</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={() => setActiveCategory(null)} className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg transition ${!activeCategory ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}>Todas</button>
+                    {categoryCounts.map((c) => (
+                      <button key={c.key} onClick={() => setActiveCategory(activeCategory === c.key ? null : c.key)} className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg transition ${activeCategory === c.key ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}>
+                        {c.label} <span className="ml-0.5 opacity-60">{c.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Origem</label>
+                  <select value={originFilter} onChange={(e) => setOriginFilter(e.target.value as OriginFilter)} className="w-full rounded-lg border border-border/40 bg-background/80 px-3 py-2 text-sm">
+                    <option value="todos">Todas as origens</option>
+                    <option value="ai">Criados por IA</option>
+                    <option value="manual">Criados manualmente</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Atributos</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {([
+                      { key: "todos", label: "Todos" },
+                      { key: "prontos", label: "Prontos para publicar" },
+                      { key: "revisar", label: "Revisar" },
+                      { key: "aura", label: "Aura Pick" },
+                      { key: "destaques", label: "Destaques" },
+                      { key: "em-alta", label: "Em alta" },
+                      { key: "detectados-hoje", label: "Detectados hoje" },
+                      { key: "sem-imagem", label: "Sem imagem" },
+                      { key: "incompletos", label: "Incompletos" },
+                      { key: "arquivados", label: "Arquivados" },
+                    ] as const).map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setExtraFilter(key as ExtraFilter)}
+                        className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg transition ${extraFilter === key ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-muted-foreground hover:bg-secondary"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sinalizações</label>
+                  <button onClick={() => setOnlyNeedsReview(!onlyNeedsReview)} className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition ${onlyNeedsReview ? "border-yellow-400/40 bg-yellow-400/10 text-yellow-300" : "border-border/40 bg-secondary/40 text-foreground/80 hover:bg-secondary/70"}`}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <AlertTriangle className="h-3 w-3" /> Apenas eventos com erro de IA
+                    </span>
+                  </button>
+                  <button onClick={() => setOnlyIncomplete(!onlyIncomplete)} className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition ${onlyIncomplete ? "border-red-400/40 bg-red-400/10 text-red-300" : "border-border/40 bg-secondary/40 text-foreground/80 hover:bg-secondary/70"}`}>
+                    Apenas rascunhos incompletos
+                  </button>
+                </div>
+
+                <div className="pt-4 border-t border-border/40 flex gap-2">
+                  <button
+                    onClick={() => {
+                      setActiveCategory(null);
+                      setActiveDateFilter("todos");
+                      setOnlyIncomplete(false);
+                      setOnlyNeedsReview(false);
+                      setOriginFilter("todos");
+                      setExtraFilter("todos");
+                    }}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/40 bg-secondary/40 px-3 py-2 text-xs font-semibold text-foreground/80 hover:bg-secondary/70"
+                  >
+                    <X className="h-3.5 w-3.5" /> Limpar
+                  </button>
+                  <button onClick={() => setFiltersOpen(false)} className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90">
+                    Aplicar
+                  </button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        {/* Tabs operacionais minimalistas */}
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1">
+          {TABS.map((t) => {
+            const active = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setActiveTab(t.key)}
+                className={`shrink-0 relative px-3 py-1.5 text-xs font-semibold transition ${
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+                {active && <span className="absolute left-2 right-2 -bottom-[1px] h-[2px] rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]" />}
+              </button>
+            );
+          })}
+
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <button
-                onClick={() => { setSearch(""); setActiveCategory(null); setActiveStatus(null); setActivePartner("todos"); setActiveDateFilter("todos"); setOnlyIncomplete(false); setOnlyNeedsReview(false); setOriginFilter("todos"); setExtraFilter("todos"); }}
-              className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
+              type="button"
+              onClick={() => setTriageMode((v) => !v)}
+              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition border ${
+                triageMode
+                  ? "bg-primary/15 text-primary border-primary/40"
+                  : "bg-secondary/40 text-muted-foreground border-border/40 hover:bg-secondary/70"
+              }`}
+              title="Modo Revisão: cards compactos + atalhos A/D/U/X/R/←→"
             >
-              <X className="h-3 w-3" /> Limpar
+              <Bot className="h-3 w-3" /> Modo Revisão
             </button>
-          </>
-        )}
-      </div>
+            <button
+              type="button"
+              onClick={() => setBulkSafeOpen(true)}
+              disabled={publishing || readyInFiltered === 0}
+              className="inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/10 px-2.5 py-1 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/20 disabled:opacity-40 transition"
+              title="Publicar todos os rascunhos seguros"
+            >
+              <Check className="h-3 w-3" /> Publicar seguros
+              {readyInFiltered > 0 && <span className="opacity-70">{readyInFiltered}</span>}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Barra sticky de ações em lote */}

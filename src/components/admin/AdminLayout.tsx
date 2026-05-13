@@ -1,23 +1,9 @@
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Plus, ArrowLeft, LogOut, Search, ShieldCheck, MapPin, Globe, Instagram, Newspaper, Building2, Radar, Film, Shield, Sparkles } from "lucide-react";
+import { Plus, ArrowLeft, LogOut, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
-const navItems = [
-  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/admin/aura", icon: Sparkles, label: "Aura" },
-  { to: "/admin/eventos", icon: CalendarDays, label: "Eventos" },
-  { to: "/admin/radar-ia", icon: Radar, label: "Radar IA" },
-  { to: "/admin/autoreels", icon: Film, label: "AutoReels" },
-  { to: "/admin/security", icon: Shield, label: "Segurança" },
-  { to: "/admin/noticias", icon: Newspaper, label: "Notícias" },
-  { to: "/admin/sugestoes", icon: Search, label: "Captação" },
-  { to: "/admin/eventou", icon: Globe, label: "Eventou" },
-  { to: "/admin/instagram", icon: Instagram, label: "Instagram" },
-  { to: "/admin/estabelecimentos", icon: Building2, label: "Estabelecimentos" },
-  { to: "/admin/parceiros", icon: Users, label: "Parceiros (legado)" },
-  { to: "/admin/editores", icon: ShieldCheck, label: "Editores" },
-];
+import { ADMIN_NAVIGATION as navItems } from "@/config/adminNavigation";
 
 const AdminLayout = () => {
   const { pathname } = useLocation();
