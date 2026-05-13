@@ -124,12 +124,17 @@ export default function JogosAdmin() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return matches;
-    return matches.filter(
-      (m) =>
+    const qn = normalizeTeamName(q);
+    return matches.filter((m) => {
+      // Match clássico (substring) + match bidirecional/normalizado por time
+      if (
         m.home_team.toLowerCase().includes(q) ||
         m.away_team.toLowerCase().includes(q) ||
-        (m.league_label ?? "").toLowerCase().includes(q),
-    );
+        (m.league_label ?? "").toLowerCase().includes(q)
+      ) return true;
+      if (qn && (isSameTeam(m.home_team, q) || isSameTeam(m.away_team, q))) return true;
+      return false;
+    });
   }, [matches, search]);
 
   // Metadata reaproveitada (venuesCount, hasStream, hasActiveChat)
