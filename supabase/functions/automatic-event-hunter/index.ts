@@ -20,6 +20,49 @@ const norm = (s: string) =>
     .replace(/[^a-z0-9]/g, "")
     .trim();
 
+// === Normalize Instagram handle (mirrors src/lib/instagramHandle.ts) ===
+const INSTAGRAM_HOST_REGEX = /^(https?:\/\/)?(www\.)?instagram\.com\//i;
+function normalizeInstagramHandle(input: string | null | undefined): string {
+  if (!input) return "";
+  let s = String(input).trim();
+  if (!s) return "";
+  s = s.replace(INSTAGRAM_HOST_REGEX, "");
+  s = s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/^@+/, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0].trim().toLowerCase();
+  return s;
+}
+
+// === Janela de 5 dias (SP timezone-aware) ===
+const POST_WINDOW_DAYS = 5;
+function isPostWithinWindow(timestamp?: string | null): boolean {
+  if (!timestamp) return false;
+  const t = new Date(timestamp).getTime();
+  if (isNaN(t)) return false;
+  const cutoff = Date.now() - POST_WINDOW_DAYS * 86400_000;
+  return t >= cutoff && t <= Date.now() + 60_000;
+}
+
+// === Classificador heurístico (sem IA) ===
+const EVENT_KW = ["hoje","amanha","sábado","sabado","sexta","quinta","domingo","lineup","atração","atracao","show","ao vivo","open bar","openbar","festa","baile","edição","edicao","entrada","ingresso","reservas","começa às","comeca as","a partir das"," 20h"," 21h"," 22h"," 23h","música ao vivo","musica ao vivo"];
+const PROMO_KW = ["promoção","promocao","combo","desconto","compre","leve","delivery","peça agora","peca agora","oferta","imperdível","imperdivel","preço especial","preco especial","dose dupla","happy hour","cardápio","cardapio","frete grátis","frete gratis"];
+const ANNOUNCE_KW = ["comunicado","funcionamento","horário especial","horario especial","fechado","abriremos","não abriremos","nao abriremos","manutenção","manutencao","aviso","informamos"];
+
+function lowerNoAccent(s: string) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function classifyPostText(text: string): "event" | "promotion" | "announcement" | "generic" | "unknown" {
+  const t = lowerNoAccent(text);
+  if (!t.trim()) return "unknown";
+  const ev = EVENT_KW.some((k) => t.includes(k));
+  const pr = PROMO_KW.some((k) => t.includes(k));
+  const an = ANNOUNCE_KW.some((k) => t.includes(k));
+  const hasTime = /\b\d{1,2}h(?:\d{2})?\b/.test(t);
+  if (an && !ev) return "announcement";
+  if (ev || hasTime) return "event";
+  if (pr) return "promotion";
+  return "generic";
+}
+
 const slugify = (s: string) =>
   (s || "evento")
     .toLowerCase()
