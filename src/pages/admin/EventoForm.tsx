@@ -441,6 +441,18 @@ const EventoForm = () => {
             {reprocessing ? "Re-processando..." : "Re-processar com IA"}
           </button>
         )}
+        {isEdit && (
+          <button
+            type="button"
+            onClick={reprocessSportsTransmission}
+            disabled={reprocessingSports}
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50"
+            title="Detectar transmissão esportiva (futebol/telão) e vincular ao jogo correspondente"
+          >
+            {reprocessingSports ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Tv className="h-3.5 w-3.5" />}
+            {reprocessingSports ? "Reprocessando..." : "Reprocessar transmissão esportiva"}
+          </button>
+        )}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
