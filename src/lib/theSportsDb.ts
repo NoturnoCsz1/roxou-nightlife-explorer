@@ -308,6 +308,94 @@ export function isBigEuropeanTeam(team: string): boolean {
   return teamMatches(team, BIG_EUROPEAN_TEAMS);
 }
 
+/**
+ * Normaliza o nome de um time para comparação canônica.
+ * Remove acentos, prefixos/sufixos comuns (FC, EC, SC, AC, CF, etc.),
+ * pontuação e espaços extras. Mantém só letras/números/espaços.
+ *
+ * Exemplos:
+ *   "São Paulo FC" → "sao paulo"
+ *   "EC Juventude" → "juventude"
+ *   "SPFC"         → "sao paulo"  (via sigla)
+ */
+const TEAM_SIGLAS: Record<string, string> = {
+  "spfc": "sao paulo",
+  "sep": "palmeiras",
+  "scp": "palmeiras",
+  "scc": "corinthians",
+  "scfc": "corinthians",
+  "crf": "flamengo",
+  "fcf": "fluminense",
+  "crvg": "vasco",
+  "bfr": "botafogo",
+  "ecv": "vitoria",
+  "ecb": "bahia",
+  "rbb": "bragantino",
+  "cam": "atletico mineiro",
+  "cap": "athletico paranaense",
+};
+
+const TEAM_PREFIX_SUFFIX = [
+  "esporte clube", "futebol clube", "club de regatas", "clube de regatas",
+  "associacao atletica", "associacao desportiva", "sport club",
+  "fc", "ec", "sc", "ac", "cf", "cd", "cr", "ca",
+  "fbc", "afc", "u20", "u23", "u17", "sub20", "sub23", "sub17",
+  "feminino", "feminina",
+];
+
+export function normalizeTeamName(name: string | null | undefined): string {
+  if (!name) return "";
+  let s = String(name)
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[._\-/]/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Sigla direta
+  const compact = s.replace(/\s+/g, "");
+  if (TEAM_SIGLAS[compact]) return TEAM_SIGLAS[compact];
+
+  // Remove prefixos/sufixos repetidamente
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const tok of TEAM_PREFIX_SUFFIX) {
+      const re1 = new RegExp(`^${tok}\\b\\s*`);
+      const re2 = new RegExp(`\\s*\\b${tok}$`);
+      if (re1.test(s)) { s = s.replace(re1, ""); changed = true; }
+      if (re2.test(s)) { s = s.replace(re2, ""); changed = true; }
+    }
+    s = s.replace(/\s+/g, " ").trim();
+  }
+  return s;
+}
+
+/** Verifica se dois nomes de time se referem ao mesmo clube (bidirecional, normalizado). */
+export function isSameTeam(a: string | null | undefined, b: string | null | undefined): boolean {
+  const na = normalizeTeamName(a);
+  const nb = normalizeTeamName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  return na.includes(nb) || nb.includes(na);
+}
+
+/**
+ * Compara um match com um par de times (bidirecional).
+ * Reconhece "Juventude x São Paulo" e "São Paulo x Juventude" como o mesmo jogo.
+ */
+export function isSameMatch(
+  match: { home_team: string; away_team: string },
+  teamA: string,
+  teamB: string,
+): boolean {
+  return (
+    (isSameTeam(match.home_team, teamA) && isSameTeam(match.away_team, teamB)) ||
+    (isSameTeam(match.home_team, teamB) && isSameTeam(match.away_team, teamA))
+  );
+}
+
 export function isClassico(home: string, away: string): boolean {
   const h = norm(home);
   const a = norm(away);
