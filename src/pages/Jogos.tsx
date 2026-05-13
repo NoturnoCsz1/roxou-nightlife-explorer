@@ -13,9 +13,11 @@ import {
   formatMatchTime,
   isPriorityTeam,
   isSameTeam,
+  isSameMatch,
   isBrazilianTeam,
   mergeMatches,
   sportsMatchRowToNormalized,
+  normalizeTeamName,
   type NormalizedMatch,
   type SportsMatchRow,
 } from "@/lib/theSportsDb";
