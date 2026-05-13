@@ -469,7 +469,13 @@ export default function Jogos() {
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2 md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:mx-0 md:px-0 md:pb-0">
                   {maisBuscados.map((m) => (
                     <div key={m.external_id} className="w-[280px] shrink-0 md:w-auto">
-                      <MatchCard match={m} compact />
+                      <MatchCard
+                        match={m}
+                        compact
+                        venuesCount={metaMap[m.slug]?.venuesCount}
+                        hasStream={metaMap[m.slug]?.hasStream}
+                        hasActiveChat={metaMap[m.slug]?.hasActiveChat}
+                      />
                     </div>
                   ))}
                 </div>
