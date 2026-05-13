@@ -909,12 +909,28 @@ export default function Jogos() {
           <h3 className="font-display font-black text-lg mt-8 mb-3">Perguntas frequentes</h3>
           <div className="space-y-3 text-sm">
             <details className="rounded-lg border border-border/40 bg-card/40 p-3">
-              <summary className="cursor-pointer font-semibold">Os horários estão em qual fuso?</summary>
-              <p className="text-muted-foreground mt-2">Todos os horários são exibidos em Brasília (America/Sao_Paulo).</p>
+              <summary className="cursor-pointer font-semibold">Onde assistir São Paulo hoje em Presidente Prudente?</summary>
+              <p className="text-muted-foreground mt-2">Veja na Roxou os bares parceiros em Presidente Prudente que confirmaram transmissão dos jogos do São Paulo. Clique no card do jogo para ver a lista atualizada de locais e horários.</p>
             </details>
             <details className="rounded-lg border border-border/40 bg-card/40 p-3">
-              <summary className="cursor-pointer font-semibold">Como sei onde assistir cada jogo?</summary>
-              <p className="text-muted-foreground mt-2">Clique no card do jogo para ver bares parceiros que transmitem aquela partida em Presidente Prudente.</p>
+              <summary className="cursor-pointer font-semibold">Quais bares transmitem Copa do Brasil em Prudente?</summary>
+              <p className="text-muted-foreground mt-2">A Roxou mantém uma curadoria de bares esportivos no interior paulista — em Presidente Prudente — que transmitem Copa do Brasil, Brasileirão e Libertadores. Confira na seção "Bares esportivos" desta página.</p>
+            </details>
+            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
+              <summary className="cursor-pointer font-semibold">Onde assistir futebol ao vivo hoje?</summary>
+              <p className="text-muted-foreground mt-2">A página de jogos da Roxou lista jogos ao vivo agora, próximos jogos brasileiros e os bares parceiros que estão transmitindo cada partida em Presidente Prudente.</p>
+            </details>
+            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
+              <summary className="cursor-pointer font-semibold">Quais jogos passam hoje?</summary>
+              <p className="text-muted-foreground mt-2">Acompanhe na Roxou todos os jogos de hoje (horário de Brasília): Copa do Brasil, Brasileirão, Libertadores, Sul-Americana, Champions League e demais ligas internacionais.</p>
+            </details>
+            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
+              <summary className="cursor-pointer font-semibold">Onde assistir Libertadores em Prudente?</summary>
+              <p className="text-muted-foreground mt-2">Os bares esportivos parceiros da Roxou em Presidente Prudente transmitem a Libertadores. Veja a lista nesta página e clique no jogo desejado para descobrir o local mais próximo.</p>
+            </details>
+            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
+              <summary className="cursor-pointer font-semibold">Os horários estão em qual fuso?</summary>
+              <p className="text-muted-foreground mt-2">Todos os horários são exibidos em horário de Brasília (America/Sao_Paulo).</p>
             </details>
             <details className="rounded-lg border border-border/40 bg-card/40 p-3">
               <summary className="cursor-pointer font-semibold">A Roxou tem transmissão ao vivo?</summary>
