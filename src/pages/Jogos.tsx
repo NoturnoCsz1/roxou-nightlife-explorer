@@ -207,10 +207,10 @@ export default function Jogos() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <SEO
-        title="Jogos de hoje em Presidente Prudente | Roxou"
-        description="Confira jogos de hoje, Copa do Mundo, Brasileirão, Copa do Brasil, Libertadores, Champions League e bares transmitindo futebol em Presidente Prudente."
+        title="Jogos de Hoje e Onde Assistir Futebol em Presidente Prudente | Roxou"
+        description="Veja jogos de hoje, próximos jogos de times brasileiros, bares que transmitem futebol, placares, tabelas e transmissões oficiais em Presidente Prudente."
         canonical="https://roxou.com.br/jogos"
-        keywords="jogos hoje, copa do mundo, brasileirão, bares futebol prudente, presidente prudente"
+        keywords="jogos de hoje, futebol prudente, onde assistir futebol, brasileirão, libertadores, champions, copa do brasil, bares com futebol presidente prudente"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "FAQPage",
@@ -249,18 +249,16 @@ export default function Jogos() {
             <Trophy className="h-3.5 w-3.5" /> COPA NA ROXOU
           </div>
           <h1
-            className="font-display font-black leading-[1] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[20ch]"
-            style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)", wordBreak: "keep-all", hyphens: "none" }}
+            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[22ch]"
+            style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)" }}
           >
-            <span className="block">JOGOS, TRANSMISSÕES E</span>
+            <span className="block">Jogos de hoje e onde assistir</span>
             <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
-              BARES PARA ASSISTIR
+              em Presidente Prudente
             </span>
-            <span className="block">FUTEBOL EM PRUDENTE</span>
           </h1>
           <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance mx-auto max-w-[55ch]">
-            Veja os principais jogos do dia, bares transmitindo e acompanhe a emoção da Copa, Brasileirão,
-            Libertadores e Champions na Roxou.
+            Futebol ao vivo, bares parceiros, transmissões oficiais e próximos jogos dos times brasileiros.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <button
@@ -610,25 +608,30 @@ export default function Jogos() {
             Onde assistir futebol em Presidente Prudente
           </h2>
           <p className="text-muted-foreground text-sm md:text-base max-w-3xl">
-            A Roxou reúne bares, pubs e restaurantes que transmitem os principais jogos de futebol em Presidente Prudente.
-            Veja onde assistir Brasileirão, Copa do Brasil, Libertadores, Champions League, Copa do Mundo e jogos da
-            Seleção Brasileira com a melhor curadoria local.
+            Na Roxou você acompanha os principais jogos de hoje, próximos jogos dos times brasileiros,
+            resultados, tabelas e bares que transmitem futebol em Presidente Prudente.
           </p>
           <div className="flex flex-wrap gap-2 mt-5">
+            <Link to="/resultados" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Resultados recentes
+            </Link>
+            <Link to="/tabela/brasileirao" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Tabela do Brasileirão
+            </Link>
+            <Link to="/tabela/libertadores" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Tabela da Libertadores
+            </Link>
+            <Link to="/tabela/champions" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Tabela da Champions
+            </Link>
             <Link to="/agenda" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-              Ver agenda de eventos
+              Agenda de eventos
             </Link>
             <Link to="/indica" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-              Ver bares em Prudente
+              Bares em Prudente
             </Link>
-            <button
-              onClick={() => { setFilter("hoje"); document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth" }); }}
-              className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition"
-            >
-              Ver jogos de hoje
-            </button>
             <a href="#bares-esportivos" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-              Ver locais esportivos
+              Locais esportivos
             </a>
           </div>
 

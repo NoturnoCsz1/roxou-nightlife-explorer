@@ -440,12 +440,35 @@ export function isHighlightedMatch(m: NormalizedMatch): boolean {
   return getMatchRelevanceScore(m) >= RELEVANCE_HIGHLIGHT_THRESHOLD;
 }
 
+/**
+ * Force-include: jogos envolvendo times brasileiros relevantes
+ * NUNCA podem ser escondidos pelos filtros principais, mesmo com score baixo.
+ */
+export function isForceIncluded(m: NormalizedMatch): boolean {
+  return isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team);
+}
+
 export function isVisibleMatch(m: NormalizedMatch): boolean {
+  if (isForceIncluded(m)) return true;
   return getMatchRelevanceScore(m) >= MINIMUM_RELEVANCE_VISIBLE;
 }
 
 /** Filtra jogos com relevância suficiente para exibição pública. */
 export function filterRelevantMatches(list: NormalizedMatch[]): NormalizedMatch[] {
-  return list.filter(isVisibleMatch);
+  const DEBUG = (import.meta as any).env?.VITE_JOGOS_DEBUG === "true";
+  return list.filter((m) => {
+    const visible = isVisibleMatch(m);
+    if (DEBUG && !visible) {
+      // eslint-disable-next-line no-console
+      console.debug("[jogos] hidden:", {
+        match: `${m.home_team} x ${m.away_team}`,
+        league: m.league_label,
+        score: getMatchRelevanceScore(m),
+        forceInclude: isForceIncluded(m),
+        date: m.raw_date,
+      });
+    }
+    return visible;
+  });
 }
 
