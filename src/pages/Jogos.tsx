@@ -180,8 +180,8 @@ export default function Jogos() {
     else if (filter === "live") list = list.filter((m) => m.status === "live");
 
     if (teamFilter) {
-      const t = norm(teamFilter);
-      list = list.filter((m) => norm(m.home_team).includes(t) || norm(m.away_team).includes(t));
+      // Bidirecional + normalizado (reconhece SPFC, EC Juventude, etc.)
+      list = list.filter((m) => isSameTeam(m.home_team, teamFilter) || isSameTeam(m.away_team, teamFilter));
     }
     return list;
   }, [matches, relevantBase, filter, today, tomorrow, teamFilter]);
