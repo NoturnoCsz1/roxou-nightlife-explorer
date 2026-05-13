@@ -2142,6 +2142,78 @@ export type Database = {
         }
         Relationships: []
       }
+      sports_league_standings: {
+        Row: {
+          created_at: string
+          draws: number
+          form: string | null
+          goal_diff: number
+          goals_against: number
+          goals_for: number
+          id: string
+          last_synced_at: string
+          league_id: string
+          league_label: string
+          league_slug: string
+          losses: number
+          played: number
+          points: number
+          position: number
+          season: string | null
+          team_badge: string | null
+          team_id: string | null
+          team_name: string
+          updated_at: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          draws?: number
+          form?: string | null
+          goal_diff?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          last_synced_at?: string
+          league_id: string
+          league_label: string
+          league_slug: string
+          losses?: number
+          played?: number
+          points?: number
+          position: number
+          season?: string | null
+          team_badge?: string | null
+          team_id?: string | null
+          team_name: string
+          updated_at?: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          draws?: number
+          form?: string | null
+          goal_diff?: number
+          goals_against?: number
+          goals_for?: number
+          id?: string
+          last_synced_at?: string
+          league_id?: string
+          league_label?: string
+          league_slug?: string
+          losses?: number
+          played?: number
+          points?: number
+          position?: number
+          season?: string | null
+          team_badge?: string | null
+          team_id?: string | null
+          team_name?: string
+          updated_at?: string
+          wins?: number
+        }
+        Relationships: []
+      }
       sports_match_events: {
         Row: {
           action: string
@@ -2270,12 +2342,16 @@ export type Database = {
       sports_matches: {
         Row: {
           away_badge: string | null
+          away_score: number | null
           away_team: string
           category: string | null
           chat_count: number
           created_at: string
+          current_minute: string | null
           external_id: string | null
+          finished_at: string | null
           home_badge: string | null
+          home_score: number | null
           home_team: string
           id: string
           is_featured: boolean
@@ -2286,6 +2362,7 @@ export type Database = {
           league_name: string | null
           match_time: string
           priority: number
+          round_label: string | null
           season: string | null
           slug: string
           status: string
@@ -2296,12 +2373,16 @@ export type Database = {
         }
         Insert: {
           away_badge?: string | null
+          away_score?: number | null
           away_team: string
           category?: string | null
           chat_count?: number
           created_at?: string
+          current_minute?: string | null
           external_id?: string | null
+          finished_at?: string | null
           home_badge?: string | null
+          home_score?: number | null
           home_team: string
           id?: string
           is_featured?: boolean
@@ -2312,6 +2393,7 @@ export type Database = {
           league_name?: string | null
           match_time: string
           priority?: number
+          round_label?: string | null
           season?: string | null
           slug: string
           status?: string
@@ -2322,12 +2404,16 @@ export type Database = {
         }
         Update: {
           away_badge?: string | null
+          away_score?: number | null
           away_team?: string
           category?: string | null
           chat_count?: number
           created_at?: string
+          current_minute?: string | null
           external_id?: string | null
+          finished_at?: string | null
           home_badge?: string | null
+          home_score?: number | null
           home_team?: string
           id?: string
           is_featured?: boolean
@@ -2338,6 +2424,7 @@ export type Database = {
           league_name?: string | null
           match_time?: string
           priority?: number
+          round_label?: string | null
           season?: string | null
           slug?: string
           status?: string

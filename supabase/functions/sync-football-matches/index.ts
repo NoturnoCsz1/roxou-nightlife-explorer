@@ -84,8 +84,12 @@ Deno.serve(async (req) => {
   const stats: Record<string, number> = { fetched: 0, upserted: 0, errors: 0 };
 
   for (const lg of FEATURED_LEAGUES) {
-    const data = await safeFetch(`${BASE_URL}/eventsnextleague.php?id=${lg.id}`);
-    const events: any[] = data?.events ?? [];
+    // Próximos jogos + resultados recentes (últimos finalizados)
+    const [nextData, pastData] = await Promise.all([
+      safeFetch(`${BASE_URL}/eventsnextleague.php?id=${lg.id}`),
+      safeFetch(`${BASE_URL}/eventspastleague.php?id=${lg.id}`),
+    ]);
+    const events: any[] = [...(nextData?.events ?? []), ...(pastData?.events ?? [])];
     stats.fetched += events.length;
 
     for (const ev of events) {
@@ -95,6 +99,17 @@ Deno.serve(async (req) => {
         const away = String(ev.strAwayTeam).trim();
         const { iso, dateSP } = toBrazilDateTime(ev.dateEvent, ev.strTime || ev.strTimeLocal);
         const slug = `${slugify(home)}-vs-${slugify(away)}-${dateSP}`.slice(0, 120);
+
+        const status = inferStatus(ev.strStatus, iso);
+        const homeScoreRaw = ev.intHomeScore;
+        const awayScoreRaw = ev.intAwayScore;
+        const home_score = homeScoreRaw !== null && homeScoreRaw !== undefined && homeScoreRaw !== ""
+          ? parseInt(String(homeScoreRaw), 10)
+          : null;
+        const away_score = awayScoreRaw !== null && awayScoreRaw !== undefined && awayScoreRaw !== ""
+          ? parseInt(String(awayScoreRaw), 10)
+          : null;
+        const round_label = ev.intRound ? `Rodada ${ev.intRound}` : (ev.strStage || null);
 
         const row = {
           external_id: String(ev.idEvent),
@@ -111,7 +126,12 @@ Deno.serve(async (req) => {
           season: ev.strSeason || null,
           venue_name: ev.strVenue || null,
           youtube_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : null,
-          status: inferStatus(ev.strStatus, iso),
+          status,
+          home_score: Number.isFinite(home_score as number) ? home_score : null,
+          away_score: Number.isFinite(away_score as number) ? away_score : null,
+          round_label,
+          current_minute: status === "live" ? (ev.strProgress || ev.strStatus || null) : null,
+          finished_at: status === "finished" ? new Date().toISOString() : null,
           is_world_cup: lg.category === "world_cup",
           priority: lg.priority,
           last_synced_at: new Date().toISOString(),

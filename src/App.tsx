@@ -86,6 +86,8 @@ import V3Contato from "./pages/v3/V3Contato";
 const PertoDeMim = lazy(() => import("./pages/PertoDeMim"));
 const Jogos = lazy(() => import("./pages/Jogos"));
 const JogoDetail = lazy(() => import("./pages/JogoDetail"));
+const TabelaCampeonato = lazy(() => import("./pages/TabelaCampeonato"));
+const Resultados = lazy(() => import("./pages/Resultados"));
 const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 import PedirCaronaGate from "./components/PedirCaronaGate";
@@ -164,6 +166,8 @@ const App = () => (
           <Route path="/parceiros" element={<V3Parceiros />} />
           <Route path="/jogos" element={L(<Jogos />)} />
           <Route path="/jogo/:slug" element={L(<JogoDetail />)} />
+          <Route path="/resultados" element={L(<Resultados />)} />
+          <Route path="/tabela/:slug" element={L(<TabelaCampeonato />)} />
 
           {/* Redirects 301 (permanentes) das URLs antigas /v3/* para a raiz */}
           <Route path="/v3" element={<Navigate to="/" replace />} />
