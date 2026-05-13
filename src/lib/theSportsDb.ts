@@ -7,7 +7,10 @@
  * `category` ("world_cup" | "brazil" | "international") e `priority`.
  */
 
-const API_KEY = (import.meta as any).env?.VITE_THESPORTSDB_API_KEY || "3";
+// Frontend usa apenas a key pública/free "3" do TheSportsDB (documentada).
+// A key PREMIUM fica EXCLUSIVAMENTE no backend (THESPORTSDB_API_KEY em Edge Functions).
+// Não usar VITE_THESPORTSDB_API_KEY — chave premium nunca pode chegar ao browser.
+const API_KEY = "3";
 const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
 
 const SP_OFFSET = "-03:00";
