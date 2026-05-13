@@ -187,6 +187,10 @@ export default function Jogos() {
   }, [matches, metaMap]);
 
 
+  // Resultados recentes (últimos 3 dias) e jogos ao vivo (vindos de sports_matches)
+  const { data: recentResults = [] } = useFootballResults({ range: "last3", limit: 6 });
+  const { data: liveMatches = [] } = useLiveMatches();
+
   const groups = groupMatchesByDate(filtered);
 
   const scrollToProximos = () => {
@@ -437,6 +441,79 @@ export default function Jogos() {
                 </div>
               </section>
             )}
+
+            {/* AO VIVO AGORA */}
+            {liveMatches.length > 0 && (
+              <section>
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                  </span>
+                  Ao vivo agora
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {liveMatches.map((m: any) => (
+                    <Link
+                      key={m.id}
+                      to={`/jogo/${m.slug}`}
+                      className="block rounded-xl border border-red-500/30 bg-gradient-to-br from-red-950/40 via-card/40 to-card/40 p-3 hover:border-red-500/60 transition shadow-[0_0_24px_-12px_rgba(239,68,68,0.6)]"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">{m.league_label}</p>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[9px] font-black text-red-300">
+                          🔴 {m.current_minute || "AO VIVO"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 flex items-center gap-2 min-w-0">
+                          {m.home_badge && <img src={m.home_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
+                          <span className="font-bold text-sm truncate">{m.home_team}</span>
+                        </div>
+                        <span className="font-display font-black text-lg tabular-nums">
+                          {m.home_score ?? 0} <span className="text-muted-foreground">×</span> {m.away_score ?? 0}
+                        </span>
+                        <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
+                          <span className="font-bold text-sm truncate text-right">{m.away_team}</span>
+                          {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* RESULTADOS RECENTES */}
+            {recentResults.length > 0 && (
+              <section>
+                <h2 className="font-display font-black text-xl mb-3 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-yellow-400" /> Resultados recentes
+                  </span>
+                  <Link to="/resultados" className="text-[11px] font-bold text-primary hover:underline">
+                    Ver todos →
+                  </Link>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {recentResults.map((r) => <ResultMatchCard key={r.slug + r.match_time} match={r} />)}
+                </div>
+              </section>
+            )}
+
+            {/* TABELAS DOS CAMPEONATOS */}
+            <section>
+              <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                <ListOrdered className="h-5 w-5 text-primary" /> Tabelas dos campeonatos
+              </h2>
+              <Suspense fallback={<div className="h-40 rounded-xl bg-card/30 animate-pulse" />}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <LeagueTable leagueSlug="brasileirao" limit={6} topZone={6} relegationZone={4} showFullLink />
+                  <LeagueTable leagueSlug="libertadores" limit={6} topZone={2} showFullLink />
+                  <LeagueTable leagueSlug="champions" limit={6} topZone={8} showFullLink />
+                </div>
+              </Suspense>
+            </section>
 
             {/* Destaque Copa */}
             {hasCopa && filter !== "copa" && (
