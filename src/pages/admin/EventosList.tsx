@@ -31,6 +31,7 @@ interface EventRow {
   title: string;
   slug: string;
   venue_name: string | null;
+  address: string | null;
   date_time: string;
   category: string;
   sub_category: string | null;
@@ -244,7 +245,7 @@ const EventosList = () => {
     setLoading(true);
     let query = supabase
       .from("events")
-      .select("id, title, slug, venue_name, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score")
+      .select("id, title, slug, venue_name, address, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score")
       .order("created_at", { ascending: false });
     if (cityFilter) query = query.eq("city", cityFilter);
     const { data } = await query;
@@ -410,9 +411,11 @@ const EventosList = () => {
         body: {
           title: e.title,
           venue_name: e.venue_name,
+          address: e.address,
           date_time: e.date_time,
-          category: e.sub_category || e.category,
-          image_url: e.image_url,
+          category: e.category,
+          sub_category: e.sub_category || undefined,
+          partner_id: e.partner_id || undefined,
         },
       });
       if (error) throw error;

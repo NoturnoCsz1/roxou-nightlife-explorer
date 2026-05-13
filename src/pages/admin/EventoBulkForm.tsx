@@ -312,7 +312,7 @@ const EventoBulkForm = () => {
               date_time: f.date_time || "",
               category: f.category || "festa",
               sub_category: (f as any)._sub || "",
-              image_url: f.image_url || "",
+              partner_id: f.partner_id || undefined,
               seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
               previous_descriptions: previousDescs,
             },
@@ -390,10 +390,11 @@ const EventoBulkForm = () => {
         body: {
           title: it.form.title,
           venue_name: it.form.venue_name,
+          address: it.form.address,
           date_time: it.form.date_time,
           category: it.form.category,
           sub_category: (it.form as any)._sub || "",
-          image_url: it.form.image_url,
+          partner_id: it.form.partner_id || undefined,
           seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
         },
       });

@@ -1,294 +1,332 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// 🎭 Personalidade por gênero (tom + cenas + palavras-âncora)
-const GENRE_PERSONALITY: Record<string, { tom: string; cena: string; ancoras: string[] }> = {
-  sertanejo: {
-    tom: "calor humano, resenha de boteco, modão, mesa cheia de amigo",
-    cena: "viola, chopp gelado, coro da galera, sofrência boa, churrasco rolando",
-    ancoras: ["modão", "mesa cheia", "resenha", "viola na veia", "raiz"],
-  },
-  funk: {
-    tom: "energia bruta, baile pesado, grave no peito, madrugada ligada",
-    cena: "pista lotada, MC no microfone, bonde fechado, fluxo até o nascer do sol",
-    ancoras: ["baile", "grave", "fluxo", "tropa", "automotivo"],
-  },
-  pagode_samba: {
-    tom: "descontraído, roda de amigos, suingue, cerveja gelada na mesa",
-    cena: "roda de samba, batuque, refrão coletivo, mesa redonda, partido alto",
-    ancoras: ["roda", "pagodão", "coro", "suingue", "boteco"],
-  },
-  eletronica: {
-    tom: "imersivo, pista, drop, luzes, experiência sensorial",
-    cena: "DJ comandando, set longo, open air, drop esperado, madrugada eletrônica",
-    ancoras: ["set", "drop", "pista", "open air", "madrugada"],
-  },
-  rock: {
-    tom: "palco vivo, guitarra distorcida, refrão gritado, energia ao vivo",
-    cena: "amplificador estourado, mosh leve, coro do público, banda suada",
-    ancoras: ["palco", "riff", "ao vivo", "refrão", "energia"],
-  },
-  pop_rock: {
-    tom: "vibe leve, refrões grudentos, hits de cover, clima de bar com banda",
-    cena: "cover de banda nacional, pé na areia, banda no palco pequeno, refrão coletivo",
-    ancoras: ["hits", "cover", "banda", "refrão", "bar com som"],
-  },
-  mpb: {
-    tom: "voz e violão, intimismo, Brasil cantado, jantar com música ao vivo",
-    cena: "voz e violão, jantar regado, clima reservado, repertório autoral",
-    ancoras: ["voz e violão", "intimismo", "MPB", "jantar com som"],
-  },
+// ─────────────────────────────────────────────────────────────────────────────
+// 🎵 Mapeamento de gênero/categoria para "tipo de atração" exibido na legenda
+// ─────────────────────────────────────────────────────────────────────────────
+const ATTRACTION_LABEL: Record<string, { label: string; emoji: string; vibe: string }> = {
+  sertanejo:    { label: "Sertanejo ao vivo",       emoji: "🤠", vibe: "modão, viola e mesa cheia de amigo" },
+  funk:         { label: "Funk",                    emoji: "🔊", vibe: "grave no peito, baile pesado e pista ligada" },
+  pagode_samba: { label: "Pagode e Samba",          emoji: "🥁", vibe: "roda de samba, batuque e refrão coletivo" },
+  eletronica:   { label: "Eletrônica / DJ Set",     emoji: "🪩", vibe: "set imersivo, luzes e madrugada na pista" },
+  rock:         { label: "Rock ao vivo",            emoji: "🎸", vibe: "guitarra, refrão gritado e energia de palco" },
+  pop_rock:     { label: "Pop / Rock cover",        emoji: "🎤", vibe: "hits conhecidos, banda no palco e clima de bar com som" },
+  mpb:          { label: "MPB / Voz e violão",      emoji: "🎶", vibe: "intimismo, violão e Brasil cantado" },
+  standup:      { label: "Stand-up Comedy",         emoji: "🎭", vibe: "humor ao vivo, drinks e clima descontraído" },
+  universitario:{ label: "Festa universitária",     emoji: "🎓", vibe: "resenha, galera nova e energia até tarde" },
+  festa:        { label: "Festa",                   emoji: "🎉", vibe: "pista, drinks e noite alta" },
+  balada:       { label: "Balada",                  emoji: "🪩", vibe: "pista cheia, DJ no comando e madrugada ligada" },
+  bar:          { label: "Bar / Música ao vivo",    emoji: "🍺", vibe: "som ao vivo, mesa cheia e clima de boteco" },
+  show:         { label: "Show ao vivo",            emoji: "🎤", vibe: "palco, banda e público cantando junto" },
+  cultural:     { label: "Evento cultural",         emoji: "🎭", vibe: "experiência cultural e encontro" },
+  restaurante:  { label: "Gastronomia",             emoji: "🍽️", vibe: "comida boa, ambiente caprichado e clima de jantar" },
 };
 
-// 🎯 Banco de CTAs (rotação por seed para evitar repetição entre eventos do lote)
+function resolveAttraction(category?: string, subCategory?: string): { label: string; emoji: string; vibe: string } {
+  const sub = String(subCategory || "").toLowerCase().trim();
+  const cat = String(category || "").toLowerCase().trim();
+  return ATTRACTION_LABEL[sub] || ATTRACTION_LABEL[cat] || { label: "Música e resenha", emoji: "🎶", vibe: "noite com música e ambiente animado" };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🎯 CTAs rotativas — pool ampliado, escolhido por seed (sem IA)
+// ─────────────────────────────────────────────────────────────────────────────
 const CTA_BANK: string[] = [
-  "Garanta sua mesa antes que lota.",
-  "Sextou do jeito certo em Prudente.",
-  "Chame os amigos e aproveite a noite.",
-  "Uma noite perfeita pra curtir música ao vivo.",
-  "Evento ideal pra quem é da cena.",
-  "Os melhores rolês de Prudente estão na ROXOU.",
-  "Confira todos os detalhes e salve na agenda.",
-  "Acesse a agenda completa na ROXOU.",
-  "Não fique de fora dessa noite especial.",
-  "Marca quem vai contigo e fecha a mesa.",
-  "Lote promocional acabando — corre.",
-  "Reserve o lugar certo da galera.",
-  "A casa enche cedo — chega antes.",
+  "Confira todos os detalhes e salve esse rolê na sua agenda da ROXOU.",
+  "Veja horários, local e mais eventos parecidos na agenda da ROXOU.",
+  "Quer descobrir o que rola hoje em Presidente Prudente? Acesse a agenda completa na ROXOU.",
+  "Abra o evento completo na ROXOU e compartilhe com a galera que vai contigo.",
+  "Entre na ROXOU e veja os rolês mais quentes da semana em Prudente.",
+  "Garanta esse evento na sua agenda e descubra outros rolês na ROXOU.",
+  "Veja mais fotos, horários e eventos parecidos no perfil do local na ROXOU.",
+  "A noite muda rápido — confira tudo o que está em alta agora na ROXOU.",
+  "Salva esse rolê, marca os amigos e descubra mais opções de noite na ROXOU.",
+  "Acesse a ROXOU para conferir o local, próximos eventos e como chegar.",
 ];
 
-// 🪝 Banco de aberturas (rotação por seed)
-const HOOK_BANK: string[] = [
-  "Marque na agenda em vermelho.",
-  "Vai dar nome aos bois.",
-  "Quem sabe, sabe.",
-  "Esse aqui é dos bons.",
-  "Atenção aos sinais.",
-  "Fim de semana com endereço certo.",
-  "É papo reto.",
-  "Pega leve no story de quem foi.",
-];
-
-function pickFromBank(bank: string[], seed: number): string {
+function pickFromBank<T>(bank: T[], seed: number): T {
   const idx = ((seed % bank.length) + bank.length) % bank.length;
   return bank[idx];
 }
 
-// 🔁 Similaridade simples por Jaccard de tokens (palavras com 4+ letras)
-function tokenize(s: string): Set<string> {
-  return new Set(
-    String(s || "")
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/[^a-z0-9 ]+/g, " ")
-      .split(/\s+/)
-      .filter((w) => w.length >= 4),
-  );
-}
-function jaccard(a: string, b: string): number {
-  const A = tokenize(a); const B = tokenize(b);
-  if (!A.size || !B.size) return 0;
-  let inter = 0;
-  for (const x of A) if (B.has(x)) inter++;
-  const union = A.size + B.size - inter;
-  return union ? inter / union : 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// 📅 Formatação oficial de data/hora a partir do banco (timezone SP)
+// ─────────────────────────────────────────────────────────────────────────────
+function formatOfficialDate(iso: string): { dateLong: string; timeLabel: string; weekday: string } {
+  const dt = new Date(iso);
+  const dateLong = dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
+  const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  const timeLabel = time.replace(":", "h").replace(/^0/, "");
+  const weekday = dt.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
+  return { dateLong, timeLabel, weekday };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 📍 Endereço resumido elegante
+// ─────────────────────────────────────────────────────────────────────────────
+function buildAddressLine(venue?: string | null, neighborhood?: string | null, city?: string | null, address?: string | null): string {
+  const parts: string[] = [];
+  if (venue) parts.push(venue);
+  const loc: string[] = [];
+  if (neighborhood) loc.push(neighborhood);
+  if (city) loc.push(city);
+  // se faltar bairro/cidade mas tiver endereço cru, extrai a última vírgula
+  if (loc.length === 0 && address) {
+    const tail = address.split(",").slice(-2).map(s => s.trim()).filter(Boolean).join(", ");
+    if (tail) loc.push(tail);
+  }
+  const right = loc.join(", ");
+  if (parts.length && right) return `${parts.join(" ")} — ${right}`;
+  if (parts.length) return parts.join(" ");
+  return right || "Local a confirmar";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🏠 Resumo heurístico do local (sem IA) caso o parceiro não tenha descrição
+// ─────────────────────────────────────────────────────────────────────────────
+const VENUE_HEURISTIC: Record<string, string[]> = {
+  bar:        ["é um dos bares queridinhos da cidade, com clima descontraído e noites de música ao vivo.", "reúne uma clientela fiel em torno de drinks bem servidos e som ao vivo."],
+  balada:     ["é uma das casas noturnas mais movimentadas da cidade, com pista cheia até tarde.", "é referência em noites longas, DJs e madrugada animada em Prudente."],
+  restaurante:["mistura gastronomia caprichada e ambiente acolhedor para encontros à noite.", "é parada certa para quem quer comer bem antes ou durante o rolê."],
+  "casa de show": ["é uma casa de show consagrada na cidade, com agenda forte de atrações.", "recebe shows ao vivo e atrações regionais ao longo do ano."],
+  default:    ["é um espaço conhecido na noite de Presidente Prudente.", "faz parte do circuito de rolês da cidade."],
+};
+
+function buildVenueBlurb(venueName?: string | null, partnerType?: string | null, providedDescription?: string | null): string | null {
+  const desc = (providedDescription || "").trim();
+  if (desc) return desc.length > 240 ? desc.slice(0, 237) + "..." : desc;
+  if (!venueName) return null;
+  const key = String(partnerType || "").toLowerCase().trim();
+  const pool = VENUE_HEURISTIC[key] || VENUE_HEURISTIC.default;
+  // pseudo-random estável pelo nome
+  const seed = Array.from(venueName).reduce((a, c) => a + c.charCodeAt(0), 0);
+  const phrase = pool[seed % pool.length];
+  return `O ${venueName} ${phrase}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🤖 IA leve: gera APENAS hype contextual + chamada curta (sem datas/preços)
+// ─────────────────────────────────────────────────────────────────────────────
 async function callAI(messages: any[], tools: any[], temperature: number, apiKey: string) {
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
-      messages, tools,
-      tool_choice: { type: "function", function: { name: "gerar_copy_evento" } },
+      messages,
+      tools,
+      tool_choice: { type: "function", function: { name: "gerar_hype" } },
       temperature,
     }),
   });
-  return r;
+}
+
+const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar|ser [ée]pico)|energia contagiante|vibe contagiante|reserve sua data)\b/gi;
+
+function stripForbidden(s: string): string {
+  return (s || "").replace(FORBIDDEN_RE, "").replace(/\s{2,}/g, " ").trim();
+}
+
+function escapeHtml(s: string): string {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { title, venue_name, date_time, category, sub_category, image_url, attractions, seed_index, neighborhood, address, previous_descriptions = [] } = await req.json();
+    const body = await req.json();
+    const {
+      title,
+      venue_name,
+      date_time,
+      category,
+      sub_category,
+      image_url,
+      attractions,
+      seed_index,
+      neighborhood,
+      address,
+      city,
+      partner_id,
+      venue_description: venueDescIn,
+      partner_type: partnerTypeIn,
+      previous_descriptions = [],
+    } = body;
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const dt = date_time ? new Date(date_time) : null;
-    const weekday = dt ? dt.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" }) : "";
-    const dateStr = dt ? dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }) : "";
-    const timeStr = dt ? dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
+    if (!date_time) {
+      return new Response(JSON.stringify({ error: "date_time é obrigatório (fonte oficial). Flyer não é fonte de data/hora." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Enriquecimento opcional via partner_id (descrição do local + tipo)
+    let venueDesc: string | null = venueDescIn || null;
+    let partnerType: string | null = partnerTypeIn || null;
+    let partnerNeighborhood: string | null = neighborhood || null;
+    let partnerCity: string | null = city || null;
+    let partnerAddress: string | null = address || null;
+
+    if (partner_id) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, serviceKey);
+        const { data: p } = await supabase
+          .from("partners")
+          .select("type, neighborhood, city, address, formatted_address, short_description, full_description")
+          .eq("id", partner_id)
+          .maybeSingle();
+        if (p) {
+          if (!venueDesc) venueDesc = p.short_description || p.full_description || null;
+          if (!partnerType) partnerType = p.type || null;
+          if (!partnerNeighborhood) partnerNeighborhood = p.neighborhood || null;
+          if (!partnerCity) partnerCity = p.city || null;
+          if (!partnerAddress) partnerAddress = p.address || p.formatted_address || null;
+        }
+      } catch (_e) { /* segue sem bloquear */ }
+    }
+
+    // ── Dados estruturados (FONTE OFICIAL)
+    const { dateLong, timeLabel, weekday } = formatOfficialDate(date_time);
+    const attraction = resolveAttraction(category, sub_category);
+    const addressLine = buildAddressLine(venue_name, partnerNeighborhood, partnerCity, partnerAddress);
+    const venueBlurb = buildVenueBlurb(venue_name, partnerType, venueDesc);
 
     const seed = Number.isFinite(Number(seed_index)) ? Number(seed_index) : Math.floor(Math.random() * 9999);
-    const subKey = String(sub_category || "").toLowerCase();
-    const persona = GENRE_PERSONALITY[subKey] || null;
-    const ctaSuggestion = pickFromBank(CTA_BANK, seed);
-    const hookSuggestion = pickFromBank(HOOK_BANK, seed + 3);
+    const cta = pickFromBank(CTA_BANK, seed);
 
-    const personaBlock = persona
-      ? `🎭 PERSONALIDADE OBRIGATÓRIA (gênero ${subKey}):
-- Tom: ${persona.tom}
-- Cena viva: ${persona.cena}
-- Palavras-âncora pra inspirar (use no máximo 2, sem virar clichê): ${persona.ancoras.join(", ")}`
-      : `🎭 PERSONALIDADE: tom adequado ao tipo de evento, sem clichê.`;
+    // ─────────────────────────────────────────────────────────────────────
+    // CAMADA IA (leve): só hype + chamada curta. Nada de datas/preços/horários.
+    // ─────────────────────────────────────────────────────────────────────
+    const systemPrompt = `Você é o Copywriter-Chefe da ROXOU — portal premium de eventos do interior de SP.
 
-    const systemPrompt = `Você é o Copywriter-Chefe da ROXOU — portal premium de eventos do interior de SP. Sua escrita é HUMANA, ESPECÍFICA, INFORMATIVA e variada. Cada evento precisa ter PERSONALIDADE PRÓPRIA — nada de molde repetido.
+🛑 REGRAS ABSOLUTAS DE FATOS (zero tolerância a alucinação):
+- NUNCA invente nem cite: data, dia da semana, horário, preço, ingresso, lote, open bar, desconto, promoção, line-up extra, idade mínima.
+- Esses dados são adicionados POR FORA, automaticamente, a partir do banco oficial.
+- Se o flyer (imagem) sugerir data/hora/preço diferente, IGNORE — o banco vence.
+- Você só recebe o tipo de atração e o nome do local. Use APENAS esses fatos.
 
-🚫 BANIMENTO ABSOLUTO (zero tolerância):
-- "Imperdível", "Sexta Insana", "Sábado Imperdível", "rolê imperdível", "noite imperdível"
-- "Prepare-se", "Preparem-se", "Se prepara"
-- "Venha curtir", "Vem curtir", "Venha viver"
-- "Não perca", "Não fique de fora" (no HYPE — só permitido como variação no CTA, e mesmo assim raramente)
-- "Energia contagiante", "vibe contagiante"
-- "está de volta ao", "o samba está de volta"
-- "Noite inesquecível", "Experiência única", "Memórias inesquecíveis"
-- "Promete ser", "Promete agitar", "Vai ser épico"
-- "Reserve sua data", "Marque na agenda" (exceto se vier do banco de CTA)
-- Aberturas tipo "Atenção, [cidade]!" / "E aí, galera!"
+🚫 BANIMENTO LEXICAL (frases proibidas):
+"imperdível", "não perca", "não fique de fora", "prepare-se", "venha curtir", "noite inesquecível", "experiência única", "promete ser/agitar/ser épico", "energia contagiante", "vibe contagiante", "reserve sua data".
 
-✅ REGRAS:
-1. Abertura HUMANA e específica do evento. Cite local + atração reais. Pode usar inspiração: "${hookSuggestion}". NUNCA copie literalmente.
-2. Frases curtas (máx 14 palavras). Pontuação direta.
-3. NÃO copie o flyer literalmente. Reescreva como um portal de eventos profissional.
-4. VARIABILIDADE: cada evento deve soar diferente. NÃO repita estrutura/abertura entre eventos.
-5. Use o nome do artista, do local e o gênero como matéria-prima. Eles vendem sozinhos.
-6. SEO: cite sutilmente "Presidente Prudente" ou bairro/região quando fizer sentido. Não force.
+✍️ TAREFA — gere DOIS textos curtos:
 
-${personaBlock}
+1. "hype" — 2 frases curtas (máx 30 palavras no total). Contextualiza o evento com personalidade do tipo de atração e cita o nome do local + atração principal. Linguagem humana, específica, sem clichê. NÃO mencione data, dia, horário ou preço.
+   Exemplos do tom certo:
+   • "Hélio Okuma desembarca no Cult Bar para uma noite de stand-up e muita resenha em Presidente Prudente."
+   • "O Vó Laura arma mais um modão de mesa cheia, viola na veia e coro da galera."
 
-🛑 FATOS:
-- NUNCA invente preços, line-up extra, horário, nada.
-- Se faltar campo, PULE — não escreva "a confirmar".
-- Use o flyer (se enviado) só como referência pra extrair atrações reais.
+2. "chamada_site" — título curto (até 60 caracteres), específico do evento, com gatilho mental forte. Sem data, sem hora, sem preço.
 
-📦 ESTRUTURA OBRIGATÓRIA do descricao_rica (HTML PURO — só <p>, <strong>, <ul>, <li>):
+Frases curtas, ponto final, zero emoji nesses dois campos.`;
 
-1. HYPE — 2 a 3 frases. Contextualiza o evento com personalidade do gênero. Cite atração + local em <strong>. Pode mencionar bairro/cidade se fizer sentido.
-   Ex sertanejo: <p>O <strong>Vó Laura</strong> arma mais uma noite de modão em Presidente Prudente. Quem chega cedo pega mesa boa e fica até o último coro.</p>
-
-2. CHECKLIST — exatamente neste formato:
-   <p><strong>📝 O QUE VOCÊ PRECISA SABER:</strong></p>
-   <ul>
-     <li>🗓️ [data]</li>
-     <li>⏰ [horário]</li>
-     <li>📍 [local]</li>
-     <li>🎤 <strong>[atração]</strong></li>
-     <li>✨ [gênero/clima]</li>
-   </ul>
-   PULE qualquer <li> sem dado.
-
-3. CTA — 1 parágrafo final, variado. Você PODE usar essa sugestão como base (ou criar outra equivalente, mas EVITE clichê): "${ctaSuggestion}".
-
-🎯 chamada_site: até 60 caracteres, gatilho mental forte, ESPECÍFICA do evento. NUNCA "Nome + Data" cru.`;
-
-    const buildEventInfo = (extraNote?: string) => [
-      `Título: ${title}`,
-      attractions && `Atrações: ${attractions}`,
-      dt && `Data: ${weekday}, ${dateStr}`,
-      timeStr && `Horário: ${timeStr}`,
-      venue_name && `Local: ${venue_name}`,
-      address && `Endereço: ${address}`,
-      neighborhood && `Bairro/região: ${neighborhood}`,
-      category && `Categoria: ${category}`,
-      sub_category && `Gênero musical: ${sub_category}`,
-      `Seed de variação: ${seed} (use isto pra alternar abertura/CTA entre eventos)`,
-      extraNote || "",
+    const userInfo = [
+      `Título do evento: ${title}`,
+      attractions ? `Atrações: ${attractions}` : null,
+      venue_name ? `Local: ${venue_name}` : null,
+      `Tipo de atração: ${attraction.label}`,
+      `Vibe do tipo: ${attraction.vibe}`,
+      partnerType ? `Tipo de estabelecimento: ${partnerType}` : null,
+      partnerNeighborhood ? `Bairro: ${partnerNeighborhood}` : null,
+      partnerCity ? `Cidade: ${partnerCity}` : null,
+      `Seed de variação: ${seed}`,
     ].filter(Boolean).join("\n");
 
     const tools = [{
       type: "function",
       function: {
-        name: "gerar_copy_evento",
-        description: "Retorna a chamada curta para o site e a descrição rica em HTML do evento.",
+        name: "gerar_hype",
+        description: "Retorna hype curto (2 frases) e chamada curta para o site.",
         parameters: {
           type: "object",
           properties: {
-            chamada_site: { type: "string", description: "Título forte e chamativo de até 60 caracteres com gatilho mental." },
-            descricao_rica: { type: "string", description: "Descrição em HTML simples (p, strong, ul, li) com Hype + Checklist + CTA." },
+            hype: { type: "string", description: "2 frases contextuais sobre o evento. Sem data/hora/preço." },
+            chamada_site: { type: "string", description: "Título de até 60 caracteres com gatilho mental." },
           },
-          required: ["chamada_site", "descricao_rica"],
+          required: ["hype", "chamada_site"],
           additionalProperties: false,
         },
       },
     }];
 
-    const cleanHtml = (html: string) => {
-      let out = html
-        .replace(/^```(?:html)?\s*/i, "")
-        .replace(/```\s*$/i, "")
-        .replace(/^<html[^>]*>|<\/html>$/gi, "")
-        .replace(/^<body[^>]*>|<\/body>$/gi, "")
-        .trim();
-      out = out.replace(/<(?!\/?(?:p|strong|em|ul|ol|li|br)\b)[^>]+>/gi, "");
-      return out.trim();
-    };
-    const bannedCopy = /\b(?:imperd[ií]vel|sexta insana|s[áa]bado imperd[ií]vel|rol[êe] imperd[ií]vel|noite imperd[ií]vel|programaç[ãa]o imperd[ií]vel)\b/gi;
+    // OBS: NÃO enviamos image_url para o modelo. O flyer não é fonte confiável de fatos.
+    // Mantemos a chamada texto-only para reduzir custo e eliminar hallucination de data/hora.
+    const messages: any[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Gere hype e chamada para este evento da ROXOU. Use APENAS os dados abaixo:\n\n${userInfo}` },
+    ];
 
-    async function generateOnce(extraNote: string, temp: number): Promise<{ chamada_site: string; descricao_rica: string; status: number }> {
-      const userText = `Gere a chamada e a descrição rica para este evento da ROXOU. Use APENAS os dados abaixo (não invente nada). Cada evento precisa de personalidade própria — não repita molde:\n\n${buildEventInfo(extraNote)}${image_url ? "\n\nUm flyer foi enviado em anexo — extraia atrações e promoções visíveis." : ""}`;
-      const messages: any[] = [{ role: "system", content: systemPrompt }];
-      if (image_url) {
-        messages.push({ role: "user", content: [{ type: "text", text: userText }, { type: "image_url", image_url: { url: image_url } }] });
-      } else {
-        messages.push({ role: "user", content: userText });
-      }
-      const response = await callAI(messages, tools, temp, LOVABLE_API_KEY);
-      if (!response.ok) {
-        return { chamada_site: "", descricao_rica: "", status: response.status };
-      }
-      const data = await response.json();
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      let chamada_site = "";
-      let descricao_rica = "";
-      if (toolCall?.function?.arguments) {
-        try {
-          const args = JSON.parse(toolCall.function.arguments);
-          chamada_site = (args.chamada_site || "").trim();
-          descricao_rica = (args.descricao_rica || "").trim();
-        } catch (e) { console.error("parse tool args", e); }
-      }
-      descricao_rica = cleanHtml(descricao_rica).replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
-      chamada_site = chamada_site.replace(/^["'`]+|["'`]+$/g, "").replace(bannedCopy, "").replace(/\s{2,}/g, " ").trim();
-      return { chamada_site, descricao_rica, status: 200 };
-    }
+    let hype = "";
+    let chamadaSite = "";
 
-    let attempt = await generateOnce("", 0.85);
-    if (attempt.status === 429) {
+    const aiResp = await callAI(messages, tools, 0.85, LOVABLE_API_KEY);
+    if (aiResp.status === 429) {
       return new Response(JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em instantes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if (attempt.status === 402) {
+    if (aiResp.status === 402) {
       return new Response(JSON.stringify({ error: "Créditos esgotados. Adicione créditos em Settings > Workspace > Usage." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    // 🔁 Bloqueio anti-repetição: compara com descrições anteriores do lote.
-    let regenerated = false;
-    if (Array.isArray(previous_descriptions) && previous_descriptions.length && attempt.descricao_rica) {
-      const maxSim = previous_descriptions.reduce((acc: number, prev: string) => Math.max(acc, jaccard(attempt.descricao_rica, prev || "")), 0);
-      if (maxSim > 0.55) {
-        const altSeed = pickFromBank(HOOK_BANK, seed + 7);
-        const altCta = pickFromBank(CTA_BANK, seed + 11);
-        const note = `⚠️ ATENÇÃO: as últimas descrições do lote ficaram parecidas. Use estrutura DIFERENTE. Abertura inspirada em "${altSeed}". CTA inspirado em "${altCta}". Mude ordem das frases, evite repetir verbos do bloco anterior.`;
-        const retry = await generateOnce(note, 0.95);
-        if (retry.descricao_rica) {
-          attempt = retry;
-          regenerated = true;
-        }
+    if (aiResp.ok) {
+      const data = await aiResp.json();
+      const tc = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (tc?.function?.arguments) {
+        try {
+          const args = JSON.parse(tc.function.arguments);
+          hype = stripForbidden(String(args.hype || "")).replace(/^["'`]+|["'`]+$/g, "").trim();
+          chamadaSite = stripForbidden(String(args.chamada_site || "")).replace(/^["'`]+|["'`]+$/g, "").trim();
+        } catch (_e) { /* fallback abaixo */ }
       }
     }
+
+    // ── Fallback determinístico se a IA falhar
+    if (!hype) {
+      hype = venue_name
+        ? `${title} no ${venue_name}: ${attraction.vibe}.`
+        : `${title}: ${attraction.vibe}.`;
+    }
+    if (!chamadaSite) {
+      chamadaSite = title.length > 60 ? title.slice(0, 57) + "..." : title;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // MONTAGEM DETERMINÍSTICA DA DESCRIÇÃO RICA (HTML)
+    //   — datas/hora/local vêm SEMPRE daqui, não da IA.
+    // ─────────────────────────────────────────────────────────────────────
+    const html: string[] = [];
+    html.push(`<p>${escapeHtml(hype)}</p>`);
+
+    html.push(`<p><strong>📝 O que você precisa saber:</strong></p>`);
+    html.push(`<ul>`);
+    html.push(`<li>📅 ${escapeHtml(weekday.charAt(0).toUpperCase() + weekday.slice(1))}, ${escapeHtml(dateLong)}</li>`);
+    html.push(`<li>🕒 ${escapeHtml(timeLabel)}</li>`);
+    html.push(`<li>📍 ${escapeHtml(addressLine)}</li>`);
+    html.push(`<li>${attraction.emoji} <strong>${escapeHtml(attraction.label)}</strong></li>`);
+    html.push(`</ul>`);
+
+    if (venueBlurb) {
+      html.push(`<p>${escapeHtml(venueBlurb)}</p>`);
+    }
+
+    html.push(`<p>${escapeHtml(cta)}</p>`);
+
+    const descricao_rica = html.join("");
 
     return new Response(
       JSON.stringify({
-        chamada_site: attempt.chamada_site,
-        descricao_rica: attempt.descricao_rica,
-        description: attempt.descricao_rica,
-        regenerated_for_uniqueness: regenerated,
+        chamada_site: chamadaSite,
+        descricao_rica,
+        description: descricao_rica,
+        used_flyer: false,
+        cta_index: ((seed % CTA_BANK.length) + CTA_BANK.length) % CTA_BANK.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

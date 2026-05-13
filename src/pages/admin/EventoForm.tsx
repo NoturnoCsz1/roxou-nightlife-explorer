@@ -90,7 +90,7 @@ const EventoForm = () => {
     }
   }
 
-  async function generateDescription(info: { title: string; venue_name?: string; date_time?: string; category?: string; image_url?: string }) {
+  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string }) {
     setGeneratingDesc(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
@@ -165,9 +165,11 @@ const EventoForm = () => {
         generateDescription({
           title: duplicateData.title,
           venue_name: duplicateData.venue_name,
+          address: (duplicateData as any).address,
           date_time: hasDateFromImport ? duplicateData.date_time : "",
           category: duplicateData.category,
-          image_url: duplicateData.image_url,
+          sub_category: (duplicateData as any).sub_category,
+          partner_id: duplicateData.partner_id || undefined,
         });
       }
     }
@@ -530,9 +532,11 @@ const EventoForm = () => {
                     onClick={() => generateDescription({
                       title: form.title,
                       venue_name: form.venue_name,
+                      address: form.address,
                       date_time: form.date_time,
                       category: form.category,
-                      image_url: form.image_url,
+                      sub_category: (form as any)._sub,
+                      partner_id: form.partner_id || undefined,
                     })}
                     className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
                   >
