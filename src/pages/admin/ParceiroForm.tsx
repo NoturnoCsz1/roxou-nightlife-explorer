@@ -7,6 +7,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import PartnerInstagramAura from "@/components/admin/PartnerInstagramAura";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { normalizeInstagramHandle, validateInstagramHandle } from "@/lib/instagramHandle";
 
 function slugify(str: string) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -57,14 +58,23 @@ const ParceiroForm = () => {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name || !form.slug) { toast.error("Nome e slug são obrigatórios"); return; }
+
+    // Normaliza + valida Instagram (aceita @, link ou handle puro)
+    const igCheck = validateInstagramHandle(form.instagram);
+    if (!igCheck.ok) {
+      toast.error(igCheck.error || "Instagram inválido");
+      return;
+    }
+    const payload = { ...form, instagram: igCheck.handle };
+
     setSaving(true);
     try {
       if (isEdit) {
-        const { error } = await supabase.from("partners").update(form).eq("id", id!);
+        const { error } = await supabase.from("partners").update(payload).eq("id", id!);
         if (error) throw error;
         toast.success("Parceiro atualizado!");
       } else {
-        const { error } = await supabase.from("partners").insert(form);
+        const { error } = await supabase.from("partners").insert(payload);
         if (error) throw error;
         toast.success("Parceiro criado!");
       }
