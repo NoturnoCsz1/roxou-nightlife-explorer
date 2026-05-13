@@ -252,9 +252,13 @@ export default function JogosAdmin() {
   const sync = async () => {
     setSyncing(true);
     try {
-      const { error } = await supabase.functions.invoke("sync-football-matches", { body: {} });
+      const { data, error } = await supabase.functions.invoke("sync-football-matches", { body: {} });
       if (error) throw error;
-      toast.success("Sincronização disparada");
+      const s = (data as any)?.stats ?? {};
+      const mode = (data as any)?.api_mode ?? "free";
+      toast.success(
+        `Sync ${mode}: ${s.upserted ?? 0} jogos · BR ${s.br_force_included ?? 0} · live ${s.livescore_found ?? 0}`,
+      );
       qc.invalidateQueries({ queryKey: ["admin-jogos"] });
     } catch (e: any) {
       toast.error(e.message ?? "Falha ao sincronizar");
@@ -267,9 +271,11 @@ export default function JogosAdmin() {
   const syncStandings = async () => {
     setSyncingStandings(true);
     try {
-      const { error } = await supabase.functions.invoke("sync-football-standings", { body: {} });
+      const { data, error } = await supabase.functions.invoke("sync-football-standings", { body: {} });
       if (error) throw error;
-      toast.success("Tabelas sincronizadas");
+      const s = (data as any)?.stats ?? {};
+      const mode = (data as any)?.api_mode ?? "free";
+      toast.success(`Tabelas ${mode}: ${s.leagues ?? 0} ligas · ${s.upserted ?? 0} times`);
     } catch (e: any) {
       toast.error(e.message ?? "Falha ao sincronizar tabelas");
     } finally {
