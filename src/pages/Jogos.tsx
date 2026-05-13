@@ -188,17 +188,32 @@ export default function Jogos() {
 
   const todays = sortMatchesByRelevance(relevantBase.filter((m) => m.raw_date === today && m.status !== "finished"));
 
-  // "HOJE TEM" — jogo mais relevante do dia
-  const hojeTem = useMemo(() => todays[0] ?? null, [todays]);
+  // Bônus de prioridade quando o jogo possui bares parceiros vinculados em Prudente.
+  const venuesBoost = (slug: string) => {
+    const m = metaMap[slug];
+    if (!m || !m.venuesCount) return 0;
+    let s = 35;                          // tem bar vinculado
+    if (m.venuesCount >= 2) s += 15;     // múltiplos bares
+    if (m.hasStream) s += 10;            // stream oficial cadastrado
+    return s;
+  };
 
-  // "Mais buscados": mistura views reais + brasileiros + livescore + Copa do Brasil + highlights.
+  // "HOJE TEM" — prefere jogo do dia com bares vinculados; se ninguém tiver, mantém o ranking padrão.
+  const hojeTem = useMemo(() => {
+    if (!todays.length) return null;
+    const withBars = todays.filter((m) => (metaMap[m.slug]?.venuesCount ?? 0) > 0);
+    return withBars[0] ?? todays[0];
+  }, [todays, metaMap]);
+
+  // "Mais buscados": mistura views reais + brasileiros + livescore + Copa do Brasil + highlights + bares vinculados.
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
     const candidates = matches.filter(
       (m) => new Date(m.match_time).getTime() <= limit && m.status !== "finished" && (
         isHighlightedMatch(m) ||
         isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team) ||
-        /copa do brasil|libertadores|brasileir/i.test(m.league_label || "")
+        /copa do brasil|libertadores|brasileir/i.test(m.league_label || "") ||
+        (metaMap[m.slug]?.venuesCount ?? 0) > 0
       ),
     );
     const boost = (m: NormalizedMatch): number => {
@@ -210,13 +225,13 @@ export default function Jogos() {
       if (/brasileir/i.test(m.league_label || "")) s += 30;
       if (e?.status === "live" || m.status === "live") s += 120;
       if (e?.highlight) s += 25;
+      s += venuesBoost(m.slug);
       return s;
     };
     const sorted = [...candidates].sort((a, b) => boost(b) - boost(a));
-    // desempate por relevância base
     if (sorted.every((m) => boost(m) === boost(sorted[0]))) return sortMatchesByRelevance(candidates).slice(0, 8);
     return sorted.slice(0, 8);
-  }, [matches, enrichMap]);
+  }, [matches, enrichMap, metaMap]);
 
   // KPI strip — números agregados
   const kpis = useMemo(() => {
