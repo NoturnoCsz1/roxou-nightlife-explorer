@@ -123,11 +123,11 @@ function inferStatus(strStatus?: string | null, isoTime?: string): string {
   return "scheduled";
 }
 
-async function safeFetch(url: string, timeoutMs = 10000): Promise<any | null> {
+async function safeFetch(url: string, timeoutMs = 10000, headers?: Record<string, string>): Promise<any | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    const r = await fetch(url, { signal: ctrl.signal });
+    const r = await fetch(url, { signal: ctrl.signal, headers });
     clearTimeout(t);
     if (!r.ok) return null;
     return await r.json();
