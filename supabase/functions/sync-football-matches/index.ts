@@ -1,5 +1,10 @@
 // Sync football matches from TheSportsDB into public.sports_matches
-// Runs via cron (every 6h). Idempotent upsert on external_id.
+// Estratégia (free key "3" é severamente limitada):
+//  1) eventsnextleague.php / eventspastleague.php para ligas whitelisted
+//  2) eventsday.php?d=YYYY-MM-DD&s=Soccer para os próximos 7 dias (pega Copa do Brasil,
+//     Libertadores, Sul-Americana etc. mesmo sem saber o ID exato)
+//  3) Normalização forte do nome da liga (strLeague vindo da API → canonical)
+//  4) Force-include de qualquer partida com time brasileiro
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -10,25 +15,76 @@ const corsHeaders = {
 const API_KEY = Deno.env.get("THESPORTSDB_API_KEY") || "3";
 const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
 const SP_OFFSET = "-03:00";
+const DAYS_AHEAD = 7;
+
+type Category = "world_cup" | "brazil" | "international" | "other";
 
 interface LeagueConfig {
   id: string;
   label: string;
-  category: "world_cup" | "brazil" | "international";
+  category: Category;
   priority: number;
 }
 
+// IDs verificados via lookupleague.php (free key "3" — alguns IDs antigos estavam errados).
 const FEATURED_LEAGUES: LeagueConfig[] = [
-  { id: "4429", label: "Copa do Mundo",    category: "world_cup",     priority: 1 },
-  { id: "4351", label: "Brasileirão",      category: "brazil",        priority: 2 },
-  { id: "4356", label: "Copa do Brasil",   category: "brazil",        priority: 3 },
-  { id: "4480", label: "Paulistão",        category: "brazil",        priority: 4 },
-  { id: "4481", label: "Libertadores",     category: "international", priority: 5 },
-  { id: "4482", label: "Champions League", category: "international", priority: 6 },
-  { id: "4335", label: "La Liga",          category: "international", priority: 7 },
-  { id: "4328", label: "Premier League",   category: "international", priority: 8 },
-  { id: "4334", label: "Ligue 1",          category: "international", priority: 9 },
+  { id: "4429", label: "Copa do Mundo",     category: "world_cup",     priority: 1 },
+  { id: "4351", label: "Brasileirão",       category: "brazil",        priority: 2 },
+  { id: "4480", label: "Champions League",  category: "international", priority: 4 }, // 4480 = UEFA Champions League
+  { id: "4481", label: "Europa League",     category: "international", priority: 6 }, // 4481 = UEFA Europa League
+  { id: "4482", label: "FA Cup",            category: "international", priority: 9 }, // 4482 = FA Cup
+  { id: "4335", label: "La Liga",           category: "international", priority: 7 },
+  { id: "4328", label: "Premier League",    category: "international", priority: 8 },
+  { id: "4334", label: "Ligue 1",           category: "international", priority: 9 },
 ];
+
+// Normalização: trecho do strLeague (vindo da API, lowercase) → { label, category, priority }
+const LEAGUE_NORMALIZATION: Array<{ match: RegExp; label: string; category: Category; priority: number }> = [
+  { match: /world cup|copa do mundo|fifa world/i,                  label: "Copa do Mundo",     category: "world_cup",     priority: 1 },
+  { match: /brazil(ian)? serie a|brasileir[aã]o|s[eé]rie a/i,      label: "Brasileirão",        category: "brazil",        priority: 2 },
+  { match: /brazil(ian)? serie b|s[eé]rie b/i,                     label: "Brasileirão Série B",category: "brazil",        priority: 3 },
+  { match: /copa do brasil|brazil(ian)? cup|copa betano/i,          label: "Copa do Brasil",     category: "brazil",        priority: 3 },
+  { match: /libertadores/i,                                         label: "Libertadores",       category: "international", priority: 4 },
+  { match: /sudamericana|sul[- ]americana/i,                        label: "Sul-Americana",      category: "international", priority: 5 },
+  { match: /paulista|paulist[aã]o/i,                                label: "Paulistão",          category: "brazil",        priority: 4 },
+  { match: /carioca/i,                                              label: "Carioca",            category: "brazil",        priority: 6 },
+  { match: /mineiro/i,                                              label: "Mineiro",            category: "brazil",        priority: 6 },
+  { match: /uefa champions|champions league/i,                      label: "Champions League",   category: "international", priority: 4 },
+  { match: /europa league|uefa europa/i,                            label: "Europa League",      category: "international", priority: 6 },
+  { match: /spanish la liga|la liga/i,                              label: "La Liga",            category: "international", priority: 7 },
+  { match: /english premier league|premier league/i,                label: "Premier League",     category: "international", priority: 8 },
+  { match: /french ligue 1|ligue 1/i,                               label: "Ligue 1",            category: "international", priority: 9 },
+  { match: /serie a italian|italian serie a|seria a/i,              label: "Serie A (ITA)",      category: "international", priority: 8 },
+  { match: /bundesliga/i,                                           label: "Bundesliga",         category: "international", priority: 8 },
+  { match: /fa cup/i,                                               label: "FA Cup",             category: "international", priority: 9 },
+];
+
+const BRAZILIAN_TEAMS = [
+  "corinthians","palmeiras","flamengo","sao paulo","são paulo","santos","vasco","botafogo",
+  "fluminense","gremio","grêmio","internacional","cruzeiro","atletico mineiro","atlético mineiro",
+  "fortaleza","bahia","ceara","ceará","sport","vitoria","vitória","athletico","atletico paranaense",
+  "atlético paranaense","coritiba","bragantino","red bull bragantino","mirassol","goias","goiás",
+  "juventude","chapecoense","ponte preta","guarani","novorizontino","operario","operário",
+  "remo","paysandu","jacuipense","csa","crb","nautico","náutico","abc","sampaio correa",
+  "brusque","londrina","villa nova","tombense","brasil","seleção brasileira","selecao brasileira",
+];
+
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+function isBrazilianTeam(team: string): boolean {
+  const t = norm(team);
+  return BRAZILIAN_TEAMS.some((p) => t === p || t.includes(p) || p.includes(t));
+}
+
+function normalizeLeague(rawName: string | null | undefined, fallback?: LeagueConfig): { label: string; category: Category; priority: number } {
+  const s = (rawName || "").trim();
+  for (const rule of LEAGUE_NORMALIZATION) {
+    if (rule.match.test(s)) return { label: rule.label, category: rule.category, priority: rule.priority };
+  }
+  if (fallback) return { label: fallback.label, category: fallback.category, priority: fallback.priority };
+  return { label: s || "Internacional", category: "other", priority: 99 };
+}
 
 const slugify = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -73,6 +129,18 @@ async function safeFetch(url: string, timeoutMs = 10000): Promise<any | null> {
   } catch { return null; }
 }
 
+function nextDates(n: number): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(d);
+    out.push(parts);
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -81,75 +149,123 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const stats: Record<string, number> = { fetched: 0, upserted: 0, errors: 0 };
+  const stats: Record<string, number> = {
+    fetched: 0, upserted: 0, errors: 0, skipped_non_soccer: 0,
+    br_force_included: 0, dropped_irrelevant: 0,
+  };
+  const debugLeagues = new Map<string, number>();
 
+  // Coleta eventos: ligas whitelisted + eventsday para próximos N dias
+  const allEvents: Array<{ ev: any; fallback?: LeagueConfig }> = [];
+
+  // 1) Whitelist: traz next + past de cada liga conhecida
   for (const lg of FEATURED_LEAGUES) {
-    // Próximos jogos + resultados recentes (últimos finalizados)
     const [nextData, pastData] = await Promise.all([
       safeFetch(`${BASE_URL}/eventsnextleague.php?id=${lg.id}`),
       safeFetch(`${BASE_URL}/eventspastleague.php?id=${lg.id}`),
     ]);
     const events: any[] = [...(nextData?.events ?? []), ...(pastData?.events ?? [])];
-    stats.fetched += events.length;
+    for (const ev of events) allEvents.push({ ev, fallback: lg });
+  }
 
-    for (const ev of events) {
-      try {
-        if (!ev?.idEvent || !ev?.strHomeTeam || !ev?.strAwayTeam || !ev?.dateEvent) continue;
-        const home = String(ev.strHomeTeam).trim();
-        const away = String(ev.strAwayTeam).trim();
-        const { iso, dateSP } = toBrazilDateTime(ev.dateEvent, ev.strTime || ev.strTimeLocal);
-        const slug = `${slugify(home)}-vs-${slugify(away)}-${dateSP}`.slice(0, 120);
+  // 2) eventsday por dia para os próximos N dias (pega Copa do Brasil, Libertadores etc.)
+  for (const day of nextDates(DAYS_AHEAD)) {
+    const data = await safeFetch(`${BASE_URL}/eventsday.php?d=${day}&s=Soccer`);
+    const events: any[] = data?.events ?? [];
+    for (const ev of events) allEvents.push({ ev });
+  }
 
-        const status = inferStatus(ev.strStatus, iso);
-        const homeScoreRaw = ev.intHomeScore;
-        const awayScoreRaw = ev.intAwayScore;
-        const home_score = homeScoreRaw !== null && homeScoreRaw !== undefined && homeScoreRaw !== ""
-          ? parseInt(String(homeScoreRaw), 10)
-          : null;
-        const away_score = awayScoreRaw !== null && awayScoreRaw !== undefined && awayScoreRaw !== ""
-          ? parseInt(String(awayScoreRaw), 10)
-          : null;
-        const round_label = ev.intRound ? `Rodada ${ev.intRound}` : (ev.strStage || null);
+  stats.fetched = allEvents.length;
 
-        const row = {
-          external_id: String(ev.idEvent),
-          slug,
-          home_team: home,
-          away_team: away,
-          home_badge: ev.strHomeTeamBadge || ev.strThumb || null,
-          away_badge: ev.strAwayTeamBadge || null,
-          match_time: iso,
-          league_id: lg.id,
-          league_label: lg.label,
-          league_name: lg.label,
-          category: lg.category,
-          season: ev.strSeason || null,
-          venue_name: ev.strVenue || null,
-          youtube_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : null,
-          status,
-          home_score: Number.isFinite(home_score as number) ? home_score : null,
-          away_score: Number.isFinite(away_score as number) ? away_score : null,
-          round_label,
-          current_minute: status === "live" ? (ev.strProgress || ev.strStatus || null) : null,
-          finished_at: status === "finished" ? new Date().toISOString() : null,
-          is_world_cup: lg.category === "world_cup",
-          priority: lg.priority,
-          last_synced_at: new Date().toISOString(),
-        };
+  // Dedup por idEvent
+  const seen = new Set<string>();
+  const queue: Array<{ ev: any; fallback?: LeagueConfig }> = [];
+  for (const it of allEvents) {
+    const id = String(it.ev?.idEvent || "");
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    queue.push(it);
+  }
 
-        const { error } = await supabase
-          .from("sports_matches")
-          .upsert(row, { onConflict: "external_id" });
-        if (error) { stats.errors++; console.error(error); }
-        else stats.upserted++;
-      } catch (e) {
-        stats.errors++;
-        console.error("row error", e);
+  for (const { ev, fallback } of queue) {
+    try {
+      if (!ev?.idEvent || !ev?.strHomeTeam || !ev?.strAwayTeam || !ev?.dateEvent) continue;
+      if (ev.strSport && String(ev.strSport).toLowerCase() !== "soccer") {
+        stats.skipped_non_soccer++; continue;
       }
+      const home = String(ev.strHomeTeam).trim();
+      const away = String(ev.strAwayTeam).trim();
+      const { iso, dateSP } = toBrazilDateTime(ev.dateEvent, ev.strTime || ev.strTimeLocal);
+      const slug = `${slugify(home)}-vs-${slugify(away)}-${dateSP}`.slice(0, 120);
+
+      // Normalização da liga: confia no strLeague vindo da API
+      const norm_ = normalizeLeague(ev.strLeague, fallback);
+      const isBR = isBrazilianTeam(home) || isBrazilianTeam(away);
+
+      // Filtro: aceita se for liga conhecida (category != "other") OU se envolver time brasileiro
+      if (norm_.category === "other" && !isBR) {
+        stats.dropped_irrelevant++;
+        continue;
+      }
+      if (isBR) stats.br_force_included++;
+
+      // Debug agregado por liga
+      const k = `${ev.strLeague || "?"} → ${norm_.label}`;
+      debugLeagues.set(k, (debugLeagues.get(k) || 0) + 1);
+
+      const status = inferStatus(ev.strStatus, iso);
+      const homeScoreRaw = ev.intHomeScore;
+      const awayScoreRaw = ev.intAwayScore;
+      const home_score = homeScoreRaw !== null && homeScoreRaw !== undefined && homeScoreRaw !== ""
+        ? parseInt(String(homeScoreRaw), 10) : null;
+      const away_score = awayScoreRaw !== null && awayScoreRaw !== undefined && awayScoreRaw !== ""
+        ? parseInt(String(awayScoreRaw), 10) : null;
+      const round_label = ev.intRound ? `Rodada ${ev.intRound}` : (ev.strStage || null);
+
+      const row = {
+        external_id: String(ev.idEvent),
+        slug,
+        home_team: home,
+        away_team: away,
+        home_badge: ev.strHomeTeamBadge || ev.strThumb || null,
+        away_badge: ev.strAwayTeamBadge || null,
+        match_time: iso,
+        league_id: ev.idLeague || fallback?.id || null,
+        league_label: norm_.label,
+        league_name: ev.strLeague || norm_.label,
+        category: norm_.category === "other" ? "international" : norm_.category,
+        season: ev.strSeason || null,
+        venue_name: ev.strVenue || null,
+        youtube_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : null,
+        status,
+        home_score: Number.isFinite(home_score as number) ? home_score : null,
+        away_score: Number.isFinite(away_score as number) ? away_score : null,
+        round_label,
+        current_minute: status === "live" ? (ev.strProgress || ev.strStatus || null) : null,
+        finished_at: status === "finished" ? new Date().toISOString() : null,
+        is_world_cup: norm_.category === "world_cup",
+        priority: norm_.priority,
+        last_synced_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("sports_matches")
+        .upsert(row, { onConflict: "external_id" });
+      if (error) { stats.errors++; console.error("upsert error", error.message, slug); }
+      else stats.upserted++;
+    } catch (e) {
+      stats.errors++;
+      console.error("row error", e);
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, stats }), {
+  // Logs detalhados por liga (debug)
+  console.log("[sync-football-matches] stats:", JSON.stringify(stats));
+  const leaguesObj: Record<string, number> = {};
+  for (const [k, v] of debugLeagues.entries()) leaguesObj[k] = v;
+  console.log("[sync-football-matches] leagues:", JSON.stringify(leaguesObj));
+
+  return new Response(JSON.stringify({ ok: true, stats, leagues: leaguesObj }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
