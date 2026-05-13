@@ -13,7 +13,11 @@ import {
   formatMatchTime,
   isPriorityTeam,
   isSameTeam,
+  isBrazilianTeam,
+  mergeMatches,
+  sportsMatchRowToNormalized,
   type NormalizedMatch,
+  type SportsMatchRow,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
