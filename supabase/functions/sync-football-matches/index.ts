@@ -358,9 +358,11 @@ Deno.serve(async (req) => {
     endpoints_called: endpointsCalled.length,
     stats,
     leagues: leaguesObj,
+    br_samples: brDebugSamples,
     timestamp: new Date().toISOString(),
   };
-  console.log("[sync-football-matches]", JSON.stringify(diagnostic));
+  console.log("[sync-football-matches]", JSON.stringify({ ...diagnostic, br_samples: `[${brDebugSamples.length} amostras]` }));
+  for (const s of brDebugSamples) console.log("[sync-br-sample]", JSON.stringify(s));
 
   return new Response(JSON.stringify(diagnostic), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
