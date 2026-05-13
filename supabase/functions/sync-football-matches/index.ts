@@ -13,7 +13,11 @@ const corsHeaders = {
 };
 
 const API_KEY = Deno.env.get("THESPORTSDB_API_KEY") || "3";
+const IS_PREMIUM = API_KEY !== "3" && API_KEY.length > 0;
 const BASE_URL = `https://www.thesportsdb.com/api/v1/json/${API_KEY}`;
+// V2 endpoints (premium): autorização via header X-API-KEY, sem key na URL.
+const V2_BASE = `https://www.thesportsdb.com/api/v2/json`;
+const V2_HEADERS: Record<string, string> = IS_PREMIUM ? { "X-API-KEY": API_KEY } : {};
 const SP_OFFSET = "-03:00";
 const DAYS_AHEAD = 7;
 
