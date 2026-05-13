@@ -111,12 +111,30 @@ export default function Jogos() {
 
   const hasCopa = useMemo(() => matches.some((m) => m.is_world_cup), [matches]);
 
-  // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam (ex: internacional/copa).
+  // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam.
   const relevantBase = useMemo(() => filterRelevantMatches(matches), [matches]);
 
+  // Slugs visíveis na página → busca metadata real (bares, stream, chat ativo)
+  const allSlugs = useMemo(() => Array.from(new Set(matches.map((m) => m.slug))), [matches]);
+  const { data: metaMap = {} } = useMatchMeta(allSlugs);
+
+  // Views agregados (vindos de sports_matches) para "Mais buscados"
+  const { data: viewsMap = {} } = useQuery({
+    queryKey: ["sports-matches-views", allSlugs.slice().sort().join("|")],
+    enabled: allSlugs.length > 0,
+    staleTime: 1000 * 60 * 5,
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data } = await supabase
+        .from("sports_matches")
+        .select("slug, views_count")
+        .in("slug", allSlugs);
+      const map: Record<string, number> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = r.views_count ?? 0; });
+      return map;
+    },
+  });
+
   const filtered = useMemo<NormalizedMatch[]>(() => {
-    // Para filtros amplos (hoje/amanha/semana/live) usa lista curada.
-    // Para filtros categóricos (copa/brasil/internacional) usa lista completa.
     let list: NormalizedMatch[] =
       filter === "copa" || filter === "brasil" || filter === "internacional"
         ? matches
@@ -144,13 +162,27 @@ export default function Jogos() {
   // "HOJE TEM" — jogo mais relevante do dia
   const hojeTem = useMemo(() => todays[0] ?? null, [todays]);
 
-  // "Mais buscados": só jogos de relevância alta, próximos 7 dias
+  // "Mais buscados": ordena por views reais quando existir; fallback p/ relevância.
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
-    return sortMatchesByRelevance(
-      matches.filter((m) => isHighlightedMatch(m) && new Date(m.match_time).getTime() <= limit && m.status !== "finished"),
-    ).slice(0, 8);
-  }, [matches]);
+    const candidates = matches.filter(
+      (m) => isHighlightedMatch(m) && new Date(m.match_time).getTime() <= limit && m.status !== "finished",
+    );
+    const totalViews = candidates.reduce((s, m) => s + (viewsMap[m.slug] ?? 0), 0);
+    const sorted = totalViews > 0
+      ? [...candidates].sort((a, b) => (viewsMap[b.slug] ?? 0) - (viewsMap[a.slug] ?? 0))
+      : sortMatchesByRelevance(candidates);
+    return sorted.slice(0, 8);
+  }, [matches, viewsMap]);
+
+  // KPI strip — números agregados
+  const kpis = useMemo(() => {
+    const liveCount = matches.filter((m) => m.status === "live").length;
+    const barsTransmitting = Object.values(metaMap).reduce((acc, m) => acc + (m?.venuesCount ?? 0), 0);
+    const activeChats = Object.values(metaMap).filter((m) => m?.hasActiveChat).length;
+    return { liveCount, barsTransmitting, activeChats };
+  }, [matches, metaMap]);
+
 
   const groups = groupMatchesByDate(filtered);
 
