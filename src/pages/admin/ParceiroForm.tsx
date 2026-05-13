@@ -23,7 +23,7 @@ const ParceiroForm = () => {
     name: "", slug: "", type: "bar", address: "",
     city: cityFilter || "Presidente Prudente", instagram: "", whatsapp: "",
     short_description: "", full_description: "", logo_url: "",
-    verified_partner: false, active: true, featured_home: false,
+    verified_partner: false, active: true, featured_home: false, supports_sports: false,
   });
 
   useEffect(() => { if (isEdit) loadPartner(); }, [id]);
@@ -44,6 +44,7 @@ const ParceiroForm = () => {
       short_description: data.short_description || "", full_description: data.full_description || "",
       logo_url: data.logo_url || "", verified_partner: data.verified_partner, active: data.active,
       featured_home: (data as any).featured_home ?? false,
+      supports_sports: (data as any).supports_sports ?? false,
     });
   }
 
@@ -168,6 +169,10 @@ const ParceiroForm = () => {
           <label className="flex items-center gap-1.5 text-xs">
             <input type="checkbox" checked={form.featured_home} onChange={(e) => handleChange("featured_home", e.target.checked)} className="accent-primary" />
             ⭐ Destaque na Home
+          </label>
+          <label className="flex items-center gap-1.5 text-xs">
+            <input type="checkbox" checked={form.supports_sports} onChange={(e) => handleChange("supports_sports", e.target.checked)} className="accent-primary" />
+            ⚽ Transmite futebol
           </label>
         </div>
 
