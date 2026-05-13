@@ -23,10 +23,13 @@ export interface LeagueConfig {
 export const FEATURED_LEAGUES: LeagueConfig[] = [
   { id: "4429", name: "FIFA World Cup",          label: "Copa do Mundo",     category: "world_cup",     priority: 1 },
   { id: "4351", name: "Brazilian Serie A",       label: "Brasileirão",       category: "brazil",        priority: 2 },
-  { id: "4356", name: "Copa do Brasil",          label: "Copa do Brasil",    category: "brazil",        priority: 3 },
-  { id: "4480", name: "Campeonato Paulista",     label: "Paulistão",         category: "brazil",        priority: 4 },
-  { id: "4481", name: "Copa Libertadores",       label: "Libertadores",      category: "international", priority: 5 },
-  { id: "4482", name: "UEFA Champions League",   label: "Champions League",  category: "international", priority: 6 },
+  // ATENÇÃO: IDs verificados via lookupleague.php (free key "3").
+  // 4480 = UEFA Champions League, 4481 = UEFA Europa League, 4482 = FA Cup, 4356 = Australian A-League.
+  // Os jogos da Copa do Brasil / Libertadores / Sul-Americana / Paulistão chegam via
+  // eventsday.php (sync-football-matches) e são reconhecidos pela normalização do strLeague.
+  { id: "4480", name: "UEFA Champions League",   label: "Champions League",  category: "international", priority: 4 },
+  { id: "4481", name: "UEFA Europa League",      label: "Europa League",     category: "international", priority: 6 },
+  { id: "4482", name: "FA Cup",                  label: "FA Cup",            category: "international", priority: 9 },
   { id: "4335", name: "Spanish La Liga",         label: "La Liga",           category: "international", priority: 7 },
   { id: "4328", name: "English Premier League", label: "Premier League",    category: "international", priority: 8 },
   { id: "4334", name: "French Ligue 1",          label: "Ligue 1",           category: "international", priority: 9 },
@@ -367,26 +370,16 @@ export function getMatchRelevanceScore(m: NormalizedMatch): number {
   // Clássico
   if (isClassico(m.home_team, m.away_team)) score += 30;
 
-  // Campeonato
-  switch (m.league_id) {
-    case "4481": // Libertadores
-      score += 40; break;
-    case "4482": // Champions
-      score += 35; break;
-    case "4356": // Copa do Brasil
-      score += 40; break;
-    case "4351": // Brasileirão
-      score += 35; break;
-    case "4480": // Paulistão
-      score += 20; break;
-    case "4335": // La Liga
-    case "4328": // Premier League
-    case "4334": // Ligue 1
-      score += 10; break;
-    default:
-      // Internacional sem time grande nem campeonato relevante → penaliza
-      if (!brHome && !brAway && !euHome && !euAway) score -= 20;
-  }
+  // Campeonato — agora baseado no label normalizado (mais confiável que league_id da API).
+  const lbl = (m.league_label || "").toLowerCase();
+  if (/libertadores/.test(lbl))                 score += 45;
+  else if (/copa do brasil|brazilian cup/.test(lbl)) score += 45;
+  else if (/brasileir/.test(lbl))               score += 40;
+  else if (/sul[- ]americana|sudameric/.test(lbl)) score += 35;
+  else if (/champions/.test(lbl))               score += 35;
+  else if (/paulist|carioca|mineiro/.test(lbl)) score += 20;
+  else if (/la liga|premier league|ligue 1|serie a|bundesliga/.test(lbl)) score += 10;
+  else if (!brHome && !brAway && !euHome && !euAway) score -= 20;
 
   // Bônus leve para prioridade declarada da liga (1..9, menor = mais importante)
   score += Math.max(0, 10 - m.priority);
