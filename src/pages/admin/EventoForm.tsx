@@ -55,7 +55,36 @@ const EventoForm = () => {
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [reprocessingSports, setReprocessingSports] = useState(false);
   const originalSnapshot = useRef<{ category: string; sub_category: string | null; description: string | null; venue_name: string | null } | null>(null);
+
+  async function reprocessSportsTransmission() {
+    if (!id) {
+      toast.error("Salve o evento antes de reprocessar.");
+      return;
+    }
+    setReprocessingSports(true);
+    try {
+      const text = [form.title, form.description, form.venue_name, (form as any)._sub, form.category]
+        .filter(Boolean).join(" \n ");
+      const refDate = form.date_time ? new Date(`${form.date_time}:00-03:00`) : null;
+      const r = await analyzeAndLinkEventTransmission({
+        eventId: id,
+        text,
+        partnerId: form.partner_id || null,
+        referenceDate: refDate,
+        source: "manual_reprocess",
+      });
+      if (r.linked) toast.success(`✅ Vínculo criado (${r.confidence}). Times: ${r.teams.join(", ") || "—"}`);
+      else if (r.detected && r.matched_match_id) toast.message(`Jogo encontrado, mas confiança ${r.confidence}. Revise em /admin/jogos.`);
+      else if (r.detected) toast.message(`Transmissão detectada (${r.teams.join(", ") || "sem times"}), sem jogo correspondente em sports_matches.`);
+      else toast.message("Nenhuma transmissão esportiva detectada no texto deste evento.");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao reprocessar transmissão");
+    } finally {
+      setReprocessingSports(false);
+    }
+  }
 
   async function reprocessFlyerWithAi() {
     if (!form.image_url) {
