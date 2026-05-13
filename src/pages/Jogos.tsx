@@ -94,11 +94,42 @@ export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
 
-  const { data: matches = [], isLoading, isError } = useQuery({
-    queryKey: ["jogos-public"],
+  const DEBUG = (import.meta as any).env?.VITE_JOGOS_DEBUG === "true";
+
+  // 1) API direta (FEATURED_LEAGUES) — Brasileirão, Champions, La Liga, Premier, Ligue 1, Europa, FA Cup
+  const { data: apiMatches = [], isLoading: loadingApi, isError } = useQuery({
+    queryKey: ["jogos-public-api"],
     queryFn: getFeaturedFootballEvents,
     staleTime: 1000 * 60 * 10,
   });
+
+  // 2) Banco (sports_matches) — Copa do Brasil, Libertadores, Sul-Americana, Série B, etc.
+  //    Sincronizado via edge function premium. SEM essa fonte, jogos como
+  //    Juventude x São Paulo (Copa do Brasil) NUNCA apareceriam no público.
+  const { data: dbMatches = [], isLoading: loadingDb } = useQuery({
+    queryKey: ["jogos-public-db"],
+    staleTime: 1000 * 60 * 5,
+    queryFn: async (): Promise<NormalizedMatch[]> => {
+      const fromIso = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+      const toIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("sports_matches")
+        .select("external_id, league_id, league_name, league_label, category, season, home_team, away_team, home_badge, away_badge, match_time, status, venue_name, youtube_url, slug, is_world_cup, priority")
+        .gte("match_time", fromIso)
+        .lte("match_time", toIso)
+        .order("match_time", { ascending: true })
+        .limit(500);
+      if (error) {
+        if (DEBUG) console.error("[jogos-debug] db error", error);
+        return [];
+      }
+      return (data ?? []).map((r) => sportsMatchRowToNormalized(r as SportsMatchRow));
+    },
+  });
+
+  const isLoading = loadingApi || loadingDb;
+
+  const matches = useMemo(() => mergeMatches(apiMatches, dbMatches), [apiMatches, dbMatches]);
 
   const { data: bars = [] } = useQuery({
     queryKey: ["jogos-bares-prudente-sports"],
