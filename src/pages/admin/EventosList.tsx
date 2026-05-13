@@ -639,7 +639,7 @@ const EventosList = () => {
     const cl = getChecklist(e);
     const busy = aiBusy[e.id];
     const isDraft = e.status === "draft";
-    const score = getQualityScore(e);
+    
     const borderClass = e.aura_pick
       ? "border-primary/60 bg-primary/5 shadow-[0_0_18px_rgba(168,85,247,0.25)]"
       : e.featured
