@@ -355,6 +355,10 @@ export default function JogosAdmin() {
             {syncingStandings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sincronizar tabelas
           </Button>
+          <Button onClick={reprocessBulk} disabled={reprocessingBulk} variant="outline" size="sm" title="Reanalisa eventos publicados (hoje..+7d) que mencionem futebol e ainda não estão vinculados a um jogo.">
+            {reprocessingBulk ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
+            Reprocessar eventos existentes
+          </Button>
         </div>
       </div>
 
