@@ -312,7 +312,7 @@ const EventoBulkForm = () => {
               date_time: f.date_time || "",
               category: f.category || "festa",
               sub_category: (f as any)._sub || "",
-              image_url: f.image_url || "",
+              partner_id: f.partner_id || undefined,
               seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
               previous_descriptions: previousDescs,
             },
