@@ -395,6 +395,22 @@ export default function JogosAdmin() {
               className="pl-9 focus-visible:ring-primary/40 focus-visible:shadow-[0_0_0_3px_hsl(var(--primary)/0.15)] transition-shadow"
             />
           </div>
+          <select
+            value={leagueFilter}
+            onChange={(e) => setLeagueFilter(e.target.value as LeagueGroupKey | "all")}
+            className="w-full rounded-lg border border-border/60 bg-card/60 px-3 py-2 text-sm font-bold text-foreground hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+            aria-label="Filtrar por liga"
+          >
+            <option value="all">🏆 Todas as ligas ({leagueCounts.all ?? 0})</option>
+            {LEAGUE_GROUPS.map((g) => (
+              <option key={g.key} value={g.key} disabled={!leagueCounts[g.key]}>
+                {g.label} ({leagueCounts[g.key] ?? 0})
+              </option>
+            ))}
+            <option value="outros" disabled={!leagueCounts.outros}>
+              Outros ({leagueCounts.outros ?? 0})
+            </option>
+          </select>
           <div className="rounded-xl border border-border/50 bg-card/40 max-h-[70vh] overflow-y-auto divide-y divide-border/40">
             {isLoading ? (
               <p className="p-4 text-sm text-muted-foreground">Carregando…</p>
