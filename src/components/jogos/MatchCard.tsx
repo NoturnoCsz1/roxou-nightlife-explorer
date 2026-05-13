@@ -61,6 +61,11 @@ function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveCha
               {b.label}
             </span>
           ))}
+          {hasVenues && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-200">
+              🔥 Assistir em Prudente
+            </span>
+          )}
           {hasStream && (
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300">
               <Tv className="h-2.5 w-2.5" /> Transmissão
