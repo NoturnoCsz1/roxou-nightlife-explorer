@@ -249,18 +249,16 @@ export default function Jogos() {
             <Trophy className="h-3.5 w-3.5" /> COPA NA ROXOU
           </div>
           <h1
-            className="font-display font-black leading-[1] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[20ch]"
-            style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)", wordBreak: "keep-all", hyphens: "none" }}
+            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[22ch]"
+            style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)" }}
           >
-            <span className="block">JOGOS, TRANSMISSÕES E</span>
+            <span className="block">Jogos de hoje e onde assistir</span>
             <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
-              BARES PARA ASSISTIR
+              em Presidente Prudente
             </span>
-            <span className="block">FUTEBOL EM PRUDENTE</span>
           </h1>
           <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance mx-auto max-w-[55ch]">
-            Veja os principais jogos do dia, bares transmitindo e acompanhe a emoção da Copa, Brasileirão,
-            Libertadores e Champions na Roxou.
+            Futebol ao vivo, bares parceiros, transmissões oficiais e próximos jogos dos times brasileiros.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <button
