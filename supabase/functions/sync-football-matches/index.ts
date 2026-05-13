@@ -260,6 +260,7 @@ Deno.serve(async (req) => {
         season: ev.strSeason || null,
         venue_name: ev.strVenue || null,
         youtube_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : null,
+        highlight_url: ev.strVideo && /youtu/.test(ev.strVideo) ? ev.strVideo : (ev.strHighlight && /youtu/.test(ev.strHighlight) ? ev.strHighlight : null),
         status,
         home_score: Number.isFinite(home_score as number) ? home_score : null,
         away_score: Number.isFinite(away_score as number) ? away_score : null,
@@ -270,6 +271,7 @@ Deno.serve(async (req) => {
         priority: norm_.priority,
         last_synced_at: new Date().toISOString(),
       };
+      if (row.highlight_url) stats.highlights_found++;
 
       const { error } = await supabase
         .from("sports_matches")
@@ -282,13 +284,20 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Logs detalhados por liga (debug)
-  console.log("[sync-football-matches] stats:", JSON.stringify(stats));
   const leaguesObj: Record<string, number> = {};
   for (const [k, v] of debugLeagues.entries()) leaguesObj[k] = v;
-  console.log("[sync-football-matches] leagues:", JSON.stringify(leaguesObj));
 
-  return new Response(JSON.stringify({ ok: true, stats, leagues: leaguesObj }), {
+  const diagnostic = {
+    ok: true,
+    api_mode: IS_PREMIUM ? "premium" : "free",
+    endpoints_called: endpointsCalled.length,
+    stats,
+    leagues: leaguesObj,
+    timestamp: new Date().toISOString(),
+  };
+  console.log("[sync-football-matches]", JSON.stringify(diagnostic));
+
+  return new Response(JSON.stringify(diagnostic), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
