@@ -567,11 +567,19 @@ const EventosList = () => {
       if (extraFilter === "prontos") return e.status !== "published" && e.status !== "archived" && getChecklist(e).complete;
       if (extraFilter === "revisar") return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
       return true;
+    })
+    .filter((e) => {
+      if (activeTab === "todos") return true;
+      if (activeTab === "hoje") return eventDayStr(e) === todayStr;
+      if (activeTab === "rascunhos") return e.status === "draft";
+      if (activeTab === "problemas") return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
+      if (activeTab === "destaques") return e.featured || e.aura_pick;
+      return true;
     });
 
   useEffect(() => {
     setVisibleCount(80);
-  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter]);
+  }, [search, activeCategory, activeStatus, activePartner, activeDateFilter, onlyIncomplete, onlyNeedsReview, originFilter, extraFilter, activeTab]);
 
   const visibleFiltered = filtered.slice(0, visibleCount);
 
