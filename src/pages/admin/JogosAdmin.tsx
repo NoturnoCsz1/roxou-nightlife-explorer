@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Trophy, RefreshCw, Plus, Trash2, Tv, Beer, Search, Loader2, Power, Radio, MessageCircle, CheckCircle2, Volume2, MonitorPlay, Sparkles } from "lucide-react";
 import { useMatchMeta } from "@/hooks/useMatchMeta";
-import { isSameTeam, normalizeTeamName } from "@/lib/theSportsDb";
+import { isSameTeam, normalizeTeamName, LEAGUE_GROUPS, getLeagueGroupKey, type LeagueGroupKey } from "@/lib/theSportsDb";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import { Wand2 } from "lucide-react";
 
@@ -101,6 +101,7 @@ function normalizeStreamUrl(url: string): string {
 export default function JogosAdmin() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [leagueFilter, setLeagueFilter] = useState<LeagueGroupKey | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [streamUrl, setStreamUrl] = useState("");
   const [streamType, setStreamType] = useState("youtube");
@@ -125,19 +126,39 @@ export default function JogosAdmin() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return matches;
-    const qn = normalizeTeamName(q);
-    return matches.filter((m) => {
-      // Match clássico (substring) + match bidirecional/normalizado por time
-      if (
-        m.home_team.toLowerCase().includes(q) ||
-        m.away_team.toLowerCase().includes(q) ||
-        (m.league_label ?? "").toLowerCase().includes(q)
-      ) return true;
-      if (qn && (isSameTeam(m.home_team, q) || isSameTeam(m.away_team, q))) return true;
-      return false;
+    const qn = q ? normalizeTeamName(q) : "";
+    let list = matches;
+    if (leagueFilter !== "all") {
+      list = list.filter((m) => {
+        const key = getLeagueGroupKey(m.league_label);
+        if (leagueFilter === "outros") return key === "outros";
+        return key === leagueFilter;
+      });
+    }
+    if (q) {
+      list = list.filter((m) => {
+        if (
+          m.home_team.toLowerCase().includes(q) ||
+          m.away_team.toLowerCase().includes(q) ||
+          (m.league_label ?? "").toLowerCase().includes(q)
+        ) return true;
+        if (qn && (isSameTeam(m.home_team, q) || isSameTeam(m.away_team, q))) return true;
+        return false;
+      });
+    }
+    return list;
+  }, [matches, search, leagueFilter]);
+
+  // Contagem por liga (para mostrar no dropdown)
+  const leagueCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: matches.length, outros: 0 };
+    LEAGUE_GROUPS.forEach((g) => (counts[g.key] = 0));
+    matches.forEach((m) => {
+      const k = getLeagueGroupKey(m.league_label);
+      counts[k] = (counts[k] ?? 0) + 1;
     });
-  }, [matches, search]);
+    return counts;
+  }, [matches]);
 
   // Metadata reaproveitada (venuesCount, hasStream, hasActiveChat)
   const slugs = useMemo(() => filtered.map((m) => m.slug), [filtered]);
@@ -374,6 +395,22 @@ export default function JogosAdmin() {
               className="pl-9 focus-visible:ring-primary/40 focus-visible:shadow-[0_0_0_3px_hsl(var(--primary)/0.15)] transition-shadow"
             />
           </div>
+          <select
+            value={leagueFilter}
+            onChange={(e) => setLeagueFilter(e.target.value as LeagueGroupKey | "all")}
+            className="w-full rounded-lg border border-border/60 bg-card/60 px-3 py-2 text-sm font-bold text-foreground hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+            aria-label="Filtrar por liga"
+          >
+            <option value="all">🏆 Todas as ligas ({leagueCounts.all ?? 0})</option>
+            {LEAGUE_GROUPS.map((g) => (
+              <option key={g.key} value={g.key} disabled={!leagueCounts[g.key]}>
+                {g.label} ({leagueCounts[g.key] ?? 0})
+              </option>
+            ))}
+            <option value="outros" disabled={!leagueCounts.outros}>
+              Outros ({leagueCounts.outros ?? 0})
+            </option>
+          </select>
           <div className="rounded-xl border border-border/50 bg-card/40 max-h-[70vh] overflow-y-auto divide-y divide-border/40">
             {isLoading ? (
               <p className="p-4 text-sm text-muted-foreground">Carregando…</p>

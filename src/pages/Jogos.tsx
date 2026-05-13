@@ -13,7 +13,11 @@ import {
   formatMatchTime,
   isPriorityTeam,
   isSameTeam,
+  isBrazilianTeam,
+  mergeMatches,
+  sportsMatchRowToNormalized,
   type NormalizedMatch,
+  type SportsMatchRow,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
@@ -90,11 +94,42 @@ export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
 
-  const { data: matches = [], isLoading, isError } = useQuery({
-    queryKey: ["jogos-public"],
+  const DEBUG = (import.meta as any).env?.VITE_JOGOS_DEBUG === "true";
+
+  // 1) API direta (FEATURED_LEAGUES) — Brasileirão, Champions, La Liga, Premier, Ligue 1, Europa, FA Cup
+  const { data: apiMatches = [], isLoading: loadingApi, isError } = useQuery({
+    queryKey: ["jogos-public-api"],
     queryFn: getFeaturedFootballEvents,
     staleTime: 1000 * 60 * 10,
   });
+
+  // 2) Banco (sports_matches) — Copa do Brasil, Libertadores, Sul-Americana, Série B, etc.
+  //    Sincronizado via edge function premium. SEM essa fonte, jogos como
+  //    Juventude x São Paulo (Copa do Brasil) NUNCA apareceriam no público.
+  const { data: dbMatches = [], isLoading: loadingDb } = useQuery({
+    queryKey: ["jogos-public-db"],
+    staleTime: 1000 * 60 * 5,
+    queryFn: async (): Promise<NormalizedMatch[]> => {
+      const fromIso = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+      const toIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("sports_matches")
+        .select("external_id, league_id, league_name, league_label, category, season, home_team, away_team, home_badge, away_badge, match_time, status, venue_name, youtube_url, slug, is_world_cup, priority")
+        .gte("match_time", fromIso)
+        .lte("match_time", toIso)
+        .order("match_time", { ascending: true })
+        .limit(500);
+      if (error) {
+        if (DEBUG) console.error("[jogos-debug] db error", error);
+        return [];
+      }
+      return (data ?? []).map((r) => sportsMatchRowToNormalized(r as SportsMatchRow));
+    },
+  });
+
+  const isLoading = loadingApi || loadingDb;
+
+  const matches = useMemo(() => mergeMatches(apiMatches, dbMatches), [apiMatches, dbMatches]);
 
   const { data: bars = [] } = useQuery({
     queryKey: ["jogos-bares-prudente-sports"],
@@ -134,7 +169,34 @@ export default function Jogos() {
   const hasCopa = useMemo(() => matches.some((m) => m.is_world_cup), [matches]);
 
   // Base relevante: esconde jogos irrelevantes a menos que filtros específicos peçam.
-  const relevantBase = useMemo(() => filterRelevantMatches(matches), [matches]);
+  // Force-include adicional: jogos brasileiros/hoje/próximos 7 dias NUNCA somem,
+  // mesmo que API direta não retorne (ex.: Copa do Brasil sincronizada via DB).
+  const relevantBase = useMemo(() => {
+    const base = filterRelevantMatches(matches);
+    const baseSlugs = new Set(base.map((m) => m.slug));
+    const limit7d = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const forced = matches.filter((m) => {
+      if (baseSlugs.has(m.slug)) return false;
+      if (m.status === "finished") return false;
+      const t = new Date(m.match_time).getTime();
+      if (t > limit7d) return false;
+      const isBr = isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team);
+      const isToday = m.raw_date === today;
+      return isBr || isToday;
+    });
+    if (DEBUG) {
+      const target = matches.find(
+        (m) => /juventude/i.test(m.home_team + m.away_team) && /s[aã]o\s*paulo/i.test(m.home_team + m.away_team),
+      );
+      console.log("[jogos-debug] total:", matches.length,
+        "| brasileiros:", matches.filter((m) => isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team)).length,
+        "| hoje:", matches.filter((m) => m.raw_date === today).length,
+        "| Juventude x SP no array bruto:", !!target,
+        target ? { slug: target.slug, league: target.league_label, raw_date: target.raw_date, match_time: target.match_time } : null,
+        "| force-included extras:", forced.length);
+    }
+    return [...base, ...forced];
+  }, [matches, today, DEBUG]);
 
   // Slugs visíveis na página → busca metadata real (bares, stream, chat ativo)
   const allSlugs = useMemo(() => Array.from(new Set(matches.map((m) => m.slug))), [matches]);
