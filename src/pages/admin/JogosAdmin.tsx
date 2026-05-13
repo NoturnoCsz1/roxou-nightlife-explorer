@@ -101,6 +101,7 @@ function normalizeStreamUrl(url: string): string {
 export default function JogosAdmin() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [leagueFilter, setLeagueFilter] = useState<LeagueGroupKey | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [streamUrl, setStreamUrl] = useState("");
   const [streamType, setStreamType] = useState("youtube");
