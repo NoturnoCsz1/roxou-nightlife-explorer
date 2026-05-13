@@ -608,25 +608,30 @@ export default function Jogos() {
             Onde assistir futebol em Presidente Prudente
           </h2>
           <p className="text-muted-foreground text-sm md:text-base max-w-3xl">
-            A Roxou reúne bares, pubs e restaurantes que transmitem os principais jogos de futebol em Presidente Prudente.
-            Veja onde assistir Brasileirão, Copa do Brasil, Libertadores, Champions League, Copa do Mundo e jogos da
-            Seleção Brasileira com a melhor curadoria local.
+            Na Roxou você acompanha os principais jogos de hoje, próximos jogos dos times brasileiros,
+            resultados, tabelas e bares que transmitem futebol em Presidente Prudente.
           </p>
           <div className="flex flex-wrap gap-2 mt-5">
+            <Link to="/resultados" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Resultados recentes
+            </Link>
+            <Link to="/tabela/brasileirao" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Tabela do Brasileirão
+            </Link>
+            <Link to="/tabela/libertadores" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Tabela da Libertadores
+            </Link>
+            <Link to="/tabela/champions" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
+              Tabela da Champions
+            </Link>
             <Link to="/agenda" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-              Ver agenda de eventos
+              Agenda de eventos
             </Link>
             <Link to="/indica" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-              Ver bares em Prudente
+              Bares em Prudente
             </Link>
-            <button
-              onClick={() => { setFilter("hoje"); document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth" }); }}
-              className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition"
-            >
-              Ver jogos de hoje
-            </button>
             <a href="#bares-esportivos" className="rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition">
-              Ver locais esportivos
+              Locais esportivos
             </a>
           </div>
 
