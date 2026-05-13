@@ -16,21 +16,29 @@ import {
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
-// useMatchMeta disponível em '@/hooks/useMatchMeta' para badges (próxima iteração)
+import { useMatchMeta, type MatchMetaMap } from "@/hooks/useMatchMeta";
 
 
 /** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
 function PriorityMatchBlock({
   match,
   bars,
+  meta,
 }: {
   match: NormalizedMatch;
   bars: { id: string; name: string; slug: string; neighborhood?: string | null; type?: string | null }[];
+  meta?: MatchMetaMap[string];
 }) {
   const showVenues = isHighlightedMatch(match) && match.status !== "finished";
+  const venuesCount = meta?.venuesCount ?? (showVenues ? bars.length : 0);
   return (
     <div>
-      <MatchCard match={match} venuesCount={showVenues ? bars.length : 0} />
+      <MatchCard
+        match={match}
+        venuesCount={venuesCount}
+        hasStream={meta?.hasStream}
+        hasActiveChat={meta?.hasActiveChat}
+      />
       {showVenues && <MatchVenuesQuickList bars={bars} />}
     </div>
   );
