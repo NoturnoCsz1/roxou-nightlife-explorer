@@ -90,7 +90,7 @@ const EventoForm = () => {
     }
   }
 
-  async function generateDescription(info: { title: string; venue_name?: string; date_time?: string; category?: string; image_url?: string }) {
+  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string }) {
     setGeneratingDesc(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
