@@ -23,7 +23,7 @@ const ParceiroForm = () => {
     name: "", slug: "", type: "bar", address: "",
     city: cityFilter || "Presidente Prudente", instagram: "", whatsapp: "",
     short_description: "", full_description: "", logo_url: "",
-    verified_partner: false, active: true, featured_home: false,
+    verified_partner: false, active: true, featured_home: false, supports_sports: false,
   });
 
   useEffect(() => { if (isEdit) loadPartner(); }, [id]);
