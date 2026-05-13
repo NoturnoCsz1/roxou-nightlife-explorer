@@ -165,9 +165,11 @@ const EventoForm = () => {
         generateDescription({
           title: duplicateData.title,
           venue_name: duplicateData.venue_name,
+          address: (duplicateData as any).address,
           date_time: hasDateFromImport ? duplicateData.date_time : "",
           category: duplicateData.category,
-          image_url: duplicateData.image_url,
+          sub_category: (duplicateData as any).sub_category,
+          partner_id: duplicateData.partner_id || undefined,
         });
       }
     }
