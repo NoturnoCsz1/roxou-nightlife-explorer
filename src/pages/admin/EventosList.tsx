@@ -411,9 +411,11 @@ const EventosList = () => {
         body: {
           title: e.title,
           venue_name: e.venue_name,
+          address: e.address,
           date_time: e.date_time,
-          category: e.sub_category || e.category,
-          image_url: e.image_url,
+          category: e.category,
+          sub_category: e.sub_category || undefined,
+          partner_id: e.partner_id || undefined,
         },
       });
       if (error) throw error;
