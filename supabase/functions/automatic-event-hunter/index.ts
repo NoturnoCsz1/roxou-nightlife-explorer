@@ -269,7 +269,46 @@ Deno.serve(async (req) => {
           const imageUrl = m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url;
           if (!imageUrl) continue;
 
-          // === DEDUP STAGE 1: media_id já scaneado ===
+          // === FILTRO BARATO 1: janela de 5 dias (ignora posts antigos) ===
+          if (!isPostWithinWindow(m.timestamp)) {
+            stats.ignored_old_post++;
+            await supabase.from("instagram_scans").insert({
+              media_id: m.id,
+              permalink: m.permalink || null,
+              source_handle: handle,
+              partner_id: p.id,
+              status: "ignored",
+              reason: m.timestamp
+                ? `Post fora da janela de ${POST_WINDOW_DAYS} dias (${m.timestamp})`
+                : "Post sem timestamp confiável",
+              raw_caption: (m.caption || "").slice(0, 2000),
+              hidden_from_radar: true,
+              archive_reason: "auto: fora da janela de 5 dias",
+              archived_at: new Date().toISOString(),
+            });
+            continue;
+          }
+
+          // === FILTRO BARATO 2: classificador heurístico (sem IA) ===
+          const cheapKind = classifyPostText(m.caption || "");
+          if (cheapKind === "promotion" || cheapKind === "announcement") {
+            await supabase.from("instagram_scans").insert({
+              media_id: m.id,
+              permalink: m.permalink || null,
+              source_handle: handle,
+              partner_id: p.id,
+              status: "ignored",
+              reason: cheapKind === "promotion"
+                ? "Promoção detectada (sem evento)"
+                : "Aviso/comunicado detectado",
+              raw_caption: (m.caption || "").slice(0, 2000),
+            });
+            if (cheapKind === "promotion") stats.ignored_promotion++;
+            else stats.ignored_announcement++;
+            continue;
+          }
+
+          stats.accepted_window++;
           const { data: existingScan } = await supabase
             .from("instagram_scans")
             .select("id,event_id,status,scan_count")
