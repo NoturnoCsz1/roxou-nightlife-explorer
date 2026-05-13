@@ -48,7 +48,23 @@ Deno.serve(async (req) => {
     { loc: "/expo2026/shows", priority: "0.95", changefreq: "daily" },
     { loc: "/expo2026/programacao", priority: "0.95", changefreq: "daily" },
     { loc: "/expo2026/ingressos", priority: "0.9", changefreq: "daily" },
+    { loc: "/jogos", priority: "0.95", changefreq: "hourly" },
+    { loc: "/resultados", priority: "0.7", changefreq: "daily" },
+    { loc: "/tabela/brasileirao", priority: "0.7", changefreq: "daily" },
+    { loc: "/tabela/libertadores", priority: "0.7", changefreq: "daily" },
+    { loc: "/tabela/champions", priority: "0.7", changefreq: "daily" },
   ];
+
+  // Sports matches (próximos 14 dias + últimos 3) — alta rotatividade SEO
+  const fromIso = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const toIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: matches } = await supabase
+    .from("sports_matches")
+    .select("slug, updated_at, match_time")
+    .gte("match_time", fromIso)
+    .lte("match_time", toIso)
+    .order("match_time", { ascending: true })
+    .limit(500);
 
   // Fetch published expo news
   const { data: expoNews } = await supabase
