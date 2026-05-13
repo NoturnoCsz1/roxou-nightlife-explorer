@@ -515,6 +515,32 @@ export default function Jogos() {
                           {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
                         </div>
                       </div>
+                      {(() => {
+                        const meta = metaMap[m.slug];
+                        const v = meta?.venuesCount ?? 0;
+                        const hs = meta?.hasStream;
+                        const hc = meta?.hasActiveChat;
+                        if (!v && !hs && !hc) return null;
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-red-500/20 text-[10px] font-bold">
+                            {v > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 text-emerald-300">
+                                🍻 {v} {v === 1 ? "bar" : "bares"}
+                              </span>
+                            )}
+                            {hs && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/40 px-2 py-0.5 text-purple-200">
+                                📺 Stream
+                              </span>
+                            )}
+                            {hc && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/40 px-2 py-0.5 text-fuchsia-300">
+                                💬 Chat ativo
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </Link>
                   ))}
                 </div>
