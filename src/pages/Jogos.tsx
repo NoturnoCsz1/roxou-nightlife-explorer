@@ -12,6 +12,7 @@ import {
   filterRelevantMatches,
   formatMatchTime,
   isPriorityTeam,
+  isSameTeam,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
