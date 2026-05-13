@@ -240,15 +240,28 @@ Deno.serve(async (req) => {
 
   stats.fetched = allEvents.length;
 
-  // Dedup por idEvent
+  // Dedup por idEvent + chave bidirecional (league + dia + par de times normalizado)
   const seen = new Set<string>();
+  const seenPair = new Set<string>(); // chave bidirecional
   const queue: Array<{ ev: any; fallback?: LeagueConfig }> = [];
   for (const it of allEvents) {
-    const id = String(it.ev?.idEvent || "");
+    const ev = it.ev;
+    const id = String(ev?.idEvent || "");
     if (!id || seen.has(id)) continue;
     seen.add(id);
+
+    // Chave bidirecional para detectar mesmo jogo invertido (home/away trocados)
+    if (ev?.strHomeTeam && ev?.strAwayTeam && ev?.dateEvent) {
+      const teamsSorted = [normalizeTeamName(ev.strHomeTeam), normalizeTeamName(ev.strAwayTeam)].sort().join("|");
+      const pairKey = `${(ev.strLeague || "?").toLowerCase()}|${ev.dateEvent}|${teamsSorted}`;
+      if (seenPair.has(pairKey)) continue;
+      seenPair.add(pairKey);
+    }
     queue.push(it);
   }
+
+  // Logs detalhados de debug para jogos brasileiros relevantes
+  const brDebugSamples: any[] = [];
 
   for (const { ev, fallback } of queue) {
     try {
@@ -270,7 +283,19 @@ Deno.serve(async (req) => {
         stats.dropped_irrelevant++;
         continue;
       }
-      if (isBR) stats.br_force_included++;
+      if (isBR) {
+        stats.br_force_included++;
+        if (brDebugSamples.length < 30) {
+          brDebugSamples.push({
+            home_orig: home, away_orig: away,
+            home_norm: normalizeTeamName(home), away_norm: normalizeTeamName(away),
+            league_orig: ev.strLeague, league_norm: norm_.label,
+            raw_date: ev.dateEvent, raw_time: ev.strTime || ev.strTimeLocal || null,
+            tz_assumed: "UTC→America/Sao_Paulo",
+            date_key_sp: dateSP, match_time_sp: iso,
+          });
+        }
+      }
 
       // Debug agregado por liga
       const k = `${ev.strLeague || "?"} → ${norm_.label}`;
