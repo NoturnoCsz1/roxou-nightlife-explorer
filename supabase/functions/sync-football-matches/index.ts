@@ -40,23 +40,24 @@ const FEATURED_LEAGUES: LeagueConfig[] = [
 
 // Normalização: trecho do strLeague (vindo da API, lowercase) → { label, category, priority }
 const LEAGUE_NORMALIZATION: Array<{ match: RegExp; label: string; category: Category; priority: number }> = [
+  // Ordem importa: regras mais específicas vêm primeiro.
   { match: /world cup|copa do mundo|fifa world/i,                  label: "Copa do Mundo",     category: "world_cup",     priority: 1 },
-  { match: /brazil(ian)? serie a|brasileir[aã]o|s[eé]rie a/i,      label: "Brasileirão",        category: "brazil",        priority: 2 },
-  { match: /brazil(ian)? serie b|s[eé]rie b/i,                     label: "Brasileirão Série B",category: "brazil",        priority: 3 },
-  { match: /copa do brasil|brazil(ian)? cup|copa betano/i,          label: "Copa do Brasil",     category: "brazil",        priority: 3 },
-  { match: /libertadores/i,                                         label: "Libertadores",       category: "international", priority: 4 },
-  { match: /sudamericana|sul[- ]americana/i,                        label: "Sul-Americana",      category: "international", priority: 5 },
-  { match: /paulista|paulist[aã]o/i,                                label: "Paulistão",          category: "brazil",        priority: 4 },
-  { match: /carioca/i,                                              label: "Carioca",            category: "brazil",        priority: 6 },
-  { match: /mineiro/i,                                              label: "Mineiro",            category: "brazil",        priority: 6 },
-  { match: /uefa champions|champions league/i,                      label: "Champions League",   category: "international", priority: 4 },
-  { match: /europa league|uefa europa/i,                            label: "Europa League",      category: "international", priority: 6 },
-  { match: /spanish la liga|la liga/i,                              label: "La Liga",            category: "international", priority: 7 },
-  { match: /english premier league|premier league/i,                label: "Premier League",     category: "international", priority: 8 },
-  { match: /french ligue 1|ligue 1/i,                               label: "Ligue 1",            category: "international", priority: 9 },
-  { match: /serie a italian|italian serie a|seria a/i,              label: "Serie A (ITA)",      category: "international", priority: 8 },
-  { match: /bundesliga/i,                                           label: "Bundesliga",         category: "international", priority: 8 },
-  { match: /fa cup/i,                                               label: "FA Cup",             category: "international", priority: 9 },
+  { match: /italian serie a|serie a italian/i,                     label: "Serie A (ITA)",      category: "international", priority: 8 },
+  { match: /brazil(ian)? serie b|brasileir[aã]o s[eé]rie b/i,      label: "Brasileirão Série B",category: "brazil",        priority: 3 },
+  { match: /brazil(ian)? serie a|brasileir[aã]o/i,                 label: "Brasileirão",        category: "brazil",        priority: 2 },
+  { match: /copa do brasil|brazil(ian)? cup|copa betano/i,         label: "Copa do Brasil",     category: "brazil",        priority: 3 },
+  { match: /libertadores/i,                                        label: "Libertadores",       category: "international", priority: 4 },
+  { match: /sudamericana|sul[- ]americana/i,                       label: "Sul-Americana",      category: "international", priority: 5 },
+  { match: /paulista|paulist[aã]o/i,                               label: "Paulistão",          category: "brazil",        priority: 4 },
+  { match: /carioca/i,                                             label: "Carioca",            category: "brazil",        priority: 6 },
+  { match: /campeonato mineiro|mineiro/i,                          label: "Mineiro",            category: "brazil",        priority: 6 },
+  { match: /uefa champions|champions league/i,                     label: "Champions League",   category: "international", priority: 4 },
+  { match: /europa league|uefa europa/i,                           label: "Europa League",      category: "international", priority: 6 },
+  { match: /spanish la liga|la liga/i,                             label: "La Liga",            category: "international", priority: 7 },
+  { match: /english premier league|premier league/i,               label: "Premier League",     category: "international", priority: 8 },
+  { match: /french ligue 1|ligue 1/i,                              label: "Ligue 1",            category: "international", priority: 9 },
+  { match: /bundesliga/i,                                          label: "Bundesliga",         category: "international", priority: 8 },
+  { match: /fa cup/i,                                              label: "FA Cup",             category: "international", priority: 9 },
 ];
 
 const BRAZILIAN_TEAMS = [
