@@ -105,7 +105,14 @@ export default function JogoDetail() {
   }
 
   const isCopa = match.is_world_cup;
-  const isLive = match.status === "live";
+  const localStatus = (localData?.status || "").toLowerCase();
+  const isLive = match.status === "live" || localStatus === "live" || localStatus === "in_play";
+  const isFinished = match.status === "finished" || localStatus === "finished" || localStatus === "ft";
+  const homeScore = localData?.home_score;
+  const awayScore = localData?.away_score;
+  const hasScore = homeScore != null && awayScore != null;
+  const roundLabel = localData?.round_label || null;
+  const currentMinute = localData?.current_minute || null;
   const venues = (localData?.venues ?? []) as any[];
   const streams = (localData?.streams ?? []) as StreamRow[];
   const fallbackYoutube = localData?.youtube_url || match.youtube_url || null;
