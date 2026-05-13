@@ -532,9 +532,11 @@ const EventoForm = () => {
                     onClick={() => generateDescription({
                       title: form.title,
                       venue_name: form.venue_name,
+                      address: form.address,
                       date_time: form.date_time,
                       category: form.category,
-                      image_url: form.image_url,
+                      sub_category: (form as any)._sub,
+                      partner_id: form.partner_id || undefined,
                     })}
                     className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
                   >
