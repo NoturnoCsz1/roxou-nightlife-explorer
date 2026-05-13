@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Trophy, RefreshCw, Plus, Trash2, Tv, Beer, Search, Loader2, Power, Radio, MessageCircle, CheckCircle2, Volume2, MonitorPlay, Sparkles } from "lucide-react";
 import { useMatchMeta } from "@/hooks/useMatchMeta";
+import { isSameTeam, normalizeTeamName } from "@/lib/theSportsDb";
 
 interface MatchRow {
   id: string;
@@ -123,12 +124,17 @@ export default function JogosAdmin() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return matches;
-    return matches.filter(
-      (m) =>
+    const qn = normalizeTeamName(q);
+    return matches.filter((m) => {
+      // Match clássico (substring) + match bidirecional/normalizado por time
+      if (
         m.home_team.toLowerCase().includes(q) ||
         m.away_team.toLowerCase().includes(q) ||
-        (m.league_label ?? "").toLowerCase().includes(q),
-    );
+        (m.league_label ?? "").toLowerCase().includes(q)
+      ) return true;
+      if (qn && (isSameTeam(m.home_team, q) || isSameTeam(m.away_team, q))) return true;
+      return false;
+    });
   }, [matches, search]);
 
   // Metadata reaproveitada (venuesCount, hasStream, hasActiveChat)

@@ -77,9 +77,49 @@ const BRAZILIAN_TEAMS = [
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
+// Sigla → canonical (espelha src/lib/theSportsDb.ts)
+const TEAM_SIGLAS: Record<string, string> = {
+  spfc: "sao paulo", sep: "palmeiras", scp: "palmeiras",
+  scc: "corinthians", crf: "flamengo", crvg: "vasco", bfr: "botafogo",
+  cam: "atletico mineiro", cap: "athletico paranaense",
+};
+const TEAM_PREFIX_SUFFIX = [
+  "esporte clube","futebol clube","sport club",
+  "fc","ec","sc","ac","cf","cd","cr","ca","fbc","afc",
+  "u20","u23","u17","sub20","sub23","sub17","feminino","feminina",
+];
+
+function normalizeTeamName(name: string | null | undefined): string {
+  if (!name) return "";
+  let s = String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[._\-/]/g, " ").replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ").trim();
+  const compact = s.replace(/\s+/g, "");
+  if (TEAM_SIGLAS[compact]) return TEAM_SIGLAS[compact];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const tok of TEAM_PREFIX_SUFFIX) {
+      const re1 = new RegExp(`^${tok}\\b\\s*`);
+      const re2 = new RegExp(`\\s*\\b${tok}$`);
+      if (re1.test(s)) { s = s.replace(re1, ""); changed = true; }
+      if (re2.test(s)) { s = s.replace(re2, ""); changed = true; }
+    }
+    s = s.replace(/\s+/g, " ").trim();
+  }
+  return s;
+}
+
+function isSameTeam(a: string, b: string): boolean {
+  const na = normalizeTeamName(a), nb = normalizeTeamName(b);
+  if (!na || !nb) return false;
+  return na === nb || na.includes(nb) || nb.includes(na);
+}
+
 function isBrazilianTeam(team: string): boolean {
   const t = norm(team);
-  return BRAZILIAN_TEAMS.some((p) => t === p || t.includes(p) || p.includes(t));
+  const n = normalizeTeamName(team);
+  return BRAZILIAN_TEAMS.some((p) => t === p || t.includes(p) || p.includes(t) || n === p || n.includes(p));
 }
 
 function normalizeLeague(rawName: string | null | undefined, fallback?: LeagueConfig): { label: string; category: Category; priority: number } {
@@ -200,15 +240,28 @@ Deno.serve(async (req) => {
 
   stats.fetched = allEvents.length;
 
-  // Dedup por idEvent
+  // Dedup por idEvent + chave bidirecional (league + dia + par de times normalizado)
   const seen = new Set<string>();
+  const seenPair = new Set<string>(); // chave bidirecional
   const queue: Array<{ ev: any; fallback?: LeagueConfig }> = [];
   for (const it of allEvents) {
-    const id = String(it.ev?.idEvent || "");
+    const ev = it.ev;
+    const id = String(ev?.idEvent || "");
     if (!id || seen.has(id)) continue;
     seen.add(id);
+
+    // Chave bidirecional para detectar mesmo jogo invertido (home/away trocados)
+    if (ev?.strHomeTeam && ev?.strAwayTeam && ev?.dateEvent) {
+      const teamsSorted = [normalizeTeamName(ev.strHomeTeam), normalizeTeamName(ev.strAwayTeam)].sort().join("|");
+      const pairKey = `${(ev.strLeague || "?").toLowerCase()}|${ev.dateEvent}|${teamsSorted}`;
+      if (seenPair.has(pairKey)) continue;
+      seenPair.add(pairKey);
+    }
     queue.push(it);
   }
+
+  // Logs detalhados de debug para jogos brasileiros relevantes
+  const brDebugSamples: any[] = [];
 
   for (const { ev, fallback } of queue) {
     try {
@@ -230,7 +283,19 @@ Deno.serve(async (req) => {
         stats.dropped_irrelevant++;
         continue;
       }
-      if (isBR) stats.br_force_included++;
+      if (isBR) {
+        stats.br_force_included++;
+        if (brDebugSamples.length < 30) {
+          brDebugSamples.push({
+            home_orig: home, away_orig: away,
+            home_norm: normalizeTeamName(home), away_norm: normalizeTeamName(away),
+            league_orig: ev.strLeague, league_norm: norm_.label,
+            raw_date: ev.dateEvent, raw_time: ev.strTime || ev.strTimeLocal || null,
+            tz_assumed: "UTC→America/Sao_Paulo",
+            date_key_sp: dateSP, match_time_sp: iso,
+          });
+        }
+      }
 
       // Debug agregado por liga
       const k = `${ev.strLeague || "?"} → ${norm_.label}`;
@@ -293,9 +358,11 @@ Deno.serve(async (req) => {
     endpoints_called: endpointsCalled.length,
     stats,
     leagues: leaguesObj,
+    br_samples: brDebugSamples,
     timestamp: new Date().toISOString(),
   };
-  console.log("[sync-football-matches]", JSON.stringify(diagnostic));
+  console.log("[sync-football-matches]", JSON.stringify({ ...diagnostic, br_samples: `[${brDebugSamples.length} amostras]` }));
+  for (const s of brDebugSamples) console.log("[sync-br-sample]", JSON.stringify(s));
 
   return new Response(JSON.stringify(diagnostic), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
