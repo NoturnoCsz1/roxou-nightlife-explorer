@@ -126,19 +126,39 @@ export default function JogosAdmin() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return matches;
-    const qn = normalizeTeamName(q);
-    return matches.filter((m) => {
-      // Match clássico (substring) + match bidirecional/normalizado por time
-      if (
-        m.home_team.toLowerCase().includes(q) ||
-        m.away_team.toLowerCase().includes(q) ||
-        (m.league_label ?? "").toLowerCase().includes(q)
-      ) return true;
-      if (qn && (isSameTeam(m.home_team, q) || isSameTeam(m.away_team, q))) return true;
-      return false;
+    const qn = q ? normalizeTeamName(q) : "";
+    let list = matches;
+    if (leagueFilter !== "all") {
+      list = list.filter((m) => {
+        const key = getLeagueGroupKey(m.league_label);
+        if (leagueFilter === "outros") return key === "outros";
+        return key === leagueFilter;
+      });
+    }
+    if (q) {
+      list = list.filter((m) => {
+        if (
+          m.home_team.toLowerCase().includes(q) ||
+          m.away_team.toLowerCase().includes(q) ||
+          (m.league_label ?? "").toLowerCase().includes(q)
+        ) return true;
+        if (qn && (isSameTeam(m.home_team, q) || isSameTeam(m.away_team, q))) return true;
+        return false;
+      });
+    }
+    return list;
+  }, [matches, search, leagueFilter]);
+
+  // Contagem por liga (para mostrar no dropdown)
+  const leagueCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: matches.length, outros: 0 };
+    LEAGUE_GROUPS.forEach((g) => (counts[g.key] = 0));
+    matches.forEach((m) => {
+      const k = getLeagueGroupKey(m.league_label);
+      counts[k] = (counts[k] ?? 0) + 1;
     });
-  }, [matches, search]);
+    return counts;
+  }, [matches]);
 
   // Metadata reaproveitada (venuesCount, hasStream, hasActiveChat)
   const slugs = useMemo(() => filtered.map((m) => m.slug), [filtered]);
