@@ -2,6 +2,7 @@
 // Sem IA: regras + busca em sports_matches.
 
 import { supabase } from "@/integrations/supabase/client";
+import { isSameTeam } from "@/lib/theSportsDb";
 
 const lower = (s: string) =>
   (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
