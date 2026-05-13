@@ -68,27 +68,25 @@ const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 
-type FilterKey = "hoje" | "amanha" | "semana" | "copa" | "brasil" | "internacional" | "live";
+import {
+  todayKeySP,
+  tomorrowKeySP,
+  getWeekRangeSP,
+  getWeekendRangeSPKeys,
+} from "@/lib/dateUtils";
+
+type FilterKey = "hoje" | "amanha" | "semana" | "fds" | "copa" | "brasil" | "internacional" | "live";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "hoje", label: "Hoje" },
   { key: "amanha", label: "Amanhã" },
+  { key: "fds", label: "Fim de semana" },
   { key: "semana", label: "Semana" },
   { key: "copa", label: "Copa" },
   { key: "brasil", label: "Brasil" },
   { key: "internacional", label: "Internacionais" },
   { key: "live", label: "Ao vivo" },
 ];
-
-const todayKeySP = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-
-const tomorrowKeySP = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
 export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
@@ -225,28 +223,61 @@ export default function Jogos() {
     },
   });
 
+  const weekRange = useMemo(() => getWeekRangeSP(), []);
+  const weekendRange = useMemo(() => getWeekendRangeSPKeys(), []);
+  const weekKeys = useMemo(() => new Set(weekRange.keys), [weekRange]);
+  const weekendKeys = useMemo(() => new Set(weekendRange.keys), [weekendRange]);
+
   const filtered = useMemo<NormalizedMatch[]>(() => {
-    let list: NormalizedMatch[] =
-      filter === "copa" || filter === "brasil" || filter === "internacional"
+    // Base: para filtros explícitos por categoria/ao vivo, mostra TUDO (não esconde por relevância).
+    // Para filtros de data, usa relevantBase (que já inclui force-include de brasileiros).
+    const base: NormalizedMatch[] =
+      filter === "copa" || filter === "brasil" || filter === "internacional" || filter === "live"
         ? matches
         : relevantBase;
 
-    if (filter === "hoje") list = list.filter((m) => m.raw_date === today);
-    else if (filter === "amanha") list = list.filter((m) => m.raw_date === tomorrow);
-    else if (filter === "semana") {
-      const limit = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      list = list.filter((m) => m.match_time <= limit);
-    } else if (filter === "copa") list = list.filter((m) => m.is_world_cup);
-    else if (filter === "brasil") list = list.filter((m) => m.category === "brazil");
-    else if (filter === "internacional") list = list.filter((m) => m.category === "international");
-    else if (filter === "live") list = list.filter((m) => m.status === "live");
+    // Garante raw_date sempre presente (segurança pós-merge).
+    const safeBase = base.filter((m) => !!m.raw_date);
+
+    let list: NormalizedMatch[] = safeBase;
+
+    if (filter === "hoje") {
+      list = safeBase.filter((m) => m.raw_date === today);
+    } else if (filter === "amanha") {
+      list = safeBase.filter((m) => m.raw_date === tomorrow);
+    } else if (filter === "semana") {
+      // Hoje + próximos 6 dias (7 dias inclusivos), comparando por chave SP.
+      list = safeBase.filter((m) => weekKeys.has(m.raw_date));
+    } else if (filter === "fds") {
+      list = safeBase.filter((m) => weekendKeys.has(m.raw_date));
+    } else if (filter === "copa") list = safeBase.filter((m) => m.is_world_cup);
+    else if (filter === "brasil") list = safeBase.filter((m) => m.category === "brazil");
+    else if (filter === "internacional") list = safeBase.filter((m) => m.category === "international");
+    else if (filter === "live") list = safeBase.filter((m) => m.status === "live");
 
     if (teamFilter) {
       // Bidirecional + normalizado (reconhece SPFC, EC Juventude, etc.)
       list = list.filter((m) => isSameTeam(m.home_team, teamFilter) || isSameTeam(m.away_team, teamFilter));
     }
+
+    if (DEBUG) {
+      const sample = safeBase.slice(0, 5).map((m) => ({ slug: m.slug, raw_date: m.raw_date, league: m.league_label }));
+      const brInList = list.filter((m) => /corinthians|palmeiras|flamengo|s[aã]o\s*paulo|santos|gr[eê]mio|internacional|cruzeiro|atl[eé]tico|fluminense|botafogo|vasco|bahia|fortaleza|juventude/i.test(m.home_team + m.away_team)).length;
+      console.log("[jogos-filtros]", {
+        filter,
+        todayKeySP: today,
+        tomorrowKeySP: tomorrow,
+        weekRange: { startKey: weekRange.startKey, endKey: weekRange.endKey, keys: weekRange.keys },
+        weekendRange: { keys: weekendRange.keys },
+        beforeFilter: safeBase.length,
+        afterFilter: list.length,
+        brasileirosNoFiltro: brInList,
+        sample,
+      });
+    }
+
     return list;
-  }, [matches, relevantBase, filter, today, tomorrow, teamFilter]);
+  }, [matches, relevantBase, filter, today, tomorrow, weekKeys, weekendKeys, teamFilter, weekRange, weekendRange, DEBUG]);
 
   const todays = sortMatchesByRelevance(relevantBase.filter((m) => m.raw_date === today && m.status !== "finished"));
 
