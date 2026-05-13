@@ -209,6 +209,11 @@ Deno.serve(async (req) => {
     possible_duplicate: 0,
     updated_existing: 0,
     not_event: 0,
+    ignored_old_post: 0,
+    ignored_promotion: 0,
+    ignored_announcement: 0,
+    sent_for_review: 0,
+    accepted_window: 0,
     validation_failures: 0,
     errors: [] as string[],
   };
