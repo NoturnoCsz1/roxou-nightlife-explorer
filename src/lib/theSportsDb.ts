@@ -556,3 +556,151 @@ export function filterRelevantMatches(list: NormalizedMatch[]): NormalizedMatch[
   });
 }
 
+
+/* ============================================================
+ * NORMALIZAÇÃO DE LIGAS (label canônico)
+ * Usado pelo filtro de ligas no /admin/jogos e por curadoria.
+ * ============================================================ */
+
+export type LeagueGroupKey =
+  | "copa_brasil"
+  | "brasileirao"
+  | "serie_b"
+  | "libertadores"
+  | "sulamericana"
+  | "world_cup"
+  | "champions"
+  | "la_liga"
+  | "premier"
+  | "ligue1"
+  | "bundesliga"
+  | "serie_a_ita"
+  | "outros";
+
+export interface LeagueGroup {
+  key: LeagueGroupKey;
+  label: string;
+  patterns: RegExp[];
+  order: number;
+}
+
+export const LEAGUE_GROUPS: LeagueGroup[] = [
+  { key: "copa_brasil",  label: "Copa do Brasil",        order: 1, patterns: [/copa\s*do\s*brasil/i, /copa\s*betano\s*do\s*brasil/i, /brazil(ian)?\s*cup/i] },
+  { key: "brasileirao",  label: "Campeonato Brasileiro", order: 2, patterns: [/brasileir[aã]o/i, /campeonato\s*brasileiro(?!\s*s[eé]rie\s*b)/i, /brazil(ian)?\s*serie\s*a/i, /serie\s*a\s*brazil/i] },
+  { key: "serie_b",      label: "Brasileirão Série B",   order: 3, patterns: [/s[eé]rie\s*b/i, /serie\s*b\s*brazil/i, /campeonato\s*brasileiro\s*s[eé]rie\s*b/i] },
+  { key: "libertadores", label: "Libertadores",          order: 4, patterns: [/libertadores/i] },
+  { key: "sulamericana", label: "Sul-Americana",         order: 5, patterns: [/sul[\s-]?americana/i, /sudamericana/i, /copa\s*sudamericana/i] },
+  { key: "world_cup",    label: "Copa do Mundo",         order: 6, patterns: [/world\s*cup/i, /copa\s*do\s*mundo/i, /fifa\s*world/i] },
+  { key: "champions",    label: "Champions League",      order: 7, patterns: [/champions\s*league/i, /uefa\s*champions/i] },
+  { key: "la_liga",      label: "La Liga",               order: 8, patterns: [/la\s*liga/i, /spanish\s*la\s*liga/i, /laliga/i] },
+  { key: "premier",      label: "Premier League",        order: 9, patterns: [/premier\s*league/i, /english\s*premier/i] },
+  { key: "ligue1",       label: "Ligue 1",               order: 10, patterns: [/ligue\s*1/i, /french\s*ligue/i] },
+  { key: "bundesliga",   label: "Bundesliga",            order: 11, patterns: [/bundesliga/i] },
+  { key: "serie_a_ita",  label: "Serie A",               order: 12, patterns: [/(italian|italy)\s*serie\s*a/i, /^serie\s*a$/i, /lega\s*serie\s*a/i] },
+];
+
+export function getLeagueGroup(label?: string | null): LeagueGroup | null {
+  if (!label) return null;
+  for (const g of LEAGUE_GROUPS) {
+    if (g.patterns.some((re) => re.test(label))) return g;
+  }
+  return null;
+}
+
+export function getLeagueGroupKey(label?: string | null): LeagueGroupKey {
+  return getLeagueGroup(label)?.key ?? "outros";
+}
+
+/* ============================================================
+ * SUPABASE → NormalizedMatch
+ * Permite que /jogos veja jogos sincronizados que não estão nas
+ * FEATURED_LEAGUES da API direta (ex.: Copa do Brasil, Libertadores).
+ * ============================================================ */
+
+export interface SportsMatchRow {
+  external_id: string | null;
+  league_id: string | null;
+  league_name: string | null;
+  league_label: string | null;
+  category: string | null;
+  season: string | null;
+  home_team: string;
+  away_team: string;
+  home_badge: string | null;
+  away_badge: string | null;
+  match_time: string;
+  status: string | null;
+  venue_name: string | null;
+  youtube_url: string | null;
+  slug: string;
+  is_world_cup: boolean | null;
+  priority: number | null;
+}
+
+function dateSPFromIso(iso: string): { dateSP: string; timeSP: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { dateSP: "", timeSP: "" };
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(d);
+  const g = (t: string) => parts.find((p) => p.type === t)?.value || "";
+  return { dateSP: `${g("year")}-${g("month")}-${g("day")}`, timeSP: `${g("hour")}:${g("minute")}` };
+}
+
+export function sportsMatchRowToNormalized(row: SportsMatchRow): NormalizedMatch {
+  const { dateSP, timeSP } = dateSPFromIso(row.match_time);
+  const cat = (row.category as LeagueConfig["category"]) || "international";
+  const status: MatchStatus =
+    row.status === "live" ? "live" :
+    row.status === "finished" ? "finished" :
+    inferStatus(null, row.match_time);
+  return {
+    external_id: row.external_id || row.slug,
+    league_id: row.league_id || "",
+    league_name: row.league_name || row.league_label || "",
+    league_label: row.league_label || row.league_name || "",
+    category: cat,
+    season: row.season,
+    home_team: row.home_team,
+    away_team: row.away_team,
+    home_badge: row.home_badge,
+    away_badge: row.away_badge,
+    match_time: row.match_time,
+    match_time_iso: row.match_time,
+    status,
+    venue_name: row.venue_name,
+    youtube_url: row.youtube_url,
+    slug: row.slug,
+    is_world_cup: !!row.is_world_cup,
+    priority: row.priority ?? 50,
+    raw_date: dateSP,
+    raw_time: timeSP,
+  };
+}
+
+/** Faz merge entre jogos da API e do Supabase, deduplicando por slug/external_id. */
+export function mergeMatches(apiList: NormalizedMatch[], dbList: NormalizedMatch[]): NormalizedMatch[] {
+  const map = new Map<string, NormalizedMatch>();
+  for (const m of apiList) map.set(m.slug, m);
+  for (const m of dbList) {
+    const existing = map.get(m.slug);
+    // DB (sync premium) tem dados mais ricos (status real, score, etc.) → prevalece em campos preenchidos
+    if (!existing) {
+      map.set(m.slug, m);
+    } else {
+      map.set(m.slug, {
+        ...existing,
+        status: m.status !== "scheduled" ? m.status : existing.status,
+        home_badge: existing.home_badge || m.home_badge,
+        away_badge: existing.away_badge || m.away_badge,
+        venue_name: existing.venue_name || m.venue_name,
+        youtube_url: existing.youtube_url || m.youtube_url,
+      });
+    }
+  }
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime(),
+  );
+}
