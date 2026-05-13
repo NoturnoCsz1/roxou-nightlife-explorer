@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AlertTriangle, Bot, CalendarDays, Check, CheckSquare, ChevronDown, Copy, Download, ExternalLink, Flame, Image as ImageIcon, Layers, Link2, Loader2, MousePointerClick, Pencil, Plus, Search, Send, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
+import { AlertTriangle, Bot, CalendarDays, Check, CheckSquare, ChevronDown, Copy, ExternalLink, Flame, Layers, Link2, Loader2, MousePointerClick, Pencil, Plus, Search, Settings2, Sparkles, Square, Star, StarOff, Trash2, Wand2, X } from "lucide-react";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,8 +23,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import AuraCreateEventModal from "@/components/admin/AuraCreateEventModal";
-import { AIConfidenceBadge } from "@/components/admin/AIConfidenceBadges";
 
 interface EventRow {
   id: string;
