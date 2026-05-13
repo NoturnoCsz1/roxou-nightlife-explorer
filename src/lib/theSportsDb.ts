@@ -367,26 +367,16 @@ export function getMatchRelevanceScore(m: NormalizedMatch): number {
   // Clássico
   if (isClassico(m.home_team, m.away_team)) score += 30;
 
-  // Campeonato
-  switch (m.league_id) {
-    case "4481": // Libertadores
-      score += 40; break;
-    case "4482": // Champions
-      score += 35; break;
-    case "4356": // Copa do Brasil
-      score += 40; break;
-    case "4351": // Brasileirão
-      score += 35; break;
-    case "4480": // Paulistão
-      score += 20; break;
-    case "4335": // La Liga
-    case "4328": // Premier League
-    case "4334": // Ligue 1
-      score += 10; break;
-    default:
-      // Internacional sem time grande nem campeonato relevante → penaliza
-      if (!brHome && !brAway && !euHome && !euAway) score -= 20;
-  }
+  // Campeonato — agora baseado no label normalizado (mais confiável que league_id da API).
+  const lbl = (m.league_label || "").toLowerCase();
+  if (/libertadores/.test(lbl))                 score += 45;
+  else if (/copa do brasil|brazilian cup/.test(lbl)) score += 45;
+  else if (/brasileir/.test(lbl))               score += 40;
+  else if (/sul[- ]americana|sudameric/.test(lbl)) score += 35;
+  else if (/champions/.test(lbl))               score += 35;
+  else if (/paulist|carioca|mineiro/.test(lbl)) score += 20;
+  else if (/la liga|premier league|ligue 1|serie a|bundesliga/.test(lbl)) score += 10;
+  else if (!brHome && !brAway && !euHome && !euAway) score -= 20;
 
   // Bônus leve para prioridade declarada da liga (1..9, menor = mais importante)
   score += Math.max(0, 10 - m.priority);
