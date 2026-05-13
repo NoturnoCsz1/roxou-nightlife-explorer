@@ -16,7 +16,7 @@ import {
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
-import { useMatchMeta } from "@/hooks/useMatchMeta";
+// useMatchMeta disponível em '@/hooks/useMatchMeta' para badges (próxima iteração)
 
 
 /** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
