@@ -1404,8 +1404,12 @@ export type Database = {
           ai_confidence: string | null
           archive_reason: string | null
           archived_at: string | null
+          archived_by: string | null
           created_at: string
+          created_event_deleted_at: string | null
+          created_event_deleted_by: string | null
           dedupe_key: string | null
+          deletion_reason: string | null
           duplicate_of_event_id: string | null
           event_id: string | null
           extracted_json: Json | null
@@ -1431,8 +1435,12 @@ export type Database = {
           ai_confidence?: string | null
           archive_reason?: string | null
           archived_at?: string | null
+          archived_by?: string | null
           created_at?: string
+          created_event_deleted_at?: string | null
+          created_event_deleted_by?: string | null
           dedupe_key?: string | null
+          deletion_reason?: string | null
           duplicate_of_event_id?: string | null
           event_id?: string | null
           extracted_json?: Json | null
@@ -1458,8 +1466,12 @@ export type Database = {
           ai_confidence?: string | null
           archive_reason?: string | null
           archived_at?: string | null
+          archived_by?: string | null
           created_at?: string
+          created_event_deleted_at?: string | null
+          created_event_deleted_by?: string | null
           dedupe_key?: string | null
+          deletion_reason?: string | null
           duplicate_of_event_id?: string | null
           event_id?: string | null
           extracted_json?: Json | null

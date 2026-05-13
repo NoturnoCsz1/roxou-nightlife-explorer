@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,24 +23,37 @@ import {
   History,
   Pin,
   Ban,
+  SlidersHorizontal,
+  Trash2,
+  Clock,
 } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-type FilterKey =
-  | "novo"
-  | "possible_duplicate"
-  | "approved"
-  | "published"
-  | "ignored"
-  | "duplicates_detected"
-  | "archived"
-  | "history"
-  | "all";
+type TabKey = "novos" | "revisar" | "criados" | "ignorados" | "arquivados";
 
 interface ScanRow {
   id: string;
   media_id: string;
   permalink: string | null;
   source_handle: string | null;
+  partner_id: string | null;
   status: string;
   reason: string | null;
   dedupe_key: string | null;
@@ -60,6 +73,8 @@ interface ScanRow {
   first_published_at: string | null;
   last_reposted_at: string | null;
   repost_count: number;
+  created_event_deleted_at?: string | null;
+  deletion_reason?: string | null;
 }
 
 interface EventRow {
@@ -98,27 +113,80 @@ function formatDate(dt: string | null) {
   } catch { return dt; }
 }
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "novo", label: "Novo" },
-  { key: "possible_duplicate", label: "Possível duplicado" },
-  { key: "approved", label: "Aprovado" },
-  { key: "published", label: "Já publicado" },
-  { key: "ignored", label: "Ignorado" },
-  { key: "duplicates_detected", label: "Duplicados detectados" },
-  { key: "archived", label: "Arquivados" },
-  { key: "history", label: "Histórico" },
-  { key: "all", label: "Todos" },
+const TABS: { key: TabKey; label: string; hint: string }[] = [
+  { key: "novos", label: "Novos", hint: "Recém capturados, aguardando decisão" },
+  { key: "revisar", label: "Revisar", hint: "Possíveis duplicados ou data incerta" },
+  { key: "criados", label: "Criados", hint: "Já viraram evento (rascunho ou publicado)" },
+  { key: "ignorados", label: "Ignorados", hint: "Promoção, aviso, post antigo ou sem data" },
+  { key: "arquivados", label: "Arquivados", hint: "Itens removidos da operação" },
 ];
 
-const HIDDEN_AWARE_FILTERS: FilterKey[] = ["archived", "history", "all", "duplicates_detected"];
+interface AdvancedFilters {
+  partner: string; // source_handle
+  detected_type: string; // evento|promocao|aviso|menu|generico|desconhecido
+  has_event: "any" | "yes" | "no";
+  is_duplicate: "any" | "yes" | "no";
+  status_raw: string;
+  include_history: boolean;
+}
+
+const DEFAULT_FILTERS: AdvancedFilters = {
+  partner: "",
+  detected_type: "",
+  has_event: "any",
+  is_duplicate: "any",
+  status_raw: "",
+  include_history: false,
+};
 
 const RadarIA = () => {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [acting, setActing] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterKey>("novo");
-  const [counts, setCounts] = useState<Record<FilterKey, number>>({} as any);
+  const [tab, setTab] = useState<TabKey>("novos");
+  const [filters, setFilters] = useState<AdvancedFilters>(DEFAULT_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
+  const [counts, setCounts] = useState<Record<TabKey, number>>({
+    novos: 0, revisar: 0, criados: 0, ignorados: 0, arquivados: 0,
+  });
+
+  function categorize(card: Card): TabKey {
+    const s = card.scan;
+    if (s.hidden_from_radar) return "arquivados";
+
+    const evStatus = card.event?.status;
+    const reason = (s.reason || "").toLowerCase();
+    const ext = s.extracted_json || {};
+    const detectedType = (ext.detected_type || ext.type || "").toLowerCase();
+
+    // Ignorados: promoção, aviso, post antigo, sem data
+    if (
+      s.status === "ignored" ||
+      detectedType === "promotion" || detectedType === "promocao" ||
+      detectedType === "announcement" || detectedType === "aviso" ||
+      reason.includes("promo") || reason.includes("aviso") ||
+      reason.includes("post antigo") || reason.includes("fora da janela") ||
+      reason.includes("não é evento") || reason.includes("nao e evento")
+    ) return "ignorados";
+
+    // Revisar: duplicados, data insegura, confiança baixa
+    if (
+      s.status === "possible_duplicate" ||
+      s.duplicate_of_event_id ||
+      (s.ai_confidence || "").toLowerCase() === "low" ||
+      reason.includes("data insegura") || reason.includes("classifica")
+    ) return "revisar";
+
+    // Criados: tem event_id e evento existe
+    if (s.event_id && card.event && !s.created_event_deleted_at) {
+      return "criados";
+    }
+    if (s.status === "skipped_duplicate" && evStatus === "published") return "criados";
+
+    return "novos";
+  }
 
   async function load() {
     setLoading(true);
@@ -155,51 +223,59 @@ const RadarIA = () => {
       duplicateOf: scan.duplicate_of_event_id ? eventsMap.get(scan.duplicate_of_event_id) || null : null,
     }));
 
-    // Counts (visíveis vs arquivados)
-    const visible = allCards.filter((c) => !c.scan.hidden_from_radar);
-    const archived = allCards.filter((c) => c.scan.hidden_from_radar);
-    const dupsDetected = allCards.filter((c) =>
-      c.scan.status === "possible_duplicate" || c.scan.status === "skipped_duplicate"
-    );
+    // Categorize once
+    const categorized = allCards.map((c) => ({ card: c, tab: categorize(c) }));
 
-    const c: Record<FilterKey, number> = {
-      novo: 0, possible_duplicate: 0, approved: 0, published: 0, ignored: 0,
-      duplicates_detected: dupsDetected.length,
-      archived: archived.length,
-      history: allCards.length,
-      all: visible.length,
+    const c: Record<TabKey, number> = {
+      novos: 0, revisar: 0, criados: 0, ignorados: 0, arquivados: 0,
     };
-    for (const card of visible) {
-      const cat = categorize(card);
-      if (cat && cat in c) (c as any)[cat]++;
-    }
+    for (const { tab: t } of categorized) c[t]++;
     setCounts(c);
 
-    let filtered: Card[];
-    if (filter === "history") filtered = allCards;
-    else if (filter === "archived") filtered = archived;
-    else if (filter === "duplicates_detected") filtered = dupsDetected;
-    else if (filter === "all") filtered = visible;
-    else filtered = visible.filter((card) => categorize(card) === filter);
+    // Apply tab filter
+    let filtered = categorized.filter((x) => x.tab === tab).map((x) => x.card);
+
+    // Apply advanced filters
+    if (filters.partner.trim()) {
+      const q = filters.partner.trim().toLowerCase();
+      filtered = filtered.filter((x) => (x.scan.source_handle || "").toLowerCase().includes(q));
+    }
+    if (filters.detected_type) {
+      filtered = filtered.filter((x) => {
+        const ext = x.scan.extracted_json || {};
+        const t = (ext.detected_type || ext.type || "").toLowerCase();
+        return t === filters.detected_type;
+      });
+    }
+    if (filters.has_event !== "any") {
+      filtered = filtered.filter((x) =>
+        filters.has_event === "yes" ? !!x.event : !x.event,
+      );
+    }
+    if (filters.is_duplicate !== "any") {
+      filtered = filtered.filter((x) => {
+        const isDup = x.scan.status === "possible_duplicate" ||
+          x.scan.status === "skipped_duplicate" ||
+          !!x.scan.duplicate_of_event_id;
+        return filters.is_duplicate === "yes" ? isDup : !isDup;
+      });
+    }
+    if (filters.status_raw) {
+      filtered = filtered.filter((x) => x.scan.status === filters.status_raw);
+    }
+    if (filters.include_history && tab !== "arquivados") {
+      // include archived items belonging to same logical bucket
+      const extras = categorized
+        .filter((x) => x.card.scan.hidden_from_radar)
+        .map((x) => x.card);
+      filtered = [...filtered, ...extras];
+    }
 
     setCards(filtered);
     setLoading(false);
   }
 
-  function categorize(card: Card): FilterKey | null {
-    const s = card.scan.status;
-    const evStatus = card.event?.status;
-    if (s === "possible_duplicate") return "possible_duplicate";
-    if (s === "skipped_duplicate") return "published";
-    if (s === "created_draft") {
-      if (evStatus === "published") return "approved";
-      if (evStatus === "archived") return "ignored";
-      return "novo";
-    }
-    return null;
-  }
-
-  useEffect(() => { load(); }, [filter]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tab, filters]);
 
   async function triggerScan() {
     setScanning(true);
@@ -217,20 +293,26 @@ const RadarIA = () => {
 
   async function archiveScan(scanId: string, reason = "manual") {
     setActing(scanId);
+    const { data: userData } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("instagram_scans" as any)
-      .update({ hidden_from_radar: true, archived_at: new Date().toISOString(), archive_reason: reason })
+      .update({
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: reason,
+        archived_by: userData.user?.id ?? null,
+      })
       .eq("id", scanId);
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Arquivado."); load(); }
+    else { toast.success("Item arquivado."); load(); }
   }
 
   async function unarchiveScan(scanId: string) {
     setActing(scanId);
     const { error } = await supabase
       .from("instagram_scans" as any)
-      .update({ hidden_from_radar: false, archived_at: null, archive_reason: null })
+      .update({ hidden_from_radar: false, archived_at: null, archive_reason: null, archived_by: null })
       .eq("id", scanId);
     setActing(null);
     if (error) toast.error(error.message);
@@ -268,71 +350,235 @@ const RadarIA = () => {
       .from("events")
       .update({ status: "archived", needs_review: false })
       .eq("id", eventId);
-    if (!error) {
-      await archiveScan(scanId, "ignorado manualmente");
+    if (error) {
+      setActing(null);
+      toast.error(error.message);
       return;
     }
-    setActing(null);
-    if (error) toast.error(error.message);
+    await archiveScan(scanId, "ignorado manualmente");
   }
+
+  async function deleteCreatedEvent(card: Card) {
+    const ev = card.event;
+    if (!ev || !card.scan.event_id) {
+      toast.error("Este item ainda não possui evento vinculado.");
+      return;
+    }
+    setActing(card.scan.id);
+    const { data: userData } = await supabase.auth.getUser();
+
+    const { error: delErr } = await supabase
+      .from("events")
+      .delete()
+      .eq("id", ev.id);
+
+    if (delErr && !/no rows/i.test(delErr.message)) {
+      setActing(null);
+      toast.error("Não foi possível remover o evento criado.");
+      return;
+    }
+
+    const { error: scanErr } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        event_id: null,
+        status: "archived",
+        created_event_deleted_at: new Date().toISOString(),
+        created_event_deleted_by: userData.user?.id ?? null,
+        deletion_reason: "Removido manualmente pelo admin via Radar IA",
+      })
+      .eq("id", card.scan.id);
+
+    setActing(null);
+    setDeleteTarget(null);
+
+    if (scanErr) toast.error("Evento removido, mas falhou ao atualizar Radar.");
+    else toast.success("Evento criado removido com sucesso.");
+    load();
+  }
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    if (filters.partner.trim()) n++;
+    if (filters.detected_type) n++;
+    if (filters.has_event !== "any") n++;
+    if (filters.is_duplicate !== "any") n++;
+    if (filters.status_raw) n++;
+    if (filters.include_history) n++;
+    return n;
+  }, [filters]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent p-6">
+      {/* Header simplificado */}
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Radar className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-display font-black tracking-tight">Radar IA</h1>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Radar className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              <h1 className="text-xl md:text-2xl font-display font-black tracking-tight">Radar IA</h1>
               <span className="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full bg-primary/20 text-primary font-bold">
                 <Sparkles className="inline h-3 w-3 mr-0.5" /> OCR + Vision
               </span>
             </div>
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              A Aura faz OCR real dos flyers, extrai título, artistas, data, local, preço e gêneros, e cria rascunhos só para revisão humana.
-              Duplicidade bloqueada por <code className="text-primary/80">media_id</code>, permalink e dedupe_key.
+            <p className="text-xs md:text-sm text-muted-foreground max-w-2xl">
+              Aura captura flyers recentes, filtra posts antigos e cria rascunhos apenas para revisão humana.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={runRetention}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold hover:bg-muted/40"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold hover:bg-muted/40 transition"
             >
               <History className="h-4 w-4" /> Aplicar retenção
             </button>
             <button
               onClick={triggerScan}
               disabled={scanning}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:opacity-90 disabled:opacity-50 transition-all"
+              className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 disabled:opacity-50 transition shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]"
             >
               {scanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {scanning ? "Varrendo..." : "Disparar varredura agora"}
+              {scanning ? "Varrendo..." : "Disparar varredura"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-              filter === f.key
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {f.label}
-            {counts[f.key] != null && (
-              <span className={`text-[10px] px-1.5 rounded-full ${filter === f.key ? "bg-white/20" : "bg-primary/20 text-primary"}`}>
-                {counts[f.key]}
+      {/* Tabs + Filtros */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex gap-1.5 flex-wrap">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              title={t.hint}
+              className={`px-3.5 py-1.5 rounded-full text-xs md:text-sm font-semibold transition-all flex items-center gap-2 ${
+                tab === t.key
+                  ? "bg-primary text-primary-foreground shadow-[0_0_15px_-3px_hsl(var(--primary)/0.6)]"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+              }`}
+            >
+              {t.label}
+              <span className={`text-[10px] px-1.5 rounded-full ${tab === t.key ? "bg-white/20" : "bg-primary/15 text-primary"}`}>
+                {counts[t.key]}
               </span>
-            )}
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
+
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetTrigger asChild>
+            <button className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filtros
+              {activeFilterCount > 0 && (
+                <span className="px-1.5 rounded-full bg-primary text-primary-foreground text-[10px]">{activeFilterCount}</span>
+              )}
+            </button>
+          </SheetTrigger>
+          <SheetContent className="bg-card border-border overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Filtros avançados</SheetTitle>
+              <SheetDescription>Refine a lista atual de "{TABS.find((t) => t.key === tab)?.label}".</SheetDescription>
+            </SheetHeader>
+            <div className="space-y-4 mt-6 text-sm">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Parceiro / @handle</label>
+                <input
+                  type="text"
+                  value={filters.partner}
+                  onChange={(e) => setFilters((f) => ({ ...f, partner: e.target.value }))}
+                  placeholder="ex: barxyz"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm focus:border-primary outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Tipo detectado</label>
+                <select
+                  value={filters.detected_type}
+                  onChange={(e) => setFilters((f) => ({ ...f, detected_type: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm focus:border-primary outline-none"
+                >
+                  <option value="">Todos</option>
+                  <option value="event">Evento</option>
+                  <option value="promotion">Promoção</option>
+                  <option value="announcement">Aviso</option>
+                  <option value="menu">Cardápio</option>
+                  <option value="generic">Genérico</option>
+                  <option value="unknown">Desconhecido</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Status original</label>
+                <select
+                  value={filters.status_raw}
+                  onChange={(e) => setFilters((f) => ({ ...f, status_raw: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm focus:border-primary outline-none"
+                >
+                  <option value="">Todos</option>
+                  <option value="created_draft">created_draft</option>
+                  <option value="possible_duplicate">possible_duplicate</option>
+                  <option value="skipped_duplicate">skipped_duplicate</option>
+                  <option value="ignored">ignored</option>
+                  <option value="scanned">scanned</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Com evento criado?</label>
+                <select
+                  value={filters.has_event}
+                  onChange={(e) => setFilters((f) => ({ ...f, has_event: e.target.value as any }))}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm focus:border-primary outline-none"
+                >
+                  <option value="any">Indiferente</option>
+                  <option value="yes">Sim</option>
+                  <option value="no">Não</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Duplicado?</label>
+                <select
+                  value={filters.is_duplicate}
+                  onChange={(e) => setFilters((f) => ({ ...f, is_duplicate: e.target.value as any }))}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm focus:border-primary outline-none"
+                >
+                  <option value="any">Indiferente</option>
+                  <option value="yes">Sim</option>
+                  <option value="no">Não</option>
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="checkbox"
+                  checked={filters.include_history}
+                  onChange={(e) => setFilters((f) => ({ ...f, include_history: e.target.checked }))}
+                  className="rounded border-border accent-primary"
+                />
+                Incluir itens arquivados (histórico)
+              </label>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  className="flex-1 px-3 py-2 rounded-lg border border-border text-xs font-bold hover:bg-muted/40"
+                >
+                  Limpar
+                </button>
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="flex-1 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold"
+                >
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Cards */}
@@ -343,8 +589,8 @@ const RadarIA = () => {
       ) : cards.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-12 text-center">
           <Radar className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-muted-foreground">Nenhum item neste filtro.</p>
-          <p className="text-xs text-muted-foreground/60 mt-2">Clique em "Disparar varredura agora".</p>
+          <p className="text-muted-foreground">Nenhum item nesta aba.</p>
+          <p className="text-xs text-muted-foreground/60 mt-2">Clique em "Disparar varredura" para capturar novos flyers.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -352,16 +598,17 @@ const RadarIA = () => {
             const ext = c.scan.extracted_json || {};
             const conf = (c.scan.ai_confidence || ext.confidence || "medium").toLowerCase();
             const ev = c.event;
-            const cat = categorize(c);
+            const detectedType = (ext.detected_type || ext.type || "").toLowerCase();
             const imageUrl = ev?.image_url || null;
             const title = ev?.title || ext.title || "—";
             const dt = ev?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
             const venue = ev?.venue_name || ext.venue_name || c.scan.source_handle;
+            const cat = categorize(c);
 
             return (
               <div
                 key={c.scan.id}
-                className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.4)]"
+                className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.4)] flex flex-col"
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
                   {imageUrl ? (
@@ -375,72 +622,61 @@ const RadarIA = () => {
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${confBadge[conf] || confBadge.medium}`}>
                       {conf === "high" ? "Alta" : conf === "low" ? "Baixa" : "Média"}
                     </span>
-                    {cat === "novo" && (
+
+                    {cat === "novos" && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                        Novo
+                        Evento provável
                       </span>
                     )}
-                    {cat === "possible_duplicate" && (
+                    {cat === "revisar" && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-orange-500/20 text-orange-300 border border-orange-500/40 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" /> Possível duplicado
+                        <AlertTriangle className="h-3 w-3" />
+                        {c.scan.duplicate_of_event_id ? "Possível duplicado" : "Revisar"}
                       </span>
                     )}
-                    {cat === "approved" && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        Aprovado
+                    {cat === "criados" && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Já virou evento
                       </span>
                     )}
-                    {cat === "published" && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40">
-                        Já publicado
-                      </span>
-                    )}
-                    {cat === "ignored" && (
+                    {cat === "ignorados" && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
-                        <Ban className="h-3 w-3" /> Ignorado
+                        <Ban className="h-3 w-3" />
+                        {detectedType === "promotion" ? "Promoção"
+                          : detectedType === "announcement" ? "Aviso"
+                          : "Ignorado"}
                       </span>
                     )}
-                    {c.scan.repost_count > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 flex items-center gap-1">
-                        <Repeat2 className="h-3 w-3" /> Repostado ×{c.scan.repost_count}
-                      </span>
-                    )}
-                    {c.scan.first_published_at && cat !== "approved" && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40 flex items-center gap-1">
-                        <Pin className="h-3 w-3" /> Já publicado
-                      </span>
-                    )}
-                    {c.scan.scan_count > 1 && c.scan.repost_count === 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
-                        ♻️ Reencontrado ×{c.scan.scan_count}
-                      </span>
-                    )}
-                    {c.scan.hidden_from_radar && (
+                    {cat === "arquivados" && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-zinc-600/30 text-zinc-300 border border-zinc-500/40 flex items-center gap-1">
                         <Archive className="h-3 w-3" /> Arquivado
+                      </span>
+                    )}
+
+                    {c.scan.repost_count > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 flex items-center gap-1">
+                        <Repeat2 className="h-3 w-3" /> ×{c.scan.repost_count}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-3 flex-1 flex flex-col">
                   <h3 className="font-display font-bold text-base line-clamp-2 leading-snug">{title}</h3>
 
                   <div className="space-y-1.5 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" />
-                      <span>{formatDate(dt)}</span>
+                      <span>Evento: {formatDate(dt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Post: {formatDate(c.scan.created_at)}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5" />
                       <span className="truncate">{venue || "—"}</span>
                     </div>
-                    {ext.artists?.length ? (
-                      <div className="flex items-center gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span className="truncate">{ext.artists.slice(0, 3).join(", ")}</span>
-                      </div>
-                    ) : null}
                     {ext.price && (
                       <div className="flex items-center gap-1.5">
                         <ShieldCheck className="h-3.5 w-3.5" />
@@ -451,30 +687,33 @@ const RadarIA = () => {
                       <ScanLine className="h-3.5 w-3.5 text-primary/70" />
                       <span className="text-primary/80">@{c.scan.source_handle || "?"}</span>
                     </div>
+                    {detectedType && (
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                        Tipo detectado: {detectedType}
+                      </div>
+                    )}
+                    {c.scan.reason && (
+                      <p className="italic text-muted-foreground/70 line-clamp-2">{c.scan.reason}</p>
+                    )}
                   </div>
-
-                  {c.scan.keywords && c.scan.keywords.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {c.scan.keywords.map((k) => (
-                        <span key={k} className="px-1.5 py-0.5 text-[10px] rounded bg-primary/10 text-primary uppercase tracking-wide">
-                          {k.replace("_", " ")}
-                        </span>
-                      ))}
-                    </div>
-                  )}
 
                   {c.duplicateOf && (
                     <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 p-2 text-xs">
                       <div className="flex items-start gap-1.5 text-orange-300">
                         <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                        <div className="space-y-1">
+                        <div>
                           <p className="font-semibold">Possível duplicado de:</p>
-                          <Link to={`/admin/eventos/${c.duplicateOf.id}/editar`} className="block hover:underline">
+                          <Link to={`/admin/eventos/${c.duplicateOf.id}/editar`} className="hover:underline">
                             {c.duplicateOf.title} ({c.duplicateOf.status})
                           </Link>
-                          {c.scan.reason && <p className="text-orange-300/70 italic">{c.scan.reason}</p>}
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {c.scan.created_event_deleted_at && (
+                    <div className="rounded-lg bg-rose-500/5 border border-rose-500/20 p-2 text-[10px] text-rose-300/80">
+                      Evento criado foi removido em {formatDate(c.scan.created_event_deleted_at)}.
                     </div>
                   )}
 
@@ -489,31 +728,28 @@ const RadarIA = () => {
                     </a>
                   )}
 
-                  {c.scan.raw_ocr && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Ver OCR bruto</summary>
-                      <pre className="mt-1 p-2 rounded bg-muted/30 text-[10px] whitespace-pre-wrap max-h-32 overflow-auto">{c.scan.raw_ocr}</pre>
-                    </details>
+                  {ev && (
+                    <Link
+                      to={`/admin/eventos/${ev.id}/editar`}
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <Pencil className="h-3 w-3" /> Abrir evento criado
+                    </Link>
                   )}
 
-                  {/* Archive metadata */}
-                  {c.scan.hidden_from_radar && c.scan.archive_reason && (
-                    <p className="text-[10px] italic text-muted-foreground/70">
-                      Arquivado: {c.scan.archive_reason} • {formatDate(c.scan.archived_at)}
-                    </p>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                    {ev && (
+                  {/* Ações */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-border mt-auto">
+                    {ev && cat !== "arquivados" && (
                       <>
-                        <button
-                          onClick={() => approve(ev.id, c.scan.id)}
-                          disabled={acting === ev.id || ev.status === "published"}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
-                        </button>
+                        {ev.status !== "published" && (
+                          <button
+                            onClick={() => approve(ev.id, c.scan.id)}
+                            disabled={acting === ev.id}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Publicar
+                          </button>
+                        )}
                         <Link
                           to={`/admin/eventos/${ev.id}/editar`}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25"
@@ -526,6 +762,14 @@ const RadarIA = () => {
                           className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 text-xs font-bold hover:bg-rose-500/20 disabled:opacity-40"
                         >
                           <XCircle className="h-3.5 w-3.5" /> Ignorar
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(c)}
+                          disabled={acting === c.scan.id}
+                          title="Excluir o evento criado a partir deste item"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-card border border-rose-500/20 text-rose-300/80 text-xs font-bold hover:bg-rose-500/15 hover:border-rose-500/40 disabled:opacity-40 transition"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Excluir evento criado
                         </button>
                       </>
                     )}
@@ -541,9 +785,10 @@ const RadarIA = () => {
                       <button
                         onClick={() => archiveScan(c.scan.id)}
                         disabled={acting === c.scan.id}
+                        title="Remove apenas da lista do Radar (não exclui o evento)"
                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-600/20 text-zinc-300 text-xs font-bold hover:bg-zinc-600/30 disabled:opacity-40"
                       >
-                        <Archive className="h-3.5 w-3.5" /> Arquivar
+                        <Archive className="h-3.5 w-3.5" /> Arquivar item
                       </button>
                     )}
                   </div>
@@ -553,6 +798,45 @@ const RadarIA = () => {
           })}
         </div>
       )}
+
+      {/* Modal confirmar exclusão de evento criado */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-rose-300">
+              <Trash2 className="h-5 w-5" /> Excluir evento criado?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  Essa ação remove o evento criado a partir deste item do Radar IA.
+                  O item do Radar será mantido como histórico.
+                </p>
+                {deleteTarget?.event && (
+                  <div className="rounded-lg bg-muted/30 border border-border p-3 text-xs space-y-1">
+                    <div><span className="font-bold">Título:</span> {deleteTarget.event.title}</div>
+                    <div><span className="font-bold">Local:</span> {deleteTarget.event.venue_name || "—"}</div>
+                    <div><span className="font-bold">Data:</span> {formatDate(deleteTarget.event.date_time)}</div>
+                    <div><span className="font-bold">Status:</span> {deleteTarget.event.status}</div>
+                  </div>
+                )}
+                <p className="text-rose-300/80 text-xs">
+                  Ação irreversível para o evento. O Radar mantém a referência para auditoria.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteCreatedEvent(deleteTarget)}
+              className="bg-rose-500 text-white hover:bg-rose-600"
+            >
+              Sim, excluir evento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
