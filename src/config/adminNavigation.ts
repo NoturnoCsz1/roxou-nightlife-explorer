@@ -12,6 +12,7 @@ import {
   Shield,
   Sparkles,
   Search,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 
