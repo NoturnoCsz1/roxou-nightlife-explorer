@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2, Tv } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -55,7 +55,36 @@ const EventoForm = () => {
   const [saving, setSaving] = useState(false);
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [reprocessingSports, setReprocessingSports] = useState(false);
   const originalSnapshot = useRef<{ category: string; sub_category: string | null; description: string | null; venue_name: string | null } | null>(null);
+
+  async function reprocessSportsTransmission() {
+    if (!id) {
+      toast.error("Salve o evento antes de reprocessar.");
+      return;
+    }
+    setReprocessingSports(true);
+    try {
+      const text = [form.title, form.description, form.venue_name, (form as any)._sub, form.category]
+        .filter(Boolean).join(" \n ");
+      const refDate = form.date_time ? new Date(`${form.date_time}:00-03:00`) : null;
+      const r = await analyzeAndLinkEventTransmission({
+        eventId: id,
+        text,
+        partnerId: form.partner_id || null,
+        referenceDate: refDate,
+        source: "manual_reprocess",
+      });
+      if (r.linked) toast.success(`✅ Vínculo criado (${r.confidence}). Times: ${r.teams.join(", ") || "—"}`);
+      else if (r.detected && r.matched_match_id) toast.message(`Jogo encontrado, mas confiança ${r.confidence}. Revise em /admin/jogos.`);
+      else if (r.detected) toast.message(`Transmissão detectada (${r.teams.join(", ") || "sem times"}), sem jogo correspondente em sports_matches.`);
+      else toast.message("Nenhuma transmissão esportiva detectada no texto deste evento.");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao reprocessar transmissão");
+    } finally {
+      setReprocessingSports(false);
+    }
+  }
 
   async function reprocessFlyerWithAi() {
     if (!form.image_url) {
@@ -410,6 +439,18 @@ const EventoForm = () => {
           >
             {reprocessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             {reprocessing ? "Re-processando..." : "Re-processar com IA"}
+          </button>
+        )}
+        {isEdit && (
+          <button
+            type="button"
+            onClick={reprocessSportsTransmission}
+            disabled={reprocessingSports}
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50"
+            title="Detectar transmissão esportiva (futebol/telão) e vincular ao jogo correspondente"
+          >
+            {reprocessingSports ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Tv className="h-3.5 w-3.5" />}
+            {reprocessingSports ? "Reprocessando..." : "Reprocessar transmissão esportiva"}
           </button>
         )}
       </div>

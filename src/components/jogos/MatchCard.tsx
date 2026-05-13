@@ -33,8 +33,11 @@ function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveCha
   const badges = getMatchBadges(match);
   const hasPriorityTeam = isPriorityTeam(match.home_team) || isPriorityTeam(match.away_team);
 
+  const hasVenues = venuesCount > 0;
   const themeClass = isCopa
     ? "border-yellow-500/50 bg-gradient-to-br from-emerald-950/60 via-background to-yellow-900/30 shadow-[0_0_40px_-12px_rgba(234,179,8,0.55)] hover:shadow-[0_0_50px_-8px_rgba(234,179,8,0.7)]"
+    : hasVenues
+      ? "border-emerald-400/60 bg-gradient-to-br from-emerald-500/10 via-card/60 to-background shadow-[0_0_28px_-10px_rgba(16,185,129,0.55)] hover:shadow-[0_0_40px_-6px_rgba(16,185,129,0.75)] ring-1 ring-emerald-400/30"
     : highlighted
       ? "border-primary/60 bg-gradient-to-br from-primary/10 via-card/60 to-background shadow-[0_0_30px_-12px_hsl(var(--primary)/0.55)] hover:shadow-[0_0_45px_-8px_hsl(var(--primary)/0.8)]"
       : "border-border/50 bg-card/60 hover:border-primary/50 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.45)]";
@@ -58,6 +61,11 @@ function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveCha
               {b.label}
             </span>
           ))}
+          {hasVenues && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/50 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-200">
+              🔥 Assistir em Prudente
+            </span>
+          )}
           {hasStream && (
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-300">
               <Tv className="h-2.5 w-2.5" /> Transmissão
@@ -110,14 +118,14 @@ function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveCha
 
       {!compact && (
         <div className="flex items-center justify-between pt-3 border-t border-border/40">
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+          <span className={`flex items-center gap-1 text-[11px] ${hasVenues ? "text-emerald-300 font-semibold" : "text-muted-foreground"}`}>
             <Beer className="h-3 w-3" />
-            {venuesCount > 0
+            {hasVenues
               ? `🍻 ${venuesCount} ${venuesCount === 1 ? "bar transmite" : "bares transmitem"}`
               : "Em breve onde assistir"}
           </span>
-          <span className={`text-[11px] font-bold ${isCopa ? "text-yellow-300" : "text-primary"}`}>
-            Ver onde assistir →
+          <span className={`text-[11px] font-bold ${isCopa ? "text-yellow-300" : hasVenues ? "text-emerald-300" : "text-primary"}`}>
+            {hasVenues ? "Onde assistir →" : "Ver onde assistir →"}
           </span>
         </div>
       )}

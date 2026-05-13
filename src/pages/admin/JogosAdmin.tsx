@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Trophy, RefreshCw, Plus, Trash2, Tv, Beer, Search, Loader2, Power, Radio, MessageCircle, CheckCircle2, Volume2, MonitorPlay, Sparkles } from "lucide-react";
 import { useMatchMeta } from "@/hooks/useMatchMeta";
 import { isSameTeam, normalizeTeamName } from "@/lib/theSportsDb";
+import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
+import { Wand2 } from "lucide-react";
 
 interface MatchRow {
   id: string;
@@ -289,6 +291,50 @@ export default function JogosAdmin() {
     }
   };
 
+  // Reprocessamento em massa: eventos hoje..+7d sem sports_match_id que mencionem futebol
+  const [reprocessingBulk, setReprocessingBulk] = useState(false);
+  const SPORTS_KW_RE = /transmiss[aã]o|tel[aã]o|futebol|jogo|ao vivo|copa do brasil|libertadores|brasileir|sul[- ]americana|champions/i;
+  const reprocessBulk = async () => {
+    setReprocessingBulk(true);
+    try {
+      const fromIso = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
+      const toIso = new Date(Date.now() + 7.5 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: candidates } = await (supabase as any)
+        .from("events")
+        .select("id, title, description, venue_name, category, partner_id, date_time, sub_category")
+        .is("sports_match_id", null)
+        .eq("status", "published")
+        .gte("date_time", fromIso)
+        .lte("date_time", toIso)
+        .limit(300);
+      const list = (candidates || []) as any[];
+      const filtered = list.filter((ev) => {
+        const text = `${ev.title ?? ""} ${ev.description ?? ""} ${ev.venue_name ?? ""} ${ev.sub_category ?? ""} ${ev.category ?? ""}`;
+        return SPORTS_KW_RE.test(text);
+      });
+      let processed = 0, linked = 0, detected = 0;
+      for (const ev of filtered) {
+        try {
+          const text = [ev.title, ev.description, ev.venue_name, ev.sub_category, ev.category].filter(Boolean).join(" \n ");
+          const refDate = ev.date_time ? new Date(ev.date_time) : null;
+          const r = await analyzeAndLinkEventTransmission({
+            eventId: ev.id, text, partnerId: ev.partner_id || null,
+            referenceDate: refDate, source: "manual_reprocess",
+          });
+          processed++;
+          if (r.linked) linked++;
+          else if (r.detected) detected++;
+        } catch (e) { console.warn("bulk reprocess item failed", e); }
+      }
+      toast.success(`Reprocessados ${processed} eventos · ${linked} vinculados · ${detected} para revisão`);
+      qc.invalidateQueries({ queryKey: ["admin-jogos-transmission-review"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha no reprocessamento em massa");
+    } finally {
+      setReprocessingBulk(false);
+    }
+  };
+
   const isLive = (m: MatchRow) => m.status?.toLowerCase() === "live" || m.status?.toLowerCase() === "in_play";
 
   return (
@@ -308,6 +354,10 @@ export default function JogosAdmin() {
           <Button onClick={syncStandings} disabled={syncingStandings} variant="outline" size="sm">
             {syncingStandings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sincronizar tabelas
+          </Button>
+          <Button onClick={reprocessBulk} disabled={reprocessingBulk} variant="outline" size="sm" title="Reanalisa eventos publicados (hoje..+7d) que mencionem futebol e ainda não estão vinculados a um jogo.">
+            {reprocessingBulk ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
+            Reprocessar eventos existentes
           </Button>
         </div>
       </div>
