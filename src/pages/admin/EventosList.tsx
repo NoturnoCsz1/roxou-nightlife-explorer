@@ -126,6 +126,15 @@ const EventosList = () => {
   const [triageMode, setTriageMode] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [bulkSafeOpen, setBulkSafeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"todos" | "hoje" | "rascunhos" | "problemas" | "destaques">("todos");
+  const [searchInput, setSearchInput] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Debounce de busca (250ms)
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const isAiOrigin = (e: EventRow) => {
     const src = (e.verification_source || "").toLowerCase();
