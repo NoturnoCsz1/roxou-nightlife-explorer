@@ -44,6 +44,7 @@ const ParceiroForm = () => {
       short_description: data.short_description || "", full_description: data.full_description || "",
       logo_url: data.logo_url || "", verified_partner: data.verified_partner, active: data.active,
       featured_home: (data as any).featured_home ?? false,
+      supports_sports: (data as any).supports_sports ?? false,
     });
   }
 
