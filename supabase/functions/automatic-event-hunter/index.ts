@@ -72,6 +72,137 @@ const slugify = (s: string) =>
     .replace(/(^-|-$)/g, "")
     .slice(0, 60) || "evento";
 
+// === Detecção de transmissão de futebol (sem IA, regras) ===
+const SPORTS_STRONG_KW = ["transmissao", "transmite", "transmitindo", "telao", "ao vivo no telao"];
+const SPORTS_KW = [
+  "futebol", "ao vivo", "jogo", "jogos",
+  "brasileirao", "copa do brasil", "libertadores", "sul-americana", "sulamericana",
+  "champions", "uefa", "premier league", "la liga",
+  "final", "classico", "torcida", "vem assistir", "vem torcer",
+];
+const SPORTS_TEAMS: { canonical: string; aliases: string[] }[] = [
+  { canonical: "sao paulo", aliases: ["sao paulo", "spfc", "tricolor paulista"] },
+  { canonical: "palmeiras", aliases: ["palmeiras", "verdao", "porco"] },
+  { canonical: "corinthians", aliases: ["corinthians", "timao"] },
+  { canonical: "santos", aliases: ["santos", "peixe"] },
+  { canonical: "flamengo", aliases: ["flamengo", "mengao", "mengo"] },
+  { canonical: "fluminense", aliases: ["fluminense", "flu"] },
+  { canonical: "vasco", aliases: ["vasco"] },
+  { canonical: "botafogo", aliases: ["botafogo", "fogao"] },
+  { canonical: "gremio", aliases: ["gremio"] },
+  { canonical: "internacional", aliases: ["internacional", "inter colorado"] },
+  { canonical: "atletico-mg", aliases: ["atletico mg", "atletico-mg", "galo", "atletico mineiro"] },
+  { canonical: "cruzeiro", aliases: ["cruzeiro", "raposa"] },
+  { canonical: "bahia", aliases: ["bahia"] },
+  { canonical: "vitoria", aliases: ["vitoria"] },
+  { canonical: "ceara", aliases: ["ceara"] },
+  { canonical: "fortaleza", aliases: ["fortaleza"] },
+  { canonical: "athletico-pr", aliases: ["athletico", "athletico pr", "furacao"] },
+  { canonical: "coritiba", aliases: ["coritiba", "coxa"] },
+  { canonical: "juventude", aliases: ["juventude"] },
+  { canonical: "bragantino", aliases: ["bragantino", "red bull bragantino"] },
+  { canonical: "remo", aliases: ["remo"] },
+  { canonical: "jacuipense", aliases: ["jacuipense"] },
+  { canonical: "psg", aliases: ["psg", "paris saint-germain"] },
+  { canonical: "barcelona", aliases: ["barcelona", "barca"] },
+  { canonical: "real madrid", aliases: ["real madrid"] },
+  { canonical: "manchester city", aliases: ["manchester city", "man city"] },
+  { canonical: "manchester united", aliases: ["manchester united", "man united"] },
+  { canonical: "liverpool", aliases: ["liverpool"] },
+  { canonical: "chelsea", aliases: ["chelsea"] },
+  { canonical: "arsenal", aliases: ["arsenal"] },
+  { canonical: "bayern", aliases: ["bayern"] },
+];
+
+function detectSports(text: string) {
+  const t = lowerNoAccent(text || "");
+  if (!t.trim()) return { is_transmission: false, confidence: "low" as const, teams: [] as string[] };
+  const strong = SPORTS_STRONG_KW.some((k) => t.includes(k));
+  const generic = SPORTS_KW.some((k) => t.includes(k));
+  const found = new Set<string>();
+  for (const team of SPORTS_TEAMS) {
+    for (const a of team.aliases) {
+      const re = new RegExp(`(^|[^a-z])${a.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}([^a-z]|$)`, "i");
+      if (re.test(t)) { found.add(team.canonical); break; }
+    }
+  }
+  const teams = Array.from(found);
+  const is_transmission = strong || (generic && teams.length > 0) || teams.length >= 2;
+  let confidence: "high" | "medium" | "low" = "low";
+  if (strong && teams.length > 0) confidence = "high";
+  else if (strong || teams.length >= 2) confidence = "medium";
+  else if (teams.length === 1 && generic) confidence = "medium";
+  return { is_transmission, confidence, teams };
+}
+
+async function findMatchAndLink(
+  supabase: any,
+  opts: { eventId: string; partnerId: string | null; text: string; refIso: string | null },
+) {
+  const det = detectSports(opts.text);
+  if (!det.is_transmission) return { detected: false };
+
+  let matchedId: string | null = null;
+  let linked = false;
+
+  if (det.teams.length > 0) {
+    const refMs = opts.refIso ? new Date(opts.refIso).getTime() : Date.now();
+    const fromIso = new Date(refMs - 86400000).toISOString();
+    const toIso = new Date(refMs + 7 * 86400000).toISOString();
+    const { data } = await supabase
+      .from("sports_matches")
+      .select("id,home_team,away_team,match_time")
+      .gte("match_time", fromIso)
+      .lte("match_time", toIso)
+      .neq("status", "cancelled")
+      .limit(200);
+    const teamSet = new Set(det.teams);
+    const scored = (data || []).map((m: any) => {
+      const home = lowerNoAccent(m.home_team || "");
+      const away = lowerNoAccent(m.away_team || "");
+      const hit = (txt: string) => {
+        for (const t of teamSet) if (txt.includes(t) || t.includes(txt)) return true;
+        return false;
+      };
+      const hits = (hit(home) ? 1 : 0) + (hit(away) ? 1 : 0);
+      const dt = Math.abs(new Date(m.match_time).getTime() - refMs) / 86400000;
+      let score = hits * 5;
+      if (dt < 0.5) score += 4; else if (dt < 1.5) score += 2; else if (dt < 3) score += 1;
+      return { id: m.id as string, score, hits };
+    }).filter((s: any) => s.hits > 0).sort((a: any, b: any) => b.score - a.score);
+    const best = scored[0];
+    if (best && (best.hits >= 2 || best.score >= 7)) {
+      matchedId = best.id;
+      if (opts.partnerId && det.confidence === "high") {
+        const { data: existing } = await supabase
+          .from("sports_match_venues").select("id,confirmed_by_admin")
+          .eq("match_id", best.id).eq("venue_id", opts.partnerId).maybeSingle();
+        if (!existing) {
+          const { error } = await supabase.from("sports_match_venues").insert({
+            match_id: best.id, venue_id: opts.partnerId,
+            transmission_type: "telao", confirmed_by_admin: false,
+          });
+          if (!error) linked = true;
+        } else {
+          linked = true;
+        }
+        if (linked) await supabase.from("partners").update({ supports_sports: true }).eq("id", opts.partnerId);
+      }
+    }
+  }
+
+  const conf = det.confidence === "high" ? 0.9 : det.confidence === "medium" ? 0.6 : 0.3;
+  await supabase.from("events").update({
+    is_sports_transmission: true,
+    sports_match_id: matchedId,
+    sports_transmission_confidence: conf,
+    sports_transmission_source: "radar-ia",
+  }).eq("id", opts.eventId);
+
+  return { detected: true, confidence: det.confidence, matched: matchedId, linked };
+}
+
+
 interface IGMedia {
   id: string;
   media_type: string;
