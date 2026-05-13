@@ -116,6 +116,8 @@ export default function JogoDetail() {
   const venues = (localData?.venues ?? []) as any[];
   const streams = (localData?.streams ?? []) as StreamRow[];
   const fallbackYoutube = localData?.youtube_url || match.youtube_url || null;
+  const highlightUrl = localData?.highlight_url || null;
+  const highlightEmbed = isFinished && highlightUrl ? toEmbedUrl(highlightUrl, "youtube") : null;
   const hasOfficialStream = streams.length > 0;
 
   const matchLabel = `${match.home_team} x ${match.away_team}`;
