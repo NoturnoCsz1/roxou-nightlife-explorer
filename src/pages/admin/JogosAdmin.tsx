@@ -609,10 +609,10 @@ function SportsTransmissionReview() {
   const { data: pending = [], refetch } = useQuery({
     queryKey: ["admin-jogos-transmission-review"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("events")
         .select("id, title, date_time, partner_id, sports_match_id, sports_transmission_confidence, sports_transmission_source, venue_name, partners:partners(id,name,slug)")
-        .eq("is_sports_transmission" as any, true)
+        .eq("is_sports_transmission", true)
         .order("date_time", { ascending: true })
         .limit(50);
       return (data ?? []) as any[];
