@@ -105,7 +105,14 @@ export default function JogoDetail() {
   }
 
   const isCopa = match.is_world_cup;
-  const isLive = match.status === "live";
+  const localStatus = (localData?.status || "").toLowerCase();
+  const isLive = match.status === "live" || localStatus === "live" || localStatus === "in_play";
+  const isFinished = match.status === "finished" || localStatus === "finished" || localStatus === "ft";
+  const homeScore = localData?.home_score;
+  const awayScore = localData?.away_score;
+  const hasScore = homeScore != null && awayScore != null;
+  const roundLabel = localData?.round_label || null;
+  const currentMinute = localData?.current_minute || null;
   const venues = (localData?.venues ?? []) as any[];
   const streams = (localData?.streams ?? []) as StreamRow[];
   const fallbackYoutube = localData?.youtube_url || match.youtube_url || null;
@@ -224,6 +231,51 @@ export default function JogoDetail() {
       </div>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-8">
+        {/* Placar / status — só aparece quando há dados */}
+        {(hasScore || isLive) && (
+          <section
+            aria-label="Placar"
+            className={`rounded-2xl border p-4 md:p-5 ${
+              isLive
+                ? "border-red-500/40 bg-gradient-to-br from-red-950/40 via-card/40 to-background shadow-[0_0_30px_-12px_rgba(239,68,68,0.6)]"
+                : "border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-card/40 to-background"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider">
+                {isLive ? (
+                  <span className="inline-flex items-center gap-1.5 text-red-300">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                    </span>
+                    AO VIVO {currentMinute && <span className="text-red-200/90">· {currentMinute}</span>}
+                  </span>
+                ) : isFinished ? (
+                  <span className="text-emerald-300">✓ Finalizado</span>
+                ) : (
+                  <span className="text-muted-foreground">Placar</span>
+                )}
+              </div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">
+                {match.league_label}
+                {roundLabel && <span className="ml-1 text-foreground/70">· {roundLabel}</span>}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 items-center gap-3">
+              <div className="text-right font-bold text-sm md:text-base truncate">{match.home_team}</div>
+              <div className="text-center font-display font-black text-3xl md:text-4xl tabular-nums">
+                {hasScore ? `${homeScore} × ${awayScore}` : "— × —"}
+              </div>
+              <div className="text-left font-bold text-sm md:text-base truncate">{match.away_team}</div>
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center mt-3">
+              <Clock className="h-3 w-3 inline -mt-0.5 mr-1" />
+              {formatMatchTime(match.match_time)} · {new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "short" }).format(new Date(match.match_time))}
+            </p>
+          </section>
+        )}
+
         {/* Assista agora */}
         <section>
           <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
