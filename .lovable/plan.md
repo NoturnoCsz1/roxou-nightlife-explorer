@@ -1,101 +1,120 @@
-# Aura Operational Engine — Fase 1 (segura)
+# Plano — Evolução `/jogos` (SEO + Retenção + Baixo custo)
 
-## Princípio
+Sem refatorar layout, sem IA pesada, sem quebrar timezone. Reaproveita `MatchCard`, `FootballMatchChat`, `MatchVenuesQuickList`.
 
-A maior parte do "cérebro" já existe na Roxou e está funcionando:
+---
 
-- **Aura Ranking** (cron 15min) → `aura_score`, `trending_score`, `hype_score`, `aura_badge` em `events`
-- **Radar IA** (cron 13h/18h) → `instagram_scans` + drafts auto-discovery
-- **Partner Aura Sync** (cron 4h) → `aura_partner_score`, `aura_partner_summary`, `aura_partner_tags`
-- **AutoReels Queue** → `auto_reels_queue` com prompts CapCut/Kling/Runway/Veo
-- **Security/Moderation** → `security_reports`, `user_risk_scores`, `community_user_states`, `flag_message_on_report`
-- **Analytics** → `analytics_events`, `analytics_daily_summary`, `event_live_presence`, `aura_home_logs`
+## Fase 1 — Schema (1 migration única)
 
-Construir tudo de novo seria duplicação e quebraria o que está em produção. **Fase 1 = unificar, ler, mostrar.** Fase 2 = automação ativa, só depois que a Fase 1 estiver no ar.
+### Tabela `sports_matches` (cache curado dos jogos da TheSportsDB)
+- `external_id` (unique), `slug` (unique, indexado), `home_team`, `away_team`, `home_badge`, `away_badge`
+- `match_time` (timestamptz), `league_id`, `league_label`, `category`, `is_world_cup`, `priority`, `status`
+- `views_count` (int default 0), `chat_count` (int default 0), `last_synced_at`
+- RLS: SELECT público; INSERT/UPDATE/DELETE só admin (`has_role`)
 
-## O que esta fase entrega
+### Tabela `sports_match_venues` (vínculo real jogo↔bar)
+- `match_id` → sports_matches, `partner_id` → partners
+- `transmission_type` (`tv_aberta` | `tv_fechada` | `streaming` | `telao` | `ambiente`)
+- `confirmed_by_admin` bool, `created_by` uuid, `created_at`
+- UNIQUE(match_id, partner_id); RLS: SELECT público, escrita admin
 
-### 1. Painel `/admin/aura` (Aura Command Center)
+### Tabela `sports_match_streams` (embeds oficiais)
+- `match_id`, `stream_url`, `stream_type` (`youtube`|`twitch`|`cazetv`|`fifa`|`conmebol`), `is_official` bool, `is_active` bool, `created_by`
+- RLS: SELECT público com `is_active=true`, escrita admin
 
-Página única, mobile-first, Visual Rich. Lê dados que já existem — zero processamento pesado no client. Seções:
+### Tabela `sports_match_events` (tracking leve)
+- `match_external_id` text (não FK, evita lock), `action` text (`open`|`venue_click`|`stream_click`|`save`|`share`|`chat_open`)
+- `partner_id` nullable, `session_id`, `created_at`
+- RLS: INSERT público (anon+auth); SELECT só admin
 
-- **KPIs ao vivo** (top): eventos publicados, em alta agora, presença ao vivo total, parceiros ativos, alertas abertos, drafts seguros prontos pra publicar.
-- **🔥 Em alta agora** — top 8 eventos por `aura_score` futuro com badge (`em_alta` / `viralizando` / `bombando`).
-- **🚀 Crescendo rápido** — top 5 por `trending_score` nas últimas 24h (lê `analytics_daily_summary` dos últimos 2 dias).
-- **👀 Mais procurado / 💜 Mais salvo** — leitura direta de `analytics_daily_summary` (views, saves) últimos 7 dias.
-- **🤖 Decisões da Aura** — últimas N entradas de `aura_home_logs` + últimos `automation_logs` (cron Aura/Radar/Partner Sync).
-- **⚠ Riscos abertos** — top 5 `user_risk_scores` com badge `high`/`critical` + `security_reports` com `status=pending`.
-- **🏪 Parceiros em alta** — top 5 por `aura_partner_score`.
-- **🎬 Fila AutoReels** — `auto_reels_queue` status `pending` (count + 3 últimos).
-- **🛰 Radar hoje** — `instagram_scans` detectados hoje (count) + `repost_count` total.
+Sem triggers pesados. Counters atualizados em RPC `increment_match_view(slug)` chamada no detalhe.
 
-Tudo é leitura agregada. Nenhum write, nenhum risco para SEO/feed/realtime.
+---
 
-### 2. Tabela `aura_alerts`
+## Fase 2 — Sync da TheSportsDB → `sports_matches`
 
-Persistência leve de alertas operacionais que a Aura "observa". Não substitui nada — é uma view consolidada.
+Edge function `sync-football-matches` (cron 6h):
+- Busca ligas configuradas (já existe em `theSportsDb.ts`)
+- Upsert por `external_id`, gera `slug` no formato `time-x-time-DD-MM-YYYY` (kebab, NFD)
+- Não toca em jogos finalizados >7d
 
-```text
-aura_alerts
-- id, created_at
-- kind: 'trending_spike' | 'viral' | 'risk_user' | 'spam_burst'
-       | 'partner_growth' | 'radar_repost' | 'security_critical'
-- severity: 'info' | 'warn' | 'critical'
-- entity_type: 'event' | 'partner' | 'user' | 'system'
-- entity_id (uuid, nullable)
-- title (text), body (text)
-- payload (jsonb)
-- resolved_at (timestamptz, nullable)
-- resolved_by (uuid, nullable)
-```
+`getFeaturedFootballEvents()` passa a ler do Supabase (rápido, sem CORS, sem dependência externa em runtime). Fallback: API direta se vazio.
 
-RLS: somente `admin` lê/escreve (via `has_role`).
+---
 
-### 3. Edge function `aura-pulse` (cron 10 min)
+## Fase 3 — Páginas de jogo SEO-first
 
-Função leve, idempotente, sem OCR nem IA generativa — só agregações SQL:
+`/jogo/:slug` (já existe — só upgrade):
+- React Helmet por rota — title `"{Home} x {Away} em Presidente Prudente — Onde assistir | Roxou"`, description com data/hora SP + bares
+- canonical `https://roxou.com.br/jogo/{slug}`, OpenGraph + Twitter card
+- JSON-LD `SportsEvent` + `BreadcrumbList` + `FAQPage`
+- **Bloco "Assista agora"**: se há `sports_match_streams` ativo → embed (YouTube/Twitch); senão "Sem transmissão oficial disponível"
+- **Bloco "Onde assistir"**: lista REAL de `sports_match_venues` (não mais bares fixos)
+- **SEO content block** (template, sem IA): parágrafo gerado via string template com nome dos times, data, cidade, contagem de bares
+- Mantém `FootballMatchChat`
 
-1. **Trending spike** — eventos com `trending_score` que pulou ≥ 1.5× em 1h → cria `aura_alerts` com kind `trending_spike` (idempotente: dedupe por `entity_id` nas últimas 2h).
-2. **Risk escalation** — `user_risk_scores.badge` virou `critical` → cria alert (1 por user/dia).
-3. **Spam burst** — `community_messages` com `is_flagged=true` > 10 nos últimos 30min → 1 alert.
-4. **Partner growth** — `aura_partner_score` subiu ≥ 15 pts vs snapshot anterior → alert.
-5. **Radar repost forte** — `instagram_scans.repost_count >= 3` recém-incrementado → alert.
+---
 
-Cron via `pg_cron` + `pg_net` chamando a função a cada 10 minutos.
+## Fase 4 — `/jogos` enriquecida (sem refazer layout)
 
-### 4. Sino "Aura" no `AdminLayout`
+Adições mínimas ao `Jogos.tsx`:
+- **Hero KPIs ao vivo**: pequena strip abaixo do hero — `🔴 X ao vivo · 🍻 Y bares transmitindo hoje · 💬 Z mensagens na última hora` (1 query agregada)
+- **Badges no `MatchCard`** (componente existente):
+  - `🔴 AO VIVO` se status=live
+  - `🍻 N bares` se houver vínculo em `sports_match_venues`
+  - `📺 Transmissão` se houver stream oficial
+  - `💬 Chat ativo` se houver mensagem nas últimas 30min
+- **"Mais buscados" dinâmico**: ranking por `views_count + chat_count + saves` dos últimos 7d em vez de lista fixa
 
-Pequeno indicador no header do admin: `🔔 Aura (n)` linkando para `/admin/aura`, contador de alertas não resolvidos. Realtime via `postgres_changes` em `aura_alerts`.
+---
 
-## O que NÃO faz nesta fase
+## Fase 5 — Admin `/admin/jogos`
 
-(Para não quebrar nada e manter escopo executável)
+Página simples (linka no `adminNavigation.ts`):
+- Lista jogos próximos 14d com filtro por liga/dia
+- Por jogo: multiselect de partners (cidade=Prudente, type=bar/restaurante/boteco/pub) + tipo de transmissão
+- Inputs para adicionar streams oficiais (URL + tipo)
+- Botão "Sincronizar agora" → invoca `sync-football-matches`
 
-- **Não** cria recommendation engine personalizado por usuário (precisa de modelo de embeddings + tabela de eventos e horários por user — projeto à parte).
-- **Não** muda como Radar IA, Aura Ranking, AutoReels, Partner Sync funcionam hoje. Apenas lê os resultados.
-- **Não** mexe em SEO, slugs, feed home, OAuth, timezone, RLS de eventos públicos, realtime existente.
-- **Não** ativa autoban/captcha/shadowban automático — moderação ativa fica como Fase 2 com regras explícitas e auditoria.
-- **Não** gera descrições/hashtags/CTAs por IA aqui — isso já existe nos fluxos de admin atuais.
+Sem editor de jogo (dados vêm da API). Apenas curadoria de bares e streams.
 
-## Tecnicamente
+---
 
-- Migration: cria `aura_alerts`, índice em `(resolved_at, created_at desc)` e `(entity_type, entity_id)`, RLS admin-only via `has_role`.
-- Edge function `aura-pulse`: Deno + supabase service role, agregações em SQL, insere em `aura_alerts` com `ON CONFLICT DO NOTHING` por chave de dedupe (`kind|entity_id|date_bucket`).
-- Cron: `pg_cron` 10min via `supabase--insert` (não migration, contém URL/anon).
-- Página `src/pages/admin/AuraCommand.tsx` + rota em `App.tsx` + item "Aura" no `AdminLayout` (ícone Sparkles).
-- Hook `useAuraAlertsCount` para o sino.
+## Fase 6 — Tracking
 
-## Critérios de aceite
+Hook `useTrackMatchEvent(matchSlug)`:
+- Insere em `sports_match_events` (debounced)
+- Disparado em: abertura do detalhe, clique em bar, clique em stream, save, share, abrir chat
+- 1 RPC `increment_match_view(slug)` no mount do detalhe (counter direto, sem rodar agregação)
 
-- `/admin/aura` carrega em < 1s (queries paralelas, no SSR).
-- Nenhuma quebra em rotas públicas, Radar, feed home, eventos publicados ou realtime.
-- Cron `aura-pulse` rodando sem erros e gerando alertas com dedupe.
-- Sino do admin atualizando em realtime quando alert novo é criado.
+---
 
-## Próximas fases (não nesta)
+## Fase 7 — Performance
 
-- F2: Aura recommendation feed (precisa de schema de comportamento por user).
-- F3: Aura moderation actions (mute/shadowban automático com auditoria).
-- F4: Aura content automation (gerar descrições/CTA/notifs em background).
+- `React.memo` no `MatchCard` e `PriorityMatchBlock`
+- `loading="lazy"` já presente nos badges; manter
+- `useQuery` com `staleTime` 10min (já existe) + `refetchOnWindowFocus: false` para bares vinculados
+- Lazy-load do bloco de chat com `Suspense`
+- Filtro `semana` migra para helpers `dateUtils` SP (Core rule)
 
-Confirma seguir com essa Fase 1? Se sim, aplico migration + edge function + página + cron na próxima rodada.
+---
+
+## Fora de escopo (mantém para depois)
+- Câmera ao vivo no bar (só schema preparado em `transmission_type='ambiente'`)
+- Dashboard analytics dedicado de jogos (dados já existem em `sports_match_events` para futura página)
+
+---
+
+## Detalhes técnicos
+
+**Stack tocada:** Supabase (3 tabelas + 1 RPC), 1 edge function (`sync-football-matches`), `src/lib/theSportsDb.ts` (passa a ler do DB), `src/pages/Jogos.tsx` (badges + KPI strip), `src/pages/JogoDetail.tsx` (Helmet + JSON-LD + streams + venues reais), `src/components/jogos/MatchCard.tsx` (badges), `src/pages/admin/JogosAdmin.tsx` (novo), `src/config/adminNavigation.ts` (entry).
+
+**Custo:** zero IA. 1 cron 6h. Tracking é INSERT plano. Counters via RPC simples.
+
+**Impacto SEO:** N páginas indexáveis novas (uma por jogo), JSON-LD SportsEvent, keywords locais ("onde assistir X em Prudente"), canonical correto, OG por jogo.
+
+**Impacto retenção:** chat visível, transmissão oficial, vínculo real com bares, "mais buscados" verdadeiro.
+
+---
+
+Aprova esse plano para eu começar pela migration + edge function de sync?
