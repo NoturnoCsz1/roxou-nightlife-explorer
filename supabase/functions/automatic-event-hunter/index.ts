@@ -237,12 +237,7 @@ Deno.serve(async (req) => {
       .not("instagram", "is", null);
 
     for (const p of partners || []) {
-      const handleRaw = (p.instagram || "").trim();
-      if (!handleRaw) continue;
-      const handle = handleRaw
-        .replace(/^@/, "")
-        .replace(/^https?:\/\/(www\.)?instagram\.com\//, "")
-        .replace(/\/$/, "");
+      const handle = normalizeInstagramHandle(p.instagram);
       if (!handle) continue;
       stats.partners_scanned++;
 
