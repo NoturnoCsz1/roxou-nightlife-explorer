@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { Trophy, RefreshCw, Plus, Trash2, Tv, Beer, Search, Loader2, Power, Radio, MessageCircle, CheckCircle2, Volume2, MonitorPlay, Sparkles } from "lucide-react";
 import { useMatchMeta } from "@/hooks/useMatchMeta";
 import { isSameTeam, normalizeTeamName } from "@/lib/theSportsDb";
+import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
+import { Wand2 } from "lucide-react";
 
 interface MatchRow {
   id: string;
