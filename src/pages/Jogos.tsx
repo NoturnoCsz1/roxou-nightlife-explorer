@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv, Zap } from "lucide-react";
+import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv, Zap, MessageCircle } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
+import { useMatchMeta } from "@/hooks/useMatchMeta";
 
 
 /** Renderiza MatchCard + lista rápida de bares quando o jogo é prioritário. */
