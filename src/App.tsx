@@ -130,6 +130,7 @@ const App = () => (
             <Route path="autoreels" element={L(<AutoReels />)} />
             <Route path="security" element={L(<AdminSecurity />)} />
             <Route path="aura" element={L(<AuraCommand />)} />
+            <Route path="jogos" element={L(<JogosAdmin />)} />
             <Route path="editores" element={L(<Editores />)} />
             <Route path="noticias" element={L(<NoticiasList />)} />
             <Route path="noticias/novo" element={L(<NoticiaForm />)} />
