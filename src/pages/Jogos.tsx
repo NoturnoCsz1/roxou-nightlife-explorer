@@ -1,7 +1,7 @@
-import { useMemo, useState, lazy, Suspense } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv, Zap, ListOrdered } from "lucide-react";
+import { Trophy, Radio, Beer, Calendar, MapPin, Flame, Sparkles, Tv, Zap, ListOrdered, Search, X, ListChecks, Users } from "lucide-react";
 import SEO from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -13,9 +13,11 @@ import {
   formatMatchTime,
   isPriorityTeam,
   isSameTeam,
+  isSameMatch,
   isBrazilianTeam,
   mergeMatches,
   sportsMatchRowToNormalized,
+  normalizeTeamName,
   type NormalizedMatch,
   type SportsMatchRow,
 } from "@/lib/theSportsDb";
@@ -88,9 +90,47 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "live", label: "Ao vivo" },
 ];
 
+// ===== Busca: mapa de campeonatos/tabelas para sugestões rápidas =====
+type LeagueSuggestion = {
+  label: string;
+  to: string;
+  // termos (já normalizados sem acento, lowercase) que devem disparar a sugestão
+  terms: string[];
+  kind: "tabela" | "jogos" | "resultados";
+};
+const LEAGUE_SUGGESTIONS: LeagueSuggestion[] = [
+  { label: "Tabela do Brasileirão", to: "/tabela/brasileirao", kind: "tabela",
+    terms: ["brasileirao", "brasileiro", "serie a", "campeonato brasileiro", "tabela brasileirao", "tabela brasileiro"] },
+  { label: "Tabela da Libertadores", to: "/tabela/libertadores", kind: "tabela",
+    terms: ["libertadores", "copa libertadores", "tabela libertadores"] },
+  { label: "Tabela da Champions League", to: "/tabela/champions", kind: "tabela",
+    terms: ["champions", "champions league", "uefa champions", "ucl"] },
+  { label: "Jogos da Copa do Brasil", to: "/jogos", kind: "jogos",
+    terms: ["copa do brasil", "copa brasil", "cdb"] },
+  { label: "Jogos da Sul-Americana", to: "/jogos", kind: "jogos",
+    terms: ["sul americana", "sulamericana", "copa sul americana", "sudamericana"] },
+  { label: "Jogos da La Liga", to: "/jogos", kind: "jogos",
+    terms: ["la liga", "laliga", "espanhol", "campeonato espanhol"] },
+  { label: "Jogos da Premier League", to: "/jogos", kind: "jogos",
+    terms: ["premier", "premier league", "ingles", "campeonato ingles"] },
+  { label: "Jogos da Série B", to: "/jogos", kind: "jogos",
+    terms: ["serie b", "brasileirao serie b", "segundona"] },
+  { label: "Resultados recentes", to: "/resultados", kind: "resultados",
+    terms: ["resultado", "resultados", "placar", "placares"] },
+];
+
 export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Debounce 250ms — evita re-render por tecla
+  useEffect(() => {
+    const t = setTimeout(() => setSearchTerm(searchInput.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
 
   const DEBUG = (import.meta as any).env?.VITE_JOGOS_DEBUG === "true";
 
@@ -341,6 +381,72 @@ export default function Jogos() {
 
   const groups = groupMatchesByDate(filtered);
 
+  // ===== Resultados da busca global =====
+  const searchActive = searchTerm.length >= 2;
+  const searchResults = useMemo(() => {
+    if (!searchActive) {
+      return { jogos: [] as NormalizedMatch[], times: [] as { name: string; count: number }[], leagues: [] as LeagueSuggestion[] };
+    }
+    const termRaw = searchTerm;
+    const termNorm = norm(termRaw);
+
+    // Detectar confronto: "santos x corinthians", "palmeiras vs flamengo", "sao paulo - juventude"
+    const splitMatch = termRaw.match(/^(.+?)\s+(?:x|vs\.?|×|-)\s+(.+)$/i);
+    const confrontoTeams = splitMatch
+      ? [splitMatch[1].trim(), splitMatch[2].trim()].filter((t) => t.length >= 2)
+      : null;
+
+    // Filtra jogos
+    const jogos = matches.filter((m) => {
+      if (confrontoTeams && confrontoTeams.length === 2) {
+        return isSameMatch(m, confrontoTeams[0], confrontoTeams[1]);
+      }
+      // termo livre: time individual OU campeonato OU "team team" (sem separador)
+      const single =
+        isSameTeam(m.home_team, termRaw) ||
+        isSameTeam(m.away_team, termRaw) ||
+        norm(m.league_label || "").includes(termNorm) ||
+        norm(m.home_team).includes(termNorm) ||
+        norm(m.away_team).includes(termNorm);
+      if (single) return true;
+      // tentativa: dois tokens longos = possível confronto sem separador
+      const tokens = termRaw.split(/\s+/).filter((t) => t.length >= 3);
+      if (tokens.length >= 2) {
+        // tenta combinações de pares
+        for (let i = 0; i < tokens.length; i++) {
+          for (let j = i + 1; j < tokens.length; j++) {
+            if (isSameMatch(m, tokens[i], tokens[j])) return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    // Times encontrados (únicos, derivados dos próprios jogos carregados)
+    const teamMap = new Map<string, { name: string; count: number }>();
+    matches.forEach((m) => {
+      [m.home_team, m.away_team].forEach((t) => {
+        if (!t) return;
+        const matchedSingle = isSameTeam(t, termRaw) || norm(t).includes(termNorm);
+        if (matchedSingle) {
+          const key = normalizeTeamName(t) || norm(t);
+          const cur = teamMap.get(key);
+          if (cur) cur.count += 1;
+          else teamMap.set(key, { name: t, count: 1 });
+        }
+      });
+    });
+    const times = Array.from(teamMap.values()).sort((a, b) => b.count - a.count).slice(0, 8);
+
+    // Campeonatos / tabelas
+    const leagues = LEAGUE_SUGGESTIONS.filter((l) =>
+      l.terms.some((t) => termNorm.includes(t) || t.includes(termNorm)),
+    );
+
+    return { jogos: jogos.slice(0, 12), times, leagues };
+  }, [searchActive, searchTerm, matches]);
+
+
   const scrollToProximos = () => {
     document.getElementById("proximos")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -576,6 +682,124 @@ export default function Jogos() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 py-6 space-y-10">
+        {/* BUSCA GLOBAL */}
+        <section aria-label="Buscar jogos, times e campeonatos">
+          <label className="relative block">
+            <span className="sr-only">Buscar time, jogo ou campeonato</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.7)] pointer-events-none">
+              <Search className="h-5 w-5" />
+            </span>
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Buscar time, jogo ou campeonato..."
+              autoComplete="off"
+              className="w-full h-12 md:h-12 rounded-2xl bg-card/60 border border-primary/30 pl-12 pr-12 text-base md:text-sm text-foreground placeholder:text-muted-foreground/70 outline-none focus:border-primary focus:shadow-[0_0_24px_-6px_hsl(var(--primary)/0.7)] transition-all"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => { setSearchInput(""); setSearchTerm(""); }}
+                aria-label="Limpar busca"
+                className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded-full bg-secondary/80 hover:bg-secondary px-2.5 py-1 text-[11px] font-bold text-foreground/80"
+              >
+                <X className="h-3 w-3" /> Limpar
+              </button>
+            )}
+          </label>
+
+          {searchActive && (
+            <div className="mt-4 rounded-2xl border border-border/50 bg-card/40 p-4 space-y-5 animate-fade-in">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Resultados para: <span className="text-foreground normal-case">"{searchTerm}"</span>
+              </p>
+
+              {/* Campeonatos / tabelas */}
+              {searchResults.leagues.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/90 mb-2 flex items-center gap-1.5">
+                    <ListChecks className="h-3.5 w-3.5" /> Campeonatos e tabelas
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {searchResults.leagues.map((l) => (
+                      <Link
+                        key={l.label}
+                        to={l.to}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-primary/20 transition"
+                      >
+                        {l.kind === "tabela" ? <ListOrdered className="h-3 w-3" /> : l.kind === "resultados" ? <Trophy className="h-3 w-3" /> : <Calendar className="h-3 w-3" />}
+                        {l.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Times encontrados */}
+              {searchResults.times.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/90 mb-2 flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5" /> Times encontrados
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {searchResults.times.map((t) => {
+                      const active = teamFilter === t.name;
+                      return (
+                        <button
+                          key={t.name}
+                          onClick={() => handleTeamClick(t.name)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                            active
+                              ? "border-yellow-500/60 bg-yellow-500/15 text-yellow-200"
+                              : "border-border/60 bg-card/60 hover:border-primary/50 text-foreground"
+                          }`}
+                        >
+                          {t.name}
+                          <span className="text-[10px] text-muted-foreground">({t.count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Jogos encontrados */}
+              {searchResults.jogos.length > 0 ? (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-primary/90 mb-2 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" /> Jogos encontrados
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {searchResults.jogos.map((m) => (
+                      <MatchCard
+                        key={m.external_id}
+                        match={m}
+                        compact
+                        venuesCount={metaMap[m.slug]?.venuesCount}
+                        hasStream={metaMap[m.slug]?.hasStream}
+                        hasActiveChat={metaMap[m.slug]?.hasActiveChat}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                searchResults.times.length === 0 &&
+                searchResults.leagues.length === 0 && (
+                  <div className="text-center py-6">
+                    <p className="text-sm font-medium text-foreground">
+                      Não encontramos jogos ou tabelas para essa busca.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tente outro time, confronto (ex.: "Santos x Corinthians") ou campeonato.
+                    </p>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </section>
+
         {/* Filtros */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
           {FILTERS.map((f) => (
