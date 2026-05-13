@@ -269,6 +269,27 @@ Deno.serve(async (req) => {
           const imageUrl = m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url;
           if (!imageUrl) continue;
 
+          // === DEDUP STAGE 1 (cheap): media_id já scaneado — pula tudo se conhecido ===
+          const { data: existingScan } = await supabase
+            .from("instagram_scans")
+            .select("id,event_id,status,scan_count")
+            .eq("media_id", m.id)
+            .maybeSingle();
+
+          if (existingScan) {
+            await supabase
+              .from("instagram_scans")
+              .update({
+                last_seen_at: new Date().toISOString(),
+                scan_count: (existingScan.scan_count || 1) + 1,
+              })
+              .eq("id", existingScan.id);
+            try { await supabase.rpc("record_radar_repost", { _scan_id: existingScan.id }); } catch {}
+            stats.skipped_duplicate++;
+            stats.updated_existing++;
+            continue;
+          }
+
           // === FILTRO BARATO 1: janela de 5 dias (ignora posts antigos) ===
           if (!isPostWithinWindow(m.timestamp)) {
             stats.ignored_old_post++;
@@ -280,7 +301,7 @@ Deno.serve(async (req) => {
               status: "ignored",
               reason: m.timestamp
                 ? `Post fora da janela de ${POST_WINDOW_DAYS} dias (${m.timestamp})`
-                : "Post sem timestamp confiável",
+                : "Post sem timestamp confiável (data_insegura)",
               raw_caption: (m.caption || "").slice(0, 2000),
               hidden_from_radar: true,
               archive_reason: "auto: fora da janela de 5 dias",
@@ -299,9 +320,12 @@ Deno.serve(async (req) => {
               partner_id: p.id,
               status: "ignored",
               reason: cheapKind === "promotion"
-                ? "Promoção detectada (sem evento)"
-                : "Aviso/comunicado detectado",
+                ? "Promoção detectada (sem evento) — sem gasto de IA"
+                : "Aviso/comunicado detectado — sem gasto de IA",
               raw_caption: (m.caption || "").slice(0, 2000),
+              hidden_from_radar: true,
+              archive_reason: cheapKind === "promotion" ? "auto: promoção" : "auto: aviso",
+              archived_at: new Date().toISOString(),
             });
             if (cheapKind === "promotion") stats.ignored_promotion++;
             else stats.ignored_announcement++;
@@ -309,27 +333,6 @@ Deno.serve(async (req) => {
           }
 
           stats.accepted_window++;
-          const { data: existingScan } = await supabase
-            .from("instagram_scans")
-            .select("id,event_id,status,scan_count")
-            .eq("media_id", m.id)
-            .maybeSingle();
-
-          if (existingScan) {
-            await supabase
-              .from("instagram_scans")
-              .update({
-                last_seen_at: new Date().toISOString(),
-                scan_count: (existingScan.scan_count || 1) + 1,
-              })
-              .eq("id", existingScan.id);
-            // Reencontro: se já está publicado, contabiliza repost
-            try { await supabase.rpc("record_radar_repost", { _scan_id: existingScan.id }); } catch {}
-            stats.skipped_duplicate++;
-            stats.updated_existing++;
-            continue;
-          }
-
           // === DEDUP STAGE 2: permalink já em events ===
           if (m.permalink) {
             const { data: dupEvent } = await supabase
