@@ -981,6 +981,7 @@ export type Database = {
           image_hash: string | null
           image_url: string | null
           instagram: string | null
+          is_sports_transmission: boolean
           latitude: number | null
           longitude: number | null
           maps_place_id: string | null
@@ -988,6 +989,9 @@ export type Database = {
           opportunity_tags: string[]
           partner_id: string | null
           slug: string
+          sports_match_id: string | null
+          sports_transmission_confidence: number | null
+          sports_transmission_source: string | null
           status: string
           sub_category: string | null
           ticket_url: string | null
@@ -1017,6 +1021,7 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          is_sports_transmission?: boolean
           latitude?: number | null
           longitude?: number | null
           maps_place_id?: string | null
@@ -1024,6 +1029,9 @@ export type Database = {
           opportunity_tags?: string[]
           partner_id?: string | null
           slug: string
+          sports_match_id?: string | null
+          sports_transmission_confidence?: number | null
+          sports_transmission_source?: string | null
           status?: string
           sub_category?: string | null
           ticket_url?: string | null
@@ -1053,6 +1061,7 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          is_sports_transmission?: boolean
           latitude?: number | null
           longitude?: number | null
           maps_place_id?: string | null
@@ -1060,6 +1069,9 @@ export type Database = {
           opportunity_tags?: string[]
           partner_id?: string | null
           slug?: string
+          sports_match_id?: string | null
+          sports_transmission_confidence?: number | null
+          sports_transmission_source?: string | null
           status?: string
           sub_category?: string | null
           ticket_url?: string | null

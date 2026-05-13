@@ -10,6 +10,7 @@ import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre, getCategoryLa
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { isoToSpLocal } from "@/lib/dateUtils";
+import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
 
 type Partner = Tables<"partners">;
@@ -294,6 +295,7 @@ const EventoForm = () => {
     const payload = buildEventPayload(form as any, { city: cityFilter });
 
     try {
+      let savedEventId: string | undefined = id || undefined;
       if (isEdit) {
         const { error } = await supabase.from("events").update(payload).eq("id", id!);
         if (error) throw error;
@@ -317,6 +319,7 @@ const EventoForm = () => {
         if (error) throw error;
 
         const eventId = inserted?.id;
+        savedEventId = eventId;
 
         // If from Eventou import, mark as approved and auto-create ROXOU post
         if (eventouImportId && eventId) {
@@ -343,6 +346,27 @@ const EventoForm = () => {
           toast.success("Evento criado!");
         }
       }
+
+      // 🏟️ Detecta transmissão de futebol e tenta vincular bar ao jogo
+      if (savedEventId) {
+        try {
+          const text = [form.title, form.description, form.venue_name, (form as any)._sub, form.category]
+            .filter(Boolean).join(" \n ");
+          const refDate = form.date_time ? new Date(`${form.date_time}:00-03:00`) : null;
+          const r = await analyzeAndLinkEventTransmission({
+            eventId: savedEventId,
+            text,
+            partnerId: form.partner_id || null,
+            referenceDate: refDate,
+            source: "manual",
+          });
+          if (r.linked) toast.success(`Transmissão vinculada ao jogo (${r.confidence}).`);
+          else if (r.detected && r.confidence !== "high") toast.message("Possível transmissão detectada — revisar em /admin/jogos.");
+        } catch (e) {
+          console.warn("sports transmission link failed", e);
+        }
+      }
+
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
