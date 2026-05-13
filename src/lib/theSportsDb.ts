@@ -242,16 +242,26 @@ export function formatMatchTime(iso: string): string {
  * público brasileiro/Prudente sobre listas genéricas da API.
  * ============================================================ */
 
-export const PRIORITY_TEAMS = [
-  "Corinthians", "Palmeiras", "São Paulo", "Sao Paulo", "Santos",
-  "Flamengo", "Fluminense", "Vasco", "Botafogo", "Atlético Mineiro",
-  "Atletico Mineiro", "Cruzeiro", "Grêmio", "Gremio", "Internacional",
+/** Times brasileiros conhecidos — recebem peso forte de relevância. */
+export const BRAZILIAN_TEAMS = [
+  "Corinthians", "Palmeiras", "Flamengo", "São Paulo", "Sao Paulo", "Santos",
+  "Vasco", "Botafogo", "Fluminense", "Grêmio", "Gremio", "Internacional",
+  "Cruzeiro", "Atlético Mineiro", "Atletico Mineiro", "Fortaleza", "Bahia",
+  "Ceará", "Ceara", "Sport", "Vitória", "Vitoria", "Athletico", "Atlético Paranaense",
+  "Coritiba", "Bragantino", "Red Bull Bragantino", "Mirassol",
   "Brasil", "Brazil", "Seleção Brasileira", "Selecao Brasileira",
-  "Argentina", "Inter Miami",
-  "Barcelona", "Real Madrid", "PSG", "Paris Saint-Germain",
-  "Manchester City", "Manchester United", "Liverpool", "Chelsea",
-  "Arsenal", "Bayern", "Juventus", "Milan", "Inter",
 ];
+
+/** Clubes europeus muito populares — aparecem acima dos internacionais menores. */
+export const BIG_EUROPEAN_TEAMS = [
+  "Barcelona", "Real Madrid", "PSG", "Paris Saint-Germain",
+  "Manchester City", "Manchester United", "Liverpool", "Arsenal", "Chelsea",
+  "Bayern", "Bayern Munich", "Bayern München",
+  "Juventus", "Milan", "AC Milan", "Inter", "Inter de Milão", "Internazionale",
+  "Borussia Dortmund", "Dortmund",
+];
+
+export const PRIORITY_TEAMS = [...BRAZILIAN_TEAMS, ...BIG_EUROPEAN_TEAMS, "Argentina", "Inter Miami"];
 
 const CLASSICS: Array<[string, string]> = [
   ["Corinthians", "Palmeiras"],
