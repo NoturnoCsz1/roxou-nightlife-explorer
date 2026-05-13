@@ -120,7 +120,19 @@ const ParceiroForm = () => {
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Instagram</label>
-            <input className={inputClass} value={form.instagram} onChange={(e) => handleChange("instagram", e.target.value)} placeholder="@handle" />
+            <input
+              className={inputClass}
+              value={form.instagram}
+              onChange={(e) => handleChange("instagram", e.target.value)}
+              onBlur={(e) => {
+                const h = normalizeInstagramHandle(e.target.value);
+                if (h !== form.instagram) handleChange("instagram", h);
+              }}
+              placeholder="@handle ou link do perfil"
+            />
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Aceita @usuario, usuario ou instagram.com/usuario — salvo limpo.
+            </p>
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">WhatsApp</label>
