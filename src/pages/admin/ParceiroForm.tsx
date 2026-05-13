@@ -7,6 +7,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import PartnerInstagramAura from "@/components/admin/PartnerInstagramAura";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { normalizeInstagramHandle, validateInstagramHandle } from "@/lib/instagramHandle";
 
 function slugify(str: string) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -57,14 +58,23 @@ const ParceiroForm = () => {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name || !form.slug) { toast.error("Nome e slug são obrigatórios"); return; }
+
+    // Normaliza + valida Instagram (aceita @, link ou handle puro)
+    const igCheck = validateInstagramHandle(form.instagram);
+    if (!igCheck.ok) {
+      toast.error(igCheck.error || "Instagram inválido");
+      return;
+    }
+    const payload = { ...form, instagram: igCheck.handle };
+
     setSaving(true);
     try {
       if (isEdit) {
-        const { error } = await supabase.from("partners").update(form).eq("id", id!);
+        const { error } = await supabase.from("partners").update(payload).eq("id", id!);
         if (error) throw error;
         toast.success("Parceiro atualizado!");
       } else {
-        const { error } = await supabase.from("partners").insert(form);
+        const { error } = await supabase.from("partners").insert(payload);
         if (error) throw error;
         toast.success("Parceiro criado!");
       }
@@ -110,7 +120,19 @@ const ParceiroForm = () => {
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Instagram</label>
-            <input className={inputClass} value={form.instagram} onChange={(e) => handleChange("instagram", e.target.value)} placeholder="@handle" />
+            <input
+              className={inputClass}
+              value={form.instagram}
+              onChange={(e) => handleChange("instagram", e.target.value)}
+              onBlur={(e) => {
+                const h = normalizeInstagramHandle(e.target.value);
+                if (h !== form.instagram) handleChange("instagram", h);
+              }}
+              placeholder="@handle ou link do perfil"
+            />
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Aceita @usuario, usuario ou instagram.com/usuario — salvo limpo.
+            </p>
           </div>
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">WhatsApp</label>

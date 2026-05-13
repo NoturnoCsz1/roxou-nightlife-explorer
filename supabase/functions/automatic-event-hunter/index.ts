@@ -20,6 +20,49 @@ const norm = (s: string) =>
     .replace(/[^a-z0-9]/g, "")
     .trim();
 
+// === Normalize Instagram handle (mirrors src/lib/instagramHandle.ts) ===
+const INSTAGRAM_HOST_REGEX = /^(https?:\/\/)?(www\.)?instagram\.com\//i;
+function normalizeInstagramHandle(input: string | null | undefined): string {
+  if (!input) return "";
+  let s = String(input).trim();
+  if (!s) return "";
+  s = s.replace(INSTAGRAM_HOST_REGEX, "");
+  s = s.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/^@+/, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0].trim().toLowerCase();
+  return s;
+}
+
+// === Janela de 5 dias (SP timezone-aware) ===
+const POST_WINDOW_DAYS = 5;
+function isPostWithinWindow(timestamp?: string | null): boolean {
+  if (!timestamp) return false;
+  const t = new Date(timestamp).getTime();
+  if (isNaN(t)) return false;
+  const cutoff = Date.now() - POST_WINDOW_DAYS * 86400_000;
+  return t >= cutoff && t <= Date.now() + 60_000;
+}
+
+// === Classificador heurístico (sem IA) ===
+const EVENT_KW = ["hoje","amanha","sábado","sabado","sexta","quinta","domingo","lineup","atração","atracao","show","ao vivo","open bar","openbar","festa","baile","edição","edicao","entrada","ingresso","reservas","começa às","comeca as","a partir das"," 20h"," 21h"," 22h"," 23h","música ao vivo","musica ao vivo"];
+const PROMO_KW = ["promoção","promocao","combo","desconto","compre","leve","delivery","peça agora","peca agora","oferta","imperdível","imperdivel","preço especial","preco especial","dose dupla","happy hour","cardápio","cardapio","frete grátis","frete gratis"];
+const ANNOUNCE_KW = ["comunicado","funcionamento","horário especial","horario especial","fechado","abriremos","não abriremos","nao abriremos","manutenção","manutencao","aviso","informamos"];
+
+function lowerNoAccent(s: string) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function classifyPostText(text: string): "event" | "promotion" | "announcement" | "generic" | "unknown" {
+  const t = lowerNoAccent(text);
+  if (!t.trim()) return "unknown";
+  const ev = EVENT_KW.some((k) => t.includes(k));
+  const pr = PROMO_KW.some((k) => t.includes(k));
+  const an = ANNOUNCE_KW.some((k) => t.includes(k));
+  const hasTime = /\b\d{1,2}h(?:\d{2})?\b/.test(t);
+  if (an && !ev) return "announcement";
+  if (ev || hasTime) return "event";
+  if (pr) return "promotion";
+  return "generic";
+}
+
 const slugify = (s: string) =>
   (s || "evento")
     .toLowerCase()
@@ -166,6 +209,11 @@ Deno.serve(async (req) => {
     possible_duplicate: 0,
     updated_existing: 0,
     not_event: 0,
+    ignored_old_post: 0,
+    ignored_promotion: 0,
+    ignored_announcement: 0,
+    sent_for_review: 0,
+    accepted_window: 0,
     validation_failures: 0,
     errors: [] as string[],
   };
@@ -194,12 +242,7 @@ Deno.serve(async (req) => {
       .not("instagram", "is", null);
 
     for (const p of partners || []) {
-      const handleRaw = (p.instagram || "").trim();
-      if (!handleRaw) continue;
-      const handle = handleRaw
-        .replace(/^@/, "")
-        .replace(/^https?:\/\/(www\.)?instagram\.com\//, "")
-        .replace(/\/$/, "");
+      const handle = normalizeInstagramHandle(p.instagram);
       if (!handle) continue;
       stats.partners_scanned++;
 
@@ -226,7 +269,7 @@ Deno.serve(async (req) => {
           const imageUrl = m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url;
           if (!imageUrl) continue;
 
-          // === DEDUP STAGE 1: media_id já scaneado ===
+          // === DEDUP STAGE 1 (cheap): media_id já scaneado — pula tudo se conhecido ===
           const { data: existingScan } = await supabase
             .from("instagram_scans")
             .select("id,event_id,status,scan_count")
@@ -241,13 +284,55 @@ Deno.serve(async (req) => {
                 scan_count: (existingScan.scan_count || 1) + 1,
               })
               .eq("id", existingScan.id);
-            // Reencontro: se já está publicado, contabiliza repost
             try { await supabase.rpc("record_radar_repost", { _scan_id: existingScan.id }); } catch {}
             stats.skipped_duplicate++;
             stats.updated_existing++;
             continue;
           }
 
+          // === FILTRO BARATO 1: janela de 5 dias (ignora posts antigos) ===
+          if (!isPostWithinWindow(m.timestamp)) {
+            stats.ignored_old_post++;
+            await supabase.from("instagram_scans").insert({
+              media_id: m.id,
+              permalink: m.permalink || null,
+              source_handle: handle,
+              partner_id: p.id,
+              status: "ignored",
+              reason: m.timestamp
+                ? `Post fora da janela de ${POST_WINDOW_DAYS} dias (${m.timestamp})`
+                : "Post sem timestamp confiável (data_insegura)",
+              raw_caption: (m.caption || "").slice(0, 2000),
+              hidden_from_radar: true,
+              archive_reason: "auto: fora da janela de 5 dias",
+              archived_at: new Date().toISOString(),
+            });
+            continue;
+          }
+
+          // === FILTRO BARATO 2: classificador heurístico (sem IA) ===
+          const cheapKind = classifyPostText(m.caption || "");
+          if (cheapKind === "promotion" || cheapKind === "announcement") {
+            await supabase.from("instagram_scans").insert({
+              media_id: m.id,
+              permalink: m.permalink || null,
+              source_handle: handle,
+              partner_id: p.id,
+              status: "ignored",
+              reason: cheapKind === "promotion"
+                ? "Promoção detectada (sem evento) — sem gasto de IA"
+                : "Aviso/comunicado detectado — sem gasto de IA",
+              raw_caption: (m.caption || "").slice(0, 2000),
+              hidden_from_radar: true,
+              archive_reason: cheapKind === "promotion" ? "auto: promoção" : "auto: aviso",
+              archived_at: new Date().toISOString(),
+            });
+            if (cheapKind === "promotion") stats.ignored_promotion++;
+            else stats.ignored_announcement++;
+            continue;
+          }
+
+          stats.accepted_window++;
           // === DEDUP STAGE 2: permalink já em events ===
           if (m.permalink) {
             const { data: dupEvent } = await supabase
