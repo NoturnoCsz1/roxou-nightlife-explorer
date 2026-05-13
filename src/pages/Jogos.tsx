@@ -68,27 +68,25 @@ const norm = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 
-type FilterKey = "hoje" | "amanha" | "semana" | "copa" | "brasil" | "internacional" | "live";
+import {
+  todayKeySP,
+  tomorrowKeySP,
+  getWeekRangeSP,
+  getWeekendRangeSPKeys,
+} from "@/lib/dateUtils";
+
+type FilterKey = "hoje" | "amanha" | "semana" | "fds" | "copa" | "brasil" | "internacional" | "live";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "hoje", label: "Hoje" },
   { key: "amanha", label: "Amanhã" },
+  { key: "fds", label: "Fim de semana" },
   { key: "semana", label: "Semana" },
   { key: "copa", label: "Copa" },
   { key: "brasil", label: "Brasil" },
   { key: "internacional", label: "Internacionais" },
   { key: "live", label: "Ao vivo" },
 ];
-
-const todayKeySP = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
-
-const tomorrowKeySP = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date(Date.now() + 24 * 60 * 60 * 1000));
 
 export default function Jogos() {
   const [filter, setFilter] = useState<FilterKey>("semana");
