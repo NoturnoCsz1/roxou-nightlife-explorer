@@ -31,7 +31,7 @@ export function useAdminProfile() {
           .from("user_roles")
           .select("role")
           .eq("user_id", user!.id)
-          .in("role", ["admin", "city_editor"]),
+          .eq("role", "admin"),
         supabase
           .from("admin_profiles")
           .select("role, allowed_city")
@@ -41,11 +41,11 @@ export function useAdminProfile() {
 
       if (cancelled) return;
 
-      const roles = (rolesRes.data ?? []).map((r) => r.role);
-      const realAdmin = roles.includes("admin");
-      const cityEditor = roles.includes("city_editor");
+      const realAdmin = (rolesRes.data ?? []).length > 0;
+      const cityEditorProfile = profileRes.data?.role === "city_editor";
 
-      setIsAdmin(realAdmin || cityEditor);
+      // Source of truth: real admin role OR explicit city_editor admin_profiles row
+      setIsAdmin(realAdmin || cityEditorProfile);
 
       if (profileRes.data) {
         setProfile({
