@@ -452,7 +452,7 @@ Deno.serve(async (req) => {
                 : "Post sem timestamp confiável (data_insegura)",
               raw_caption: (m.caption || "").slice(0, 2000),
               hidden_from_radar: true,
-              archive_reason: "auto: fora da janela de 5 dias",
+              archive_reason: "auto: fora da janela de 2 dias",
               archived_at: new Date().toISOString(),
             });
             continue;
