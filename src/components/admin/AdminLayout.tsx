@@ -8,8 +8,8 @@ import { ADMIN_NAVIGATION as navItems } from "@/config/adminNavigation";
 const AdminLayout = () => {
   const { pathname } = useLocation();
   const { user, loading, signOut } = useAuth();
-  const { profile, isCityEditor, cityFilter } = useAdminProfile();
-  if (loading) {
+  const { profile, isAdmin, loading: adminLoading, isCityEditor, cityFilter } = useAdminProfile();
+  if (loading || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -19,6 +19,10 @@ const AdminLayout = () => {
 
   if (!user) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return (
