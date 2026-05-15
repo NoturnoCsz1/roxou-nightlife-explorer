@@ -632,10 +632,23 @@ const RadarIA = () => {
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
                   {imageUrl ? (
-                    <img src={imageUrl} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={imageUrl}
+                      alt={title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.src !== window.location.origin + "/placeholder.svg") {
+                          img.src = "/placeholder.svg";
+                          img.classList.add("opacity-40", "p-8");
+                        }
+                      }}
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <ImageIcon className="h-10 w-10" />
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/60 bg-gradient-to-br from-primary/5 to-purple-500/5">
+                      <Radar className="h-10 w-10" />
+                      <span className="text-[10px] uppercase tracking-wider">Sem preview</span>
                     </div>
                   )}
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5">
