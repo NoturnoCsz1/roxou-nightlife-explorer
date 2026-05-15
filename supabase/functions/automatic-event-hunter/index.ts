@@ -32,14 +32,25 @@ function normalizeInstagramHandle(input: string | null | undefined): string {
   return s;
 }
 
-// === Janela de 5 dias (SP timezone-aware) ===
-const POST_WINDOW_DAYS = 5;
+// === Janela de 2 dias (SP timezone-aware) ===
+const POST_WINDOW_DAYS = 2;
 function isPostWithinWindow(timestamp?: string | null): boolean {
   if (!timestamp) return false;
   const t = new Date(timestamp).getTime();
   if (isNaN(t)) return false;
   const cutoff = Date.now() - POST_WINDOW_DAYS * 86400_000;
   return t >= cutoff && t <= Date.now() + 60_000;
+}
+
+// Hoje (00:00) em America/Sao_Paulo, retorna timestamp UTC ms
+function startOfTodaySPMs(): number {
+  const now = new Date();
+  const spStr = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const sp = new Date(spStr);
+  sp.setHours(0, 0, 0, 0);
+  // converte de volta pra UTC
+  const offsetMin = (now.getTime() - new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getTime()) / 60000;
+  return sp.getTime() + offsetMin * 60000;
 }
 
 // === Classificador heurístico (sem IA) ===
@@ -403,11 +414,16 @@ Deno.serve(async (req) => {
           // === DEDUP STAGE 1 (cheap): media_id já scaneado — pula tudo se conhecido ===
           const { data: existingScan } = await supabase
             .from("instagram_scans")
-            .select("id,event_id,status,scan_count")
+            .select("id,event_id,status,scan_count,permanently_ignored")
             .eq("media_id", m.id)
             .maybeSingle();
 
           if (existingScan) {
+            // Permanentemente ignorado: nem atualiza, só passa
+            if (existingScan.permanently_ignored) {
+              stats.skipped_duplicate++;
+              continue;
+            }
             await supabase
               .from("instagram_scans")
               .update({
@@ -426,6 +442,7 @@ Deno.serve(async (req) => {
             stats.ignored_old_post++;
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -435,7 +452,7 @@ Deno.serve(async (req) => {
                 : "Post sem timestamp confiável (data_insegura)",
               raw_caption: (m.caption || "").slice(0, 2000),
               hidden_from_radar: true,
-              archive_reason: "auto: fora da janela de 5 dias",
+              archive_reason: "auto: fora da janela de 2 dias",
               archived_at: new Date().toISOString(),
             });
             continue;
@@ -446,6 +463,7 @@ Deno.serve(async (req) => {
           if (cheapKind === "promotion" || cheapKind === "announcement") {
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -474,6 +492,7 @@ Deno.serve(async (req) => {
             if (dupEvent) {
               await supabase.from("instagram_scans").insert({
                 media_id: m.id,
+              preview_image_url: imageUrl,
                 permalink: m.permalink,
                 source_handle: handle,
                 partner_id: p.id,
@@ -495,6 +514,7 @@ Deno.serve(async (req) => {
             stats.errors.push(`AI ${handle}/${m.id}: ${e.message}`);
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -513,6 +533,7 @@ Deno.serve(async (req) => {
           if (!cls?.is_event) {
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -551,6 +572,7 @@ Deno.serve(async (req) => {
           if (dupByKey) {
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -588,6 +610,7 @@ Deno.serve(async (req) => {
             if (match) {
               await supabase.from("instagram_scans").insert({
                 media_id: m.id,
+              preview_image_url: imageUrl,
                 permalink: m.permalink || null,
                 source_handle: handle,
                 partner_id: p.id,
@@ -627,11 +650,57 @@ Deno.serve(async (req) => {
             }
           } catch (_e) { /* mantém URL original */ }
 
-          const fallbackDt = dt || new Date(Date.now() + 86400000).toISOString();
+          // === Bloqueia eventos passados (SP) ===
+          if (dt) {
+            const evMs = new Date(dt).getTime();
+            if (!isNaN(evMs) && evMs < startOfTodaySPMs()) {
+              await supabase.from("instagram_scans").insert({
+                media_id: m.id,
+                preview_image_url: imageUrl,
+                permalink: m.permalink || null,
+                source_handle: handle,
+                partner_id: p.id,
+                status: "ignored",
+                reason: `Evento passado (${dt.slice(0, 10)})`,
+                dedupe_key: dedupeKey,
+                raw_ocr: ocrText,
+                raw_caption: m.caption || null,
+                extracted_json: cls,
+                keywords: allKeywords,
+                ai_confidence: cls.confidence,
+                hidden_from_radar: true,
+                archived_at: new Date().toISOString(),
+                archive_reason: "auto: evento passado",
+              });
+              stats.ignored_old_post++;
+              continue;
+            }
+          } else {
+            // sem data confiável: manda para revisão e NÃO cria evento
+            await supabase.from("instagram_scans").insert({
+              media_id: m.id,
+              preview_image_url: imageUrl,
+              permalink: m.permalink || null,
+              source_handle: handle,
+              partner_id: p.id,
+              status: "possible_duplicate",
+              reason: "Data insegura — enviar para revisão manual",
+              dedupe_key: dedupeKey,
+              raw_ocr: ocrText,
+              raw_caption: m.caption || null,
+              extracted_json: cls,
+              keywords: allKeywords,
+              ai_confidence: "low",
+            });
+            stats.sent_for_review++;
+            continue;
+          }
+
+          const fallbackDt = dt;
           const baseSlug = slugify(`${eventTitle}-${m.id.slice(-6)}`);
 
+          // Descrição pública limpa (sem texto técnico de IA)
           const description = [
-            cls.reason,
             cls.artists?.length ? `Atrações: ${cls.artists.join(", ")}` : null,
             cls.price ? `Entrada: ${cls.price}` : null,
             cls.observations,
@@ -665,6 +734,7 @@ Deno.serve(async (req) => {
             stats.errors.push(`insert ${handle}: ${insErr.message}`);
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -682,6 +752,7 @@ Deno.serve(async (req) => {
 
           await supabase.from("instagram_scans").insert({
             media_id: m.id,
+              preview_image_url: imageUrl,
             permalink: m.permalink || null,
             source_handle: handle,
             partner_id: p.id,

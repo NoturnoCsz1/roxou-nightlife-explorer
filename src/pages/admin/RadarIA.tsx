@@ -70,6 +70,8 @@ interface ScanRow {
   archived_at: string | null;
   archive_reason: string | null;
   hidden_from_radar: boolean;
+  permanently_ignored?: boolean;
+  preview_image_url?: string | null;
   first_published_at: string | null;
   last_reposted_at: string | null;
   repost_count: number;
@@ -154,7 +156,7 @@ const RadarIA = () => {
 
   function categorize(card: Card): TabKey {
     const s = card.scan;
-    if (s.hidden_from_radar) return "arquivados";
+    if (s.permanently_ignored || s.hidden_from_radar) return "arquivados";
 
     const evStatus = card.event?.status;
     const reason = (s.reason || "").toLowerCase();
@@ -317,6 +319,24 @@ const RadarIA = () => {
     setActing(null);
     if (error) toast.error(error.message);
     else { toast.success("Restaurado."); load(); }
+  }
+
+  async function permanentlyIgnore(scanId: string) {
+    setActing(scanId);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        permanently_ignored: true,
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Ignorado permanentemente pelo admin",
+        archived_by: userData.user?.id ?? null,
+      })
+      .eq("id", scanId);
+    setActing(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Postagem ignorada permanentemente."); load(); }
   }
 
   async function runRetention() {
@@ -599,7 +619,7 @@ const RadarIA = () => {
             const conf = (c.scan.ai_confidence || ext.confidence || "medium").toLowerCase();
             const ev = c.event;
             const detectedType = (ext.detected_type || ext.type || "").toLowerCase();
-            const imageUrl = ev?.image_url || null;
+            const imageUrl = ev?.image_url || c.scan.preview_image_url || ext.image_url || null;
             const title = ev?.title || ext.title || "—";
             const dt = ev?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
             const venue = ev?.venue_name || ext.venue_name || c.scan.source_handle;
@@ -612,10 +632,23 @@ const RadarIA = () => {
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
                   {imageUrl ? (
-                    <img src={imageUrl} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={imageUrl}
+                      alt={title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        if (img.src !== window.location.origin + "/placeholder.svg") {
+                          img.src = "/placeholder.svg";
+                          img.classList.add("opacity-40", "p-8");
+                        }
+                      }}
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      <ImageIcon className="h-10 w-10" />
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/60 bg-gradient-to-br from-primary/5 to-purple-500/5">
+                      <Radar className="h-10 w-10" />
+                      <span className="text-[10px] uppercase tracking-wider">Sem preview</span>
                     </div>
                   )}
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5">
@@ -790,6 +823,21 @@ const RadarIA = () => {
                       >
                         <Archive className="h-3.5 w-3.5" /> Arquivar item
                       </button>
+                    )}
+                    {!c.scan.permanently_ignored && (
+                      <button
+                        onClick={() => permanentlyIgnore(c.scan.id)}
+                        disabled={acting === c.scan.id}
+                        title="Não voltar a aparecer mesmo em novas varreduras"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-600/15 text-rose-300 text-xs font-bold hover:bg-rose-600/25 disabled:opacity-40 border border-rose-500/30"
+                      >
+                        <Ban className="h-3.5 w-3.5" /> Ignorar permanentemente
+                      </button>
+                    )}
+                    {c.scan.permanently_ignored && (
+                      <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300/80 text-xs font-bold border border-rose-500/30">
+                        <Ban className="h-3.5 w-3.5" /> Permanentemente ignorado
+                      </span>
                     )}
                   </div>
                 </div>
