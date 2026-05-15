@@ -70,6 +70,8 @@ interface ScanRow {
   archived_at: string | null;
   archive_reason: string | null;
   hidden_from_radar: boolean;
+  permanently_ignored?: boolean;
+  preview_image_url?: string | null;
   first_published_at: string | null;
   last_reposted_at: string | null;
   repost_count: number;
