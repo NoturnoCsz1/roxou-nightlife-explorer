@@ -156,7 +156,7 @@ const RadarIA = () => {
 
   function categorize(card: Card): TabKey {
     const s = card.scan;
-    if (s.hidden_from_radar) return "arquivados";
+    if (s.permanently_ignored || s.hidden_from_radar) return "arquivados";
 
     const evStatus = card.event?.status;
     const reason = (s.reason || "").toLowerCase();
