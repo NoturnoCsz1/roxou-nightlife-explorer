@@ -321,6 +321,24 @@ const RadarIA = () => {
     else { toast.success("Restaurado."); load(); }
   }
 
+  async function permanentlyIgnore(scanId: string) {
+    setActing(scanId);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        permanently_ignored: true,
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Ignorado permanentemente pelo admin",
+        archived_by: userData.user?.id ?? null,
+      })
+      .eq("id", scanId);
+    setActing(null);
+    if (error) toast.error(error.message);
+    else { toast.success("Postagem ignorada permanentemente."); load(); }
+  }
+
   async function runRetention() {
     const t = toast.loading("Aplicando retenção inteligente...");
     const { data, error } = await supabase.rpc("archive_old_radar_scans");
