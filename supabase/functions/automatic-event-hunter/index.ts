@@ -414,11 +414,16 @@ Deno.serve(async (req) => {
           // === DEDUP STAGE 1 (cheap): media_id já scaneado — pula tudo se conhecido ===
           const { data: existingScan } = await supabase
             .from("instagram_scans")
-            .select("id,event_id,status,scan_count")
+            .select("id,event_id,status,scan_count,permanently_ignored")
             .eq("media_id", m.id)
             .maybeSingle();
 
           if (existingScan) {
+            // Permanentemente ignorado: nem atualiza, só passa
+            if (existingScan.permanently_ignored) {
+              stats.skipped_duplicate++;
+              continue;
+            }
             await supabase
               .from("instagram_scans")
               .update({
