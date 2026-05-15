@@ -442,6 +442,7 @@ Deno.serve(async (req) => {
             stats.ignored_old_post++;
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -462,6 +463,7 @@ Deno.serve(async (req) => {
           if (cheapKind === "promotion" || cheapKind === "announcement") {
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -490,6 +492,7 @@ Deno.serve(async (req) => {
             if (dupEvent) {
               await supabase.from("instagram_scans").insert({
                 media_id: m.id,
+              preview_image_url: imageUrl,
                 permalink: m.permalink,
                 source_handle: handle,
                 partner_id: p.id,
@@ -511,6 +514,7 @@ Deno.serve(async (req) => {
             stats.errors.push(`AI ${handle}/${m.id}: ${e.message}`);
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -529,6 +533,7 @@ Deno.serve(async (req) => {
           if (!cls?.is_event) {
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -567,6 +572,7 @@ Deno.serve(async (req) => {
           if (dupByKey) {
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -604,6 +610,7 @@ Deno.serve(async (req) => {
             if (match) {
               await supabase.from("instagram_scans").insert({
                 media_id: m.id,
+              preview_image_url: imageUrl,
                 permalink: m.permalink || null,
                 source_handle: handle,
                 partner_id: p.id,
@@ -681,6 +688,7 @@ Deno.serve(async (req) => {
             stats.errors.push(`insert ${handle}: ${insErr.message}`);
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
+              preview_image_url: imageUrl,
               permalink: m.permalink || null,
               source_handle: handle,
               partner_id: p.id,
@@ -698,6 +706,7 @@ Deno.serve(async (req) => {
 
           await supabase.from("instagram_scans").insert({
             media_id: m.id,
+              preview_image_url: imageUrl,
             permalink: m.permalink || null,
             source_handle: handle,
             partner_id: p.id,
