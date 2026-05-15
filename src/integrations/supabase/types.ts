@@ -1434,6 +1434,8 @@ export type Database = {
           media_id: string
           partner_id: string | null
           permalink: string | null
+          permanently_ignored: boolean
+          preview_image_url: string | null
           raw_caption: string | null
           raw_ocr: string | null
           reason: string | null
@@ -1465,6 +1467,8 @@ export type Database = {
           media_id: string
           partner_id?: string | null
           permalink?: string | null
+          permanently_ignored?: boolean
+          preview_image_url?: string | null
           raw_caption?: string | null
           raw_ocr?: string | null
           reason?: string | null
@@ -1496,6 +1500,8 @@ export type Database = {
           media_id?: string
           partner_id?: string | null
           permalink?: string | null
+          permanently_ignored?: boolean
+          preview_image_url?: string | null
           raw_caption?: string | null
           raw_ocr?: string | null
           reason?: string | null
