@@ -824,6 +824,21 @@ const RadarIA = () => {
                         <Archive className="h-3.5 w-3.5" /> Arquivar item
                       </button>
                     )}
+                    {!c.scan.permanently_ignored && (
+                      <button
+                        onClick={() => permanentlyIgnore(c.scan.id)}
+                        disabled={acting === c.scan.id}
+                        title="Não voltar a aparecer mesmo em novas varreduras"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-600/15 text-rose-300 text-xs font-bold hover:bg-rose-600/25 disabled:opacity-40 border border-rose-500/30"
+                      >
+                        <Ban className="h-3.5 w-3.5" /> Ignorar permanentemente
+                      </button>
+                    )}
+                    {c.scan.permanently_ignored && (
+                      <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300/80 text-xs font-bold border border-rose-500/30">
+                        <Ban className="h-3.5 w-3.5" /> Permanentemente ignorado
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
