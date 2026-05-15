@@ -650,11 +650,57 @@ Deno.serve(async (req) => {
             }
           } catch (_e) { /* mantém URL original */ }
 
-          const fallbackDt = dt || new Date(Date.now() + 86400000).toISOString();
+          // === Bloqueia eventos passados (SP) ===
+          if (dt) {
+            const evMs = new Date(dt).getTime();
+            if (!isNaN(evMs) && evMs < startOfTodaySPMs()) {
+              await supabase.from("instagram_scans").insert({
+                media_id: m.id,
+                preview_image_url: imageUrl,
+                permalink: m.permalink || null,
+                source_handle: handle,
+                partner_id: p.id,
+                status: "ignored",
+                reason: `Evento passado (${dt.slice(0, 10)})`,
+                dedupe_key: dedupeKey,
+                raw_ocr: ocrText,
+                raw_caption: m.caption || null,
+                extracted_json: cls,
+                keywords: allKeywords,
+                ai_confidence: cls.confidence,
+                hidden_from_radar: true,
+                archived_at: new Date().toISOString(),
+                archive_reason: "auto: evento passado",
+              });
+              stats.ignored_old_post++;
+              continue;
+            }
+          } else {
+            // sem data confiável: manda para revisão e NÃO cria evento
+            await supabase.from("instagram_scans").insert({
+              media_id: m.id,
+              preview_image_url: imageUrl,
+              permalink: m.permalink || null,
+              source_handle: handle,
+              partner_id: p.id,
+              status: "possible_duplicate",
+              reason: "Data insegura — enviar para revisão manual",
+              dedupe_key: dedupeKey,
+              raw_ocr: ocrText,
+              raw_caption: m.caption || null,
+              extracted_json: cls,
+              keywords: allKeywords,
+              ai_confidence: "low",
+            });
+            stats.sent_for_review++;
+            continue;
+          }
+
+          const fallbackDt = dt;
           const baseSlug = slugify(`${eventTitle}-${m.id.slice(-6)}`);
 
+          // Descrição pública limpa (sem texto técnico de IA)
           const description = [
-            cls.reason,
             cls.artists?.length ? `Atrações: ${cls.artists.join(", ")}` : null,
             cls.price ? `Entrada: ${cls.price}` : null,
             cls.observations,
