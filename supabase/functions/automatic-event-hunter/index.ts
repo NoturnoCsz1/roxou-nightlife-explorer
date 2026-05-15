@@ -32,14 +32,25 @@ function normalizeInstagramHandle(input: string | null | undefined): string {
   return s;
 }
 
-// === Janela de 5 dias (SP timezone-aware) ===
-const POST_WINDOW_DAYS = 5;
+// === Janela de 2 dias (SP timezone-aware) ===
+const POST_WINDOW_DAYS = 2;
 function isPostWithinWindow(timestamp?: string | null): boolean {
   if (!timestamp) return false;
   const t = new Date(timestamp).getTime();
   if (isNaN(t)) return false;
   const cutoff = Date.now() - POST_WINDOW_DAYS * 86400_000;
   return t >= cutoff && t <= Date.now() + 60_000;
+}
+
+// Hoje (00:00) em America/Sao_Paulo, retorna timestamp UTC ms
+function startOfTodaySPMs(): number {
+  const now = new Date();
+  const spStr = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+  const sp = new Date(spStr);
+  sp.setHours(0, 0, 0, 0);
+  // converte de volta pra UTC
+  const offsetMin = (now.getTime() - new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getTime()) / 60000;
+  return sp.getTime() + offsetMin * 60000;
 }
 
 // === Classificador heurístico (sem IA) ===
