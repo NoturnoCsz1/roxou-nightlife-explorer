@@ -358,6 +358,28 @@ export default function JogosAdmin() {
 
   const isLive = (m: MatchRow) => m.status?.toLowerCase() === "live" || m.status?.toLowerCase() === "in_play";
 
+  // Resumo operacional da Copa — apenas próximas 48h
+  const opSummary = useMemo(() => {
+    const now = Date.now();
+    const horizon = now + 48 * 60 * 60 * 1000;
+    const todayKey = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const upcoming = matches.filter((m) => {
+      const t = new Date(m.match_time).getTime();
+      return t >= now - 3 * 60 * 60 * 1000 && t <= horizon;
+    });
+    const live = upcoming.filter(isLive).length;
+    const brToday = upcoming.filter((m) => {
+      const k = getLeagueGroupKey(m.league_label);
+      const day = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(m.match_time));
+      return day === todayKey && (k === "brasileirao" || k === "copa_brasil" || k === "libertadores" || k === "sulamericana" || k === "serie_b");
+    }).length;
+    const withBars = upcoming.filter((m) => (metaMap[m.slug]?.venuesCount ?? 0) > 0).length;
+    const withStream = upcoming.filter((m) => metaMap[m.slug]?.hasStream).length;
+    const withoutAny = upcoming.filter((m) => !metaMap[m.slug]?.hasStream && (metaMap[m.slug]?.venuesCount ?? 0) === 0).length;
+    const topViewed = [...matches].sort((a, b) => (b.views_count ?? 0) - (a.views_count ?? 0))[0];
+    return { live, brToday, withBars, withStream, withoutAny, topViewed, upcomingCount: upcoming.length };
+  }, [matches, metaMap]);
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -528,21 +550,6 @@ export default function JogosAdmin() {
                   )}
                 </div>
 
-                {/* KPIs futuros (placeholder visual) */}
-                <div className="grid grid-cols-3 gap-2 pt-2 opacity-50">
-                  <div className="rounded-lg border border-dashed border-border/40 px-2 py-1.5 text-center">
-                    <p className="text-[9px] uppercase text-muted-foreground">Lotação</p>
-                    <p className="text-xs font-black">—</p>
-                  </div>
-                  <div className="rounded-lg border border-dashed border-border/40 px-2 py-1.5 text-center">
-                    <p className="text-[9px] uppercase text-muted-foreground">Torcida</p>
-                    <p className="text-xs font-black">—</p>
-                  </div>
-                  <div className="rounded-lg border border-dashed border-border/40 px-2 py-1.5 text-center">
-                    <p className="text-[9px] uppercase text-muted-foreground">Temperatura</p>
-                    <p className="text-xs font-black">—</p>
-                  </div>
-                </div>
               </div>
 
               {/* Streams */}
