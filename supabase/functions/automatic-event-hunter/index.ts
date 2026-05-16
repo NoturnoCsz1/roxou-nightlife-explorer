@@ -774,6 +774,7 @@ Deno.serve(async (req) => {
             .from("events")
             .insert({
               title: eventTitle,
+              original_detected_title: rawTitle,
               slug: baseSlug,
               date_time: fallbackDt,
               category: cls.category || "festa",
