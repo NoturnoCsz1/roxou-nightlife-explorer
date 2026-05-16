@@ -118,6 +118,117 @@ function formatDate(dt: string | null) {
   } catch { return dt; }
 }
 
+// ============ PREVIEW HELPERS ============
+function normalizeUrl(raw: any): string | null {
+  if (raw == null) return null;
+  let u = String(raw).trim();
+  if (!u || u === "null" || u === "undefined") return null;
+  try { u = decodeURI(u); } catch {}
+  if (!/^https?:\/\//i.test(u)) return null;
+  return u;
+}
+
+function buildPreviewChain(scan: any, ev: any, ext: any): string[] {
+  const candidates = [
+    ev?.image_url,
+    scan?.preview_image_url,
+    ext?.image_url,
+    ext?.flyer_url,
+    ext?.media_url,
+    ext?.thumbnail_url,
+    ext?.display_url,
+    Array.isArray(ext?.media) ? ext.media[0]?.url : null,
+    Array.isArray(ext?.media) ? ext.media[0]?.thumbnail_url : null,
+  ];
+  const out: string[] = [];
+  for (const c of candidates) {
+    const n = normalizeUrl(c);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
+
+// Mini-componente com fallback automático + skeleton + fade-in
+function SmartPreview({ urls, alt }: { urls: string[]; alt: string }) {
+  const [idx, setIdx] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { setIdx(0); setLoaded(false); }, [urls.join("|")]);
+
+  if (!urls.length || idx >= urls.length) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/60 bg-gradient-to-br from-primary/5 to-purple-500/5">
+        <Radar className="h-10 w-10" />
+        <span className="text-[10px] uppercase tracking-wider">Sem preview</span>
+      </div>
+    );
+  }
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/40 via-muted/20 to-muted/40" />
+      )}
+      <img
+        key={urls[idx]}
+        src={urls[idx]}
+        alt={alt}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => { setLoaded(false); setIdx((i) => i + 1); }}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+    </>
+  );
+}
+
+// ============ CLASSIFICAÇÃO DE CONTEÚDO ============
+const MUSIC_KEYWORDS = [
+  "dj","música ao vivo","musica ao vivo","ao vivo","show","banda","cantor","cantora",
+  "sertanejo","pagode","funk","eletrônica","eletronica","rock","mpb","samba","roda de samba",
+  "axé","forró","forro","reggae","hip hop","rap","trap","techno","house","brega",
+  "balada","festa","festival","sunset","after","resenha","open bar","openbar",
+  "universitário","universitario","line up","line-up","atração","atracao","apresenta",
+  "🎤","🎧","🎶","🎵","🪩","🎸","🥁",
+];
+const FOOD_KEYWORDS = [
+  "prato executivo","executivo","hamburguer","hambúrguer","burger","pizza","almoço","almoco",
+  "jantar","cardápio","cardapio","menu","delivery","combo","promoção do dia","happy hour comida",
+  "porção","porcao","churrasco","rodízio","rodizio","buffet",
+];
+const AD_KEYWORDS = [
+  "publicidade","institucional","propaganda","aniversário da loja","aniversario da loja",
+  "venha conhecer","novidade","inauguração","inauguracao","abertura","financiamento",
+  "imobiliária","imobiliaria","oferta","queima de estoque",
+];
+
+function getContentText(scan: any, ext: any): string {
+  return [
+    scan?.raw_caption, scan?.raw_ocr, ext?.title, ext?.description, ext?.summary,
+    Array.isArray(scan?.keywords) ? scan.keywords.join(" ") : "",
+    Array.isArray(ext?.hashtags) ? ext.hashtags.join(" ") : "",
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+type ContentKind = "music" | "food" | "ad" | "review";
+function classifyContent(scan: any, ext: any): ContentKind {
+  const text = getContentText(scan, ext);
+  const detected = String(ext?.detected_type || ext?.type || "").toLowerCase();
+  const hasMusic = MUSIC_KEYWORDS.some(k => text.includes(k));
+  const hasFood = FOOD_KEYWORDS.some(k => text.includes(k));
+  const hasAd = AD_KEYWORDS.some(k => text.includes(k));
+  if (hasMusic) return "music";
+  if (detected === "promotion" || detected === "promocao" || hasAd) return "ad";
+  if (detected === "menu" || hasFood) return "food";
+  return "review";
+}
+
+const CONTENT_BADGE: Record<ContentKind, { label: string; icon: any; cls: string }> = {
+  music: { label: "Evento Musical", icon: Music2, cls: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" },
+  food:  { label: "Gastronomia",    icon: Utensils, cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  ad:    { label: "Publicidade",    icon: Megaphone, cls: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30" },
+  review:{ label: "Revisar",        icon: AlertTriangle, cls: "bg-orange-500/15 text-orange-300 border-orange-500/30" },
+};
+
 const TABS: { key: TabKey; label: string; hint: string }[] = [
   { key: "novos", label: "Novos", hint: "Recém capturados, aguardando decisão" },
   { key: "revisar", label: "Revisar", hint: "Possíveis duplicados ou data incerta" },
