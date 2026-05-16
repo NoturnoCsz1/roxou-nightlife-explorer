@@ -580,6 +580,65 @@ const RadarIA = () => {
     else { toast.success("Postagem ignorada permanentemente."); load(); }
   }
 
+  // ===== BULK ACTIONS =====
+  async function bulkArchive() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Arquivar ${ids.length} item(ns) do Radar?`)) return;
+    setBulkRunning(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Arquivamento em lote pelo admin",
+        archived_by: userData.user?.id ?? null,
+      })
+      .in("id", ids);
+    setBulkRunning(false);
+    if (error) toast.error(error.message);
+    else { toast.success(`${ids.length} item(ns) arquivado(s).`); clearSelection(); load(); }
+  }
+
+  async function bulkPermanentIgnore() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Ignorar permanentemente ${ids.length} item(ns)? Eles não voltarão em novas varreduras.`)) return;
+    setBulkRunning(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        permanently_ignored: true,
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Ignorado permanentemente em lote",
+        archived_by: userData.user?.id ?? null,
+      })
+      .in("id", ids);
+    setBulkRunning(false);
+    if (error) toast.error(error.message);
+    else { toast.success(`${ids.length} item(ns) ignorado(s) permanentemente.`); clearSelection(); load(); }
+  }
+
+  async function bulkCreateEvents() {
+    const targets = cards.filter((c) => selected.has(c.scan.id) && !c.event && !c.scan.permanently_ignored);
+    if (!targets.length) { toast.info("Nenhum item selecionado pode virar evento."); return; }
+    if (!confirm(`Criar rascunhos para ${targets.length} item(ns) selecionado(s)?`)) return;
+    setBulkRunning(true);
+    const t = toast.loading(`Criando ${targets.length} evento(s)...`);
+    let ok = 0, fail = 0;
+    for (const c of targets) {
+      try { await createEventFromScan(c); ok++; } catch { fail++; }
+    }
+    toast.dismiss(t);
+    setBulkRunning(false);
+    toast.success(`Lote: ${ok} criado(s), ${fail} falha(s).`);
+    clearSelection();
+    load();
+  }
+
   async function runRetention() {
     const t = toast.loading("Aplicando retenção inteligente...");
     const { data, error } = await supabase.rpc("archive_old_radar_scans");
