@@ -1115,6 +1115,19 @@ const RadarIA = () => {
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
                   <SmartPreview urls={previewUrls} alt={title} />
+                  <label
+                    className={`absolute top-2 right-2 z-10 flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-all border-2 ${selected.has(c.scan.id) ? "bg-primary border-primary shadow-[0_0_15px_-2px_hsl(var(--primary)/0.7)]" : "bg-black/60 border-white/30 hover:border-primary/70 backdrop-blur-sm"}`}
+                    onClick={(e) => e.stopPropagation()}
+                    title="Selecionar para ações em lote"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.scan.id)}
+                      onChange={() => toggleSelect(c.scan.id)}
+                      className="sr-only"
+                    />
+                    {selected.has(c.scan.id) && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
+                  </label>
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${kindMeta.cls}`}>
                       <KindIcon className="h-3 w-3" /> {kindMeta.label}
