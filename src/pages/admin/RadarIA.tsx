@@ -1026,6 +1026,61 @@ const RadarIA = () => {
         </Sheet>
       </div>
 
+      {/* Bulk action bar */}
+      {!loading && cards.length > 0 && (
+        <div className={`sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl border p-2.5 transition-all ${selected.size > 0 ? "bg-primary/10 border-primary/40 shadow-[0_0_25px_-8px_hsl(var(--primary)/0.5)]" : "bg-card border-border"}`}>
+          <button
+            onClick={selected.size === cards.length ? clearSelection : selectAllVisible}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-card border border-border hover:border-primary/40 transition"
+          >
+            <input
+              type="checkbox"
+              readOnly
+              checked={selected.size > 0 && selected.size === cards.length}
+              ref={(el) => { if (el) el.indeterminate = selected.size > 0 && selected.size < cards.length; }}
+              className="accent-primary pointer-events-none"
+            />
+            {selected.size === cards.length ? "Limpar seleção" : "Selecionar todos"}
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {selected.size} de {cards.length} selecionado(s)
+          </span>
+          {selected.size > 0 && (
+            <div className="flex flex-wrap gap-2 ml-auto">
+              <button
+                onClick={bulkCreateEvents}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40 border border-emerald-500/30"
+              >
+                {bulkRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                Criar eventos ({selected.size})
+              </button>
+              <button
+                onClick={bulkArchive}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-600/20 text-zinc-300 text-xs font-bold hover:bg-zinc-600/30 disabled:opacity-40 border border-zinc-500/30"
+              >
+                <Archive className="h-3.5 w-3.5" /> Arquivar ({selected.size})
+              </button>
+              <button
+                onClick={bulkPermanentIgnore}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-600/15 text-rose-300 text-xs font-bold hover:bg-rose-600/25 disabled:opacity-40 border border-rose-500/30"
+              >
+                <Ban className="h-3.5 w-3.5" /> Ignorar perm. ({selected.size})
+              </button>
+              <button
+                onClick={clearSelection}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-card border border-border text-xs font-bold text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Cards */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
