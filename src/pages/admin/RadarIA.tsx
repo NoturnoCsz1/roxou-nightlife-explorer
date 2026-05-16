@@ -303,9 +303,23 @@ const RadarIA = () => {
   const [filters, setFilters] = useState<AdvancedFilters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
   const [counts, setCounts] = useState<Record<TabKey, number>>({
     novos: 0, revisar: 0, criados: 0, ignorados: 0, arquivados: 0,
   });
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function clearSelection() { setSelected(new Set()); }
+  function selectAllVisible() {
+    setSelected(new Set(cards.map((c) => c.scan.id)));
+  }
 
   function categorize(card: Card): TabKey {
     const s = card.scan;
