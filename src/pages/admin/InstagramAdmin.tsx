@@ -318,37 +318,70 @@ const InstagramAdmin = () => {
         </div>
       )}
 
-      {/* Quick metrics — dados reais da Meta */}
-      <div className="grid grid-cols-3 gap-2">
-        {syncStage === "loading" && !syncData ? (
-          <>
-            <MetricSkeleton />
-            <MetricSkeleton />
-            <MetricSkeleton />
-          </>
-        ) : (
-          <>
-            <MetricCard
-              icon={Users}
-              label="Seguidores"
-              value={fmtNum(syncData?.metrics.followers || 0)}
-              hint={account ? `@${account.username}` : "—"}
-            />
-            <MetricCard
-              icon={Eye}
-              label="Alcance 7d"
-              value={fmtNum(syncData?.metrics.reach_7d || 0)}
-              hint={syncData ? `${fmtNum(syncData.metrics.impressions_7d)} impressões` : "—"}
-            />
-            <MetricCard
-              icon={Heart}
-              label="Engajamento"
-              value={fmtNum(syncData?.metrics.engagement_recent || 0)}
-              hint={syncData ? `${fmtNum(syncData.metrics.media_count)} posts` : "—"}
-            />
-          </>
-        )}
-      </div>
+      {/* Onboarding elegante — só quando NÃO há conta conectada */}
+      {!loading && !account && (
+        <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-card p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <Instagram className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-foreground">Conecte o Instagram da Roxou</h2>
+              <p className="text-[11px] text-muted-foreground">Habilita publicação direta, insights reais e Radar IA.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleConnect}
+              disabled={connecting}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 transition"
+            >
+              {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Instagram className="h-3.5 w-3.5" />}
+              Autorizar Meta
+            </button>
+            <button
+              onClick={() => switchTab("contas")}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 bg-card px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary/40"
+            >
+              Ver pré-requisitos
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Quick metrics — só renderiza quando há conta conectada */}
+      {account && (
+        <div className="grid grid-cols-3 gap-2">
+          {syncStage === "loading" && !syncData ? (
+            <>
+              <MetricSkeleton />
+              <MetricSkeleton />
+              <MetricSkeleton />
+            </>
+          ) : (
+            <>
+              <MetricCard
+                icon={Users}
+                label="Seguidores"
+                value={fmtNum(syncData?.metrics.followers || 0)}
+                hint={account ? `@${account.username}` : "—"}
+              />
+              <MetricCard
+                icon={Eye}
+                label="Alcance 7d"
+                value={fmtNum(syncData?.metrics.reach_7d || 0)}
+                hint={syncData ? `${fmtNum(syncData.metrics.impressions_7d)} impressões` : "—"}
+              />
+              <MetricCard
+                icon={Heart}
+                label="Engajamento"
+                value={fmtNum(syncData?.metrics.engagement_recent || 0)}
+                hint={syncData ? `${fmtNum(syncData.metrics.media_count)} posts` : "—"}
+              />
+            </>
+          )}
+        </div>
+      )}
 
       {/* Tab navigation */}
       <div className="flex gap-1 overflow-x-auto pb-1">
