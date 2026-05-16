@@ -51,6 +51,33 @@ function cleanEventTitle(raw: string | null | undefined): string {
   return s;
 }
 
+// === Flyer fingerprint (mirror src/lib/eventDuplicateDetector.ts) ===
+function fnv1aHex(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = (hash * 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+function cleanImageUrlForFp(url: string | null | undefined): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.toLowerCase();
+  } catch {
+    return String(url).split("?")[0].toLowerCase();
+  }
+}
+function buildFlyerFingerprint(parts: { image_hash?: string | null; image_url?: string | null; permalink?: string | null; media_id?: string | null }): string | null {
+  if (parts.image_hash) return `h:${parts.image_hash}`;
+  const u = cleanImageUrlForFp(parts.image_url || "");
+  if (u) return `u:${fnv1aHex(u)}`;
+  if (parts.media_id) return `m:${fnv1aHex(String(parts.media_id))}`;
+  if (parts.permalink) return `p:${fnv1aHex(cleanImageUrlForFp(parts.permalink))}`;
+  return null;
+}
+
 const norm = (s: string) =>
   (s || "")
     .toLowerCase()
