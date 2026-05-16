@@ -303,9 +303,23 @@ const RadarIA = () => {
   const [filters, setFilters] = useState<AdvancedFilters>(DEFAULT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Card | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
   const [counts, setCounts] = useState<Record<TabKey, number>>({
     novos: 0, revisar: 0, criados: 0, ignorados: 0, arquivados: 0,
   });
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+  function clearSelection() { setSelected(new Set()); }
+  function selectAllVisible() {
+    setSelected(new Set(cards.map((c) => c.scan.id)));
+  }
 
   function categorize(card: Card): TabKey {
     const s = card.scan;
@@ -460,6 +474,7 @@ const RadarIA = () => {
   }
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [tab, filters]);
+  useEffect(() => { clearSelection(); /* eslint-disable-next-line */ }, [tab]);
 
   async function triggerScan() {
     setScanning(true);
@@ -563,6 +578,65 @@ const RadarIA = () => {
     setActing(null);
     if (error) toast.error(error.message);
     else { toast.success("Postagem ignorada permanentemente."); load(); }
+  }
+
+  // ===== BULK ACTIONS =====
+  async function bulkArchive() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Arquivar ${ids.length} item(ns) do Radar?`)) return;
+    setBulkRunning(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Arquivamento em lote pelo admin",
+        archived_by: userData.user?.id ?? null,
+      })
+      .in("id", ids);
+    setBulkRunning(false);
+    if (error) toast.error(error.message);
+    else { toast.success(`${ids.length} item(ns) arquivado(s).`); clearSelection(); load(); }
+  }
+
+  async function bulkPermanentIgnore() {
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+    if (!confirm(`Ignorar permanentemente ${ids.length} item(ns)? Eles não voltarão em novas varreduras.`)) return;
+    setBulkRunning(true);
+    const { data: userData } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        permanently_ignored: true,
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Ignorado permanentemente em lote",
+        archived_by: userData.user?.id ?? null,
+      })
+      .in("id", ids);
+    setBulkRunning(false);
+    if (error) toast.error(error.message);
+    else { toast.success(`${ids.length} item(ns) ignorado(s) permanentemente.`); clearSelection(); load(); }
+  }
+
+  async function bulkCreateEvents() {
+    const targets = cards.filter((c) => selected.has(c.scan.id) && !c.event && !c.scan.permanently_ignored);
+    if (!targets.length) { toast.info("Nenhum item selecionado pode virar evento."); return; }
+    if (!confirm(`Criar rascunhos para ${targets.length} item(ns) selecionado(s)?`)) return;
+    setBulkRunning(true);
+    const t = toast.loading(`Criando ${targets.length} evento(s)...`);
+    let ok = 0, fail = 0;
+    for (const c of targets) {
+      try { await createEventFromScan(c); ok++; } catch { fail++; }
+    }
+    toast.dismiss(t);
+    setBulkRunning(false);
+    toast.success(`Lote: ${ok} criado(s), ${fail} falha(s).`);
+    clearSelection();
+    load();
   }
 
   async function runRetention() {
@@ -952,6 +1026,61 @@ const RadarIA = () => {
         </Sheet>
       </div>
 
+      {/* Bulk action bar */}
+      {!loading && cards.length > 0 && (
+        <div className={`sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl border p-2.5 transition-all ${selected.size > 0 ? "bg-primary/10 border-primary/40 shadow-[0_0_25px_-8px_hsl(var(--primary)/0.5)]" : "bg-card border-border"}`}>
+          <button
+            onClick={selected.size === cards.length ? clearSelection : selectAllVisible}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-card border border-border hover:border-primary/40 transition"
+          >
+            <input
+              type="checkbox"
+              readOnly
+              checked={selected.size > 0 && selected.size === cards.length}
+              ref={(el) => { if (el) el.indeterminate = selected.size > 0 && selected.size < cards.length; }}
+              className="accent-primary pointer-events-none"
+            />
+            {selected.size === cards.length ? "Limpar seleção" : "Selecionar todos"}
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {selected.size} de {cards.length} selecionado(s)
+          </span>
+          {selected.size > 0 && (
+            <div className="flex flex-wrap gap-2 ml-auto">
+              <button
+                onClick={bulkCreateEvents}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40 border border-emerald-500/30"
+              >
+                {bulkRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                Criar eventos ({selected.size})
+              </button>
+              <button
+                onClick={bulkArchive}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-600/20 text-zinc-300 text-xs font-bold hover:bg-zinc-600/30 disabled:opacity-40 border border-zinc-500/30"
+              >
+                <Archive className="h-3.5 w-3.5" /> Arquivar ({selected.size})
+              </button>
+              <button
+                onClick={bulkPermanentIgnore}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-600/15 text-rose-300 text-xs font-bold hover:bg-rose-600/25 disabled:opacity-40 border border-rose-500/30"
+              >
+                <Ban className="h-3.5 w-3.5" /> Ignorar perm. ({selected.size})
+              </button>
+              <button
+                onClick={clearSelection}
+                disabled={bulkRunning}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-card border border-border text-xs font-bold text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Cards */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
@@ -986,6 +1115,19 @@ const RadarIA = () => {
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
                   <SmartPreview urls={previewUrls} alt={title} />
+                  <label
+                    className={`absolute top-2 right-2 z-10 flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-all border-2 ${selected.has(c.scan.id) ? "bg-primary border-primary shadow-[0_0_15px_-2px_hsl(var(--primary)/0.7)]" : "bg-black/60 border-white/30 hover:border-primary/70 backdrop-blur-sm"}`}
+                    onClick={(e) => e.stopPropagation()}
+                    title="Selecionar para ações em lote"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.scan.id)}
+                      onChange={() => toggleSelect(c.scan.id)}
+                      className="sr-only"
+                    />
+                    {selected.has(c.scan.id) && <CheckCircle2 className="h-4 w-4 text-primary-foreground" />}
+                  </label>
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${kindMeta.cls}`}>
                       <KindIcon className="h-3 w-3" /> {kindMeta.label}
