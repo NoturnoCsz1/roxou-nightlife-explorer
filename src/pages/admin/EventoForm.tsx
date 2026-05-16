@@ -66,7 +66,28 @@ const EventoForm = () => {
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [reprocessingSports, setReprocessingSports] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const originalSnapshot = useRef<{ category: string; sub_category: string | null; description: string | null; venue_name: string | null } | null>(null);
+
+  async function softDeleteEvent() {
+    if (!id) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "archived", featured: false, needs_review: false })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Evento excluído (arquivado). Já saiu do site público.");
+      navigate("/admin/eventos");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao excluir evento");
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  }
 
   async function reprocessSportsTransmission() {
     if (!id) {
