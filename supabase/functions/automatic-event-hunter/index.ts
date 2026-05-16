@@ -51,6 +51,33 @@ function cleanEventTitle(raw: string | null | undefined): string {
   return s;
 }
 
+// === Flyer fingerprint (mirror src/lib/eventDuplicateDetector.ts) ===
+function fnv1aHex(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = (hash * 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+function cleanImageUrlForFp(url: string | null | undefined): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`.toLowerCase();
+  } catch {
+    return String(url).split("?")[0].toLowerCase();
+  }
+}
+function buildFlyerFingerprint(parts: { image_hash?: string | null; image_url?: string | null; permalink?: string | null; media_id?: string | null }): string | null {
+  if (parts.image_hash) return `h:${parts.image_hash}`;
+  const u = cleanImageUrlForFp(parts.image_url || "");
+  if (u) return `u:${fnv1aHex(u)}`;
+  if (parts.media_id) return `m:${fnv1aHex(String(parts.media_id))}`;
+  if (parts.permalink) return `p:${fnv1aHex(cleanImageUrlForFp(parts.permalink))}`;
+  return null;
+}
+
 const norm = (s: string) =>
   (s || "")
     .toLowerCase()
@@ -544,6 +571,39 @@ Deno.serve(async (req) => {
           }
 
           stats.accepted_window++;
+
+          // === DEDUP STAGE 0: flyer fingerprint (mesmo flyer já processado) ===
+          const flyerFp = buildFlyerFingerprint({
+            image_url: imageUrl,
+            permalink: m.permalink,
+            media_id: m.id,
+          });
+          if (flyerFp) {
+            const { data: dupByFp } = await supabase
+              .from("events")
+              .select("id,status,title")
+              .eq("flyer_fingerprint", flyerFp)
+              .maybeSingle();
+            if (dupByFp) {
+              await supabase.from("instagram_scans").insert({
+                media_id: m.id,
+                preview_image_url: imageUrl,
+                permalink: m.permalink || null,
+                source_handle: handle,
+                partner_id: p.id,
+                status: "skipped_duplicate",
+                reason: `Mesmo flyer já processado: ${dupByFp.title} (${dupByFp.status})`,
+                event_id: dupByFp.id,
+                duplicate_of_event_id: dupByFp.id,
+                duplicate_score: 100,
+                duplicate_reason: "flyer_fingerprint match",
+                flyer_fingerprint: flyerFp,
+              });
+              stats.skipped_duplicate++;
+              continue;
+            }
+          }
+
           // === DEDUP STAGE 2: permalink já em events ===
           if (m.permalink) {
             const { data: dupEvent } = await supabase
@@ -790,6 +850,8 @@ Deno.serve(async (req) => {
               ai_confidence: cls.confidence || "medium",
               needs_review: needsReview,
               dedupe_key: dedupeKey,
+              flyer_fingerprint: flyerFp,
+              duplicate_checked_at: new Date().toISOString(),
             })
             .select("id")
             .single();

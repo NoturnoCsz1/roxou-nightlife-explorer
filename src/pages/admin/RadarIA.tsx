@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cleanEventTitle, wasTitleOptimized } from "@/lib/titleCleaner";
+import { findPossibleDuplicateEvent } from "@/lib/eventDuplicateDetector";
 import {
   Radar,
   Sparkles,
@@ -81,6 +82,9 @@ interface ScanRow {
   repost_count: number;
   created_event_deleted_at?: string | null;
   deletion_reason?: string | null;
+  duplicate_score?: number | null;
+  duplicate_reason?: string | null;
+  flyer_fingerprint?: string | null;
 }
 
 interface EventRow {
@@ -517,15 +521,38 @@ const RadarIA = () => {
     else { toast.success(`${data ?? 0} itens arquivados automaticamente`); load(); }
   }
 
-  async function approve(eventId: string, scanId: string) {
+  async function approve(eventId: string, scanId: string, force = false) {
     setActing(eventId);
 
-    // Busca título atual para tentar refatoração
+    // Busca título + dados do evento atual
     const { data: evCur } = await supabase
       .from("events")
-      .select("title, original_detected_title")
+      .select("id, title, original_detected_title, date_time, venue_name, partner_id, image_hash, instagram, flyer_fingerprint")
       .eq("id", eventId)
       .maybeSingle();
+
+    // === Checagem de duplicidade antes de publicar (a menos que force=true) ===
+    if (!force && evCur?.date_time) {
+      const day = evCur.date_time.slice(0, 10);
+      const fromDate = new Date(new Date(day + "T00:00:00-03:00").getTime() - 15 * 86400000).toISOString();
+      const toDate = new Date(new Date(day + "T23:59:59-03:00").getTime() + 15 * 86400000).toISOString();
+      const { data: nearby } = await supabase
+        .from("events")
+        .select("id,title,date_time,venue_name,partner_id,image_hash,instagram,flyer_fingerprint,dedupe_key,status")
+        .eq("status", "published")
+        .gte("date_time", fromDate)
+        .lte("date_time", toDate)
+        .neq("id", eventId)
+        .limit(200);
+      const dup = findPossibleDuplicateEvent(evCur as any, (nearby || []) as any[]);
+      if (dup.decision === "confirmed" && dup.matched_event_id) {
+        setActing(null);
+        toast.error(`Duplicado de "${dup.matched_event_title}" (score ${Math.round(dup.duplicate_score)}). Vincule ou use forçar.`, {
+          action: { label: "Publicar mesmo assim", onClick: () => approve(eventId, scanId, true) },
+        });
+        return;
+      }
+    }
 
     const updates: Record<string, any> = { status: "published", needs_review: false };
     let optimized = false;
@@ -927,6 +954,24 @@ const RadarIA = () => {
                       <p className="italic text-muted-foreground/70 line-clamp-2">{c.scan.reason}</p>
                     )}
                   </div>
+
+                  {typeof c.scan.duplicate_score === "number" && c.scan.duplicate_score >= 60 && (
+                    <div className={`rounded-lg p-2 text-xs border ${c.scan.duplicate_score >= 80 ? "bg-rose-500/10 border-rose-500/40 text-rose-200" : "bg-amber-500/10 border-amber-500/40 text-amber-200"}`}>
+                      <div className="flex items-center gap-1.5 font-semibold">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        {c.scan.duplicate_score >= 80 ? "Duplicado detectado" : "Possível duplicado"}
+                        <span className="ml-auto text-[10px] opacity-80">score {Math.round(c.scan.duplicate_score)}</span>
+                      </div>
+                      {c.scan.duplicate_reason && (
+                        <p className="mt-1 opacity-80 line-clamp-2">{c.scan.duplicate_reason}</p>
+                      )}
+                      {c.scan.event_id && (
+                        <Link to={`/admin/eventos/${c.scan.event_id}/editar`} className="mt-1 inline-flex items-center gap-1 text-[11px] underline opacity-90">
+                          <ExternalLink className="h-3 w-3" /> Abrir evento existente
+                        </Link>
+                      )}
+                    </div>
+                  )}
 
                   {c.duplicateOf && (
                     <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 p-2 text-xs">
