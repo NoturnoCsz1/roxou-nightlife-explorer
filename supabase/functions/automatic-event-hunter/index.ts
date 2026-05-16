@@ -620,7 +620,8 @@ Deno.serve(async (req) => {
             dt = m.timestamp;
           }
 
-          const eventTitle = (cls.title || `Evento em ${p.name}`).slice(0, 200);
+          const rawTitle = (cls.title || `Evento em ${p.name}`).slice(0, 200);
+          const eventTitle = cleanEventTitle(rawTitle) || rawTitle;
           const venueName = cls.venue_name || p.name;
           const dedupeKey = buildDedupeKey(eventTitle, dt, venueName, handle);
 
