@@ -124,6 +124,39 @@ function formatDate(dt: string | null) {
   } catch { return dt; }
 }
 
+// ============ DEFENSIVE DATE PARSER ============
+// Aceita ISO (yyyy-mm-dd) ou DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY.
+// Retorna ISO com offset -03:00 ou null se não der pra parsear com segurança.
+function parseEventDateTimeSP(ext: any): string | null {
+  const dateRaw = ext?.date ?? ext?.event_date ?? null;
+  const timeRaw = ext?.time ?? ext?.event_time ?? "22:00";
+  if (!dateRaw) return null;
+  const s = String(dateRaw).trim();
+  let y = 0, mo = 0, d = 0;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else {
+    m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if (m) {
+      d = +m[1]; mo = +m[2]; y = +m[3];
+      if (y < 100) y += 2000;
+    } else return null;
+  }
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const t = String(timeRaw).match(/^(\d{1,2}):?(\d{2})?/);
+  const hh = t ? Math.min(23, +t[1]) : 22;
+  const mi = t && t[2] ? Math.min(59, +t[2]) : 0;
+  const iso = `${y}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}T${String(hh).padStart(2,"0")}:${String(mi).padStart(2,"0")}:00-03:00`;
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return null;
+  return iso;
+}
+
+function slugifyScan(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80) || "evento";
+}
+
 // ============ PREVIEW HELPERS ============
 function normalizeUrl(raw: any): string | null {
   if (raw == null) return null;
