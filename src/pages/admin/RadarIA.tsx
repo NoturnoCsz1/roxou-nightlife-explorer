@@ -124,6 +124,39 @@ function formatDate(dt: string | null) {
   } catch { return dt; }
 }
 
+// ============ DEFENSIVE DATE PARSER ============
+// Aceita ISO (yyyy-mm-dd) ou DD/MM/YYYY, DD-MM-YYYY, DD/MM/YY.
+// Retorna ISO com offset -03:00 ou null se não der pra parsear com segurança.
+function parseEventDateTimeSP(ext: any): string | null {
+  const dateRaw = ext?.date ?? ext?.event_date ?? null;
+  const timeRaw = ext?.time ?? ext?.event_time ?? "22:00";
+  if (!dateRaw) return null;
+  const s = String(dateRaw).trim();
+  let y = 0, mo = 0, d = 0;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else {
+    m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if (m) {
+      d = +m[1]; mo = +m[2]; y = +m[3];
+      if (y < 100) y += 2000;
+    } else return null;
+  }
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  const t = String(timeRaw).match(/^(\d{1,2}):?(\d{2})?/);
+  const hh = t ? Math.min(23, +t[1]) : 22;
+  const mi = t && t[2] ? Math.min(59, +t[2]) : 0;
+  const iso = `${y}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}T${String(hh).padStart(2,"0")}:${String(mi).padStart(2,"0")}:00-03:00`;
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return null;
+  return iso;
+}
+
+function slugifyScan(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 80) || "evento";
+}
+
 // ============ PREVIEW HELPERS ============
 function normalizeUrl(raw: any): string | null {
   if (raw == null) return null;
@@ -403,9 +436,10 @@ const RadarIA = () => {
         const seen = x.scan.last_seen_at ? new Date(x.scan.last_seen_at).getTime() : 0;
         const recentPost = seen && (now - seen) <= TWO_DAYS;
         const ext = x.scan.extracted_json || {};
-        const evDtStr = x.event?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
+        const evDtStr = x.event?.date_time || parseEventDateTimeSP(ext);
         const evMs = evDtStr ? new Date(evDtStr).getTime() : 0;
-        const futureEvent = evMs && evMs >= (now - TWO_DAYS) && evMs <= (now + THIRTY_DAYS);
+        const futureEvent = evMs && !isNaN(evMs) && evMs >= (now - TWO_DAYS) && evMs <= (now + THIRTY_DAYS);
+        // Sem data válida não derruba o item: mantém pelo last_seen_at recente.
         return recentPost || futureEvent;
       });
     }
@@ -537,6 +571,63 @@ const RadarIA = () => {
     toast.dismiss(t);
     if (error) toast.error(error.message);
     else { toast.success(`${data ?? 0} itens arquivados automaticamente`); load(); }
+  }
+
+  async function createEventFromScan(card: Card) {
+    const scan = card.scan;
+    if (scan.event_id) { toast.info("Este item já possui evento vinculado."); return; }
+    const ext = scan.extracted_json || {};
+    const rawTitle = (ext.title || (scan.raw_caption || "").split("\n")[0] || `Evento @${scan.source_handle || ""}`).trim().slice(0, 200);
+    const cleaned = cleanEventTitle(rawTitle) || rawTitle;
+    const safeDt = parseEventDateTimeSP(ext);
+    const fallbackDt = new Date(Date.now() + 2 * 86400000).toISOString();
+    const dt = safeDt || fallbackDt;
+    const venue = ext.venue_name || ext.venue || scan.source_handle || "A confirmar";
+    const slug = slugifyScan(`${cleaned}-${(scan.media_id || scan.id).slice(-6)}`);
+    const description = [
+      Array.isArray(ext.artists) && ext.artists.length ? `Atrações: ${ext.artists.join(", ")}` : null,
+      ext.price ? `Entrada: ${ext.price}` : null,
+      ext.description,
+      scan.raw_caption,
+    ].filter(Boolean).join("\n\n").slice(0, 4000) || null;
+    const imageUrl = scan.preview_image_url || ext.image_url || ext.flyer_url || null;
+
+    setActing(scan.id);
+    const { data: inserted, error } = await supabase.from("events").insert({
+      title: cleaned,
+      original_detected_title: rawTitle,
+      slug,
+      date_time: dt,
+      category: ext.category || "festa",
+      sub_category: ext.sub_category || null,
+      partner_id: scan.partner_id,
+      venue_name: venue,
+      address: ext.address || null,
+      instagram: scan.permalink || null,
+      description,
+      status: "draft",
+      verification_source: "radar-manual",
+      image_url: imageUrl,
+      ai_confidence: scan.ai_confidence || "medium",
+      needs_review: !safeDt,
+      dedupe_key: scan.dedupe_key || null,
+      flyer_fingerprint: scan.flyer_fingerprint || null,
+      duplicate_checked_at: new Date().toISOString(),
+    } as any).select("id").single();
+
+    if (error || !inserted) {
+      setActing(null);
+      toast.error(`Falha ao criar: ${error?.message || "desconhecido"}`);
+      return;
+    }
+
+    await supabase.from("instagram_scans" as any)
+      .update({ event_id: inserted.id, status: "created_draft" })
+      .eq("id", scan.id);
+
+    setActing(null);
+    toast.success(safeDt ? "Evento criado como rascunho. Revise e publique." : "Evento criado (data incerta — revise antes de publicar).");
+    load();
   }
 
   async function approve(eventId: string, scanId: string, force = false) {
@@ -1049,6 +1140,16 @@ const RadarIA = () => {
 
                   {/* Ações */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-border mt-auto">
+                    {!ev && !c.scan.permanently_ignored && !c.scan.hidden_from_radar && (
+                      <button
+                        onClick={() => createEventFromScan(c)}
+                        disabled={acting === c.scan.id}
+                        title="Criar rascunho de evento a partir deste post"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Criar evento
+                      </button>
+                    )}
                     {ev && cat !== "arquivados" && (
                       <>
                         {ev.status !== "published" && (
