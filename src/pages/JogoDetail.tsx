@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, Clock, MapPin, Beer, Radio, ArrowLeft, Youtube, Tv, ExternalLink } from "lucide-react";
 import SEO from "@/components/SEO";
