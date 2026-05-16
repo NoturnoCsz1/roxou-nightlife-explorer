@@ -26,6 +26,9 @@ import {
   SlidersHorizontal,
   Trash2,
   Clock,
+  Music2,
+  Utensils,
+  Megaphone,
 } from "lucide-react";
 import {
   Sheet,
