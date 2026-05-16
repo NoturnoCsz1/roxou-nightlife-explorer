@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Trophy, Clock, MapPin, Beer, Radio, ArrowLeft, Youtube, Tv, ExternalLink } from "lucide-react";
 import SEO from "@/components/SEO";
@@ -51,10 +51,60 @@ export default function JogoDetail() {
     staleTime: 1000 * 60 * 10,
   });
 
-  const match = useMemo<NormalizedMatch | null>(
-    () => matches.find((m) => m.slug === slug) ?? null,
-    [matches, slug],
+  const normalizedSlug = useMemo(
+    () => slug.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9-]/g, ""),
+    [slug],
   );
+
+  // 1) Match no array da API (fonte principal)
+  const apiMatch = useMemo<NormalizedMatch | null>(() => {
+    if (!matches.length) return null;
+    const exact = matches.find((m) => m.slug === slug);
+    if (exact) return exact;
+    return matches.find((m) => m.slug.toLowerCase() === normalizedSlug) ?? null;
+  }, [matches, slug, normalizedSlug]);
+
+  // 2) Fallback: busca direto no banco por slug / external_id quando a API não tem
+  const { data: dbFallback, isLoading: loadingDbFallback } = useQuery({
+    queryKey: ["jogo-fallback", slug],
+    enabled: !!slug && !apiMatch && !isLoading,
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sports_matches")
+        .select("slug, external_id, home_team, away_team, league_label, league_name, league_id, match_time, status, home_badge, away_badge, venue_name, youtube_url, is_world_cup, priority, category, season")
+        .or(`slug.eq.${slug},external_id.eq.${slug}`)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  // Se achou por external_id mas slug é outro → redireciona para slug canônico
+  if (!apiMatch && dbFallback && dbFallback.slug && dbFallback.slug !== slug) {
+    return <Navigate to={`/jogo/${dbFallback.slug}`} replace />;
+  }
+
+  const match: NormalizedMatch | null = apiMatch ?? (dbFallback ? {
+    external_id: dbFallback.external_id ?? dbFallback.slug,
+    league_id: dbFallback.league_id ?? "",
+    league_name: dbFallback.league_name ?? "",
+    league_label: dbFallback.league_label ?? "",
+    category: (dbFallback.category as any) ?? "international",
+    season: dbFallback.season ?? "",
+    home_team: dbFallback.home_team,
+    away_team: dbFallback.away_team,
+    home_badge: dbFallback.home_badge ?? null,
+    away_badge: dbFallback.away_badge ?? null,
+    match_time: dbFallback.match_time,
+    raw_date: (dbFallback.match_time ?? "").slice(0, 10),
+    status: (dbFallback.status as any) ?? "scheduled",
+    venue_name: dbFallback.venue_name ?? null,
+    youtube_url: dbFallback.youtube_url ?? null,
+    slug: dbFallback.slug,
+    is_world_cup: !!dbFallback.is_world_cup,
+    priority: dbFallback.priority ?? 5,
+  } as NormalizedMatch : null);
 
   const { data: localData } = useQuery({
     queryKey: ["jogo-local", slug],
@@ -89,7 +139,7 @@ export default function JogoDetail() {
     trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "open" });
   }, [match?.slug, match?.external_id]);
 
-  if (isLoading) {
+  if (isLoading || loadingDbFallback) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Carregando…</div>;
   }
 

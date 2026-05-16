@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2, Tv } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Save, ChevronDown, ChevronUp, Instagram, Sparkles, Loader2, Tv, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -56,7 +66,28 @@ const EventoForm = () => {
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
   const [reprocessingSports, setReprocessingSports] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const originalSnapshot = useRef<{ category: string; sub_category: string | null; description: string | null; venue_name: string | null } | null>(null);
+
+  async function softDeleteEvent() {
+    if (!id) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({ status: "archived", featured: false, needs_review: false })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Evento excluído (arquivado). Já saiu do site público.");
+      navigate("/admin/eventos");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao excluir evento");
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  }
 
   async function reprocessSportsTransmission() {
     if (!id) {
@@ -453,7 +484,41 @@ const EventoForm = () => {
             {reprocessingSports ? "Reprocessando..." : "Reprocessar transmissão esportiva"}
           </button>
         )}
+        {isEdit && (
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition"
+            title="Arquiva o evento (sai do site público, mantém histórico)"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Excluir evento
+          </button>
+        )}
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir este evento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O evento será <strong>arquivado</strong>: sai imediatamente do site público,
+              mas o registro fica preservado para auditoria. Esta ação pode ser revertida
+              alterando o status para "publicado" novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); softDeleteEvent(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
       <form onSubmit={handleSubmit} className="max-w-xl space-y-4">

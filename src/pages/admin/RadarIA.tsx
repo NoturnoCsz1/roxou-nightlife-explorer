@@ -619,7 +619,15 @@ const RadarIA = () => {
             const conf = (c.scan.ai_confidence || ext.confidence || "medium").toLowerCase();
             const ev = c.event;
             const detectedType = (ext.detected_type || ext.type || "").toLowerCase();
-            const imageUrl = ev?.image_url || c.scan.preview_image_url || ext.image_url || null;
+            const imageUrl = ev?.image_url
+              || c.scan.preview_image_url
+              || ext.image_url
+              || ext.flyer_url
+              || ext.media_url
+              || ext.thumbnail_url
+              || ext.display_url
+              || (Array.isArray(ext.media) ? ext.media[0]?.url : null)
+              || null;
             const title = ev?.title || ext.title || "—";
             const dt = ev?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
             const venue = ev?.venue_name || ext.venue_name || c.scan.source_handle;

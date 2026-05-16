@@ -518,7 +518,7 @@ export function sortMatchesByRelevance(list: NormalizedMatch[]): NormalizedMatch
 export const RELEVANCE_HIGHLIGHT_THRESHOLD = 80;
 
 /** Limite mínimo para um jogo ser visível na página /jogos (esconde lixo da API). */
-export const MINIMUM_RELEVANCE_VISIBLE = 20;
+export const MINIMUM_RELEVANCE_VISIBLE = 35;
 
 export function isHighlightedMatch(m: NormalizedMatch): boolean {
   return getMatchRelevanceScore(m) >= RELEVANCE_HIGHLIGHT_THRESHOLD;

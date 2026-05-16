@@ -1,120 +1,74 @@
-# Plano — Evolução `/jogos` (SEO + Retenção + Baixo custo)
+# Plano — Otimização Roxou V3 (cirúrgico, baixo custo)
 
-Sem refatorar layout, sem IA pesada, sem quebrar timezone. Reaproveita `MatchCard`, `FootballMatchChat`, `MatchVenuesQuickList`.
-
----
-
-## Fase 1 — Schema (1 migration única)
-
-### Tabela `sports_matches` (cache curado dos jogos da TheSportsDB)
-- `external_id` (unique), `slug` (unique, indexado), `home_team`, `away_team`, `home_badge`, `away_badge`
-- `match_time` (timestamptz), `league_id`, `league_label`, `category`, `is_world_cup`, `priority`, `status`
-- `views_count` (int default 0), `chat_count` (int default 0), `last_synced_at`
-- RLS: SELECT público; INSERT/UPDATE/DELETE só admin (`has_role`)
-
-### Tabela `sports_match_venues` (vínculo real jogo↔bar)
-- `match_id` → sports_matches, `partner_id` → partners
-- `transmission_type` (`tv_aberta` | `tv_fechada` | `streaming` | `telao` | `ambiente`)
-- `confirmed_by_admin` bool, `created_by` uuid, `created_at`
-- UNIQUE(match_id, partner_id); RLS: SELECT público, escrita admin
-
-### Tabela `sports_match_streams` (embeds oficiais)
-- `match_id`, `stream_url`, `stream_type` (`youtube`|`twitch`|`cazetv`|`fifa`|`conmebol`), `is_official` bool, `is_active` bool, `created_by`
-- RLS: SELECT público com `is_active=true`, escrita admin
-
-### Tabela `sports_match_events` (tracking leve)
-- `match_external_id` text (não FK, evita lock), `action` text (`open`|`venue_click`|`stream_click`|`save`|`share`|`chat_open`)
-- `partner_id` nullable, `session_id`, `created_at`
-- RLS: INSERT público (anon+auth); SELECT só admin
-
-Sem triggers pesados. Counters atualizados em RPC `increment_match_view(slug)` chamada no detalhe.
+Você listou 11 frentes. Implementar tudo em uma rodada gastaria muitos créditos e aumenta risco de regressão. Proponho **3 ondas** em ordem de impacto/custo. Você aprova a Onda 1 e seguimos; depois decidimos se vamos para a 2 e 3.
 
 ---
 
-## Fase 2 — Sync da TheSportsDB → `sports_matches`
+## 🌊 Onda 1 — Correções críticas (baixo custo, alto impacto)
 
-Edge function `sync-football-matches` (cron 6h):
-- Busca ligas configuradas (já existe em `theSportsDb.ts`)
-- Upsert por `external_id`, gera `slug` no formato `time-x-time-DD-MM-YYYY` (kebab, NFD)
-- Não toca em jogos finalizados >7d
+Foco: bugs reais que quebram uso hoje.
 
-`getFeaturedFootballEvents()` passa a ler do Supabase (rápido, sem CORS, sem dependência externa em runtime). Fallback: API direta se vazio.
+1. **Menu admin unificado (#1)**
+   - Auditar `AdminLayout`, sidebar/mobile, `DashboardLayout` e qualquer fallback.
+   - Garantir que todos consumam `src/config/adminNavigation.ts` (já existe e já tem Jogos/Radar/Segurança).
+   - Remover arrays hardcoded antigos.
 
----
+2. **/jogo/:slug "não encontrado" (#2.1)**
+   - Adicionar fallback de busca por `external_id` e slug normalizado em `JogoDetail.tsx`.
+   - Redirect 301 client-side quando achar por external_id.
 
-## Fase 3 — Páginas de jogo SEO-first
+3. **Prioridade de jogos BR + filtro de irrelevantes (#2.2, #2.3, #2.4)**
+   - Ajustar ordenação no hook/lista de jogos: BR/Liberta/Sula/Champions/Copa do Brasil + ao vivo no topo.
+   - Filtrar/depriorizar ligas asiáticas pequenas e amistosos obscuros via lista de allowlist/denylist leve.
+   - Reordenar tabelas (`/jogos` tabs) para BR → Copa do Brasil → Libertadores → Champions.
 
-`/jogo/:slug` (já existe — só upgrade):
-- React Helmet por rota — title `"{Home} x {Away} em Presidente Prudente — Onde assistir | Roxou"`, description com data/hora SP + bares
-- canonical `https://roxou.com.br/jogo/{slug}`, OpenGraph + Twitter card
-- JSON-LD `SportsEvent` + `BreadcrumbList` + `FAQPage`
-- **Bloco "Assista agora"**: se há `sports_match_streams` ativo → embed (YouTube/Twitch); senão "Sem transmissão oficial disponível"
-- **Bloco "Onde assistir"**: lista REAL de `sports_match_venues` (não mais bares fixos)
-- **SEO content block** (template, sem IA): parágrafo gerado via string template com nome dos times, data, cidade, contagem de bares
-- Mantém `FootballMatchChat`
+4. **Radar IA — fallback de preview + limpeza (#6, #7)**
+   - Estender cadeia de fallback: `flyer_url → media_url → thumbnail_url → preview_image_url → instagram → placeholder`.
+   - Botão **"Limpar antigos"** chamando a função `archive_old_radar_scans()` (já existe no DB).
+   - Reforçar filtro client-side de janela 2 dias + `permanently_ignored` + eventos passados.
 
----
+5. **Botão "Excluir evento" no admin (#4)**
+   - Soft delete reutilizando `status = 'archived'` (sistema existente) + opcional `deleted_at/deleted_by` se já houver coluna; se não, apenas mudar status para não criar migration cara.
+   - Modal de confirmação, gate `isAdmin`.
 
-## Fase 4 — `/jogos` enriquecida (sem refazer layout)
-
-Adições mínimas ao `Jogos.tsx`:
-- **Hero KPIs ao vivo**: pequena strip abaixo do hero — `🔴 X ao vivo · 🍻 Y bares transmitindo hoje · 💬 Z mensagens na última hora` (1 query agregada)
-- **Badges no `MatchCard`** (componente existente):
-  - `🔴 AO VIVO` se status=live
-  - `🍻 N bares` se houver vínculo em `sports_match_venues`
-  - `📺 Transmissão` se houver stream oficial
-  - `💬 Chat ativo` se houver mensagem nas últimas 30min
-- **"Mais buscados" dinâmico**: ranking por `views_count + chat_count + saves` dos últimos 7d em vez de lista fixa
+**Custo estimado:** baixo. ~6 arquivos editados, 0 migrations (reaproveita o que existe).
 
 ---
 
-## Fase 5 — Admin `/admin/jogos`
+## 🌊 Onda 2 — Melhorias de UX admin (médio custo)
 
-Página simples (linka no `adminNavigation.ts`):
-- Lista jogos próximos 14d com filtro por liga/dia
-- Por jogo: multiselect de partners (cidade=Prudente, type=bar/restaurante/boteco/pub) + tipo de transmissão
-- Inputs para adicionar streams oficiais (URL + tipo)
-- Botão "Sincronizar agora" → invoca `sync-football-matches`
+6. **Dashboard analytics mais limpo (#3)** — esconder cards zerados, agrupar KPIs, sem redesign.
+7. **Admin /jogos enriquecido (#5)** — chips por competição, destaque dia/BR/ao vivo, contadores de bares. Reaproveita `MatchCard` existente.
+8. **Aura Command Center útil (#11)** — remover placeholders vazios, listar alertas reais já existentes (`aura_alerts`, Radar hoje, eventos sem aprovação), adicionar mini-explicação.
 
-Sem editor de jogo (dados vêm da API). Apenas curadoria de bares e streams.
+**Custo estimado:** médio. ~5 arquivos, 0 migrations.
 
 ---
 
-## Fase 6 — Tracking
+## 🌊 Onda 3 — Painéis Instagram / Studio / Estabelecimentos (maior custo, requer escolhas)
 
-Hook `useTrackMatchEvent(matchSlug)`:
-- Insere em `sports_match_events` (debounced)
-- Disparado em: abertura do detalhe, clique em bar, clique em stream, save, share, abrir chat
-- 1 RPC `increment_match_view(slug)` no mount do detalhe (counter direto, sem rodar agregação)
+9. **Página Instagram com analytics reais (#8)** — depende de quais métricas o token Meta atual retorna. Pode exigir nova edge function.
+10. **Studio menos poluído (#9)** — colapsar seções avançadas.
+11. **Auditoria de Estabelecimentos com badges (#10)** — badges Instagram/endereço confirmado.
 
----
-
-## Fase 7 — Performance
-
-- `React.memo` no `MatchCard` e `PriorityMatchBlock`
-- `loading="lazy"` já presente nos badges; manter
-- `useQuery` com `staleTime` 10min (já existe) + `refetchOnWindowFocus: false` para bares vinculados
-- Lazy-load do bloco de chat com `Suspense`
-- Filtro `semana` migra para helpers `dateUtils` SP (Core rule)
+**Custo estimado:** maior. Pode envolver edge function nova (#8). Precisa decisão sua sobre profundidade.
 
 ---
 
-## Fora de escopo (mantém para depois)
-- Câmera ao vivo no bar (só schema preparado em `transmission_type='ambiente'`)
-- Dashboard analytics dedicado de jogos (dados já existem em `sports_match_events` para futura página)
+## 🚫 O que NÃO faço
+
+- Sem refatoração de páginas inteiras.
+- Sem mudança de identidade visual.
+- Sem migrations novas a menos que estritamente necessário (#4 vai tentar reaproveitar `status='archived'`).
+- Sem novas libs.
+- Sem mexer em timezone, RLS, API premium TheSportsDB.
 
 ---
 
-## Detalhes técnicos
+## 📋 Relatório final
 
-**Stack tocada:** Supabase (3 tabelas + 1 RPC), 1 edge function (`sync-football-matches`), `src/lib/theSportsDb.ts` (passa a ler do DB), `src/pages/Jogos.tsx` (badges + KPI strip), `src/pages/JogoDetail.tsx` (Helmet + JSON-LD + streams + venues reais), `src/components/jogos/MatchCard.tsx` (badges), `src/pages/admin/JogosAdmin.tsx` (novo), `src/config/adminNavigation.ts` (entry).
-
-**Custo:** zero IA. 1 cron 6h. Tracking é INSERT plano. Counters via RPC simples.
-
-**Impacto SEO:** N páginas indexáveis novas (uma por jogo), JSON-LD SportsEvent, keywords locais ("onde assistir X em Prudente"), canonical correto, OG por jogo.
-
-**Impacto retenção:** chat visível, transmissão oficial, vínculo real com bares, "mais buscados" verdadeiro.
+Ao fim de cada onda entrego o bloco ✅/⚠️/🛠️/🚫/📊 que você pediu.
 
 ---
 
-Aprova esse plano para eu começar pela migration + edge function de sync?
+**Posso começar pela Onda 1?** Se quiser pular alguma das ondas seguintes ou inverter prioridade, me diga antes que eu siga.
