@@ -164,18 +164,23 @@ const EventoBulkForm = () => {
    * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
    */
   const smartDuplicates = (() => {
-    const map = new Map<string, DuplicateResult>();
+    const map = new Map<string, DuplicateConfidenceResult>();
     if (!dbEvents.length) return map;
-    const existing: ExistingEvent[] = dbEvents.map((e) => ({
+    const existing: (DuplicateConfidenceExisting & { dedupe_key?: string | null })[] = dbEvents.map((e) => ({
       id: e.id,
       title: e.title,
       date_time: e.date_time,
       venue_name: e.venue_name,
       image_hash: e.image_hash,
       slug: e.slug,
+      flyer_fingerprint: generateFlyerFingerprint({ image_hash: e.image_hash }),
     }));
     for (const it of items) {
       if (!it.form.title || !it.form.date_time) continue;
+      const fp = generateFlyerFingerprint({
+        image_hash: it.form.image_hash,
+        image_url: it.form.image_url,
+      });
       const result = findPossibleDuplicateEvent(
         {
           id: undefined,
@@ -186,17 +191,17 @@ const EventoBulkForm = () => {
           instagram: it.form.instagram,
           partner_id: it.form.partner_id || null,
           image_hash: it.form.image_hash,
+          flyer_fingerprint: fp,
         },
         existing,
       );
-      if (result.level !== "none") {
+      if (result.decision !== "clear") {
         map.set(it.localId, result);
-        // Log discreto, sem quebrar fluxo
         console.warn("[DuplicateEventCheck]", {
           localId: it.localId,
           title: it.form.title,
           score: result.duplicate_score,
-          level: result.level,
+          decision: result.decision,
           matched: result.matched_event_title,
           fields: result.matched_fields,
         });
