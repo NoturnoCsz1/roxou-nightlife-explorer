@@ -733,19 +733,14 @@ const RadarIA = () => {
             const conf = (c.scan.ai_confidence || ext.confidence || "medium").toLowerCase();
             const ev = c.event;
             const detectedType = (ext.detected_type || ext.type || "").toLowerCase();
-            const imageUrl = ev?.image_url
-              || c.scan.preview_image_url
-              || ext.image_url
-              || ext.flyer_url
-              || ext.media_url
-              || ext.thumbnail_url
-              || ext.display_url
-              || (Array.isArray(ext.media) ? ext.media[0]?.url : null)
-              || null;
+            const previewUrls = buildPreviewChain(c.scan, ev, ext);
             const title = ev?.title || ext.title || "—";
             const dt = ev?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
             const venue = ev?.venue_name || ext.venue_name || c.scan.source_handle;
             const cat = categorize(c);
+            const kind = classifyContent(c.scan, ext);
+            const kindMeta = CONTENT_BADGE[kind];
+            const KindIcon = kindMeta.icon;
 
             return (
               <div
@@ -753,27 +748,11 @@ const RadarIA = () => {
                 className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.4)] flex flex-col"
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (img.src !== window.location.origin + "/placeholder.svg") {
-                          img.src = "/placeholder.svg";
-                          img.classList.add("opacity-40", "p-8");
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/60 bg-gradient-to-br from-primary/5 to-purple-500/5">
-                      <Radar className="h-10 w-10" />
-                      <span className="text-[10px] uppercase tracking-wider">Sem preview</span>
-                    </div>
-                  )}
+                  <SmartPreview urls={previewUrls} alt={title} />
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${kindMeta.cls}`}>
+                      <KindIcon className="h-3 w-3" /> {kindMeta.label}
+                    </span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${confBadge[conf] || confBadge.medium}`}>
                       {conf === "high" ? "Alta" : conf === "low" ? "Baixa" : "Média"}
                     </span>
