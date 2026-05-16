@@ -102,6 +102,7 @@ const InstagramStudio = () => {
   // Marketing modes
   const [viralMode, setViralMode] = useState(false);
   const [economyMode, setEconomyMode] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Generation
   const [generating, setGenerating] = useState(false);
@@ -820,31 +821,40 @@ const InstagramStudio = () => {
 
             {/* AVANÇADO */}
             <section className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(v => !v)}
+                className="w-full flex items-center justify-between px-1 group"
+              >
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 group-hover:text-foreground transition">
                   <Sparkles className="h-3 w-3" /> Avançado
+                  <span className="text-[9px] font-medium text-muted-foreground/70 normal-case tracking-normal">· Controle fino</span>
                 </h3>
-                <span className="text-[9px] text-muted-foreground">Controle fino do conteúdo</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                {avancado.map(t => renderCard(t, false))}
-              </div>
-              <div className="grid grid-cols-3 gap-1.5 pt-1">
-                {MODE_TABS.filter(t => t.key !== "story").map(t => {
-                  const Icon = t.icon;
-                  const isActive = activeMode === t.key;
-                  return (
-                    <button key={t.key} onClick={() => setActiveMode(t.key)}
-                      className={`flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium transition ${isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
-                      <Icon className="h-3 w-3" /> {t.label}
+                {showAdvanced ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+              </button>
+              {showAdvanced && (
+                <>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {avancado.map(t => renderCard(t, false))}
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    {MODE_TABS.filter(t => t.key !== "story").map(t => {
+                      const Icon = t.icon;
+                      const isActive = activeMode === t.key;
+                      return (
+                        <button key={t.key} onClick={() => setActiveMode(t.key)}
+                          className={`flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium transition ${isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}>
+                          <Icon className="h-3 w-3" /> {t.label}
+                        </button>
+                      );
+                    })}
+                    <button onClick={() => handleGenerate("all", activeMode)} disabled={generating || selectedEvents.length === 0}
+                      className="flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition disabled:opacity-50">
+                      <Sparkles className="h-3 w-3" /> Tudo
                     </button>
-                  );
-                })}
-                <button onClick={() => handleGenerate("all", activeMode)} disabled={generating || selectedEvents.length === 0}
-                  className="flex items-center justify-center gap-1.5 rounded-2xl border border-border/20 bg-transparent px-2 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition disabled:opacity-50">
-                  <Sparkles className="h-3 w-3" /> Tudo
-                </button>
-              </div>
+                  </div>
+                </>
+              )}
             </section>
           </div>
         );
