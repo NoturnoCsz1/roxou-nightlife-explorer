@@ -975,7 +975,10 @@ export type Database = {
           date_time: string
           dedupe_key: string | null
           description: string | null
+          duplicate_checked_at: string | null
+          duplicate_group_id: string | null
           featured: boolean
+          flyer_fingerprint: string | null
           hype_score: number | null
           id: string
           image_hash: string | null
@@ -1016,7 +1019,10 @@ export type Database = {
           date_time: string
           dedupe_key?: string | null
           description?: string | null
+          duplicate_checked_at?: string | null
+          duplicate_group_id?: string | null
           featured?: boolean
+          flyer_fingerprint?: string | null
           hype_score?: number | null
           id?: string
           image_hash?: string | null
@@ -1057,7 +1063,10 @@ export type Database = {
           date_time?: string
           dedupe_key?: string | null
           description?: string | null
+          duplicate_checked_at?: string | null
+          duplicate_group_id?: string | null
           featured?: boolean
+          flyer_fingerprint?: string | null
           hype_score?: number | null
           id?: string
           image_hash?: string | null
@@ -1426,9 +1435,12 @@ export type Database = {
           dedupe_key: string | null
           deletion_reason: string | null
           duplicate_of_event_id: string | null
+          duplicate_reason: string | null
+          duplicate_score: number | null
           event_id: string | null
           extracted_json: Json | null
           first_published_at: string | null
+          flyer_fingerprint: string | null
           hidden_from_radar: boolean
           id: string
           keywords: string[] | null
@@ -1459,9 +1471,12 @@ export type Database = {
           dedupe_key?: string | null
           deletion_reason?: string | null
           duplicate_of_event_id?: string | null
+          duplicate_reason?: string | null
+          duplicate_score?: number | null
           event_id?: string | null
           extracted_json?: Json | null
           first_published_at?: string | null
+          flyer_fingerprint?: string | null
           hidden_from_radar?: boolean
           id?: string
           keywords?: string[] | null
@@ -1492,9 +1507,12 @@ export type Database = {
           dedupe_key?: string | null
           deletion_reason?: string | null
           duplicate_of_event_id?: string | null
+          duplicate_reason?: string | null
+          duplicate_score?: number | null
           event_id?: string | null
           extracted_json?: Json | null
           first_published_at?: string | null
+          flyer_fingerprint?: string | null
           hidden_from_radar?: boolean
           id?: string
           keywords?: string[] | null

@@ -1,74 +1,85 @@
-# Plano — Otimização Roxou V3 (cirúrgico, baixo custo)
+## Objetivo
+Unificar e endurecer a detecção de duplicidade em **uma única ferramenta** reutilizada por Radar IA, hunter, EventoForm/BulkForm e Instagram imports. **Sem IA. Sem refator de layout. Sem apagar nada.**
 
-Você listou 11 frentes. Implementar tudo em uma rodada gastaria muitos créditos e aumenta risco de regressão. Proponho **3 ondas** em ordem de impacto/custo. Você aprova a Onda 1 e seguimos; depois decidimos se vamos para a 2 e 3.
+## O que já existe (reaproveitar)
+- `src/lib/eventDuplicateValidator.ts` — já tem `findPossibleDuplicateEvent` com score 0–100, normalização, Jaccard, anti-recorrente. **Vamos estender, não recriar.**
+- `events.dedupe_key` (coluna já existe) + `buildDedupeKey` no `automatic-event-hunter` (4 estágios de dedup).
+- `instagram_scans` já tem `dedupe_key`, `duplicate_of_event_id`, `event_id`, `status`.
+- `events.original_detected_title`, `events.image_hash` já existem.
 
----
+## O que falta (vamos adicionar)
 
-## 🌊 Onda 1 — Correções críticas (baixo custo, alto impacto)
+### 1. Migration única
+```sql
+alter table public.events
+  add column if not exists flyer_fingerprint text,
+  add column if not exists duplicate_group_id uuid,
+  add column if not exists duplicate_checked_at timestamptz;
 
-Foco: bugs reais que quebram uso hoje.
+alter table public.instagram_scans
+  add column if not exists flyer_fingerprint text,
+  add column if not exists duplicate_score numeric,
+  add column if not exists duplicate_reason text;
 
-1. **Menu admin unificado (#1)**
-   - Auditar `AdminLayout`, sidebar/mobile, `DashboardLayout` e qualquer fallback.
-   - Garantir que todos consumam `src/config/adminNavigation.ts` (já existe e já tem Jogos/Radar/Segurança).
-   - Remover arrays hardcoded antigos.
+create index if not exists idx_events_flyer_fingerprint
+  on public.events(flyer_fingerprint) where flyer_fingerprint is not null;
+create index if not exists idx_scans_flyer_fingerprint
+  on public.instagram_scans(flyer_fingerprint) where flyer_fingerprint is not null;
+```
+Já temos `idx_events_dedupe_key`.
 
-2. **/jogo/:slug "não encontrado" (#2.1)**
-   - Adicionar fallback de busca por `external_id` e slug normalizado em `JogoDetail.tsx`.
-   - Redirect 301 client-side quando achar por external_id.
+### 2. Novo módulo `src/lib/eventDuplicateDetector.ts`
+Fachada única que expõe:
+- `normalizeEventTitle(t)` — reusa `normalizeText` + remove spam ("hoje tem", "sextou", "imperdível", preço, telefone).
+- `normalizeVenueName(v)` — remove sufixos genéricos ("bar","club","casa","pub","lounge") **só** para comparação.
+- `generateEventDedupeKey({partner_id, title, date_time, venue_name})` — `partnerId|normTitle|dateKeySP|normVenue`. Fallback sem partner_id.
+- `generateFlyerFingerprint({image_hash?, image_url?, preview_image_url?, media_id?, permalink?})` — hash determinístico (FNV-1a inline) da primeira fonte disponível.
+- `getDuplicateConfidence(candidate, existing)` — score conforme a tabela do prompt (40 flyer / 30 título / 25 data / 20 local / 20 partner / 15 horário / 10 caption; -30/-30/-20 divergências). Internamente chama `findPossibleDuplicateEvent` e refina com sinais novos (flyer_fingerprint, caption similarity).
+- `findPossibleDuplicateEvent(candidate, existing, opts)` — re-export reforçado (busca por dedupe_key e flyer_fingerprint primeiro, depois cai no scoring).
+- `compareEventsForDuplicate(a,b)` — wrapper síncrono útil em formulários.
 
-3. **Prioridade de jogos BR + filtro de irrelevantes (#2.2, #2.3, #2.4)**
-   - Ajustar ordenação no hook/lista de jogos: BR/Liberta/Sula/Champions/Copa do Brasil + ao vivo no topo.
-   - Filtrar/depriorizar ligas asiáticas pequenas e amistosos obscuros via lista de allowlist/denylist leve.
-   - Reordenar tabelas (`/jogos` tabs) para BR → Copa do Brasil → Libertadores → Champions.
+Thresholds: **≥80 bloqueia**, **60–79 revisão**, **<60 livre**.
 
-4. **Radar IA — fallback de preview + limpeza (#6, #7)**
-   - Estender cadeia de fallback: `flyer_url → media_url → thumbnail_url → preview_image_url → instagram → placeholder`.
-   - Botão **"Limpar antigos"** chamando a função `archive_old_radar_scans()` (já existe no DB).
-   - Reforçar filtro client-side de janela 2 dias + `permanently_ignored` + eventos passados.
+### 3. Hunter (`supabase/functions/automatic-event-hunter/index.ts`)
+- Espelhar `generateFlyerFingerprint` e `normalize*` inline (edge não importa `src/`).
+- Adicionar **estágio 0** de dedup: `events.flyer_fingerprint = fp` ou `instagram_scans.flyer_fingerprint = fp` já vinculado a evento → marca scan `status='skipped_duplicate'`, `duplicate_reason='Mesmo flyer já processado'`, salva `duplicate_score=100`.
+- Estágios 3 e 4 existentes continuam; passam a salvar `duplicate_score` e `duplicate_reason` no scan.
+- No insert do evento: gravar `flyer_fingerprint` e `duplicate_checked_at = now()`.
 
-5. **Botão "Excluir evento" no admin (#4)**
-   - Soft delete reutilizando `status = 'archived'` (sistema existente) + opcional `deleted_at/deleted_by` se já houver coluna; se não, apenas mudar status para não criar migration cara.
-   - Modal de confirmação, gate `isAdmin`.
+### 4. Radar IA admin (`src/pages/admin/RadarIA.tsx`)
+- Badge **"Duplicado detectado"** (rosa) quando `duplicate_score >= 80` ou `status='skipped_duplicate'/'duplicate_detected'`, mostrando score, motivo e link "Abrir evento existente" (`/admin/eventos/:id`).
+- No `approve()`: rodar `getDuplicateConfidence` contra eventos publicados próximos (±15 dias) antes de publicar. Se ≥80 → toast bloqueando + sugerir vincular. Botão extra "Ignorar e publicar mesmo assim" apenas para admin.
 
-**Custo estimado:** baixo. ~6 arquivos editados, 0 migrations (reaproveita o que existe).
+### 5. EventoForm (`src/pages/admin/EventoForm.tsx`)
+- Ao submeter novo evento: chamar `findPossibleDuplicateEvent` contra fetch dos últimos 90 dias do mesmo partner/venue. Se score ≥80 → AlertDialog com evento existente + "Abrir existente" / "Salvar mesmo assim".
+- Apenas alerta, não bloqueia.
 
----
+### 6. EventosList (`src/pages/admin/EventosList.tsx`)
+- Filtro novo **"Possíveis duplicados"**: lista eventos que compartilham `dedupe_key` ou `flyer_fingerprint` com outro evento.
 
-## 🌊 Onda 2 — Melhorias de UX admin (médio custo)
+### 7. EventoBulkForm + Instagram imports
+- Passar cada candidato pelo mesmo detector antes de criar evento; pular silenciosamente os ≥80 com log no toast resumo ("X pulados por duplicidade").
 
-6. **Dashboard analytics mais limpo (#3)** — esconder cards zerados, agrupar KPIs, sem redesign.
-7. **Admin /jogos enriquecido (#5)** — chips por competição, destaque dia/BR/ao vivo, contadores de bares. Reaproveita `MatchCard` existente.
-8. **Aura Command Center útil (#11)** — remover placeholders vazios, listar alertas reais já existentes (`aura_alerts`, Radar hoje, eventos sem aprovação), adicionar mini-explicação.
+## Detalhes técnicos
+- **Sem libs novas**. Hash = FNV-1a 32-bit inline.
+- **Sem IA**. Tudo regex + score determinístico.
+- `date_key_sp` vem de `getDateKeySP` em `@/lib/dateUtils` (front) e função inline equivalente no edge (já temos `startOfTodaySPMs`).
+- Nenhum evento existente é alterado; só novos inserts gravam fingerprint. Backfill opcional fora deste prompt.
+- Nada apagado automaticamente — só `status` de scans e badges no admin.
 
-**Custo estimado:** médio. ~5 arquivos, 0 migrations.
+## Arquivos tocados
+- **Novo:** `src/lib/eventDuplicateDetector.ts`
+- **Novo:** migration `supabase/migrations/<ts>_event_duplicate_fingerprint.sql`
+- **Editar:** `supabase/functions/automatic-event-hunter/index.ts`
+- **Editar:** `src/pages/admin/RadarIA.tsx`
+- **Editar:** `src/pages/admin/EventoForm.tsx`
+- **Editar:** `src/pages/admin/EventosList.tsx`
+- **Editar:** `src/pages/admin/EventoBulkForm.tsx` (checagem leve)
 
----
+## Fora do escopo
+- Backfill de `flyer_fingerprint` em eventos antigos.
+- Merge/unificação automática de duplicados existentes.
+- Mudança de UI pública.
+- Qualquer ajuste em Home / Transporte / Auth.
 
-## 🌊 Onda 3 — Painéis Instagram / Studio / Estabelecimentos (maior custo, requer escolhas)
-
-9. **Página Instagram com analytics reais (#8)** — depende de quais métricas o token Meta atual retorna. Pode exigir nova edge function.
-10. **Studio menos poluído (#9)** — colapsar seções avançadas.
-11. **Auditoria de Estabelecimentos com badges (#10)** — badges Instagram/endereço confirmado.
-
-**Custo estimado:** maior. Pode envolver edge function nova (#8). Precisa decisão sua sobre profundidade.
-
----
-
-## 🚫 O que NÃO faço
-
-- Sem refatoração de páginas inteiras.
-- Sem mudança de identidade visual.
-- Sem migrations novas a menos que estritamente necessário (#4 vai tentar reaproveitar `status='archived'`).
-- Sem novas libs.
-- Sem mexer em timezone, RLS, API premium TheSportsDB.
-
----
-
-## 📋 Relatório final
-
-Ao fim de cada onda entrego o bloco ✅/⚠️/🛠️/🚫/📊 que você pediu.
-
----
-
-**Posso começar pela Onda 1?** Se quiser pular alguma das ondas seguintes ou inverter prioridade, me diga antes que eu siga.
+Confirma que posso seguir com esse plano?
