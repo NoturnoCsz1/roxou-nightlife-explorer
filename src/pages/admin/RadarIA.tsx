@@ -881,7 +881,19 @@ const RadarIA = () => {
                 </div>
 
                 <div className="p-4 space-y-3 flex-1 flex flex-col">
-                  <h3 className="font-display font-bold text-base line-clamp-2 leading-snug">{title}</h3>
+                  <div className="space-y-1">
+                    <h3 className="font-display font-bold text-base line-clamp-2 leading-snug">{title}</h3>
+                    {ev?.original_detected_title && ev.original_detected_title !== ev.title && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30 flex items-center gap-1">
+                          <Sparkles className="h-2.5 w-2.5" /> Título otimizado
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/60 line-through line-clamp-1">
+                          {ev.original_detected_title}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="space-y-1.5 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
