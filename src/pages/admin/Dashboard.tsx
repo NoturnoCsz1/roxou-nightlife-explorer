@@ -333,7 +333,7 @@ const Dashboard = () => {
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Audiência em Tempo Real
         </h2>
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className={cn("grid gap-3", igStats.followers !== null && "lg:grid-cols-2")}>
           {/* Card Site (GA4) */}
           <div className={cn("relative overflow-hidden p-5", GLASS, "border-primary/25")}>
             <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
@@ -370,7 +370,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Card Instagram */}
+          {/* Card Instagram — só aparece quando há token ativo */}
+          {igStats.followers !== null && (
           <div className={cn("relative overflow-hidden p-5", GLASS, "border-pink-500/25")}>
             <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-pink-500/15 blur-3xl pointer-events-none" />
             <div className="flex items-center justify-between mb-4 relative">
@@ -419,6 +420,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+          )}
         </div>
       </section>
 
@@ -517,7 +519,8 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* ── 5. Desempenho (colapsável) ── */}
+      {/* ── 5. Desempenho (colapsável) — escondido se zerado ── */}
+      {(perf.views + perf.visitors + perf.clicks) > 0 && (
       <Collapsible open={perfOpen} onOpenChange={setPerfOpen}>
         <CollapsibleTrigger className="flex items-center justify-between w-full group">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
@@ -534,6 +537,7 @@ const Dashboard = () => {
           </div>
         </CollapsibleContent>
       </Collapsible>
+      )}
 
       {/* ── 6. Oportunidades ── */}
       {opportunities.length > 0 && (

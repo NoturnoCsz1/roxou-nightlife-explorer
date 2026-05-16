@@ -182,14 +182,37 @@ export default function AuraCommand() {
     toast.success("Alerta resolvido");
   }
 
+  // Status operacional global
+  const overallStatus = (() => {
+    if (kpis.pendingReports > 0 || kpis.openAlerts >= 5) return { label: "Crítico", cls: "border-red-500/50 bg-red-500/15 text-red-300" };
+    if (kpis.openAlerts > 0 || kpis.safeDrafts === 0 && kpis.radarToday > 5) return { label: "Atenção", cls: "border-yellow-500/40 bg-yellow-500/15 text-yellow-300" };
+    return { label: "Saudável", cls: "border-green-500/40 bg-green-500/15 text-green-300" };
+  })();
+
+  // Lista de KPIs — esconde zerados (mantém sempre os essenciais)
+  const kpiList: { key: string; icon: React.ReactNode; label: string; value: number; accent?: boolean; alwaysShow?: boolean }[] = [
+    { key: "pub", icon: <Eye className="h-4 w-4" />, label: "Publicados (futuros)", value: kpis.publishedFuture, alwaysShow: true },
+    { key: "alta", icon: <Flame className="h-4 w-4 text-orange-400" />, label: "Em alta agora", value: kpis.enAlta },
+    { key: "live", icon: <TrendingUp className="h-4 w-4 text-green-400" />, label: "Ao vivo no app", value: kpis.liveNow },
+    { key: "part", icon: <Building2 className="h-4 w-4" />, label: "Parceiros ativos", value: kpis.activePartners, alwaysShow: true },
+    { key: "alert", icon: <Bell className="h-4 w-4 text-yellow-400" />, label: "Alertas abertos", value: kpis.openAlerts, accent: kpis.openAlerts > 0, alwaysShow: true },
+    { key: "drafts", icon: <Check className="h-4 w-4 text-green-400" />, label: "Drafts seguros", value: kpis.safeDrafts },
+    { key: "radar", icon: <Radar className="h-4 w-4" />, label: "Radar (hoje)", value: kpis.radarToday },
+    { key: "reels", icon: <Film className="h-4 w-4" />, label: "AutoReels pendentes", value: kpis.autoreelsPending },
+    { key: "rep", icon: <ShieldAlert className="h-4 w-4 text-red-400" />, label: "Denúncias pendentes", value: kpis.pendingReports, accent: kpis.pendingReports > 0 },
+  ].filter((k) => k.alwaysShow || k.value > 0);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div>
           <h1 className="text-2xl font-display font-black text-foreground inline-flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" /> Aura Command Center
+            <span className={`ml-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${overallStatus.cls}`}>
+              <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" /> {overallStatus.label}
+            </span>
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">Cérebro operacional da Roxou — observação contínua, decisões e alertas em tempo real.</p>
+          <p className="text-xs text-muted-foreground mt-1">A Aura monitora eventos, repostagens, tendências e problemas operacionais em tempo real.</p>
         </div>
         <button
           onClick={runPulse}
@@ -201,17 +224,11 @@ export default function AuraCommand() {
         </button>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs — esconde cards zerados (exceto essenciais) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-        <Kpi icon={<Eye className="h-4 w-4" />} label="Publicados (futuros)" value={kpis.publishedFuture} />
-        <Kpi icon={<Flame className="h-4 w-4 text-orange-400" />} label="Em alta agora" value={kpis.enAlta} />
-        <Kpi icon={<TrendingUp className="h-4 w-4 text-green-400" />} label="Ao vivo no app" value={kpis.liveNow} />
-        <Kpi icon={<Building2 className="h-4 w-4" />} label="Parceiros ativos" value={kpis.activePartners} />
-        <Kpi icon={<Bell className="h-4 w-4 text-yellow-400" />} label="Alertas abertos" value={kpis.openAlerts} accent={kpis.openAlerts > 0} />
-        <Kpi icon={<Check className="h-4 w-4 text-green-400" />} label="Drafts seguros" value={kpis.safeDrafts} />
-        <Kpi icon={<Radar className="h-4 w-4" />} label="Radar (hoje)" value={kpis.radarToday} />
-        <Kpi icon={<Film className="h-4 w-4" />} label="AutoReels pendentes" value={kpis.autoreelsPending} />
-        <Kpi icon={<ShieldAlert className="h-4 w-4 text-red-400" />} label="Denúncias pendentes" value={kpis.pendingReports} accent={kpis.pendingReports > 0} />
+        {kpiList.map((k) => (
+          <Kpi key={k.key} icon={k.icon} label={k.label} value={k.value} accent={k.accent} />
+        ))}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
