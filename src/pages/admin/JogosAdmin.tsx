@@ -405,6 +405,23 @@ export default function JogosAdmin() {
         </div>
       </div>
 
+      {/* Central da Copa — resumo operacional das próximas 48h */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        {[
+          { label: "🔴 Ao vivo", value: opSummary.live, accent: opSummary.live > 0 ? "border-red-500/40 bg-red-500/10 text-red-300" : "" },
+          { label: "🇧🇷 BR hoje", value: opSummary.brToday, accent: opSummary.brToday > 0 ? "border-green-500/40 bg-green-500/10 text-green-300" : "" },
+          { label: "🍻 Com bares", value: opSummary.withBars },
+          { label: "📺 Com stream", value: opSummary.withStream },
+          { label: "⚠ Sem bar/stream", value: opSummary.withoutAny, accent: opSummary.withoutAny > 0 ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-300" : "" },
+          { label: "🔥 Mais visto", value: opSummary.topViewed?.views_count ?? 0 },
+        ].map((k) => (
+          <div key={k.label} className={`rounded-xl border px-3 py-2 ${k.accent || "border-border/40 bg-card/40"}`}>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{k.label}</div>
+            <div className="text-2xl font-black font-display text-foreground tabular-nums">{k.value}</div>
+          </div>
+        ))}
+      </div>
+
       <div className="grid md:grid-cols-[360px_1fr] gap-4">
         {/* Lista */}
         <div className="space-y-3">
