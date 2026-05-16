@@ -410,13 +410,18 @@ Deno.serve(async (req) => {
 
         for (const m of media) {
           stats.media_seen++;
-          const imageUrl = m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url;
-          if (!imageUrl) continue;
+          const rawImg = m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url;
+          const imageUrl = cleanPreviewUrl(rawImg);
+          if (!imageUrl) {
+            stats.previews_missing++;
+            continue;
+          }
+          stats.previews_found++;
 
           // === DEDUP STAGE 1 (cheap): media_id já scaneado — pula tudo se conhecido ===
           const { data: existingScan } = await supabase
             .from("instagram_scans")
-            .select("id,event_id,status,scan_count,permanently_ignored")
+            .select("id,event_id,status,scan_count,permanently_ignored,preview_image_url,hidden_from_radar")
             .eq("media_id", m.id)
             .maybeSingle();
 
@@ -426,13 +431,20 @@ Deno.serve(async (req) => {
               stats.skipped_duplicate++;
               continue;
             }
-            await supabase
-              .from("instagram_scans")
-              .update({
-                last_seen_at: new Date().toISOString(),
-                scan_count: (existingScan.scan_count || 1) + 1,
-              })
-              .eq("id", existingScan.id);
+            // Se o scan antigo está sem preview e não virou evento, recupera o preview e desarquiva
+            const needsPreviewRefresh = !existingScan.preview_image_url && !existingScan.event_id;
+            const updatePayload: Record<string, unknown> = {
+              last_seen_at: new Date().toISOString(),
+              scan_count: (existingScan.scan_count || 1) + 1,
+            };
+            if (needsPreviewRefresh) {
+              updatePayload.preview_image_url = imageUrl;
+              updatePayload.hidden_from_radar = false;
+              updatePayload.archived_at = null;
+              updatePayload.archive_reason = null;
+              updatePayload.status = "scanned";
+            }
+            await supabase.from("instagram_scans").update(updatePayload).eq("id", existingScan.id);
             try { await supabase.rpc("record_radar_repost", { _scan_id: existingScan.id }); } catch {}
             stats.skipped_duplicate++;
             stats.updated_existing++;
