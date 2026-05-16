@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cleanEventTitle, wasTitleOptimized } from "@/lib/titleCleaner";
+import { findPossibleDuplicateEvent } from "@/lib/eventDuplicateDetector";
 import {
   Radar,
   Sparkles,
