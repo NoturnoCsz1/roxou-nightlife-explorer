@@ -621,6 +621,14 @@ const RadarIA = () => {
               <History className="h-4 w-4" /> Aplicar retenção
             </button>
             <button
+              onClick={resetRadar}
+              disabled={scanning}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-destructive/40 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 disabled:opacity-50 transition"
+              title="Arquiva scans sem preview ou antigos. Eventos criados são preservados."
+            >
+              <RefreshCw className="h-4 w-4" /> Resetar Radar IA
+            </button>
+            <button
               onClick={triggerScan}
               disabled={scanning}
               className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 disabled:opacity-50 transition shadow-[0_0_20px_-5px_hsl(var(--primary)/0.5)]"
