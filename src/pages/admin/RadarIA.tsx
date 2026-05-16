@@ -467,6 +467,24 @@ const RadarIA = () => {
     load();
   }
 
+  async function runBackfillDuplicates(dry = false) {
+    if (!dry && !confirm("Rodar backfill de duplicidade em eventos antigos?\n\nVai preencher dedupe_key, flyer_fingerprint e duplicate_group_id (alta confiança).\nNão apaga, não publica, não arquiva nada.")) return;
+    setScanning(true);
+    const t = toast.loading(dry ? "Analisando (dry-run)..." : "Rodando backfill...");
+    const { data, error } = await supabase.functions.invoke("backfill-event-duplicates", {
+      body: { dry_run: dry, only_missing: true, batch_size: 500 },
+    });
+    toast.dismiss(t);
+    setScanning(false);
+    if (error) { toast.error(`Falha: ${error.message}`); return; }
+    const d = data as any;
+    toast.success(
+      `Backfill${dry ? " (dry)" : ""}: ${d?.analyzed ?? 0} analisados • ${d?.fingerprints_created ?? 0} fingerprints • ${d?.dedupe_keys_created ?? 0} dedupe_keys • ${d?.groups_created ?? 0} grupos • ${d?.confirmed_duplicates ?? 0} duplicados • ${d?.errors?.length ?? 0} erros`,
+      { duration: 8000 },
+    );
+    console.log("[backfill-event-duplicates]", d);
+  }
+
   async function archiveScan(scanId: string, reason = "manual") {
     setActing(scanId);
     const { data: userData } = await supabase.auth.getUser();
@@ -669,6 +687,22 @@ const RadarIA = () => {
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold hover:bg-muted/40 transition"
             >
               <History className="h-4 w-4" /> Aplicar retenção
+            </button>
+            <button
+              onClick={() => runBackfillDuplicates(true)}
+              disabled={scanning}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/30 disabled:opacity-50 transition"
+              title="Analisa eventos antigos sem aplicar mudanças (dry-run)."
+            >
+              <History className="h-4 w-4" /> Analisar duplicados
+            </button>
+            <button
+              onClick={() => runBackfillDuplicates(false)}
+              disabled={scanning}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/40 bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 disabled:opacity-50 transition"
+              title="Preenche dedupe_key, flyer_fingerprint e marca grupos de alta confiança. Não apaga nada."
+            >
+              <RefreshCw className="h-4 w-4" /> Backfill duplicidade
             </button>
             <button
               onClick={resetRadar}
