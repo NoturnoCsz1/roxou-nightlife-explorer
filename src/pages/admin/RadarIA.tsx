@@ -94,6 +94,7 @@ interface EventRow {
   ai_confidence: string | null;
   instagram: string | null;
   dedupe_key: string | null;
+  original_detected_title: string | null;
 }
 
 interface Card {
