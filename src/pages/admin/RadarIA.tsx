@@ -81,6 +81,9 @@ interface ScanRow {
   repost_count: number;
   created_event_deleted_at?: string | null;
   deletion_reason?: string | null;
+  duplicate_score?: number | null;
+  duplicate_reason?: string | null;
+  flyer_fingerprint?: string | null;
 }
 
 interface EventRow {
