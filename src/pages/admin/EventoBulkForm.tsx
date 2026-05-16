@@ -682,7 +682,7 @@ interface ReviewRowProps {
   item: BulkItem;
   partners: Partner[];
   isDuplicate?: boolean;
-  smartDup?: DuplicateResult;
+  smartDup?: DuplicateConfidenceResult;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
