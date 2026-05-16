@@ -430,8 +430,34 @@ const RadarIA = () => {
     if (error) { toast.error(`Falha: ${error.message}`); return; }
     const d = data as any;
     toast.success(
-      `Radar IA: ${d?.drafts_created ?? 0} novos • ${d?.possible_duplicate ?? 0} possíveis duplicados • ${d?.skipped_duplicate ?? 0} já existentes`,
+      `Radar IA: ${d?.media_seen ?? 0} posts • ${d?.previews_found ?? 0} previews • ${d?.previews_missing ?? 0} sem imagem • ${d?.drafts_created ?? 0} novos`,
     );
+    load();
+  }
+
+  async function resetRadar() {
+    if (!confirm("Resetar Radar IA?\n\nVai arquivar scans antigos sem preview ou fora da janela.\nEventos já criados NÃO serão apagados.")) return;
+    setScanning(true);
+    const t = toast.loading("Resetando radar...");
+    const { data: userData } = await supabase.auth.getUser();
+    const cutoff = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    // Arquiva: sem preview, OU sem evento e antigo (>2d), preservando os já vinculados a eventos publicados
+    const { data, error } = await supabase
+      .from("instagram_scans" as any)
+      .update({
+        hidden_from_radar: true,
+        archived_at: new Date().toISOString(),
+        archive_reason: "Reset manual para recaptura com preview",
+        archived_by: userData.user?.id ?? null,
+        status: "archived",
+      })
+      .eq("hidden_from_radar", false)
+      .or(`preview_image_url.is.null,and(event_id.is.null,last_seen_at.lt.${cutoff})`)
+      .select("id");
+    toast.dismiss(t);
+    setScanning(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Reset: ${data?.length ?? 0} scans arquivados. Agora dispare uma nova varredura.`);
     load();
   }
 
@@ -593,6 +619,14 @@ const RadarIA = () => {
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold hover:bg-muted/40 transition"
             >
               <History className="h-4 w-4" /> Aplicar retenção
+            </button>
+            <button
+              onClick={resetRadar}
+              disabled={scanning}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-destructive/40 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 disabled:opacity-50 transition"
+              title="Arquiva scans sem preview ou antigos. Eventos criados são preservados."
+            >
+              <RefreshCw className="h-4 w-4" /> Resetar Radar IA
             </button>
             <button
               onClick={triggerScan}
