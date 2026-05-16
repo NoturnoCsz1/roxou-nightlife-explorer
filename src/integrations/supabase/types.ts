@@ -987,6 +987,7 @@ export type Database = {
           maps_place_id: string | null
           needs_review: boolean
           opportunity_tags: string[]
+          original_detected_title: string | null
           partner_id: string | null
           slug: string
           sports_match_id: string | null
@@ -1027,6 +1028,7 @@ export type Database = {
           maps_place_id?: string | null
           needs_review?: boolean
           opportunity_tags?: string[]
+          original_detected_title?: string | null
           partner_id?: string | null
           slug: string
           sports_match_id?: string | null
@@ -1067,6 +1069,7 @@ export type Database = {
           maps_place_id?: string | null
           needs_review?: boolean
           opportunity_tags?: string[]
+          original_detected_title?: string | null
           partner_id?: string | null
           slug?: string
           sports_match_id?: string | null
