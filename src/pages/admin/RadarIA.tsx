@@ -689,6 +689,22 @@ const RadarIA = () => {
               <History className="h-4 w-4" /> Aplicar retenção
             </button>
             <button
+              onClick={() => runBackfillDuplicates(true)}
+              disabled={scanning}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-card text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/30 disabled:opacity-50 transition"
+              title="Analisa eventos antigos sem aplicar mudanças (dry-run)."
+            >
+              <History className="h-4 w-4" /> Analisar duplicados
+            </button>
+            <button
+              onClick={() => runBackfillDuplicates(false)}
+              disabled={scanning}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-primary/40 bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 disabled:opacity-50 transition"
+              title="Preenche dedupe_key, flyer_fingerprint e marca grupos de alta confiança. Não apaga nada."
+            >
+              <RefreshCw className="h-4 w-4" /> Backfill duplicidade
+            </button>
+            <button
               onClick={resetRadar}
               disabled={scanning}
               className="flex items-center gap-2 px-3 py-2 rounded-xl border border-destructive/40 bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 disabled:opacity-50 transition"
