@@ -213,6 +213,14 @@ async function findMatchAndLink(
   return { detected: true, confidence: det.confidence, matched: matchedId, linked };
 }
 
+// === Preview URL sanitizer ===
+function cleanPreviewUrl(u: unknown): string | null {
+  if (!u || typeof u !== "string") return null;
+  const trimmed = u.trim();
+  if (!trimmed) return null;
+  if (!/^https?:\/\//i.test(trimmed)) return null;
+  return trimmed;
+}
 
 interface IGMedia {
   id: string;
