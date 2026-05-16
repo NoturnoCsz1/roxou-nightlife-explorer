@@ -26,6 +26,9 @@ import {
   SlidersHorizontal,
   Trash2,
   Clock,
+  Music2,
+  Utensils,
+  Megaphone,
 } from "lucide-react";
 import {
   Sheet,
@@ -114,6 +117,117 @@ function formatDate(dt: string | null) {
     });
   } catch { return dt; }
 }
+
+// ============ PREVIEW HELPERS ============
+function normalizeUrl(raw: any): string | null {
+  if (raw == null) return null;
+  let u = String(raw).trim();
+  if (!u || u === "null" || u === "undefined") return null;
+  try { u = decodeURI(u); } catch {}
+  if (!/^https?:\/\//i.test(u)) return null;
+  return u;
+}
+
+function buildPreviewChain(scan: any, ev: any, ext: any): string[] {
+  const candidates = [
+    ev?.image_url,
+    scan?.preview_image_url,
+    ext?.image_url,
+    ext?.flyer_url,
+    ext?.media_url,
+    ext?.thumbnail_url,
+    ext?.display_url,
+    Array.isArray(ext?.media) ? ext.media[0]?.url : null,
+    Array.isArray(ext?.media) ? ext.media[0]?.thumbnail_url : null,
+  ];
+  const out: string[] = [];
+  for (const c of candidates) {
+    const n = normalizeUrl(c);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
+
+// Mini-componente com fallback automático + skeleton + fade-in
+function SmartPreview({ urls, alt }: { urls: string[]; alt: string }) {
+  const [idx, setIdx] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { setIdx(0); setLoaded(false); }, [urls.join("|")]);
+
+  if (!urls.length || idx >= urls.length) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/60 bg-gradient-to-br from-primary/5 to-purple-500/5">
+        <Radar className="h-10 w-10" />
+        <span className="text-[10px] uppercase tracking-wider">Sem preview</span>
+      </div>
+    );
+  }
+  return (
+    <>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/40 via-muted/20 to-muted/40" />
+      )}
+      <img
+        key={urls[idx]}
+        src={urls[idx]}
+        alt={alt}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        onLoad={() => setLoaded(true)}
+        onError={() => { setLoaded(false); setIdx((i) => i + 1); }}
+        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+    </>
+  );
+}
+
+// ============ CLASSIFICAÇÃO DE CONTEÚDO ============
+const MUSIC_KEYWORDS = [
+  "dj","música ao vivo","musica ao vivo","ao vivo","show","banda","cantor","cantora",
+  "sertanejo","pagode","funk","eletrônica","eletronica","rock","mpb","samba","roda de samba",
+  "axé","forró","forro","reggae","hip hop","rap","trap","techno","house","brega",
+  "balada","festa","festival","sunset","after","resenha","open bar","openbar",
+  "universitário","universitario","line up","line-up","atração","atracao","apresenta",
+  "🎤","🎧","🎶","🎵","🪩","🎸","🥁",
+];
+const FOOD_KEYWORDS = [
+  "prato executivo","executivo","hamburguer","hambúrguer","burger","pizza","almoço","almoco",
+  "jantar","cardápio","cardapio","menu","delivery","combo","promoção do dia","happy hour comida",
+  "porção","porcao","churrasco","rodízio","rodizio","buffet",
+];
+const AD_KEYWORDS = [
+  "publicidade","institucional","propaganda","aniversário da loja","aniversario da loja",
+  "venha conhecer","novidade","inauguração","inauguracao","abertura","financiamento",
+  "imobiliária","imobiliaria","oferta","queima de estoque",
+];
+
+function getContentText(scan: any, ext: any): string {
+  return [
+    scan?.raw_caption, scan?.raw_ocr, ext?.title, ext?.description, ext?.summary,
+    Array.isArray(scan?.keywords) ? scan.keywords.join(" ") : "",
+    Array.isArray(ext?.hashtags) ? ext.hashtags.join(" ") : "",
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+type ContentKind = "music" | "food" | "ad" | "review";
+function classifyContent(scan: any, ext: any): ContentKind {
+  const text = getContentText(scan, ext);
+  const detected = String(ext?.detected_type || ext?.type || "").toLowerCase();
+  const hasMusic = MUSIC_KEYWORDS.some(k => text.includes(k));
+  const hasFood = FOOD_KEYWORDS.some(k => text.includes(k));
+  const hasAd = AD_KEYWORDS.some(k => text.includes(k));
+  if (hasMusic) return "music";
+  if (detected === "promotion" || detected === "promocao" || hasAd) return "ad";
+  if (detected === "menu" || hasFood) return "food";
+  return "review";
+}
+
+const CONTENT_BADGE: Record<ContentKind, { label: string; icon: any; cls: string }> = {
+  music: { label: "Evento Musical", icon: Music2, cls: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40" },
+  food:  { label: "Gastronomia",    icon: Utensils, cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
+  ad:    { label: "Publicidade",    icon: Megaphone, cls: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30" },
+  review:{ label: "Revisar",        icon: AlertTriangle, cls: "bg-orange-500/15 text-orange-300 border-orange-500/30" },
+};
 
 const TABS: { key: TabKey; label: string; hint: string }[] = [
   { key: "novos", label: "Novos", hint: "Recém capturados, aguardando decisão" },
@@ -272,6 +386,34 @@ const RadarIA = () => {
         .map((x) => x.card);
       filtered = [...filtered, ...extras];
     }
+
+    // Hard time-window (apenas para abas operacionais: novos/revisar)
+    // Janela: posts capturados nos últimos 2 dias OU eventos com data entre ontem e +30d
+    if (tab === "novos" || tab === "revisar") {
+      const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
+      const THIRTY_DAYS = 1000 * 60 * 60 * 24 * 30;
+      const now = Date.now();
+      filtered = filtered.filter((x) => {
+        const seen = x.scan.last_seen_at ? new Date(x.scan.last_seen_at).getTime() : 0;
+        const recentPost = seen && (now - seen) <= TWO_DAYS;
+        const ext = x.scan.extracted_json || {};
+        const evDtStr = x.event?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
+        const evMs = evDtStr ? new Date(evDtStr).getTime() : 0;
+        const futureEvent = evMs && evMs >= (now - TWO_DAYS) && evMs <= (now + THIRTY_DAYS);
+        return recentPost || futureEvent;
+      });
+    }
+
+    // Ordenar: música primeiro, depois revisar, food, ad por último
+    const kindOrder: Record<string, number> = { music: 0, review: 1, food: 2, ad: 3 };
+    filtered.sort((a, b) => {
+      const ka = kindOrder[classifyContent(a.scan, a.scan.extracted_json || {})] ?? 5;
+      const kb = kindOrder[classifyContent(b.scan, b.scan.extracted_json || {})] ?? 5;
+      if (ka !== kb) return ka - kb;
+      const sa = a.scan.last_seen_at ? new Date(a.scan.last_seen_at).getTime() : 0;
+      const sb = b.scan.last_seen_at ? new Date(b.scan.last_seen_at).getTime() : 0;
+      return sb - sa;
+    });
 
     setCards(filtered);
     setLoading(false);
@@ -619,19 +761,14 @@ const RadarIA = () => {
             const conf = (c.scan.ai_confidence || ext.confidence || "medium").toLowerCase();
             const ev = c.event;
             const detectedType = (ext.detected_type || ext.type || "").toLowerCase();
-            const imageUrl = ev?.image_url
-              || c.scan.preview_image_url
-              || ext.image_url
-              || ext.flyer_url
-              || ext.media_url
-              || ext.thumbnail_url
-              || ext.display_url
-              || (Array.isArray(ext.media) ? ext.media[0]?.url : null)
-              || null;
+            const previewUrls = buildPreviewChain(c.scan, ev, ext);
             const title = ev?.title || ext.title || "—";
             const dt = ev?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
             const venue = ev?.venue_name || ext.venue_name || c.scan.source_handle;
             const cat = categorize(c);
+            const kind = classifyContent(c.scan, ext);
+            const kindMeta = CONTENT_BADGE[kind];
+            const KindIcon = kindMeta.icon;
 
             return (
               <div
@@ -639,27 +776,11 @@ const RadarIA = () => {
                 className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.4)] flex flex-col"
               >
                 <div className="relative aspect-[4/5] bg-muted overflow-hidden">
-                  {imageUrl ? (
-                    <img
-                      src={imageUrl}
-                      alt={title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onError={(e) => {
-                        const img = e.currentTarget;
-                        if (img.src !== window.location.origin + "/placeholder.svg") {
-                          img.src = "/placeholder.svg";
-                          img.classList.add("opacity-40", "p-8");
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground/60 bg-gradient-to-br from-primary/5 to-purple-500/5">
-                      <Radar className="h-10 w-10" />
-                      <span className="text-[10px] uppercase tracking-wider">Sem preview</span>
-                    </div>
-                  )}
+                  <SmartPreview urls={previewUrls} alt={title} />
                   <div className="absolute top-2 left-2 right-2 flex flex-wrap gap-1.5">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${kindMeta.cls}`}>
+                      <KindIcon className="h-3 w-3" /> {kindMeta.label}
+                    </span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${confBadge[conf] || confBadge.medium}`}>
                       {conf === "high" ? "Alta" : conf === "low" ? "Baixa" : "Média"}
                     </span>
