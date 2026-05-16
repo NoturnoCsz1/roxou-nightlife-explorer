@@ -931,6 +931,24 @@ const RadarIA = () => {
                     )}
                   </div>
 
+                  {typeof c.scan.duplicate_score === "number" && c.scan.duplicate_score >= 60 && (
+                    <div className={`rounded-lg p-2 text-xs border ${c.scan.duplicate_score >= 80 ? "bg-rose-500/10 border-rose-500/40 text-rose-200" : "bg-amber-500/10 border-amber-500/40 text-amber-200"}`}>
+                      <div className="flex items-center gap-1.5 font-semibold">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        {c.scan.duplicate_score >= 80 ? "Duplicado detectado" : "Possível duplicado"}
+                        <span className="ml-auto text-[10px] opacity-80">score {Math.round(c.scan.duplicate_score)}</span>
+                      </div>
+                      {c.scan.duplicate_reason && (
+                        <p className="mt-1 opacity-80 line-clamp-2">{c.scan.duplicate_reason}</p>
+                      )}
+                      {c.scan.event_id && (
+                        <Link to={`/admin/eventos/${c.scan.event_id}/editar`} className="mt-1 inline-flex items-center gap-1 text-[11px] underline opacity-90">
+                          <ExternalLink className="h-3 w-3" /> Abrir evento existente
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
                   {c.duplicateOf && (
                     <div className="rounded-lg bg-orange-500/10 border border-orange-500/30 p-2 text-xs">
                       <div className="flex items-start gap-1.5 text-orange-300">
