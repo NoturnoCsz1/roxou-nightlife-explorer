@@ -102,6 +102,7 @@ const InstagramStudio = () => {
   // Marketing modes
   const [viralMode, setViralMode] = useState(false);
   const [economyMode, setEconomyMode] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Generation
   const [generating, setGenerating] = useState(false);
