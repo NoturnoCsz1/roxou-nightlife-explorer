@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cleanEventTitle, wasTitleOptimized } from "@/lib/titleCleaner";
 import {
   Radar,
   Sparkles,
@@ -93,6 +94,7 @@ interface EventRow {
   ai_confidence: string | null;
   instagram: string | null;
   dedupe_key: string | null;
+  original_detected_title: string | null;
 }
 
 interface Card {
@@ -328,7 +330,7 @@ const RadarIA = () => {
     if (eventIds.length) {
       const { data: evs } = await supabase
         .from("events")
-        .select("id,title,slug,date_time,venue_name,image_url,status,ai_confidence,instagram,dedupe_key")
+        .select("id,title,slug,date_time,venue_name,image_url,status,ai_confidence,instagram,dedupe_key,original_detected_title")
         .in("id", eventIds);
       (evs || []).forEach((e) => eventsMap.set(e.id, e as EventRow));
     }
@@ -517,10 +519,28 @@ const RadarIA = () => {
 
   async function approve(eventId: string, scanId: string) {
     setActing(eventId);
-    const { error } = await supabase
+
+    // Busca título atual para tentar refatoração
+    const { data: evCur } = await supabase
       .from("events")
-      .update({ status: "published", needs_review: false })
-      .eq("id", eventId);
+      .select("title, original_detected_title")
+      .eq("id", eventId)
+      .maybeSingle();
+
+    const updates: Record<string, any> = { status: "published", needs_review: false };
+    let optimized = false;
+    if (evCur?.title) {
+      const cleaned = cleanEventTitle(evCur.title);
+      if (cleaned && wasTitleOptimized(evCur.title, cleaned)) {
+        updates.title = cleaned;
+        if (!evCur.original_detected_title) {
+          updates.original_detected_title = evCur.title;
+        }
+        optimized = true;
+      }
+    }
+
+    const { error } = await supabase.from("events").update(updates as any).eq("id", eventId);
     if (!error) {
       await supabase.from("instagram_scans" as any)
         .update({ first_published_at: new Date().toISOString() })
@@ -529,7 +549,10 @@ const RadarIA = () => {
     }
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Evento publicado!"); load(); }
+    else {
+      toast.success(optimized ? "Evento publicado · título otimizado ✨" : "Evento publicado!");
+      load();
+    }
   }
 
   async function ignore(eventId: string, scanId: string) {
@@ -858,7 +881,19 @@ const RadarIA = () => {
                 </div>
 
                 <div className="p-4 space-y-3 flex-1 flex flex-col">
-                  <h3 className="font-display font-bold text-base line-clamp-2 leading-snug">{title}</h3>
+                  <div className="space-y-1">
+                    <h3 className="font-display font-bold text-base line-clamp-2 leading-snug">{title}</h3>
+                    {ev?.original_detected_title && ev.original_detected_title !== ev.title && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30 flex items-center gap-1">
+                          <Sparkles className="h-2.5 w-2.5" /> Título otimizado
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/60 line-through line-clamp-1">
+                          {ev.original_detected_title}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="space-y-1.5 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1.5">
