@@ -387,6 +387,34 @@ const RadarIA = () => {
       filtered = [...filtered, ...extras];
     }
 
+    // Hard time-window (apenas para abas operacionais: novos/revisar)
+    // Janela: posts capturados nos últimos 2 dias OU eventos com data entre ontem e +30d
+    if (tab === "novos" || tab === "revisar") {
+      const TWO_DAYS = 1000 * 60 * 60 * 24 * 2;
+      const THIRTY_DAYS = 1000 * 60 * 60 * 24 * 30;
+      const now = Date.now();
+      filtered = filtered.filter((x) => {
+        const seen = x.scan.last_seen_at ? new Date(x.scan.last_seen_at).getTime() : 0;
+        const recentPost = seen && (now - seen) <= TWO_DAYS;
+        const ext = x.scan.extracted_json || {};
+        const evDtStr = x.event?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
+        const evMs = evDtStr ? new Date(evDtStr).getTime() : 0;
+        const futureEvent = evMs && evMs >= (now - TWO_DAYS) && evMs <= (now + THIRTY_DAYS);
+        return recentPost || futureEvent;
+      });
+    }
+
+    // Ordenar: música primeiro, depois revisar, food, ad por último
+    const kindOrder: Record<string, number> = { music: 0, review: 1, food: 2, ad: 3 };
+    filtered.sort((a, b) => {
+      const ka = kindOrder[classifyContent(a.scan, a.scan.extracted_json || {})] ?? 5;
+      const kb = kindOrder[classifyContent(b.scan, b.scan.extracted_json || {})] ?? 5;
+      if (ka !== kb) return ka - kb;
+      const sa = a.scan.last_seen_at ? new Date(a.scan.last_seen_at).getTime() : 0;
+      const sb = b.scan.last_seen_at ? new Date(b.scan.last_seen_at).getTime() : 0;
+      return sb - sa;
+    });
+
     setCards(filtered);
     setLoading(false);
   }
