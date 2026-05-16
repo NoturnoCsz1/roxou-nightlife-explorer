@@ -1140,6 +1140,16 @@ const RadarIA = () => {
 
                   {/* Ações */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-border mt-auto">
+                    {!ev && !c.scan.permanently_ignored && !c.scan.hidden_from_radar && (
+                      <button
+                        onClick={() => createEventFromScan(c)}
+                        disabled={acting === c.scan.id}
+                        title="Criar rascunho de evento a partir deste post"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Criar evento
+                      </button>
+                    )}
                     {ev && cat !== "arquivados" && (
                       <>
                         {ev.status !== "published" && (
