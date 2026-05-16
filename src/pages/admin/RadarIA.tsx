@@ -573,6 +573,63 @@ const RadarIA = () => {
     else { toast.success(`${data ?? 0} itens arquivados automaticamente`); load(); }
   }
 
+  async function createEventFromScan(card: Card) {
+    const scan = card.scan;
+    if (scan.event_id) { toast.info("Este item já possui evento vinculado."); return; }
+    const ext = scan.extracted_json || {};
+    const rawTitle = (ext.title || (scan.raw_caption || "").split("\n")[0] || `Evento @${scan.source_handle || ""}`).trim().slice(0, 200);
+    const cleaned = cleanEventTitle(rawTitle) || rawTitle;
+    const safeDt = parseEventDateTimeSP(ext);
+    const fallbackDt = new Date(Date.now() + 2 * 86400000).toISOString();
+    const dt = safeDt || fallbackDt;
+    const venue = ext.venue_name || ext.venue || scan.source_handle || "A confirmar";
+    const slug = slugifyScan(`${cleaned}-${(scan.media_id || scan.id).slice(-6)}`);
+    const description = [
+      Array.isArray(ext.artists) && ext.artists.length ? `Atrações: ${ext.artists.join(", ")}` : null,
+      ext.price ? `Entrada: ${ext.price}` : null,
+      ext.description,
+      scan.raw_caption,
+    ].filter(Boolean).join("\n\n").slice(0, 4000) || null;
+    const imageUrl = scan.preview_image_url || ext.image_url || ext.flyer_url || null;
+
+    setActing(scan.id);
+    const { data: inserted, error } = await supabase.from("events").insert({
+      title: cleaned,
+      original_detected_title: rawTitle,
+      slug,
+      date_time: dt,
+      category: ext.category || "festa",
+      sub_category: ext.sub_category || null,
+      partner_id: scan.partner_id,
+      venue_name: venue,
+      address: ext.address || null,
+      instagram: scan.permalink || null,
+      description,
+      status: "draft",
+      verification_source: "radar-manual",
+      image_url: imageUrl,
+      ai_confidence: scan.ai_confidence || "medium",
+      needs_review: !safeDt,
+      dedupe_key: scan.dedupe_key || null,
+      flyer_fingerprint: scan.flyer_fingerprint || null,
+      duplicate_checked_at: new Date().toISOString(),
+    } as any).select("id").single();
+
+    if (error || !inserted) {
+      setActing(null);
+      toast.error(`Falha ao criar: ${error?.message || "desconhecido"}`);
+      return;
+    }
+
+    await supabase.from("instagram_scans" as any)
+      .update({ event_id: inserted.id, status: "created_draft" })
+      .eq("id", scan.id);
+
+    setActing(null);
+    toast.success(safeDt ? "Evento criado como rascunho. Revise e publique." : "Evento criado (data incerta — revise antes de publicar).");
+    load();
+  }
+
   async function approve(eventId: string, scanId: string, force = false) {
     setActing(eventId);
 
