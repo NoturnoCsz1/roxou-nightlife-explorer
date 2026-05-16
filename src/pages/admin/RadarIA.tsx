@@ -467,6 +467,24 @@ const RadarIA = () => {
     load();
   }
 
+  async function runBackfillDuplicates(dry = false) {
+    if (!dry && !confirm("Rodar backfill de duplicidade em eventos antigos?\n\nVai preencher dedupe_key, flyer_fingerprint e duplicate_group_id (alta confiança).\nNão apaga, não publica, não arquiva nada.")) return;
+    setScanning(true);
+    const t = toast.loading(dry ? "Analisando (dry-run)..." : "Rodando backfill...");
+    const { data, error } = await supabase.functions.invoke("backfill-event-duplicates", {
+      body: { dry_run: dry, only_missing: true, batch_size: 500 },
+    });
+    toast.dismiss(t);
+    setScanning(false);
+    if (error) { toast.error(`Falha: ${error.message}`); return; }
+    const d = data as any;
+    toast.success(
+      `Backfill${dry ? " (dry)" : ""}: ${d?.analyzed ?? 0} analisados • ${d?.fingerprints_created ?? 0} fingerprints • ${d?.dedupe_keys_created ?? 0} dedupe_keys • ${d?.groups_created ?? 0} grupos • ${d?.confirmed_duplicates ?? 0} duplicados • ${d?.errors?.length ?? 0} erros`,
+      { duration: 8000 },
+    );
+    console.log("[backfill-event-duplicates]", d);
+  }
+
   async function archiveScan(scanId: string, reason = "manual") {
     setActing(scanId);
     const { data: userData } = await supabase.auth.getUser();
