@@ -346,6 +346,8 @@ Deno.serve(async (req) => {
   const stats = {
     partners_scanned: 0,
     media_seen: 0,
+    previews_found: 0,
+    previews_missing: 0,
     drafts_created: 0,
     skipped_duplicate: 0,
     possible_duplicate: 0,
