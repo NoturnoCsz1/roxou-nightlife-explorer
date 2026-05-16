@@ -521,15 +521,38 @@ const RadarIA = () => {
     else { toast.success(`${data ?? 0} itens arquivados automaticamente`); load(); }
   }
 
-  async function approve(eventId: string, scanId: string) {
+  async function approve(eventId: string, scanId: string, force = false) {
     setActing(eventId);
 
-    // Busca título atual para tentar refatoração
+    // Busca título + dados do evento atual
     const { data: evCur } = await supabase
       .from("events")
-      .select("title, original_detected_title")
+      .select("id, title, original_detected_title, date_time, venue_name, partner_id, image_hash, instagram, flyer_fingerprint")
       .eq("id", eventId)
       .maybeSingle();
+
+    // === Checagem de duplicidade antes de publicar (a menos que force=true) ===
+    if (!force && evCur?.date_time) {
+      const day = evCur.date_time.slice(0, 10);
+      const fromDate = new Date(new Date(day + "T00:00:00-03:00").getTime() - 15 * 86400000).toISOString();
+      const toDate = new Date(new Date(day + "T23:59:59-03:00").getTime() + 15 * 86400000).toISOString();
+      const { data: nearby } = await supabase
+        .from("events")
+        .select("id,title,date_time,venue_name,partner_id,image_hash,instagram,flyer_fingerprint,dedupe_key,status")
+        .eq("status", "published")
+        .gte("date_time", fromDate)
+        .lte("date_time", toDate)
+        .neq("id", eventId)
+        .limit(200);
+      const dup = findPossibleDuplicateEvent(evCur as any, (nearby || []) as any[]);
+      if (dup.decision === "confirmed" && dup.matched_event_id) {
+        setActing(null);
+        toast.error(`Duplicado de "${dup.matched_event_title}" (score ${Math.round(dup.duplicate_score)}). Vincule ou use forçar.`, {
+          action: { label: "Publicar mesmo assim", onClick: () => approve(eventId, scanId, true) },
+        });
+        return;
+      }
+    }
 
     const updates: Record<string, any> = { status: "published", needs_review: false };
     let optimized = false;
