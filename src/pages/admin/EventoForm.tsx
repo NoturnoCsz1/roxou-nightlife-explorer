@@ -484,7 +484,41 @@ const EventoForm = () => {
             {reprocessingSports ? "Reprocessando..." : "Reprocessar transmissão esportiva"}
           </button>
         )}
+        {isEdit && (
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition"
+            title="Arquiva o evento (sai do site público, mantém histórico)"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Excluir evento
+          </button>
+        )}
       </div>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir este evento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O evento será <strong>arquivado</strong>: sai imediatamente do site público,
+              mas o registro fica preservado para auditoria. Esta ação pode ser revertida
+              alterando o status para "publicado" novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); softDeleteEvent(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Sim, excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
       <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
