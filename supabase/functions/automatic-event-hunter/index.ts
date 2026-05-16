@@ -850,6 +850,8 @@ Deno.serve(async (req) => {
               ai_confidence: cls.confidence || "medium",
               needs_review: needsReview,
               dedupe_key: dedupeKey,
+              flyer_fingerprint: flyerFp,
+              duplicate_checked_at: new Date().toISOString(),
             })
             .select("id")
             .single();
