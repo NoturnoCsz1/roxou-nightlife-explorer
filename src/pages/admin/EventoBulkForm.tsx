@@ -505,7 +505,7 @@ const EventoBulkForm = () => {
       const isReview = sd?.decision === "review";
       const itemStatus: "draft" | "published" = isReview ? "draft" : status;
       const base = buildEventPayload(
-        { ...it.form, needs_review: isReview || it.form.needs_review },
+        { ...it.form, needs_review: isReview || (it.form as any).needs_review },
         { city: cityFilter, status: itemStatus },
       );
       return {
