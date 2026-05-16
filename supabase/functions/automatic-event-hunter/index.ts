@@ -11,6 +11,46 @@ const json = (data: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+// === Title cleaner (mirror src/lib/titleCleaner.ts — regex only, no AI) ===
+const TITLE_SPAM_PHRASES = [
+  "hoje tem","sextou","sabadou","domingou","imperdivel","imperdível","corre","corra",
+  "bora","vamoo","vamoooo","vamos","ultima chance","última chance","ingresso garantido",
+  "lote promocional","ultimos ingressos","últimos ingressos","promocao","promoção",
+  "open bar liberado","atencao","atenção","aviso","novidade","novidades",
+];
+const TITLE_LOWER_WORDS = new Set(["de","da","do","das","dos","e","o","a","os","as","no","na","nos","nas","em","com","por","para","um","uma","ao","à"]);
+function titleCaseSmart(input: string): string {
+  return input.toLowerCase().split(/\s+/).map((w, i) => {
+    if (!w) return "";
+    if (/^(dj|mc|vip|rj|sp|pp)$/i.test(w)) return w.toUpperCase();
+    if (i > 0 && TITLE_LOWER_WORDS.has(w)) return w;
+    return w.split("-").map((p) => (p ? p[0].toUpperCase() + p.slice(1) : "")).join("-");
+  }).filter(Boolean).join(" ");
+}
+function cleanEventTitle(raw: string | null | undefined): string {
+  if (!raw) return "";
+  let s = String(raw);
+  s = s.replace(/https?:\/\/\S+/g, " ");
+  s = s.replace(/#\w+/g, " ");
+  s = s.replace(/@\w+/g, " ");
+  s = s.replace(/(\+?\d{2}\s?)?\(?\d{2}\)?\s?9?\d{4}[-\s]?\d{4}/g, " ");
+  s = s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F2FF}]/gu, " ");
+  s = s.replace(/\b(r\$\s?\d+|\d+\s?reais?|combo|promo|desconto|gratis|grátis|free|happy hour)\b/gi, " ");
+  for (const phrase of TITLE_SPAM_PHRASES) {
+    s = s.replace(new RegExp(`\\b${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"), " ");
+  }
+  s = s.replace(/([!?.])\1{1,}/g, "$1");
+  s = s.replace(/(.)\1{2,}/g, "$1$1");
+  s = s.replace(/[\-–—|•·:;,.!?]+/g, " ");
+  s = s.replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  const upperRatio = (s.match(/[A-ZÀ-Ý]/g) || []).length / Math.max(s.replace(/\s/g, "").length, 1);
+  if (upperRatio > 0.5) s = titleCaseSmart(s);
+  else s = s.charAt(0).toUpperCase() + s.slice(1);
+  if (s.length > 80) s = s.slice(0, 77).replace(/\s+\S*$/, "") + "…";
+  return s;
+}
+
 const norm = (s: string) =>
   (s || "")
     .toLowerCase()
