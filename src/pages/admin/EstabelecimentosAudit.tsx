@@ -575,8 +575,23 @@ const EstabelecimentosAudit = () => {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-sm font-semibold truncate">{e.name}</span>
-                      {e.instagram_validated && <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />}
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${meta.cls}`}>{meta.label}</span>
+                      {/* Badges de qualidade — positivos */}
+                      {e.instagram_validated && (
+                        <span title="Instagram validado pelo admin" className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">
+                          <CheckCircle2 className="h-3 w-3" /> Instagram confirmado
+                        </span>
+                      )}
+                      {e.address?.trim() && e.formatted_address?.trim() && (
+                        <span title={e.formatted_address || ""} className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">
+                          <CheckCircle2 className="h-3 w-3" /> Endereço validado
+                        </span>
+                      )}
+                      {e.latitude != null && e.longitude != null && (
+                        <span title={`${e.latitude.toFixed(5)}, ${e.longitude.toFixed(5)}`} className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400">
+                          <MapPin className="h-3 w-3" /> Coordenadas válidas
+                        </span>
+                      )}
                       {flags.length > 0 && (
                         <span
                           title={flags.map(f => FLAG_LABELS[f] || f).join(", ")}
