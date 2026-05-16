@@ -463,27 +463,74 @@ const EventoBulkForm = () => {
       toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
       return;
     }
-    if (duplicateIds.size > 0) {
-      toast.warning("⚠️ Este evento já foi postado. Revise os cards marcados antes de salvar.");
-      return;
-    }
-    // dedupe by slug/title
+
+    // dedupe interno do lote (mesma slug+título)
     const seen = new Set<string>();
     for (const it of ready) {
       const k = `${it.form.slug}|${it.form.title.toLowerCase()}`;
       if (seen.has(k)) {
-        toast.error(`Duplicidade detectada: ${it.form.title}`);
+        toast.error(`Duplicidade interna no lote: ${it.form.title}`);
         return;
       }
       seen.add(k);
     }
 
+    // Classifica pela ferramenta central
+    const blocked: BulkItem[] = [];
+    const review: BulkItem[] = [];
+    const clear: BulkItem[] = [];
+    for (const it of ready) {
+      const sd = smartDuplicates.get(it.localId);
+      if (sd?.decision === "confirmed") blocked.push(it);
+      else if (sd?.decision === "review") review.push(it);
+      else clear.push(it);
+    }
+
+    if (blocked.length && !confirm(
+      `${blocked.length} evento(s) confirmados como duplicados (score ≥ 80) serão bloqueados.\n${review.length} enviados como rascunho para revisão.\n${clear.length} serão ${status === "published" ? "publicados" : "salvos como rascunho"}.\n\nContinuar?`,
+    )) {
+      return;
+    }
+
+    const toInsert = [...clear, ...review];
+    if (!toInsert.length) {
+      toast.warning(`Todos os ${blocked.length} eventos foram bloqueados por duplicidade.`);
+      return;
+    }
+
     setSaving(true);
-    const payloads = ready.map((it) => buildEventPayload(it.form, { city: cityFilter, status }));
+    const nowIso = new Date().toISOString();
+    const payloads = toInsert.map((it) => {
+      const sd = smartDuplicates.get(it.localId);
+      const isReview = sd?.decision === "review";
+      const itemStatus: "draft" | "published" = isReview ? "draft" : status;
+      const base = buildEventPayload(
+        { ...it.form, needs_review: isReview || it.form.needs_review },
+        { city: cityFilter, status: itemStatus },
+      );
+      return {
+        ...base,
+        dedupe_key: generateEventDedupeKey({
+          partner_id: it.form.partner_id || null,
+          title: it.form.title,
+          date_time: it.form.date_time,
+          venue_name: it.form.venue_name,
+        }),
+        flyer_fingerprint: generateFlyerFingerprint({
+          image_hash: it.form.image_hash,
+          image_url: it.form.image_url,
+        }),
+        duplicate_checked_at: nowIso,
+      };
+    });
+
     try {
-      const { error } = await supabase.from("events").insert(payloads);
+      const { error } = await supabase.from("events").insert(payloads as any);
       if (error) throw error;
-      toast.success(`${ready.length} evento(s) ${status === "published" ? "publicado(s)" : "salvo(s) como rascunho"}!`);
+      toast.success(
+        `Lote: ${clear.length} criado(s) • ${review.length} em revisão • ${blocked.length} bloqueado(s) por duplicidade`,
+        { duration: 8000 },
+      );
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
