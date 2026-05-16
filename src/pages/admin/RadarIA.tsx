@@ -436,9 +436,10 @@ const RadarIA = () => {
         const seen = x.scan.last_seen_at ? new Date(x.scan.last_seen_at).getTime() : 0;
         const recentPost = seen && (now - seen) <= TWO_DAYS;
         const ext = x.scan.extracted_json || {};
-        const evDtStr = x.event?.date_time || (ext.date ? `${ext.date}T${ext.time || "22:00"}:00-03:00` : null);
+        const evDtStr = x.event?.date_time || parseEventDateTimeSP(ext);
         const evMs = evDtStr ? new Date(evDtStr).getTime() : 0;
-        const futureEvent = evMs && evMs >= (now - TWO_DAYS) && evMs <= (now + THIRTY_DAYS);
+        const futureEvent = evMs && !isNaN(evMs) && evMs >= (now - TWO_DAYS) && evMs <= (now + THIRTY_DAYS);
+        // Sem data válida não derruba o item: mantém pelo last_seen_at recente.
         return recentPost || futureEvent;
       });
     }
