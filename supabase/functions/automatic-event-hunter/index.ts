@@ -571,6 +571,39 @@ Deno.serve(async (req) => {
           }
 
           stats.accepted_window++;
+
+          // === DEDUP STAGE 0: flyer fingerprint (mesmo flyer já processado) ===
+          const flyerFp = buildFlyerFingerprint({
+            image_url: imageUrl,
+            permalink: m.permalink,
+            media_id: m.id,
+          });
+          if (flyerFp) {
+            const { data: dupByFp } = await supabase
+              .from("events")
+              .select("id,status,title")
+              .eq("flyer_fingerprint", flyerFp)
+              .maybeSingle();
+            if (dupByFp) {
+              await supabase.from("instagram_scans").insert({
+                media_id: m.id,
+                preview_image_url: imageUrl,
+                permalink: m.permalink || null,
+                source_handle: handle,
+                partner_id: p.id,
+                status: "skipped_duplicate",
+                reason: `Mesmo flyer já processado: ${dupByFp.title} (${dupByFp.status})`,
+                event_id: dupByFp.id,
+                duplicate_of_event_id: dupByFp.id,
+                duplicate_score: 100,
+                duplicate_reason: "flyer_fingerprint match",
+                flyer_fingerprint: flyerFp,
+              });
+              stats.skipped_duplicate++;
+              continue;
+            }
+          }
+
           // === DEDUP STAGE 2: permalink já em events ===
           if (m.permalink) {
             const { data: dupEvent } = await supabase
