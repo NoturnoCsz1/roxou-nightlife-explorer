@@ -540,7 +540,7 @@ const RadarIA = () => {
       }
     }
 
-    const { error } = await supabase.from("events").update(updates).eq("id", eventId);
+    const { error } = await supabase.from("events").update(updates as any).eq("id", eventId);
     if (!error) {
       await supabase.from("instagram_scans" as any)
         .update({ first_published_at: new Date().toISOString() })
