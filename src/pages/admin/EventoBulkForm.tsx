@@ -13,9 +13,11 @@ import { buildEventPayload } from "@/lib/adminEventPayload";
 import { sha256File } from "@/lib/imageHash";
 import {
   findPossibleDuplicateEvent,
-  type DuplicateResult,
-  type ExistingEvent,
-} from "@/lib/eventDuplicateValidator";
+  generateEventDedupeKey,
+  generateFlyerFingerprint,
+  type DuplicateConfidenceResult,
+  type DuplicateConfidenceExisting,
+} from "@/lib/eventDuplicateDetector";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
