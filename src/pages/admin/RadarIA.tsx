@@ -330,7 +330,7 @@ const RadarIA = () => {
     if (eventIds.length) {
       const { data: evs } = await supabase
         .from("events")
-        .select("id,title,slug,date_time,venue_name,image_url,status,ai_confidence,instagram,dedupe_key")
+        .select("id,title,slug,date_time,venue_name,image_url,status,ai_confidence,instagram,dedupe_key,original_detected_title")
         .in("id", eventIds);
       (evs || []).forEach((e) => eventsMap.set(e.id, e as EventRow));
     }
