@@ -519,10 +519,28 @@ const RadarIA = () => {
 
   async function approve(eventId: string, scanId: string) {
     setActing(eventId);
-    const { error } = await supabase
+
+    // Busca título atual para tentar refatoração
+    const { data: evCur } = await supabase
       .from("events")
-      .update({ status: "published", needs_review: false })
-      .eq("id", eventId);
+      .select("title, original_detected_title")
+      .eq("id", eventId)
+      .maybeSingle();
+
+    const updates: Record<string, any> = { status: "published", needs_review: false };
+    let optimized = false;
+    if (evCur?.title) {
+      const cleaned = cleanEventTitle(evCur.title);
+      if (cleaned && wasTitleOptimized(evCur.title, cleaned)) {
+        updates.title = cleaned;
+        if (!evCur.original_detected_title) {
+          updates.original_detected_title = evCur.title;
+        }
+        optimized = true;
+      }
+    }
+
+    const { error } = await supabase.from("events").update(updates).eq("id", eventId);
     if (!error) {
       await supabase.from("instagram_scans" as any)
         .update({ first_published_at: new Date().toISOString() })
@@ -531,7 +549,10 @@ const RadarIA = () => {
     }
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Evento publicado!"); load(); }
+    else {
+      toast.success(optimized ? "Evento publicado · título otimizado ✨" : "Evento publicado!");
+      load();
+    }
   }
 
   async function ignore(eventId: string, scanId: string) {
