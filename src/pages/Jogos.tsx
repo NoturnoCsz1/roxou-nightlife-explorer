@@ -488,13 +488,9 @@ export default function Jogos() {
   const featuredHasStream = featured ? !!metaMap[featured.slug]?.hasStream : false;
   const featuredLabel = featured ? `${featured.home_team} x ${featured.away_team}` : null;
 
-  const seoTitle = featuredLabel
-    ? `${featuredLabel}: onde assistir hoje em Presidente Prudente | Roxou`
-    : "Jogos de Hoje, Futebol ao Vivo e Onde Assistir em Presidente Prudente | Roxou";
+  const seoTitle = "Jogos do Brasil, Copa do Mundo e Futebol Hoje | Roxou";
 
-  const seoDescription = featuredLabel
-    ? `Hoje tem ${featuredLabel} pelo ${featured!.league_label}. Veja horário, transmissão e bares que vão transmitir o jogo em Presidente Prudente. Copa do Brasil, Brasileirão e Libertadores ao vivo na Roxou.`
-    : "Veja os jogos de hoje, futebol ao vivo, Copa do Brasil, Brasileirão e os bares que transmitem futebol em Presidente Prudente. Saiba onde assistir na Roxou.";
+  const seoDescription = "Veja jogos do Brasil, Brasileirão Série A, Copa do Brasil, Libertadores, Sul-Americana, Copa do Mundo, resultados, tabelas e onde assistir em Presidente Prudente.";
 
   const seoKeywords = [
     "jogos de hoje", "futebol hoje", "onde assistir futebol",
