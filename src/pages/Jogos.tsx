@@ -329,7 +329,21 @@ export default function Jogos() {
     return list;
   }, [matches, relevantBase, filter, today, teamFilter, DEBUG]);
 
-  const todays = sortMatchesByRelevance(relevantBase.filter((m) => m.raw_date === today && m.status !== "finished"));
+  // Jogos de hoje — sempre Brasil-first (Série B vai pra aba dedicada).
+  const todays = sortMatchesByRelevance(
+    relevantBase.filter((m) => m.raw_date === today && m.status !== "finished" && !isSerieB(m) && isBrazilPriority(m))
+  );
+
+  // Destaques do Brasil (próximos 7 dias) — Seleção, Série A, copas BR, Libertadores, Sul-Americana, Mundial.
+  const destaquesBrasil = useMemo(() => {
+    const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const list = matches.filter((m) =>
+      m.status !== "finished" &&
+      new Date(m.match_time).getTime() <= limit &&
+      isBrazilPriority(m) && !isSerieB(m)
+    );
+    return sortMatchesByRelevance(list).slice(0, 6);
+  }, [matches]);
 
   // Bônus de prioridade quando o jogo possui bares parceiros vinculados em Prudente.
   const venuesBoost = (slug: string) => {
