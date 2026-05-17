@@ -135,7 +135,7 @@ const LEAGUE_SUGGESTIONS: LeagueSuggestion[] = [
 ];
 
 export default function Jogos() {
-  const [filter, setFilter] = useState<FilterKey>("semana");
+  const [filter, setFilter] = useState<FilterKey>("brasil");
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
