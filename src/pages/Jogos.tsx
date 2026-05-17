@@ -463,7 +463,7 @@ export default function Jogos() {
 
   const handleTeamClick = (team: string) => {
     setTeamFilter((prev) => (prev === team ? null : team));
-    setFilter("semana");
+    setFilter("brasil");
     setTimeout(scrollToProximos, 80);
   };
 
