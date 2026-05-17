@@ -59,7 +59,7 @@ function PriorityMatchBlock({
         hasStream={meta?.hasStream}
         hasActiveChat={meta?.hasActiveChat}
       />
-      {showVenues && <MatchVenuesQuickList bars={bars} />}
+      {showVenues && venuesCount > 0 && <MatchVenuesInline bars={bars} count={venuesCount} />}
     </div>
   );
 }
