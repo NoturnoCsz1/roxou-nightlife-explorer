@@ -1093,28 +1093,97 @@ export default function Jogos() {
               </section>
             )}
 
-            {/* Lista filtrada */}
-            <section id="proximos">
-              <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" /> Próximos jogos
-              </h2>
-              {groups.length === 0 ? (
-                <p className="text-muted-foreground text-sm py-8 text-center">
-                  Nenhum jogo neste filtro. Tente outro período.
-                </p>
-              ) : (
-                groups.map((g) => (
-                  <div key={g.dateKey} className="mb-6">
-                    <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
-                      {g.label}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />)}
-                    </div>
+            {/* DESTAQUES DO BRASIL */}
+            {filter !== "serie_b" && filter !== "outras" && destaquesBrasil.length > 0 && (
+              <section>
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-emerald-300" /> Destaques do Brasil
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">próximos 7 dias</span>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {destaquesBrasil.map((m) => (
+                    <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Lista filtrada — esconde quando aba dedicada cuida do conteúdo */}
+            {filter !== "serie_b" && filter !== "outras" && (
+              <section id="proximos">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" /> Próximos jogos
+                </h2>
+                {groups.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-6 text-center">
+                    <p className="text-sm font-semibold">Nenhum jogo brasileiro encontrado agora.</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Você ainda pode ver outras ligas internacionais.
+                    </p>
+                    <button
+                      onClick={() => setFilter("outras")}
+                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/15 border border-primary/40 px-4 py-1.5 text-xs font-bold text-primary hover:bg-primary/25 transition"
+                    >
+                      Ver outras ligas →
+                    </button>
                   </div>
-                ))
-              )}
-            </section>
+                ) : (
+                  groups.map((g) => (
+                    <div key={g.dateKey} className="mb-6">
+                      <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                        {g.label}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </section>
+            )}
+
+            {/* ABA SÉRIE B */}
+            {filter === "serie_b" && (
+              <section id="serie-b">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" /> Brasileirão Série B
+                </h2>
+                {filtered.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-6 text-center">
+                    <p className="text-sm font-semibold">Nenhum jogo da Série B disponível no momento.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {sortMatchesByRelevance(filtered).map((m) => (
+                      <MatchCard key={m.external_id} match={m} compact venuesCount={metaMap[m.slug]?.venuesCount} />
+                    ))}
+                  </div>
+                )}
+                <div className="mt-6">
+                  <Suspense fallback={<div className="h-40 rounded-xl bg-card/30 animate-pulse" />}>
+                    <LeagueTable leagueSlug="serie-b" limit={10} topZone={4} relegationZone={4} showFullLink />
+                  </Suspense>
+                </div>
+              </section>
+            )}
+
+            {/* ABA OUTRAS LIGAS */}
+            {filter === "outras" && (
+              <section id="outras-ligas">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" /> Outras ligas internacionais
+                </h2>
+                <OtherLeaguesAccordion matches={filtered} metaMap={metaMap} />
+              </section>
+            )}
+
+            {/* Empty state Copa do Mundo */}
+            {filter === "copa_mundo" && !hasCopa && (
+              <div className="rounded-2xl border border-dashed border-yellow-500/40 bg-yellow-500/5 p-6 text-center">
+                <Trophy className="h-8 w-8 text-yellow-400/70 mx-auto mb-2" />
+                <p className="text-sm font-semibold">Os jogos da Copa do Mundo aparecerão aqui quando estiverem disponíveis.</p>
+              </div>
+            )}
           </>
         )}
 
