@@ -18,11 +18,21 @@ import {
   mergeMatches,
   sportsMatchRowToNormalized,
   normalizeTeamName,
+  isBrazilPriority,
+  isBrazilSelecao,
+  isSerieA,
+  isSerieB,
+  isCopaDoBrasil,
+  isLibertadores,
+  isSulAmericana,
+  isCopaDoMundoMatch,
   type NormalizedMatch,
   type SportsMatchRow,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
+import MatchVenuesInline from "@/components/jogos/MatchVenuesInline";
+import OtherLeaguesAccordion from "@/components/jogos/OtherLeaguesAccordion";
 import { useMatchMeta, type MatchMetaMap } from "@/hooks/useMatchMeta";
 import ResultMatchCard from "@/components/jogos/ResultMatchCard";
 import { useFootballResults, useLiveMatches } from "@/hooks/useFootballResults";
@@ -49,7 +59,7 @@ function PriorityMatchBlock({
         hasStream={meta?.hasStream}
         hasActiveChat={meta?.hasActiveChat}
       />
-      {showVenues && <MatchVenuesQuickList bars={bars} />}
+      {showVenues && venuesCount > 0 && <MatchVenuesInline bars={bars} count={venuesCount} />}
     </div>
   );
 }
@@ -77,17 +87,22 @@ import {
   getWeekendRangeSPKeys,
 } from "@/lib/dateUtils";
 
-type FilterKey = "hoje" | "amanha" | "semana" | "fds" | "copa" | "brasil" | "internacional" | "live";
+type FilterKey =
+  | "hoje" | "live" | "brasil" | "serie_a" | "copa_brasil"
+  | "libertadores" | "sul_americana" | "copa_mundo"
+  | "serie_b" | "outras";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "hoje", label: "Hoje" },
-  { key: "amanha", label: "Amanhã" },
-  { key: "fds", label: "Fim de semana" },
-  { key: "semana", label: "Semana" },
-  { key: "copa", label: "Copa" },
-  { key: "brasil", label: "Brasil" },
-  { key: "internacional", label: "Internacionais" },
   { key: "live", label: "Ao vivo" },
+  { key: "brasil", label: "Brasil" },
+  { key: "serie_a", label: "Série A" },
+  { key: "copa_brasil", label: "Copa do Brasil" },
+  { key: "libertadores", label: "Libertadores" },
+  { key: "sul_americana", label: "Sul-Americana" },
+  { key: "copa_mundo", label: "Copa do Mundo" },
+  { key: "serie_b", label: "Série B" },
+  { key: "outras", label: "Outras ligas" },
 ];
 
 // ===== Busca: mapa de campeonatos/tabelas para sugestões rápidas =====
@@ -120,7 +135,7 @@ const LEAGUE_SUGGESTIONS: LeagueSuggestion[] = [
 ];
 
 export default function Jogos() {
-  const [filter, setFilter] = useState<FilterKey>("semana");
+  const [filter, setFilter] = useState<FilterKey>("brasil");
   const [teamFilter, setTeamFilter] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -269,57 +284,66 @@ export default function Jogos() {
   const weekendKeys = useMemo(() => new Set(weekendRange.keys), [weekendRange]);
 
   const filtered = useMemo<NormalizedMatch[]>(() => {
-    // Base: para filtros explícitos por categoria/ao vivo, mostra TUDO (não esconde por relevância).
-    // Para filtros de data, usa relevantBase (que já inclui force-include de brasileiros).
-    const base: NormalizedMatch[] =
-      filter === "copa" || filter === "brasil" || filter === "internacional" || filter === "live"
-        ? matches
-        : relevantBase;
+    // Para filtros explícitos por categoria/ao vivo/serie_b/outras, mostra TUDO (não esconde por relevância).
+    // Para "hoje" / "brasil" usa relevantBase (que já inclui force-include de brasileiros).
+    const wide = filter === "live" || filter === "serie_b" || filter === "outras" ||
+                 filter === "serie_a" || filter === "copa_brasil" || filter === "libertadores" ||
+                 filter === "sul_americana" || filter === "copa_mundo";
+    const base: NormalizedMatch[] = wide ? matches : relevantBase;
 
-    // Garante raw_date sempre presente (segurança pós-merge).
     const safeBase = base.filter((m) => !!m.raw_date);
-
     let list: NormalizedMatch[] = safeBase;
 
     if (filter === "hoje") {
-      list = safeBase.filter((m) => m.raw_date === today);
-    } else if (filter === "amanha") {
-      list = safeBase.filter((m) => m.raw_date === tomorrow);
-    } else if (filter === "semana") {
-      // Hoje + próximos 6 dias (7 dias inclusivos), comparando por chave SP.
-      list = safeBase.filter((m) => weekKeys.has(m.raw_date));
-    } else if (filter === "fds") {
-      list = safeBase.filter((m) => weekendKeys.has(m.raw_date));
-    } else if (filter === "copa") list = safeBase.filter((m) => m.is_world_cup);
-    else if (filter === "brasil") list = safeBase.filter((m) => m.category === "brazil");
-    else if (filter === "internacional") list = safeBase.filter((m) => m.category === "international");
-    else if (filter === "live") list = safeBase.filter((m) => m.status === "live");
+      // Hoje, mas priorizando o universo Brasil-first (Série B vai pra aba dedicada).
+      list = safeBase.filter((m) => m.raw_date === today && !isSerieB(m));
+    } else if (filter === "live") {
+      list = safeBase.filter((m) => m.status === "live");
+    } else if (filter === "brasil") {
+      list = safeBase.filter((m) => isBrazilPriority(m) && !isSerieB(m));
+    } else if (filter === "serie_a") {
+      list = safeBase.filter(isSerieA);
+    } else if (filter === "copa_brasil") {
+      list = safeBase.filter(isCopaDoBrasil);
+    } else if (filter === "libertadores") {
+      list = safeBase.filter(isLibertadores);
+    } else if (filter === "sul_americana") {
+      list = safeBase.filter(isSulAmericana);
+    } else if (filter === "copa_mundo") {
+      list = safeBase.filter((m) => isCopaDoMundoMatch(m) || isBrazilSelecao(m));
+    } else if (filter === "serie_b") {
+      list = safeBase.filter(isSerieB);
+    } else if (filter === "outras") {
+      // Exclui tudo que é "Brasil-first" e Série B (vão pra abas próprias).
+      list = safeBase.filter((m) => !isBrazilPriority(m) && !isSerieB(m));
+    }
 
     if (teamFilter) {
-      // Bidirecional + normalizado (reconhece SPFC, EC Juventude, etc.)
       list = list.filter((m) => isSameTeam(m.home_team, teamFilter) || isSameTeam(m.away_team, teamFilter));
     }
 
     if (DEBUG) {
-      const sample = safeBase.slice(0, 5).map((m) => ({ slug: m.slug, raw_date: m.raw_date, league: m.league_label }));
-      const brInList = list.filter((m) => /corinthians|palmeiras|flamengo|s[aã]o\s*paulo|santos|gr[eê]mio|internacional|cruzeiro|atl[eé]tico|fluminense|botafogo|vasco|bahia|fortaleza|juventude/i.test(m.home_team + m.away_team)).length;
-      console.log("[jogos-filtros]", {
-        filter,
-        todayKeySP: today,
-        tomorrowKeySP: tomorrow,
-        weekRange: { startKey: weekRange.startKey, endKey: weekRange.endKey, keys: weekRange.keys },
-        weekendRange: { keys: weekendRange.keys },
-        beforeFilter: safeBase.length,
-        afterFilter: list.length,
-        brasileirosNoFiltro: brInList,
-        sample,
-      });
+      console.log("[jogos-filtros]", { filter, base: safeBase.length, list: list.length });
     }
 
     return list;
-  }, [matches, relevantBase, filter, today, tomorrow, weekKeys, weekendKeys, teamFilter, weekRange, weekendRange, DEBUG]);
+  }, [matches, relevantBase, filter, today, teamFilter, DEBUG]);
 
-  const todays = sortMatchesByRelevance(relevantBase.filter((m) => m.raw_date === today && m.status !== "finished"));
+  // Jogos de hoje — sempre Brasil-first (Série B vai pra aba dedicada).
+  const todays = sortMatchesByRelevance(
+    relevantBase.filter((m) => m.raw_date === today && m.status !== "finished" && !isSerieB(m) && isBrazilPriority(m))
+  );
+
+  // Destaques do Brasil (próximos 7 dias) — Seleção, Série A, copas BR, Libertadores, Sul-Americana, Mundial.
+  const destaquesBrasil = useMemo(() => {
+    const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const list = matches.filter((m) =>
+      m.status !== "finished" &&
+      new Date(m.match_time).getTime() <= limit &&
+      isBrazilPriority(m) && !isSerieB(m)
+    );
+    return sortMatchesByRelevance(list).slice(0, 6);
+  }, [matches]);
 
   // Bônus de prioridade quando o jogo possui bares parceiros vinculados em Prudente.
   const venuesBoost = (slug: string) => {
@@ -342,10 +366,10 @@ export default function Jogos() {
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
     const candidates = matches.filter(
-      (m) => new Date(m.match_time).getTime() <= limit && m.status !== "finished" && (
+      (m) => new Date(m.match_time).getTime() <= limit && m.status !== "finished" && !isSerieB(m) && (
+        isBrazilPriority(m) ||
         isHighlightedMatch(m) ||
         isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team) ||
-        /copa do brasil|libertadores|brasileir/i.test(m.league_label || "") ||
         (metaMap[m.slug]?.venuesCount ?? 0) > 0
       ),
     );
@@ -453,7 +477,7 @@ export default function Jogos() {
 
   const handleTeamClick = (team: string) => {
     setTeamFilter((prev) => (prev === team ? null : team));
-    setFilter("semana");
+    setFilter("brasil");
     setTimeout(scrollToProximos, 80);
   };
 
@@ -464,21 +488,16 @@ export default function Jogos() {
   const featuredHasStream = featured ? !!metaMap[featured.slug]?.hasStream : false;
   const featuredLabel = featured ? `${featured.home_team} x ${featured.away_team}` : null;
 
-  const seoTitle = featuredLabel
-    ? `${featuredLabel}: onde assistir hoje em Presidente Prudente | Roxou`
-    : "Jogos de Hoje, Futebol ao Vivo e Onde Assistir em Presidente Prudente | Roxou";
+  const seoTitle = "Jogos do Brasil, Copa do Mundo e Futebol Hoje | Roxou";
 
-  const seoDescription = featuredLabel
-    ? `Hoje tem ${featuredLabel} pelo ${featured!.league_label}. Veja horário, transmissão e bares que vão transmitir o jogo em Presidente Prudente. Copa do Brasil, Brasileirão e Libertadores ao vivo na Roxou.`
-    : "Veja os jogos de hoje, futebol ao vivo, Copa do Brasil, Brasileirão e os bares que transmitem futebol em Presidente Prudente. Saiba onde assistir na Roxou.";
+  const seoDescription = "Veja jogos do Brasil, Brasileirão Série A, Copa do Brasil, Libertadores, Sul-Americana, Copa do Mundo, resultados, tabelas e onde assistir em Presidente Prudente.";
 
   const seoKeywords = [
-    "jogos de hoje", "futebol hoje", "onde assistir futebol",
-    "bares futebol prudente", "bares com transmissão",
-    "futebol presidente prudente", "futebol ao vivo prudente",
-    "copa do brasil hoje", "brasileirão hoje", "libertadores hoje",
-    "jogos do são paulo hoje", "jogos do palmeiras hoje", "jogos do corinthians hoje",
-    "jogos do flamengo hoje", "futebol ao vivo",
+    "jogos do brasil", "jogos hoje", "futebol hoje",
+    "brasileirão série a", "copa do brasil", "libertadores", "sul-americana",
+    "copa do mundo", "tabela brasileirão",
+    "onde assistir futebol", "roxou jogos",
+    "bares futebol prudente", "futebol ao vivo prudente",
     featuredLabel ? `${featuredLabel.toLowerCase()} onde assistir` : null,
   ].filter(Boolean).join(", ");
 
@@ -623,32 +642,44 @@ export default function Jogos() {
 
         <div className="relative mx-auto max-w-3xl px-4 py-8 md:py-12 text-center">
           <div className="inline-flex items-center gap-1.5 mb-4 rounded-full bg-yellow-500/15 border border-yellow-500/50 px-3 py-1.5 text-[11px] md:text-xs font-black text-yellow-300 shadow-[0_0_20px_-4px_rgba(234,179,8,0.5)]">
-            <Trophy className="h-3.5 w-3.5" /> COPA NA ROXOU
+            <Trophy className="h-3.5 w-3.5" /> FUTEBOL NA ROXOU
           </div>
           <h1
-            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[22ch]"
+            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[24ch]"
             style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)" }}
           >
-            <span className="block">Jogos de hoje e onde assistir</span>
+            <span className="block">Jogos do Brasil, Copa do Mundo</span>
             <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
-              em Presidente Prudente
+              e onde assistir
             </span>
           </h1>
           <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance mx-auto max-w-[55ch]">
-            Futebol ao vivo, bares parceiros, transmissões oficiais e próximos jogos dos times brasileiros.
+            Veja os jogos de hoje, próximos confrontos dos times brasileiros, tabelas e partidas da Seleção.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <button
               onClick={() => { setFilter("hoje"); scrollToProximos(); }}
               className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
             >
-              <Calendar className="h-4 w-4" /> Ver jogos de hoje
+              <Calendar className="h-4 w-4" /> Jogos de hoje
             </button>
-            <a
-              href="#bares-esportivos"
+            <button
+              onClick={() => { setFilter("copa_mundo"); scrollToProximos(); }}
               className="inline-flex items-center gap-2 rounded-full border border-yellow-500/50 bg-yellow-500/10 text-yellow-200 px-5 py-2.5 text-sm font-bold hover:bg-yellow-500/20 transition"
             >
-              <Beer className="h-4 w-4" /> Ver bares esportivos
+              <Trophy className="h-4 w-4" /> Copa do Mundo
+            </button>
+            <a
+              href="#tabelas"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 text-primary px-5 py-2.5 text-sm font-bold hover:bg-primary/20 transition"
+            >
+              <ListOrdered className="h-4 w-4" /> Tabelas
+            </a>
+            <a
+              href="#bares-esportivos"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-200 px-5 py-2.5 text-sm font-bold hover:bg-emerald-500/20 transition"
+            >
+              <Beer className="h-4 w-4" /> Bares que transmitem
             </a>
           </div>
         </div>
@@ -908,7 +939,9 @@ export default function Jogos() {
                     </div>
                   </div>
                   </Link>
-                  <MatchVenuesQuickList bars={bars as any} title="Onde assistir esse jogo" />
+                  {(metaMap[hojeTem.slug]?.venuesCount ?? bars.length) > 0 && (
+                    <MatchVenuesInline bars={bars as any} count={metaMap[hojeTem.slug]?.venuesCount ?? bars.length} />
+                  )}
                 </section>
               )}
 
@@ -1021,7 +1054,7 @@ export default function Jogos() {
             )}
 
             {/* TABELAS DOS CAMPEONATOS */}
-            <section>
+            <section id="tabelas">
               <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
                 <ListOrdered className="h-5 w-5 text-primary" /> Tabelas dos campeonatos
               </h2>
@@ -1029,13 +1062,13 @@ export default function Jogos() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <LeagueTable leagueSlug="brasileirao" limit={6} topZone={6} relegationZone={4} showFullLink />
                   <LeagueTable leagueSlug="libertadores" limit={6} topZone={2} showFullLink />
-                  <LeagueTable leagueSlug="champions" limit={6} topZone={8} showFullLink />
+                  <LeagueTable leagueSlug="sulamericana" limit={6} topZone={2} showFullLink />
                 </div>
               </Suspense>
             </section>
 
             {/* Destaque Copa */}
-            {hasCopa && filter !== "copa" && (
+            {hasCopa && filter !== "copa_mundo" && filter !== "outras" && filter !== "serie_b" && (
               <section>
                 <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-yellow-400" /> Copa na Roxou
@@ -1060,28 +1093,97 @@ export default function Jogos() {
               </section>
             )}
 
-            {/* Lista filtrada */}
-            <section id="proximos">
-              <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" /> Próximos jogos
-              </h2>
-              {groups.length === 0 ? (
-                <p className="text-muted-foreground text-sm py-8 text-center">
-                  Nenhum jogo neste filtro. Tente outro período.
-                </p>
-              ) : (
-                groups.map((g) => (
-                  <div key={g.dateKey} className="mb-6">
-                    <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
-                      {g.label}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />)}
-                    </div>
+            {/* DESTAQUES DO BRASIL */}
+            {filter !== "serie_b" && filter !== "outras" && destaquesBrasil.length > 0 && (
+              <section>
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-emerald-300" /> Destaques do Brasil
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">próximos 7 dias</span>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {destaquesBrasil.map((m) => (
+                    <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Lista filtrada — esconde quando aba dedicada cuida do conteúdo */}
+            {filter !== "serie_b" && filter !== "outras" && (
+              <section id="proximos">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" /> Próximos jogos
+                </h2>
+                {groups.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-6 text-center">
+                    <p className="text-sm font-semibold">Nenhum jogo brasileiro encontrado agora.</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Você ainda pode ver outras ligas internacionais.
+                    </p>
+                    <button
+                      onClick={() => setFilter("outras")}
+                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary/15 border border-primary/40 px-4 py-1.5 text-xs font-bold text-primary hover:bg-primary/25 transition"
+                    >
+                      Ver outras ligas →
+                    </button>
                   </div>
-                ))
-              )}
-            </section>
+                ) : (
+                  groups.map((g) => (
+                    <div key={g.dateKey} className="mb-6">
+                      <h3 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                        {g.label}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {sortMatchesByRelevance(g.matches).map((m) => <PriorityMatchBlock key={m.external_id} match={m} bars={bars as any} meta={metaMap[m.slug]} />)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </section>
+            )}
+
+            {/* ABA SÉRIE B */}
+            {filter === "serie_b" && (
+              <section id="serie-b">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-primary" /> Brasileirão Série B
+                </h2>
+                {filtered.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-6 text-center">
+                    <p className="text-sm font-semibold">Nenhum jogo da Série B disponível no momento.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {sortMatchesByRelevance(filtered).map((m) => (
+                      <MatchCard key={m.external_id} match={m} compact venuesCount={metaMap[m.slug]?.venuesCount} />
+                    ))}
+                  </div>
+                )}
+                <div className="mt-6">
+                  <Suspense fallback={<div className="h-40 rounded-xl bg-card/30 animate-pulse" />}>
+                    <LeagueTable leagueSlug="serie-b" limit={10} topZone={4} relegationZone={4} showFullLink />
+                  </Suspense>
+                </div>
+              </section>
+            )}
+
+            {/* ABA OUTRAS LIGAS */}
+            {filter === "outras" && (
+              <section id="outras-ligas">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" /> Outras ligas internacionais
+                </h2>
+                <OtherLeaguesAccordion matches={filtered} metaMap={metaMap} />
+              </section>
+            )}
+
+            {/* Empty state Copa do Mundo */}
+            {filter === "copa_mundo" && !hasCopa && (
+              <div className="rounded-2xl border border-dashed border-yellow-500/40 bg-yellow-500/5 p-6 text-center">
+                <Trophy className="h-8 w-8 text-yellow-400/70 mx-auto mb-2" />
+                <p className="text-sm font-semibold">Os jogos da Copa do Mundo aparecerão aqui quando estiverem disponíveis.</p>
+              </div>
+            )}
           </>
         )}
 

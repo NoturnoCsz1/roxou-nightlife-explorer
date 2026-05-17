@@ -6,6 +6,9 @@ import {
   formatMatchTime,
   sortMatchesByRelevance,
   isPriorityTeam,
+  isBrazilPriority,
+  isBrazilSelecao,
+  isCopaDoMundoMatch,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 
@@ -23,9 +26,10 @@ export default function HomeJogosCard() {
   }).format(new Date());
 
   const all = data ?? [];
-  const todays = all.filter((m) => m.raw_date === todayKey);
-  // Ordena por relevância antes de cortar
-  const list: NormalizedMatch[] = sortMatchesByRelevance(todays.length ? todays : all).slice(0, 3);
+  // Apenas jogos BR-priority / Copa / Seleção — sem ligas aleatórias na Home.
+  const brOnly = all.filter((m) => isBrazilPriority(m) || isCopaDoMundoMatch(m) || isBrazilSelecao(m));
+  const todays = brOnly.filter((m) => m.raw_date === todayKey);
+  const list: NormalizedMatch[] = sortMatchesByRelevance(todays.length ? todays : brOnly).slice(0, 3);
   const hasCopa = list.some((m) => m.is_world_cup);
   const hasLive = list.some((m) => m.status === "live");
 
@@ -39,7 +43,7 @@ export default function HomeJogosCard() {
 
   if (!list.length) return null;
 
-  const title = hasCopa ? "🏆 Copa na Roxou" : "⚽ Jogos de Hoje na Roxou";
+  const title = hasCopa ? "🏆 Copa na Roxou" : "⚽ Futebol na Roxou";
   const themeBorder = hasCopa
     ? "border-yellow-500/50 bg-gradient-to-br from-emerald-950/40 via-card/60 to-yellow-900/20 shadow-[0_0_30px_-12px_rgba(234,179,8,0.5)]"
     : hasLive

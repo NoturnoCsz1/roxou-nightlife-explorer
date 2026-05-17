@@ -1,85 +1,123 @@
-## Objetivo
-Unificar e endurecer a detecção de duplicidade em **uma única ferramenta** reutilizada por Radar IA, hunter, EventoForm/BulkForm e Instagram imports. **Sem IA. Sem refator de layout. Sem apagar nada.**
+# Refatoração premium da página /jogos
 
-## O que já existe (reaproveitar)
-- `src/lib/eventDuplicateValidator.ts` — já tem `findPossibleDuplicateEvent` com score 0–100, normalização, Jaccard, anti-recorrente. **Vamos estender, não recriar.**
-- `events.dedupe_key` (coluna já existe) + `buildDedupeKey` no `automatic-event-hunter` (4 estágios de dedup).
-- `instagram_scans` já tem `dedupe_key`, `duplicate_of_event_id`, `event_id`, `status`.
-- `events.original_detected_title`, `events.image_hash` já existem.
+Objetivo: transformar `/jogos` numa central brasileira de futebol da Roxou, priorizando Seleção, Série A, copas continentais e Copa do Mundo. Ligas internacionais e Série B saem do topo e vão para abas dedicadas.
 
-## O que falta (vamos adicionar)
+## Escopo
 
-### 1. Migration única
-```sql
-alter table public.events
-  add column if not exists flyer_fingerprint text,
-  add column if not exists duplicate_group_id uuid,
-  add column if not exists duplicate_checked_at timestamptz;
+- `src/pages/Jogos.tsx` (reescrita da estrutura visual + filtros)
+- `src/lib/theSportsDb.ts` (novos helpers de classificação — sem remover existentes)
+- `src/components/jogos/MatchCard.tsx` (variante premium "placar")
+- `src/components/jogos/HomeJogosCard.tsx` (bloco da Home reduzido a Brasil/Copa)
+- Novo: `src/components/jogos/MatchVenuesInline.tsx` (linha "X bares transmitem · Ver bares" + accordion)
+- Novo: `src/components/jogos/OtherLeaguesAccordion.tsx` (agrupa por liga)
 
-alter table public.instagram_scans
-  add column if not exists flyer_fingerprint text,
-  add column if not exists duplicate_score numeric,
-  add column if not exists duplicate_reason text;
+Fora do escopo: rotas, timezone, edge functions de sync, schema do Supabase.
 
-create index if not exists idx_events_flyer_fingerprint
-  on public.events(flyer_fingerprint) where flyer_fingerprint is not null;
-create index if not exists idx_scans_flyer_fingerprint
-  on public.instagram_scans(flyer_fingerprint) where flyer_fingerprint is not null;
+## Classificação de prioridade (novos helpers em `theSportsDb.ts`)
+
+Adicionar funções puras, reutilizáveis:
+
+- `isBrazilSelecao(m)` — detecta Seleção Brasileira (home/away contém "brasil" + liga tipo "amistoso", "eliminator", "world cup", "copa america").
+- `isSerieA(m)` — `league_label` casa `/brasileir[ãa]o\s*s[eé]rie\s*a|^brasileir[ãa]o$|brazilian serie a/i` (sem Série B).
+- `isSerieB(m)` — `/s[eé]rie\s*b|brasileir[ãa]o\s*s[eé]rie\s*b/i`.
+- `isCopaDoBrasil`, `isLibertadores`, `isSulAmericana`, `isMundialClubes`, `isCopaDoMundo`/eliminatórias.
+- `isBrazilPriority(m)`: união de Seleção + Série A + copas BR + continentais + Copa do Mundo. **Usado como base do topo.**
+- `getMatchBucket(m)`: retorna `"selecao" | "copa_mundo" | "serie_a" | "copa_brasil" | "libertadores" | "sul_americana" | "mundial_clubes" | "serie_b" | "outras"`.
+- `groupByLeague(list)`: `Record<league_label, NormalizedMatch[]>` para o accordion.
+
+Regex novas aceitam acentos/variações já vistas no projeto (Brasileirão, Brasileirao, Serie A, Série A, etc).
+
+## Nova estrutura da página `/jogos`
+
+```text
+┌─ SEO (title/desc/keywords novos) ──────────────────────────┐
+├─ HERO compacto                                              │
+│   h1 "Jogos do Brasil, Copa do Mundo e onde assistir"       │
+│   subtítulo + 4 chips: Hoje · Copa do Mundo · Tabelas ·     │
+│                         Bares que transmitem                │
+│   (links âncora p/ seções da página)                        │
+├─ KPI strip (mantém: ao vivo, bares, chats)                  │
+├─ Busca + chips de times (mantém)                            │
+├─ FILTROS PRINCIPAIS (substitui FILTERS atual):              │
+│   [Hoje] [Ao vivo] [Brasil] [Série A] [Copa do Brasil]      │
+│   [Libertadores] [Sul-Americana] [Copa do Mundo]            │
+│   [Série B] [Outras ligas]                                  │
+│   default = "brasil"                                        │
+├─ DESTAQUES DO BRASIL (sempre visível, exceto em "Outras")   │
+│   topN 6 ordenados por isBrazilPriority + sortByRelevance   │
+├─ AO VIVO AGORA (somente jogos Brasil-relevantes)            │
+│   se vazio → não renderiza                                  │
+├─ JOGOS DE HOJE (apenas buckets BR-relevantes)               │
+│   + botão "Ver jogos de outras ligas hoje" → expande        │
+├─ Conteúdo conforme filtro ativo (lista agrupada por data)   │
+├─ Aba "Série B" (renderiza só quando filter=serie_b)         │
+│   jogos + tabela + resultados (lazy)                        │
+├─ Aba "Outras ligas" (renderiza só quando filter=outras)     │
+│   OtherLeaguesAccordion: agrupado por league_label          │
+├─ Tabelas (mantém, reordena): Brasileirão A → Libertadores  │
+│   → Sul-Americana → Copa do Mundo. Série B só dentro da aba │
+├─ Bares que transmitem (mantém seção #bares-esportivos)      │
+└─ Empty states condicionais                                  │
 ```
-Já temos `idx_events_dedupe_key`.
 
-### 2. Novo módulo `src/lib/eventDuplicateDetector.ts`
-Fachada única que expõe:
-- `normalizeEventTitle(t)` — reusa `normalizeText` + remove spam ("hoje tem", "sextou", "imperdível", preço, telefone).
-- `normalizeVenueName(v)` — remove sufixos genéricos ("bar","club","casa","pub","lounge") **só** para comparação.
-- `generateEventDedupeKey({partner_id, title, date_time, venue_name})` — `partnerId|normTitle|dateKeySP|normVenue`. Fallback sem partner_id.
-- `generateFlyerFingerprint({image_hash?, image_url?, preview_image_url?, media_id?, permalink?})` — hash determinístico (FNV-1a inline) da primeira fonte disponível.
-- `getDuplicateConfidence(candidate, existing)` — score conforme a tabela do prompt (40 flyer / 30 título / 25 data / 20 local / 20 partner / 15 horário / 10 caption; -30/-30/-20 divergências). Internamente chama `findPossibleDuplicateEvent` e refina com sinais novos (flyer_fingerprint, caption similarity).
-- `findPossibleDuplicateEvent(candidate, existing, opts)` — re-export reforçado (busca por dedupe_key e flyer_fingerprint primeiro, depois cai no scoring).
-- `compareEventsForDuplicate(a,b)` — wrapper síncrono útil em formulários.
+## Cards "placar premium" (MatchCard)
 
-Thresholds: **≥80 bloqueia**, **60–79 revisão**, **<60 livre**.
+Refinos visuais (sem quebrar API atual: mesmas props):
 
-### 3. Hunter (`supabase/functions/automatic-event-hunter/index.ts`)
-- Espelhar `generateFlyerFingerprint` e `normalize*` inline (edge não importa `src/`).
-- Adicionar **estágio 0** de dedup: `events.flyer_fingerprint = fp` ou `instagram_scans.flyer_fingerprint = fp` já vinculado a evento → marca scan `status='skipped_duplicate'`, `duplicate_reason='Mesmo flyer já processado'`, salva `duplicate_score=100`.
-- Estágios 3 e 4 existentes continuam; passam a salvar `duplicate_score` e `duplicate_reason` no scan.
-- No insert do evento: gravar `flyer_fingerprint` e `duplicate_checked_at = now()`.
+- Escudos 56px, nomes truncados em 2 linhas centralizadas.
+- Horário grande no centro com "×" neon roxo (dourado em Copa, vermelho em ao vivo).
+- Badge de campeonato no topo-esquerdo, status no topo-direito.
+- Glass: `bg-card/50 backdrop-blur-md`. Borda neon condicional:
+  - Brasil (Série A, copas BR): borda `from-emerald-400/40 to-yellow-400/40`.
+  - Copa do Mundo: borda dourada já existente.
+  - Ao vivo: ring vermelho pulsante já existente.
+  - Demais: borda padrão muted.
+- Substitui o rodapé "X bares transmitem" pelo novo `MatchVenuesInline` (1 linha + accordion ao clique, em vez de lista renderizada sempre).
 
-### 4. Radar IA admin (`src/pages/admin/RadarIA.tsx`)
-- Badge **"Duplicado detectado"** (rosa) quando `duplicate_score >= 80` ou `status='skipped_duplicate'/'duplicate_detected'`, mostrando score, motivo e link "Abrir evento existente" (`/admin/eventos/:id`).
-- No `approve()`: rodar `getDuplicateConfidence` contra eventos publicados próximos (±15 dias) antes de publicar. Se ≥80 → toast bloqueando + sugerir vincular. Botão extra "Ignorar e publicar mesmo assim" apenas para admin.
+## Bares colapsados (`MatchVenuesInline`)
 
-### 5. EventoForm (`src/pages/admin/EventoForm.tsx`)
-- Ao submeter novo evento: chamar `findPossibleDuplicateEvent` contra fetch dos últimos 90 dias do mesmo partner/venue. Se score ≥80 → AlertDialog com evento existente + "Abrir existente" / "Salvar mesmo assim".
-- Apenas alerta, não bloqueia.
+Linha única: `🍻 3 bares cadastrados transmitem este jogo · [Ver bares]`. Botão abre `<details>` com `MatchVenuesQuickList` interno. Substitui o uso atual de `<MatchVenuesQuickList>` renderizado sempre embaixo dos cards prioritários em `PriorityMatchBlock` e demais lugares.
 
-### 6. EventosList (`src/pages/admin/EventosList.tsx`)
-- Filtro novo **"Possíveis duplicados"**: lista eventos que compartilham `dedupe_key` ou `flyer_fingerprint` com outro evento.
+## Home (`HomeJogosCard`)
 
-### 7. EventoBulkForm + Instagram imports
-- Passar cada candidato pelo mesmo detector antes de criar evento; pular silenciosamente os ≥80 com log no toast resumo ("X pulados por duplicidade").
+- Filtra `data` por `isBrazilPriority(m) || m.is_world_cup || isBrazilSelecao(m)`.
+- Mostra no máx. 3: próximo BR relevante + ao vivo nacional + Copa do Mundo (se houver).
+- Esconde se a lista filtrada ficar vazia (não exibe ligas aleatórias).
+- Título: "Futebol na Roxou". Subtítulo: "Jogos do Brasil, Copa do Mundo e onde assistir em Prudente." CTA: "Ver calendário de jogos →".
+
+## SEO
+
+`SEO` da rota /jogos:
+- title: `Jogos do Brasil, Copa do Mundo e Futebol Hoje | Roxou`
+- description conforme spec
+- keywords conforme spec
+- canonical mantém
+
+## Empty states
+
+- Sem jogos BR no filtro ativo → "Nenhum jogo brasileiro encontrado agora. Você ainda pode ver outras ligas internacionais abaixo." + atalho p/ aba "Outras ligas".
+- Sem Copa do Mundo → mensagem dedicada na seção Copa.
+- Sem Série B → mensagem dedicada na aba.
+
+## Garantias / não-quebra
+
+- Rota `/jogos` preservada.
+- Timezone: continua usando helpers de `@/lib/dateUtils` (`todayKeySP`, `weekRange`, etc.).
+- Nenhum dado removido — apenas reorganização/filtros de exibição.
+- Sem invenções: se a fonte não retornar dados, mostra empty state.
+- Sem loading infinito: mantém `isLoading = loadingApi || loadingDb` + skeletons já existentes; nenhum `await` novo bloqueante.
+- Visual dark/neon Roxou mantido (tokens, glassmorphism, sombras existentes).
+- Build (`tsc --noEmit` + Vite) é validado no fim; ajuste de erros sem mudar regra funcional.
 
 ## Detalhes técnicos
-- **Sem libs novas**. Hash = FNV-1a 32-bit inline.
-- **Sem IA**. Tudo regex + score determinístico.
-- `date_key_sp` vem de `getDateKeySP` em `@/lib/dateUtils` (front) e função inline equivalente no edge (já temos `startOfTodaySPMs`).
-- Nenhum evento existente é alterado; só novos inserts gravam fingerprint. Backfill opcional fora deste prompt.
-- Nada apagado automaticamente — só `status` de scans e badges no admin.
 
-## Arquivos tocados
-- **Novo:** `src/lib/eventDuplicateDetector.ts`
-- **Novo:** migration `supabase/migrations/<ts>_event_duplicate_fingerprint.sql`
-- **Editar:** `supabase/functions/automatic-event-hunter/index.ts`
-- **Editar:** `src/pages/admin/RadarIA.tsx`
-- **Editar:** `src/pages/admin/EventoForm.tsx`
-- **Editar:** `src/pages/admin/EventosList.tsx`
-- **Editar:** `src/pages/admin/EventoBulkForm.tsx` (checagem leve)
+- Migração de `FilterKey` para incluir os novos buckets brasileiros + `serie_b` + `outras`. Os antigos `amanha`/`semana`/`fds` ficam disponíveis em sub-controle dentro de "Hoje" (chip secundário) para não perder funcionalidade.
+- `relevantBase` é recomputado para priorizar `isBrazilPriority` e excluir Série B/outras do topo (Série B aparece só na aba dedicada; outras só na aba "Outras ligas").
+- `OtherLeaguesAccordion`: `Object.entries(groupByLeague(others)).sort((a,b)=>a[0].localeCompare(b[0]))`, cada grupo é um `<details>` com cards compactos.
+- Performance: nenhuma nova query Supabase; só re-uso de `matches`/`metaMap`/`enrichMap`.
 
-## Fora do escopo
-- Backfill de `flyer_fingerprint` em eventos antigos.
-- Merge/unificação automática de duplicados existentes.
-- Mudança de UI pública.
-- Qualquer ajuste em Home / Transporte / Auth.
+## Validação final
 
-Confirma que posso seguir com esse plano?
+1. `bunx tsc --noEmit` limpa.
+2. Smoke manual: `/jogos` carrega, default "Brasil" mostra Destaques do Brasil; "Série B" só aparece ao clicar; "Outras ligas" agrupado por liga; Home só mostra bloco se houver jogo BR/Copa.
+3. Console sem erros novos.

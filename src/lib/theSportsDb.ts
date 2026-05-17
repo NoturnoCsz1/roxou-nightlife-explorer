@@ -704,3 +704,86 @@ export function mergeMatches(apiList: NormalizedMatch[], dbList: NormalizedMatch
     (a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime(),
   );
 }
+
+/* ============================================================
+ * PRIORIDADE BRASILEIRA — central da página /jogos.
+ * Helpers puros, reutilizáveis. Não removem nada anterior.
+ * ============================================================ */
+
+const SELECAO_RE = /\bbrasil\b|brazil/i;
+const SELECAO_LEAGUE_RE = /world\s*cup|copa\s*do\s*mundo|eliminat|qualif|amistos|friendl|copa\s*am[eé]rica|nations\s*league/i;
+
+export function isBrazilSelecao(m: NormalizedMatch): boolean {
+  const hasBrasil = SELECAO_RE.test(m.home_team) || SELECAO_RE.test(m.away_team);
+  if (!hasBrasil) return false;
+  return SELECAO_LEAGUE_RE.test(m.league_label || "") || !!m.is_world_cup;
+}
+
+export function isSerieA(m: NormalizedMatch): boolean {
+  return getLeagueGroupKey(m.league_label) === "brasileirao";
+}
+export function isSerieB(m: NormalizedMatch): boolean {
+  return getLeagueGroupKey(m.league_label) === "serie_b";
+}
+export function isCopaDoBrasil(m: NormalizedMatch): boolean {
+  return getLeagueGroupKey(m.league_label) === "copa_brasil";
+}
+export function isLibertadores(m: NormalizedMatch): boolean {
+  return getLeagueGroupKey(m.league_label) === "libertadores";
+}
+export function isSulAmericana(m: NormalizedMatch): boolean {
+  return getLeagueGroupKey(m.league_label) === "sulamericana";
+}
+export function isCopaDoMundoMatch(m: NormalizedMatch): boolean {
+  return !!m.is_world_cup || getLeagueGroupKey(m.league_label) === "world_cup";
+}
+export function isMundialClubes(m: NormalizedMatch): boolean {
+  return /mundial\s*de\s*clubes|fifa\s*club\s*world|club\s*world\s*cup/i.test(m.league_label || "");
+}
+
+/** União: jogos que entram no topo "Brasil-first". */
+export function isBrazilPriority(m: NormalizedMatch): boolean {
+  if (isBrazilSelecao(m)) return true;
+  if (isCopaDoMundoMatch(m)) return true;
+  if (isSerieA(m)) return true;
+  if (isCopaDoBrasil(m)) return true;
+  if (isLibertadores(m)) return true;
+  if (isSulAmericana(m)) return true;
+  if (isMundialClubes(m)) return true;
+  // Times brasileiros relevantes jogando em qualquer torneio oficial relevante
+  if ((isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team)) && !isSerieB(m)) return true;
+  return false;
+}
+
+export type MatchBucket =
+  | "selecao" | "copa_mundo" | "serie_a" | "copa_brasil"
+  | "libertadores" | "sul_americana" | "mundial_clubes"
+  | "serie_b" | "outras";
+
+export function getMatchBucket(m: NormalizedMatch): MatchBucket {
+  if (isBrazilSelecao(m)) return "selecao";
+  if (isCopaDoMundoMatch(m)) return "copa_mundo";
+  if (isMundialClubes(m)) return "mundial_clubes";
+  if (isLibertadores(m)) return "libertadores";
+  if (isSulAmericana(m)) return "sul_americana";
+  if (isCopaDoBrasil(m)) return "copa_brasil";
+  if (isSerieA(m)) return "serie_a";
+  if (isSerieB(m)) return "serie_b";
+  return "outras";
+}
+
+/** Agrupa por league_label para o accordion "Outras ligas". */
+export function groupByLeague(list: NormalizedMatch[]): Array<{ league: string; matches: NormalizedMatch[] }> {
+  const map = new Map<string, NormalizedMatch[]>();
+  for (const m of list) {
+    const k = m.league_label || "Outros";
+    if (!map.has(k)) map.set(k, []);
+    map.get(k)!.push(m);
+  }
+  return Array.from(map.entries())
+    .map(([league, matches]) => ({
+      league,
+      matches: matches.sort((a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime()),
+    }))
+    .sort((a, b) => b.matches.length - a.matches.length || a.league.localeCompare(b.league));
+}
