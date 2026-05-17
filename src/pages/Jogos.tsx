@@ -18,11 +18,21 @@ import {
   mergeMatches,
   sportsMatchRowToNormalized,
   normalizeTeamName,
+  isBrazilPriority,
+  isBrazilSelecao,
+  isSerieA,
+  isSerieB,
+  isCopaDoBrasil,
+  isLibertadores,
+  isSulAmericana,
+  isCopaDoMundoMatch,
   type NormalizedMatch,
   type SportsMatchRow,
 } from "@/lib/theSportsDb";
 import MatchCard from "@/components/jogos/MatchCard";
 import MatchVenuesQuickList from "@/components/jogos/MatchVenuesQuickList";
+import MatchVenuesInline from "@/components/jogos/MatchVenuesInline";
+import OtherLeaguesAccordion from "@/components/jogos/OtherLeaguesAccordion";
 import { useMatchMeta, type MatchMetaMap } from "@/hooks/useMatchMeta";
 import ResultMatchCard from "@/components/jogos/ResultMatchCard";
 import { useFootballResults, useLiveMatches } from "@/hooks/useFootballResults";
