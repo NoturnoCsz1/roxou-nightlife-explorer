@@ -939,7 +939,9 @@ export default function Jogos() {
                     </div>
                   </div>
                   </Link>
-                  <MatchVenuesQuickList bars={bars as any} title="Onde assistir esse jogo" />
+                  {(metaMap[hojeTem.slug]?.venuesCount ?? bars.length) > 0 && (
+                    <MatchVenuesInline bars={bars as any} count={metaMap[hojeTem.slug]?.venuesCount ?? bars.length} />
+                  )}
                 </section>
               )}
 
