@@ -642,32 +642,44 @@ export default function Jogos() {
 
         <div className="relative mx-auto max-w-3xl px-4 py-8 md:py-12 text-center">
           <div className="inline-flex items-center gap-1.5 mb-4 rounded-full bg-yellow-500/15 border border-yellow-500/50 px-3 py-1.5 text-[11px] md:text-xs font-black text-yellow-300 shadow-[0_0_20px_-4px_rgba(234,179,8,0.5)]">
-            <Trophy className="h-3.5 w-3.5" /> COPA NA ROXOU
+            <Trophy className="h-3.5 w-3.5" /> FUTEBOL NA ROXOU
           </div>
           <h1
-            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[22ch]"
+            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[24ch]"
             style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)" }}
           >
-            <span className="block">Jogos de hoje e onde assistir</span>
+            <span className="block">Jogos do Brasil, Copa do Mundo</span>
             <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
-              em Presidente Prudente
+              e onde assistir
             </span>
           </h1>
           <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance mx-auto max-w-[55ch]">
-            Futebol ao vivo, bares parceiros, transmissões oficiais e próximos jogos dos times brasileiros.
+            Veja os jogos de hoje, próximos confrontos dos times brasileiros, tabelas e partidas da Seleção.
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             <button
               onClick={() => { setFilter("hoje"); scrollToProximos(); }}
               className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
             >
-              <Calendar className="h-4 w-4" /> Ver jogos de hoje
+              <Calendar className="h-4 w-4" /> Jogos de hoje
             </button>
-            <a
-              href="#bares-esportivos"
+            <button
+              onClick={() => { setFilter("copa_mundo"); scrollToProximos(); }}
               className="inline-flex items-center gap-2 rounded-full border border-yellow-500/50 bg-yellow-500/10 text-yellow-200 px-5 py-2.5 text-sm font-bold hover:bg-yellow-500/20 transition"
             >
-              <Beer className="h-4 w-4" /> Ver bares esportivos
+              <Trophy className="h-4 w-4" /> Copa do Mundo
+            </button>
+            <a
+              href="#tabelas"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 text-primary px-5 py-2.5 text-sm font-bold hover:bg-primary/20 transition"
+            >
+              <ListOrdered className="h-4 w-4" /> Tabelas
+            </a>
+            <a
+              href="#bares-esportivos"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-200 px-5 py-2.5 text-sm font-bold hover:bg-emerald-500/20 transition"
+            >
+              <Beer className="h-4 w-4" /> Bares que transmitem
             </a>
           </div>
         </div>
