@@ -493,12 +493,11 @@ export default function Jogos() {
   const seoDescription = "Veja jogos do Brasil, Brasileirão Série A, Copa do Brasil, Libertadores, Sul-Americana, Copa do Mundo, resultados, tabelas e onde assistir em Presidente Prudente.";
 
   const seoKeywords = [
-    "jogos de hoje", "futebol hoje", "onde assistir futebol",
-    "bares futebol prudente", "bares com transmissão",
-    "futebol presidente prudente", "futebol ao vivo prudente",
-    "copa do brasil hoje", "brasileirão hoje", "libertadores hoje",
-    "jogos do são paulo hoje", "jogos do palmeiras hoje", "jogos do corinthians hoje",
-    "jogos do flamengo hoje", "futebol ao vivo",
+    "jogos do brasil", "jogos hoje", "futebol hoje",
+    "brasileirão série a", "copa do brasil", "libertadores", "sul-americana",
+    "copa do mundo", "tabela brasileirão",
+    "onde assistir futebol", "roxou jogos",
+    "bares futebol prudente", "futebol ao vivo prudente",
     featuredLabel ? `${featuredLabel.toLowerCase()} onde assistir` : null,
   ].filter(Boolean).join(", ");
 
