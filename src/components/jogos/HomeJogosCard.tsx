@@ -6,6 +6,9 @@ import {
   formatMatchTime,
   sortMatchesByRelevance,
   isPriorityTeam,
+  isBrazilPriority,
+  isBrazilSelecao,
+  isCopaDoMundoMatch,
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 
