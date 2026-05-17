@@ -366,10 +366,10 @@ export default function Jogos() {
   const maisBuscados = useMemo(() => {
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
     const candidates = matches.filter(
-      (m) => new Date(m.match_time).getTime() <= limit && m.status !== "finished" && (
+      (m) => new Date(m.match_time).getTime() <= limit && m.status !== "finished" && !isSerieB(m) && (
+        isBrazilPriority(m) ||
         isHighlightedMatch(m) ||
         isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team) ||
-        /copa do brasil|libertadores|brasileir/i.test(m.league_label || "") ||
         (metaMap[m.slug]?.venuesCount ?? 0) > 0
       ),
     );
