@@ -1054,7 +1054,7 @@ export default function Jogos() {
             )}
 
             {/* TABELAS DOS CAMPEONATOS */}
-            <section>
+            <section id="tabelas">
               <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
                 <ListOrdered className="h-5 w-5 text-primary" /> Tabelas dos campeonatos
               </h2>
@@ -1062,7 +1062,7 @@ export default function Jogos() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <LeagueTable leagueSlug="brasileirao" limit={6} topZone={6} relegationZone={4} showFullLink />
                   <LeagueTable leagueSlug="libertadores" limit={6} topZone={2} showFullLink />
-                  <LeagueTable leagueSlug="champions" limit={6} topZone={8} showFullLink />
+                  <LeagueTable leagueSlug="sulamericana" limit={6} topZone={2} showFullLink />
                 </div>
               </Suspense>
             </section>
