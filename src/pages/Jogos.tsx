@@ -87,17 +87,22 @@ import {
   getWeekendRangeSPKeys,
 } from "@/lib/dateUtils";
 
-type FilterKey = "hoje" | "amanha" | "semana" | "fds" | "copa" | "brasil" | "internacional" | "live";
+type FilterKey =
+  | "hoje" | "live" | "brasil" | "serie_a" | "copa_brasil"
+  | "libertadores" | "sul_americana" | "copa_mundo"
+  | "serie_b" | "outras";
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "hoje", label: "Hoje" },
-  { key: "amanha", label: "Amanhã" },
-  { key: "fds", label: "Fim de semana" },
-  { key: "semana", label: "Semana" },
-  { key: "copa", label: "Copa" },
-  { key: "brasil", label: "Brasil" },
-  { key: "internacional", label: "Internacionais" },
   { key: "live", label: "Ao vivo" },
+  { key: "brasil", label: "Brasil" },
+  { key: "serie_a", label: "Série A" },
+  { key: "copa_brasil", label: "Copa do Brasil" },
+  { key: "libertadores", label: "Libertadores" },
+  { key: "sul_americana", label: "Sul-Americana" },
+  { key: "copa_mundo", label: "Copa do Mundo" },
+  { key: "serie_b", label: "Série B" },
+  { key: "outras", label: "Outras ligas" },
 ];
 
 // ===== Busca: mapa de campeonatos/tabelas para sugestões rápidas =====
