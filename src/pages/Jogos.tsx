@@ -1045,7 +1045,7 @@ export default function Jogos() {
             </section>
 
             {/* Destaque Copa */}
-            {hasCopa && filter !== "copa" && (
+            {hasCopa && filter !== "copa_mundo" && filter !== "outras" && filter !== "serie_b" && (
               <section>
                 <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-yellow-400" /> Copa na Roxou
