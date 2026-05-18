@@ -353,7 +353,33 @@ const EventoForm = () => {
     }
 
     setSaving(true);
-    const payload = buildEventPayload(form as any, { city: cityFilter });
+    let payload = buildEventPayload(form as any, { city: cityFilter });
+
+    // === Guard de ingestão ===
+    const guard = await validateBeforePublish({
+      source: "form",
+      title: form.title,
+      description: (form as any).description,
+      venue_name: form.venue_name,
+      partner_id: (form as any).partner_id || null,
+      date_time: form.date_time,
+      image_url: form.image_url,
+      image_hash: (form as any).image_hash,
+      current_event_id: id || null,
+    });
+
+    if (!guard.ok) {
+      const reasons = guard.blockReasons.map((r) => REASON_LABELS[r] || r).join(", ");
+      const userConfirm = (form as any).status === "published"
+        ? confirm(`⚠ Guard bloqueou publicação: ${reasons}.\n\nSalvar como rascunho para revisão?`)
+        : true;
+      if (!userConfirm) { setSaving(false); return; }
+      payload = { ...payload, status: "draft", needs_review: true } as any;
+    } else if (guard.recommendedNeedsReview) {
+      payload = { ...payload, needs_review: true } as any;
+    }
+    await persistValidationLog(guard.validationLog, id || null);
+
 
     try {
       let savedEventId: string | undefined = id || undefined;
