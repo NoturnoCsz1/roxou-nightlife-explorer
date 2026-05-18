@@ -18,6 +18,7 @@ import {
   type DuplicateConfidenceResult,
   type DuplicateConfidenceExisting,
 } from "@/lib/eventDuplicateDetector";
+import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
