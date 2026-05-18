@@ -768,6 +768,33 @@ const RadarIA = () => {
       }
     }
 
+    // === Guard de publicação ===
+    if (!force && evCur) {
+      const guard = await validateBeforePublish({
+        source: "radar",
+        title: evCur.title,
+        venue_name: evCur.venue_name,
+        partner_id: evCur.partner_id,
+        date_time: evCur.date_time,
+        image_hash: (evCur as any).image_hash,
+        flyer_fingerprint: evCur.flyer_fingerprint,
+        current_event_id: eventId,
+        scan_id: scanId,
+      });
+      const hardBlocks = guard.blockReasons.filter(
+        (r) => r === "EVENTO_NO_PASSADO" || r === "FORA_DO_ESCOPO" || r === "DATA_DIVERGENTE",
+      );
+      if (hardBlocks.length) {
+        setActing(null);
+        await persistValidationLog(guard.validationLog, eventId);
+        toast.error(`Bloqueado para publicar: ${hardBlocks.map((r) => REASON_LABELS[r] || r).join(", ")}`, {
+          action: { label: "Publicar mesmo assim", onClick: () => approve(eventId, scanId, true) },
+        });
+        return;
+      }
+      await persistValidationLog(guard.validationLog, eventId);
+    }
+
     const updates: Record<string, any> = { status: "published", needs_review: false };
     let optimized = false;
     if (evCur?.title) {
