@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cleanEventTitle, wasTitleOptimized } from "@/lib/titleCleaner";
 import { findPossibleDuplicateEvent } from "@/lib/eventDuplicateDetector";
+import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 import {
   Radar,
   Sparkles,
@@ -667,6 +668,33 @@ const RadarIA = () => {
     const imageUrl = scan.preview_image_url || ext.image_url || ext.flyer_url || null;
 
     setActing(scan.id);
+
+    // === Guard de ingestão (OCR/data/escopo/duplicidade) ===
+    const guard = await validateBeforePublish({
+      source: "radar",
+      title: cleaned,
+      description,
+      venue_name: venue,
+      partner_id: scan.partner_id,
+      date_time: dt,
+      image_url: imageUrl,
+      flyer_fingerprint: scan.flyer_fingerprint,
+      raw_caption: scan.raw_caption,
+      raw_ocr: scan.raw_ocr,
+      scan_id: scan.id,
+    });
+
+    // Bloqueio duro (MESMO_FLYER / DUPLICATA) — não cria.
+    const hardBlocks = guard.blockReasons.filter(
+      (r) => r === "MESMO_FLYER" || r === "DUPLICATA" || r === "FORA_DO_ESCOPO" || r === "EVENTO_NO_PASSADO",
+    );
+    if (hardBlocks.length) {
+      setActing(null);
+      await persistValidationLog(guard.validationLog);
+      toast.error(`Bloqueado: ${hardBlocks.map((r) => REASON_LABELS[r] || r).join(", ")}`);
+      return;
+    }
+
     const { data: inserted, error } = await supabase.from("events").insert({
       title: cleaned,
       original_detected_title: rawTitle,
@@ -683,7 +711,7 @@ const RadarIA = () => {
       verification_source: "radar-manual",
       image_url: imageUrl,
       ai_confidence: scan.ai_confidence || "medium",
-      needs_review: !safeDt,
+      needs_review: !safeDt || guard.recommendedNeedsReview,
       dedupe_key: scan.dedupe_key || null,
       flyer_fingerprint: scan.flyer_fingerprint || null,
       duplicate_checked_at: new Date().toISOString(),
@@ -695,12 +723,15 @@ const RadarIA = () => {
       return;
     }
 
+    await persistValidationLog(guard.validationLog, inserted.id);
+
     await supabase.from("instagram_scans" as any)
       .update({ event_id: inserted.id, status: "created_draft" })
       .eq("id", scan.id);
 
     setActing(null);
-    toast.success(safeDt ? "Evento criado como rascunho. Revise e publique." : "Evento criado (data incerta — revise antes de publicar).");
+    const warnSuffix = guard.warnings.length ? ` ⚠ ${guard.badges.join(" · ")}` : "";
+    toast.success((safeDt ? "Evento criado como rascunho. Revise e publique." : "Evento criado (data incerta — revise antes de publicar).") + warnSuffix);
     load();
   }
 
@@ -735,6 +766,33 @@ const RadarIA = () => {
         });
         return;
       }
+    }
+
+    // === Guard de publicação ===
+    if (!force && evCur) {
+      const guard = await validateBeforePublish({
+        source: "radar",
+        title: evCur.title,
+        venue_name: evCur.venue_name,
+        partner_id: evCur.partner_id,
+        date_time: evCur.date_time,
+        image_hash: (evCur as any).image_hash,
+        flyer_fingerprint: evCur.flyer_fingerprint,
+        current_event_id: eventId,
+        scan_id: scanId,
+      });
+      const hardBlocks = guard.blockReasons.filter(
+        (r) => r === "EVENTO_NO_PASSADO" || r === "FORA_DO_ESCOPO" || r === "DATA_DIVERGENTE",
+      );
+      if (hardBlocks.length) {
+        setActing(null);
+        await persistValidationLog(guard.validationLog, eventId);
+        toast.error(`Bloqueado para publicar: ${hardBlocks.map((r) => REASON_LABELS[r] || r).join(", ")}`, {
+          action: { label: "Publicar mesmo assim", onClick: () => approve(eventId, scanId, true) },
+        });
+        return;
+      }
+      await persistValidationLog(guard.validationLog, eventId);
     }
 
     const updates: Record<string, any> = { status: "published", needs_review: false };

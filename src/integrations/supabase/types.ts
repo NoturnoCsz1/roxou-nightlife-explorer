@@ -900,6 +900,63 @@ export type Database = {
         }
         Relationships: []
       }
+      event_validation_logs: {
+        Row: {
+          ai_date: string | null
+          block_reasons: string[]
+          created_at: string
+          created_by: string | null
+          detected_date: string | null
+          detected_ocr: string | null
+          entertainment_score: number | null
+          event_id: string | null
+          flyer_hash: string | null
+          form_date: string | null
+          id: string
+          scan_id: string | null
+          similarity_score: number | null
+          source: string
+          validation_status: string
+          warnings: string[]
+        }
+        Insert: {
+          ai_date?: string | null
+          block_reasons?: string[]
+          created_at?: string
+          created_by?: string | null
+          detected_date?: string | null
+          detected_ocr?: string | null
+          entertainment_score?: number | null
+          event_id?: string | null
+          flyer_hash?: string | null
+          form_date?: string | null
+          id?: string
+          scan_id?: string | null
+          similarity_score?: number | null
+          source: string
+          validation_status: string
+          warnings?: string[]
+        }
+        Update: {
+          ai_date?: string | null
+          block_reasons?: string[]
+          created_at?: string
+          created_by?: string | null
+          detected_date?: string | null
+          detected_ocr?: string | null
+          entertainment_score?: number | null
+          event_id?: string | null
+          flyer_hash?: string | null
+          form_date?: string | null
+          id?: string
+          scan_id?: string | null
+          similarity_score?: number | null
+          source?: string
+          validation_status?: string
+          warnings?: string[]
+        }
+        Relationships: []
+      }
       eventou_imports: {
         Row: {
           address: string | null

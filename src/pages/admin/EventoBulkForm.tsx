@@ -18,6 +18,7 @@ import {
   type DuplicateConfidenceResult,
   type DuplicateConfidenceExisting,
 } from "@/lib/eventDuplicateDetector";
+import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 
 type Partner = Tables<"partners">;
 type ItemStatus = "uploading" | "extracting" | "ready" | "error";
@@ -500,15 +501,32 @@ const EventoBulkForm = () => {
 
     setSaving(true);
     const nowIso = new Date().toISOString();
-    const payloads = toInsert.map((it) => {
+
+    // === Guard de ingestão por item ===
+    const guarded: Array<{ it: BulkItem; payload: any; guard: Awaited<ReturnType<typeof validateBeforePublish>>; blocked: boolean }> = [];
+    for (const it of toInsert) {
       const sd = smartDuplicates.get(it.localId);
       const isReview = sd?.decision === "review";
-      const itemStatus: "draft" | "published" = isReview ? "draft" : status;
+      const guard = await validateBeforePublish({
+        source: "bulk",
+        title: it.form.title,
+        description: (it.form as any).description,
+        venue_name: it.form.venue_name,
+        partner_id: it.form.partner_id || null,
+        date_time: it.form.date_time,
+        image_url: it.form.image_url,
+        image_hash: it.form.image_hash,
+      });
+      const hardBlocks = guard.blockReasons.filter(
+        (r) => r === "MESMO_FLYER" || r === "DUPLICATA" || r === "FORA_DO_ESCOPO" || r === "EVENTO_NO_PASSADO",
+      );
+      const needsReview = isReview || guard.recommendedNeedsReview;
+      const itemStatus: "draft" | "published" = (needsReview || hardBlocks.length) ? "draft" : status;
       const base = buildEventPayload(
-        { ...it.form, needs_review: isReview || (it.form as any).needs_review },
+        { ...it.form, needs_review: needsReview || (it.form as any).needs_review },
         { city: cityFilter, status: itemStatus },
       );
-      return {
+      const payload = {
         ...base,
         dedupe_key: generateEventDedupeKey({
           partner_id: it.form.partner_id || null,
@@ -522,15 +540,40 @@ const EventoBulkForm = () => {
         }),
         duplicate_checked_at: nowIso,
       };
-    });
+      guarded.push({ it, payload, guard, blocked: hardBlocks.length > 0 });
+    }
+
+    const guardBlocked = guarded.filter((g) => g.blocked);
+    const payloads = guarded.filter((g) => !g.blocked).map((g) => g.payload);
+
+    if (!payloads.length) {
+      setSaving(false);
+      toast.warning(`Todos os ${guardBlocked.length + blocked.length} eventos foram bloqueados (duplicidade ou guard).`);
+      return;
+    }
 
     try {
-      const { error } = await supabase.from("events").insert(payloads as any);
+      const { data: insertedRows, error } = await supabase.from("events").insert(payloads as any).select("id");
       if (error) throw error;
+
+      // Persiste logs (best-effort, em paralelo)
+      const ids = insertedRows || [];
+      await Promise.all(
+        guarded
+          .filter((g) => !g.blocked)
+          .map((g, idx) => persistValidationLog(g.guard.validationLog, ids[idx]?.id ?? null)),
+      );
+      await Promise.all(guardBlocked.map((g) => persistValidationLog(g.guard.validationLog)));
+
+      const blockedTotal = blocked.length + guardBlocked.length;
       toast.success(
-        `Lote: ${clear.length} criado(s) • ${review.length} em revisão • ${blocked.length} bloqueado(s) por duplicidade`,
+        `Lote: ${clear.length} criado(s) • ${review.length} em revisão • ${blockedTotal} bloqueado(s)`,
         { duration: 8000 },
       );
+      if (guardBlocked.length) {
+        const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
+        toast.warning(`Motivos de bloqueio: ${reasons.join(", ")}`, { duration: 9000 });
+      }
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
