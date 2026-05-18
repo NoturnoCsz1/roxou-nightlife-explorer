@@ -1,123 +1,122 @@
-# Refatoração premium da página /jogos
 
-Objetivo: transformar `/jogos` numa central brasileira de futebol da Roxou, priorizando Seleção, Série A, copas continentais e Copa do Mundo. Ligas internacionais e Série B saem do topo e vão para abas dedicadas.
+# Hotfix: validação real do pipeline de ingestão
 
-## Escopo
+Sem reescrever nada. Adicionar uma camada única de validação que tudo o que publica passa a chamar, e endurecer os detectores existentes.
 
-- `src/pages/Jogos.tsx` (reescrita da estrutura visual + filtros)
-- `src/lib/theSportsDb.ts` (novos helpers de classificação — sem remover existentes)
-- `src/components/jogos/MatchCard.tsx` (variante premium "placar")
-- `src/components/jogos/HomeJogosCard.tsx` (bloco da Home reduzido a Brasil/Copa)
-- Novo: `src/components/jogos/MatchVenuesInline.tsx` (linha "X bares transmitem · Ver bares" + accordion)
-- Novo: `src/components/jogos/OtherLeaguesAccordion.tsx` (agrupa por liga)
+## 1. Nova lib central: `src/lib/eventIngestionGuard.ts`
 
-Fora do escopo: rotas, timezone, edge functions de sync, schema do Supabase.
+Função única `validateBeforePublish(input)` retornando `{ ok, blockReasons[], warnings[], badges[], entertainmentScore, ocrDate, validationLog }`.
 
-## Classificação de prioridade (novos helpers em `theSportsDb.ts`)
+Executa, em ordem:
 
-Adicionar funções puras, reutilizáveis:
+1. **OCR de data**
+   - Regex pt-BR no `raw_caption + raw_ocr + title`: `\b(\d{1,2})[\/\s\-de]+([a-zç]+|\d{1,2})\b`, mapeia mês por extenso, monta data em SP.
+   - Detecta palavras-chave: `SEXTOU`, `SÁBADO`, `DOMINGO`, `HOJE`, `AMANHÃ` → resolve para a próxima ocorrência em SP.
+   - Retorna `ocrDate | null`.
 
-- `isBrazilSelecao(m)` — detecta Seleção Brasileira (home/away contém "brasil" + liga tipo "amistoso", "eliminator", "world cup", "copa america").
-- `isSerieA(m)` — `league_label` casa `/brasileir[ãa]o\s*s[eé]rie\s*a|^brasileir[ãa]o$|brazilian serie a/i` (sem Série B).
-- `isSerieB(m)` — `/s[eé]rie\s*b|brasileir[ãa]o\s*s[eé]rie\s*b/i`.
-- `isCopaDoBrasil`, `isLibertadores`, `isSulAmericana`, `isMundialClubes`, `isCopaDoMundo`/eliminatórias.
-- `isBrazilPriority(m)`: união de Seleção + Série A + copas BR + continentais + Copa do Mundo. **Usado como base do topo.**
-- `getMatchBucket(m)`: retorna `"selecao" | "copa_mundo" | "serie_a" | "copa_brasil" | "libertadores" | "sul_americana" | "mundial_clubes" | "serie_b" | "outras"`.
-- `groupByLeague(list)`: `Record<league_label, NormalizedMatch[]>` para o accordion.
+2. **Data divergente**
+   - Se `ocrDate && formDate` e `|diffDias| >= 1` → bloqueia (`DATA_DIVERGENTE`), badge "DATA DIVERGENTE".
 
-Regex novas aceitam acentos/variações já vistas no projeto (Brasileirão, Brasileirao, Serie A, Série A, etc).
+3. **Evento no passado**
+   - Compara `formDate` com `getStartOfTodaySP()` (helper já existente em `dateUtils`).
+   - Se passado → bloqueia (`EVENTO_NO_PASSADO`), badge "EVENTO NO PASSADO".
 
-## Nova estrutura da página `/jogos`
+4. **Score de entretenimento**
+   - Lista positiva: show, festa, balada, dj, open bar, pagode, sertanejo, eletrônico, música ao vivo, futebol, universitária, lounge, barzinho, rave, funk, rock, samba.
+   - Lista negativa (`BLOCKED_KEYWORDS`): workshop, congresso, seminário, simpósio, curso, palestra, científico, ciência, networking, corporativo, empresarial, mesa redonda, feira acadêmica, missa, culto, comício.
+   - Score = 50 base + 10/keyword positiva − 25/keyword negativa, clamp 0–100.
+   - `< 70` → bloqueia (`BAIXO_SCORE_ENTRETENIMENTO`), badge "BAIXO SCORE".
+   - `≥ 1` keyword bloqueada → bloqueio rígido (`FORA_DO_ESCOPO`).
 
-```text
-┌─ SEO (title/desc/keywords novos) ──────────────────────────┐
-├─ HERO compacto                                              │
-│   h1 "Jogos do Brasil, Copa do Mundo e onde assistir"       │
-│   subtítulo + 4 chips: Hoje · Copa do Mundo · Tabelas ·     │
-│                         Bares que transmitem                │
-│   (links âncora p/ seções da página)                        │
-├─ KPI strip (mantém: ao vivo, bares, chats)                  │
-├─ Busca + chips de times (mantém)                            │
-├─ FILTROS PRINCIPAIS (substitui FILTERS atual):              │
-│   [Hoje] [Ao vivo] [Brasil] [Série A] [Copa do Brasil]      │
-│   [Libertadores] [Sul-Americana] [Copa do Mundo]            │
-│   [Série B] [Outras ligas]                                  │
-│   default = "brasil"                                        │
-├─ DESTAQUES DO BRASIL (sempre visível, exceto em "Outras")   │
-│   topN 6 ordenados por isBrazilPriority + sortByRelevance   │
-├─ AO VIVO AGORA (somente jogos Brasil-relevantes)            │
-│   se vazio → não renderiza                                  │
-├─ JOGOS DE HOJE (apenas buckets BR-relevantes)               │
-│   + botão "Ver jogos de outras ligas hoje" → expande        │
-├─ Conteúdo conforme filtro ativo (lista agrupada por data)   │
-├─ Aba "Série B" (renderiza só quando filter=serie_b)         │
-│   jogos + tabela + resultados (lazy)                        │
-├─ Aba "Outras ligas" (renderiza só quando filter=outras)     │
-│   OtherLeaguesAccordion: agrupado por league_label          │
-├─ Tabelas (mantém, reordena): Brasileirão A → Libertadores  │
-│   → Sul-Americana → Copa do Mundo. Série B só dentro da aba │
-├─ Bares que transmitem (mantém seção #bares-esportivos)      │
-└─ Empty states condicionais                                  │
+5. **Duplicidade real (reaproveita `eventDuplicateDetector`)**
+   - Já existe `score 0–100` + `samePartner` + `dateDistance`. Apenas endurecer regra final aqui: `score ≥ 90 && samePartner && dateDistanceHours < 2` → bloqueia (`DUPLICATA`).
+   - 60–89 → não bloqueia, manda para revisão.
+
+6. **OCR ausente quando deveria existir**
+   - Se origem é Radar IA / Instagram scan e `raw_ocr` vazio E `raw_caption` vazio → badge "OCR INVÁLIDO", manda para revisão (não bloqueio rígido).
+
+Retorna `validationLog` pronto para `event_validation_logs`.
+
+## 2. Endurecer `eventDuplicateDetector.ts`
+
+Apenas ajustar threshold de bloqueio (não a função de score) e expor `dateDistanceHours` no resultado para a guard usar.
+
+## 3. Plug nos 3 pontos de entrada
+
+Sem mudar UX, sem mover botões:
+
+- **`src/pages/admin/RadarIA.tsx`** → dentro de `createEventFromScan` e `bulkCreateEvents`, chamar `validateBeforePublish` antes do `insert/update`. Se `!ok` e tem bloqueio rígido → mostra toast com motivo, força `status: 'draft'` + `needs_review: true`, grava `event_validation_logs`. Nunca cria silenciosamente publicado.
+- **`src/pages/admin/EventoBulkForm.tsx`** → mesma chamada no loop de save. Já tem resumo "criados/bloqueados/revisão" — apenas alimentar contadores com os reasons.
+- **`src/pages/admin/EventoForm.tsx`** → no submit, antes do upsert: se houver `blockReasons` rígidos, abrir confirm "Publicar mesmo assim?" (só admin) e força `status='draft'` + `needs_review=true` se confirmar parcial. Manter botão "Publicar mesmo assim" já existente.
+- **Edge function `automatic-event-hunter`** (cron) → port da mesma guard em Deno (cópia leve, mesmas listas). Eventos que falham guard → `status='draft'`, `needs_review=true`, nunca `published`.
+
+## 4. Hash de flyer
+
+Já existe `flyer_fingerprint` em `events` e `instagram_scans`. Garantir que:
+
+- Toda criação por scan grava `flyer_fingerprint = scan.flyer_fingerprint`.
+- `validateBeforePublish` consulta `events` por `flyer_fingerprint` igual nos últimos 14 dias → mesmo hash + mesmo partner → bloqueio duro (`MESMO_FLYER`).
+- Slug único garantido pelo unique index já existente (`events.slug`).
+
+## 5. Nova tabela `event_validation_logs`
+
+```sql
+create table public.event_validation_logs (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid null,
+  scan_id uuid null,
+  flyer_hash text null,
+  detected_ocr text null,
+  detected_date timestamptz null,
+  ai_date timestamptz null,
+  form_date timestamptz null,
+  similarity_score numeric null,
+  entertainment_score numeric null,
+  validation_status text not null,   -- 'ok' | 'blocked' | 'review'
+  block_reasons text[] not null default '{}',
+  warnings text[] not null default '{}',
+  source text not null,              -- 'radar' | 'bulk' | 'form' | 'cron'
+  created_by uuid null,
+  created_at timestamptz not null default now()
+);
+alter table public.event_validation_logs enable row level security;
+create policy "Admins manage event_validation_logs"
+  on public.event_validation_logs for all
+  to authenticated
+  using (has_role(auth.uid(),'admin'))
+  with check (has_role(auth.uid(),'admin'));
+create index on public.event_validation_logs (created_at desc);
+create index on public.event_validation_logs (event_id);
 ```
 
-## Cards "placar premium" (MatchCard)
+## 6. Badges no admin
 
-Refinos visuais (sem quebrar API atual: mesmas props):
+Sem novo componente. No `RadarIA.tsx` e `EventosList.tsx`, ler `event.needs_review`, último `event_validation_logs.block_reasons` e renderizar chips usando o estilo já existente (`AIConfidenceBadges`/`Badge`):
 
-- Escudos 56px, nomes truncados em 2 linhas centralizadas.
-- Horário grande no centro com "×" neon roxo (dourado em Copa, vermelho em ao vivo).
-- Badge de campeonato no topo-esquerdo, status no topo-direito.
-- Glass: `bg-card/50 backdrop-blur-md`. Borda neon condicional:
-  - Brasil (Série A, copas BR): borda `from-emerald-400/40 to-yellow-400/40`.
-  - Copa do Mundo: borda dourada já existente.
-  - Ao vivo: ring vermelho pulsante já existente.
-  - Demais: borda padrão muted.
-- Substitui o rodapé "X bares transmitem" pelo novo `MatchVenuesInline` (1 linha + accordion ao clique, em vez de lista renderizada sempre).
+- `POSSÍVEL DUPLICATA`, `DATA DIVERGENTE`, `EVENTO NO PASSADO`, `BAIXO SCORE`, `OCR INVÁLIDO`, `REVISÃO NECESSÁRIA`.
 
-## Bares colapsados (`MatchVenuesInline`)
+## 7. Garantias
 
-Linha única: `🍻 3 bares cadastrados transmitem este jogo · [Ver bares]`. Botão abre `<details>` com `MatchVenuesQuickList` interno. Substitui o uso atual de `<MatchVenuesQuickList>` renderizado sempre embaixo dos cards prioritários em `PriorityMatchBlock` e demais lugares.
+- Nenhuma rota nova, nenhum botão movido, nenhum redesign.
+- Mesmas funções de IA permanecem; apenas perdem o poder de publicar sem passar pela guard.
+- `getStartOfTodaySP`, `getDateKeySP`, sufixo `-03:00` mantidos (regra core).
+- Sem migração de dados existentes — só nova tabela + nova lib + 4 chamadas.
 
-## Home (`HomeJogosCard`)
+## Arquivos tocados
 
-- Filtra `data` por `isBrazilPriority(m) || m.is_world_cup || isBrazilSelecao(m)`.
-- Mostra no máx. 3: próximo BR relevante + ao vivo nacional + Copa do Mundo (se houver).
-- Esconde se a lista filtrada ficar vazia (não exibe ligas aleatórias).
-- Título: "Futebol na Roxou". Subtítulo: "Jogos do Brasil, Copa do Mundo e onde assistir em Prudente." CTA: "Ver calendário de jogos →".
+- **novo**: `src/lib/eventIngestionGuard.ts`
+- **novo**: `supabase/functions/_shared/ingestionGuard.ts` (espelho Deno consumido pelo `automatic-event-hunter`)
+- **migração**: criar `event_validation_logs`
+- **edit**: `src/lib/eventDuplicateDetector.ts` (expor `dateDistanceHours`)
+- **edit**: `src/pages/admin/RadarIA.tsx` (guard + badges)
+- **edit**: `src/pages/admin/EventoBulkForm.tsx` (guard + contadores)
+- **edit**: `src/pages/admin/EventoForm.tsx` (guard no submit)
+- **edit**: `src/pages/admin/EventosList.tsx` (badges)
+- **edit**: `supabase/functions/automatic-event-hunter/index.ts` (guard antes do insert)
 
-## SEO
+## Fora de escopo (não faço)
 
-`SEO` da rota /jogos:
-- title: `Jogos do Brasil, Copa do Mundo e Futebol Hoje | Roxou`
-- description conforme spec
-- keywords conforme spec
-- canonical mantém
-
-## Empty states
-
-- Sem jogos BR no filtro ativo → "Nenhum jogo brasileiro encontrado agora. Você ainda pode ver outras ligas internacionais abaixo." + atalho p/ aba "Outras ligas".
-- Sem Copa do Mundo → mensagem dedicada na seção Copa.
-- Sem Série B → mensagem dedicada na aba.
-
-## Garantias / não-quebra
-
-- Rota `/jogos` preservada.
-- Timezone: continua usando helpers de `@/lib/dateUtils` (`todayKeySP`, `weekRange`, etc.).
-- Nenhum dado removido — apenas reorganização/filtros de exibição.
-- Sem invenções: se a fonte não retornar dados, mostra empty state.
-- Sem loading infinito: mantém `isLoading = loadingApi || loadingDb` + skeletons já existentes; nenhum `await` novo bloqueante.
-- Visual dark/neon Roxou mantido (tokens, glassmorphism, sombras existentes).
-- Build (`tsc --noEmit` + Vite) é validado no fim; ajuste de erros sem mudar regra funcional.
-
-## Detalhes técnicos
-
-- Migração de `FilterKey` para incluir os novos buckets brasileiros + `serie_b` + `outras`. Os antigos `amanha`/`semana`/`fds` ficam disponíveis em sub-controle dentro de "Hoje" (chip secundário) para não perder funcionalidade.
-- `relevantBase` é recomputado para priorizar `isBrazilPriority` e excluir Série B/outras do topo (Série B aparece só na aba dedicada; outras só na aba "Outras ligas").
-- `OtherLeaguesAccordion`: `Object.entries(groupByLeague(others)).sort((a,b)=>a[0].localeCompare(b[0]))`, cada grupo é um `<details>` com cards compactos.
-- Performance: nenhuma nova query Supabase; só re-uso de `matches`/`metaMap`/`enrichMap`.
-
-## Validação final
-
-1. `bunx tsc --noEmit` limpa.
-2. Smoke manual: `/jogos` carrega, default "Brasil" mostra Destaques do Brasil; "Série B" só aparece ao clicar; "Outras ligas" agrupado por liga; Home só mostra bloco se houver jogo BR/Copa.
-3. Console sem erros novos.
+- Nenhuma feature nova de IA.
+- Nenhum cron novo.
+- Nenhum redesign.
+- Não toco em `extract-flyer-metadata` além de garantir que o `raw_ocr` continua sendo persistido para a guard ler.
