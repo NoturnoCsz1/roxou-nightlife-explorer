@@ -21,6 +21,7 @@ import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { isoToSpLocal } from "@/lib/dateUtils";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
+import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
 
 type Partner = Tables<"partners">;
