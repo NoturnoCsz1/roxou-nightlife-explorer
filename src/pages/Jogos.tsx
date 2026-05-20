@@ -192,7 +192,7 @@ export default function Jogos() {
       const [{ data: flagged }, { data: linked }] = await Promise.all([
         supabase
           .from("partners")
-          .select("id, name, slug, neighborhood, type, supports_sports")
+          .select("id, name, slug, neighborhood, type, supports_sports, address, image_url")
           .eq("city", "Presidente Prudente")
           .eq("active", true)
           .eq("supports_sports", true)
