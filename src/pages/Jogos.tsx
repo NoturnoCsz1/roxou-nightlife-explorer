@@ -390,9 +390,11 @@ export default function Jogos() {
     return sorted.slice(0, 8);
   }, [matches, enrichMap, metaMap]);
 
-  // KPI strip — números agregados
+  // KPI strip — números agregados (live considera API + DB)
   const kpis = useMemo(() => {
-    const liveCount = matches.filter((m) => m.status === "live").length;
+    const liveApi = matches.filter((m) => m.status === "live").length;
+    const liveDb = (liveMatchesRaw?.length ?? 0);
+    const liveCount = Math.max(liveApi, liveDb);
     const barsTransmitting = Object.values(metaMap).reduce((acc, m) => acc + (m?.venuesCount ?? 0), 0);
     const activeChats = Object.values(metaMap).filter((m) => m?.hasActiveChat).length;
     return { liveCount, barsTransmitting, activeChats };
