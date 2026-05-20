@@ -34,7 +34,9 @@ function MatchCardImpl({ match, venuesCount = 0, hasStream = false, hasActiveCha
   const hasPriorityTeam = isPriorityTeam(match.home_team) || isPriorityTeam(match.away_team);
 
   const hasVenues = venuesCount > 0;
-  const themeClass = isCopa
+  const themeClass = isLive
+    ? "border-red-500/70 bg-gradient-to-br from-red-950/60 via-card/40 to-card/40 shadow-[0_0_40px_-10px_rgba(239,68,68,0.7)] hover:shadow-[0_0_55px_-6px_rgba(239,68,68,0.9)] ring-1 ring-red-500/40"
+    : isCopa
     ? "border-yellow-500/50 bg-gradient-to-br from-emerald-950/60 via-background to-yellow-900/30 shadow-[0_0_40px_-12px_rgba(234,179,8,0.55)] hover:shadow-[0_0_50px_-8px_rgba(234,179,8,0.7)]"
     : hasVenues
       ? "border-emerald-400/60 bg-gradient-to-br from-emerald-500/10 via-card/60 to-background shadow-[0_0_28px_-10px_rgba(16,185,129,0.55)] hover:shadow-[0_0_40px_-6px_rgba(16,185,129,0.75)] ring-1 ring-emerald-400/30"

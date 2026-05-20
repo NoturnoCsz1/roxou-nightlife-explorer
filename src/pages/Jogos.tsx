@@ -192,14 +192,14 @@ export default function Jogos() {
       const [{ data: flagged }, { data: linked }] = await Promise.all([
         supabase
           .from("partners")
-          .select("id, name, slug, neighborhood, type, supports_sports")
+          .select("id, name, slug, neighborhood, type, supports_sports, address, image_url")
           .eq("city", "Presidente Prudente")
           .eq("active", true)
           .eq("supports_sports", true)
           .limit(24),
         supabase
           .from("sports_match_venues")
-          .select("venue_id, partners:venue_id(id, name, slug, neighborhood, type, city, active, supports_sports)")
+          .select("venue_id, partners:venue_id(id, name, slug, neighborhood, type, city, active, supports_sports, address, image_url)")
           .limit(50),
       ]);
       const map = new Map<string, any>();
@@ -390,7 +390,7 @@ export default function Jogos() {
     return sorted.slice(0, 8);
   }, [matches, enrichMap, metaMap]);
 
-  // KPI strip — números agregados
+  // KPI strip — números agregados (live count atualizado depois com mergedLive)
   const kpis = useMemo(() => {
     const liveCount = matches.filter((m) => m.status === "live").length;
     const barsTransmitting = Object.values(metaMap).reduce((acc, m) => acc + (m?.venuesCount ?? 0), 0);
@@ -402,6 +402,82 @@ export default function Jogos() {
   // Resultados recentes (últimos 3 dias) e jogos ao vivo (vindos de sports_matches)
   const { data: recentResults = [] } = useFootballResults({ range: "last3", limit: 6 });
   const { data: liveMatches = [] } = useLiveMatches();
+
+  // ===== MERGE LIVE (DB + API) — jogos live NUNCA somem por relevância =====
+  // DB tem placar/minuto; API live vira fallback. Brasileiros sempre no topo.
+  const mergedLive = useMemo(() => {
+    type LiveCard = {
+      id: string;
+      slug: string;
+      home_team: string;
+      away_team: string;
+      home_badge?: string | null;
+      away_badge?: string | null;
+      home_score?: number | null;
+      away_score?: number | null;
+      league_label?: string | null;
+      current_minute?: string | null;
+      match_time: string;
+    };
+    const map = new Map<string, LiveCard>();
+    // DB primeiro (placar real)
+    (liveMatches as any[]).forEach((m) => {
+      if (!m?.slug) return;
+      map.set(m.slug, {
+        id: m.id ?? m.slug,
+        slug: m.slug,
+        home_team: m.home_team,
+        away_team: m.away_team,
+        home_badge: m.home_badge,
+        away_badge: m.away_badge,
+        home_score: m.home_score,
+        away_score: m.away_score,
+        league_label: m.league_label,
+        current_minute: m.current_minute,
+        match_time: m.match_time,
+      });
+    });
+    // API: adiciona se ainda não tem
+    matches.forEach((m) => {
+      if (m.status !== "live") return;
+      if (map.has(m.slug)) return;
+      map.set(m.slug, {
+        id: m.external_id || m.slug,
+        slug: m.slug,
+        home_team: m.home_team,
+        away_team: m.away_team,
+        home_badge: m.home_badge,
+        away_badge: m.away_badge,
+        home_score: null,
+        away_score: null,
+        league_label: m.league_label,
+        current_minute: null,
+        match_time: m.match_time,
+      });
+    });
+    // Ordenação: Seleção > Copa BR/Libertadores/Brasileirão > times BR > resto
+    const score = (l: LiveCard): number => {
+      const lbl = (l.league_label || "").toLowerCase();
+      const isBR =
+        isBrazilianTeam(l.home_team) || isBrazilianTeam(l.away_team);
+      let s = 0;
+      if (/seleç|brazil|brasil/i.test(l.home_team + l.away_team) && /amistoso|copa do mundo|eliminat/i.test(lbl)) s += 200;
+      if (/copa do mundo/i.test(lbl)) s += 150;
+      if (/libertadores/i.test(lbl)) s += 120;
+      if (/copa do brasil/i.test(lbl)) s += 110;
+      if (/brasileir/i.test(lbl)) s += 90;
+      if (isBR) s += 60;
+      return s;
+    };
+    const list = Array.from(map.values()).sort((a, b) => score(b) - score(a));
+    console.log("[JOGOS_LIVE]", {
+      db: (liveMatches as any[]).length,
+      api: matches.filter((m) => m.status === "live").length,
+      merged: list.length,
+      slugs: list.slice(0, 5).map((l) => l.slug),
+    });
+    return list;
+  }, [liveMatches, matches]);
 
   const groups = groupMatchesByDate(filtered);
 
@@ -892,6 +968,83 @@ export default function Jogos() {
           </div>
         ) : (
           <>
+            {/* 🔴 AO VIVO AGORA — TOPO ABSOLUTO, NUNCA ESCONDIDO */}
+            {mergedLive.length > 0 && (
+              <section aria-label="Jogos ao vivo agora">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                  </span>
+                  Ao vivo agora
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-300/80">
+                    {mergedLive.length} {mergedLive.length === 1 ? "jogo" : "jogos"}
+                  </span>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {mergedLive.map((m) => {
+                    const meta = metaMap[m.slug];
+                    const v = meta?.venuesCount ?? 0;
+                    const hs = meta?.hasStream;
+                    const hc = meta?.hasActiveChat;
+                    const isBR = isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team);
+                    return (
+                      <Link
+                        key={m.id}
+                        to={`/jogo/${m.slug}`}
+                        className={`relative block rounded-2xl border p-3.5 transition shadow-[0_0_40px_-12px_rgba(239,68,68,0.55)] hover:-translate-y-0.5 ${
+                          isBR
+                            ? "border-red-500/60 bg-gradient-to-br from-red-950/60 via-emerald-950/30 to-card/40 hover:border-red-400 hover:shadow-[0_0_50px_-6px_rgba(239,68,68,0.85)]"
+                            : "border-red-500/40 bg-gradient-to-br from-red-950/40 via-card/40 to-card/40 hover:border-red-500/70"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                            {m.league_label}
+                          </p>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/25 border border-red-500/60 px-2 py-0.5 text-[10px] font-black text-red-200 animate-pulse">
+                            🔴 {m.current_minute || "AO VIVO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 flex items-center gap-2 min-w-0">
+                            {m.home_badge && <img src={m.home_badge} alt="" loading="lazy" className="h-8 w-8 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />}
+                            <span className="font-bold text-sm truncate">{m.home_team}</span>
+                          </div>
+                          <span className="font-display font-black text-2xl md:text-3xl tabular-nums text-red-100 drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]">
+                            {m.home_score ?? 0} <span className="text-muted-foreground/60 text-lg">×</span> {m.away_score ?? 0}
+                          </span>
+                          <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
+                            <span className="font-bold text-sm truncate text-right">{m.away_team}</span>
+                            {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-8 w-8 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />}
+                          </div>
+                        </div>
+                        {(v > 0 || hs || hc) && (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-red-500/20 text-[10px] font-bold">
+                            {v > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 text-emerald-300">
+                                🍻 {v} {v === 1 ? "bar" : "bares"}
+                              </span>
+                            )}
+                            {hs && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/40 px-2 py-0.5 text-purple-200">
+                                📺 Stream
+                              </span>
+                            )}
+                            {hc && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/40 px-2 py-0.5 text-fuchsia-300">
+                                💬 Chat ativo
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
             {/* 🔥 HOJE TEM — destaque do dia */}
             {hojeTem && !teamFilter && (
               <section aria-label="Destaque do dia">
@@ -968,73 +1121,7 @@ export default function Jogos() {
               </section>
             )}
 
-            {/* AO VIVO AGORA */}
-            {liveMatches.length > 0 && (
-              <section>
-                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
-                  <span className="relative flex h-3 w-3">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
-                  </span>
-                  Ao vivo agora
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {liveMatches.map((m: any) => (
-                    <Link
-                      key={m.id}
-                      to={`/jogo/${m.slug}`}
-                      className="block rounded-xl border border-red-500/30 bg-gradient-to-br from-red-950/40 via-card/40 to-card/40 p-3 hover:border-red-500/60 transition shadow-[0_0_24px_-12px_rgba(239,68,68,0.6)]"
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">{m.league_label}</p>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 border border-red-500/40 px-2 py-0.5 text-[9px] font-black text-red-300">
-                          🔴 {m.current_minute || "AO VIVO"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 flex items-center gap-2 min-w-0">
-                          {m.home_badge && <img src={m.home_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
-                          <span className="font-bold text-sm truncate">{m.home_team}</span>
-                        </div>
-                        <span className="font-display font-black text-lg tabular-nums">
-                          {m.home_score ?? 0} <span className="text-muted-foreground">×</span> {m.away_score ?? 0}
-                        </span>
-                        <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
-                          <span className="font-bold text-sm truncate text-right">{m.away_team}</span>
-                          {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
-                        </div>
-                      </div>
-                      {(() => {
-                        const meta = metaMap[m.slug];
-                        const v = meta?.venuesCount ?? 0;
-                        const hs = meta?.hasStream;
-                        const hc = meta?.hasActiveChat;
-                        if (!v && !hs && !hc) return null;
-                        return (
-                          <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-2 border-t border-red-500/20 text-[10px] font-bold">
-                            {v > 0 && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 text-emerald-300">
-                                🍻 {v} {v === 1 ? "bar" : "bares"}
-                              </span>
-                            )}
-                            {hs && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/40 px-2 py-0.5 text-purple-200">
-                                📺 Stream
-                              </span>
-                            )}
-                            {hc && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/40 px-2 py-0.5 text-fuchsia-300">
-                                💬 Chat ativo
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
+
 
             {/* RESULTADOS RECENTES */}
             {recentResults.length > 0 && (
@@ -1200,31 +1287,84 @@ export default function Jogos() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {bars.map((b: any) => (
-                <Link
-                  key={b.id}
-                  to={`/local/${b.slug}`}
-                  className="group rounded-2xl border border-border/50 bg-card/60 hover:border-primary/60 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.55)] p-4 transition-all hover:-translate-y-0.5"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="font-bold text-sm line-clamp-1">{b.name}</p>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">
-                      <Tv className="h-2.5 w-2.5" /> {b._matchLinked ? "Transmissão confirmada" : "Futebol ao vivo"}
-                    </span>
+              {bars.map((b: any) => {
+                const mapsQuery = encodeURIComponent(
+                  [b.name, b.address, b.neighborhood, "Presidente Prudente"].filter(Boolean).join(", ")
+                );
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+                const uberUrl = `https://m.uber.com/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${mapsQuery}`;
+                return (
+                  <div
+                    key={b.id}
+                    className="group relative rounded-2xl border border-border/50 bg-card/60 hover:border-primary/60 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.55)] overflow-hidden transition-all hover:-translate-y-0.5"
+                  >
+                    <Link to={`/local/${b.slug}`} className="block">
+                      {b.image_url ? (
+                        <div className="relative h-24 w-full overflow-hidden">
+                          <img
+                            src={b.image_url}
+                            alt={b.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-card/90 to-transparent" />
+                          {b._matchLinked && (
+                            <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/60 bg-emerald-500/30 backdrop-blur px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-100">
+                              🍻 Transmitindo hoje
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="h-2 w-full bg-gradient-to-r from-emerald-500/40 via-primary/40 to-emerald-500/40" />
+                      )}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="font-bold text-sm line-clamp-1">{b.name}</p>
+                          {!b.image_url && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">
+                              <Tv className="h-2.5 w-2.5" /> {b._matchLinked ? "Confirmado" : "Ao vivo"}
+                            </span>
+                          )}
+                        </div>
+                        {b.neighborhood && (
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {b.neighborhood}
+                          </p>
+                        )}
+                        {b.type && (
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{b.type}</p>
+                        )}
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-1.5 px-4 pb-4">
+                      <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1.5 text-[10px] font-bold text-emerald-200 transition"
+                      >
+                        <MapPin className="h-3 w-3" /> Rota
+                      </a>
+                      <a
+                        href={uberUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-foreground/30 bg-foreground/5 hover:bg-foreground/15 px-2 py-1.5 text-[10px] font-bold text-foreground/90 transition"
+                      >
+                        🚗 Uber
+                      </a>
+                      <Link
+                        to={`/local/${b.slug}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-primary/40 bg-primary/10 hover:bg-primary/20 px-2 py-1.5 text-[10px] font-bold text-primary transition"
+                      >
+                        Agenda →
+                      </Link>
+                    </div>
                   </div>
-                  {b.neighborhood && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {b.neighborhood}
-                    </p>
-                  )}
-                  {b.type && (
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{b.type}</p>
-                  )}
-                  <span className="mt-3 inline-block text-[11px] font-bold text-primary group-hover:underline">
-                    Ver local →
-                  </span>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
