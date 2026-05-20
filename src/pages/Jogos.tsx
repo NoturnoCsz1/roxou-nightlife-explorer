@@ -1287,31 +1287,84 @@ export default function Jogos() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {bars.map((b: any) => (
-                <Link
-                  key={b.id}
-                  to={`/local/${b.slug}`}
-                  className="group rounded-2xl border border-border/50 bg-card/60 hover:border-primary/60 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.55)] p-4 transition-all hover:-translate-y-0.5"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="font-bold text-sm line-clamp-1">{b.name}</p>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">
-                      <Tv className="h-2.5 w-2.5" /> {b._matchLinked ? "Transmissão confirmada" : "Futebol ao vivo"}
-                    </span>
+              {bars.map((b: any) => {
+                const mapsQuery = encodeURIComponent(
+                  [b.name, b.address, b.neighborhood, "Presidente Prudente"].filter(Boolean).join(", ")
+                );
+                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+                const uberUrl = `https://m.uber.com/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${mapsQuery}`;
+                return (
+                  <div
+                    key={b.id}
+                    className="group relative rounded-2xl border border-border/50 bg-card/60 hover:border-primary/60 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.55)] overflow-hidden transition-all hover:-translate-y-0.5"
+                  >
+                    <Link to={`/local/${b.slug}`} className="block">
+                      {b.image_url ? (
+                        <div className="relative h-24 w-full overflow-hidden">
+                          <img
+                            src={b.image_url}
+                            alt={b.name}
+                            loading="lazy"
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-card/90 to-transparent" />
+                          {b._matchLinked && (
+                            <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full border border-emerald-400/60 bg-emerald-500/30 backdrop-blur px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-100">
+                              🍻 Transmitindo hoje
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="h-2 w-full bg-gradient-to-r from-emerald-500/40 via-primary/40 to-emerald-500/40" />
+                      )}
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <p className="font-bold text-sm line-clamp-1">{b.name}</p>
+                          {!b.image_url && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">
+                              <Tv className="h-2.5 w-2.5" /> {b._matchLinked ? "Confirmado" : "Ao vivo"}
+                            </span>
+                          )}
+                        </div>
+                        {b.neighborhood && (
+                          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {b.neighborhood}
+                          </p>
+                        )}
+                        {b.type && (
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{b.type}</p>
+                        )}
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-1.5 px-4 pb-4">
+                      <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1.5 text-[10px] font-bold text-emerald-200 transition"
+                      >
+                        <MapPin className="h-3 w-3" /> Rota
+                      </a>
+                      <a
+                        href={uberUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-foreground/30 bg-foreground/5 hover:bg-foreground/15 px-2 py-1.5 text-[10px] font-bold text-foreground/90 transition"
+                      >
+                        🚗 Uber
+                      </a>
+                      <Link
+                        to={`/local/${b.slug}`}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-full border border-primary/40 bg-primary/10 hover:bg-primary/20 px-2 py-1.5 text-[10px] font-bold text-primary transition"
+                      >
+                        Agenda →
+                      </Link>
+                    </div>
                   </div>
-                  {b.neighborhood && (
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {b.neighborhood}
-                    </p>
-                  )}
-                  {b.type && (
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{b.type}</p>
-                  )}
-                  <span className="mt-3 inline-block text-[11px] font-bold text-primary group-hover:underline">
-                    Ver local →
-                  </span>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
