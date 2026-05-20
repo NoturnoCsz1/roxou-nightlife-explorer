@@ -403,6 +403,82 @@ export default function Jogos() {
   const { data: recentResults = [] } = useFootballResults({ range: "last3", limit: 6 });
   const { data: liveMatches = [] } = useLiveMatches();
 
+  // ===== MERGE LIVE (DB + API) — jogos live NUNCA somem por relevância =====
+  // DB tem placar/minuto; API live vira fallback. Brasileiros sempre no topo.
+  const mergedLive = useMemo(() => {
+    type LiveCard = {
+      id: string;
+      slug: string;
+      home_team: string;
+      away_team: string;
+      home_badge?: string | null;
+      away_badge?: string | null;
+      home_score?: number | null;
+      away_score?: number | null;
+      league_label?: string | null;
+      current_minute?: string | null;
+      match_time: string;
+    };
+    const map = new Map<string, LiveCard>();
+    // DB primeiro (placar real)
+    (liveMatches as any[]).forEach((m) => {
+      if (!m?.slug) return;
+      map.set(m.slug, {
+        id: m.id ?? m.slug,
+        slug: m.slug,
+        home_team: m.home_team,
+        away_team: m.away_team,
+        home_badge: m.home_badge,
+        away_badge: m.away_badge,
+        home_score: m.home_score,
+        away_score: m.away_score,
+        league_label: m.league_label,
+        current_minute: m.current_minute,
+        match_time: m.match_time,
+      });
+    });
+    // API: adiciona se ainda não tem
+    matches.forEach((m) => {
+      if (m.status !== "live") return;
+      if (map.has(m.slug)) return;
+      map.set(m.slug, {
+        id: m.external_id || m.slug,
+        slug: m.slug,
+        home_team: m.home_team,
+        away_team: m.away_team,
+        home_badge: m.home_badge,
+        away_badge: m.away_badge,
+        home_score: null,
+        away_score: null,
+        league_label: m.league_label,
+        current_minute: null,
+        match_time: m.match_time,
+      });
+    });
+    // Ordenação: Seleção > Copa BR/Libertadores/Brasileirão > times BR > resto
+    const score = (l: LiveCard): number => {
+      const lbl = (l.league_label || "").toLowerCase();
+      const isBR =
+        isBrazilianTeam(l.home_team) || isBrazilianTeam(l.away_team);
+      let s = 0;
+      if (/seleç|brazil|brasil/i.test(l.home_team + l.away_team) && /amistoso|copa do mundo|eliminat/i.test(lbl)) s += 200;
+      if (/copa do mundo/i.test(lbl)) s += 150;
+      if (/libertadores/i.test(lbl)) s += 120;
+      if (/copa do brasil/i.test(lbl)) s += 110;
+      if (/brasileir/i.test(lbl)) s += 90;
+      if (isBR) s += 60;
+      return s;
+    };
+    const list = Array.from(map.values()).sort((a, b) => score(b) - score(a));
+    console.log("[JOGOS_LIVE]", {
+      db: (liveMatches as any[]).length,
+      api: matches.filter((m) => m.status === "live").length,
+      merged: list.length,
+      slugs: list.slice(0, 5).map((l) => l.slug),
+    });
+    return list;
+  }, [liveMatches, matches]);
+
   const groups = groupMatchesByDate(filtered);
 
   // ===== Resultados da busca global =====
