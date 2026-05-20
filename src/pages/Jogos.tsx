@@ -968,6 +968,83 @@ export default function Jogos() {
           </div>
         ) : (
           <>
+            {/* 🔴 AO VIVO AGORA — TOPO ABSOLUTO, NUNCA ESCONDIDO */}
+            {mergedLive.length > 0 && (
+              <section aria-label="Jogos ao vivo agora">
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
+                  </span>
+                  Ao vivo agora
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-300/80">
+                    {mergedLive.length} {mergedLive.length === 1 ? "jogo" : "jogos"}
+                  </span>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {mergedLive.map((m) => {
+                    const meta = metaMap[m.slug];
+                    const v = meta?.venuesCount ?? 0;
+                    const hs = meta?.hasStream;
+                    const hc = meta?.hasActiveChat;
+                    const isBR = isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team);
+                    return (
+                      <Link
+                        key={m.id}
+                        to={`/jogo/${m.slug}`}
+                        className={`relative block rounded-2xl border p-3.5 transition shadow-[0_0_40px_-12px_rgba(239,68,68,0.55)] hover:-translate-y-0.5 ${
+                          isBR
+                            ? "border-red-500/60 bg-gradient-to-br from-red-950/60 via-emerald-950/30 to-card/40 hover:border-red-400 hover:shadow-[0_0_50px_-6px_rgba(239,68,68,0.85)]"
+                            : "border-red-500/40 bg-gradient-to-br from-red-950/40 via-card/40 to-card/40 hover:border-red-500/70"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                            {m.league_label}
+                          </p>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/25 border border-red-500/60 px-2 py-0.5 text-[10px] font-black text-red-200 animate-pulse">
+                            🔴 {m.current_minute || "AO VIVO"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 flex items-center gap-2 min-w-0">
+                            {m.home_badge && <img src={m.home_badge} alt="" loading="lazy" className="h-8 w-8 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />}
+                            <span className="font-bold text-sm truncate">{m.home_team}</span>
+                          </div>
+                          <span className="font-display font-black text-2xl md:text-3xl tabular-nums text-red-100 drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]">
+                            {m.home_score ?? 0} <span className="text-muted-foreground/60 text-lg">×</span> {m.away_score ?? 0}
+                          </span>
+                          <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
+                            <span className="font-bold text-sm truncate text-right">{m.away_team}</span>
+                            {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-8 w-8 object-contain shrink-0 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />}
+                          </div>
+                        </div>
+                        {(v > 0 || hs || hc) && (
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 border-t border-red-500/20 text-[10px] font-bold">
+                            {v > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 text-emerald-300">
+                                🍻 {v} {v === 1 ? "bar" : "bares"}
+                              </span>
+                            )}
+                            {hs && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/15 border border-purple-500/40 px-2 py-0.5 text-purple-200">
+                                📺 Stream
+                              </span>
+                            )}
+                            {hc && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 border border-fuchsia-500/40 px-2 py-0.5 text-fuchsia-300">
+                                💬 Chat ativo
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
             {/* 🔥 HOJE TEM — destaque do dia */}
             {hojeTem && !teamFilter && (
               <section aria-label="Destaque do dia">
@@ -1020,6 +1097,29 @@ export default function Jogos() {
                   )}
                 </section>
               )}
+
+            {/* MAIS BUSCADOS HOJE */}
+            {maisBuscados.length > 0 && (
+              <section>
+                <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-orange-400" /> Mais buscados
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">próximos 7 dias</span>
+                </h2>
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2 md:grid md:grid-cols-2 md:gap-3 md:overflow-visible md:mx-0 md:px-0 md:pb-0">
+                  {maisBuscados.map((m) => (
+                    <div key={m.external_id} className="w-[280px] shrink-0 md:w-auto">
+                      <MatchCard
+                        match={m}
+                        compact
+                        venuesCount={metaMap[m.slug]?.venuesCount}
+                        hasStream={metaMap[m.slug]?.hasStream}
+                        hasActiveChat={metaMap[m.slug]?.hasActiveChat}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* MAIS BUSCADOS HOJE */}
             {maisBuscados.length > 0 && (
