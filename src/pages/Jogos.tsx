@@ -199,7 +199,7 @@ export default function Jogos() {
           .limit(24),
         supabase
           .from("sports_match_venues")
-          .select("venue_id, partners:venue_id(id, name, slug, neighborhood, type, city, active, supports_sports)")
+          .select("venue_id, partners:venue_id(id, name, slug, neighborhood, type, city, active, supports_sports, address, image_url)")
           .limit(50),
       ]);
       const map = new Map<string, any>();
