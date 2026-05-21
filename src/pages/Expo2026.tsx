@@ -48,7 +48,7 @@ const ATTRACTIONS = [
     date: "Data a confirmar",
     tag: "Sertanejo Raiz",
     image:
-      "https://www.leonardo.com.br/wp-content/uploads/2023/05/leonardo-oficial-1.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Leonardo_%28cantor%29.jpg/960px-Leonardo_%28cantor%29.jpg",
     position: "center 25%",
   },
   {
@@ -56,7 +56,7 @@ const ATTRACTIONS = [
     date: "13/09/2026",
     tag: "Sertanejo",
     image:
-      "https://zenetoecristiano.com.br/wp-content/uploads/2024/03/ze-neto-e-cristiano-oficial.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/55/Z%C3%A9_Neto_%26_Cristiano_2017_ZN%26C.png",
     position: "center 20%",
   },
 ];
