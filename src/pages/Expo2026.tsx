@@ -29,7 +29,7 @@ const CATEGORIES = [
 const ATTRACTIONS = [
   {
     name: "Gusttavo Lima",
-    date: "10/09/2026",
+    date: "Data a confirmar",
     tag: "Sertanejo",
     image:
       "https://gusttavolima.com.br/wp-content/uploads/2025/08/R5C15611-2.png",
@@ -37,11 +37,27 @@ const ATTRACTIONS = [
   },
   {
     name: "Zezé Di Camargo & Luciano",
-    date: "11/09/2026",
+    date: "Data a confirmar",
     tag: "Sertanejo Raiz",
     image:
       "https://midias.correiobraziliense.com.br/_midias/jpg/2023/03/19/675x450/1_zeze_di_camargo_e_luciano_1024x768-27646392.jpg",
     position: "center 30%",
+  },
+  {
+    name: "Leonardo",
+    date: "Data a confirmar",
+    tag: "Sertanejo Raiz",
+    image:
+      "https://www.leonardo.com.br/wp-content/uploads/2023/05/leonardo-oficial-1.jpg",
+    position: "center 25%",
+  },
+  {
+    name: "Zé Neto & Cristiano",
+    date: "13/09/2026",
+    tag: "Sertanejo",
+    image:
+      "https://zenetoecristiano.com.br/wp-content/uploads/2024/03/ze-neto-e-cristiano-oficial.jpg",
+    position: "center 20%",
   },
 ];
 
