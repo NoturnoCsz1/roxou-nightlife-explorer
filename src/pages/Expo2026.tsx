@@ -48,7 +48,7 @@ const ATTRACTIONS = [
     date: "Data a confirmar",
     tag: "Sertanejo Raiz",
     image:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Leonardo_%28cantor%29.jpg/960px-Leonardo_%28cantor%29.jpg",
+      "https://leonardo.art.br/wp-content/uploads/2025/09/0-Cadu_Fernandes_7R52300-AJUSTETRATAMENTO-scaled-e1774983202397-800x520.png",
     position: "center 25%",
   },
   {
