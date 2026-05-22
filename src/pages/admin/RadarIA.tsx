@@ -1306,14 +1306,24 @@ const RadarIA = () => {
                       <span className="text-primary/80">@{c.scan.source_handle || "?"}</span>
                     </div>
                     {detectedType && (
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                        Tipo detectado: {detectedType}
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
+                        <span>Tipo: {detectedType}</span>
+                        {radarScore !== null && (
+                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary/90 font-bold">score {radarScore}</span>
+                        )}
+                        {(detectedDate || detectedTime) && (
+                          <span className="text-emerald-300/80">📅 {detectedDate || "?"}{detectedTime ? ` · ${detectedTime}` : ""}</span>
+                        )}
                       </div>
+                    )}
+                    {radarMain && (
+                      <p className="text-[11px] text-primary/80 line-clamp-2">★ {radarMain}</p>
                     )}
                     {c.scan.reason && (
                       <p className="italic text-muted-foreground/70 line-clamp-2">{c.scan.reason}</p>
                     )}
                   </div>
+
 
                   {typeof c.scan.duplicate_score === "number" && c.scan.duplicate_score >= 60 && (
                     <div className={`rounded-lg p-2 text-xs border ${c.scan.duplicate_score >= 80 ? "bg-rose-500/10 border-rose-500/40 text-rose-200" : "bg-amber-500/10 border-amber-500/40 text-amber-200"}`}>
