@@ -285,7 +285,7 @@ export function classifyRadarPost(input: RadarPostInput): RadarClassification {
   if (type === "announcement" || type === "menu" || type === "food_promo" || type === "old_post") {
     decision = "ignore";
   }
-  if (type === "invalid") decision = "ignore";
+  
 
   // Sem data E sem horário E sem dia da semana → no máximo "review"
   if (!extracted.date && !extracted.time && !weekdayHits.length) {
