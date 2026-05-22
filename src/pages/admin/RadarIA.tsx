@@ -1166,6 +1166,34 @@ const RadarIA = () => {
             const kindMeta = CONTENT_BADGE[kind];
             const KindIcon = kindMeta.icon;
 
+            // Radar classifier metadata (vem da edge function)
+            const radarScore: number | null = typeof ext.radar_score === "number" ? ext.radar_score : null;
+            const radarReasons: string[] = Array.isArray(ext.radar_reasons) ? ext.radar_reasons : [];
+            const radarMain = radarReasons[0] || null;
+            const radarExt = ext.radar_extracted || {};
+            const detectedDate: string | null = radarExt.date || ext.date || null;
+            const detectedTime: string | null = radarExt.time || ext.time || null;
+            const isDup = !!c.scan.duplicate_of_event_id || c.scan.status === "skipped_duplicate";
+
+            // Badges Radar (EVENTO FORTE / PRECISA REVISAR / PROMOÇÃO / CARDÁPIO / etc)
+            const radarBadges: { label: string; cls: string }[] = [];
+            if (isDup) radarBadges.push({ label: "DUPLICADO", cls: "bg-rose-500/20 text-rose-200 border-rose-500/40" });
+            if (detectedType === "menu") radarBadges.push({ label: "CARDÁPIO", cls: "bg-amber-500/20 text-amber-200 border-amber-500/40" });
+            else if (detectedType === "food_promo" || detectedType === "promotion" || detectedType === "promocao")
+              radarBadges.push({ label: "PROMOÇÃO", cls: "bg-orange-500/20 text-orange-200 border-orange-500/40" });
+            else if (detectedType === "announcement" || detectedType === "aviso")
+              radarBadges.push({ label: "AVISO", cls: "bg-zinc-500/25 text-zinc-200 border-zinc-500/40" });
+            else if (detectedType === "old_post")
+              radarBadges.push({ label: "POST ANTIGO", cls: "bg-zinc-600/25 text-zinc-300 border-zinc-500/40" });
+            else if (radarScore !== null && radarScore >= 80)
+              radarBadges.push({ label: "EVENTO FORTE", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40" });
+            else if (radarScore !== null && radarScore >= 60)
+              radarBadges.push({ label: "PRECISA REVISAR", cls: "bg-amber-500/20 text-amber-200 border-amber-500/40" });
+            if (!detectedDate && !ev?.date_time)
+              radarBadges.push({ label: "SEM DATA", cls: "bg-rose-500/15 text-rose-200 border-rose-500/30" });
+
+
+
             return (
               <div
                 key={c.scan.id}
