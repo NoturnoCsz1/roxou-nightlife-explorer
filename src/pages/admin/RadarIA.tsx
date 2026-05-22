@@ -486,7 +486,8 @@ const RadarIA = () => {
     if (error) { toast.error(`Falha: ${error.message}`); return; }
     const d = data as any;
     toast.success(
-      `Radar IA: ${d?.media_seen ?? 0} posts • ${d?.previews_found ?? 0} previews • ${d?.previews_missing ?? 0} sem imagem • ${d?.drafts_created ?? 0} novos`,
+      `Varredura: ${d?.partners_scanned ?? 0} parceiros · ${d?.media_seen ?? 0} posts · ${d?.drafts_created ?? 0} prováveis · ${d?.sent_for_review ?? 0} revisão · ${(d?.ignored_old_post ?? 0) + (d?.ignored_promotion ?? 0) + (d?.ignored_announcement ?? 0)} ignorados · ${(d?.skipped_duplicate ?? 0) + (d?.possible_duplicate ?? 0)} duplicados`,
+      { duration: 9000 },
     );
     load();
   }
