@@ -486,7 +486,8 @@ const RadarIA = () => {
     if (error) { toast.error(`Falha: ${error.message}`); return; }
     const d = data as any;
     toast.success(
-      `Radar IA: ${d?.media_seen ?? 0} posts • ${d?.previews_found ?? 0} previews • ${d?.previews_missing ?? 0} sem imagem • ${d?.drafts_created ?? 0} novos`,
+      `Varredura: ${d?.partners_scanned ?? 0} parceiros · ${d?.media_seen ?? 0} posts · ${d?.drafts_created ?? 0} prováveis · ${d?.sent_for_review ?? 0} revisão · ${(d?.ignored_old_post ?? 0) + (d?.ignored_promotion ?? 0) + (d?.ignored_announcement ?? 0)} ignorados · ${(d?.skipped_duplicate ?? 0) + (d?.possible_duplicate ?? 0)} duplicados`,
+      { duration: 9000 },
     );
     load();
   }
@@ -1166,6 +1167,34 @@ const RadarIA = () => {
             const kindMeta = CONTENT_BADGE[kind];
             const KindIcon = kindMeta.icon;
 
+            // Radar classifier metadata (vem da edge function)
+            const radarScore: number | null = typeof ext.radar_score === "number" ? ext.radar_score : null;
+            const radarReasons: string[] = Array.isArray(ext.radar_reasons) ? ext.radar_reasons : [];
+            const radarMain = radarReasons[0] || null;
+            const radarExt = ext.radar_extracted || {};
+            const detectedDate: string | null = radarExt.date || ext.date || null;
+            const detectedTime: string | null = radarExt.time || ext.time || null;
+            const isDup = !!c.scan.duplicate_of_event_id || c.scan.status === "skipped_duplicate";
+
+            // Badges Radar (EVENTO FORTE / PRECISA REVISAR / PROMOÇÃO / CARDÁPIO / etc)
+            const radarBadges: { label: string; cls: string }[] = [];
+            if (isDup) radarBadges.push({ label: "DUPLICADO", cls: "bg-rose-500/20 text-rose-200 border-rose-500/40" });
+            if (detectedType === "menu") radarBadges.push({ label: "CARDÁPIO", cls: "bg-amber-500/20 text-amber-200 border-amber-500/40" });
+            else if (detectedType === "food_promo" || detectedType === "promotion" || detectedType === "promocao")
+              radarBadges.push({ label: "PROMOÇÃO", cls: "bg-orange-500/20 text-orange-200 border-orange-500/40" });
+            else if (detectedType === "announcement" || detectedType === "aviso")
+              radarBadges.push({ label: "AVISO", cls: "bg-zinc-500/25 text-zinc-200 border-zinc-500/40" });
+            else if (detectedType === "old_post")
+              radarBadges.push({ label: "POST ANTIGO", cls: "bg-zinc-600/25 text-zinc-300 border-zinc-500/40" });
+            else if (radarScore !== null && radarScore >= 80)
+              radarBadges.push({ label: "EVENTO FORTE", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40" });
+            else if (radarScore !== null && radarScore >= 60)
+              radarBadges.push({ label: "PRECISA REVISAR", cls: "bg-amber-500/20 text-amber-200 border-amber-500/40" });
+            if (!detectedDate && !ev?.date_time)
+              radarBadges.push({ label: "SEM DATA", cls: "bg-rose-500/15 text-rose-200 border-rose-500/30" });
+
+
+
             return (
               <div
                 key={c.scan.id}
@@ -1229,8 +1258,15 @@ const RadarIA = () => {
                         <Repeat2 className="h-3 w-3" /> ×{c.scan.repost_count}
                       </span>
                     )}
+
+                    {radarBadges.map((b) => (
+                      <span key={b.label} className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${b.cls}`}>
+                        {b.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
+
 
                 <div className="p-4 space-y-3 flex-1 flex flex-col">
                   <div className="space-y-1">
@@ -1271,14 +1307,24 @@ const RadarIA = () => {
                       <span className="text-primary/80">@{c.scan.source_handle || "?"}</span>
                     </div>
                     {detectedType && (
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                        Tipo detectado: {detectedType}
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
+                        <span>Tipo: {detectedType}</span>
+                        {radarScore !== null && (
+                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary/90 font-bold">score {radarScore}</span>
+                        )}
+                        {(detectedDate || detectedTime) && (
+                          <span className="text-emerald-300/80">📅 {detectedDate || "?"}{detectedTime ? ` · ${detectedTime}` : ""}</span>
+                        )}
                       </div>
+                    )}
+                    {radarMain && (
+                      <p className="text-[11px] text-primary/80 line-clamp-2">★ {radarMain}</p>
                     )}
                     {c.scan.reason && (
                       <p className="italic text-muted-foreground/70 line-clamp-2">{c.scan.reason}</p>
                     )}
                   </div>
+
 
                   {typeof c.scan.duplicate_score === "number" && c.scan.duplicate_score >= 60 && (
                     <div className={`rounded-lg p-2 text-xs border ${c.scan.duplicate_score >= 80 ? "bg-rose-500/10 border-rose-500/40 text-rose-200" : "bg-amber-500/10 border-amber-500/40 text-amber-200"}`}>

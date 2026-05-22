@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { classifyRadarPost } from "../_shared/radarPostClassifier.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -547,9 +548,29 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // === FILTRO BARATO 2: classificador heurístico (sem IA) ===
-          const cheapKind = classifyPostText(m.caption || "");
-          if (cheapKind === "promotion" || cheapKind === "announcement") {
+          // === FILTRO BARATO 2: classificador refinado (sem IA) ===
+          const radarClf = classifyRadarPost({
+            caption: m.caption || "",
+            ocr: "",
+            timestamp: m.timestamp || null,
+            partnerName: p.name,
+          });
+          const radarExtras = {
+            detected_type: radarClf.type,
+            radar_score: radarClf.score,
+            radar_decision: radarClf.decision,
+            radar_reasons: radarClf.reasons,
+            radar_extracted: radarClf.extracted,
+          };
+
+          if (radarClf.decision === "ignore") {
+            const mainReason = radarClf.reasons[0] || `Classificado como ${radarClf.type}`;
+            const archReason =
+              radarClf.type === "food_promo" ? "auto: promoção" :
+              radarClf.type === "menu" ? "auto: cardápio" :
+              radarClf.type === "announcement" ? "auto: aviso" :
+              radarClf.type === "old_post" ? "auto: post antigo" :
+              "auto: sem sinais de evento";
             await supabase.from("instagram_scans").insert({
               media_id: m.id,
               preview_image_url: imageUrl,
@@ -557,20 +578,22 @@ Deno.serve(async (req) => {
               source_handle: handle,
               partner_id: p.id,
               status: "ignored",
-              reason: cheapKind === "promotion"
-                ? "Promoção detectada (sem evento) — sem gasto de IA"
-                : "Aviso/comunicado detectado — sem gasto de IA",
+              reason: `[${radarClf.type} · score ${radarClf.score}] ${mainReason}`,
               raw_caption: (m.caption || "").slice(0, 2000),
+              extracted_json: radarExtras,
+              ai_confidence: radarClf.confidence,
               hidden_from_radar: true,
-              archive_reason: cheapKind === "promotion" ? "auto: promoção" : "auto: aviso",
+              archive_reason: archReason,
               archived_at: new Date().toISOString(),
             });
-            if (cheapKind === "promotion") stats.ignored_promotion++;
-            else stats.ignored_announcement++;
+            if (radarClf.type === "food_promo" || radarClf.type === "menu") stats.ignored_promotion++;
+            else if (radarClf.type === "announcement") stats.ignored_announcement++;
+            else stats.ignored_old_post++;
             continue;
           }
 
           stats.accepted_window++;
+
 
           // === DEDUP STAGE 0: flyer fingerprint (mesmo flyer já processado) ===
           const flyerFp = buildFlyerFingerprint({
@@ -663,7 +686,7 @@ Deno.serve(async (req) => {
               reason: cls?.reason || "Não é flyer",
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: cls?.confidence || "low",
             });
@@ -706,7 +729,7 @@ Deno.serve(async (req) => {
               duplicate_of_event_id: dupByKey.id,
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: cls.confidence,
             });
@@ -743,7 +766,7 @@ Deno.serve(async (req) => {
                 duplicate_of_event_id: match.id,
                 raw_ocr: ocrText,
                 raw_caption: m.caption || null,
-                extracted_json: cls,
+                extracted_json: { ...cls, ...radarExtras },
                 keywords: allKeywords,
                 ai_confidence: cls.confidence,
               });
@@ -788,7 +811,7 @@ Deno.serve(async (req) => {
                 dedupe_key: dedupeKey,
                 raw_ocr: ocrText,
                 raw_caption: m.caption || null,
-                extracted_json: cls,
+                extracted_json: { ...cls, ...radarExtras },
                 keywords: allKeywords,
                 ai_confidence: cls.confidence,
                 hidden_from_radar: true,
@@ -811,7 +834,7 @@ Deno.serve(async (req) => {
               dedupe_key: dedupeKey,
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: "low",
             });
@@ -869,7 +892,7 @@ Deno.serve(async (req) => {
               dedupe_key: dedupeKey,
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: cls.confidence,
             });
@@ -887,7 +910,7 @@ Deno.serve(async (req) => {
             event_id: inserted!.id,
             raw_ocr: ocrText,
             raw_caption: m.caption || null,
-            extracted_json: cls,
+            extracted_json: { ...cls, ...radarExtras },
             keywords: allKeywords,
             ai_confidence: cls.confidence,
           });
