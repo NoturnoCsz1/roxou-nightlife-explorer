@@ -686,7 +686,7 @@ Deno.serve(async (req) => {
               reason: cls?.reason || "Não é flyer",
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: cls?.confidence || "low",
             });
@@ -729,7 +729,7 @@ Deno.serve(async (req) => {
               duplicate_of_event_id: dupByKey.id,
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: cls.confidence,
             });
@@ -766,7 +766,7 @@ Deno.serve(async (req) => {
                 duplicate_of_event_id: match.id,
                 raw_ocr: ocrText,
                 raw_caption: m.caption || null,
-                extracted_json: cls,
+                extracted_json: { ...cls, ...radarExtras },
                 keywords: allKeywords,
                 ai_confidence: cls.confidence,
               });
@@ -811,7 +811,7 @@ Deno.serve(async (req) => {
                 dedupe_key: dedupeKey,
                 raw_ocr: ocrText,
                 raw_caption: m.caption || null,
-                extracted_json: cls,
+                extracted_json: { ...cls, ...radarExtras },
                 keywords: allKeywords,
                 ai_confidence: cls.confidence,
                 hidden_from_radar: true,
@@ -834,7 +834,7 @@ Deno.serve(async (req) => {
               dedupe_key: dedupeKey,
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: "low",
             });
@@ -892,7 +892,7 @@ Deno.serve(async (req) => {
               dedupe_key: dedupeKey,
               raw_ocr: ocrText,
               raw_caption: m.caption || null,
-              extracted_json: cls,
+              extracted_json: { ...cls, ...radarExtras },
               keywords: allKeywords,
               ai_confidence: cls.confidence,
             });
@@ -910,7 +910,7 @@ Deno.serve(async (req) => {
             event_id: inserted!.id,
             raw_ocr: ocrText,
             raw_caption: m.caption || null,
-            extracted_json: cls,
+            extracted_json: { ...cls, ...radarExtras },
             keywords: allKeywords,
             ai_confidence: cls.confidence,
           });
