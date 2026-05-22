@@ -1257,8 +1257,15 @@ const RadarIA = () => {
                         <Repeat2 className="h-3 w-3" /> ×{c.scan.repost_count}
                       </span>
                     )}
+
+                    {radarBadges.map((b) => (
+                      <span key={b.label} className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${b.cls}`}>
+                        {b.label}
+                      </span>
+                    ))}
                   </div>
                 </div>
+
 
                 <div className="p-4 space-y-3 flex-1 flex flex-col">
                   <div className="space-y-1">
