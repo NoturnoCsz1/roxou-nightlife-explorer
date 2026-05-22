@@ -1,122 +1,97 @@
 
-# Hotfix: validação real do pipeline de ingestão
+# Upgrade de precisão do Radar IA
 
-Sem reescrever nada. Adicionar uma camada única de validação que tudo o que publica passa a chamar, e endurecer os detectores existentes.
+Objetivo: reduzir lixo (promoção, cardápio, posts antigos, avisos) e aumentar captura de flyers reais de evento, sem mudar layout, abas, timezone, dedupe existente ou política de "não publicar automaticamente".
 
-## 1. Nova lib central: `src/lib/eventIngestionGuard.ts`
+## 1. Novo classificador `src/lib/radarPostClassifier.ts`
 
-Função única `validateBeforePublish(input)` retornando `{ ok, blockReasons[], warnings[], badges[], entertainmentScore, ocrDate, validationLog }`.
+Função pura `classifyRadarPost({ caption, ocr, timestamp, partner })` retornando:
 
-Executa, em ordem:
-
-1. **OCR de data**
-   - Regex pt-BR no `raw_caption + raw_ocr + title`: `\b(\d{1,2})[\/\s\-de]+([a-zç]+|\d{1,2})\b`, mapeia mês por extenso, monta data em SP.
-   - Detecta palavras-chave: `SEXTOU`, `SÁBADO`, `DOMINGO`, `HOJE`, `AMANHÃ` → resolve para a próxima ocorrência em SP.
-   - Retorna `ocrDate | null`.
-
-2. **Data divergente**
-   - Se `ocrDate && formDate` e `|diffDias| >= 1` → bloqueia (`DATA_DIVERGENTE`), badge "DATA DIVERGENTE".
-
-3. **Evento no passado**
-   - Compara `formDate` com `getStartOfTodaySP()` (helper já existente em `dateUtils`).
-   - Se passado → bloqueia (`EVENTO_NO_PASSADO`), badge "EVENTO NO PASSADO".
-
-4. **Score de entretenimento**
-   - Lista positiva: show, festa, balada, dj, open bar, pagode, sertanejo, eletrônico, música ao vivo, futebol, universitária, lounge, barzinho, rave, funk, rock, samba.
-   - Lista negativa (`BLOCKED_KEYWORDS`): workshop, congresso, seminário, simpósio, curso, palestra, científico, ciência, networking, corporativo, empresarial, mesa redonda, feira acadêmica, missa, culto, comício.
-   - Score = 50 base + 10/keyword positiva − 25/keyword negativa, clamp 0–100.
-   - `< 70` → bloqueia (`BAIXO_SCORE_ENTRETENIMENTO`), badge "BAIXO SCORE".
-   - `≥ 1` keyword bloqueada → bloqueio rígido (`FORA_DO_ESCOPO`).
-
-5. **Duplicidade real (reaproveita `eventDuplicateDetector`)**
-   - Já existe `score 0–100` + `samePartner` + `dateDistance`. Apenas endurecer regra final aqui: `score ≥ 90 && samePartner && dateDistanceHours < 2` → bloqueia (`DUPLICATA`).
-   - 60–89 → não bloqueia, manda para revisão.
-
-6. **OCR ausente quando deveria existir**
-   - Se origem é Radar IA / Instagram scan e `raw_ocr` vazio E `raw_caption` vazio → badge "OCR INVÁLIDO", manda para revisão (não bloqueio rígido).
-
-Retorna `validationLog` pronto para `event_validation_logs`.
-
-## 2. Endurecer `eventDuplicateDetector.ts`
-
-Apenas ajustar threshold de bloqueio (não a função de score) e expor `dateDistanceHours` no resultado para a guard usar.
-
-## 3. Plug nos 3 pontos de entrada
-
-Sem mudar UX, sem mover botões:
-
-- **`src/pages/admin/RadarIA.tsx`** → dentro de `createEventFromScan` e `bulkCreateEvents`, chamar `validateBeforePublish` antes do `insert/update`. Se `!ok` e tem bloqueio rígido → mostra toast com motivo, força `status: 'draft'` + `needs_review: true`, grava `event_validation_logs`. Nunca cria silenciosamente publicado.
-- **`src/pages/admin/EventoBulkForm.tsx`** → mesma chamada no loop de save. Já tem resumo "criados/bloqueados/revisão" — apenas alimentar contadores com os reasons.
-- **`src/pages/admin/EventoForm.tsx`** → no submit, antes do upsert: se houver `blockReasons` rígidos, abrir confirm "Publicar mesmo assim?" (só admin) e força `status='draft'` + `needs_review=true` se confirmar parcial. Manter botão "Publicar mesmo assim" já existente.
-- **Edge function `automatic-event-hunter`** (cron) → port da mesma guard em Deno (cópia leve, mesmas listas). Eventos que falham guard → `status='draft'`, `needs_review=true`, nunca `published`.
-
-## 4. Hash de flyer
-
-Já existe `flyer_fingerprint` em `events` e `instagram_scans`. Garantir que:
-
-- Toda criação por scan grava `flyer_fingerprint = scan.flyer_fingerprint`.
-- `validateBeforePublish` consulta `events` por `flyer_fingerprint` igual nos últimos 14 dias → mesmo hash + mesmo partner → bloqueio duro (`MESMO_FLYER`).
-- Slug único garantido pelo unique index já existente (`events.slug`).
-
-## 5. Nova tabela `event_validation_logs`
-
-```sql
-create table public.event_validation_logs (
-  id uuid primary key default gen_random_uuid(),
-  event_id uuid null,
-  scan_id uuid null,
-  flyer_hash text null,
-  detected_ocr text null,
-  detected_date timestamptz null,
-  ai_date timestamptz null,
-  form_date timestamptz null,
-  similarity_score numeric null,
-  entertainment_score numeric null,
-  validation_status text not null,   -- 'ok' | 'blocked' | 'review'
-  block_reasons text[] not null default '{}',
-  warnings text[] not null default '{}',
-  source text not null,              -- 'radar' | 'bulk' | 'form' | 'cron'
-  created_by uuid null,
-  created_at timestamptz not null default now()
-);
-alter table public.event_validation_logs enable row level security;
-create policy "Admins manage event_validation_logs"
-  on public.event_validation_logs for all
-  to authenticated
-  using (has_role(auth.uid(),'admin'))
-  with check (has_role(auth.uid(),'admin'));
-create index on public.event_validation_logs (created_at desc);
-create index on public.event_validation_logs (event_id);
+```
+{
+  type: 'event_flyer' | 'music_event' | 'party_event' | 'bar_event'
+      | 'food_promo' | 'menu' | 'announcement' | 'old_post'
+      | 'generic_post' | 'invalid',
+  score: 0-100,
+  decision: 'create' | 'review' | 'ignore',
+  extracted: { title, date, time, venue, artists, genre, shortDescription },
+  reasons: string[],        // motivos legíveis
+  confidence: 'high'|'medium'|'low'
+}
 ```
 
-## 6. Badges no admin
+Regras:
+- Sinais fortes de evento (+pontos): data/dia semana, horário (`22h`, `00h`), local/casa/bar/club, artista/DJ/banda, palavras `hoje, sábado, sexta, domingo, ao vivo, show, pagode, sertanejo, funk, dj, open, entrada, reserva, agenda, line-up, ingresso`.
+- Sinais negativos (−pontos): `cardápio, prato, delivery, peça já, combo, desconto, frete, sorteio, em breve, aviso, comunicado, funcionamento, horário especial`.
+- Sem data E sem horário → score < 60 → `ignore` com badge `SEM DATA`.
+- Post > 5 dias E sem data futura clara no flyer → `old_post` → `ignore`.
+- ≥1 sinal `food_promo`/`menu` E zero sinais de evento → `food_promo`/`menu` → `ignore`.
+- ≥2 sinais `announcement` → `announcement` → `ignore`.
+- 80–100 → `create`/`review`, 60–79 → `review`, <60 → `ignore`.
+- Extração nunca inventa: se regex não casa, retorna `null`. Aceita `hoje, amanhã, sex/sáb/dom, 23/05, 23 de maio` ancorado em SP (reaproveita `instagramPostFilters.resolveEventDate/Time`).
 
-Sem novo componente. No `RadarIA.tsx` e `EventosList.tsx`, ler `event.needs_review`, último `event_validation_logs.block_reasons` e renderizar chips usando o estilo já existente (`AIConfidenceBadges`/`Badge`):
+## 2. Edge function `automatic-event-hunter`
 
-- `POSSÍVEL DUPLICATA`, `DATA DIVERGENTE`, `EVENTO NO PASSADO`, `BAIXO SCORE`, `OCR INVÁLIDO`, `REVISÃO NECESSÁRIA`.
+- Adicionar espelho Deno do classificador (`supabase/functions/_shared/radarPostClassifier.ts`) e chamar antes de criar `instagram_scans`.
+- Aplicar filtro de recência (últimos 5 dias) — já existe `getInstagramPostWindow`, garantir que está sendo respeitado e que posts antigos com data futura no flyer passam.
+- Para cada post: persistir `keywords`, `ai_confidence`, `extracted_json` (campos estruturados acima), `reason` (motivo principal), `status`:
+  - `decision=create` → `status='scanned'` (vai para aba Novos).
+  - `decision=review` → `status='needs_review'`.
+  - `decision=ignore` → `status='ignored'` + `hidden_from_radar=false` (continua visível em "Ignorados" 7 dias).
+- Antes de gerar rascunho, rodar `findPossibleDuplicateEvent` com janela 14 dias + comparação por `flyer_fingerprint`. Duplicado → `status='skipped_duplicate'`, set `duplicate_of_event_id` e `duplicate_score`.
+- Gravar em `event_validation_logs` (source=`radar-cron`) o motivo da decisão e campos extraídos. Tabela já existe.
 
-## 7. Garantias
+## 3. UI — `src/pages/admin/RadarIA.tsx`
 
-- Nenhuma rota nova, nenhum botão movido, nenhum redesign.
-- Mesmas funções de IA permanecem; apenas perdem o poder de publicar sem passar pela guard.
-- `getStartOfTodaySP`, `getDateKeySP`, sufixo `-03:00` mantidos (regra core).
-- Sem migração de dados existentes — só nova tabela + nova lib + 4 chamadas.
+Sem mudar layout/abas. Apenas enriquecer os cards e a barra de ações:
+
+### Badges no card (chips já no padrão visual existente)
+`EVENTO FORTE` (verde, score≥80), `PRECISA REVISAR` (amarelo, 60–79), `PROMOÇÃO`, `CARDÁPIO`, `SEM DATA`, `POST ANTIGO`, `DUPLICADO`, `AVISO`. Mapear do `extracted_json.type` + score.
+
+### Bloco "leitura rápida" no card
+- Parceiro (já existe)
+- Data detectada (`extracted.date` formatada SP)
+- Tipo + score
+- Motivo principal (`reasons[0]`)
+- Botões: `Ver OCR` (abre Sheet existente), `Criar evento`, `Ignorar`, `Arquivar`, `Marcar como duplicado` (já existem; só garantir todos visíveis).
+
+### Barra de ações topo
+- `Disparar varredura`: mostrar progresso em toast (`sonner` com update) — parceiros analisados / posts / prováveis / revisão / ignorados / duplicados (vem do retorno da edge function).
+- `Avaliar duplicados`: feedback visual de progresso e contagem de duplicatas marcadas.
+- `Aplicar retenção`: já chama `archive_old_radar_scans()`; manter, só melhorar toast com contagem.
+
+## 4. Log de decisão
+
+Toda criação/ignore/duplicação grava em `event_validation_logs`:
+- `validation_status`: `ok`|`review`|`blocked`
+- `block_reasons`: tipo + razões
+- `entertainment_score`: score do classificador
+- `detected_ocr`, `detected_date`, `flyer_hash`
+- `source`: `radar-cron`|`radar-manual`
+
+## 5. Dedupe reforçado
+
+`eventDuplicateDetector.findPossibleDuplicateEvent` já compara title/date/partner/fingerprint. Estender janela para 14 dias (parametrizada). Adicionar comparação leve por `artists` extraídos quando disponível.
+
+## 6. Não muda
+
+- Layout, abas, ordenação, cores globais.
+- `getStartOfTodaySP`, `-03:00`, helpers de dateUtils.
+- Política: nada vira `published` automaticamente.
+- Sem migration nova — `event_validation_logs`, `instagram_scans.keywords/extracted_json/reason/ai_confidence` já existem.
 
 ## Arquivos tocados
 
-- **novo**: `src/lib/eventIngestionGuard.ts`
-- **novo**: `supabase/functions/_shared/ingestionGuard.ts` (espelho Deno consumido pelo `automatic-event-hunter`)
-- **migração**: criar `event_validation_logs`
-- **edit**: `src/lib/eventDuplicateDetector.ts` (expor `dateDistanceHours`)
-- **edit**: `src/pages/admin/RadarIA.tsx` (guard + badges)
-- **edit**: `src/pages/admin/EventoBulkForm.tsx` (guard + contadores)
-- **edit**: `src/pages/admin/EventoForm.tsx` (guard no submit)
-- **edit**: `src/pages/admin/EventosList.tsx` (badges)
-- **edit**: `supabase/functions/automatic-event-hunter/index.ts` (guard antes do insert)
+- **novo**: `src/lib/radarPostClassifier.ts`
+- **novo**: `supabase/functions/_shared/radarPostClassifier.ts` (espelho Deno)
+- **edit**: `supabase/functions/automatic-event-hunter/index.ts` (usa classificador + grava extracted_json/reason/status corretos + dedupe 14d + log)
+- **edit**: `src/pages/admin/RadarIA.tsx` (badges novos no card, leitura rápida, toasts de progresso nas 3 ações do topo)
+- **edit**: `src/lib/eventDuplicateDetector.ts` (janela 14d default + comparação por artists)
+- **edit leve**: `src/lib/instagramPostFilters.ts` (exportar helpers de extração já existentes para o novo classificador)
 
-## Fora de escopo (não faço)
+## Fora de escopo
 
-- Nenhuma feature nova de IA.
-- Nenhum cron novo.
-- Nenhum redesign.
-- Não toco em `extract-flyer-metadata` além de garantir que o `raw_ocr` continua sendo persistido para a guard ler.
+- Nenhuma migration nova.
+- Nenhuma mudança em `extract-flyer-metadata` além de garantir que o `raw_ocr` continua persistido.
+- Nenhuma alteração nas páginas públicas, no Home, no Jogos, no Expo.
+- Nenhuma publicação automática.
