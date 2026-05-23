@@ -586,6 +586,7 @@ const RadarIA = () => {
   async function archiveScan(scanId: string, reason = "manual") {
     setActing(scanId);
     const { data: userData } = await supabase.auth.getUser();
+    const scanRow = cards.find((c) => c.scan.id === scanId)?.scan;
     const { error } = await supabase
       .from("instagram_scans" as any)
       .update({
@@ -597,7 +598,10 @@ const RadarIA = () => {
       .eq("id", scanId);
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Item arquivado."); load(); }
+    else {
+      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || null), "admin_ignored");
+      toast.success("Item arquivado."); load();
+    }
   }
 
   async function unarchiveScan(scanId: string) {
