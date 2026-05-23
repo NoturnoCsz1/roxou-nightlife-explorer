@@ -413,6 +413,27 @@ const RadarIA = () => {
       (evs || []).forEach((e) => eventsMap.set(e.id, e as EventRow));
     }
 
+    // === Memória inteligente por parceiro ===
+    const partnerIds = Array.from(new Set(scanRows.map((s) => s.partner_id).filter(Boolean))) as string[];
+    const handles = Array.from(new Set(scanRows.map((s) => (s.source_handle || "").toLowerCase()).filter(Boolean)));
+    const memMap = new Map<string, PartnerMemorySummary & { dominant_type: string | null }>();
+    if (partnerIds.length || handles.length) {
+      try {
+        const { data: mems } = await supabase
+          .from("partner_radar_memory" as any)
+          .select("partner_id,instagram_handle,dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed")
+          .or([
+            partnerIds.length ? `partner_id.in.(${partnerIds.join(",")})` : null,
+            handles.length ? `instagram_handle.in.(${handles.map((h) => `"${h}"`).join(",")})` : null,
+          ].filter(Boolean).join(","));
+        (mems || []).forEach((m: any) => {
+          if (m.partner_id) memMap.set(`p:${m.partner_id}`, m);
+          if (m.instagram_handle) memMap.set(`h:${String(m.instagram_handle).toLowerCase()}`, m);
+        });
+      } catch { /* memória opcional */ }
+    }
+    setMemoryMap(memMap);
+
     const allCards: Card[] = scanRows.map((scan) => ({
       scan,
       event: scan.event_id ? eventsMap.get(scan.event_id) || null : null,
