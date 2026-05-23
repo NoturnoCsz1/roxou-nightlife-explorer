@@ -350,3 +350,75 @@ export function radarBadgesFor(c: Pick<RadarClassification, "type" | "score" | "
   else if (c.score >= 60) badges.push({ label: "PRECISA REVISAR", variant: "review" });
   return badges;
 }
+
+// =====================================================================
+// Memória inteligente por parceiro (aplicada após classifyRadarPost)
+// =====================================================================
+
+export interface PartnerMemorySummary {
+  dominant_type: string | null;
+  event_accuracy_score: number;
+  promo_rate: number;
+  menu_rate: number;
+  ignore_rate: number;
+  confidence: number;
+  total_analyzed: number;
+}
+
+/** Aplica boost/penalidade baseado no histórico do parceiro. Não muda extraído. */
+export function applyPartnerMemory(
+  c: RadarClassification,
+  mem: PartnerMemorySummary | null | undefined,
+): RadarClassification {
+  if (!mem || mem.confidence < 30 || mem.total_analyzed < 3) return c;
+
+  let score = c.score;
+  const reasons = [...c.reasons];
+  let decision = c.decision;
+
+  if (mem.event_accuracy_score >= 70) {
+    score += 8;
+    reasons.push(`Parceiro confiável (${mem.event_accuracy_score}% eventos reais)`);
+  }
+  if (mem.promo_rate >= 50) {
+    score -= 12;
+    reasons.push(`Parceiro posta muita promoção (${mem.promo_rate}%)`);
+  }
+  if (mem.menu_rate >= 40) {
+    score -= 10;
+    reasons.push(`Parceiro posta muito cardápio (${mem.menu_rate}%)`);
+  }
+  if (mem.ignore_rate >= 70) {
+    score -= 8;
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  if (decision !== "ignore") {
+    if (score >= 80) decision = "create";
+    else if (score >= 60) decision = "review";
+    else if (mem.confidence >= 60 && mem.event_accuracy_score < 20) decision = "ignore";
+  }
+
+  return { ...c, score, reasons, decision };
+}
+
+export const PARTNER_MEMORY_BADGES = {
+  reliable: { label: "PARCEIRO CONFIÁVEL", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40" },
+  promo: { label: "MUITA PROMOÇÃO", cls: "bg-orange-500/20 text-orange-200 border-orange-500/40" },
+  music: { label: "PADRÃO MUSICAL", cls: "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-500/40" },
+  menu: { label: "PADRÃO CARDÁPIO", cls: "bg-amber-500/20 text-amber-200 border-amber-500/40" },
+} as const;
+
+export function partnerMemoryBadges(mem: PartnerMemorySummary | null | undefined): Array<{ label: string; cls: string }> {
+  if (!mem || mem.confidence < 30) return [];
+  const out: Array<{ label: string; cls: string }> = [];
+  if (mem.event_accuracy_score >= 70 && mem.confidence >= 50) out.push(PARTNER_MEMORY_BADGES.reliable);
+  if (mem.promo_rate >= 50) out.push(PARTNER_MEMORY_BADGES.promo);
+  if (
+    (mem.dominant_type === "music_event" || mem.dominant_type === "party_event" || mem.dominant_type === "event_flyer")
+    && mem.confidence >= 40
+  ) out.push(PARTNER_MEMORY_BADGES.music);
+  if (mem.dominant_type === "menu" || mem.menu_rate >= 40) out.push(PARTNER_MEMORY_BADGES.menu);
+  return out;
+}
