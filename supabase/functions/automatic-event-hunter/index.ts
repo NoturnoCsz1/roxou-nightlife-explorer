@@ -508,6 +508,9 @@ Deno.serve(async (req) => {
       if (!handle) continue;
       stats.partners_scanned++;
 
+      // Memória de parceiro (uma leitura por parceiro/scan)
+      const partnerMemory = await loadPartnerMemory(supabase, p.id, handle);
+
       try {
         const fields = `business_discovery.username(${handle}){username,name,media.limit(5){id,media_type,media_url,thumbnail_url,caption,permalink,timestamp}}`;
         const url = `https://graph.facebook.com/v21.0/${igUserId}?fields=${encodeURIComponent(fields)}&access_token=${token}`;
