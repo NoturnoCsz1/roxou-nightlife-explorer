@@ -593,20 +593,33 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // === FILTRO BARATO 2: classificador refinado (sem IA) ===
-          const radarClf = classifyRadarPost({
+          // === FILTRO BARATO 2: classificador refinado (sem IA) + memória do parceiro ===
+          const rawClf = classifyRadarPost({
             caption: m.caption || "",
             ocr: "",
             timestamp: m.timestamp || null,
             partnerName: p.name,
           });
+          const radarClf = applyPartnerMemory(rawClf, partnerMemory);
           const radarExtras = {
             detected_type: radarClf.type,
             radar_score: radarClf.score,
             radar_decision: radarClf.decision,
             radar_reasons: radarClf.reasons,
             radar_extracted: radarClf.extracted,
+            partner_memory: partnerMemory || null,
           };
+
+          // Memória: registra cada observação do radar
+          await recordPartnerMemory(supabase, {
+            partnerId: p.id,
+            handle,
+            type: radarClf.type,
+            decision: radarClf.decision,
+            genre: radarClf.extracted.genre,
+            weekday: spWeekdayFromIso(m.timestamp || null),
+            time: radarClf.extracted.time,
+          });
 
           if (radarClf.decision === "ignore") {
             const mainReason = radarClf.reasons[0] || `Classificado como ${radarClf.type}`;
