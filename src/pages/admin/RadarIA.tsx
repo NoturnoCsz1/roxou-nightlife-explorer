@@ -1240,6 +1240,15 @@ const RadarIA = () => {
             if (!detectedDate && !ev?.date_time)
               radarBadges.push({ label: "SEM DATA", cls: "bg-rose-500/15 text-rose-200 border-rose-500/30" });
 
+            // Memória do parceiro
+            const memKey = c.scan.partner_id
+              ? `p:${c.scan.partner_id}`
+              : c.scan.source_handle ? `h:${c.scan.source_handle.toLowerCase()}` : null;
+            const mem = memKey ? memoryMap.get(memKey) || null : null;
+            const memBadges = partnerMemoryBadges(mem);
+            for (const b of memBadges) radarBadges.push(b);
+
+
 
 
             return (
