@@ -1669,6 +1669,72 @@ export type Database = {
           },
         ]
       }
+      partner_radar_memory: {
+        Row: {
+          common_genres: string[]
+          common_times: string[]
+          confidence: number
+          created_at: string
+          dominant_type: string | null
+          event_accuracy_score: number
+          id: string
+          ignore_rate: number
+          instagram_handle: string | null
+          last_confirmed_at: string | null
+          menu_rate: number
+          partner_id: string | null
+          promo_rate: number
+          recurring_days: string[]
+          total_analyzed: number
+          total_created: number
+          total_ignored: number
+          type_counts: Json
+          updated_at: string
+        }
+        Insert: {
+          common_genres?: string[]
+          common_times?: string[]
+          confidence?: number
+          created_at?: string
+          dominant_type?: string | null
+          event_accuracy_score?: number
+          id?: string
+          ignore_rate?: number
+          instagram_handle?: string | null
+          last_confirmed_at?: string | null
+          menu_rate?: number
+          partner_id?: string | null
+          promo_rate?: number
+          recurring_days?: string[]
+          total_analyzed?: number
+          total_created?: number
+          total_ignored?: number
+          type_counts?: Json
+          updated_at?: string
+        }
+        Update: {
+          common_genres?: string[]
+          common_times?: string[]
+          confidence?: number
+          created_at?: string
+          dominant_type?: string | null
+          event_accuracy_score?: number
+          id?: string
+          ignore_rate?: number
+          instagram_handle?: string | null
+          last_confirmed_at?: string | null
+          menu_rate?: number
+          partner_id?: string | null
+          promo_rate?: number
+          recurring_days?: string[]
+          total_analyzed?: number
+          total_created?: number
+          total_ignored?: number
+          type_counts?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       partners: {
         Row: {
           active: boolean
@@ -2759,6 +2825,18 @@ export type Database = {
       }
       increment_match_view: { Args: { _slug: string }; Returns: undefined }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
+      upsert_partner_radar_memory: {
+        Args: {
+          _decision: string
+          _genre?: string
+          _handle: string
+          _partner_id: string
+          _time?: string
+          _type: string
+          _weekday?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "passenger" | "driver" | "admin"

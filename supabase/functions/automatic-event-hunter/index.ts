@@ -1,5 +1,47 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { classifyRadarPost } from "../_shared/radarPostClassifier.ts";
+import { classifyRadarPost, applyPartnerMemory, type PartnerMemorySummary } from "../_shared/radarPostClassifier.ts";
+
+// Quinto da semana em PT-BR (para alimentar memória de parceiro)
+const WEEKDAY_PT = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+function spWeekdayFromIso(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const sp = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return WEEKDAY_PT[sp.getDay()] || null;
+}
+
+async function loadPartnerMemory(
+  supabase: any,
+  partnerId: string | null,
+  handle: string | null,
+): Promise<PartnerMemorySummary | null> {
+  try {
+    let q = supabase.from("partner_radar_memory").select("dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed").limit(1);
+    if (partnerId) q = q.eq("partner_id", partnerId);
+    else if (handle) q = q.ilike("instagram_handle", handle);
+    else return null;
+    const { data } = await q.maybeSingle();
+    return (data as PartnerMemorySummary) || null;
+  } catch { return null; }
+}
+
+async function recordPartnerMemory(
+  supabase: any,
+  args: { partnerId: string | null; handle: string | null; type: string | null; decision: string; genre?: string | null; weekday?: string | null; time?: string | null },
+) {
+  try {
+    await supabase.rpc("upsert_partner_radar_memory", {
+      _partner_id: args.partnerId,
+      _handle: args.handle,
+      _type: args.type,
+      _decision: args.decision,
+      _genre: args.genre ?? null,
+      _weekday: args.weekday ?? null,
+      _time: args.time ?? null,
+    });
+  } catch (_e) { /* memória não-crítica */ }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -466,6 +508,9 @@ Deno.serve(async (req) => {
       if (!handle) continue;
       stats.partners_scanned++;
 
+      // Memória de parceiro (uma leitura por parceiro/scan)
+      const partnerMemory = await loadPartnerMemory(supabase, p.id, handle);
+
       try {
         const fields = `business_discovery.username(${handle}){username,name,media.limit(5){id,media_type,media_url,thumbnail_url,caption,permalink,timestamp}}`;
         const url = `https://graph.facebook.com/v21.0/${igUserId}?fields=${encodeURIComponent(fields)}&access_token=${token}`;
@@ -548,20 +593,33 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // === FILTRO BARATO 2: classificador refinado (sem IA) ===
-          const radarClf = classifyRadarPost({
+          // === FILTRO BARATO 2: classificador refinado (sem IA) + memória do parceiro ===
+          const rawClf = classifyRadarPost({
             caption: m.caption || "",
             ocr: "",
             timestamp: m.timestamp || null,
             partnerName: p.name,
           });
+          const radarClf = applyPartnerMemory(rawClf, partnerMemory);
           const radarExtras = {
             detected_type: radarClf.type,
             radar_score: radarClf.score,
             radar_decision: radarClf.decision,
             radar_reasons: radarClf.reasons,
             radar_extracted: radarClf.extracted,
+            partner_memory: partnerMemory || null,
           };
+
+          // Memória: registra cada observação do radar
+          await recordPartnerMemory(supabase, {
+            partnerId: p.id,
+            handle,
+            type: radarClf.type,
+            decision: radarClf.decision,
+            genre: radarClf.extracted.genre,
+            weekday: spWeekdayFromIso(m.timestamp || null),
+            time: radarClf.extracted.time,
+          });
 
           if (radarClf.decision === "ignore") {
             const mainReason = radarClf.reasons[0] || `Classificado como ${radarClf.type}`;

@@ -5,6 +5,31 @@ import { toast } from "sonner";
 import { cleanEventTitle, wasTitleOptimized } from "@/lib/titleCleaner";
 import { findPossibleDuplicateEvent } from "@/lib/eventDuplicateDetector";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
+import { partnerMemoryBadges, type PartnerMemorySummary } from "@/lib/radarPostClassifier";
+
+const PARTNER_TYPE_LABEL: Record<string, string> = {
+  event_flyer: "evento",
+  music_event: "evento musical",
+  party_event: "festa",
+  bar_event: "evento de bar",
+  food_promo: "promoção",
+  menu: "cardápio",
+  announcement: "aviso",
+  old_post: "post antigo",
+  generic_post: "post genérico",
+};
+
+async function recordAdminMemory(partnerId: string | null, handle: string | null, type: string | null, decision: "admin_created" | "admin_ignored") {
+  if (!partnerId && !handle) return;
+  try {
+    await supabase.rpc("upsert_partner_radar_memory" as any, {
+      _partner_id: partnerId,
+      _handle: handle,
+      _type: type,
+      _decision: decision,
+    });
+  } catch { /* memória não-crítica */ }
+}
 import {
   Radar,
   Sparkles,
@@ -309,6 +334,7 @@ const RadarIA = () => {
   const [counts, setCounts] = useState<Record<TabKey, number>>({
     novos: 0, revisar: 0, criados: 0, ignorados: 0, arquivados: 0,
   });
+  const [memoryMap, setMemoryMap] = useState<Map<string, PartnerMemorySummary & { dominant_type: string | null }>>(new Map());
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -386,6 +412,27 @@ const RadarIA = () => {
         .in("id", eventIds);
       (evs || []).forEach((e) => eventsMap.set(e.id, e as EventRow));
     }
+
+    // === Memória inteligente por parceiro ===
+    const partnerIds = Array.from(new Set(scanRows.map((s) => s.partner_id).filter(Boolean))) as string[];
+    const handles = Array.from(new Set(scanRows.map((s) => (s.source_handle || "").toLowerCase()).filter(Boolean)));
+    const memMap = new Map<string, PartnerMemorySummary & { dominant_type: string | null }>();
+    if (partnerIds.length || handles.length) {
+      try {
+        const { data: mems } = await supabase
+          .from("partner_radar_memory" as any)
+          .select("partner_id,instagram_handle,dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed")
+          .or([
+            partnerIds.length ? `partner_id.in.(${partnerIds.join(",")})` : null,
+            handles.length ? `instagram_handle.in.(${handles.map((h) => `"${h}"`).join(",")})` : null,
+          ].filter(Boolean).join(","));
+        (mems || []).forEach((m: any) => {
+          if (m.partner_id) memMap.set(`p:${m.partner_id}`, m);
+          if (m.instagram_handle) memMap.set(`h:${String(m.instagram_handle).toLowerCase()}`, m);
+        });
+      } catch { /* memória opcional */ }
+    }
+    setMemoryMap(memMap);
 
     const allCards: Card[] = scanRows.map((scan) => ({
       scan,
@@ -539,6 +586,7 @@ const RadarIA = () => {
   async function archiveScan(scanId: string, reason = "manual") {
     setActing(scanId);
     const { data: userData } = await supabase.auth.getUser();
+    const scanRow = cards.find((c) => c.scan.id === scanId)?.scan;
     const { error } = await supabase
       .from("instagram_scans" as any)
       .update({
@@ -550,7 +598,10 @@ const RadarIA = () => {
       .eq("id", scanId);
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Item arquivado."); load(); }
+    else {
+      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || null), "admin_ignored");
+      toast.success("Item arquivado."); load();
+    }
   }
 
   async function unarchiveScan(scanId: string) {
@@ -567,6 +618,7 @@ const RadarIA = () => {
   async function permanentlyIgnore(scanId: string) {
     setActing(scanId);
     const { data: userData } = await supabase.auth.getUser();
+    const scanRow = cards.find((c) => c.scan.id === scanId)?.scan;
     const { error } = await supabase
       .from("instagram_scans" as any)
       .update({
@@ -579,7 +631,10 @@ const RadarIA = () => {
       .eq("id", scanId);
     setActing(null);
     if (error) toast.error(error.message);
-    else { toast.success("Postagem ignorada permanentemente."); load(); }
+    else {
+      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || null), "admin_ignored");
+      toast.success("Postagem ignorada permanentemente."); load();
+    }
   }
 
   // ===== BULK ACTIONS =====
@@ -1193,6 +1248,15 @@ const RadarIA = () => {
             if (!detectedDate && !ev?.date_time)
               radarBadges.push({ label: "SEM DATA", cls: "bg-rose-500/15 text-rose-200 border-rose-500/30" });
 
+            // Memória do parceiro
+            const memKey = c.scan.partner_id
+              ? `p:${c.scan.partner_id}`
+              : c.scan.source_handle ? `h:${c.scan.source_handle.toLowerCase()}` : null;
+            const mem = memKey ? memoryMap.get(memKey) || null : null;
+            const memBadges = partnerMemoryBadges(mem);
+            for (const b of memBadges) radarBadges.push(b);
+
+
 
 
             return (
@@ -1306,6 +1370,11 @@ const RadarIA = () => {
                       <ScanLine className="h-3.5 w-3.5 text-primary/70" />
                       <span className="text-primary/80">@{c.scan.source_handle || "?"}</span>
                     </div>
+                    {mem && mem.total_analyzed >= 3 && (
+                      <div className="text-[10px] text-muted-foreground/70 italic">
+                        🧠 Memória do parceiro: geralmente {PARTNER_TYPE_LABEL[mem.dominant_type || ""] || mem.dominant_type || "—"} • confiança {Math.round(mem.confidence)}%
+                      </div>
+                    )}
                     {detectedType && (
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
                         <span>Tipo: {detectedType}</span>

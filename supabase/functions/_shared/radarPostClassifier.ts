@@ -240,3 +240,46 @@ export function classifyRadarPost(input: RadarPostInput): RadarClassification {
 
   return { type, score, decision, confidence, extracted, reasons, matchedSignals: matched };
 }
+
+// === Partner memory (mirror src/lib/radarPostClassifier.ts) ===
+export interface PartnerMemorySummary {
+  dominant_type: string | null;
+  event_accuracy_score: number;
+  promo_rate: number;
+  menu_rate: number;
+  ignore_rate: number;
+  confidence: number;
+  total_analyzed: number;
+}
+
+export function applyPartnerMemory(
+  c: RadarClassification,
+  mem: PartnerMemorySummary | null | undefined,
+): RadarClassification {
+  if (!mem || mem.confidence < 30 || mem.total_analyzed < 3) return c;
+  let score = c.score;
+  const reasons = [...c.reasons];
+  let decision = c.decision;
+
+  if (mem.event_accuracy_score >= 70) {
+    score += 8;
+    reasons.push(`Parceiro confiável (${mem.event_accuracy_score}% eventos reais)`);
+  }
+  if (mem.promo_rate >= 50) {
+    score -= 12;
+    reasons.push(`Parceiro posta muita promoção (${mem.promo_rate}%)`);
+  }
+  if (mem.menu_rate >= 40) {
+    score -= 10;
+    reasons.push(`Parceiro posta muito cardápio (${mem.menu_rate}%)`);
+  }
+  if (mem.ignore_rate >= 70) score -= 8;
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  if (decision !== "ignore") {
+    if (score >= 80) decision = "create";
+    else if (score >= 60) decision = "review";
+    else if (mem.confidence >= 60 && mem.event_accuracy_score < 20) decision = "ignore";
+  }
+  return { ...c, score, reasons, decision };
+}
