@@ -334,6 +334,7 @@ const RadarIA = () => {
   const [counts, setCounts] = useState<Record<TabKey, number>>({
     novos: 0, revisar: 0, criados: 0, ignorados: 0, arquivados: 0,
   });
+  const [memoryMap, setMemoryMap] = useState<Map<string, PartnerMemorySummary & { dominant_type: string | null }>>(new Map());
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
