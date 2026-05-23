@@ -1362,6 +1362,11 @@ const RadarIA = () => {
                       <ScanLine className="h-3.5 w-3.5 text-primary/70" />
                       <span className="text-primary/80">@{c.scan.source_handle || "?"}</span>
                     </div>
+                    {mem && mem.total_analyzed >= 3 && (
+                      <div className="text-[10px] text-muted-foreground/70 italic">
+                        🧠 Memória do parceiro: geralmente {PARTNER_TYPE_LABEL[mem.dominant_type || ""] || mem.dominant_type || "—"} • confiança {Math.round(mem.confidence)}%
+                      </div>
+                    )}
                     {detectedType && (
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
                         <span>Tipo: {detectedType}</span>
