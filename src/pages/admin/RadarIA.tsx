@@ -5,6 +5,31 @@ import { toast } from "sonner";
 import { cleanEventTitle, wasTitleOptimized } from "@/lib/titleCleaner";
 import { findPossibleDuplicateEvent } from "@/lib/eventDuplicateDetector";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
+import { partnerMemoryBadges, type PartnerMemorySummary } from "@/lib/radarPostClassifier";
+
+const PARTNER_TYPE_LABEL: Record<string, string> = {
+  event_flyer: "evento",
+  music_event: "evento musical",
+  party_event: "festa",
+  bar_event: "evento de bar",
+  food_promo: "promoção",
+  menu: "cardápio",
+  announcement: "aviso",
+  old_post: "post antigo",
+  generic_post: "post genérico",
+};
+
+async function recordAdminMemory(partnerId: string | null, handle: string | null, type: string | null, decision: "admin_created" | "admin_ignored") {
+  if (!partnerId && !handle) return;
+  try {
+    await supabase.rpc("upsert_partner_radar_memory" as any, {
+      _partner_id: partnerId,
+      _handle: handle,
+      _type: type,
+      _decision: decision,
+    });
+  } catch { /* memória não-crítica */ }
+}
 import {
   Radar,
   Sparkles,
