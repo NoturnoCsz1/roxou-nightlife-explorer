@@ -610,7 +610,7 @@ const RadarIA = () => {
     setActing(null);
     if (error) toast.error(error.message);
     else {
-      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || null), "admin_ignored");
+      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || scanRow.extracted_json?.type || null), "admin_archived");
       toast.success("Item arquivado."); load();
     }
   }
