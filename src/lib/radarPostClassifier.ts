@@ -355,6 +355,12 @@ export function radarBadgesFor(c: Pick<RadarClassification, "type" | "score" | "
 // Memória inteligente por parceiro (aplicada após classifyRadarPost)
 // =====================================================================
 
+export type PartnerState =
+  | "trusted_partner"
+  | "mixed_partner"
+  | "low_quality_partner"
+  | "promotional_partner";
+
 export interface PartnerMemorySummary {
   dominant_type: string | null;
   event_accuracy_score: number;
@@ -363,6 +369,9 @@ export interface PartnerMemorySummary {
   ignore_rate: number;
   confidence: number;
   total_analyzed: number;
+  partner_state?: PartnerState | null;
+  recent_created_score?: number | null;
+  recent_ignored_score?: number | null;
 }
 
 /** Aplica boost/penalidade baseado no histórico do parceiro. Não muda extraído. */
@@ -370,33 +379,66 @@ export function applyPartnerMemory(
   c: RadarClassification,
   mem: PartnerMemorySummary | null | undefined,
 ): RadarClassification {
-  if (!mem || mem.confidence < 30 || mem.total_analyzed < 3) return c;
+  if (!mem || mem.total_analyzed < 3) return c;
 
   let score = c.score;
   const reasons = [...c.reasons];
   let decision = c.decision;
+  const state = mem.partner_state || null;
+  const recentPos = mem.recent_created_score ?? 0;
+  const recentNeg = mem.recent_ignored_score ?? 0;
 
-  if (mem.event_accuracy_score >= 70) {
-    score += 8;
-    reasons.push(`Parceiro confiável (${mem.event_accuracy_score}% eventos reais)`);
+  // --- Boosts/penalidades por estado adaptativo
+  if (state === "trusted_partner") {
+    score += 10;
+    reasons.push(`Parceiro CONFIÁVEL (${mem.event_accuracy_score}% eventos reais)`);
+  } else if (state === "low_quality_partner") {
+    score -= 15;
+    reasons.push(`Parceiro BAIXA QUALIDADE — admin ignora muito`);
+  } else if (state === "promotional_partner") {
+    // Penalidade extra se o post não tem data clara
+    if (!c.extracted.date && !c.extracted.time) {
+      score -= 12;
+      reasons.push("Parceiro PROMOCIONAL sem data clara no flyer");
+    } else {
+      score -= 4;
+      reasons.push("Parceiro PROMOCIONAL");
+    }
   }
-  if (mem.promo_rate >= 50) {
-    score -= 12;
-    reasons.push(`Parceiro posta muita promoção (${mem.promo_rate}%)`);
+
+  // --- Boost por padrão musical confirmado
+  if (
+    (mem.dominant_type === "music_event" || mem.dominant_type === "bar_event" || mem.dominant_type === "party_event")
+    && (c.type === "music_event" || c.type === "bar_event" || c.type === "party_event" || c.type === "event_flyer")
+    && mem.confidence >= 40
+  ) {
+    score += 6;
+    reasons.push(`Padrão musical confirmado (${mem.dominant_type})`);
   }
-  if (mem.menu_rate >= 40) {
-    score -= 10;
-    reasons.push(`Parceiro posta muito cardápio (${mem.menu_rate}%)`);
-  }
-  if (mem.ignore_rate >= 70) {
+
+  // --- Padrão cardápio: penalizar flyer sem data
+  if ((mem.dominant_type === "menu" || mem.menu_rate >= 40) && !c.extracted.date) {
     score -= 8;
+    reasons.push("Parceiro com padrão de cardápio — sem data");
   }
+
+  // --- Fallback nas taxas (caso state ainda não esteja calibrado)
+  if (!state || state === "mixed_partner") {
+    if (mem.event_accuracy_score >= 70 && mem.confidence >= 50) score += 6;
+    if (mem.promo_rate >= 50) score -= 10;
+    if (mem.ignore_rate >= 70) score -= 6;
+  }
+
+  // --- Recência: feedback recente pesa mais que histórico antigo
+  if (recentPos - recentNeg >= 3) score += 3;
+  else if (recentNeg - recentPos >= 3) score -= 4;
 
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   if (decision !== "ignore") {
     if (score >= 80) decision = "create";
     else if (score >= 60) decision = "review";
+    else if (state === "low_quality_partner" && mem.confidence >= 50) decision = "ignore";
     else if (mem.confidence >= 60 && mem.event_accuracy_score < 20) decision = "ignore";
   }
 
@@ -404,21 +446,30 @@ export function applyPartnerMemory(
 }
 
 export const PARTNER_MEMORY_BADGES = {
-  reliable: { label: "PARCEIRO CONFIÁVEL", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40" },
-  promo: { label: "MUITA PROMOÇÃO", cls: "bg-orange-500/20 text-orange-200 border-orange-500/40" },
+  trusted: { label: "CONFIÁVEL", cls: "bg-emerald-500/20 text-emerald-200 border-emerald-500/40" },
+  mixed: { label: "MISTO", cls: "bg-slate-500/20 text-slate-200 border-slate-500/40" },
+  promotional: { label: "MUITO PROMOCIONAL", cls: "bg-orange-500/20 text-orange-200 border-orange-500/40" },
+  low_quality: { label: "BAIXA QUALIDADE", cls: "bg-rose-500/20 text-rose-200 border-rose-500/40" },
   music: { label: "PADRÃO MUSICAL", cls: "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-500/40" },
   menu: { label: "PADRÃO CARDÁPIO", cls: "bg-amber-500/20 text-amber-200 border-amber-500/40" },
 } as const;
 
 export function partnerMemoryBadges(mem: PartnerMemorySummary | null | undefined): Array<{ label: string; cls: string }> {
-  if (!mem || mem.confidence < 30) return [];
+  if (!mem || mem.total_analyzed < 3) return [];
   const out: Array<{ label: string; cls: string }> = [];
-  if (mem.event_accuracy_score >= 70 && mem.confidence >= 50) out.push(PARTNER_MEMORY_BADGES.reliable);
-  if (mem.promo_rate >= 50) out.push(PARTNER_MEMORY_BADGES.promo);
+  const state = mem.partner_state || null;
+
+  if (state === "trusted_partner") out.push(PARTNER_MEMORY_BADGES.trusted);
+  else if (state === "promotional_partner") out.push(PARTNER_MEMORY_BADGES.promotional);
+  else if (state === "low_quality_partner") out.push(PARTNER_MEMORY_BADGES.low_quality);
+  else if (state === "mixed_partner" && mem.confidence >= 40) out.push(PARTNER_MEMORY_BADGES.mixed);
+
   if (
-    (mem.dominant_type === "music_event" || mem.dominant_type === "party_event" || mem.dominant_type === "event_flyer")
+    (mem.dominant_type === "music_event" || mem.dominant_type === "party_event" || mem.dominant_type === "bar_event")
     && mem.confidence >= 40
   ) out.push(PARTNER_MEMORY_BADGES.music);
   if (mem.dominant_type === "menu" || mem.menu_rate >= 40) out.push(PARTNER_MEMORY_BADGES.menu);
+
   return out;
 }
+
