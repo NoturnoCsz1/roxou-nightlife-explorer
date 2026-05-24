@@ -19,7 +19,15 @@ const PARTNER_TYPE_LABEL: Record<string, string> = {
   generic_post: "post genérico",
 };
 
-async function recordAdminMemory(partnerId: string | null, handle: string | null, type: string | null, decision: "admin_created" | "admin_ignored") {
+type AdminMemoryDecision = "admin_created" | "admin_ignored" | "admin_archived" | "admin_duplicate";
+
+async function recordAdminMemory(
+  partnerId: string | null,
+  handle: string | null,
+  type: string | null,
+  decision: AdminMemoryDecision,
+  extras?: { genre?: string | null; weekday?: string | null; time?: string | null },
+) {
   if (!partnerId && !handle) return;
   try {
     await supabase.rpc("upsert_partner_radar_memory" as any, {
@@ -27,6 +35,9 @@ async function recordAdminMemory(partnerId: string | null, handle: string | null
       _handle: handle,
       _type: type,
       _decision: decision,
+      _genre: extras?.genre ?? null,
+      _weekday: extras?.weekday ?? null,
+      _time: extras?.time ?? null,
     });
   } catch { /* memória não-crítica */ }
 }
