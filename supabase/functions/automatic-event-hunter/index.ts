@@ -17,7 +17,7 @@ async function loadPartnerMemory(
   handle: string | null,
 ): Promise<PartnerMemorySummary | null> {
   try {
-    let q = supabase.from("partner_radar_memory").select("dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed").limit(1);
+    let q = supabase.from("partner_radar_memory").select("dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed,partner_state,recent_created_score,recent_ignored_score").limit(1);
     if (partnerId) q = q.eq("partner_id", partnerId);
     else if (handle) q = q.ilike("instagram_handle", handle);
     else return null;
