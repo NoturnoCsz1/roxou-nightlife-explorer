@@ -19,7 +19,15 @@ const PARTNER_TYPE_LABEL: Record<string, string> = {
   generic_post: "post genérico",
 };
 
-async function recordAdminMemory(partnerId: string | null, handle: string | null, type: string | null, decision: "admin_created" | "admin_ignored") {
+type AdminMemoryDecision = "admin_created" | "admin_ignored" | "admin_archived" | "admin_duplicate";
+
+async function recordAdminMemory(
+  partnerId: string | null,
+  handle: string | null,
+  type: string | null,
+  decision: AdminMemoryDecision,
+  extras?: { genre?: string | null; weekday?: string | null; time?: string | null },
+) {
   if (!partnerId && !handle) return;
   try {
     await supabase.rpc("upsert_partner_radar_memory" as any, {
@@ -27,6 +35,9 @@ async function recordAdminMemory(partnerId: string | null, handle: string | null
       _handle: handle,
       _type: type,
       _decision: decision,
+      _genre: extras?.genre ?? null,
+      _weekday: extras?.weekday ?? null,
+      _time: extras?.time ?? null,
     });
   } catch { /* memória não-crítica */ }
 }
@@ -599,7 +610,7 @@ const RadarIA = () => {
     setActing(null);
     if (error) toast.error(error.message);
     else {
-      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || null), "admin_ignored");
+      if (scanRow) await recordAdminMemory(scanRow.partner_id, scanRow.source_handle, (scanRow.extracted_json?.detected_type || scanRow.extracted_json?.type || null), "admin_archived");
       toast.success("Item arquivado."); load();
     }
   }
@@ -784,6 +795,20 @@ const RadarIA = () => {
     await supabase.from("instagram_scans" as any)
       .update({ event_id: inserted.id, status: "created_draft" })
       .eq("id", scan.id);
+
+    // Feedback positivo para a memória do parceiro (admin confirmou que o post virou evento).
+    await recordAdminMemory(
+      scan.partner_id,
+      scan.source_handle,
+      (ext.detected_type || ext.type || null),
+      "admin_created",
+      {
+        genre: ext.genre || ext.sub_category || null,
+        weekday: safeDt ? new Date(safeDt).toLocaleDateString("pt-BR", { weekday: "short", timeZone: "America/Sao_Paulo" }) : null,
+        time: ext.time || null,
+      },
+    );
+
 
     setActing(null);
     const warnSuffix = guard.warnings.length ? ` ⚠ ${guard.badges.join(" · ")}` : "";
