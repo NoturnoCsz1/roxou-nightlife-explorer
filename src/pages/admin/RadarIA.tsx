@@ -432,7 +432,7 @@ const RadarIA = () => {
       try {
         const { data: mems } = await supabase
           .from("partner_radar_memory" as any)
-          .select("partner_id,instagram_handle,dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed")
+          .select("partner_id,instagram_handle,dominant_type,event_accuracy_score,promo_rate,menu_rate,ignore_rate,confidence,total_analyzed,partner_state,recent_created_score,recent_ignored_score")
           .or([
             partnerIds.length ? `partner_id.in.(${partnerIds.join(",")})` : null,
             handles.length ? `instagram_handle.in.(${handles.map((h) => `"${h}"`).join(",")})` : null,
