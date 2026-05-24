@@ -796,6 +796,20 @@ const RadarIA = () => {
       .update({ event_id: inserted.id, status: "created_draft" })
       .eq("id", scan.id);
 
+    // Feedback positivo para a memória do parceiro (admin confirmou que o post virou evento).
+    await recordAdminMemory(
+      scan.partner_id,
+      scan.source_handle,
+      (ext.detected_type || ext.type || null),
+      "admin_created",
+      {
+        genre: ext.genre || ext.sub_category || null,
+        weekday: safeDt ? new Date(safeDt).toLocaleDateString("pt-BR", { weekday: "short", timeZone: "America/Sao_Paulo" }) : null,
+        time: ext.time || null,
+      },
+    );
+
+
     setActing(null);
     const warnSuffix = guard.warnings.length ? ` ⚠ ${guard.badges.join(" · ")}` : "";
     toast.success((safeDt ? "Evento criado como rascunho. Revise e publique." : "Evento criado (data incerta — revise antes de publicar).") + warnSuffix);
