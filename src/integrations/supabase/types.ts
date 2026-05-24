@@ -1681,9 +1681,13 @@ export type Database = {
           ignore_rate: number
           instagram_handle: string | null
           last_confirmed_at: string | null
+          last_ignored_at: string | null
           menu_rate: number
           partner_id: string | null
+          partner_state: string
           promo_rate: number
+          recent_created_score: number
+          recent_ignored_score: number
           recurring_days: string[]
           total_analyzed: number
           total_created: number
@@ -1702,9 +1706,13 @@ export type Database = {
           ignore_rate?: number
           instagram_handle?: string | null
           last_confirmed_at?: string | null
+          last_ignored_at?: string | null
           menu_rate?: number
           partner_id?: string | null
+          partner_state?: string
           promo_rate?: number
+          recent_created_score?: number
+          recent_ignored_score?: number
           recurring_days?: string[]
           total_analyzed?: number
           total_created?: number
@@ -1723,9 +1731,13 @@ export type Database = {
           ignore_rate?: number
           instagram_handle?: string | null
           last_confirmed_at?: string | null
+          last_ignored_at?: string | null
           menu_rate?: number
           partner_id?: string | null
+          partner_state?: string
           promo_rate?: number
+          recent_created_score?: number
+          recent_ignored_score?: number
           recurring_days?: string[]
           total_analyzed?: number
           total_created?: number

@@ -242,6 +242,12 @@ export function classifyRadarPost(input: RadarPostInput): RadarClassification {
 }
 
 // === Partner memory (mirror src/lib/radarPostClassifier.ts) ===
+export type PartnerState =
+  | "trusted_partner"
+  | "mixed_partner"
+  | "low_quality_partner"
+  | "promotional_partner";
+
 export interface PartnerMemorySummary {
   dominant_type: string | null;
   event_accuracy_score: number;
@@ -250,36 +256,70 @@ export interface PartnerMemorySummary {
   ignore_rate: number;
   confidence: number;
   total_analyzed: number;
+  partner_state?: PartnerState | null;
+  recent_created_score?: number | null;
+  recent_ignored_score?: number | null;
 }
 
 export function applyPartnerMemory(
   c: RadarClassification,
   mem: PartnerMemorySummary | null | undefined,
 ): RadarClassification {
-  if (!mem || mem.confidence < 30 || mem.total_analyzed < 3) return c;
+  if (!mem || mem.total_analyzed < 3) return c;
+
   let score = c.score;
   const reasons = [...c.reasons];
   let decision = c.decision;
+  const state = mem.partner_state || null;
+  const recentPos = mem.recent_created_score ?? 0;
+  const recentNeg = mem.recent_ignored_score ?? 0;
 
-  if (mem.event_accuracy_score >= 70) {
-    score += 8;
-    reasons.push(`Parceiro confiável (${mem.event_accuracy_score}% eventos reais)`);
+  if (state === "trusted_partner") {
+    score += 10;
+    reasons.push(`Parceiro CONFIÁVEL (${mem.event_accuracy_score}% eventos reais)`);
+  } else if (state === "low_quality_partner") {
+    score -= 15;
+    reasons.push("Parceiro BAIXA QUALIDADE — admin ignora muito");
+  } else if (state === "promotional_partner") {
+    if (!c.extracted.date && !c.extracted.time) {
+      score -= 12;
+      reasons.push("Parceiro PROMOCIONAL sem data clara no flyer");
+    } else {
+      score -= 4;
+      reasons.push("Parceiro PROMOCIONAL");
+    }
   }
-  if (mem.promo_rate >= 50) {
-    score -= 12;
-    reasons.push(`Parceiro posta muita promoção (${mem.promo_rate}%)`);
+
+  if (
+    (mem.dominant_type === "music_event" || mem.dominant_type === "bar_event" || mem.dominant_type === "party_event")
+    && (c.type === "music_event" || c.type === "bar_event" || c.type === "party_event" || c.type === "event_flyer")
+    && mem.confidence >= 40
+  ) {
+    score += 6;
+    reasons.push(`Padrão musical confirmado (${mem.dominant_type})`);
   }
-  if (mem.menu_rate >= 40) {
-    score -= 10;
-    reasons.push(`Parceiro posta muito cardápio (${mem.menu_rate}%)`);
+
+  if ((mem.dominant_type === "menu" || mem.menu_rate >= 40) && !c.extracted.date) {
+    score -= 8;
+    reasons.push("Parceiro com padrão de cardápio — sem data");
   }
-  if (mem.ignore_rate >= 70) score -= 8;
+
+  if (!state || state === "mixed_partner") {
+    if (mem.event_accuracy_score >= 70 && mem.confidence >= 50) score += 6;
+    if (mem.promo_rate >= 50) score -= 10;
+    if (mem.ignore_rate >= 70) score -= 6;
+  }
+
+  if (recentPos - recentNeg >= 3) score += 3;
+  else if (recentNeg - recentPos >= 3) score -= 4;
 
   score = Math.max(0, Math.min(100, Math.round(score)));
   if (decision !== "ignore") {
     if (score >= 80) decision = "create";
     else if (score >= 60) decision = "review";
+    else if (state === "low_quality_partner" && mem.confidence >= 50) decision = "ignore";
     else if (mem.confidence >= 60 && mem.event_accuracy_score < 20) decision = "ignore";
   }
   return { ...c, score, reasons, decision };
 }
+
