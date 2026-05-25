@@ -2827,6 +2827,13 @@ export type Database = {
         Args: { _event_id: string }
         Returns: number
       }
+      count_event_presence: {
+        Args: { _event_id: string }
+        Returns: {
+          status: string
+          total: number
+        }[]
+      }
       expire_stale_ride_requests: { Args: never; Returns: number }
       has_role: {
         Args: {
@@ -2836,6 +2843,7 @@ export type Database = {
         Returns: boolean
       }
       increment_match_view: { Args: { _slug: string }; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
       upsert_partner_radar_memory: {
         Args: {
