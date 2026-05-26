@@ -1,12 +1,8 @@
 // Partner Instagram + Aura sync via Meta Business Discovery
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireCronOrAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -207,6 +203,10 @@ async function syncOne(partnerId: string, token: string, igId: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) return auth.response;
+
 
   try {
     const body = await req.json().catch(() => ({}));

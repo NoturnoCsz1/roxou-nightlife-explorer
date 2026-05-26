@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { classifyRadarPost, applyPartnerMemory, type PartnerMemorySummary } from "../_shared/radarPostClassifier.ts";
+import { requireCronOrAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
+
 
 // Quinto da semana em PT-BR (para alimentar memória de parceiro)
 const WEEKDAY_PT = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
@@ -452,6 +454,10 @@ async function callVision(imageUrl: string, caption: string, lovableKey: string)
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) return auth.response;
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

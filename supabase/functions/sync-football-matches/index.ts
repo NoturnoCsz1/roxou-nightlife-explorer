@@ -6,11 +6,8 @@
 //  3) Normalização forte do nome da liga (strLeague vindo da API → canonical)
 //  4) Force-include de qualquer partida com time brasileiro
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { requireCronOrAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 const API_KEY = Deno.env.get("THESPORTSDB_API_KEY") || "3";
 const IS_PREMIUM = API_KEY !== "3" && API_KEY.length > 0;
@@ -188,6 +185,10 @@ function nextDates(n: number): string[] {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) return auth.response;
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

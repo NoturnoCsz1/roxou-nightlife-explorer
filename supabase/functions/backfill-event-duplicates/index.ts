@@ -5,12 +5,8 @@
 // Apenas relatório no retorno.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { requireCronOrAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 // ---------- helpers (espelho de src/lib/eventDuplicateDetector.ts) ----------
 const TITLE_SPAM_RE =
@@ -110,6 +106,10 @@ function generateFlyerFingerprint(e: {
 // ---------- handler ----------
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) return auth.response;
+
 
   try {
     const supabase = createClient(
