@@ -518,11 +518,69 @@ serve(async (req) => {
       }
     }
 
+    // ============== 🚧 Bounds duros: >1 ano futuro / >30d passado ==============
+    if (dateIso) {
+      const eventDate = new Date(`${dateIso}-03:00`);
+      const now = Date.now();
+      const oneYearAhead = now + 365 * 86400000;
+      const thirtyDaysAgo = now - 30 * 86400000;
+      if (!isNaN(eventDate.getTime())) {
+        if (eventDate.getTime() > oneYearAhead) {
+          date_validation_note = `[REVISAR] Data >1 ano no futuro (${dateIso.slice(0,10)}) — provável erro de ano.`;
+          date_needs_review = true;
+          dateIso = null;
+        } else if (eventDate.getTime() < thirtyDaysAgo) {
+          date_validation_note = `[REVISAR] Data >30 dias no passado (${dateIso.slice(0,10)}).`;
+          date_needs_review = true;
+          dateIso = null;
+        }
+      }
+    }
+
+    // ============== 🚧 Sanidade dia/mês quando IA mandou direto ==============
+    if (aiMonth && (aiMonth < 1 || aiMonth > 12)) {
+      date_validation_note = `[REVISAR] Mês inválido (${aiMonth}).`;
+      date_needs_review = true;
+      dateIso = null;
+    }
+    if (aiDay && (aiDay < 1 || aiDay > 31)) {
+      date_validation_note = `[REVISAR] Dia inválido (${aiDay}).`;
+      date_needs_review = true;
+      dateIso = null;
+    }
+
     // Confiança baixa da IA → marcar para revisão
     const dateConf = String(parsed.date_confidence || parsed.confidence || "medium").toLowerCase();
     if (dateConf === "low") {
       date_needs_review = true;
     }
+
+    // ============== 🎯 Score numérico de confiança da data (0–100) ==============
+    let date_confidence_score = 0;
+    let date_confidence_label: "high" | "medium" | "low" = "low";
+    if (!dateIso) {
+      date_confidence_score = 0;
+    } else if (aiDay && aiMonth && weekdayIdx !== null && !date_needs_review) {
+      // dia+mês+weekday coerentes e dentro dos limites → máxima
+      date_confidence_score = dateConf === "high" ? 95 : 85;
+    } else if (aiDay && aiMonth && !date_needs_review) {
+      date_confidence_score = dateConf === "high" ? 80 : 70;
+    } else if (aiDay && !date_needs_review) {
+      date_confidence_score = 55;
+    } else {
+      date_confidence_score = 40;
+    }
+    if (date_needs_review) date_confidence_score = Math.min(date_confidence_score, 35);
+    if (dateConf === "low") date_confidence_score = Math.min(date_confidence_score, 45);
+    if (date_confidence_score >= 80) date_confidence_label = "high";
+    else if (date_confidence_score >= 55) date_confidence_label = "medium";
+    else date_confidence_label = "low";
+
+    console.log("[extract-flyer-metadata] date pipeline", {
+      aiDay, aiMonth, weekdayIdx, dateIso, date_needs_review,
+      date_confidence_score, date_confidence_label, note: date_validation_note,
+    });
+
 
     // ============== 🔒 Gênero com confiança baixa → REVISAR ==============
     const genreConf = String(parsed.genre_confidence || "medium").toLowerCase();
