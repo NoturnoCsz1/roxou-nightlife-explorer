@@ -31,9 +31,10 @@ async function checkAuth(req: Request, requireAdmin: boolean): Promise<AuthCheck
     { global: { headers: { Authorization: authHeader } } },
   );
 
-  const { data, error } = await supabase.auth.getClaims(token);
-  const userId = data?.claims?.sub;
+  const { data, error } = await supabase.auth.getUser(token);
+  const userId = data?.user?.id;
   if (error || !userId) {
+    console.error("requireAdmin: getUser failed", error?.message);
     return { ok: false, response: jsonResp({ error: "Unauthorized" }, 401) };
   }
 
