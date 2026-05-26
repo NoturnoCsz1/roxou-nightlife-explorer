@@ -179,11 +179,6 @@ serve(async (req) => {
       return json(args ? JSON.parse(args) : { greeting: "Bom dia, Prudente!", weather: `${temp}°C agora`, economy_tip: "Procure happy hours antes das 21h.", role_suggestion: "Veja os eventos em alta de hoje." });
     }
 
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData } = token ? await supabase.auth.getUser(token) : { data: { user: null } } as any;
-    const user = userData?.user;
-    if (!user) return json({ error: "Faça login para usar o Prudente IA." }, 401);
 
     if (mode === "studio") {
       const partnerId = body.partner_id || null;
