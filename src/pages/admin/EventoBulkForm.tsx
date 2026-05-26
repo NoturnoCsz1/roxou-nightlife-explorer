@@ -117,6 +117,8 @@ const EventoBulkForm = () => {
   const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
   const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
+  const fileMapRef = useRef<Map<string, File>>(new Map());
 
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
