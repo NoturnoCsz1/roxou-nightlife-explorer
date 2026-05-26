@@ -3,14 +3,14 @@
 // in public.aura_alerts. Does NOT mutate events/partners/users.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { requireCronOrAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) return auth.response;
+
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

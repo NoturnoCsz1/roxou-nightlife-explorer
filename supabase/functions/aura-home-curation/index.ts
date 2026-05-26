@@ -1,11 +1,8 @@
 // Aura Home Curation - calculates aura/trending/hype scores for events
 // Runs every 15 minutes via cron. Manual aura_pick / featured retain priority.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCronOrAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -26,6 +23,11 @@ function clamp(n: number, min = 0, max = 100) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) return auth.response;
+
+
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
   const startedAt = Date.now();
