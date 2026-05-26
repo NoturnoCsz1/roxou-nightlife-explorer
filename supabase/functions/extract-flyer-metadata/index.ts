@@ -629,6 +629,8 @@ serve(async (req) => {
       date_iso: dateIso,
       date_needs_review,
       date_validation_note,
+      date_confidence_score,
+      date_confidence_label,
       venue_name: parsed.venue_name || null,
       venue_confidence: parsed.venue_confidence || "low",
       address: parsed.address || null,
@@ -648,6 +650,7 @@ serve(async (req) => {
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
