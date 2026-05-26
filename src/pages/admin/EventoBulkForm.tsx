@@ -235,6 +235,7 @@ const EventoBulkForm = () => {
   }
 
   async function uploadAndProcess(file: File, localId: string) {
+    patchItem(localId, { status: "uploading", errorMsg: undefined });
     try {
       const imageHash = await sha256File(file);
       // 1. upload to storage
