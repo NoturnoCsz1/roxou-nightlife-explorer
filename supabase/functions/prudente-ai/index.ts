@@ -87,7 +87,7 @@ serve(async (req) => {
 
   // Require authentication for ALL modes (home, chat, studio) to prevent paid-API abuse.
   const authHeader = req.headers.get("Authorization") || "";
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace("Bearer ", "").trim();
   if (!token) return json({ error: "Unauthorized" }, 401);
 
   try {
@@ -95,8 +95,8 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data: authData } = await supabase.auth.getUser(token);
-    if (!authData?.user) return json({ error: "Unauthorized" }, 401);
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (!user) return json({ error: "Unauthorized" }, 401);
 
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || "chat";
@@ -179,11 +179,6 @@ serve(async (req) => {
       return json(args ? JSON.parse(args) : { greeting: "Bom dia, Prudente!", weather: `${temp}°C agora`, economy_tip: "Procure happy hours antes das 21h.", role_suggestion: "Veja os eventos em alta de hoje." });
     }
 
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData } = token ? await supabase.auth.getUser(token) : { data: { user: null } } as any;
-    const user = userData?.user;
-    if (!user) return json({ error: "Faça login para usar o Prudente IA." }, 401);
 
     if (mode === "studio") {
       const partnerId = body.partner_id || null;
