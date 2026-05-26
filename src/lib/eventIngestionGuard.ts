@@ -179,7 +179,14 @@ function buildSpDate(y: number, m: number, d: number): Date {
  */
 export function detectOcrDate(rawText: string | null | undefined, referenceNow = new Date()): Date | null {
   if (!rawText) return null;
-  const text = rawText.toLowerCase();
+  // Remove explicit time tokens (22:00, 22h, 22h30, 23 h, 00:30, 18hs) before scanning dates
+  // so that "ABERTURA 22:00" or "22.00H" never matches as dd/mm.
+  const sanitized = rawText
+    .toLowerCase()
+    .replace(/\b\d{1,2}\s*[:h]\s*\d{2}\b/g, " ")          // 22:00, 22h00, 22 h 00
+    .replace(/\b\d{1,2}\s*h(?:s|rs)?\b/g, " ")            // 22h, 22hs, 22hrs
+    .replace(/\bopen\s*\d{1,2}\b/g, " ");                 // OPEN 21
+  const text = sanitized;
   const today = spYmd(referenceNow);
   const todayDate = buildSpDate(today.y, today.m, today.d);
 
@@ -189,20 +196,36 @@ export function detectOcrDate(rawText: string | null | undefined, referenceNow =
     return new Date(todayDate.getTime() + 24 * 3600 * 1000);
   }
 
-  // 2) dd/mm ou dd-mm ou dd.mm
-  const numeric = text.match(/\b(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?\b/);
+  // Contexto que confirma que estamos olhando uma data (palavra de mês ou weekday no texto)
+  const hasMonthOrWeekdayContext =
+    Object.keys(MONTHS_PT).some((m) => new RegExp(`\\b${m}\\b`).test(text)) ||
+    Object.keys(WEEKDAYS_PT).some((w) => new RegExp(`\\b${w.replace(/-/g, "\\-")}\\b`).test(text));
+
+  // 2) dd/mm[/yy] — separador `/` é o formato BR canônico de data, aceito sempre.
+  //    dd-mm ou dd.mm só são aceitos quando há um sinal extra de data no texto (mês escrito ou weekday),
+  //    para não confundir com versões/horários (ex: "22.00", "v2-10").
+  const slashMatch = text.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+  const dashOrDotMatch = !slashMatch && hasMonthOrWeekdayContext
+    ? text.match(/\b(\d{1,2})[\-\.](\d{1,2})(?:[\-\.](\d{2,4}))?\b/)
+    : null;
+  const numeric = slashMatch || dashOrDotMatch;
   if (numeric) {
     const d = Number(numeric[1]);
     const m = Number(numeric[2]);
     let y = numeric[3] ? Number(numeric[3]) : today.y;
     if (y < 100) y += 2000;
-    if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+    // Sanidade dura: dia 1-31, mês 1-12, ano 2020-2099
+    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 2020 && y <= 2099) {
+      // Valida calendário real (rejeita 31/02, 30/02 etc.)
       const candidate = buildSpDate(y, m, d);
-      // Se ano não foi explicitado e candidato é mais de 6 meses atrás, assume próximo ano
-      if (!numeric[3] && candidate.getTime() < todayDate.getTime() - 180 * 86400000) {
-        return buildSpDate(y + 1, m, d);
+      const check = spYmd(candidate);
+      if (check.y === y && check.m === m && check.d === d) {
+        // Se ano não foi explicitado e candidato é mais de 6 meses atrás, assume próximo ano
+        if (!numeric[3] && candidate.getTime() < todayDate.getTime() - 180 * 86400000) {
+          return buildSpDate(y + 1, m, d);
+        }
+        return candidate;
       }
-      return candidate;
     }
   }
 
@@ -214,16 +237,19 @@ export function detectOcrDate(rawText: string | null | undefined, referenceNow =
     const monthShort = monthKey.slice(0, 3);
     const m = MONTHS_PT[monthKey] ?? MONTHS_PT[monthShort];
     if (d >= 1 && d <= 31 && m) {
-      let y = today.y;
+      const y = today.y;
       const candidate = buildSpDate(y, m, d);
-      if (candidate.getTime() < todayDate.getTime() - 180 * 86400000) {
-        return buildSpDate(y + 1, m, d);
+      const check = spYmd(candidate);
+      if (check.y === y && check.m === m && check.d === d) {
+        if (candidate.getTime() < todayDate.getTime() - 180 * 86400000) {
+          return buildSpDate(y + 1, m, d);
+        }
+        return candidate;
       }
-      return candidate;
     }
   }
 
-  // 4) dia da semana (próxima ocorrência)
+  // 4) dia da semana (próxima ocorrência) — só se NÃO houver outro candidato numérico ambíguo
   for (const [word, dow] of Object.entries(WEEKDAYS_PT)) {
     const re = new RegExp(`\\b${word.replace(/-/g, "\\-")}\\b`, "i");
     if (re.test(text)) {
@@ -234,6 +260,7 @@ export function detectOcrDate(rawText: string | null | undefined, referenceNow =
 
   return null;
 }
+
 
 // =====================================================================
 // Score de entretenimento
