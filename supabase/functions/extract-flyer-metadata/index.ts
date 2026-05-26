@@ -243,6 +243,10 @@ function detectGenreFromText(text: string): { sub: string | null; confidence: "h
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const { requireAdmin } = await import("../_shared/requireAdmin.ts");
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
     const { image_url, current_year, verified_partners = [], admin_feedback = [] } = await req.json();
     if (!image_url) {

@@ -139,6 +139,10 @@ function escapeHtml(s: string): string {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const { requireAdmin } = await import("../_shared/requireAdmin.ts");
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
     const body = await req.json();
     const {

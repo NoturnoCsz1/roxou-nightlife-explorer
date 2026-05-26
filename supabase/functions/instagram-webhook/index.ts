@@ -96,11 +96,49 @@ Deno.serve(async (req) => {
 
   // 2) Events — ack rápido + processa em background
   if (req.method === "POST") {
+    // 🔒 HMAC validation (X-Hub-Signature-256)
+    const rawBody = await req.arrayBuffer();
+    const sigHeader = req.headers.get("x-hub-signature-256") || req.headers.get("X-Hub-Signature-256");
+    const appSecret = Deno.env.get("META_APP_SECRET");
+    if (!appSecret) {
+      console.error("[webhook] META_APP_SECRET missing");
+      return new Response("Server misconfigured", { status: 500, headers: corsHeaders });
+    }
+    if (!sigHeader || !sigHeader.startsWith("sha256=")) {
+      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+    try {
+      const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(appSecret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
+      const macBuf = await crypto.subtle.sign("HMAC", key, rawBody);
+      const expected = Array.from(new Uint8Array(macBuf))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      const provided = sigHeader.slice("sha256=".length).toLowerCase();
+      // constant-time compare
+      if (expected.length !== provided.length) {
+        return new Response("Forbidden", { status: 403, headers: corsHeaders });
+      }
+      let diff = 0;
+      for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ provided.charCodeAt(i);
+      if (diff !== 0) {
+        return new Response("Forbidden", { status: 403, headers: corsHeaders });
+      }
+    } catch (e) {
+      console.error("[webhook] hmac error", e);
+      return new Response("Forbidden", { status: 403, headers: corsHeaders });
+    }
+
     let payload: any;
-    try { payload = await req.json(); }
+    try { payload = JSON.parse(new TextDecoder().decode(rawBody)); }
     catch { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
 
-    console.log("[webhook] event:", JSON.stringify(payload).slice(0, 500));
+    console.log("[webhook] event received (verified)");
 
     // Processa async sem bloquear o ack
     (async () => {

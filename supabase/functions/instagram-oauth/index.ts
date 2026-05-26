@@ -1,9 +1,22 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { corsHeaders, requireAdmin } from "../_shared/requireAdmin.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Sanitiza um registro de instagram_accounts: nunca retornar access_token bruto ao frontend
+function safeAccount(acc: any) {
+  if (!acc) return null;
+  return {
+    id: acc.id,
+    username: acc.username,
+    ig_account_id: acc.ig_account_id,
+    page_id: acc.page_id,
+    status: acc.status,
+    token_expires_at: acc.token_expires_at,
+    connected_by: acc.connected_by,
+    created_at: acc.created_at,
+    updated_at: acc.updated_at,
+    has_token: !!acc.access_token,
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -23,6 +36,13 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: "META_APP_ID e META_APP_SECRET não configurados" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  }
+
+  // 🔒 Todas as ações exceto o callback OAuth exigem admin.
+  // O callback é público porque é o redirect_uri que a Meta chama via GET.
+  if (action !== "callback") {
+    const auth = await requireAdmin(req);
+    if (!auth.ok) return auth.response;
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -133,7 +153,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Action: check connection status
+  // Action: check connection status (admin-only, sem retornar token)
   if (action === "status") {
     const { data } = await supabase
       .from("instagram_accounts")
@@ -142,7 +162,7 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    return new Response(JSON.stringify({ account: data?.[0] || null }), {
+    return new Response(JSON.stringify({ account: safeAccount(data?.[0] || null) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
