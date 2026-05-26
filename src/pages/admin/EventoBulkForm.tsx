@@ -268,25 +268,47 @@ const EventoBulkForm = () => {
 
       const matched = matchPartner(data.venue_name, partners, data.venue_confidence);
       const dateInput = formatDateForInput(data.date_iso);
+
+      // 📅 Score numérico de confiança da data (0–100)
+      const dateScore: number = typeof data.date_confidence_score === "number" ? data.date_confidence_score : -1;
+      const dateLabel: string | null = typeof data.date_confidence_label === "string" ? data.date_confidence_label : null;
+      const dateBadge =
+        dateScore >= 80 ? "📅 Data: Alta confiança"
+        : dateScore >= 55 ? "📅 Data: Média confiança — confira"
+        : dateScore >= 0 ? "📅 Data: BAIXA confiança — revisar manualmente"
+        : null;
+      const lowDateConfidence = dateScore >= 0 && dateScore < 55;
+
       const warnings: string[] = [];
+      if (dateBadge) warnings.push(dateBadge);
       if (data.category_override_reason) warnings.push(data.category_override_reason);
       if (data.date_needs_review) warnings.push(`📅 Data precisa revisão${data.date_validation_note ? `: ${data.date_validation_note}` : ""}`);
       if (data.date_validation_note && !data.date_needs_review) warnings.push(`📅 ${data.date_validation_note}`);
       if (data.genre_needs_review) warnings.push("🎵 Gênero musical com baixa certeza — confira");
       const categoryWarning: string | null = warnings.length ? warnings.join(" • ") : null;
 
+      // Força needs_review quando data tem baixa confiança — evita publicação automática em data errada
+      const finalNeedsReview = Boolean(data.needs_review) || lowDateConfidence || Boolean(data.date_needs_review);
+
+      console.log("[bulk] extracted", {
+        title: data.title, date_iso: data.date_iso, dateScore, dateLabel,
+        date_needs_review: data.date_needs_review, finalNeedsReview,
+      });
+
       let readyForm: EventFormData | null = null;
       setItems((prev) =>
         prev.map((it) => {
           if (it.localId !== localId) return it;
           const upperTitle = (data.title || it.form.title || "").toUpperCase();
+          // Se a confiança é baixa, não pré-preencher a data — força admin a digitar
+          const safeDateInput = lowDateConfidence ? "" : dateInput;
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
             image_hash: imageHash,
             title: upperTitle,
             slug: upperTitle ? slugify(upperTitle) : it.form.slug,
-            date_time: dateInput || it.form.date_time,
+            date_time: safeDateInput || it.form.date_time,
             category: data.category || it.form.category,
             venue_name: matched ? matched.name : (data.venue_name || ""),
             address: matched ? (matched.address || "") : (data.address || ""),
@@ -297,12 +319,13 @@ const EventoBulkForm = () => {
             opportunity_tags: data.opportunity_tags || [],
             ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
             ...(data.ai_confidence ? { ai_confidence: data.ai_confidence } as any : {}),
-            ...(typeof data.needs_review === "boolean" ? { needs_review: data.needs_review } as any : {}),
-          };
+            needs_review: finalNeedsReview,
+          } as EventFormData;
           readyForm = next;
           return { ...it, form: next, status: "ready", categoryWarning };
         }),
       );
+
 
       // Auto-generate rich description (Persona V2) — only after metadata is confirmed valid
       const f = readyForm as EventFormData | null;
