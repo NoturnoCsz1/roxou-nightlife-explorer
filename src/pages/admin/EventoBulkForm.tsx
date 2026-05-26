@@ -381,26 +381,71 @@ const EventoBulkForm = () => {
   async function handleFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
+    console.log(`[bulk] selected ${arr.length} flyer(s)`);
 
-    const newItems: BulkItem[] = [];
-    for (const file of arr) {
+    // 1) Cria placeholders IMEDIATAMENTE com status "queued" — UI responde no ato.
+    const placeholders: BulkItem[] = arr.map((file) => {
       const localId = crypto.randomUUID();
-      const thumbDataUrl = await fileToDataUrl(file);
-      newItems.push({
+      fileMapRef.current.set(localId, file);
+      // Aviso amigável para arquivos muito grandes (>8MB) — apenas log/toast, não bloqueia.
+      if (file.size > 8 * 1024 * 1024) {
+        console.warn(`[bulk] arquivo grande: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+      }
+      return {
         localId,
         fileName: file.name,
-        thumbDataUrl,
-        status: "uploading",
+        thumbDataUrl: "",
+        status: "queued",
         expanded: false,
         form: emptyEventForm(),
-      });
-    }
-    setItems((prev) => [...prev, ...newItems]);
+      };
+    });
+    setItems((prev) => [...prev, ...placeholders]);
 
-    // process sequentially to be gentle with rate limits
-    for (let i = 0; i < arr.length; i++) {
-      await uploadAndProcess(arr[i], newItems[i].localId);
+    // 2) Geração de thumbnails em background, com yield entre cada item
+    //    para não travar a thread principal.
+    (async () => {
+      for (let i = 0; i < arr.length; i++) {
+        const thumb = await makeThumb(arr[i]);
+        patchItem(placeholders[i].localId, { thumbDataUrl: thumb });
+        // yield para o navegador respirar (pintura, scroll, inputs)
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    })();
+
+    // 3) Pool de concorrência: processa no máximo 2 em paralelo.
+    //    Erros individuais NÃO derrubam o lote — ficam isolados no item.
+    const CONCURRENCY = 2;
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(CONCURRENCY, arr.length) }, async () => {
+      while (true) {
+        const my = cursor++;
+        if (my >= arr.length) return;
+        const file = arr[my];
+        const localId = placeholders[my].localId;
+        const t0 = performance.now();
+        console.log(`[bulk] start ${my + 1}/${arr.length} ${file.name}`);
+        try {
+          await uploadAndProcess(file, localId);
+        } catch (e) {
+          console.error(`[bulk] item ${my + 1} fatal`, e);
+        }
+        console.log(`[bulk] done  ${my + 1}/${arr.length} ${file.name} in ${Math.round(performance.now() - t0)}ms`);
+      }
+    });
+    await Promise.all(workers);
+    console.log(`[bulk] all ${arr.length} processed`);
+  }
+
+  // Retry isolado de um único item com erro
+  async function retryItem(localId: string) {
+    const file = fileMapRef.current.get(localId);
+    if (!file) {
+      toast.error("Arquivo original indisponível — re-suba o flyer.");
+      return;
     }
+    patchItem(localId, { status: "queued", errorMsg: undefined });
+    await uploadAndProcess(file, localId);
   }
 
   function onDrop(e: React.DragEvent) {
