@@ -668,7 +668,11 @@ const EventoBulkForm = () => {
 
   const readyCount = items.filter((it) => it.status === "ready").length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
+  const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
+  const totalCount = items.length;
+  const doneForProgress = readyCount + errorCount;
+  const progressPct = totalCount ? Math.round((doneForProgress / totalCount) * 100) : 0;
 
   return (
     <div className="md:ml-44 max-w-3xl pb-12">
@@ -688,10 +692,25 @@ const EventoBulkForm = () => {
         </div>
         {items.length > 0 && (
           <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-            {readyCount} pronto(s) · {processingCount} processando · {errorCount} erro
+            {readyCount} pronto(s) · {processingCount} processando · {queuedCount} na fila · {errorCount} erro
           </span>
         )}
       </div>
+
+      {/* Barra de progresso geral do lote */}
+      {totalCount > 0 && (processingCount > 0 || queuedCount > 0) && (
+        <div className="mb-3" aria-label="Progresso do lote">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {doneForProgress}/{totalCount} processados ({progressPct}%)
+          </p>
+        </div>
+      )}
 
       {/* Dropzone */}
       <div
