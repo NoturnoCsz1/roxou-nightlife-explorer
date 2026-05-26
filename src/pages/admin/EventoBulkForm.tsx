@@ -753,13 +753,24 @@ const EventoBulkForm = () => {
             {items.map((it) => (
               <div key={it.localId} className="relative aspect-square rounded-lg overflow-hidden border border-border/40 bg-secondary/30 group">
                 {it.thumbDataUrl ? (
-                  <img src={it.thumbDataUrl} alt={it.fileName} className="h-full w-full object-cover" />
+                  <img
+                    src={it.thumbDataUrl}
+                    alt={it.fileName}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                  <div className="h-full w-full flex items-center justify-center text-muted-foreground animate-pulse">
                     <ImageIcon className="h-5 w-5" />
                   </div>
                 )}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                  {it.status === "queued" && (
+                    <div className="flex items-center gap-1 text-[9px] text-white/80">
+                      <Loader2 className="h-2.5 w-2.5 animate-spin opacity-60" /> fila
+                    </div>
+                  )}
                   {it.status === "uploading" && (
                     <div className="flex items-center gap-1 text-[9px] text-white">
                       <Loader2 className="h-2.5 w-2.5 animate-spin" /> upload
@@ -776,8 +787,18 @@ const EventoBulkForm = () => {
                     </div>
                   )}
                   {it.status === "error" && (
-                    <div className="flex items-center gap-1 text-[9px] text-destructive">
-                      <AlertCircle className="h-2.5 w-2.5" /> erro
+                    <div className="flex items-center gap-1 justify-between">
+                      <span className="flex items-center gap-1 text-[9px] text-destructive">
+                        <AlertCircle className="h-2.5 w-2.5" /> erro
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); retryItem(it.localId); }}
+                        className="text-[9px] rounded bg-white/20 px-1 py-0.5 text-white hover:bg-white/30"
+                        title={it.errorMsg || "Tentar novamente"}
+                      >
+                        retry
+                      </button>
                     </div>
                   )}
                 </div>
