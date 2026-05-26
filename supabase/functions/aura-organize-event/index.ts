@@ -59,6 +59,10 @@ const tool = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const { requireAdmin } = await import("../_shared/requireAdmin.ts");
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return auth.response;
+
   try {
     const { text, instagram_url, image_url } = await req.json();
     if (!text || typeof text !== "string" || text.trim().length < 10) {
