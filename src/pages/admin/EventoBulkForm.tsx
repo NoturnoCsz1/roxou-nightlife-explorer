@@ -21,12 +21,12 @@ import {
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 
 type Partner = Tables<"partners">;
-type ItemStatus = "uploading" | "extracting" | "ready" | "error";
+type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error";
 
 interface BulkItem {
   localId: string;
   fileName: string;
-  thumbDataUrl: string; // local preview
+  thumbDataUrl: string; // local preview (downscaled)
   status: ItemStatus;
   errorMsg?: string;
   expanded: boolean;
@@ -40,7 +40,6 @@ function normalize(s: string) {
 
 function matchPartner(name: string | null, partners: Partner[], confidence?: string): Partner | null {
   if (!name) return null;
-  // Only auto-match when AI is highly confident on venue name
   if (confidence && confidence !== "high") return null;
   const n = normalize(name);
   if (!n || n.length < 3) return null;
@@ -58,22 +57,35 @@ function matchPartner(name: string | null, partners: Partner[], confidence?: str
       bestScore = score;
     }
   }
-  // Require strong match (exact or substring of meaningful length)
   return bestScore >= 4 ? best : null;
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+/**
+ * Gera thumbnail leve (~320px) usando createImageBitmap + canvas.
+ * Não trava a UI e evita guardar dataURLs gigantes na memória.
+ */
+async function makeThumb(file: File, maxDim = 320): Promise<string> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no ctx");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    return canvas.toDataURL("image/jpeg", 0.7);
+  } catch (err) {
+    console.warn("[bulk] thumb fallback", file.name, err);
+    return "";
+  }
 }
 
 function formatDateForInput(iso: string | null): string {
   if (!iso) return "";
-  // expects "YYYY-MM-DDTHH:MM" — accept ISO as well
   const m = iso.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
   if (m) return `${m[1]}T${m[2]}`;
   try {
