@@ -1075,4 +1075,16 @@ function ReviewRow({
   );
 }
 
+// Memoiza para evitar re-render em massa do lote a cada patchItem
+const ReviewRow = memo(ReviewRowBase, (prev, next) => {
+  return (
+    prev.item === next.item &&
+    prev.partners === next.partners &&
+    prev.isDuplicate === next.isDuplicate &&
+    prev.smartDup === next.smartDup &&
+    prev.generatingDesc === next.generatingDesc &&
+    prev.index === next.index
+  );
+});
+
 export default EventoBulkForm;
