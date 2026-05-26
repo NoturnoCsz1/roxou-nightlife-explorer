@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Action: check connection status
+  // Action: check connection status (admin-only, sem retornar token)
   if (action === "status") {
     const { data } = await supabase
       .from("instagram_accounts")
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(1);
 
-    return new Response(JSON.stringify({ account: data?.[0] || null }), {
+    return new Response(JSON.stringify({ account: safeAccount(data?.[0] || null) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
