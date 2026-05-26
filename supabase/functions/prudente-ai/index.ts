@@ -87,7 +87,7 @@ serve(async (req) => {
 
   // Require authentication for ALL modes (home, chat, studio) to prevent paid-API abuse.
   const authHeader = req.headers.get("Authorization") || "";
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace("Bearer ", "").trim();
   if (!token) return json({ error: "Unauthorized" }, 401);
 
   try {
@@ -95,8 +95,8 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data: authData } = await supabase.auth.getUser(token);
-    if (!authData?.user) return json({ error: "Unauthorized" }, 401);
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (!user) return json({ error: "Unauthorized" }, 401);
 
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || "chat";
