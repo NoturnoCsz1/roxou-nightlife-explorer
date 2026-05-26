@@ -55,3 +55,18 @@ async function checkAuth(req: Request, requireAdmin: boolean): Promise<AuthCheck
 
 export const requireAdmin = (req: Request) => checkAuth(req, true);
 export const requireUser = (req: Request) => checkAuth(req, false);
+
+/**
+ * Accept either:
+ *  - a valid `x-cron-secret` header matching env CRON_SECRET (pg_cron usage), OR
+ *  - an authenticated admin user (manual trigger from the admin UI)
+ */
+export async function requireCronOrAdmin(req: Request): Promise<AuthCheck> {
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const headerSecret = req.headers.get("x-cron-secret");
+  if (cronSecret && headerSecret && headerSecret === cronSecret) {
+    return { ok: true, userId: "cron", isAdmin: true };
+  }
+  return checkAuth(req, true);
+}
+
