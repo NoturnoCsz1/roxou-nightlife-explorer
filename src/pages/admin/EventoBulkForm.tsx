@@ -456,6 +456,7 @@ const EventoBulkForm = () => {
   }
 
   function removeItem(localId: string) {
+    fileMapRef.current.delete(localId);
     setItems((prev) => prev.filter((it) => it.localId !== localId));
   }
   function addBlankItem() {
