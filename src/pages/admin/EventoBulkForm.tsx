@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Plus, Send, Sparkles, Loader2, Upload, X, ChevronDown, ChevronUp,
@@ -21,12 +21,12 @@ import {
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 
 type Partner = Tables<"partners">;
-type ItemStatus = "uploading" | "extracting" | "ready" | "error";
+type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error";
 
 interface BulkItem {
   localId: string;
   fileName: string;
-  thumbDataUrl: string; // local preview
+  thumbDataUrl: string; // local preview (downscaled)
   status: ItemStatus;
   errorMsg?: string;
   expanded: boolean;
@@ -40,7 +40,6 @@ function normalize(s: string) {
 
 function matchPartner(name: string | null, partners: Partner[], confidence?: string): Partner | null {
   if (!name) return null;
-  // Only auto-match when AI is highly confident on venue name
   if (confidence && confidence !== "high") return null;
   const n = normalize(name);
   if (!n || n.length < 3) return null;
@@ -58,22 +57,35 @@ function matchPartner(name: string | null, partners: Partner[], confidence?: str
       bestScore = score;
     }
   }
-  // Require strong match (exact or substring of meaningful length)
   return bestScore >= 4 ? best : null;
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result as string);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
+/**
+ * Gera thumbnail leve (~320px) usando createImageBitmap + canvas.
+ * Não trava a UI e evita guardar dataURLs gigantes na memória.
+ */
+async function makeThumb(file: File, maxDim = 320): Promise<string> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no ctx");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    return canvas.toDataURL("image/jpeg", 0.7);
+  } catch (err) {
+    console.warn("[bulk] thumb fallback", file.name, err);
+    return "";
+  }
 }
 
 function formatDateForInput(iso: string | null): string {
   if (!iso) return "";
-  // expects "YYYY-MM-DDTHH:MM" — accept ISO as well
   const m = iso.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
   if (m) return `${m[1]}T${m[2]}`;
   try {
@@ -105,6 +117,8 @@ const EventoBulkForm = () => {
   const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
   const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
+  const fileMapRef = useRef<Map<string, File>>(new Map());
 
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
@@ -221,6 +235,7 @@ const EventoBulkForm = () => {
   }
 
   async function uploadAndProcess(file: File, localId: string) {
+    patchItem(localId, { status: "uploading", errorMsg: undefined });
     try {
       const imageHash = await sha256File(file);
       // 1. upload to storage
@@ -367,26 +382,71 @@ const EventoBulkForm = () => {
   async function handleFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
+    console.log(`[bulk] selected ${arr.length} flyer(s)`);
 
-    const newItems: BulkItem[] = [];
-    for (const file of arr) {
+    // 1) Cria placeholders IMEDIATAMENTE com status "queued" — UI responde no ato.
+    const placeholders: BulkItem[] = arr.map((file) => {
       const localId = crypto.randomUUID();
-      const thumbDataUrl = await fileToDataUrl(file);
-      newItems.push({
+      fileMapRef.current.set(localId, file);
+      // Aviso amigável para arquivos muito grandes (>8MB) — apenas log/toast, não bloqueia.
+      if (file.size > 8 * 1024 * 1024) {
+        console.warn(`[bulk] arquivo grande: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+      }
+      return {
         localId,
         fileName: file.name,
-        thumbDataUrl,
-        status: "uploading",
+        thumbDataUrl: "",
+        status: "queued",
         expanded: false,
         form: emptyEventForm(),
-      });
-    }
-    setItems((prev) => [...prev, ...newItems]);
+      };
+    });
+    setItems((prev) => [...prev, ...placeholders]);
 
-    // process sequentially to be gentle with rate limits
-    for (let i = 0; i < arr.length; i++) {
-      await uploadAndProcess(arr[i], newItems[i].localId);
+    // 2) Geração de thumbnails em background, com yield entre cada item
+    //    para não travar a thread principal.
+    (async () => {
+      for (let i = 0; i < arr.length; i++) {
+        const thumb = await makeThumb(arr[i]);
+        patchItem(placeholders[i].localId, { thumbDataUrl: thumb });
+        // yield para o navegador respirar (pintura, scroll, inputs)
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    })();
+
+    // 3) Pool de concorrência: processa no máximo 2 em paralelo.
+    //    Erros individuais NÃO derrubam o lote — ficam isolados no item.
+    const CONCURRENCY = 2;
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(CONCURRENCY, arr.length) }, async () => {
+      while (true) {
+        const my = cursor++;
+        if (my >= arr.length) return;
+        const file = arr[my];
+        const localId = placeholders[my].localId;
+        const t0 = performance.now();
+        console.log(`[bulk] start ${my + 1}/${arr.length} ${file.name}`);
+        try {
+          await uploadAndProcess(file, localId);
+        } catch (e) {
+          console.error(`[bulk] item ${my + 1} fatal`, e);
+        }
+        console.log(`[bulk] done  ${my + 1}/${arr.length} ${file.name} in ${Math.round(performance.now() - t0)}ms`);
+      }
+    });
+    await Promise.all(workers);
+    console.log(`[bulk] all ${arr.length} processed`);
+  }
+
+  // Retry isolado de um único item com erro
+  async function retryItem(localId: string) {
+    const file = fileMapRef.current.get(localId);
+    if (!file) {
+      toast.error("Arquivo original indisponível — re-suba o flyer.");
+      return;
     }
+    patchItem(localId, { status: "queued", errorMsg: undefined });
+    await uploadAndProcess(file, localId);
   }
 
   function onDrop(e: React.DragEvent) {
@@ -396,6 +456,7 @@ const EventoBulkForm = () => {
   }
 
   function removeItem(localId: string) {
+    fileMapRef.current.delete(localId);
     setItems((prev) => prev.filter((it) => it.localId !== localId));
   }
   function addBlankItem() {
@@ -607,7 +668,11 @@ const EventoBulkForm = () => {
 
   const readyCount = items.filter((it) => it.status === "ready").length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
+  const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
+  const totalCount = items.length;
+  const doneForProgress = readyCount + errorCount;
+  const progressPct = totalCount ? Math.round((doneForProgress / totalCount) * 100) : 0;
 
   return (
     <div className="md:ml-44 max-w-3xl pb-12">
@@ -627,10 +692,25 @@ const EventoBulkForm = () => {
         </div>
         {items.length > 0 && (
           <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-            {readyCount} pronto(s) · {processingCount} processando · {errorCount} erro
+            {readyCount} pronto(s) · {processingCount} processando · {queuedCount} na fila · {errorCount} erro
           </span>
         )}
       </div>
+
+      {/* Barra de progresso geral do lote */}
+      {totalCount > 0 && (processingCount > 0 || queuedCount > 0) && (
+        <div className="mb-3" aria-label="Progresso do lote">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {doneForProgress}/{totalCount} processados ({progressPct}%)
+          </p>
+        </div>
+      )}
 
       {/* Dropzone */}
       <div
@@ -673,13 +753,24 @@ const EventoBulkForm = () => {
             {items.map((it) => (
               <div key={it.localId} className="relative aspect-square rounded-lg overflow-hidden border border-border/40 bg-secondary/30 group">
                 {it.thumbDataUrl ? (
-                  <img src={it.thumbDataUrl} alt={it.fileName} className="h-full w-full object-cover" />
+                  <img
+                    src={it.thumbDataUrl}
+                    alt={it.fileName}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                  <div className="h-full w-full flex items-center justify-center text-muted-foreground animate-pulse">
                     <ImageIcon className="h-5 w-5" />
                   </div>
                 )}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                  {it.status === "queued" && (
+                    <div className="flex items-center gap-1 text-[9px] text-white/80">
+                      <Loader2 className="h-2.5 w-2.5 animate-spin opacity-60" /> fila
+                    </div>
+                  )}
                   {it.status === "uploading" && (
                     <div className="flex items-center gap-1 text-[9px] text-white">
                       <Loader2 className="h-2.5 w-2.5 animate-spin" /> upload
@@ -696,8 +787,18 @@ const EventoBulkForm = () => {
                     </div>
                   )}
                   {it.status === "error" && (
-                    <div className="flex items-center gap-1 text-[9px] text-destructive">
-                      <AlertCircle className="h-2.5 w-2.5" /> erro
+                    <div className="flex items-center gap-1 justify-between">
+                      <span className="flex items-center gap-1 text-[9px] text-destructive">
+                        <AlertCircle className="h-2.5 w-2.5" /> erro
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); retryItem(it.localId); }}
+                        className="text-[9px] rounded bg-white/20 px-1 py-0.5 text-white hover:bg-white/30"
+                        title={it.errorMsg || "Tentar novamente"}
+                      >
+                        retry
+                      </button>
                     </div>
                   )}
                 </div>
@@ -810,7 +911,7 @@ interface ReviewRowProps {
   generatingDesc: boolean;
 }
 
-function ReviewRow({
+function ReviewRowBase({
   index, item, partners, isDuplicate, smartDup, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
@@ -973,5 +1074,17 @@ function ReviewRow({
     </div>
   );
 }
+
+// Memoiza para evitar re-render em massa do lote a cada patchItem
+const ReviewRow = memo(ReviewRowBase, (prev, next) => {
+  return (
+    prev.item === next.item &&
+    prev.partners === next.partners &&
+    prev.isDuplicate === next.isDuplicate &&
+    prev.smartDup === next.smartDup &&
+    prev.generatingDesc === next.generatingDesc &&
+    prev.index === next.index
+  );
+});
 
 export default EventoBulkForm;
