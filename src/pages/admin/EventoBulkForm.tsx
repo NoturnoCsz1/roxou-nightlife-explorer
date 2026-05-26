@@ -911,7 +911,7 @@ interface ReviewRowProps {
   generatingDesc: boolean;
 }
 
-function ReviewRow({
+function ReviewRowBase({
   index, item, partners, isDuplicate, smartDup, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
