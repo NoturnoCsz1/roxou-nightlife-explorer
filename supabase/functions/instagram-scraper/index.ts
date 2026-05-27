@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, requireCronOrAdmin } from "../_shared/requireAdmin.ts";
 
 const MAX_PARTNERS = 20;
 const MAX_POSTS_PER_PARTNER = 3;
@@ -103,6 +98,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) {
+    console.log("instagram-scraper: unauthorized call blocked");
+    return auth.response;
+  }
+  console.log(`instagram-scraper: authorized (mode=${auth.userId === "cron" ? "cron" : auth.userId === "service_role" ? "service-role" : "admin"})`);
+
 
   const startTime = Date.now();
   const stats = { partnersProcessed: 0, postsFound: 0, newInserted: 0, errors: 0 };
