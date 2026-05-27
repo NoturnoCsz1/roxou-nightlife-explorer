@@ -89,23 +89,57 @@ poderia ser usada de outros domínios caso vazasse.
 
 ---
 
-## 5. Migrations SQL aplicadas nesta rodada
+## 5. Migrations SQL aplicadas
 
-- `20260526204045_*.sql` — substitui 8 policies "always true" por validações
-  reais; restringe `community_presence` a autenticados; revoga `EXECUTE` em 15
-  SECURITY DEFINER (triggers + cron + admin RPCs); habilita RLS em
-  `realtime.messages` com allowlist por tópico.
+- `20260526204045_*.sql` — policies "always true" → validações reais; restringe
+  `community_presence`; revoga `EXECUTE` em SECURITY DEFINER; allowlist em
+  `realtime.messages`.
 - `20260526204120_*.sql` — restaura `EXECUTE` de `record_radar_repost` para
-  `authenticated` (admin UI precisa).
+  `authenticated`.
 - `20260526204217_*.sql` — column-level GRANTs em `public.partners` ocultando
-  `whatsapp`, `instagram_raw_json` e demais campos internos/IA de visitantes
-  anônimos.
+  `whatsapp`, `instagram_raw_json` e campos internos/IA do anon.
+- `20260527143936_*.sql` (rodada 3) —
+  - `community_messages.SELECT` restrito a `authenticated` (`REVOKE` de anon).
+  - `football_chat_messages.SELECT` restrito a `authenticated` (`REVOKE` de anon).
+  - `ride_requests.SELECT` agora exige `passenger_id = auth.uid()` OU role
+    `driver` OU role `admin`. Usuário comum (não-motorista) não enxerga mais
+    todas as corridas abertas via Realtime.
+  - Criada view `public.public_partners` (`security_invoker=true`) com apenas
+    colunas seguras (sem WhatsApp, raw_json do Instagram, sugestões da Aura,
+    `manual_locked_fields`, sync interno, etc.).
 
 ---
 
-## 6. Verificação final
+## 6. Falsos positivos e ações aceitas
 
-Após este round o scanner Supabase passou de **27 alertas → 11 alertas
-restantes**, todos `warn` e justificados acima como aceitos por arquitetura.
-Os 3 erros `error` (Instagram OAuth/Publish, Maps key, partners WhatsApp) e o
-crítico `REALTIME_NO_CHANNEL_AUTHORIZATION` foram eliminados.
+### "Partner WhatsApp readable by anonymous users"
+A policy `USING (active = true)` em `partners` permanece, mas o scanner não
+considera os GRANTs por coluna. Na prática, `anon` recebeu apenas as colunas
+seguras via `GRANT SELECT (name, slug, …) ON public.partners`. Qualquer SELECT
+anônimo em `whatsapp`, `instagram_raw_json`, `aura_suggestions`,
+`aura_partner_summary`, `manual_locked_fields`, `instagram_sync_*` ou
+`aura_last_run_at` retorna `permission denied`. A view `public_partners` foi
+adicionada como caminho canônico para o front público migrar gradualmente.
+Usuários autenticados continuam vendo `whatsapp` (botão WhatsApp no detalhe do
+parceiro). Admin vê tudo.
+
+### Realtime publication
+Tabelas em `supabase_realtime` (`community_messages`, `football_chat_messages`,
+`ride_requests`, `ride_offers`, `transport_messages`, `aura_alerts`,
+`community_rooms`, `community_presence`) seguem publicadas, mas o Realtime
+respeita as policies de SELECT. Após a rodada 3 nenhuma delas vaza dados
+pessoais para anon ou para usuários sem papel apropriado.
+
+---
+
+## 7. Verificação final
+
+- `community_messages` e `football_chat_messages`: anon não recebe mais nada
+  via Realtime (RLS bloqueia o canal).
+- `ride_requests`: usuário comum só recebe eventos do próprio passageiro;
+  motorista (`driver`) e admin recebem o feed completo.
+- `partners.whatsapp` e campos internos: invisíveis ao anon por GRANT por
+  coluna e disponíveis na view `public_partners` versão "limpa".
+- Funcionalidades públicas (Agenda, Locais, Jogos, SEO, Aura, Radar) e
+  autenticadas (chat de jogos, comunidade, transporte, painel admin)
+  continuam operando normalmente.
