@@ -1158,6 +1158,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "events_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
         ]
       }
       expo_news: {
@@ -1425,6 +1432,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "instagram_imports_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
         ]
       }
       instagram_posts: {
@@ -1665,6 +1679,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_views_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
             referencedColumns: ["id"]
           },
         ]
@@ -2275,6 +2296,13 @@ export type Database = {
             referencedRelation: "partners"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "saved_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
         ]
       }
       security_reports: {
@@ -2512,6 +2540,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sports_match_venues_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
             referencedColumns: ["id"]
           },
         ]
@@ -2816,7 +2851,117 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_partners: {
+        Row: {
+          active: boolean | null
+          address: string | null
+          aura_partner_score: number | null
+          aura_partner_tags: string[] | null
+          city: string | null
+          created_at: string | null
+          featured_home: boolean | null
+          formatted_address: string | null
+          full_description: string | null
+          id: string | null
+          instagram: string | null
+          instagram_bio: string | null
+          instagram_followers_count: number | null
+          instagram_id: string | null
+          instagram_media_count: number | null
+          instagram_name: string | null
+          instagram_profile_picture_url: string | null
+          instagram_profile_url: string | null
+          instagram_username: string | null
+          instagram_validated: boolean | null
+          instagram_website: string | null
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          maps_place_id: string | null
+          name: string | null
+          neighborhood: string | null
+          short_description: string | null
+          slug: string | null
+          status: string | null
+          supports_sports: boolean | null
+          type: string | null
+          updated_at: string | null
+          verified_partner: boolean | null
+        }
+        Insert: {
+          active?: boolean | null
+          address?: string | null
+          aura_partner_score?: number | null
+          aura_partner_tags?: string[] | null
+          city?: string | null
+          created_at?: string | null
+          featured_home?: boolean | null
+          formatted_address?: string | null
+          full_description?: string | null
+          id?: string | null
+          instagram?: string | null
+          instagram_bio?: string | null
+          instagram_followers_count?: number | null
+          instagram_id?: string | null
+          instagram_media_count?: number | null
+          instagram_name?: string | null
+          instagram_profile_picture_url?: string | null
+          instagram_profile_url?: string | null
+          instagram_username?: string | null
+          instagram_validated?: boolean | null
+          instagram_website?: string | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          maps_place_id?: string | null
+          name?: string | null
+          neighborhood?: string | null
+          short_description?: string | null
+          slug?: string | null
+          status?: string | null
+          supports_sports?: boolean | null
+          type?: string | null
+          updated_at?: string | null
+          verified_partner?: boolean | null
+        }
+        Update: {
+          active?: boolean | null
+          address?: string | null
+          aura_partner_score?: number | null
+          aura_partner_tags?: string[] | null
+          city?: string | null
+          created_at?: string | null
+          featured_home?: boolean | null
+          formatted_address?: string | null
+          full_description?: string | null
+          id?: string | null
+          instagram?: string | null
+          instagram_bio?: string | null
+          instagram_followers_count?: number | null
+          instagram_id?: string | null
+          instagram_media_count?: number | null
+          instagram_name?: string | null
+          instagram_profile_picture_url?: string | null
+          instagram_profile_url?: string | null
+          instagram_username?: string | null
+          instagram_validated?: boolean | null
+          instagram_website?: string | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          maps_place_id?: string | null
+          name?: string | null
+          neighborhood?: string | null
+          short_description?: string | null
+          slug?: string | null
+          status?: string | null
+          supports_sports?: boolean | null
+          type?: string | null
+          updated_at?: string | null
+          verified_partner?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       archive_old_radar_scans: { Args: never; Returns: number }
