@@ -1,0 +1,146 @@
+# /etc/nginx/sites-available/roxou.conf
+# Reference Nginx config for Roxou VPS. Adjust paths, server_name and certs.
+# Sites:
+#   roxou.com.br / www.roxou.com.br   -> SPA (roxou-web)
+#   api.roxou.com.br                   -> roxou-api (Node 3001)
+#   cortes.roxou.com.br                -> roxou-cortes (Node 3010)
+
+# ---------- Upstreams ----------
+upstream roxou_web   { server 127.0.0.1:3000; keepalive 32; }
+upstream roxou_api   { server 127.0.0.1:3001; keepalive 64; }
+upstream roxou_cortes { server 127.0.0.1:3010; keepalive 32; }
+
+# ---------- gzip global (também válido em nginx.conf) ----------
+gzip on;
+gzip_comp_level 6;
+gzip_min_length 1024;
+gzip_proxied any;
+gzip_types
+  text/plain text/css text/xml application/json application/javascript
+  application/xml+rss application/atom+xml image/svg+xml font/ttf font/otf;
+
+# ---------- HTTP -> HTTPS ----------
+server {
+  listen 80;
+  listen [::]:80;
+  server_name roxou.com.br www.roxou.com.br api.roxou.com.br cortes.roxou.com.br;
+  return 301 https://$host$request_uri;
+}
+
+# ============ FRONTEND (SPA) ============
+server {
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  server_name roxou.com.br www.roxou.com.br;
+
+  ssl_certificate     /etc/letsencrypt/live/roxou.com.br/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/roxou.com.br/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+
+  # Bloqueio de arquivos sensíveis
+  location ~ /\.(env|git|svn|hg|DS_Store) { deny all; return 404; }
+  location ~ \.(bak|backup|swp|old|sql)$  { deny all; return 404; }
+
+  # Cache agressivo de assets versionados (Vite gera hashes)
+  location ~* ^/assets/.*\.(?:js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|webp|avif)$ {
+    proxy_pass http://roxou_web;
+    expires 365d;
+    add_header Cache-Control "public, immutable";
+    access_log off;
+  }
+
+  # Sitemap/robots vindos da API (dinâmicos)
+  location = /sitemap.xml { proxy_pass http://roxou_api/sitemap.xml; }
+  location = /robots.txt  { proxy_pass http://roxou_web/robots.txt; }
+
+  # Mídia local (storage VPS — Roxou Cortes / renders / thumbnails)
+  location /storage/ {
+    alias /var/www/roxou/storage/;
+    autoindex off;
+    expires 30d;
+    add_header Cache-Control "public, max-age=2592000";
+    # Bloquear executáveis
+    location ~* \.(php|sh|exe|bin)$ { deny all; }
+  }
+
+  # SPA fallback
+  location / {
+    proxy_pass http://roxou_web;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+# ============ API ============
+server {
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  server_name api.roxou.com.br;
+
+  ssl_certificate     /etc/letsencrypt/live/api.roxou.com.br/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/api.roxou.com.br/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+
+  # Upload grande (flyers em lote, vídeo curto, OCR)
+  client_max_body_size 200M;
+  client_body_timeout  300s;
+
+  # Timeouts maiores para OCR / render / IA
+  proxy_connect_timeout 30s;
+  proxy_send_timeout    600s;
+  proxy_read_timeout    600s;
+
+  location ~ /\.(env|git) { deny all; return 404; }
+
+  # WebSocket / Realtime
+  location /ws/ {
+    proxy_pass http://roxou_api;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 3600s;
+  }
+
+  # Health checks (sem auth)
+  location = /health             { proxy_pass http://roxou_api; access_log off; }
+  location = /api/health         { proxy_pass http://roxou_api; access_log off; }
+  location = /api/storage/health { proxy_pass http://roxou_api; access_log off; }
+  location = /api/ffmpeg/health  { proxy_pass http://roxou_api; access_log off; }
+
+  # API geral
+  location / {
+    proxy_pass http://roxou_api;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+# ============ ROXOU CORTES ============
+server {
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  server_name cortes.roxou.com.br;
+
+  ssl_certificate     /etc/letsencrypt/live/cortes.roxou.com.br/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/cortes.roxou.com.br/privkey.pem;
+
+  client_max_body_size 500M;
+  client_body_timeout  600s;
+  proxy_read_timeout   900s;
+
+  location / {
+    proxy_pass http://roxou_cortes;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
