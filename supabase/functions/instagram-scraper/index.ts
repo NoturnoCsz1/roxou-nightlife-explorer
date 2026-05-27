@@ -99,6 +99,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireCronOrAdmin(req);
+  if (!auth.ok) {
+    console.log("instagram-scraper: unauthorized call blocked");
+    return auth.response;
+  }
+  console.log(`instagram-scraper: authorized (mode=${auth.userId === "cron" ? "cron" : auth.userId === "service_role" ? "service-role" : "admin"})`);
+
+
   const startTime = Date.now();
   const stats = { partnersProcessed: 0, postsFound: 0, newInserted: 0, errors: 0 };
 
