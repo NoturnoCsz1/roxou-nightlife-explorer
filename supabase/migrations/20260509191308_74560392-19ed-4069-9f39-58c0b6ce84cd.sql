@@ -1,0 +1,2 @@
+ALTER TABLE public.instagram_accounts
+ADD CONSTRAINT instagram_accounts_ig_account_id_unique UNIQUE (ig_account_id);

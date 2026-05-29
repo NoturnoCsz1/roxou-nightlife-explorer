@@ -1,0 +1,24 @@
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /archive/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+Disallow: /archive/
+
+User-agent: Twitterbot
+Allow: /
+Disallow: /archive/
+
+User-agent: facebookexternalhit
+Allow: /
+Disallow: /archive/
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /archive/
+
+Sitemap: https://roxou.com.br/sitemap.xml

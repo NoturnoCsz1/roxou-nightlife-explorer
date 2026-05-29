@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN sub_category text DEFAULT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE public.expo_news ADD COLUMN IF NOT EXISTS seo_keyword text;

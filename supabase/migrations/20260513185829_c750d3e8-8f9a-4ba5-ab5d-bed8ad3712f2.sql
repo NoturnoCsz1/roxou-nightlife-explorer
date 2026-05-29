@@ -1,0 +1,1 @@
+ALTER TABLE public.sports_matches ADD COLUMN IF NOT EXISTS highlight_url text;

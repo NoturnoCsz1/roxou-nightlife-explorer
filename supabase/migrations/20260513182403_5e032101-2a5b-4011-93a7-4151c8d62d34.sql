@@ -1,0 +1,2 @@
+ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS supports_sports boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_partners_supports_sports ON public.partners(supports_sports) WHERE supports_sports = true;

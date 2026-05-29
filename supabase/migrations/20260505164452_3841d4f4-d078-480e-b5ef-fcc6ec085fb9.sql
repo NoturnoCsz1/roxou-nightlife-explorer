@@ -1,0 +1,1 @@
+ALTER TABLE public.expo_news ADD COLUMN source_url text;

@@ -1,0 +1,24 @@
+project_id = "bapdgykghciiyvlqdrqx"
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.import-instagram]
+verify_jwt = false
+
+[functions.instagram-scraper]
+verify_jwt = false
+
+[functions.instagram-webhook]
+verify_jwt = false
+[functions.automatic-event-hunter]
+verify_jwt = false
+
+[functions.partner-instagram-sync]
+verify_jwt = false
+
+[functions.aura-home-curation]
+verify_jwt = false
+
+[functions.aura-autoreels-generate]
+verify_jwt = false
