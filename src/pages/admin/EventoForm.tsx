@@ -370,11 +370,24 @@ const EventoForm = () => {
 
     if (!guard.ok) {
       const reasons = guard.blockReasons.map((r) => REASON_LABELS[r] || r).join(", ");
-      const userConfirm = (form as any).status === "published"
-        ? confirm(`⚠ Guard bloqueou publicação: ${reasons}.\n\nSalvar como rascunho para revisão?`)
-        : true;
-      if (!userConfirm) { setSaving(false); return; }
-      payload = { ...payload, status: "draft", needs_review: true } as any;
+      if ((form as any).status === "published") {
+        // Admin/super_admin pode fazer override após revisão manual.
+        // Guard é alerta de segurança, não bloqueio absoluto para eventos revisados.
+        // OK → publica mesmo assim (marcado para revisão). Cancelar → salva como rascunho.
+        const publishAnyway = confirm(
+          `⚠ Guard detectou: ${reasons}.\n\nO evento foi revisado manualmente e pode ser publicado.\n\nOK → Publicar mesmo assim (ficará marcado para revisão)\nCancelar → Salvar como rascunho`
+        );
+        if (publishAnyway) {
+          // Override confirmado: mantém status publicado, mas sinaliza para revisão
+          payload = { ...payload, needs_review: true } as any;
+        } else {
+          // Admin optou por não publicar: rebaixa para rascunho com flag de revisão
+          payload = { ...payload, status: "draft", needs_review: true } as any;
+        }
+      } else {
+        // Já era rascunho: apenas adiciona flag de revisão, salva sem interromper
+        payload = { ...payload, needs_review: true } as any;
+      }
     } else if (guard.recommendedNeedsReview) {
       payload = { ...payload, needs_review: true } as any;
     }
