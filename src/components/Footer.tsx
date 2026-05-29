@@ -11,7 +11,7 @@ const Footer = () => (
             <li><Link to="/eventos-hoje-em-presidente-prudente" className="hover:text-primary transition-colors">Eventos hoje</Link></li>
             <li><Link to="/eventos-amanha-em-presidente-prudente" className="hover:text-primary transition-colors">Eventos amanhã</Link></li>
             <li><Link to="/eventos-fim-de-semana-em-presidente-prudente" className="hover:text-primary transition-colors">Fim de semana</Link></li>
-            <li><Link to="/semana" className="hover:text-primary transition-colors">Esta semana</Link></li>
+            <li><Link to="/agenda" className="hover:text-primary transition-colors">Esta semana</Link></li>
           </ul>
         </div>
         <div>
@@ -20,7 +20,7 @@ const Footer = () => (
             <li><Link to="/baladas-em-presidente-prudente" className="hover:text-primary transition-colors">Baladas</Link></li>
             <li><Link to="/bares-em-presidente-prudente" className="hover:text-primary transition-colors">Bares</Link></li>
             <li><Link to="/shows-em-presidente-prudente" className="hover:text-primary transition-colors">Shows</Link></li>
-            <li><Link to="/categorias" className="hover:text-primary transition-colors">Todas categorias</Link></li>
+            <li><Link to="/descobrir" className="hover:text-primary transition-colors">Todas categorias</Link></li>
           </ul>
         </div>
         <div>

@@ -208,7 +208,7 @@ const SEOLanding = () => {
   }, []);
 
   if (!config) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const filtered = events.filter(config.filter);

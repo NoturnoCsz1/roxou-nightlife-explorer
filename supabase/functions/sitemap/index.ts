@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   // Fetch published events
   const { data: events } = await supabase
     .from("events")
-    .select("slug, created_at, date_time")
+    .select("slug, created_at, updated_at, date_time")
     .eq("status", "published")
     .order("date_time", { ascending: false });
 
@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
     { loc: "/tabela/brasileirao", priority: "0.7", changefreq: "daily" },
     { loc: "/tabela/libertadores", priority: "0.7", changefreq: "daily" },
     { loc: "/tabela/champions", priority: "0.7", changefreq: "daily" },
+    { loc: "/noticias", priority: "0.8", changefreq: "daily" },
   ];
 
   // Sports matches (próximos 14 dias + últimos 3) — alta rotatividade SEO
@@ -69,6 +70,13 @@ Deno.serve(async (req) => {
   // Fetch published expo news
   const { data: expoNews } = await supabase
     .from("expo_news")
+    .select("slug, published_at, updated_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+
+  // Fetch published Roxou noticias
+  const { data: noticias } = await supabase
+    .from("noticias")
     .select("slug, published_at, updated_at")
     .eq("status", "published")
     .order("published_at", { ascending: false });
@@ -112,7 +120,7 @@ Deno.serve(async (req) => {
 
   // Event pages
   for (const event of events || []) {
-    const lastmod = (event.created_at || today).split("T")[0];
+    const lastmod = (event.updated_at || event.created_at || today).split("T")[0];
     xml += `  <url>
     <loc>${BASE_URL}/evento/${event.slug}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -139,6 +147,18 @@ Deno.serve(async (req) => {
     const lastmod = (n.updated_at || n.published_at || today).split("T")[0];
     xml += `  <url>
     <loc>${BASE_URL}/expo2026/noticia/${n.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
+  // Roxou noticias
+  for (const n of noticias || []) {
+    const lastmod = (n.updated_at || n.published_at || today).split("T")[0];
+    xml += `  <url>
+    <loc>${BASE_URL}/noticia/${n.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

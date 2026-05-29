@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, endOfDay, format, addDays, addHours, isWithinInterval } from "date-fns";
+import { format, addHours, isWithinInterval } from "date-fns";
 import { isTodaySP, isTomorrowSP, getDateKeySP, dateKeySPToAnchorDate, formatDateHeaderSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
@@ -39,8 +39,14 @@ const isEventNow = (dateTime: string) => {
   return isWithinInterval(now, { start, end: addHours(start, 4) });
 };
 
+/** Retorna true se o evento cai em sexta, sábado ou domingo no fuso America/Sao_Paulo. */
+const isWeekendSP = (dateStr: string): boolean => {
+  const d = new Date(dateStr);
+  const dow = new Intl.DateTimeFormat("en-US", { timeZone: "America/Sao_Paulo", weekday: "short" }).format(d);
+  return dow === "Fri" || dow === "Sat" || dow === "Sun";
+};
+
 export default function V3Agenda() {
-  const today = startOfDay(new Date());
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("todos");
@@ -71,7 +77,7 @@ export default function V3Agenda() {
       const { data } = await supabase.from("events")
         .select("id,slug,title,image_url,date_time,venue_name,address,category,video_url")
         .eq("status", "published")
-        .gte("date_time", today.toISOString())
+        .gte("date_time", getStartOfTodaySP())
         .order("date_time").limit(100);
       return data || [];
     },
@@ -89,19 +95,13 @@ export default function V3Agenda() {
   const filteredEvents = useMemo(() => {
     let list = events;
     const cat = activeCategory.toLowerCase();
-    const now = new Date();
 
     if (cat === "hoje") {
-      const start = startOfDay(now); const end = endOfDay(now);
-      list = list.filter((e) => { const d = new Date(e.date_time); return d >= start && d <= end; });
+      list = list.filter((e) => isTodaySP(new Date(e.date_time)));
     } else if (cat === "amanha") {
-      const start = startOfDay(addDays(now, 1)); const end = endOfDay(addDays(now, 1));
-      list = list.filter((e) => { const d = new Date(e.date_time); return d >= start && d <= end; });
+      list = list.filter((e) => isTomorrowSP(new Date(e.date_time)));
     } else if (cat === "fds") {
-      list = list.filter((e) => {
-        const day = new Date(e.date_time).getDay();
-        return day === 5 || day === 6 || day === 0;
-      });
+      list = list.filter((e) => isWeekendSP(e.date_time));
     } else if (cat === "expo2026") {
       list = list.filter((e) => `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase().includes("expo"));
     } else if (cat !== "todos") {

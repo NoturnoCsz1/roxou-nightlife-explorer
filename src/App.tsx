@@ -90,6 +90,8 @@ const TabelaCampeonato = lazy(() => import("./pages/TabelaCampeonato"));
 const Resultados = lazy(() => import("./pages/Resultados"));
 const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
+const SEOLanding = lazy(() => import("./pages/SEOLanding"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import PedirCaronaGate from "./components/PedirCaronaGate";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*) — lazy
@@ -212,9 +214,11 @@ const App = () => (
             <Route path="local/:slug/eventos" element={L(<LegacyLocalEventos />)} />
           </Route>
 
-          {/* Catch-all: admins logados acessam app completo (testes V3);
-              público vai para a landing V3 (Maintenance / contagem). */}
-          <Route path="*" element={<AdminMaintenanceGate />} />
+          {/* ─── SEO Landings (/:landingSlug validado pelo próprio componente) ─── */}
+          <Route path="/:landingSlug" element={L(<SEOLanding />)} />
+
+          {/* 404 — qualquer URL não reconhecida */}
+          <Route path="*" element={L(<NotFound />)} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
