@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, addHours, isWithinInterval } from "date-fns";
-import { isTodaySP, isTomorrowSP, getDateKeySP, dateKeySPToAnchorDate, formatDateHeaderSP, getNowInSaoPaulo } from "@/lib/dateUtils";
+import { isTodaySP, isTomorrowSP, getStartOfTodaySP, getDateKeySP, dateKeySPToAnchorDate, formatDateHeaderSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -74,10 +74,13 @@ export default function V3Agenda() {
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["v3-agenda"],
     queryFn: async () => {
+      // Converte para UTC puro (formato "Z") — PostgREST rejeita offset -03:00 diretamente.
+      // getStartOfTodaySP() garante que o corte seja a meia-noite civil de SP, não do browser.
+      const startOfTodaySPUtc = new Date(getStartOfTodaySP()).toISOString();
       const { data } = await supabase.from("events")
         .select("id,slug,title,image_url,date_time,venue_name,address,category,video_url")
         .eq("status", "published")
-        .gte("date_time", getStartOfTodaySP())
+        .gte("date_time", startOfTodaySPUtc)
         .order("date_time").limit(100);
       return data || [];
     },
