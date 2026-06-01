@@ -1236,9 +1236,10 @@ function DesktopHeroSection({
         </div>
       </div>
 
-      {/* RIGHT — Carrossel de evento em destaque */}
+      {/* RIGHT — Carrossel editorial de evento em destaque */}
+      <div className="flex flex-col gap-2">
       <div
-        className="relative rounded-3xl overflow-hidden h-[460px] shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.4)] group"
+        className="relative rounded-3xl overflow-hidden h-[360px] shadow-[0_16px_48px_-12px_hsl(var(--primary)/0.4)]"
         onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
         onTouchEnd={(e) => {
           const s = touchRef.current; if (!s) return;
@@ -1310,35 +1311,56 @@ function DesktopHeroSection({
           </div>
         </div>
 
-        {/* Arrows */}
+        {/* Setas sempre visíveis */}
         {total > 1 && (
           <>
             <button
               onClick={(e) => { e.stopPropagation(); go(-1); }}
               aria-label="Slide anterior"
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/50"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm border border-white/25 flex items-center justify-center text-white hover:bg-primary/80 hover:border-primary/60 active:scale-95 transition-all"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); go(1); }}
               aria-label="Próximo slide"
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/50"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm border border-white/25 flex items-center justify-center text-white hover:bg-primary/80 hover:border-primary/60 active:scale-95 transition-all"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
-            <div className="absolute bottom-4 right-6 flex gap-1.5 z-20">
-              {heroEvents.map((_, i) => (
-                <button
-                  key={i}
-                  aria-label={`Slide ${i + 1}`}
-                  onClick={(e) => { e.stopPropagation(); setHeroIdx(i); }}
-                  className={`h-1.5 rounded-full transition-all ${i === heroIdx ? "w-5 bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
-                />
-              ))}
-            </div>
           </>
         )}
+      </div>
+
+      {/* Strip editorial — miniaturas dos outros eventos do carrossel */}
+      {total > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+          {heroEvents.map((e, i) => (
+            <button
+              key={e.id}
+              onClick={() => setHeroIdx(i)}
+              title={e.title}
+              className={`shrink-0 relative rounded-xl overflow-hidden w-[88px] h-[52px] transition-all active:scale-95 ${
+                i === heroIdx
+                  ? "ring-2 ring-primary ring-offset-1 ring-offset-background"
+                  : "opacity-40 hover:opacity-75"
+              }`}
+            >
+              <SmartImage
+                src={e.image_url}
+                alt={e.title}
+                loading="lazy"
+                wrapperClassName="w-full h-full"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/30" />
+              {i === heroIdx && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.9)]" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
       </div>
     </div>
   );
@@ -1391,11 +1413,11 @@ function CommandCenter({
         />
       )}
 
-      {/* ── GRID CONTEÚDO: coluna principal larga + sidebar compacta ── */}
-      <div className="grid grid-cols-[1fr_260px] gap-7 px-8 pb-10">
+      {/* ── GRID CONTEÚDO: coluna principal larga + sidebar discreta ── */}
+      <div className="grid grid-cols-[1fr_240px] gap-8 px-8 pb-12">
 
         {/* COLUNA PRINCIPAL */}
-        <section className="min-w-0 space-y-8">
+        <section className="min-w-0 space-y-10">
 
           {/* Busca + Vibe chips */}
           <div className="space-y-3">
@@ -1407,16 +1429,16 @@ function CommandCenter({
             <V3VibeChips className="!py-0 -mx-0" />
           </div>
 
-          {/* Hoje na Roxou */}
+          {/* 1 — Hoje na Roxou */}
           {safeToday.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="relative flex h-2.5 w-2.5">
                     <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-70 animate-ping" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
                   </span>
-                  <h2 className="font-display font-extrabold text-xl text-foreground">Hoje na Roxou</h2>
+                  <h2 className="font-display font-extrabold text-2xl text-foreground">Hoje na Roxou</h2>
                   <span className="px-2 py-0.5 rounded-full bg-primary/15 text-[11px] font-black text-primary">{safeToday.length}</span>
                 </div>
                 <Link to="/agenda" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
@@ -1429,35 +1451,84 @@ function CommandCenter({
             <TodayEmptyState />
           )}
 
-          {/* Jogos ao vivo — bloco grande e destacado */}
-          <div className="rounded-3xl overflow-hidden border border-amber-400/20 bg-gradient-to-br from-amber-500/[0.07] via-transparent to-transparent shadow-[0_0_40px_-20px_rgba(251,191,36,0.3)]">
-            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+          {/* 2 — Arena Roxou: Jogos ao vivo */}
+          <div className="rounded-3xl overflow-hidden border border-amber-400/25 bg-gradient-to-br from-amber-500/[0.08] via-background/60 to-background shadow-[0_0_48px_-20px_rgba(251,191,36,0.35)]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shadow-[0_0_16px_rgba(251,191,36,0.25)]">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/35 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.3)]">
                   <Trophy className="w-5 h-5 text-amber-400" />
                 </div>
                 <div>
-                  <h2 className="font-display font-extrabold text-xl text-foreground">Jogos ao vivo hoje</h2>
-                  <p className="text-[11px] text-muted-foreground">Futebol · onde assistir em Presidente Prudente</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400/80">Arena Roxou</p>
+                  <h2 className="font-display font-extrabold text-2xl text-foreground leading-tight">Jogos ao vivo hoje</h2>
                 </div>
               </div>
-              <Link to="/jogos" className="text-sm font-bold text-primary hover:underline flex items-center gap-1 shrink-0">
-                Ver todos <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link to="/jogos" className="inline-flex items-center gap-1.5 h-8 px-4 rounded-full border border-primary/40 bg-primary/10 text-sm font-bold text-primary hover:bg-primary/20 transition-all shrink-0">
+                  Ver todos <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
             </div>
             <HomeJogosCard />
           </div>
 
-          {/* Destaque da semana */}
-          {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />}
+          {/* 3 — Agenda da semana (movida do sidebar para coluna principal) */}
+          {safeWeekEvents.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="w-5 h-5 text-primary" />
+                  <h2 className="font-display font-extrabold text-2xl text-foreground">Agenda da semana</h2>
+                </div>
+                <Link to="/agenda" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
+                  Ver tudo <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {safeWeekEvents.slice(0, 6).map(ev => (
+                  <Link
+                    key={ev.id}
+                    to={`/evento/${ev.slug}`}
+                    className="group flex gap-3 rounded-2xl border border-border/20 bg-card/50 p-3 hover:border-primary/40 hover:bg-primary/5 transition-all"
+                  >
+                    <div className="flex flex-col items-center justify-center rounded-xl bg-primary/10 border border-primary/15 px-2.5 py-1.5 min-w-[50px]">
+                      <span className="text-[9px] font-black uppercase text-primary">{format(new Date(ev.date_time), "MMM", { locale: ptBR })}</span>
+                      <span className="text-xl font-black text-foreground leading-none">{format(new Date(ev.date_time), "dd")}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-bold text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-tight">{ev.title}</p>
+                      <p className="text-[10px] text-muted-foreground truncate mt-1">{fmtTime(ev.date_time)} · {ev.venue_name || "—"}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link
+                to="/agenda"
+                className="flex items-center justify-center gap-2 w-full h-10 rounded-2xl border border-primary/30 bg-primary/5 text-sm font-bold text-primary hover:bg-primary/10 transition-all"
+              >
+                Ver agenda completa <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
 
-          {/* Curadoria Roxou — bento grid */}
+          {/* 4 — Destaque da semana */}
+          {weeklyHighlight && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Gem className="w-5 h-5 text-accent" />
+                <h2 className="font-display font-extrabold text-2xl text-foreground">Destaque da semana</h2>
+              </div>
+              <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />
+            </div>
+          )}
+
+          {/* 5 — Próximos grandes eventos */}
           {mainEvents.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Curadoria Roxou</p>
-                  <h2 className="font-display text-xl font-black text-foreground leading-tight">Eventos em destaque</h2>
+                  <h2 className="font-display text-2xl font-black text-foreground leading-tight">Próximos grandes eventos</h2>
                 </div>
                 <Link to="/agenda" className="text-sm font-bold text-primary hover:underline flex items-center gap-1 shrink-0">
                   Ver agenda completa <ArrowRight className="w-3.5 h-3.5" />
@@ -1472,11 +1543,10 @@ function CommandCenter({
           )}
         </section>
 
-        {/* SIDEBAR COMPACTA */}
+        {/* SIDEBAR DISCRETA — não compete com o conteúdo principal */}
         <aside className="sticky top-20 h-fit space-y-4">
           <AIHomeWidget />
           <DesktopCategoriesPanel />
-          <DesktopWeekPanel events={weekEvents} />
           <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
         </aside>
       </div>
