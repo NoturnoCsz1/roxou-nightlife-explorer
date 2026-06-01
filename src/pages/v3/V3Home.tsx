@@ -15,7 +15,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import {
   CalendarDays, MapPin, Sparkles, Car, ArrowRight, Clock,
-  Crown, Eye, TrendingUp,
+  Crown, Eye, TrendingUp, Trophy,
   ChevronRight, ChevronLeft, Gem, BadgeCheck, Heart, Flame,
   PartyPopper, Mic2, Zap, Beer, Music, Newspaper, Users, Search, Bot, PiggyBank, Utensils,
 } from "lucide-react";
@@ -403,6 +403,29 @@ export default function V3Home() {
             <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} Timeline={TodayTimeline} EmptyState={TodayEmptyState} />
           ) : null}
         </HomeSectionBoundary>
+
+        {/* Jogos ao vivo — posição nobre no mobile, logo após eventos de hoje */}
+        {!isLoading && !hasHomeDataError && (
+          <HomeSectionBoundary name="Jogos mobile" silent>
+            <div className="px-4 pt-4 pb-1">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <h2 className="font-display font-extrabold text-base text-foreground">Jogos ao vivo hoje</h2>
+                    <p className="text-[10px] text-muted-foreground -mt-0.5">Futebol, onde assistir em Prudente</p>
+                  </div>
+                </div>
+                <Link to="/jogos" className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5">
+                  Ver todos <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+            <HomeJogosCard />
+          </HomeSectionBoundary>
+        )}
       </div>
 
       {/* ══════ DESKTOP: 3-COLUMN GRID ══════ */}
@@ -435,12 +458,9 @@ export default function V3Home() {
         </HomeSectionBoundary>
       </div>
 
-      {/* ══════ HUB DE NOTÍCIAS / EXPO — só após layout principal montar ══════ */}
+      {/* ══════ NOTÍCIAS / EXPO — após layout principal ══════ */}
       {!isLoading && !hasHomeDataError && (
-        <div className="max-w-3xl mx-auto min-h-[200px]">
-          <HomeSectionBoundary name="Jogos na Roxou" silent>
-            <HomeJogosCard />
-          </HomeSectionBoundary>
+        <div className="max-w-5xl mx-auto min-h-[200px] px-4 lg:px-6">
           <HomeSectionBoundary name="Notícias trending" silent>
             <LatestNewsSection variant="trending" limit={6} />
           </HomeSectionBoundary>
@@ -783,8 +803,8 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           </div>
         </div>
 
-        {/* CTAs — unified pill style */}
-        <div className="flex gap-2 pt-1">
+        {/* CTAs — primário + atalhos rápidos: agenda, jogos ao vivo, transporte */}
+        <div className="flex flex-wrap gap-2 pt-1">
           <Link
             to={`/evento/${ev.slug}`}
             className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
@@ -792,10 +812,22 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
             Ver evento <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
-            to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold tracking-normal shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] active:scale-95 transition-all"
+            to="/agenda"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-foreground text-sm font-semibold active:scale-95 transition-all hover:bg-white/20"
           >
-            <Car className="w-4 h-4 text-primary-foreground" /> Como vou?
+            <CalendarDays className="w-3.5 h-3.5" /> Agenda
+          </Link>
+          <Link
+            to="/jogos"
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-sm font-semibold active:scale-95 transition-all hover:bg-amber-500/30"
+          >
+            <Trophy className="w-3.5 h-3.5" /> Jogos ao vivo
+          </Link>
+          <Link
+            to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
+            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-foreground text-sm font-semibold active:scale-95 transition-all hover:bg-white/20"
+          >
+            <Car className="w-3.5 h-3.5" /> Como vou?
           </Link>
         </div>
       </div>
@@ -1129,7 +1161,190 @@ function FeaturedPartnerCard({ p }: { p: any }) {
   );
 }
 
-/* ─── PREMIUM EVENT CARD — fluid native-app feel, larger radius, inner shadow ─── */
+/* ─── DESKTOP HERO SECTION — 2 colunas: tagline à esquerda, carrossel à direita ─── */
+function DesktopHeroSection({
+  heroEvents, heroIdx, setHeroIdx, todayCount, partnerRankMap,
+}: {
+  heroEvents: Ev[]; heroIdx: number; setHeroIdx: (n: number) => void;
+  todayCount: number; partnerRankMap: Map<string, number>;
+}) {
+  const ev = heroEvents[heroIdx];
+  const total = heroEvents.length;
+  const go = (dir: number) => setHeroIdx((heroIdx + dir + total) % total);
+  const touchRef = useRef<{ x: number; y: number } | null>(null);
+  if (!ev) return null;
+  const dayLabel = getDayLabel(ev.date_time);
+  const rank = ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined;
+
+  return (
+    <div className="grid grid-cols-2 gap-8 px-8 pt-8 pb-6 items-center">
+      {/* LEFT — Headline da plataforma + CTAs */}
+      <div className="flex flex-col justify-center space-y-6 pr-2">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 w-fit">
+          <span className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_hsl(var(--primary))]" />
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-primary">
+            {todayCount > 0 ? `${todayCount} evento${todayCount > 1 ? "s" : ""} hoje em Prudente` : "Próximos eventos em Prudente"}
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          <h1
+            className="font-display font-black text-foreground leading-[1.05]"
+            style={{ fontSize: "clamp(30px, 3.2vw, 48px)" }}
+          >
+            O que rola hoje em<br />
+            <span className="text-primary" style={{ textShadow: "0 0 40px hsl(var(--primary)/0.4)" }}>
+              Presidente Prudente
+            </span>
+          </h1>
+          <p className="text-[15px] text-muted-foreground leading-relaxed max-w-md">
+            Eventos, shows, bares, jogos ao vivo e rolês da cidade — tudo em um só lugar, atualizado diariamente.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/agenda"
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-bold text-sm shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.5)] hover:bg-primary/90 active:scale-95 transition-all"
+          >
+            <CalendarDays className="w-4 h-4" /> Ver agenda completa
+          </Link>
+          <Link
+            to="/jogos"
+            className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-bold text-sm hover:bg-amber-500/30 active:scale-95 transition-all"
+          >
+            <Trophy className="w-4 h-4" /> Jogos ao vivo
+          </Link>
+          <Link
+            to="/ia"
+            className="inline-flex items-center gap-2 h-11 px-5 rounded-full v3-glass border border-border/40 text-foreground font-bold text-sm hover:border-primary/40 active:scale-95 transition-all"
+          >
+            <Bot className="w-4 h-4 text-primary" /> Aura IA
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-6 pt-1">
+          <Link to="/descobrir" className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+            <Search className="w-3.5 h-3.5" /> Descobrir
+          </Link>
+          <Link to="/parceiros" className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+            <Users className="w-3.5 h-3.5" /> Parceiros
+          </Link>
+          <Link to="/transporte" className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+            <Car className="w-3.5 h-3.5" /> Caronas
+          </Link>
+        </div>
+      </div>
+
+      {/* RIGHT — Carrossel de evento em destaque */}
+      <div
+        className="relative rounded-3xl overflow-hidden h-[460px] shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.4)] group"
+        onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
+        onTouchEnd={(e) => {
+          const s = touchRef.current; if (!s) return;
+          const t = e.changedTouches[0];
+          const dx = t.clientX - s.x; const dy = t.clientY - s.y;
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+          touchRef.current = null;
+        }}
+      >
+        <SmartImage
+          src={ev.image_url}
+          alt={ev.title}
+          loading="eager"
+          fetchPriority="high"
+          wrapperClassName="absolute inset-0 w-full h-full"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/5" />
+
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/95 backdrop-blur-sm neon-glow">
+            <Flame className="w-3 h-3 text-primary-foreground" />
+            <span className="text-[10px] font-extrabold text-primary-foreground uppercase tracking-wide">{dayLabel}</span>
+          </span>
+          {rank && rank <= 3 && (
+            <span className="px-2.5 py-1 rounded-full bg-amber-500/90 text-[10px] font-black text-white">#{rank} venue</span>
+          )}
+        </div>
+
+        {/* Event info */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 space-y-2 z-10">
+          <span className="inline-block text-[10px] font-semibold text-primary/80 uppercase tracking-widest">{ev.category}</span>
+          <h2
+            className="font-display font-black text-white line-clamp-2 break-words"
+            style={{ fontSize: "clamp(18px, 2vw, 28px)", lineHeight: 1.1, textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}
+          >
+            {ev.title}
+          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            {ev.venue_name && (
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
+                <span className="text-sm text-white/90 font-medium truncate max-w-[200px]">{ev.venue_name}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-accent" />
+              <span className="text-sm text-white/80">{fmtDateFull(ev.date_time)}</span>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Link
+              to={`/evento/${ev.slug}`}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-primary-foreground text-sm font-bold shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.6)] hover:bg-primary/90 active:scale-95 transition-all"
+            >
+              Ver evento <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+            {ev.ticket_url && (
+              <a
+                href={ev.ticket_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-semibold hover:bg-white/20 active:scale-95 transition-all"
+              >
+                Ingressos
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Arrows */}
+        {total > 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); go(-1); }}
+              aria-label="Slide anterior"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/50"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); go(1); }}
+              aria-label="Próximo slide"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/30 backdrop-blur-md border border-white/15 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/50"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+            <div className="absolute bottom-4 right-6 flex gap-1.5 z-20">
+              {heroEvents.map((_, i) => (
+                <button
+                  key={i}
+                  aria-label={`Slide ${i + 1}`}
+                  onClick={(e) => { e.stopPropagation(); setHeroIdx(i); }}
+                  className={`h-1.5 rounded-full transition-all ${i === heroIdx ? "w-5 bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.8)]" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── COMMAND CENTER — layout desktop principal ─── */
 function CommandCenter({
   hero, heroIsToday, heroEvents, heroIdx, setHeroIdx, weeklyHighlight,
   todayEvents, todayCount, trending, featured, weekEvents,
@@ -1142,7 +1357,6 @@ function CommandCenter({
   trendingIdSet: Set<string>; partnerRankMap: Map<string, number>;
   venueRanks: VenueRank[]; featuredPartners: any[]; events: Ev[];
 }) {
-  // Evita duplicar eventos já mostrados na timeline de hoje, no hero ou no spotlight
   const excludeIds = new Set<string>();
   const safeToday = safeEvents(todayEvents);
   const safeTrending = safeEvents(trending);
@@ -1154,7 +1368,6 @@ function CommandCenter({
   const mainPool = [...safeTrending, ...safeFeatured, ...safeWeekEvents].filter((e, i, arr) =>
     arr.findIndex(x => x.id === e.id) === i && !excludeIds.has(e.id)
   );
-  // Embaralhamento estável por dia para variar a curadoria sem mudar a cada render
   const seed = TODAY_KEY.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const mainEvents = mainPool
     .map((e, i) => ({ e, k: ((i + 1) * 9301 + seed * 49297) % 233280 }))
@@ -1165,87 +1378,109 @@ function CommandCenter({
   if (!safeToday.length && !mainEvents.length && !hero) return <HomeDataFallback />;
 
   return (
-    <section className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_320px] gap-5 px-6 py-6">
+    <div className="max-w-7xl mx-auto">
 
-      {/* CENTER — Hero, Search, Today Timeline, Weekly Spotlight, feed */}
-      <section className="min-w-0 space-y-6">
-        {hero && (
-          <div className="relative group rounded-3xl overflow-hidden shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)]">
-            <ImmersiveHero
-              ev={hero}
-              isToday={heroIsToday}
-              todayCount={todayCount}
-              venueRank={hero.partner_id ? partnerRankMap.get(hero.partner_id) : undefined}
-            />
-            {(heroEvents ?? []).length > 1 && (
-              <>
-                <button
-                  aria-label="Slide anterior"
-                  onClick={() => setHeroIdx((heroIdx - 1 + (heroEvents ?? []).length) % (heroEvents ?? []).length)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  aria-label="Próximo slide"
-                  onClick={() => setHeroIdx((heroIdx + 1) % (heroEvents ?? []).length)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-xl bg-background/40 border border-primary/30 text-foreground opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                  {(heroEvents ?? []).map((_, i) => (
-                    <button
-                      key={i}
-                      aria-label={`Slide ${i + 1}`}
-                      onClick={() => setHeroIdx(i)}
-                      className={`h-2 rounded-full transition-all ${
-                        i === heroIdx ? "bg-primary w-7 shadow-[0_0_10px_hsl(var(--primary)/0.7)]" : "bg-foreground/30 w-2 hover:bg-foreground/50"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        <V3SearchBar
-          events={mainEvents as any}
-          fallbackEvent={(featured[0] || mainEvents[0]) as any}
-          placeholder="Buscar evento, local, vibe..."
+      {/* ── HERO 2-COLUNAS ── */}
+      {(heroEvents ?? []).length > 0 && (
+        <DesktopHeroSection
+          heroEvents={heroEvents}
+          heroIdx={heroIdx}
+          setHeroIdx={setHeroIdx}
+          todayCount={todayCount}
+          partnerRankMap={partnerRankMap}
         />
+      )}
 
-        <V3VibeChips className="!py-0 -mx-0" />
+      {/* ── GRID CONTEÚDO: coluna principal larga + sidebar compacta ── */}
+      <div className="grid grid-cols-[1fr_260px] gap-7 px-8 pb-10">
 
-        {safeToday.length > 0 ? (
-          <TodayTimeline events={safeToday} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
-        ) : (
-          <TodayEmptyState />
-        )}
+        {/* COLUNA PRINCIPAL */}
+        <section className="min-w-0 space-y-8">
 
-        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />}
-
-        {mainEvents.length > 0 && (
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary mb-2">Curadoria Roxou</p>
-            <div className="grid auto-rows-[260px] grid-cols-6 gap-4">
-              {mainEvents.slice(0, 7).map((ev, i) => (
-                <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full animate-fade-up`} />
-              ))}
-            </div>
+          {/* Busca + Vibe chips */}
+          <div className="space-y-3">
+            <V3SearchBar
+              events={mainEvents as any}
+              fallbackEvent={(featured[0] || mainEvents[0]) as any}
+              placeholder="Buscar evento, local, vibe..."
+            />
+            <V3VibeChips className="!py-0 -mx-0" />
           </div>
-        )}
-      </section>
 
-      {/* RIGHT — IA + Categories + Week agenda (glassmorphism, sticky, lazy) */}
-      <aside className="sticky top-20 h-auto space-y-4 backdrop-blur-xl bg-background/40 py-6 px-4 pb-16">
-        <AIHomeWidget />
-        <DesktopCategoriesPanel />
-        <DesktopWeekPanel events={weekEvents} />
-        <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
-      </aside>
-    </section>
+          {/* Hoje na Roxou */}
+          {safeToday.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-70 animate-ping" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_10px_hsl(var(--primary))]" />
+                  </span>
+                  <h2 className="font-display font-extrabold text-xl text-foreground">Hoje na Roxou</h2>
+                  <span className="px-2 py-0.5 rounded-full bg-primary/15 text-[11px] font-black text-primary">{safeToday.length}</span>
+                </div>
+                <Link to="/agenda" className="text-sm font-bold text-primary hover:underline flex items-center gap-1">
+                  Ver agenda <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <TodayTimeline events={safeToday} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} />
+            </div>
+          ) : (
+            <TodayEmptyState />
+          )}
+
+          {/* Jogos ao vivo — bloco grande e destacado */}
+          <div className="rounded-3xl overflow-hidden border border-amber-400/20 bg-gradient-to-br from-amber-500/[0.07] via-transparent to-transparent shadow-[0_0_40px_-20px_rgba(251,191,36,0.3)]">
+            <div className="flex items-center justify-between px-5 pt-5 pb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shadow-[0_0_16px_rgba(251,191,36,0.25)]">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h2 className="font-display font-extrabold text-xl text-foreground">Jogos ao vivo hoje</h2>
+                  <p className="text-[11px] text-muted-foreground">Futebol · onde assistir em Presidente Prudente</p>
+                </div>
+              </div>
+              <Link to="/jogos" className="text-sm font-bold text-primary hover:underline flex items-center gap-1 shrink-0">
+                Ver todos <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+            <HomeJogosCard />
+          </div>
+
+          {/* Destaque da semana */}
+          {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />}
+
+          {/* Curadoria Roxou — bento grid */}
+          {mainEvents.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-primary">Curadoria Roxou</p>
+                  <h2 className="font-display text-xl font-black text-foreground leading-tight">Eventos em destaque</h2>
+                </div>
+                <Link to="/agenda" className="text-sm font-bold text-primary hover:underline flex items-center gap-1 shrink-0">
+                  Ver agenda completa <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <div className="grid auto-rows-[260px] grid-cols-6 gap-4">
+                {mainEvents.slice(0, 7).map((ev, i) => (
+                  <PremiumEventCard key={ev.id} ev={ev} size={i < 2 ? "lg" : "md"} isTrending={trendingIdSet.has(ev.id)} partnerRank={ev.partner_id ? partnerRankMap.get(ev.partner_id) : undefined} className={`${i === 0 ? "col-span-4 row-span-2" : i === 1 ? "col-span-2 row-span-2" : "col-span-2"} !h-full !min-h-0 !w-full animate-fade-up`} />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* SIDEBAR COMPACTA */}
+        <aside className="sticky top-20 h-fit space-y-4">
+          <AIHomeWidget />
+          <DesktopCategoriesPanel />
+          <DesktopWeekPanel events={weekEvents} />
+          <DesktopFeaturedPartnersPanel partners={featuredPartners} ranks={venueRanks} />
+        </aside>
+      </div>
+    </div>
   );
 }
 
