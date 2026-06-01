@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
@@ -41,63 +41,81 @@ export default function V3Layout() {
 
   return (
     <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
-      {/* Header — Midnight glass */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-white/10">
-        <div className="flex items-center justify-between gap-4 px-4 h-14 max-w-7xl mx-auto">
-          <Link to="/" className="font-display font-bold text-xl tracking-tight shrink-0">
-            <span className="text-primary v3-neon-text">Roxou</span>
+      {/* Header — premium hub */}
+      <header className="sticky top-0 z-50 bg-background/88 backdrop-blur-lg border-b border-white/8">
+        <div className="flex items-center gap-5 px-5 h-16 max-w-7xl mx-auto">
+
+          {/* Logo */}
+          <Link to="/" className="font-display font-black text-2xl tracking-tight shrink-0">
+            <span className="text-primary" style={{ textShadow: "0 0 24px hsl(var(--primary)/0.5)" }}>ROXOU</span>
           </Link>
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Desktop nav central */}
+          <nav className="hidden lg:flex items-center gap-0.5 flex-1">
+            {[
+              { to: "/agenda",    label: "Agenda"    },
+              { to: "/jogos",     label: "Jogos"     },
+              { to: "/expo2026",  label: "Expo 2026" },
+              { to: "/noticias",  label: "Notícias"  },
+              { to: "/parceiros", label: "Parceiros" },
+            ].map(({ to, label }) => {
+              const isActive = pathname === to || (to !== "/" && pathname.startsWith(to));
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all ${
+                    isActive
+                      ? "bg-primary/12 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+            {/* Buscar — desktop */}
             <Link
-              to="/economize"
-              className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
-              title="Economize"
+              to="/descobrir"
+              className="hidden lg:flex items-center gap-1.5 h-8 px-3.5 rounded-xl border border-border/40 bg-white/3 text-[12px] font-medium text-muted-foreground hover:border-primary/35 hover:text-foreground transition-all"
             >
-              <PiggyBank className="w-4 h-4 text-muted-foreground" />
+              <Search className="w-3.5 h-3.5" /> Buscar
             </Link>
-            <Link
-              to="/ia"
-              className="p-2 rounded-full hover:bg-white/5 transition-colors lg:hidden"
-              title="Aura"
-            >
+            {/* Mobile icons */}
+            <Link to="/ia" className="lg:hidden p-2 rounded-full hover:bg-white/5">
               <Bot className="w-4 h-4 text-primary" />
             </Link>
-            {user ? (
-              <button
-                onClick={() => signOut()}
-                className="p-2 rounded-full hover:bg-white/5 transition-colors"
-                title="Sair"
-              >
-                <LogOut className="w-4 h-4 text-muted-foreground" />
-              </button>
-            ) : (
-              <Link
-                to="/auth"
-                className="p-2 rounded-full hover:bg-white/5 transition-colors"
-                title="Entrar"
-              >
-                <LogIn className="w-4 h-4 text-muted-foreground" />
-              </Link>
-            )}
-            <a
-              href="https://x.com/roxou_pp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-full hover:bg-white/5 transition-colors"
-              title="Twitter/X"
-            >
-              <Twitter className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
-            </a>
-            <a
-              href="https://www.instagram.com/roxou.pp/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-full hover:bg-white/5 transition-colors"
-              title="Instagram"
-            >
+            <Link to="/economize" className="lg:hidden p-2 rounded-full hover:bg-white/5">
+              <PiggyBank className="w-4 h-4 text-muted-foreground" />
+            </Link>
+            {/* Social — desktop only */}
+            <a href="https://www.instagram.com/roxou.pp/" target="_blank" rel="noopener noreferrer" className="hidden lg:flex p-2 rounded-full hover:bg-white/5" title="Instagram">
               <Instagram className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
             </a>
+            {/* Logout / Entrar */}
+            {user ? (
+              <button onClick={() => signOut()} className="hidden lg:flex p-2 rounded-full hover:bg-white/5" title="Sair">
+                <LogOut className="w-4 h-4 text-muted-foreground" />
+              </button>
+            ) : null}
+            {/* Avatar / perfil */}
+            <button
+              onClick={handleProfileClick}
+              className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden hover:border-primary/60 active:scale-95 transition-all shrink-0"
+              title={user ? displayName : "Entrar"}
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} decoding="async" className="w-full h-full object-cover" />
+              ) : user ? (
+                <span className="text-[11px] font-black text-primary">{initial}</span>
+              ) : (
+                <LogIn className="w-3.5 h-3.5 text-muted-foreground" />
+              )}
+            </button>
           </div>
         </div>
       </header>
@@ -105,8 +123,8 @@ export default function V3Layout() {
       {/* Content + Sidebar Desktop */}
       <PullToRefresh>
         <div className="flex-1 max-w-7xl w-full mx-auto lg:flex lg:gap-6 lg:px-4">
-          {/* Sidebar Desktop */}
-          <aside className="hidden lg:flex lg:flex-col lg:items-center lg:w-64 shrink-0 sticky top-14 self-start py-6 px-4 max-h-[calc(100vh-3.5rem)] overflow-y-auto backdrop-blur-xl bg-background/40">
+          {/* Sidebar Desktop — oculta na home (CommandCenter tem sidebar própria) */}
+          <aside className={`lg:flex-col lg:items-center lg:w-64 shrink-0 sticky top-16 self-start py-6 px-4 max-h-[calc(100vh-4rem)] overflow-y-auto backdrop-blur-xl bg-background/40 ${pathname === "/" ? "hidden" : "hidden lg:flex"}`}>
             {/* Card de perfil — clean, centralizado */}
             <button
               onClick={handleProfileClick}
