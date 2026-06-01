@@ -21,7 +21,20 @@ interface MatchRow {
   league_label: string | null;
   status: string;
   views_count: number;
+  is_world_cup: boolean | null;
+  world_cup_phase: string | null;
+  youtube_url: string | null;
 }
+
+const WORLD_CUP_PHASES = [
+  { value: "", label: "— Selecionar fase —" },
+  { value: "grupos", label: "Fase de Grupos" },
+  { value: "oitavas", label: "Oitavas de Final" },
+  { value: "quartas", label: "Quartas de Final" },
+  { value: "semifinal", label: "Semifinal" },
+  { value: "terceiro", label: "3º Lugar" },
+  { value: "final", label: "Final" },
+];
 
 interface VenueLink {
   id: string;
@@ -106,6 +119,7 @@ export default function JogosAdmin() {
   const [streamUrl, setStreamUrl] = useState("");
   const [streamType, setStreamType] = useState("youtube");
   const [syncing, setSyncing] = useState(false);
+  const [savingCopa, setSavingCopa] = useState(false);
 
   // 14 dias de jogos a partir de agora
   const { data: matches = [], isLoading } = useQuery({
@@ -114,7 +128,7 @@ export default function JogosAdmin() {
       const limit = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("sports_matches")
-        .select("id, slug, external_id, home_team, away_team, match_time, league_label, status, views_count")
+        .select("id, slug, external_id, home_team, away_team, match_time, league_label, status, views_count, is_world_cup, world_cup_phase, youtube_url")
         .lte("match_time", limit)
         .gte("match_time", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
         .order("match_time", { ascending: true })
@@ -567,6 +581,145 @@ export default function JogosAdmin() {
                   )}
                 </div>
 
+              </div>
+
+              {/* Copa do Mundo — campos específicos */}
+              <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-3">
+                <h3 className="font-bold flex items-center gap-2 text-yellow-300">
+                  <Trophy className="h-4 w-4 text-yellow-400" /> Copa do Mundo
+                </h3>
+
+                {/* is_world_cup toggle */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Jogo da Copa do Mundo</p>
+                    <p className="text-[11px] text-muted-foreground">Marca como partida oficial da Copa do Mundo. Aparece em destaque com visual dourado/verde.</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!selectedId || savingCopa) return;
+                      setSavingCopa(true);
+                      try {
+                        const next = !(selected?.is_world_cup ?? false);
+                        await supabase.from("sports_matches").update({ is_world_cup: next } as any).eq("id", selectedId);
+                        qc.invalidateQueries({ queryKey: ["admin-jogos"] });
+                        toast.success(next ? "Marcado como Copa do Mundo" : "Removido da Copa do Mundo");
+                      } catch (e: any) { toast.error(e.message ?? "Erro ao salvar"); }
+                      finally { setSavingCopa(false); }
+                    }}
+                    className={`relative h-6 w-11 rounded-full transition-colors shrink-0 ${selected?.is_world_cup ? "bg-yellow-500" : "bg-border"}`}
+                    disabled={savingCopa}
+                    aria-label="Toggle Copa do Mundo"
+                  >
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${selected?.is_world_cup ? "translate-x-5" : "translate-x-0"}`} />
+                  </button>
+                </div>
+
+                {/* world_cup_phase */}
+                {selected?.is_world_cup && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-foreground">Fase da Copa</label>
+                    <select
+                      value={selected?.world_cup_phase ?? ""}
+                      onChange={async (e) => {
+                        if (!selectedId) return;
+                        const phase = e.target.value || null;
+                        await supabase.from("sports_matches").update({ world_cup_phase: phase } as any).eq("id", selectedId);
+                        qc.invalidateQueries({ queryKey: ["admin-jogos"] });
+                        toast.success("Fase da Copa atualizada");
+                      }}
+                      className="w-full rounded-lg border border-yellow-500/40 bg-background px-3 py-2 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-yellow-500/30"
+                    >
+                      {WORLD_CUP_PHASES.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* youtube_url */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground">Link YouTube (transmissão)</label>
+                  <p className="text-[11px] text-muted-foreground">Aceita: youtube.com/watch?v=..., youtu.be/..., ou embed. Converte automaticamente.</p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="https://youtube.com/watch?v=..."
+                      defaultValue={selected?.youtube_url ?? ""}
+                      id={`yt-url-${selectedId}`}
+                      className="flex-1 text-sm"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={savingCopa}
+                      onClick={async () => {
+                        if (!selectedId) return;
+                        const el = document.getElementById(`yt-url-${selectedId}`) as HTMLInputElement | null;
+                        const raw = el?.value?.trim() ?? "";
+                        setSavingCopa(true);
+                        try {
+                          await supabase.from("sports_matches").update({ youtube_url: raw || null } as any).eq("id", selectedId);
+                          qc.invalidateQueries({ queryKey: ["admin-jogos"] });
+                          toast.success("YouTube URL salva");
+                        } catch (e: any) { toast.error(e.message ?? "Erro ao salvar"); }
+                        finally { setSavingCopa(false); }
+                      }}
+                    >
+                      Salvar
+                    </Button>
+                  </div>
+                  {selected?.youtube_url && (
+                    <a
+                      href={selected.youtube_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[11px] text-red-400 hover:underline"
+                    >
+                      <MonitorPlay className="h-3.5 w-3.5" /> Testar link no YouTube
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* CazéTV — busca manual de lives */}
+              <div className="rounded-xl border border-red-500/25 bg-red-500/5 p-4 space-y-3">
+                <h3 className="font-bold flex items-center gap-2 text-red-300">
+                  <MonitorPlay className="h-4 w-4 text-red-400" /> Lives CazéTV
+                </h3>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  A CazéTV transmite jogos da Copa no YouTube. Acesse o canal, copie o link da live e cole no campo "YouTube URL" acima para vincular ao jogo.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <a
+                    href="https://www.youtube.com/@CazeTV/streams"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 px-3 py-2 text-xs font-bold text-red-300 transition"
+                  >
+                    <MonitorPlay className="h-3.5 w-3.5" /> Abrir lives da CazéTV no YouTube
+                  </a>
+                  <a
+                    href="https://www.youtube.com/@FIFA/streams"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/8 hover:bg-red-500/15 px-3 py-2 text-xs font-bold text-red-300/80 transition"
+                  >
+                    <MonitorPlay className="h-3.5 w-3.5" /> Canal FIFA no YouTube
+                  </a>
+                </div>
+                <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/5 px-3 py-2 text-[10px] text-yellow-300/80">
+                  <strong className="text-yellow-300">Integração futura:</strong> Quando a integração automática com a API do YouTube for ativada, as lives serão detectadas e vinculadas automaticamente por nome do jogo e horário.
+                </div>
+              </div>
+
+              {/* Texto de ajuda */}
+              <div className="rounded-xl border border-border/30 bg-card/20 p-4">
+                <p className="text-[11px] font-semibold text-foreground mb-1">💡 Como destacar jogos da Copa</p>
+                <ul className="text-[11px] text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Ative <strong className="text-foreground">Jogo da Copa do Mundo</strong> para visual verde/dourado e badge especial</li>
+                  <li>Selecione a <strong className="text-foreground">fase</strong> (grupos, oitavas, etc.) para exibição na página pública</li>
+                  <li>Cole o <strong className="text-foreground">link do YouTube</strong> (CazéTV, FIFA) para mostrar o botão "Assistir"</li>
+                  <li>Vincule <strong className="text-foreground">bares parceiros</strong> para aparecer em "Onde assistir em Prudente"</li>
+                </ul>
               </div>
 
               {/* Streams */}

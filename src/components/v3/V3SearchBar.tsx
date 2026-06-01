@@ -151,18 +151,11 @@ export default function V3SearchBar({
           {showEmpty && (
             <div className="p-4 text-center">
               <p className="text-sm text-foreground font-medium">
-                Nenhum evento encontrado para esta vibe.
+                Nenhum evento encontrado
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Tente outro termo!</p>
-              {fallbackEvent && (
-                <Link
-                  to={`/evento/${fallbackEvent.slug}`}
-                  onClick={() => setOpen(false)}
-                  className="mt-3 inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
-                >
-                  ✨ Sugestão: {fallbackEvent.title}
-                </Link>
-              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Tente buscar por nome do evento, local ou categoria.
+              </p>
             </div>
           )}
         </div>

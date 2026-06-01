@@ -26,6 +26,7 @@ import {
   isLibertadores,
   isSulAmericana,
   isCopaDoMundoMatch,
+  toYouTubeEmbedUrl,
   type NormalizedMatch,
   type SportsMatchRow,
 } from "@/lib/theSportsDb";
@@ -345,6 +346,20 @@ export default function Jogos() {
     return sortMatchesByRelevance(list).slice(0, 6);
   }, [matches]);
 
+  // Próximo jogo da Seleção Brasileira (Copa do Mundo prioritário)
+  const nextBrazilMatch = useMemo(() => {
+    const now = Date.now();
+    const copa = matches.filter(
+      (m) => isBrazilSelecao(m) && m.is_world_cup && m.status !== "finished" && new Date(m.match_time).getTime() > now
+    );
+    if (copa.length) return copa.sort((a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime())[0];
+    const any = matches.filter(
+      (m) => isBrazilSelecao(m) && m.status !== "finished" && new Date(m.match_time).getTime() > now
+    );
+    if (any.length) return any.sort((a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime())[0];
+    return null;
+  }, [matches]);
+
   // Bônus de prioridade quando o jogo possui bares parceiros vinculados em Prudente.
   const venuesBoost = (slug: string) => {
     const m = metaMap[slug];
@@ -564,9 +579,11 @@ export default function Jogos() {
   const featuredHasStream = featured ? !!metaMap[featured.slug]?.hasStream : false;
   const featuredLabel = featured ? `${featured.home_team} x ${featured.away_team}` : null;
 
-  const seoTitle = "Jogos do Brasil, Copa do Mundo e Futebol Hoje | Roxou";
+  const seoTitle = hasCopa
+    ? "Copa na Roxou | Jogos ao Vivo em Presidente Prudente"
+    : "Jogos ao Vivo em Presidente Prudente | Copa na Roxou";
 
-  const seoDescription = "Veja jogos do Brasil, Brasileirão Série A, Copa do Brasil, Libertadores, Sul-Americana, Copa do Mundo, resultados, tabelas e onde assistir em Presidente Prudente.";
+  const seoDescription = "Veja jogos ao vivo, partidas do Brasil, Copa do Mundo, bares transmitindo em Presidente Prudente e links de transmissão na Roxou.";
 
   const seoKeywords = [
     "jogos do brasil", "jogos hoje", "futebol hoje",
@@ -707,59 +724,93 @@ export default function Jogos() {
         jsonLd={{ "@context": "https://schema.org", "@graph": seoGraph }}
       />
 
-      {/* HERO PREMIUM */}
+      {/* HERO — Copa na Roxou */}
       <header className="relative overflow-hidden border-b border-border/40">
-        {/* Atmosfera de estádio */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/80 via-background to-yellow-900/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.25),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(34,197,94,0.18),transparent_60%)]" />
-        {/* grid de estádio sutil */}
-        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(0deg,transparent_24%,rgba(255,255,255,0.4)_25%,rgba(255,255,255,0.4)_26%,transparent_27%,transparent_74%,rgba(255,255,255,0.4)_75%,rgba(255,255,255,0.4)_76%,transparent_77%,transparent)] bg-[length:60px_60px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/90 via-background to-yellow-900/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(var(--primary)/0.28),transparent_55%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(34,197,94,0.22),transparent_55%)]" />
+        <div className="absolute inset-0 opacity-[0.04] bg-[linear-gradient(0deg,transparent_24%,rgba(255,255,255,0.5)_25%,rgba(255,255,255,0.5)_26%,transparent_27%,transparent_74%,rgba(255,255,255,0.5)_75%,rgba(255,255,255,0.5)_76%,transparent_77%,transparent)] bg-[length:60px_60px]" />
+        {/* Brilho Copa dourado */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-yellow-500/10 blur-[80px] rounded-full" />
 
-        <div className="relative mx-auto max-w-3xl px-4 py-8 md:py-12 text-center">
-          <div className="inline-flex items-center gap-1.5 mb-4 rounded-full bg-yellow-500/15 border border-yellow-500/50 px-3 py-1.5 text-[11px] md:text-xs font-black text-yellow-300 shadow-[0_0_20px_-4px_rgba(234,179,8,0.5)]">
-            <Trophy className="h-3.5 w-3.5" /> FUTEBOL NA ROXOU
+        <div className="relative mx-auto max-w-4xl px-4 py-8 md:py-12 text-center">
+          {/* Badge Copa na Roxou */}
+          <div className="inline-flex items-center gap-2 mb-4 rounded-full border border-yellow-500/60 bg-gradient-to-r from-yellow-500/20 to-green-500/15 px-4 py-1.5 shadow-[0_0_24px_-4px_rgba(234,179,8,0.6)]">
+            <span className="text-base">🇧🇷</span>
+            <span className="text-[11px] md:text-xs font-black uppercase tracking-[0.22em] text-yellow-200">Copa na Roxou</span>
+            {hasCopa && (
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+            )}
           </div>
+
           <h1
-            className="font-display font-black leading-[1.05] tracking-tight md:tracking-[-0.01em] mb-3 text-balance mx-auto max-w-[24ch]"
-            style={{ fontSize: "clamp(1.5rem, 5vw, 2.75rem)" }}
+            className="font-display font-black leading-[1.05] tracking-tight mb-3 text-balance mx-auto max-w-[26ch]"
+            style={{ fontSize: "clamp(1.6rem, 5vw, 3rem)" }}
           >
-            <span className="block">Jogos do Brasil, Copa do Mundo</span>
-            <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-primary bg-clip-text text-transparent">
-              e onde assistir
+            <span className="block bg-gradient-to-r from-yellow-300 via-green-300 to-emerald-200 bg-clip-text text-transparent">
+              Copa na Roxou
+            </span>
+            <span className="block text-foreground/80" style={{ fontSize: "clamp(1rem, 2.5vw, 1.5rem)" }}>
+              {hasCopa ? "Copa do Mundo e onde assistir" : "Futebol ao vivo e onde assistir"}
             </span>
           </h1>
-          <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance mx-auto max-w-[55ch]">
-            Veja os jogos de hoje, próximos confrontos dos times brasileiros, tabelas e partidas da Seleção.
+
+          <p className="text-muted-foreground text-sm md:text-base mb-5 text-balance mx-auto max-w-[58ch]">
+            Jogos ao vivo, bares transmitindo, links de transmissão e a agenda completa {hasCopa ? "da Copa" : "do futebol"} em Presidente Prudente.
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
+
+          {/* Badges de feature */}
+          <div className="flex flex-wrap justify-center gap-2 mb-5">
+            {hasCopa && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/60 bg-yellow-500/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-yellow-200">
+                🏆 Copa do Mundo
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/12 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-200">
+              🇧🇷 Jogos do Brasil
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-primary">
+              🍻 Onde assistir
+            </span>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2.5">
+            {hasCopa && (
+              <button
+                onClick={() => { setFilter("copa_mundo"); scrollToProximos(); }}
+                className="inline-flex items-center gap-2 rounded-full border border-yellow-500/60 bg-gradient-to-r from-yellow-500/25 to-green-500/15 text-yellow-100 px-5 py-2.5 text-sm font-black shadow-[0_0_28px_-6px_rgba(234,179,8,0.7)] hover:shadow-[0_0_40px_-4px_rgba(234,179,8,0.9)] hover:scale-[1.02] transition"
+              >
+                🏆 Copa do Mundo
+              </button>
+            )}
+            <button
+              onClick={() => { setFilter("brasil"); scrollToProximos(); }}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600/80 border border-emerald-400/50 text-white px-5 py-2.5 text-sm font-bold shadow-[0_0_20px_-6px_rgba(16,185,129,0.7)] hover:scale-[1.02] transition"
+            >
+              🇧🇷 Jogo do Brasil
+            </button>
             <button
               onClick={() => { setFilter("hoje"); scrollToProximos(); }}
-              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
+              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold shadow-[0_0_20px_-6px_hsl(var(--primary))] hover:scale-[1.02] transition"
             >
               <Calendar className="h-4 w-4" /> Jogos de hoje
             </button>
-            <button
-              onClick={() => { setFilter("copa_mundo"); scrollToProximos(); }}
-              className="inline-flex items-center gap-2 rounded-full border border-yellow-500/50 bg-yellow-500/10 text-yellow-200 px-5 py-2.5 text-sm font-bold hover:bg-yellow-500/20 transition"
-            >
-              <Trophy className="h-4 w-4" /> Copa do Mundo
-            </button>
-            <a
-              href="#tabelas"
-              className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 text-primary px-5 py-2.5 text-sm font-bold hover:bg-primary/20 transition"
-            >
-              <ListOrdered className="h-4 w-4" /> Tabelas
-            </a>
             <a
               href="#bares-esportivos"
               className="inline-flex items-center gap-2 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-200 px-5 py-2.5 text-sm font-bold hover:bg-emerald-500/20 transition"
             >
-              <Beer className="h-4 w-4" /> Bares que transmitem
+              <Beer className="h-4 w-4" /> Onde assistir
             </a>
           </div>
         </div>
       </header>
+
+      {/* PRÓXIMO JOGO DO BRASIL — card principal, maior da página */}
+      {nextBrazilMatch && (
+        <div className="mx-auto max-w-6xl px-4 pt-6">
+          <BrazilNextMatchCard match={nextBrazilMatch} bars={bars as any} metaMap={metaMap} />
+        </div>
+      )}
 
       {/* KPI strip */}
       {(kpis.liveCount > 0 || kpis.barsTransmitting > 0 || kpis.activeChats > 0) && (
@@ -1276,14 +1327,26 @@ export default function Jogos() {
 
         {/* Bares premium — APENAS curadoria real */}
         <section id="bares-esportivos">
-          <h2 className="font-display font-black text-xl mb-3 flex items-center gap-2">
-            <Beer className="h-5 w-5 text-primary" /> Bares que transmitem futebol em Prudente
-          </h2>
+          <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary/80 mb-0.5">Copa na Roxou</p>
+              <h2 className="font-display font-black text-2xl flex items-center gap-2">
+                <Beer className="h-5 w-5 text-emerald-400" /> Onde assistir em Prudente
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">Bares e parceiros que vão transmitir os jogos.</p>
+            </div>
+            <Link
+              to="/parceiros"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 hover:bg-primary/20 px-4 py-2 text-xs font-bold text-primary transition"
+            >
+              Ver todos os parceiros →
+            </Link>
+          </div>
           {bars.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border/50 bg-card/30 p-8 text-center">
-              <Tv className="h-9 w-9 text-muted-foreground/60 mx-auto mb-3" />
-              <p className="font-semibold mb-1">Nenhum bar parceiro confirmou transmissão para os próximos jogos ainda.</p>
-              <p className="text-sm text-muted-foreground">Novos bares esportivos serão adicionados em breve.</p>
+              <Beer className="h-9 w-9 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="font-semibold mb-1">Nenhum bar confirmado para este jogo ainda.</p>
+              <p className="text-sm text-muted-foreground">Bares serão adicionados quando confirmarem transmissão.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -1436,6 +1499,205 @@ export default function Jogos() {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+/* ─── PRÓXIMO JOGO DO BRASIL — mega card premium ─── */
+function BrazilNextMatchCard({
+  match,
+  bars,
+  metaMap,
+}: {
+  match: NormalizedMatch;
+  bars: { id: string; name: string; slug: string; neighborhood?: string | null }[];
+  metaMap: import("@/hooks/useMatchMeta").MatchMetaMap;
+}) {
+  const venuesCount = metaMap[match.slug]?.venuesCount ?? 0;
+  const hasStream = !!metaMap[match.slug]?.hasStream;
+  const isLive = match.status === "live";
+  const isCopa = match.is_world_cup;
+  const embedUrl = toYouTubeEmbedUrl(match.youtube_url);
+
+  const phaseLabel = (() => {
+    if (match.world_cup_phase) return match.world_cup_phase;
+    if (isCopa) return "Copa do Mundo 2026";
+    return match.league_label;
+  })();
+
+  return (
+    <div
+      className="relative rounded-3xl overflow-hidden border"
+      style={{
+        background: isCopa
+          ? "linear-gradient(135deg, #052e10, #0a1f00, #1a1200)"
+          : "linear-gradient(135deg, #052e10, #0a2010)",
+        borderColor: isCopa ? "rgba(234,179,8,0.5)" : "rgba(74,222,128,0.4)",
+        boxShadow: isCopa
+          ? "0 0 80px -20px rgba(234,179,8,0.6), 0 0 40px -30px rgba(74,222,128,0.4)"
+          : "0 0 60px -20px rgba(74,222,128,0.5)",
+      }}
+    >
+      {/* Glow de fundo */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(234,179,8,0.15),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(74,222,128,0.15),transparent_50%)] pointer-events-none" />
+
+      <div className="relative p-5 md:p-7">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-yellow-500/60 bg-yellow-500/20 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-yellow-200 shadow-[0_0_16px_-4px_rgba(234,179,8,0.7)]">
+              🇧🇷 {isLive ? "Ao vivo agora!" : "Próximo jogo do Brasil"}
+            </span>
+            {isCopa && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/50 bg-yellow-500/10 px-2.5 py-1 text-[10px] font-black text-yellow-300 uppercase tracking-wider">
+                🏆 Copa do Mundo
+              </span>
+            )}
+            {isLive && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/25 border border-red-500/60 px-2.5 py-1 text-[10px] font-black text-red-200 animate-pulse">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping inline-block" />
+                AO VIVO
+              </span>
+            )}
+          </div>
+          <Link
+            to={`/jogo/${match.slug}`}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 px-4 py-1.5 text-[12px] font-bold text-white/80 transition"
+          >
+            Ver detalhes →
+          </Link>
+        </div>
+
+        {/* Times */}
+        <Link to={`/jogo/${match.slug}`} className="block group">
+          <div className="flex items-center justify-between gap-4 md:gap-8 mb-4">
+            {/* Time da casa */}
+            <div className="flex-1 flex flex-col items-center gap-2 text-center">
+              {match.home_badge ? (
+                <img
+                  src={match.home_badge}
+                  alt={match.home_team}
+                  loading="eager"
+                  className="h-16 w-16 md:h-24 md:w-24 object-contain drop-shadow-[0_0_20px_rgba(234,179,8,0.5)]"
+                />
+              ) : (
+                <div className="h-16 w-16 md:h-24 md:w-24 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl font-black text-emerald-300">
+                  {match.home_team[0]}
+                </div>
+              )}
+              <span
+                className="font-display font-black text-white group-hover:text-yellow-200 transition-colors"
+                style={{ fontSize: "clamp(15px, 2.5vw, 20px)" }}
+              >
+                {match.home_team}
+              </span>
+            </div>
+
+            {/* Placar / VS */}
+            <div className="flex flex-col items-center gap-1 shrink-0">
+              {isLive ? (
+                <span className="font-display font-black text-4xl md:text-6xl text-white tabular-nums drop-shadow-[0_0_20px_rgba(234,179,8,0.7)]">
+                  {/* Se tiver placar no futuro, exibir aqui */}
+                  <span className="text-red-300 text-2xl md:text-4xl">AO VIVO</span>
+                </span>
+              ) : (
+                <span className="font-display font-black text-3xl md:text-5xl text-yellow-300/60">×</span>
+              )}
+              <div className="text-center">
+                <p className="text-xl md:text-3xl font-black text-yellow-300">
+                  {formatMatchTime(match.match_time)}
+                </p>
+                <p className="text-[11px] md:text-xs uppercase tracking-wider text-white/50 font-bold mt-0.5">
+                  {phaseLabel}
+                </p>
+              </div>
+            </div>
+
+            {/* Time visitante */}
+            <div className="flex-1 flex flex-col items-center gap-2 text-center">
+              {match.away_badge ? (
+                <img
+                  src={match.away_badge}
+                  alt={match.away_team}
+                  loading="eager"
+                  className="h-16 w-16 md:h-24 md:w-24 object-contain drop-shadow-[0_0_16px_rgba(34,197,94,0.4)]"
+                />
+              ) : (
+                <div className="h-16 w-16 md:h-24 md:w-24 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl font-black text-emerald-300">
+                  {match.away_team[0]}
+                </div>
+              )}
+              <span
+                className="font-display font-black text-white group-hover:text-yellow-200 transition-colors"
+                style={{ fontSize: "clamp(15px, 2.5vw, 20px)" }}
+              >
+                {match.away_team}
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        {/* CTAs */}
+        <div className="flex flex-wrap gap-2.5 mt-4">
+          <a
+            href="#bares-esportivos"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-full text-sm font-black text-white transition active:scale-95"
+            style={{ background: "linear-gradient(135deg, rgba(22,163,74,0.9), rgba(16,185,129,0.8))", border: "1px solid rgba(74,222,128,0.5)", boxShadow: "0 0 20px -6px rgba(74,222,128,0.6)" }}
+          >
+            <Beer className="h-4 w-4" /> Onde assistir em Prudente
+          </a>
+          {(hasStream || match.youtube_url) && (
+            <a
+              href={match.youtube_url ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-red-500/50 bg-red-500/15 text-red-200 text-sm font-bold hover:bg-red-500/25 transition active:scale-95"
+            >
+              <Tv className="h-4 w-4" /> Assistir no YouTube
+            </a>
+          )}
+          <Link
+            to="/agenda"
+            className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-white/15 bg-white/5 text-white/75 text-sm font-bold hover:bg-white/10 transition active:scale-95"
+          >
+            <Calendar className="h-4 w-4" /> Salvar na agenda
+          </Link>
+        </div>
+
+        {/* Bares transmitindo */}
+        {venuesCount > 0 && bars.slice(0, 4).length > 0 && (
+          <div className="mt-4 pt-4 border-t border-white/10">
+            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-300/80 mb-2">
+              {venuesCount} {venuesCount === 1 ? "bar transmite" : "bares transmitem"} em Prudente
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {bars.slice(0, 4).map((b) => (
+                <Link
+                  key={b.id}
+                  to={`/local/${b.slug}`}
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 text-[11px] font-bold text-emerald-200 transition"
+                >
+                  🍻 {b.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* YouTube embed */}
+        {embedUrl && (
+          <div className="mt-4 rounded-2xl overflow-hidden border border-yellow-500/20">
+            <iframe
+              src={embedUrl}
+              className="w-full aspect-video"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              title={`${match.home_team} x ${match.away_team}`}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

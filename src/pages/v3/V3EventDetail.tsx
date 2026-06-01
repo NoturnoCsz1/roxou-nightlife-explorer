@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarDays, MapPin, ArrowLeft, Bookmark, Sparkles } from "lucide-react";
+import { CalendarDays, MapPin, ArrowLeft, Bookmark, Sparkles, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
@@ -13,12 +13,14 @@ import { EventLivePresence } from "@/components/v3/EventLivePresence";
 import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import SafeHtml from "@/components/SafeHtml";
 
 export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const { isAdmin } = useAdminProfile();
   const { isSaved, toggleSave } = useSavedEvents();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -99,7 +101,20 @@ export default function V3EventDetail() {
           {event.category}
         </span>
 
-        <h1 className="font-display font-bold text-2xl text-foreground leading-tight">{event.title}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="font-display font-bold text-2xl text-foreground leading-tight flex-1">{event.title}</h1>
+          {/* Botão de edição — visível apenas para admins */}
+          {isAdmin && (
+            <Link
+              to={`/admin/eventos/${event.id}/editar`}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/30 text-xs font-semibold text-primary hover:bg-primary/20 active:scale-95 transition-all"
+              title="Editar este evento no painel admin"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              Editar
+            </Link>
+          )}
+        </div>
 
         {/* Meta */}
         <div className="space-y-2">

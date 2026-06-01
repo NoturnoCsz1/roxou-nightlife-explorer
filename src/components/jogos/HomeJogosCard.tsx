@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Trophy, ChevronRight, Radio } from "lucide-react";
+import { ArrowRight, Radio } from "lucide-react";
 import {
   getFeaturedFootballEvents,
   formatMatchTime,
@@ -12,7 +12,7 @@ import {
   type NormalizedMatch,
 } from "@/lib/theSportsDb";
 
-/** Card compacto exibido na Home. */
+/** Card compacto exibido na Home — headless (container/header ficam em V3Home). */
 export default function HomeJogosCard() {
   const { data, isLoading } = useQuery({
     queryKey: ["jogos-home-card"],
@@ -26,87 +26,164 @@ export default function HomeJogosCard() {
   }).format(new Date());
 
   const all = data ?? [];
-  // Apenas jogos BR-priority / Copa / Seleção — sem ligas aleatórias na Home.
   const brOnly = all.filter((m) => isBrazilPriority(m) || isCopaDoMundoMatch(m) || isBrazilSelecao(m));
   const todays = brOnly.filter((m) => m.raw_date === todayKey);
-  const list: NormalizedMatch[] = sortMatchesByRelevance(todays.length ? todays : brOnly).slice(0, 3);
-  const hasCopa = list.some((m) => m.is_world_cup);
-  const hasLive = list.some((m) => m.status === "live");
+  const list: NormalizedMatch[] = sortMatchesByRelevance(todays.length ? todays : brOnly).slice(0, 5);
 
   if (isLoading) {
     return (
-      <section className="mx-auto max-w-3xl px-4 py-3">
-        <div className="rounded-2xl border border-border/40 bg-card/40 h-32 animate-pulse" />
-      </section>
+      <div className="px-4 pb-4 space-y-1.5">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+        ))}
+      </div>
     );
   }
 
   if (!list.length) return null;
 
-  const title = hasCopa ? "🏆 Copa na Roxou" : "⚽ Futebol na Roxou";
-  const themeBorder = hasCopa
-    ? "border-yellow-500/50 bg-gradient-to-br from-emerald-950/40 via-card/60 to-yellow-900/20 shadow-[0_0_30px_-12px_rgba(234,179,8,0.5)]"
-    : hasLive
-      ? "border-red-500/40 bg-gradient-to-br from-red-950/20 via-card/60 to-background shadow-[0_0_25px_-12px_rgba(239,68,68,0.5)]"
-      : "border-primary/30 bg-card/60 hover:shadow-[0_0_24px_-12px_hsl(var(--primary)/0.5)]";
-
   return (
-    <section className="mx-auto max-w-3xl px-4 py-3">
-      <Link
-        to="/jogos"
-        className={`block rounded-2xl border ${themeBorder} backdrop-blur-sm p-4 transition-all hover:scale-[1.01]`}
-      >
-        <div className="flex items-center justify-between mb-3 gap-2">
-          <div className="min-w-0">
-            <h2 className="font-display font-black text-base flex items-center gap-2 flex-wrap">
-              {hasCopa && <Trophy className="h-4 w-4 text-yellow-400" />}
-              <span className="truncate">{title}</span>
-              {hasLive && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-red-500/50 bg-red-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-red-300 animate-pulse">
-                  <Radio className="h-2.5 w-2.5" /> Ao vivo agora
-                </span>
-              )}
-            </h2>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Veja os jogos, horários e bares transmitindo em Prudente.
-            </p>
-          </div>
-          <ChevronRight className={`h-5 w-5 shrink-0 ${hasCopa ? "text-yellow-300" : "text-primary"}`} />
-        </div>
+    <div className="px-3 pb-4 space-y-1.5">
+      {list.map((m) => {
+        const isLive = m.status === "live";
+        const isBrasil = isBrazilSelecao(m);
+        const isCopa = m.is_world_cup;
+        const isPriority = isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team);
 
-        <div className="space-y-2">
-          {list.map((m) => {
-            const isLive = m.status === "live";
-            const priority = isPriorityTeam(m.home_team) || isPriorityTeam(m.away_team) || m.is_world_cup;
-            return (
-              <div
-                key={m.external_id}
-                className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 ${
-                  isLive
-                    ? "bg-red-500/10 ring-1 ring-red-500/30"
-                    : priority
-                      ? "bg-primary/5 ring-1 ring-primary/20"
-                      : "bg-background/40"
-                }`}
-              >
-                <span className={`shrink-0 font-bold w-12 ${m.is_world_cup ? "text-yellow-300" : isLive ? "text-red-300" : "text-primary"}`}>
-                  {isLive ? "AO VIVO" : formatMatchTime(m.match_time)}
+        return (
+          <Link
+            key={m.external_id}
+            to={`/jogo/${m.slug}`}
+            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all active:scale-[0.98] group"
+            style={{
+              background: isBrasil
+                ? "linear-gradient(135deg, rgba(22,163,74,0.18), rgba(202,138,4,0.08))"
+                : isCopa
+                  ? "rgba(202,138,4,0.1)"
+                  : isLive
+                    ? "rgba(239,68,68,0.1)"
+                    : isPriority
+                      ? "rgba(255,255,255,0.05)"
+                      : "rgba(255,255,255,0.03)",
+              border: isBrasil
+                ? "1px solid rgba(74,222,128,0.28)"
+                : isCopa
+                  ? "1px solid rgba(234,179,8,0.22)"
+                  : isLive
+                    ? "1px solid rgba(239,68,68,0.4)"
+                    : "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            {/* Horário pill */}
+            <span
+              className="shrink-0 rounded-xl px-2.5 py-1.5 text-[11px] font-black tabular-nums leading-none text-center min-w-[52px]"
+              style={{
+                background: isLive
+                  ? "rgba(239,68,68,0.2)"
+                  : isBrasil
+                    ? "rgba(22,163,74,0.22)"
+                    : isCopa
+                      ? "rgba(202,138,4,0.2)"
+                      : "rgba(255,255,255,0.07)",
+                color: isLive
+                  ? "rgb(252,165,165)"
+                  : isBrasil
+                    ? "rgb(134,239,172)"
+                    : isCopa
+                      ? "rgb(234,179,8)"
+                      : "rgb(180,180,220)",
+                border: isLive ? "1px solid rgba(239,68,68,0.4)" : "none",
+              }}
+            >
+              {isLive ? (
+                <span className="flex items-center justify-center gap-0.5">
+                  <Radio className="w-2.5 h-2.5" />
+                  VIVO
                 </span>
-                <span className="flex-1 truncate font-semibold">
-                  {m.home_team} <span className="text-muted-foreground">×</span> {m.away_team}
+              ) : (
+                formatMatchTime(m.match_time)
+              )}
+            </span>
+
+            {/* Times + campeonato */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
+                {m.home_badge && (
+                  <img
+                    src={m.home_badge}
+                    alt=""
+                    loading="lazy"
+                    className="w-4 h-4 object-contain shrink-0 opacity-90"
+                  />
+                )}
+                <span className="text-[12px] font-bold text-white/90 group-hover:text-white transition-colors truncate">
+                  {m.home_team}
                 </span>
-                <span className="text-[10px] text-muted-foreground hidden sm:inline truncate max-w-[120px]">
+                <span className="text-white/30 shrink-0 text-[10px] font-black">×</span>
+                <span className="text-[12px] font-bold text-white/90 group-hover:text-white transition-colors truncate">
+                  {m.away_team}
+                </span>
+                {m.away_badge && (
+                  <img
+                    src={m.away_badge}
+                    alt=""
+                    loading="lazy"
+                    className="w-4 h-4 object-contain shrink-0 opacity-90"
+                  />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className="text-[10px] text-white/35 truncate max-w-[130px]">
                   {m.league_label}
                 </span>
+                {isBrasil && (
+                  <span
+                    className="shrink-0 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider"
+                    style={{
+                      background: "rgba(22,163,74,0.2)",
+                      border: "1px solid rgba(74,222,128,0.4)",
+                      color: "rgb(134,239,172)",
+                    }}
+                  >
+                    🇧🇷 Brasil
+                  </span>
+                )}
+                {isCopa && !isBrasil && (
+                  <span
+                    className="shrink-0 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider"
+                    style={{
+                      background: "rgba(202,138,4,0.15)",
+                      border: "1px solid rgba(234,179,8,0.35)",
+                      color: "rgb(234,179,8)",
+                    }}
+                  >
+                    🏆 Copa
+                  </span>
+                )}
               </div>
-            );
-          })}
-        </div>
+            </div>
 
-        <div className={`mt-3 text-xs font-bold ${hasCopa ? "text-yellow-300" : "text-primary"}`}>
-          Ver todos os jogos →
-        </div>
+            {/* Seta */}
+            <ArrowRight
+              className="shrink-0 w-3.5 h-3.5 opacity-30 group-hover:opacity-70 transition-opacity"
+              style={{ color: isBrasil ? "rgb(134,239,172)" : isCopa ? "rgb(234,179,8)" : "white" }}
+            />
+          </Link>
+        );
+      })}
+
+      {/* CTA Ver todos */}
+      <Link
+        to="/jogos"
+        className="flex items-center justify-center gap-2 mt-2 py-2.5 rounded-2xl font-bold text-[12px] transition-all active:scale-[0.98] hover:brightness-110"
+        style={{
+          background: "rgba(202,138,4,0.1)",
+          border: "1px solid rgba(234,179,8,0.28)",
+          color: "rgb(234,179,8)",
+        }}
+      >
+        Ver todos os jogos <ArrowRight className="w-3.5 h-3.5" />
       </Link>
-    </section>
+    </div>
   );
 }

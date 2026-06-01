@@ -1,4 +1,5 @@
 import { Component, useState, useMemo, ReactNode, useEffect, useRef } from "react";
+import SEO from "@/components/SEO";
 import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -293,6 +294,18 @@ export default function V3Home() {
   }, [events, trendingIds]);
 
   const [heroIdx, setHeroIdx] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+
+  // Autoplay do hero — avança a cada 4500ms, para com > 1 evento
+  useEffect(() => {
+    const total = (heroEvents ?? []).length;
+    if (total <= 1 || isHeroPaused) return;
+    const id = setInterval(() => {
+      setHeroIdx(prev => (prev + 1) % total);
+    }, 4500);
+    return () => clearInterval(id);
+  }, [(heroEvents ?? []).length, isHeroPaused]);
+
   const hero = heroEvents[heroIdx] || heroEvents[0] || null;
   const heroDate = hero ? toSafeDate(hero.date_time) : null;
   const heroIsToday = heroDate ? isTodayFn(heroDate) : false;
@@ -362,6 +375,86 @@ export default function V3Home() {
   }, [events, usedIds]);
   if (weeklyHighlight) usedIds.add(weeklyHighlight.id);
 
+  // [DEBUG SORRISO MAROTO] — remover após diagnóstico
+  useEffect(() => {
+    const TARGET = "sorriso-maroto-ao-vivo-em-prudente";
+    const findIn = (arr: Ev[], label: string) => {
+      const found = arr.find(e => e.slug === TARGET || e.title?.toLowerCase().includes("sorriso"));
+      if (found) {
+        console.log(`[Sorriso ✅] ENCONTRADO em ${label}:`, {
+          id: found.id,
+          title: found.title,
+          slug: found.slug,
+          date_time: found.date_time,
+          featured: found.featured,
+          arraySize: arr.length,
+        });
+      } else {
+        console.log(`[Sorriso ❌] Não está em ${label} (${arr.length} itens)`);
+      }
+    };
+
+    console.group("%c[Sorriso Maroto — Diagnóstico V3Home]", "background:#7c3aed;color:white;padding:2px 8px;border-radius:4px;font-weight:bold");
+
+    // ① Query principal do Supabase
+    const allRaw = safeEvents(events);
+    const rawFound = allRaw.find(e => e.slug === TARGET || e.title?.toLowerCase().includes("sorriso"));
+    if (rawFound) {
+      console.log("%c[Sorriso 📦] RAW query (events, limit 80):", "color:green;font-weight:bold", {
+        id: rawFound.id,
+        title: rawFound.title,
+        slug: rawFound.slug,
+        date_time: rawFound.date_time,
+        featured: rawFound.featured,
+      });
+    } else {
+      console.warn("[Sorriso ⚠️] NÃO encontrado na query principal.", {
+        queryParams: {
+          status: "published",
+          date_time_gte: futureCutoffISO,
+          limit: 80,
+          total_returned: allRaw.length,
+        },
+        possível_causa: allRaw.length >= 80
+          ? "LIMITE de 80 eventos atingido — evento pode estar além do corte"
+          : "Evento não publicado, data passada ou slug diferente no banco",
+      });
+      // Tenta encontrar por título parcial em todos os eventos
+      const byTitle = allRaw.filter(e => e.title?.toLowerCase().includes("sorriso") || e.title?.toLowerCase().includes("maroto"));
+      console.log("[Sorriso 🔍] Busca por título 'sorriso'/'maroto' nos eventos retornados:", byTitle.length, byTitle.map(e => ({ id: e.id, title: e.title, slug: e.slug, date_time: e.date_time })));
+    }
+
+    // ② Today events
+    findIn(safeEvents(rawTodayEvents), "rawTodayEvents (hoje)");
+
+    // ③ heroEvents (carousel)
+    findIn(heroEvents, "heroEvents (carousel hero)");
+
+    // ④ trending
+    findIn(trending, "trending (views 24h)");
+
+    // ⑤ featured
+    findIn(featured, "featured");
+
+    // ⑥ weekEvents
+    findIn(weekEvents, "weekEvents (próximos 7 dias, excl. hero)");
+
+    // ⑦ weeklyHighlight
+    if (weeklyHighlight && (weeklyHighlight.slug === TARGET || weeklyHighlight.title?.toLowerCase().includes("sorriso"))) {
+      console.log("[Sorriso ✅] É o WEEKLY HIGHLIGHT!", {
+        id: weeklyHighlight.id, title: weeklyHighlight.title, slug: weeklyHighlight.slug,
+      });
+    } else {
+      console.log("[Sorriso ❌] Não é o weeklyHighlight");
+    }
+
+    console.log("[Sorriso ℹ️] mainEvents (CommandCenter) = merge de trending + featured + weekEvents, excluindo usedIds.");
+    console.log("[Sorriso ℹ️] usedIds no momento:", Array.from(usedIds).length, "eventos excluídos de mainEvents.");
+
+    console.groupEnd();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, rawTodayEvents, heroEvents, trending, featured, weekEvents, weeklyHighlight]);
+
   const maxViews = venueRanks[0]?.views || 1;
   const isLoading = loadingEvents;
 
@@ -375,6 +468,65 @@ export default function V3Home() {
 
   return (
     <div>
+      {/* SEO da home — JSON-LD WebSite + Organization + EntertainmentBusiness */}
+      <SEO
+        title="Roxou | Eventos, Bares, Restaurantes e Jogos ao Vivo em Presidente Prudente"
+        description="A Roxou reúne eventos, shows, bares, restaurantes, música ao vivo, porções, chopp, jogos ao vivo e rolês em Presidente Prudente e região. Veja o que acontece hoje, no fim de semana e na Expo Prudente 2026."
+        canonical="https://roxou.com.br/"
+        ogType="website"
+        keywords="eventos Presidente Prudente, bares Presidente Prudente, restaurantes Presidente Prudente, música ao vivo Prudente, jogos ao vivo Prudente, Expo Prudente 2026, baladas Prudente, shows Prudente"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "name": "Roxou",
+              "url": "https://roxou.com.br",
+              "description": "Portal local para descobrir eventos, shows, bares, restaurantes, música ao vivo, jogos ao vivo e entretenimento em Presidente Prudente.",
+              "inLanguage": "pt-BR",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://roxou.com.br/agenda?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            },
+            {
+              "@type": "Organization",
+              "name": "Roxou",
+              "url": "https://roxou.com.br",
+              "description": "Portal de eventos, bares, restaurantes, jogos ao vivo e entretenimento em Presidente Prudente e região.",
+              "sameAs": ["https://www.instagram.com/roxou.pp/"]
+            },
+            {
+              "@type": "EntertainmentBusiness",
+              "name": "Roxou",
+              "url": "https://roxou.com.br",
+              "description": "Plataforma local para descobrir eventos, bares, restaurantes e entretenimento em Presidente Prudente.",
+              "areaServed": {
+                "@type": "City",
+                "name": "Presidente Prudente",
+                "addressRegion": "SP",
+                "addressCountry": "BR"
+              },
+              "knowsAbout": [
+                "eventos em Presidente Prudente",
+                "bares em Presidente Prudente",
+                "restaurantes em Presidente Prudente",
+                "música ao vivo em Presidente Prudente",
+                "porções em Presidente Prudente",
+                "chopp em Presidente Prudente",
+                "jogos ao vivo em Presidente Prudente",
+                "baladas em Presidente Prudente",
+                "Expo Prudente 2026"
+              ]
+            }
+          ]
+        } as any}
+      />
+
       {/* ══════ MOBILE: IMMERSIVE HERO ══════ */}
       <div className="lg:hidden">
         <HomeSectionBoundary name="Hero mobile" fallback={<EmptyHero />}>
@@ -389,6 +541,8 @@ export default function V3Home() {
                   slides={heroEvents}
                   index={heroIdx}
                   onChange={setHeroIdx}
+                  onPauseAutoplay={() => setIsHeroPaused(true)}
+                  onResumeAutoplay={() => setIsHeroPaused(false)}
                 />
               </div>
             </div>
@@ -694,9 +848,10 @@ function HomeDataFallback() {
 /* TodaySection extraído para src/components/v3/home/TodaySection.tsx */
 
 /* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
-function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange }: {
+function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange, onPauseAutoplay, onResumeAutoplay }: {
   ev: Ev; isToday: boolean; todayCount: number; venueRank?: number;
   slides?: Ev[]; index?: number; onChange?: (i: number) => void;
+  onPauseAutoplay?: () => void; onResumeAutoplay?: () => void;
 }) {
   const dayLabel = getDayLabel(ev.date_time);
   const momentumText = isToday && todayCount > 1
@@ -714,13 +869,18 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
   return (
     <div
       className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-[460px] lg:max-h-[560px] lg:aspect-auto overflow-hidden"
-      onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        touchRef.current = { x: t.clientX, y: t.clientY };
+        onPauseAutoplay?.();
+      }}
       onTouchEnd={(e) => {
         const s = touchRef.current; if (!s) return;
         const t = e.changedTouches[0];
         const dx = t.clientX - s.x; const dy = t.clientY - s.y;
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
         touchRef.current = null;
+        onResumeAutoplay?.();
       }}
     >
       {/* Background image with Ken Burns */}
@@ -1164,9 +1324,11 @@ function FeaturedPartnerCard({ p }: { p: any }) {
 /* ─── DESKTOP HERO SECTION — 2 colunas: tagline à esquerda, carrossel à direita ─── */
 function DesktopHeroSection({
   heroEvents, heroIdx, setHeroIdx, todayCount, weekEventsCount, partnerRankMap,
+  onPauseAutoplay, onResumeAutoplay,
 }: {
   heroEvents: Ev[]; heroIdx: number; setHeroIdx: (n: number) => void;
   todayCount: number; weekEventsCount: number; partnerRankMap: Map<string, number>;
+  onPauseAutoplay?: () => void; onResumeAutoplay?: () => void;
 }) {
   const ev = heroEvents[heroIdx];
   const total = heroEvents.length;
@@ -1198,7 +1360,7 @@ function DesktopHeroSection({
             </span>
           </h1>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-md">
-            Eventos, shows, bares, jogos ao vivo e rolês da cidade — tudo em um só lugar, atualizado diariamente.
+            Eventos, shows, bares, restaurantes, música ao vivo, jogos ao vivo e rolês em Presidente Prudente — tudo em um só lugar, atualizado diariamente.
           </p>
         </div>
 
@@ -1255,8 +1417,12 @@ function DesktopHeroSection({
         )}
       </div>
 
-      {/* RIGHT — Carrossel editorial de evento em destaque */}
-      <div className="flex flex-col gap-2">
+      {/* RIGHT — Carrossel editorial (pause-on-hover, autoplay do pai) */}
+      <div
+        className="flex flex-col gap-2"
+        onMouseEnter={() => onPauseAutoplay?.()}
+        onMouseLeave={() => onResumeAutoplay?.()}
+      >
       <div
         className="relative rounded-3xl overflow-hidden h-[360px] shadow-[0_16px_48px_-12px_hsl(var(--primary)/0.4)]"
         onTouchStart={(e) => { const t = e.touches[0]; touchRef.current = { x: t.clientX, y: t.clientY }; }}
@@ -1374,7 +1540,16 @@ function DesktopHeroSection({
               />
               <div className="absolute inset-0 bg-black/30" />
               {i === heroIdx && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.9)]" />
+                /* Barra de progresso animada — reinicia a cada mudança de slide */
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-border/40 overflow-hidden">
+                  <div
+                    key={`prog-${heroIdx}`}
+                    className="h-full bg-primary origin-left shadow-[0_0_6px_hsl(var(--primary)/0.9)]"
+                    style={{
+                      animation: "heroProgress 4.5s linear forwards",
+                    }}
+                  />
+                </div>
               )}
             </button>
           ))}
@@ -1430,6 +1605,8 @@ function CommandCenter({
           todayCount={todayCount}
           weekEventsCount={safeWeekEvents.length}
           partnerRankMap={partnerRankMap}
+          onPauseAutoplay={() => setIsHeroPaused(true)}
+          onResumeAutoplay={() => setIsHeroPaused(false)}
         />
       )}
 
@@ -1439,11 +1616,11 @@ function CommandCenter({
         {/* COLUNA PRINCIPAL */}
         <section className="min-w-0 space-y-14">
 
-          {/* Busca + Vibe chips */}
+          {/* Busca + Vibe chips — pool completo de eventos (title, venue, categoria, descrição) */}
           <div className="space-y-3">
             <V3SearchBar
-              events={mainEvents as any}
-              fallbackEvent={(featured[0] || mainEvents[0]) as any}
+              events={safeEvents(events) as any}
+              fallbackEvent={null}
               placeholder="Buscar evento, local, vibe..."
             />
             <V3VibeChips className="!py-0 -mx-0" />
@@ -1539,7 +1716,7 @@ function CommandCenter({
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-yellow-500/80">Arena Roxou</p>
                   <h2 className="font-display font-extrabold text-2xl text-yellow-50 leading-tight">Jogos ao vivo hoje</h2>
-                  <p className="text-[11px] text-yellow-500/60">Futebol · locais que transmitem em Prudente</p>
+                  <p className="text-[11px] text-yellow-500/55">Copa, Brasileirão e onde assistir em Prudente</p>
                 </div>
               </div>
               <Link

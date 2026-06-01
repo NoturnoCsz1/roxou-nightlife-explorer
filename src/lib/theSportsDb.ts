@@ -61,7 +61,30 @@ export interface NormalizedMatch {
   priority: number;
   raw_date: string;             // YYYY-MM-DD em SP
   raw_time: string;             // HH:mm em SP
+  world_cup_phase?: string | null;      // fase da Copa: grupos | oitavas | quartas | semi | final
+  alternative_stream_url?: string | null;
 }
+
+/**
+ * Converte qualquer formato de URL do YouTube para URL de embed.
+ * Aceita: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID.
+ * Retorna null se a URL não for YouTube ou não tiver ID válido.
+ */
+export function toYouTubeEmbedUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const patterns = [
+    /youtube\.com\/watch\?(?:.*&)?v=([A-Za-z0-9_-]{11})/i,
+    /youtu\.be\/([A-Za-z0-9_-]{11})/i,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/i,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/i,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1`;
+  }
+  return null;
+}
+
 
 /** Slugifica string PT-BR. */
 const slugify = (s: string) =>
