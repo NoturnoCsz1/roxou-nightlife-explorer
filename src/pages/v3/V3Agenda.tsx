@@ -102,24 +102,11 @@ export default function V3Agenda() {
     },
   });
 
-  /* Categorias dinâmicas (a partir dos próprios eventos) */
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    events.forEach((e) => {
-      if (e.category) set.add(e.category);
-    });
-    return ["todos", ...Array.from(set).slice(0, 12)];
-  }, [events]);
-
-  const filteredEvents = useMemo(() => {
-    let list = events;
-    const cat = activeCategory.toLowerCase();
-
   const RESOURCE_KEYS = new Set(["carona", "futebol", "ingresso"]);
   const GENRE_KEYS = new Set(["sertanejo", "pagode", "funk", "mpb", "rock", "eletronico"]);
-
   const norm = (s: string) =>
     s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 
   const filteredEvents = useMemo(() => {
     let list = events as any[];
