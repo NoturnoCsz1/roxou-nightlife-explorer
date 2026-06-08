@@ -28,18 +28,6 @@ const categoryIcon = (category?: string | null) => {
   return "📍";
 };
 
-const mapsUrl = (address?: string | null, venue?: string | null) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || venue || "Presidente Prudente")}`;
-
-const uberUrl = (address?: string | null, venue?: string | null) => {
-  const q = encodeURIComponent(address || venue || "Presidente Prudente");
-  return `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${q}`;
-};
-
-const noveNoveUrl = (address?: string | null, venue?: string | null) => {
-  const q = encodeURIComponent(address || venue || "Presidente Prudente");
-  return `https://99app.com/?dropoff=${q}`;
-};
 
 const isEventNow = (dateTime: string) => {
   const start = new Date(dateTime);
