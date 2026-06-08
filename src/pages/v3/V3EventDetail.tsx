@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import EventPresence from "@/components/v3/EventPresence";
+import TransmissionBlock from "@/components/TransmissionBlock";
 import { EventLivePresence } from "@/components/v3/EventLivePresence";
 import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
