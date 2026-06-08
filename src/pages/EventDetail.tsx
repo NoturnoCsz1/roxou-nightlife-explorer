@@ -24,7 +24,13 @@ import AdBanner from "@/components/AdBanner";
 import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
-import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
+import {
+  categoryConfig,
+  getCategoryLabel,
+  ADMIN_PARTNER_TYPE_OPTIONS,
+  PARTNER_MUSIC_STYLE_LABELS,
+  SPORTS_COMPETITION_LABELS,
+} from "@/lib/categoryConfig";
 import SafeHtml from "@/components/SafeHtml";
 import TransmissionBlock from "@/components/TransmissionBlock";
 
