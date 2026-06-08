@@ -327,44 +327,78 @@ function tplMinimal(c: Ctx): string {
   return lines.join("");
 }
 
-// — Template 9: Narrativo do local (usa identidade do parceiro) —
+// — Template 9: Narrativo editorial (prioridade alta, 2–4 parágrafos) —
+// Regras: nunca repete o título cru; contextualiza pelo tipo do local +
+// bairro/cidade; quando houver artista, abre falando do show; quando for
+// bar/restaurante, contextualiza o ambiente.
 function tplVenueNarrative(c: Ctx): string {
-  const opener = c.isToday
-    ? "Hoje"
-    : `Nesta ${c.weekdayShort.toLowerCase()}`;
+  const ambientByType: Record<string, string> = {
+    bar: "A casa é parada típica de bar de bairro, com mesa na calçada e chope gelado.",
+    pub: "O pub mantém o clima de happy hour estendido, com cerveja artesanal e som médio.",
+    choperia: "A choperia é ponto certo para encerrar a semana no ritmo da rua.",
+    restaurante: "O restaurante combina cozinha do dia a dia com música ao vivo durante a noite.",
+    espetinho: "O espetinho é daqueles endereços de mesa na rua, chope e brasa direto.",
+    lounge: "O lounge aposta em iluminação baixa e drinks autorais para a noite.",
+    balada: "A balada entrega pista cheia e som alto até de madrugada.",
+    "casa de shows": "A casa de shows recebe atrações com palco montado e produção dedicada.",
+    adega: "A adega é endereço de carta de vinhos e ambiente intimista.",
+    tabacaria: "A tabacaria mistura narguilé, drinks e som ambiente para conversar.",
+    cultural: "O espaço cultural recebe programações que misturam música, arte e encontro.",
+  };
 
-  // Linha 1 — abertura com tipo de local + bairro/cidade
+  // ─── Parágrafo 1 — abertura editorial, sem citar o título ───
+  const opener = c.isToday ? "Hoje" : `Nesta ${c.weekdayShort.toLowerCase()}, ${c.dateShort},`;
   const typeLabel = c.partnerTypeLabel || "casa";
-  const localBit = c.neighborhood
-    ? `${typeLabel} em ${c.city || c.neighborhood}`
-    : c.city
-      ? `${typeLabel} em ${c.city}`
-      : typeLabel;
-  const venuePart = c.venue ? ` no ${c.venue}` : "";
-  const head = `${opener} tem ${c.attractionShort}${venuePart}, ${localBit}.`;
+  const localBit = c.neighborhood && c.city
+    ? `${typeLabel} no ${c.neighborhood}, em ${c.city}`
+    : c.neighborhood
+      ? `${typeLabel} no ${c.neighborhood}`
+      : c.city
+        ? `${typeLabel} em ${c.city}`
+        : typeLabel;
 
-  // Linha 2 — contexto curto do local (apenas se vier do banco)
-  const venueLine = c.partnerSummary
-    ? c.partnerSummary
-    : c.partnerSecondaryStyles.length
-      ? `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")}.`
-      : "";
+  let p1: string;
+  if (c.artist) {
+    // Foco no show
+    const venuePart = c.venue ? ` no ${c.venue}` : "";
+    p1 = `${opener} ${c.artist} sobe ao palco${venuePart}, ${localBit}, com repertório ${c.attractionShort}.`;
+  } else if (c.venue) {
+    p1 = `${opener} o ${c.venue} entra na agenda da cidade com programação de ${c.attractionShort}, ${localBit}.`;
+  } else {
+    p1 = `${opener} a noite tem ${c.attractionShort}${c.city ? ` em ${c.city}` : ""}.`;
+  }
 
-  // Linha 3 — atração + horário + artista (se extraído)
-  const artistBit = c.artist ? `${c.artist} comanda a noite` : `a atração comanda a noite`;
-  const timeBit = c.hasRealTime ? ` a partir das ${c.timeLabel}` : "";
-  const styleBit = c.attractionShort && c.attractionShort !== "rolê"
-    ? ` com repertório ${c.attractionShort}`
+  // ─── Parágrafo 2 — ambiente do local (curado pelo tipo + summary do parceiro) ───
+  const ambientLine = c.partnerTypeLabel
+    ? ambientByType[String(c.partnerTypeLabel).toLowerCase()] || ""
     : "";
-  const line3 = c.artist
-    ? `${artistBit}${styleBit}${timeBit}.`
-    : `${c.title}${styleBit}${timeBit}.`;
+  const p2Parts: string[] = [];
+  if (c.partnerSummary) p2Parts.push(c.partnerSummary);
+  if (ambientLine && !c.partnerSummary) p2Parts.push(ambientLine);
+  if (c.partnerSecondaryStyles.length) {
+    p2Parts.push(
+      `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")} ao longo da semana.`,
+    );
+  }
+  const p2 = p2Parts.join(" ").trim();
+
+  // ─── Parágrafo 3 — operação prática (horário + dia), sem listão ───
+  const timeBit = c.hasRealTime ? `a partir das ${c.timeLabel}` : "com horário a confirmar";
+  let p3: string;
+  if (c.artist) {
+    p3 = `O show começa ${timeBit}. ${c.isToday ? "É para hoje" : `É ${c.weekdayShort.toLowerCase()}, ${c.dateShort}`}, e a entrada acompanha a programação da casa.`;
+  } else {
+    p3 = `A programação rola ${timeBit}${c.isToday ? ", hoje mesmo" : `, ${c.weekdayShort.toLowerCase()}, ${c.dateShort}`}.`;
+  }
+
+  // ─── Parágrafo 4 — CTA variável ───
+  const p4 = c.cta;
 
   const blocks: string[] = [];
-  blocks.push(`<p>${escapeHtml(head)}</p>`);
-  if (venueLine) blocks.push(`<p>${escapeHtml(venueLine)}</p>`);
-  blocks.push(`<p>${escapeHtml(line3)}</p>`);
-  blocks.push(`<p>${escapeHtml(c.cta)}</p>`);
+  blocks.push(`<p>${escapeHtml(p1)}</p>`);
+  if (p2) blocks.push(`<p>${escapeHtml(p2)}</p>`);
+  blocks.push(`<p>${escapeHtml(p3)}</p>`);
+  blocks.push(`<p>${escapeHtml(p4)}</p>`);
   return blocks.join("");
 }
 
