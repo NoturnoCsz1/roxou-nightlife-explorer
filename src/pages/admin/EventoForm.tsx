@@ -787,11 +787,24 @@ const EventoForm = () => {
           )}
         </div>
 
+        <TransmissionSection
+          eventDateTime={form.date_time}
+          value={{
+            is_sports_transmission: Boolean((form as any).is_sports_transmission),
+            sports_match_id: (form as any).sports_match_id || null,
+            transmission_channel: (form as any).transmission_channel || null,
+            transmission_url: (form as any).transmission_url || null,
+            transmission_notes: (form as any).transmission_notes || null,
+          }}
+          onChange={(t: TransmissionFields) => setForm((prev) => ({ ...prev, ...t }) as any)}
+        />
+
         <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50">
           <Save className="h-4 w-4" />
           {saving ? "Salvando..." : "Salvar"}
         </button>
       </form>
+
 
       <aside className="hidden lg:block">
         <div className="sticky top-20 rounded-2xl border border-primary/20 bg-card/80 p-3 shadow-[0_0_24px_hsl(var(--primary)/0.12)] backdrop-blur-xl">
