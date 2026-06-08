@@ -184,6 +184,37 @@ export default function Jogos() {
     ).slice(0, 6);
   }, [matches]);
 
+  // ─── 🇧🇷 Brasil na Copa (Seleção em jogos da Copa do Mundo) ─
+  const brasilNaCopa = useMemo(() => {
+    const now = Date.now();
+    return matches
+      .filter(
+        (m) =>
+          m.is_world_cup &&
+          (isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team)) &&
+          new Date(m.match_time).getTime() > now - 4 * 60 * 60 * 1000,
+      )
+      .sort((a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime())
+      .slice(0, 4);
+  }, [matches]);
+
+  // ─── 🌎 Copa do Mundo 2026 — agrupado por dia ─────────────
+  const copaPorDia = useMemo(() => {
+    const now = Date.now();
+    const future = matches
+      .filter((m) => m.is_world_cup && new Date(m.match_time).getTime() > now - 4 * 60 * 60 * 1000)
+      .sort((a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime());
+    const map = new Map<string, NormalizedMatch[]>();
+    for (const m of future) {
+      const key = m.raw_date;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(m);
+    }
+    return Array.from(map.entries()).slice(0, 5);
+  }, [matches]);
+
+  const brasilHojeNaCopa = brasilNaCopa.some((m) => m.raw_date === today);
+
   // ─── Carrossel compacto (Hoje → Brasil → próximos 7d) ─────
   const carouselMatches = useMemo(() => {
     const now = Date.now();
@@ -209,6 +240,7 @@ export default function Jogos() {
     }
     return out;
   }, [matches, today]);
+
 
 
   const transmissionCount = transmissions.length;
