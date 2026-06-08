@@ -5,6 +5,70 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ----- Instagram helpers (reuso da lógica de partner-instagram-sync) -----
+function normalizeHandle(raw?: string | null): string | null {
+  if (!raw) return null;
+  let v = String(raw).trim();
+  if (!v) return null;
+  const m = v.match(/instagram\.com\/([^/?#]+)/i);
+  if (m) v = m[1];
+  v = v.replace(/^@+/, "").replace(/\/+$/, "").trim();
+  if (!v || v.includes(" ")) return null;
+  return v.toLowerCase();
+}
+
+async function fetchInstagramContext(admin: any, handle: string) {
+  // Reusa instagram_accounts (Meta Business Discovery), mesma fonte do partner-instagram-sync
+  try {
+    const { data: acc } = await admin
+      .from("instagram_accounts")
+      .select("access_token, ig_account_id, status")
+      .eq("status", "active")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!acc?.access_token || !acc?.ig_account_id) {
+      return { validated: false, reason: "Nenhuma conta Instagram conectada na Roxou.", data: null };
+    }
+    const fields =
+      `business_discovery.username(${handle}){username,name,biography,followers_count,media_count,website,media.limit(6){caption,media_type,permalink,timestamp,like_count,comments_count}}`;
+    const url = `https://graph.facebook.com/v21.0/${acc.ig_account_id}?fields=${encodeURIComponent(fields)}&access_token=${acc.access_token}`;
+    const r = await fetch(url);
+    const json = await r.json();
+    if (!r.ok || json?.error || !json?.business_discovery) {
+      return {
+        validated: false,
+        reason: json?.error?.message || "Instagram não pôde ser lido (perfil pessoal/privado ou inexistente).",
+        data: null,
+      };
+    }
+    const bd = json.business_discovery;
+    return {
+      validated: true,
+      reason: "ok",
+      data: {
+        username: bd.username,
+        name: bd.name,
+        biography: bd.biography,
+        followers_count: bd.followers_count,
+        media_count: bd.media_count,
+        website: bd.website,
+        recent_captions: (bd.media?.data || [])
+          .map((m: any) => ({
+            caption: (m.caption || "").slice(0, 300),
+            type: m.media_type,
+            timestamp: m.timestamp,
+            likes: m.like_count,
+          }))
+          .slice(0, 6),
+      },
+    };
+  } catch (err: any) {
+    return { validated: false, reason: err?.message || "Erro ao acessar Instagram", data: null };
+  }
+}
+
+
 const SYSTEM_BASE = `Você é um auditor de dados da plataforma Roxou (guia de eventos noturnos no interior de SP).
 Analise estabelecimentos cadastrados (bares, casas de show, baladas) e aponte problemas de qualidade.
 
