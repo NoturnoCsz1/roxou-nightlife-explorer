@@ -85,19 +85,21 @@ async function getWeather() {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Require authentication for ALL modes (home, chat, studio) to prevent paid-API abuse.
+  // Auth opcional: visitantes (não logados) também podem conversar com a Aura na home.
+  // Quando há token, validamos para personalizar; quando não há, segue como anônimo.
   const authHeader = req.headers.get("Authorization") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return json({ error: "Unauthorized" }, 401);
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    const user = userData?.user;
-    if (userErr || !user) return json({ error: "Unauthorized" }, 401);
+    let user: any = null;
+    if (token) {
+      const { data: userData } = await supabase.auth.getUser(token);
+      user = userData?.user ?? null;
+    }
 
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || "chat";
