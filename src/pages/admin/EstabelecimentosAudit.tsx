@@ -271,6 +271,18 @@ const EstabelecimentosAudit = () => {
     improvements: string[];
     confidence: "baixa" | "media" | "alta";
     evidence?: string;
+    // 2.4 — endereço
+    suggested_address?: string | null;
+    suggested_neighborhood?: string | null;
+    suggested_latitude?: number | null;
+    suggested_longitude?: number | null;
+    suggested_place_id?: string | null;
+    suggested_formatted_address?: string | null;
+    address_source?: "instagram" | "website" | "cadastro" | "google_maps" | "ambos" | "nao_encontrado" | null;
+    address_confidence?: "baixa" | "media" | "alta" | null;
+    address_evidence?: string | null;
+    address_google_status?: string | null;
+    address_partial_match?: boolean | null;
     instagram?: {
       handle: string | null;
       source: "cadastro" | "instagram_validated" | "instagram_not_validated";
@@ -279,7 +291,7 @@ const EstabelecimentosAudit = () => {
       bio?: string | null;
     } | null;
   };
-  type ApplyKey = "type" | "music_style_primary" | "music_styles_secondary" | "short_description" | "full_description";
+  type ApplyKey = "type" | "music_style_primary" | "music_styles_secondary" | "short_description" | "full_description" | "address";
   const [suggestBusy, setSuggestBusy] = useState<string | null>(null);
   const [suggestResult, setSuggestResult] = useState<Record<string, SuggestAI>>({});
   const [applySel, setApplySel] = useState<Record<string, Record<ApplyKey, boolean>>>({});
@@ -288,14 +300,20 @@ const EstabelecimentosAudit = () => {
   function defaultApplySel(e: Establishment, s: SuggestAI): Record<ApplyKey, boolean> {
     const score = computeScore(e);
     const lowScore = score < 60;
+    const noAddress = !e.address?.trim();
+    const noCoords = e.latitude == null || e.longitude == null;
+    const addrOk = !!s.suggested_address && (s.address_confidence === "media" || s.address_confidence === "alta");
     return {
       type: !e.type?.trim() || e.type === "bar" /* default */ || lowScore && !!s.suggested_type,
       music_style_primary: !e.music_style_primary?.trim(),
       music_styles_secondary: !(e.music_styles_secondary && e.music_styles_secondary.length > 0),
       short_description: !((e as any).short_description?.trim() || e.description?.trim()),
       full_description: !!s.suggested_full_description && !((e as any).full_description?.trim()),
+      // 2.4: por padrão só marca se faltar endereço ou coords E confiança >= média
+      address: addrOk && (noAddress || noCoords),
     };
   }
+
 
   async function applySuggestions(e: Establishment) {
     const s = suggestResult[e.id];
