@@ -269,6 +269,14 @@ const EstabelecimentosAudit = () => {
     problems: string[];
     improvements: string[];
     confidence: "baixa" | "media" | "alta";
+    evidence?: string;
+    instagram?: {
+      handle: string | null;
+      source: "cadastro" | "instagram_validated" | "instagram_not_validated";
+      reason?: string;
+      followers_count?: number | null;
+      bio?: string | null;
+    } | null;
   };
   const [suggestBusy, setSuggestBusy] = useState<string | null>(null);
   const [suggestResult, setSuggestResult] = useState<Record<string, SuggestAI>>({});
