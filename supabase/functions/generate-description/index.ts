@@ -12,8 +12,10 @@ const ATTRACTION_LABEL: Record<string, { label: string; emoji: string; short: st
   pagode:       { label: "Pagode",              emoji: "🥁", short: "pagode" },
   samba:        { label: "Samba",               emoji: "🥁", short: "samba" },
   eletronica:   { label: "Eletrônica / DJ Set", emoji: "🪩", short: "eletrônica" },
+  eletronico:   { label: "Eletrônica / DJ Set", emoji: "🪩", short: "eletrônica" },
   rock:         { label: "Rock ao vivo",        emoji: "🎸", short: "rock" },
   pop_rock:     { label: "Pop / Rock cover",    emoji: "🎤", short: "pop/rock" },
+  pop:          { label: "Pop ao vivo",         emoji: "🎤", short: "pop" },
   mpb:          { label: "MPB / Voz e violão",  emoji: "🎶", short: "MPB" },
   standup:      { label: "Stand-up Comedy",     emoji: "🎭", short: "stand-up" },
   universitario:{ label: "Festa universitária", emoji: "🎓", short: "festa universitária" },
@@ -23,12 +25,55 @@ const ATTRACTION_LABEL: Record<string, { label: string; emoji: string; short: st
   show:         { label: "Show ao vivo",        emoji: "🎤", short: "show" },
   cultural:     { label: "Evento cultural",     emoji: "🎭", short: "rolê cultural" },
   restaurante:  { label: "Gastronomia",         emoji: "🍽️", short: "gastronomia" },
+  acustico:     { label: "Música acústica",     emoji: "🎶", short: "som acústico" },
+  flashback:    { label: "Flashback",           emoji: "💿", short: "flashback" },
+  forro:        { label: "Forró",               emoji: "🪗", short: "forró" },
+  arrocha:      { label: "Arrocha",             emoji: "🎶", short: "arrocha" },
+  axe:          { label: "Axé",                 emoji: "🥁", short: "axé" },
+  rap_trap:     { label: "Rap / Trap",          emoji: "🎤", short: "rap/trap" },
+  open_format:  { label: "Open Format",         emoji: "🎚️", short: "open format" },
 };
 
-function resolveAttraction(category?: string, subCategory?: string) {
+function resolveAttraction(category?: string, subCategory?: string, partnerStyle?: string) {
+  // Prioridade: estilo do evento (sub) > estilo primário do local > categoria do evento.
   const sub = String(subCategory || "").toLowerCase().trim();
+  const ps  = String(partnerStyle || "").toLowerCase().trim();
   const cat = String(category || "").toLowerCase().trim();
-  return ATTRACTION_LABEL[sub] || ATTRACTION_LABEL[cat] || { label: "Música e resenha", emoji: "🎶", short: "rolê" };
+  return ATTRACTION_LABEL[sub]
+      || ATTRACTION_LABEL[ps]
+      || ATTRACTION_LABEL[cat]
+      || { label: "Música e resenha", emoji: "🎶", short: "rolê" };
+}
+
+// Label humano para `partner.type` quando entrar na frase narrativa
+const PARTNER_TYPE_LABEL: Record<string, string> = {
+  bar: "bar", restaurante: "restaurante", espetinho: "espetinho",
+  lounge: "lounge", balada: "balada", "casa de shows": "casa de shows",
+  pub: "pub", choperia: "choperia", adega: "adega", tabacaria: "tabacaria",
+  cultural: "espaço cultural", outro: "casa",
+};
+
+// Extrai um possível nome de artista do título (sem inventar).
+// Suporta: "FESTA com ARTISTA", "FESTA - ARTISTA", "FESTA | ARTISTA", "FESTA feat ARTISTA"
+function extractArtistFromTitle(title?: string): string {
+  const t = String(title || "").trim();
+  if (!t) return "";
+  const patterns: RegExp[] = [
+    /\b(?:com|c\/)\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/u,
+    /\s[-–—|]\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/u,
+    /\bfeat\.?\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/iu,
+  ];
+  for (const re of patterns) {
+    const m = t.match(re);
+    if (m && m[1]) {
+      const cand = m[1].trim().replace(/\s+/g, " ");
+      // evita pegar palavras genéricas curtas
+      if (cand.length >= 3 && !/^(ao vivo|hoje|live|show|festa|noite)$/i.test(cand)) {
+        return cand;
+      }
+    }
+  }
+  return "";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
