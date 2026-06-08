@@ -435,7 +435,7 @@ export default function V3Agenda() {
             <span className="h-1 w-6 rounded-full bg-gradient-to-r from-primary to-transparent" />
             {g.label}
           </h2>
-          <div className="relative ml-2 space-y-4 before:absolute before:left-[2.45rem] before:top-3 before:bottom-3 before:w-px before:bg-gradient-to-b before:from-primary/60 before:via-primary/20 before:to-transparent">
+          <div className="relative space-y-3 md:space-y-4 before:absolute before:left-[1.625rem] md:before:left-[2.45rem] before:top-3 before:bottom-3 before:w-px before:bg-gradient-to-b before:from-primary/60 before:via-primary/20 before:to-transparent">
             {g.events.map((e: any) => {
               const hasPOV = !!e.video_url;
               const p = e.partners || null;
