@@ -300,6 +300,96 @@ export default function V3Agenda() {
         })()}
       </div>
 
+      {/* ===== HERO — Em destaque na Roxou ===== */}
+      {(() => {
+        const featured = (events as any[])
+          .filter((e) => !!e.featured)
+          .slice(0, 2);
+        if (featured.length === 0) return null;
+        return (
+          <section className="mb-6">
+            <h2 className="font-display font-bold text-sm text-primary uppercase tracking-[0.22em] mb-3 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              🔥 Em destaque na Roxou
+            </h2>
+            <div className={`grid gap-3 ${featured.length > 1 ? "md:grid-cols-2" : ""}`}>
+              {featured.map((e) => {
+                const p = e.partners || null;
+                const hasCarona = !!e.transport_reservation_enabled;
+                const hasTicket = !!e.ticket_url;
+                const hasSports = !!e.is_sports_transmission;
+                const musicLabel = p?.music_style_primary
+                  ? PARTNER_MUSIC_STYLE_LABELS[p.music_style_primary] || p.music_style_primary
+                  : null;
+                return (
+                  <Link
+                    key={e.id}
+                    to={`/evento/${e.slug}`}
+                    className="group relative block overflow-hidden rounded-3xl border border-primary/30 bg-card/40 shadow-[0_0_36px_hsl(var(--v3-neon)/0.22)] hover:shadow-[0_0_48px_hsl(var(--v3-neon)/0.38)] hover:border-primary/60 transition-all"
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                      <img
+                        src={e.image_url || "/placeholder.svg"}
+                        alt={e.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="eager"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)]"
+                        style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}>
+                        <Sparkles className="w-3 h-3" /> Destaque
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-display font-bold text-base md:text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                        {e.title}
+                      </h3>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarDays className="w-3 h-3 text-primary" />
+                          <span className="capitalize">{format(new Date(e.date_time), "EEE, d 'de' MMM · HH'h'mm", { locale: ptBR })}</span>
+                        </span>
+                        {e.venue_name && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-primary" />
+                            {e.venue_name}
+                          </span>
+                        )}
+                      </div>
+                      {(hasCarona || hasTicket || hasSports || musicLabel) && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {hasCarona && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                              <Car className="w-2.5 h-2.5" /> Carona
+                            </span>
+                          )}
+                          {hasTicket && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-300">
+                              <Ticket className="w-2.5 h-2.5" /> Ingresso
+                            </span>
+                          )}
+                          {hasSports && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                              <Tv className="w-2.5 h-2.5" /> Futebol
+                            </span>
+                          )}
+                          {musicLabel && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-200">
+                              🎵 {musicLabel}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
+
+
       {/* ===== STORY CARD ===== */}
       {showShareCard && shareGroup && (
         <div className="mb-5 overflow-hidden rounded-3xl border border-primary/25 shadow-[0_0_36px_hsl(var(--v3-neon)/0.18)] animate-scale-in">
