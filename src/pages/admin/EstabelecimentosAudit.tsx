@@ -1402,6 +1402,20 @@ const EstabelecimentosAudit = () => {
                           ...(s.suggested_full_description
                             ? [{ k: "full_description" as ApplyKey, label: "Descrição completa", preview: s.suggested_full_description, enabled: true }]
                             : []),
+                          ...(s.suggested_address
+                            ? [{
+                                k: "address" as ApplyKey,
+                                label: e.address?.trim()
+                                  ? "Endereço e coordenadas (sobrescrever)"
+                                  : "Endereço e coordenadas",
+                                preview: [
+                                  s.suggested_formatted_address || s.suggested_address,
+                                  s.suggested_latitude != null && s.suggested_longitude != null
+                                    ? `· ${s.suggested_latitude.toFixed(4)},${s.suggested_longitude.toFixed(4)}` : "",
+                                ].filter(Boolean).join(" "),
+                                enabled: true,
+                              }]
+                            : []),
                         ];
                         const anyChecked = rows.some(r => r.enabled && sel[r.k]);
                         return (
