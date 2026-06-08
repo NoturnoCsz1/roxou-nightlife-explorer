@@ -1,0 +1,1 @@
+GRANT SELECT (music_style_primary, music_styles_secondary) ON public.partners TO anon, authenticated;
