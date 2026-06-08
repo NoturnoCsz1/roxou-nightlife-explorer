@@ -458,16 +458,16 @@ export default function V3Agenda() {
               const ctaLabel = hasCarona ? "🚗 Carona" : hasTicket ? "🎟 Ingresso" : "Ver evento →";
 
               return (
-                <div key={e.id} className="relative grid grid-cols-[5rem_1fr] gap-3">
-                  <div className="relative z-10 flex flex-col items-center pt-3">
+                <div key={e.id} className="relative grid grid-cols-[3.25rem_1fr] md:grid-cols-[5rem_1fr] gap-2 md:gap-3">
+                  <div className="relative z-10 flex flex-col items-center pt-2.5">
                     <span
-                      className="rounded-full px-2.5 py-1.5 text-[10px] font-black text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)] ring-2 ring-background"
+                      className="rounded-full px-2 py-1 text-[10px] font-black text-primary-foreground shadow-[0_0_18px_hsl(var(--v3-neon)/0.5)] ring-2 ring-background"
                       style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}
                     >
                       {fmtTime(e.date_time)}
                     </span>
                     {isEventNow(e.date_time) && (
-                      <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-400">
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         AO VIVO
                       </span>
