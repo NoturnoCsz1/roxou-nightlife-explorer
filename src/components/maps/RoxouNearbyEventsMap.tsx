@@ -13,6 +13,7 @@ export interface NearbyEvent {
   date_time: string;
   lat: number;
   lng: number;
+  transport_reservation_enabled?: boolean;
 }
 
 interface Props {
@@ -144,10 +145,12 @@ export default function RoxouNearbyEventsMap({
                         onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}
                         style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "#a855f7", color: "#fff", fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer" }}
                       >Ver evento</button>
-                      <button
-                        onClick={() => navigate(`/pedir-carona?eventId=${e.id}`)}
-                        style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "transparent", color: "#a855f7", border: "1px solid #a855f7", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-                      >Pedir carona</button>
+                      {e.transport_reservation_enabled && (
+                        <button
+                          onClick={() => navigate(`/pedir-carona?eventId=${e.id}`)}
+                          style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "transparent", color: "#a855f7", border: "1px solid #a855f7", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                        >Pedir carona</button>
+                      )}
                     </div>
                   )}
                 </div>

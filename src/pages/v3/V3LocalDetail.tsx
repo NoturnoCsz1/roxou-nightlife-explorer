@@ -547,7 +547,8 @@ export default function V3LocalDetail() {
             <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
               {events.map((e) => (
                 <EventCardV3 key={e.id} id={e.id} slug={e.slug} title={e.title} imageUrl={e.image_url}
-                  dateTime={e.date_time} venueName={e.venue_name} category={e.category} />
+                  dateTime={e.date_time} venueName={e.venue_name} category={e.category}
+                  ticketUrl={(e as any).ticket_url} transportEnabled={Boolean((e as any).transport_reservation_enabled)} />
               ))}
             </div>
           </div>

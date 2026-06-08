@@ -78,7 +78,7 @@ export default function PertoDeMim() {
       const now = new Date().toISOString();
       const { data: evts } = await supabase
         .from("events")
-        .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status")
+        .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled")
         .eq("status", "published")
         .gt("date_time", now)
         .order("date_time", { ascending: true })
@@ -106,6 +106,7 @@ export default function PertoDeMim() {
           return {
             id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name,
             date_time: e.date_time, lat, lng,
+            transport_reservation_enabled: Boolean((e as any).transport_reservation_enabled),
           } as NearbyEvent;
         })
         .filter(Boolean) as NearbyEvent[];

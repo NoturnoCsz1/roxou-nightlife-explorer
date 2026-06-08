@@ -79,6 +79,7 @@ interface Ev {
   date_time: string; venue_name: string | null; category: string;
   sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
   video_url?: string | null;
+  transport_reservation_enabled?: boolean;
 }
 
 const normalizeEvent = (event: any): Ev | null => {
@@ -96,6 +97,7 @@ const normalizeEvent = (event: any): Ev | null => {
     partner_id: event.partner_id || null,
     ticket_url: event.ticket_url || null,
     video_url: event.video_url || null,
+    transport_reservation_enabled: Boolean(event.transport_reservation_enabled),
   };
 };
 
@@ -135,7 +137,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-          .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
+          .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url,transport_reservation_enabled")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .order("date_time", { ascending: true })
@@ -156,7 +158,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
+        .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url,transport_reservation_enabled")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .lt("date_time", TODAY_END)
@@ -1000,12 +1002,14 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           >
             <Trophy className="w-3.5 h-3.5" /> Jogos ao vivo
           </Link>
-          <Link
-            to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-foreground text-sm font-semibold active:scale-95 transition-all hover:bg-white/20"
-          >
-            <Car className="w-3.5 h-3.5" /> Como vou?
-          </Link>
+          {ev.transport_reservation_enabled && (
+            <Link
+              to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-foreground text-sm font-semibold active:scale-95 transition-all hover:bg-white/20"
+            >
+              <Car className="w-3.5 h-3.5" /> Como vou?
+            </Link>
+          )}
         </div>
       </div>
 
@@ -2247,28 +2251,32 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
             {badge && <span className="inline-block text-[10px] font-bold text-accent">{badge}</span>}
           </div>
         </Link>
-        <div className="absolute bottom-3 right-3 z-10">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setDrawerOpen(true);
-            }}
-            className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-bold text-white v3-neon-hover"
-            style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.95), hsl(var(--v3-neon-soft) / 0.95))" }}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Reservar
-          </button>
-        </div>
+        {(ev.transport_reservation_enabled || !!ev.ticket_url) && (
+          <div className="absolute bottom-3 right-3 z-10">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDrawerOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-bold text-white v3-neon-hover"
+              style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon) / 0.95), hsl(var(--v3-neon-soft) / 0.95))" }}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {ev.transport_reservation_enabled ? "Reservar" : "Ingresso"}
+            </button>
+          </div>
+        )}
         <div className="pointer-events-none absolute inset-x-3 top-14 z-10 hidden translate-y-2 rounded-2xl border border-primary/30 bg-background/80 p-3 opacity-0 backdrop-blur-xl transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 lg:block">
           <p className="line-clamp-3 text-[11px] font-medium leading-relaxed text-foreground/90">
-            {ev.venue_name ? `${ev.venue_name} · ` : ""}{ev.category} marcado para {fmtTime(ev.date_time)}. Veja detalhes, ingresso e opções de carona sem perder o ritmo.
+            {ev.venue_name ? `${ev.venue_name} · ` : ""}{ev.category} marcado para {fmtTime(ev.date_time)}. Veja detalhes e opções sem perder o ritmo.
           </p>
-          <Link to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`} className="pointer-events-auto mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-[10px] font-black uppercase text-primary hover:bg-primary/25">
-            <Car className="h-3 w-3" /> Pedir carona
-          </Link>
+          {ev.transport_reservation_enabled && (
+            <Link to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`} className="pointer-events-auto mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1.5 text-[10px] font-black uppercase text-primary hover:bg-primary/25">
+              <Car className="h-3 w-3" /> Pedir carona
+            </Link>
+          )}
         </div>
       </div>
       <ReservationDrawer
@@ -2280,6 +2288,7 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
         venueName={ev.venue_name}
         eventDate={ev.date_time}
         imageUrl={ev.image_url}
+        transportEnabled={!!ev.transport_reservation_enabled}
       />
     </>
   );

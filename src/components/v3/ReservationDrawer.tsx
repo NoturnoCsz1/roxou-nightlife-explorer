@@ -17,6 +17,7 @@ interface ReservationDrawerProps {
   eventDate?: string | null;
   imageUrl?: string | null;
   onTicketClick?: () => void;
+  transportEnabled?: boolean;
 }
 
 /**
@@ -63,6 +64,7 @@ function Body({
   eventDate,
   imageUrl,
   onTicketClick,
+  transportEnabled = false,
   onClose,
 }: ReservationDrawerProps & { onClose: () => void }) {
   const navigate = useNavigate();
@@ -108,31 +110,33 @@ function Body({
 
       <UrgencyBadge slug={eventSlug} />
 
-      {/* Option B — Transport (primary, neon pulse) */}
-      <button
-        onClick={goTransport}
-        className="w-full relative overflow-hidden rounded-2xl p-4 text-left v3-pulse-glow group"
-        style={{
-          background:
-            "linear-gradient(135deg, hsl(var(--v3-neon) / 0.85), hsl(var(--v3-neon-soft) / 0.85))",
-        }}
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_60%)] pointer-events-none" />
-        <div className="relative flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
-            <Car className="w-5 h-5 text-white" />
+      {/* Option B — Transport (primary, neon pulse) — only when enabled */}
+      {transportEnabled && (
+        <button
+          onClick={goTransport}
+          className="w-full relative overflow-hidden rounded-2xl p-4 text-left v3-pulse-glow group"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(var(--v3-neon) / 0.85), hsl(var(--v3-neon-soft) / 0.85))",
+          }}
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_60%)] pointer-events-none" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <Car className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display font-extrabold text-[13px] uppercase tracking-wide text-white">
+                🚗 Transporte ROXOU
+              </p>
+              <p className="text-[11px] text-white/85 mt-0.5">
+                {rideClosed ? "Sistema de carona encerrado para este evento" : "Carona segura, ar, Wi-Fi e playlist. Vai sem stress."}
+              </p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-display font-extrabold text-[13px] uppercase tracking-wide text-white">
-              🚗 Transporte ROXOU
-            </p>
-            <p className="text-[11px] text-white/85 mt-0.5">
-              {rideClosed ? "Sistema de carona encerrado para este evento" : "Carona segura, ar, Wi-Fi e playlist. Vai sem stress."}
-            </p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-white shrink-0 group-hover:translate-x-0.5 transition-transform" />
-        </div>
-      </button>
+        </button>
+      )}
 
       {/* Option A — External ticket (secondary, thin border) */}
       {ticketUrl ? (

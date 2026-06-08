@@ -136,7 +136,7 @@ export default function V3RideRequest() {
       }
       const { data, error } = await supabase
         .from("events")
-        .select("id,title,venue_name,address,date_time,latitude,longitude,status,partner_id")
+        .select("id,title,venue_name,address,date_time,latitude,longitude,status,partner_id,transport_reservation_enabled")
         .eq("id", eventIdParam)
         .maybeSingle();
       if (error || !data) {
@@ -146,6 +146,11 @@ export default function V3RideRequest() {
       }
       if (data.status !== "published") {
         setEventError("Este evento não está mais ativo.");
+        setEventLoading(false);
+        return;
+      }
+      if (!(data as any).transport_reservation_enabled) {
+        setEventError("Este evento não está disponível para carona Roxou.");
         setEventLoading(false);
         return;
       }
