@@ -1057,6 +1057,9 @@ export type Database = {
           sub_category: string | null
           ticket_url: string | null
           title: string
+          transmission_channel: string | null
+          transmission_notes: string | null
+          transmission_url: string | null
           trending_score: number | null
           venue_name: string | null
           verification_source: string | null
@@ -1101,6 +1104,9 @@ export type Database = {
           sub_category?: string | null
           ticket_url?: string | null
           title: string
+          transmission_channel?: string | null
+          transmission_notes?: string | null
+          transmission_url?: string | null
           trending_score?: number | null
           venue_name?: string | null
           verification_source?: string | null
@@ -1145,6 +1151,9 @@ export type Database = {
           sub_category?: string | null
           ticket_url?: string | null
           title?: string
+          transmission_channel?: string | null
+          transmission_notes?: string | null
+          transmission_url?: string | null
           trending_score?: number | null
           venue_name?: string | null
           verification_source?: string | null
