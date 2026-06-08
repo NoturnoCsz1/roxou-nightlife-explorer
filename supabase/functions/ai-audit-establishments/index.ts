@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     if (!roleOk) return json({ error: "forbidden" }, 403);
 
     const body = await req.json();
-    const mode: "single" | "global" = body.mode || "single";
+    const mode: "single" | "global" | "suggest" = body.mode || "single";
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return json({ error: "AI not configured" }, 500);
 
