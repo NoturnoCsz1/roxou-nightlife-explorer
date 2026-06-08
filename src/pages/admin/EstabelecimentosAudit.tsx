@@ -347,25 +347,58 @@ const EstabelecimentosAudit = () => {
       if (categoryF && e.type !== categoryF) return false;
       if (errorsOnly && computeFlags(e).length === 0) return false;
       if (noCoordsOnly && e.latitude != null && e.longitude != null) return false;
+      // Quality filter chips
+      const score = computeScore(e);
+      if (qualityFilter === "needs_attention" && score >= 60) return false;
+      if (qualityFilter === "no_coords" && !(e.latitude == null || e.longitude == null)) return false;
+      if (qualityFilter === "no_instagram" && !!e.instagram?.trim()) return false;
+      if (qualityFilter === "no_description" && !!e.description?.trim()) return false;
+      if (qualityFilter === "no_music_style" && !!e.music_style_primary?.trim()) return false;
+      if (qualityFilter === "no_logo" && !!e.logo_url?.trim()) return false;
+      if (qualityFilter === "ready_to_feature" && score < 90) return false;
       return true;
     });
     if (orderBy === "events_desc") arr = [...arr].sort((a, b) => (metrics[b.id]?.eventCount || 0) - (metrics[a.id]?.eventCount || 0));
     if (orderBy === "events_asc") arr = [...arr].sort((a, b) => (metrics[a.id]?.eventCount || 0) - (metrics[b.id]?.eventCount || 0));
+    if (orderBy === "score_asc") arr = [...arr].sort((a, b) => computeScore(a) - computeScore(b));
+    if (orderBy === "score_desc") arr = [...arr].sort((a, b) => computeScore(b) - computeScore(a));
     return arr;
-  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, noCoordsOnly, orderBy, metrics]);
+  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, noCoordsOnly, qualityFilter, orderBy, metrics]);
 
   const stats = useMemo(() => {
     const total = items.length;
     let ativo = 0, destaque = 0, oficial = 0, errors = 0;
+    let completos = 0, precisamAtencao = 0;
+    let semLogo = 0, semCoords = 0, semInstagram = 0, semDescricao = 0, semEstilo = 0;
+    let scoreSum = 0;
     items.forEach(e => {
       const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
       if (cur === "ativo") ativo++;
       if (cur === "destaque") destaque++;
       if (cur === "oficial") oficial++;
       if (computeFlags(e).length > 0) errors++;
+      const score = computeScore(e);
+      scoreSum += score;
+      if (score >= 90) completos++;
+      if (score < 60) precisamAtencao++;
+      if (!e.logo_url?.trim()) semLogo++;
+      if (e.latitude == null || e.longitude == null) semCoords++;
+      if (!e.instagram?.trim()) semInstagram++;
+      if (!e.description?.trim()) semDescricao++;
+      if (!e.music_style_primary?.trim()) semEstilo++;
     });
-    return { total, ativo, destaque, oficial, errors };
+    const avgScore = total > 0 ? Math.round(scoreSum / total) : 0;
+    return { total, ativo, destaque, oficial, errors, completos, precisamAtencao, semLogo, semCoords, semInstagram, semDescricao, semEstilo, avgScore };
   }, [items, metrics]);
+
+  // Top 5 piores scores — seção "Corrigir primeiro"
+  const fixFirst = useMemo(() => {
+    return [...items]
+      .map(e => ({ e, score: computeScore(e) }))
+      .filter(x => x.score < 90)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 5);
+  }, [items]);
 
   async function patch(id: string, payload: Partial<Establishment>) {
     setBusy(id);
