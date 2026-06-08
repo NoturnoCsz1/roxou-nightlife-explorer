@@ -36,11 +36,49 @@ interface Establishment {
   longitude: number | null;
   maps_place_id?: string | null;
   formatted_address?: string | null;
+  description?: string | null;
+  logo_url?: string | null;
+  music_style_primary?: string | null;
+  music_styles_secondary?: string[] | null;
   updated_at: string | null;
   created_at: string;
 }
 
 interface Metrics { eventCount: number; }
+
+// ============================================================
+// Score Roxou (0–100) — quanto mais completo o perfil, maior.
+// ============================================================
+const SCORE_WEIGHTS = {
+  logo: 15,
+  coordinates: 15,
+  address: 10,
+  instagram: 15,
+  description: 15,
+  category: 10,
+  music_style: 10,
+  instagram_validated: 10,
+} as const;
+
+function computeScore(e: Establishment): number {
+  let s = 0;
+  if (e.logo_url?.trim()) s += SCORE_WEIGHTS.logo;
+  if (e.latitude != null && e.longitude != null) s += SCORE_WEIGHTS.coordinates;
+  if (e.address?.trim()) s += SCORE_WEIGHTS.address;
+  if (e.instagram?.trim()) s += SCORE_WEIGHTS.instagram;
+  if (e.description?.trim()) s += SCORE_WEIGHTS.description;
+  if (e.type?.trim()) s += SCORE_WEIGHTS.category;
+  if (e.music_style_primary?.trim()) s += SCORE_WEIGHTS.music_style;
+  if (e.instagram_validated) s += SCORE_WEIGHTS.instagram_validated;
+  return Math.min(100, s);
+}
+
+function scoreTone(score: number): { cls: string; label: string } {
+  if (score >= 90) return { cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/40", label: "Excelente" };
+  if (score >= 70) return { cls: "bg-sky-500/15 text-sky-400 border-sky-500/40", label: "Bom" };
+  if (score >= 50) return { cls: "bg-amber-500/15 text-amber-400 border-amber-500/40", label: "Atenção" };
+  return { cls: "bg-destructive/15 text-destructive border-destructive/40", label: "Crítico" };
+}
 
 const STATUS_META: Record<Status, { label: string; cls: string }> = {
   draft:      { label: "Rascunho",   cls: "bg-muted/40 text-muted-foreground" },
