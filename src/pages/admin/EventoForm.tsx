@@ -195,6 +195,7 @@ const EventoForm = () => {
     status: "draft", verification_source: "Instagram", featured: false, image_url: "",
     video_url: "",
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
+    transport_reservation_enabled: false,
     ...emptyTransmission(),
   });
 
