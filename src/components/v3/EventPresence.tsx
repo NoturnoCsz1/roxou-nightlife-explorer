@@ -13,18 +13,31 @@ export default function EventPresence({ eventId }: Props) {
   const totalGoing = counts.going;
   const totalInterested = counts.interested;
 
+  const hasAny = totalGoing > 0 || totalInterested > 0;
+
   return (
     <div className="rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm p-3 space-y-2">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
+      {hasAny ? (
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          {totalGoing > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-primary" />
+              <strong className="text-foreground font-semibold">{totalGoing}</strong> indo
+            </span>
+          )}
+          {totalInterested > 0 && (
+            <span className="inline-flex items-center gap-1.5 ml-auto">
+              <Eye className="w-3.5 h-3.5 text-primary/80" />
+              <strong className="text-foreground font-semibold">{totalInterested}</strong> interessados
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Flame className="w-3.5 h-3.5 text-primary" />
-          <strong className="text-foreground font-semibold">{totalGoing}</strong> indo
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Eye className="w-3.5 h-3.5 text-primary/80" />
-          <strong className="text-foreground font-semibold">{totalInterested}</strong> interessados
-        </span>
-      </div>
+          <span>Seja o primeiro a confirmar presença</span>
+        </div>
+      )}
 
       {isAuthed ? (
         <div className="grid grid-cols-2 gap-2">
