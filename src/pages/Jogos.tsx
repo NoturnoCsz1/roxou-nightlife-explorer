@@ -221,70 +221,69 @@ export default function Jogos() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.25),transparent_60%)]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-primary/10 blur-[80px] rounded-full" />
 
-        <div className="relative mx-auto max-w-4xl px-5 py-12 md:py-16 text-center">
-          <div className="inline-flex items-center gap-2 mb-5 rounded-full border border-primary/40 bg-primary/10 px-4 py-1.5">
-            <Tv className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">
+        <div className="relative mx-auto max-w-4xl px-5 pt-6 pb-4 md:pt-12 md:pb-8 text-center">
+          <div className="inline-flex items-center gap-1.5 mb-2.5 md:mb-5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 md:px-4 md:py-1.5">
+            <Tv className="h-3 w-3 md:h-3.5 md:w-3.5 text-primary" />
+            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-primary">
               Roxou Jogos
             </span>
           </div>
 
           <h1
-            className="font-display font-black leading-[1.05] tracking-tight mb-4 text-balance mx-auto max-w-[20ch] bg-gradient-to-br from-foreground via-foreground to-primary/80 bg-clip-text text-transparent"
-            style={{ fontSize: "clamp(1.9rem, 6vw, 3.4rem)" }}
+            className="font-display font-black leading-[1.05] tracking-tight mb-2 md:mb-4 text-balance mx-auto max-w-[20ch] bg-gradient-to-br from-foreground via-foreground to-primary/80 bg-clip-text text-transparent"
+            style={{ fontSize: "clamp(1.35rem, 5vw, 3.4rem)" }}
           >
             Onde assistir futebol em Prudente
           </h1>
 
-          <p className="text-muted-foreground text-sm md:text-lg mb-7 mx-auto max-w-[52ch] text-balance">
-            Jogos ao vivo, bares transmitindo agora e a programação completa da semana —
-            tudo em um lugar só.
+          <p className="text-muted-foreground text-[12px] md:text-lg mb-3 md:mb-7 mx-auto max-w-[52ch] text-balance leading-snug">
+            Jogos ao vivo, bares transmitindo e a programação da semana.
           </p>
 
-          {/* CTA principal + mini stats */}
-          <div className="flex flex-col items-center gap-4">
+          {/* CTA + mini stats */}
+          <div className="flex flex-col items-center gap-2.5 md:gap-4">
             <a
               href="#onde-assistir"
-              className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-7 py-3.5 text-sm font-bold shadow-[0_0_30px_-6px_hsl(var(--primary))] hover:scale-[1.03] active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 md:px-7 md:py-3.5 text-[12px] md:text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.03] active:scale-95 transition"
             >
-              <Beer className="h-4 w-4" />
+              <Beer className="h-3.5 w-3.5 md:h-4 md:w-4" />
               Ver locais transmitindo
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </a>
 
-            <div className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-[12px] text-muted-foreground">
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 md:gap-x-5 text-[10.5px] md:text-[12px] text-muted-foreground">
               {liveCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-red-400 font-bold">
-                  <span className="relative flex h-2 w-2">
+                <span className="inline-flex items-center gap-1 text-red-400 font-bold">
+                  <span className="relative flex h-1.5 w-1.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
                   </span>
                   {liveCount} ao vivo
                 </span>
               )}
               {transmissionCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-emerald-300 font-medium">
-                  📺 {transmissionCount} transmissões nos bares
+                <span className="inline-flex items-center gap-1 text-emerald-300 font-medium">
+                  📺 {transmissionCount} transmissões
                 </span>
               )}
               {barsCount > 0 && (
-                <span className="inline-flex items-center gap-1.5 font-medium">
-                  🍻 {barsCount} bares parceiros
+                <span className="inline-flex items-center gap-1 font-medium">
+                  🍻 {barsCount} bares
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Hero match destacado — discreto, abaixo do título */}
+        {/* Hero match destacado — faixa compacta */}
         {heroMatch && (
-          <div className="relative mx-auto max-w-3xl px-4 pb-8 -mt-2">
+          <div className="relative mx-auto max-w-3xl px-4 pb-3 md:pb-8 -mt-1 md:-mt-2">
             <HeroMatchStripe match={heroMatch} isToday={heroMatch.raw_date === today} />
           </div>
         )}
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-10 space-y-14">
+      <main className="mx-auto max-w-5xl px-4 py-6 md:py-10 space-y-10 md:space-y-14">
         {/* ═══════════ JOGOS DE HOJE ═══════════ */}
         <Section
           eyebrow="Hoje"
