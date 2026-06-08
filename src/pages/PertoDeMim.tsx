@@ -106,6 +106,7 @@ export default function PertoDeMim() {
           return {
             id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name,
             date_time: e.date_time, lat, lng,
+            transport_reservation_enabled: Boolean((e as any).transport_reservation_enabled),
           } as NearbyEvent;
         })
         .filter(Boolean) as NearbyEvent[];
