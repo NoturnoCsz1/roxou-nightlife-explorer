@@ -75,6 +75,38 @@ Deno.serve(async (req) => {
         required: ["risk", "summary", "problems", "suggestions", "recommended_actions", "priority", "oficial_candidate"],
         additionalProperties: false,
       };
+    } else if (mode === "suggest") {
+      const e = body.establishment;
+      if (!e) return json({ error: "missing establishment" }, 400);
+      userPrompt =
+        `Você é um assistente de curadoria da Roxou. Analise o estabelecimento abaixo e gere SUGESTÕES de melhoria de cadastro.\n` +
+        `Use nome, instagram, endereço, descrição e contexto para inferir categoria e estilos musicais.\n` +
+        `Se algum dado faltar, ainda assim arrisque a melhor sugestão plausível e indique baixa confiança.\n` +
+        `A descrição sugerida deve ter 2 a 3 frases, tom direto, sem clichês ("o melhor", "incrível", "imperdível"), em pt-BR.\n\n` +
+        `Estabelecimento:\n${JSON.stringify(e, null, 2)}`;
+      toolName = "suggest_establishment";
+      toolSchema = {
+        type: "object",
+        properties: {
+          suggested_type: {
+            type: "string",
+            enum: ["bar", "balada", "casa_de_shows", "restaurante", "pub", "lounge", "boate", "cervejaria", "rooftop", "espaco_eventos", "outro"],
+            description: "Categoria principal sugerida",
+          },
+          suggested_type_label: { type: "string", description: "Rótulo amigável (ex: 'Bar', 'Casa de Shows')" },
+          suggested_music_primary: { type: "string", description: "Estilo musical principal (ex: Sertanejo, Funk, Rock, Eletrônica)" },
+          suggested_music_secondary: { type: "array", items: { type: "string" }, description: "Até 3 estilos secundários" },
+          suggested_description: { type: "string", description: "Descrição curta (2-3 frases) em pt-BR" },
+          problems: { type: "array", items: { type: "string" }, description: "Problemas detectados nos dados atuais" },
+          improvements: { type: "array", items: { type: "string" }, description: "Melhorias recomendadas (ex: adicionar logo, validar IG)" },
+          confidence: { type: "string", enum: ["baixa", "media", "alta"] },
+        },
+        required: [
+          "suggested_type", "suggested_type_label", "suggested_music_primary",
+          "suggested_music_secondary", "suggested_description", "problems", "improvements", "confidence",
+        ],
+        additionalProperties: false,
+      };
     } else {
       const list = body.establishments || [];
       userPrompt = `Analise a base de ${list.length} estabelecimentos e retorne diagnóstico geral.\n` +
