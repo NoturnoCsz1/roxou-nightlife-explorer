@@ -541,7 +541,64 @@ const EventDetail = () => {
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground">
                     {partner.name.slice(0, 2).toUpperCase()}
+              </div>
+              {(() => {
+                const typeLabel = partner.type
+                  ? ADMIN_PARTNER_TYPE_OPTIONS.find((o) => o.value === partner.type)?.label || partner.type
+                  : null;
+                const primary = (partner as any).music_style_primary
+                  ? PARTNER_MUSIC_STYLE_LABELS[(partner as any).music_style_primary] || (partner as any).music_style_primary
+                  : null;
+                const secondary: string[] = Array.isArray((partner as any).music_styles_secondary)
+                  ? (partner as any).music_styles_secondary
+                      .slice(0, 2)
+                      .map((s: string) => PARTNER_MUSIC_STYLE_LABELS[s] || s)
+                  : [];
+                const supportsSports = Boolean((partner as any).supports_sports);
+                const comps: string[] = Array.isArray((partner as any).sports_competitions)
+                  ? (partner as any).sports_competitions.map(
+                      (c: string) => SPORTS_COMPETITION_LABELS[c] || c,
+                    )
+                  : [];
+                const hasAny = typeLabel || primary || secondary.length > 0 || supportsSports;
+                if (!hasAny) return null;
+                return (
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {typeLabel && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted/40 border border-border/40 text-foreground">
+                        {typeLabel}
+                      </span>
+                    )}
+                    {primary && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/15 border border-primary/30 text-primary">
+                        🎵 {primary}
+                      </span>
+                    )}
+                    {secondary.map((s) => (
+                      <span
+                        key={s}
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 border border-primary/20 text-primary/90"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                    {supportsSports && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-500">
+                        📺 Transmite futebol
+                      </span>
+                    )}
+                    {supportsSports &&
+                      comps.map((c) => (
+                        <span
+                          key={c}
+                          className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500/90"
+                        >
+                          {c}
+                        </span>
+                      ))}
                   </div>
+                );
+              })()}
                 )}
                 <div>
                   <p className="text-sm font-bold text-foreground">
