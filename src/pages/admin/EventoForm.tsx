@@ -23,6 +23,7 @@ import { isoToSpLocal } from "@/lib/dateUtils";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
+import TransmissionSection, { emptyTransmission, type TransmissionFields } from "@/components/admin/TransmissionSection";
 
 type Partner = Tables<"partners">;
 
@@ -194,6 +195,7 @@ const EventoForm = () => {
     status: "draft", verification_source: "Instagram", featured: false, image_url: "",
     video_url: "",
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
+    ...emptyTransmission(),
   });
 
   useEffect(() => {
@@ -268,6 +270,11 @@ const EventoForm = () => {
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
       _sub: (data as any).sub_category || data.category,
+      is_sports_transmission: Boolean((data as any).is_sports_transmission),
+      sports_match_id: (data as any).sports_match_id || null,
+      transmission_channel: (data as any).transmission_channel || null,
+      transmission_url: (data as any).transmission_url || null,
+      transmission_notes: (data as any).transmission_notes || null,
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     originalSnapshot.current = {
@@ -780,11 +787,24 @@ const EventoForm = () => {
           )}
         </div>
 
+        <TransmissionSection
+          eventDateTime={form.date_time}
+          value={{
+            is_sports_transmission: Boolean((form as any).is_sports_transmission),
+            sports_match_id: (form as any).sports_match_id || null,
+            transmission_channel: (form as any).transmission_channel || null,
+            transmission_url: (form as any).transmission_url || null,
+            transmission_notes: (form as any).transmission_notes || null,
+          }}
+          onChange={(t: TransmissionFields) => setForm((prev) => ({ ...prev, ...t }) as any)}
+        />
+
         <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50">
           <Save className="h-4 w-4" />
           {saving ? "Salvando..." : "Salvar"}
         </button>
       </form>
+
 
       <aside className="hidden lg:block">
         <div className="sticky top-20 rounded-2xl border border-primary/20 bg-card/80 p-3 shadow-[0_0_24px_hsl(var(--primary)/0.12)] backdrop-blur-xl">
