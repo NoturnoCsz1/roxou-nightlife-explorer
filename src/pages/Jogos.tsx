@@ -36,7 +36,7 @@ import { todayKeySP } from "@/lib/dateUtils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const LeagueTable = lazy(() => import("@/components/jogos/LeagueTable"));
+
 
 /* ────────────────────────────────────────────────────────────
  * /jogos — redesign focado em "Onde assistir em Prudente"
