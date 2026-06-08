@@ -17,6 +17,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import SafeHtml from "@/components/SafeHtml";
+import {
+  ADMIN_PARTNER_TYPE_OPTIONS,
+  PARTNER_MUSIC_STYLE_LABELS,
+  SPORTS_COMPETITION_LABELS,
+} from "@/lib/categoryConfig";
+
+const PARTNER_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  ADMIN_PARTNER_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -30,7 +39,7 @@ export default function V3EventDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-        .select("*, partners:partner_id(name, slug, logo_url)")
+        .select("*, partners:partner_id(name, slug, logo_url, type, music_style_primary, music_styles_secondary, supports_sports, sports_competitions)")
         .eq("slug", slug!)
         .eq("status", "published")
         .maybeSingle();
@@ -242,6 +251,74 @@ export default function V3EventDetail() {
             </a>
           </div>
         )}
+
+        {/* Venue chips — derived from partner metadata */}
+        {(() => {
+          const p: any = (event as any).partners;
+          if (!p) return null;
+          const typeLabel = p.type ? PARTNER_TYPE_LABELS[p.type] || p.type : null;
+          const primary = p.music_style_primary
+            ? PARTNER_MUSIC_STYLE_LABELS[p.music_style_primary] || p.music_style_primary
+            : null;
+          const secondary: string[] = Array.isArray(p.music_styles_secondary)
+            ? p.music_styles_secondary
+                .slice(0, 2)
+                .map((s: string) => PARTNER_MUSIC_STYLE_LABELS[s] || s)
+            : [];
+          const comps: string[] = Array.isArray(p.sports_competitions)
+            ? p.sports_competitions.map((c: string) => SPORTS_COMPETITION_LABELS[c] || c)
+            : [];
+          const hasAny =
+            typeLabel || primary || secondary.length > 0 || p.supports_sports;
+          if (!hasAny) return null;
+          return (
+            <div className="space-y-2">
+              <h2 className="font-display font-semibold text-base text-foreground">Sobre o local</h2>
+              <div className="flex flex-wrap gap-2">
+                {typeLabel && (
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-card border border-border/40 text-foreground">
+                    {typeLabel}
+                  </span>
+                )}
+                {primary && (
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/15 border border-primary/30 text-primary">
+                    🎵 {primary}
+                  </span>
+                )}
+                {secondary.map((s) => (
+                  <span
+                    key={s}
+                    className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 border border-primary/20 text-primary/90"
+                  >
+                    {s}
+                  </span>
+                ))}
+                {p.supports_sports && (
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                    📺 Transmite futebol
+                  </span>
+                )}
+                {p.supports_sports &&
+                  comps.map((c) => (
+                    <span
+                      key={c}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300"
+                    >
+                      {c}
+                    </span>
+                  ))}
+              </div>
+              {p.slug && (
+                <Link
+                  to={`/local/${p.slug}`}
+                  className="inline-block text-xs font-semibold text-primary hover:underline"
+                >
+                  Ver perfil do local →
+                </Link>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
