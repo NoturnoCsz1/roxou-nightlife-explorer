@@ -542,6 +542,19 @@ const EventDetail = () => {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground">
                     {partner.name.slice(0, 2).toUpperCase()}
               </div>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    {partner.name}
+                  </p>
+                  {partner.type && (
+                    <p className="text-[11px] text-muted-foreground capitalize">
+                      {partner.type}
+                    </p>
+                  )}
+                </div>
+              </div>
               {(() => {
                 const typeLabel = partner.type
                   ? ADMIN_PARTNER_TYPE_OPTIONS.find((o) => o.value === partner.type)?.label || partner.type
@@ -599,18 +612,6 @@ const EventDetail = () => {
                   </div>
                 );
               })()}
-                )}
-                <div>
-                  <p className="text-sm font-bold text-foreground">
-                    {partner.name}
-                  </p>
-                  {partner.type && (
-                    <p className="text-[11px] text-muted-foreground capitalize">
-                      {partner.type}
-                    </p>
-                  )}
-                </div>
-              </div>
               {partner.full_description && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {partner.full_description}
