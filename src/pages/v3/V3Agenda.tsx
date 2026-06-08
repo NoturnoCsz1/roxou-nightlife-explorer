@@ -3,11 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, addHours, isWithinInterval } from "date-fns";
 import { isTodaySP, isTomorrowSP, getStartOfTodaySP, getDateKeySP, dateKeySPToAnchorDate, formatDateHeaderSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
+import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles, Ticket, Tv } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import {
+  ADMIN_PARTNER_TYPE_OPTIONS,
+  PARTNER_MUSIC_STYLE_LABELS,
+} from "@/lib/categoryConfig";
+
+const PARTNER_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  ADMIN_PARTNER_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
