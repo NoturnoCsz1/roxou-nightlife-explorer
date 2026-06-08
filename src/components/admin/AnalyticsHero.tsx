@@ -250,17 +250,20 @@ const AnalyticsHero = ({ cityFilter }: { cityFilter?: string | null }) => {
           eventsCurRes,
           ticketCurRes,
           ticketPrevRes,
+          partnerCurRes,
+          partnerPrevRes,
         ] = await Promise.all([
           supabase
             .from("visitor_sessions")
             .select("id", { count: "exact", head: true })
             .gte("last_seen_at", fiveMinAgo),
+          // Sparkline + count exact (count is total even when rows are capped at 1000)
           supabase
             .from("visitor_sessions")
-            .select("started_at")
+            .select("started_at", { count: "exact" })
             .gte("started_at", start.toISOString())
             .lte("started_at", end.toISOString())
-            .limit(5000),
+            .limit(1000),
           supabase
             .from("visitor_sessions")
             .select("id", { count: "exact", head: true })
@@ -268,10 +271,10 @@ const AnalyticsHero = ({ cityFilter }: { cityFilter?: string | null }) => {
             .lt("started_at", prevEnd.toISOString()),
           supabase
             .from("page_views")
-            .select("created_at, page_path")
+            .select("created_at, page_path", { count: "exact" })
             .gte("created_at", start.toISOString())
             .lte("created_at", end.toISOString())
-            .limit(10000),
+            .limit(1000),
           supabase
             .from("page_views")
             .select("id", { count: "exact", head: true })
@@ -280,22 +283,33 @@ const AnalyticsHero = ({ cityFilter }: { cityFilter?: string | null }) => {
           eventsQ,
           supabase
             .from("ticket_clicks")
-            .select("created_at")
+            .select("created_at", { count: "exact" })
             .gte("created_at", start.toISOString())
             .lte("created_at", end.toISOString())
-            .limit(5000),
+            .limit(1000),
           supabase
             .from("ticket_clicks")
             .select("id", { count: "exact", head: true })
             .gte("created_at", prevStart.toISOString())
             .lt("created_at", prevEnd.toISOString()),
+          // Partner clicks (page_path /local/*) — count exact, head only
+          supabase
+            .from("page_views")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", start.toISOString())
+            .lte("created_at", end.toISOString())
+            .ilike("page_path", "/local/%"),
+          supabase
+            .from("page_views")
+            .select("id", { count: "exact", head: true })
+            .gte("created_at", prevStart.toISOString())
+            .lt("created_at", prevEnd.toISOString())
+            .ilike("page_path", "/local/%"),
         ]);
 
-        // Page views breakdown (partner clicks = /local/*)
+        // Sparkline data (capped at 1000 rows — fine for visual trend)
         const pvRows = (pvCurRes.data || []) as { created_at: string; page_path: string }[];
-        const partnerRows = pvRows.filter((r) => /^\/local\//.test(r.page_path));
-
-        // Sessions sparkline
+        const partnerSparkRows = pvRows.filter((r) => /^\/local\//.test(r.page_path));
         const sessionsRows = ((sessionsCurRes.data || []) as { started_at: string }[]).map((r) => ({
           created_at: r.started_at,
         }));
@@ -309,12 +323,12 @@ const AnalyticsHero = ({ cityFilter }: { cityFilter?: string | null }) => {
             spark: [],
           },
           sessions: {
-            current: sessionsCurRes.data?.length ?? 0,
+            current: sessionsCurRes.count ?? sessionsCurRes.data?.length ?? 0,
             previous: sessionsPrevRes.count ?? 0,
             spark: bucketize(sessionsRows, start, end, buckets),
           },
           pageViews: {
-            current: pvRows.length,
+            current: pvCurRes.count ?? pvRows.length,
             previous: pvPrevRes.count ?? 0,
             spark: bucketize(pvRows, start, end, buckets),
           },
@@ -324,12 +338,12 @@ const AnalyticsHero = ({ cityFilter }: { cityFilter?: string | null }) => {
             spark: [],
           },
           partnerClicks: {
-            current: partnerRows.length,
-            previous: 0,
-            spark: bucketize(partnerRows, start, end, buckets),
+            current: partnerCurRes.count ?? partnerSparkRows.length,
+            previous: partnerPrevRes.count ?? 0,
+            spark: bucketize(partnerSparkRows, start, end, buckets),
           },
           ticketClicks: {
-            current: ticketCurRes.data?.length ?? 0,
+            current: ticketCurRes.count ?? ticketCurRes.data?.length ?? 0,
             previous: ticketPrevRes.count ?? 0,
             spark: bucketize(ticketCurRes.data || [], start, end, buckets),
           },
