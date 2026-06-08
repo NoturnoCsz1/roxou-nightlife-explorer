@@ -70,13 +70,15 @@ export default function V3Parceiros() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.25),transparent_60%)]" />
             <div className="relative flex items-center gap-4">
-              <div className="h-20 w-20 flex-none rounded-xl bg-card/80 ring-1 ring-white/10 overflow-hidden flex items-center justify-center">
-                {spotlight.logo_url ? (
-                  <img src={spotlight.logo_url} alt={spotlight.name} fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-black text-primary">{spotlight.name[0]}</span>
-                )}
-              </div>
+              <PartnerLogo
+                src={spotlight.logo_url}
+                alt={spotlight.name}
+                size="xl"
+                rounded="xl"
+                interactive
+                loading="eager"
+                fetchPriority="high"
+              />
               <div className="min-w-0 flex-1">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-primary">
                   {typeLabel(spotlight.type)}
