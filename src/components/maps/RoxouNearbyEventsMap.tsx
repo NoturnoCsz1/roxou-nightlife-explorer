@@ -13,6 +13,7 @@ export interface NearbyEvent {
   date_time: string;
   lat: number;
   lng: number;
+  transport_reservation_enabled?: boolean;
 }
 
 interface Props {
