@@ -471,6 +471,9 @@ serve(async (req) => {
     let partnerType: string | null = partnerTypeIn || null;
     let partnerNeighborhood: string | null = neighborhood || null;
     let partnerCity: string | null = city || null;
+    let partnerSummary: string | null = venueDescIn || null;
+    let partnerMusicPrimary: string | null = null;
+    let partnerMusicSecondary: string[] = [];
 
     if (partner_id) {
       try {
@@ -479,32 +482,44 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, serviceKey);
         const { data: p } = await supabase
           .from("partners")
-          .select("type, neighborhood, city")
+          .select("type, neighborhood, city, short_description, full_description, music_style_primary, music_styles_secondary")
           .eq("id", partner_id)
           .maybeSingle();
         if (p) {
           if (!partnerType) partnerType = p.type || null;
           if (!partnerNeighborhood) partnerNeighborhood = p.neighborhood || null;
           if (!partnerCity) partnerCity = p.city || null;
+          if (!partnerSummary) {
+            // prefere short; full vira fallback truncado em 1 frase
+            partnerSummary = (p.short_description || "")
+              || (p.full_description ? String(p.full_description).split(/(?<=\.)\s/)[0] : "")
+              || null;
+          }
+          partnerMusicPrimary = (p as any).music_style_primary || null;
+          partnerMusicSecondary = Array.isArray((p as any).music_styles_secondary)
+            ? (p as any).music_styles_secondary.filter(Boolean)
+            : [];
         }
       } catch (_e) { /* segue */ }
     }
 
     const dateInfo = formatOfficialDate(date_time);
-    const attraction = resolveAttraction(category, sub_category);
+    const attraction = resolveAttraction(category, sub_category, partnerMusicPrimary || undefined);
 
     const cleanTitle = String(title || "").trim();
     const cleanVenue = String(venue_name || "").trim();
     const cleanCity = String(partnerCity || "").trim();
     const cleanNeighborhood = String(partnerNeighborhood || "").trim();
+    const artist = extractArtistFromTitle(cleanTitle);
 
     const seed = Number.isFinite(Number(seed_index)) ? Number(seed_index) : Math.floor(Math.random() * 9999);
 
-    // Detecta se temos pouca informação real
     const hasMinimalData = !cleanVenue && !cleanCity && !cleanNeighborhood;
+    const hasRichVenue = Boolean(
+      cleanVenue && (partnerType || partnerSummary || partnerMusicPrimary),
+    );
 
-    // Escolhe template evitando repetição
-    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData);
+    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue);
 
     // Gera hype curto (opcional) — só usado por T1 (e ignorado pelos outros)
     let hype = "";
@@ -515,8 +530,12 @@ serve(async (req) => {
       );
     }
 
-    // Escolhe CTA distinto do anterior
     const cta = pickFromBank(CTA_BANK, seed + tplIdx);
+
+    // Labels secundários (apenas os que conhecemos)
+    const secondaryLabels = partnerMusicSecondary
+      .map((v) => ATTRACTION_LABEL[String(v).toLowerCase()]?.short)
+      .filter((x): x is string => !!x);
 
     const ctx: Ctx = {
       title: cleanTitle,
@@ -536,7 +555,12 @@ serve(async (req) => {
       hype,
       cta,
       seed,
+      partnerTypeLabel: PARTNER_TYPE_LABEL[String(partnerType || "").toLowerCase()] || (partnerType || ""),
+      partnerSummary: stripForbidden(String(partnerSummary || "").trim()),
+      partnerSecondaryStyles: secondaryLabels,
+      artist,
     };
+
 
     const html = TEMPLATES[tplIdx](ctx);
 
