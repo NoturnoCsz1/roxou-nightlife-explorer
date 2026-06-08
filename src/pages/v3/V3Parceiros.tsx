@@ -119,17 +119,13 @@ export default function V3Parceiros() {
                 onClick={() => import("@/lib/ga").then(m => m.trackPartnerClick(p.id, p.name))}
                 className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 transition hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.6)]"
               >
-                <div className="aspect-square w-full rounded-xl overflow-hidden bg-background/50 ring-1 ring-white/5 mb-2 flex items-center justify-center">
-                  {p.logo_url ? (
-                    <img
-                      src={p.logo_url}
-                      alt={p.name}
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  ) : (
-                    <span className="text-3xl font-black text-primary/60">{p.name[0]}</span>
-                  )}
-                </div>
+                <PartnerLogo
+                  src={p.logo_url}
+                  alt={p.name}
+                  rounded="xl"
+                  interactive
+                  className="aspect-square h-auto w-full mb-2 p-3"
+                />
                 <div className="text-[9px] font-bold uppercase tracking-wider text-primary">
                   {typeLabel(p.type)}
                 </div>
