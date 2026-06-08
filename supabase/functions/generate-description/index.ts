@@ -77,19 +77,19 @@ function extractArtistFromTitle(title?: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🎯 CTAs rotativos (sem clichês)
+// 🎯 CTAs rotativos (sem clichês, sem "não fique de fora" / "bora marcar")
 // ─────────────────────────────────────────────────────────────────────────────
 const CTA_BANK: string[] = [
-  "Confere os detalhes na Roxou.",
-  "Salva esse rolê e manda pra quem vai com você.",
-  "A agenda completa tá em roxou.com.br/agenda.",
-  "Confere esse e outros rolês na Roxou.",
-  "Marca quem não pode perder.",
-  "Já manda no grupo.",
-  "Acompanhe a agenda da cidade na Roxou.",
-  "Chama a galera e confere a programação na Roxou.",
-  "Veja mais detalhes na Roxou.",
-  "Mais informações na agenda da Roxou.",
+  "Programação completa na agenda da Roxou.",
+  "Veja o evento na Roxou e combine seu rolê.",
+  "Mais detalhes em roxou.com.br/agenda.",
+  "Confira o que rola na cidade pela Roxou.",
+  "A Roxou tem a agenda completa do fim de semana.",
+  "Saiba mais sobre o rolê na Roxou.",
+  "Veja a agenda da semana em roxou.com.br.",
+  "Acompanhe a programação local pela Roxou.",
+  "Encontre esse e outros rolês na Roxou.",
+  "Detalhes e ingressos pela página do evento na Roxou.",
 ];
 
 function pickFromBank<T>(bank: T[], seed: number): T {
@@ -134,7 +134,7 @@ function buildLocationLine(venue?: string | null, neighborhood?: string | null, 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🚫 Frases banidas (cara de IA / cara de release)
 // ─────────────────────────────────────────────────────────────────────────────
-const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar|ser [ée]pico)|energia contagiante|vibe contagiante|reserve sua data|celebrando|proporcionando|embalar a noite|a cidade vai parar|evento completo|compartilhe com a galera|clima de pura)\b/gi;
+const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar|ser [ée]pico)|energia contagiante|vibe contagiante|reserve sua data|celebrando|proporcionando|embalar a noite|a cidade vai parar|evento completo|compartilhe com a galera|clima de pura|bora marcar quem vai junto|mesa cheia e gente boa|rol[êe] confirmado|marca quem n[ãa]o pode perder|j[áa] manda no grupo)\b/gi;
 const FILLER_RE = /\b(?:em breve)\b/gi;
 
 function stripForbidden(s: string): string {
