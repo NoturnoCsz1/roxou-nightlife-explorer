@@ -167,8 +167,6 @@ const App = () => (
           {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
           <Route path="/pedir-carona" element={<PedirCaronaGate />} />
           <Route path="/parceiros" element={<V3Parceiros />} />
-          <Route path="/jogos" element={L(<Jogos />)} />
-          <Route path="/jogo/:slug" element={L(<JogoDetail />)} />
           <Route path="/resultados" element={L(<Resultados />)} />
           <Route path="/tabela/:slug" element={L(<TabelaCampeonato />)} />
 
@@ -199,6 +197,8 @@ const App = () => (
             <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
             <Route path="rankings" element={<V3Rankings />} />
             <Route path="comunidade" element={<V3Community />} />
+            <Route path="jogos" element={L(<Jogos />)} />
+            <Route path="jogo/:slug" element={L(<JogoDetail />)} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
 
