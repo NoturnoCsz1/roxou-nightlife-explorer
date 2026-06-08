@@ -15,6 +15,7 @@ import SEO from "@/components/SEO";
 import { toast } from "sonner";
 import { isTodaySP, isTomorrowSP, formatTime, formatWeekdaySP, getEventDateSP } from "@/lib/dateUtils";
 import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
+import SpotlightBadge from "@/components/partners/SpotlightBadge";
 
 const TOP_WEEK_THRESHOLD = 100;
 
@@ -296,6 +297,13 @@ export default function V3LocalDetail() {
         <span className="text-foreground/80 truncate">{partner.name}</span>
       </nav>
 
+      {/* Banner premium — Destaque do Mês */}
+      {(partner as any).featured_home && (
+        <div className="px-4 pt-3">
+          <SpotlightBadge variant="banner" />
+        </div>
+      )}
+
       {/* Header — refined composition */}
       <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
         <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
@@ -318,9 +326,10 @@ export default function V3LocalDetail() {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <h1 className="font-display font-bold text-xl text-foreground truncate">{partner.name}</h1>
               {partner.verified_partner && <BadgeCheck className="w-5 h-5 text-accent shrink-0" />}
+              {(partner as any).featured_home && <SpotlightBadge variant="chip" />}
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
