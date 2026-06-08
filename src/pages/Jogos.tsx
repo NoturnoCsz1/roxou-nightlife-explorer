@@ -230,15 +230,27 @@ export default function Jogos() {
         ogType="website"
       />
 
+      {/* Ribbon sazonal — Copa do Mundo */}
+      <WorldCupRibbon className="mx-auto max-w-5xl" compact />
+
       {/* ═══════════ HEADER COMPACTO ═══════════ */}
       <header className="relative border-b border-border/40">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background pointer-events-none" />
+        {/* Faixa fina verde→amarelo no topo do header */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[2px]"
+          style={{ background: "linear-gradient(90deg,#009B3A 0%,#FFDF00 100%)" }}
+        />
         <div className="relative mx-auto max-w-5xl px-4 pt-4 pb-3">
-          <h1 className="font-display font-black text-lg md:text-2xl text-foreground leading-tight flex items-center gap-2">
-            <span aria-hidden>⚽</span> Jogos na Roxou
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="font-display font-black text-lg md:text-2xl text-foreground leading-tight flex items-center gap-2">
+              <span aria-hidden>⚽</span> Jogos na Roxou
+            </h1>
+            <WorldCupBadge variant="page" />
+          </div>
           <p className="text-[12px] md:text-sm text-muted-foreground mt-0.5">
-            Veja onde assistir futebol em Prudente
+            {wc.copy.where} futebol em Prudente
             {liveCount > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 text-red-400 font-bold">
                 <span className="relative flex h-1.5 w-1.5">
