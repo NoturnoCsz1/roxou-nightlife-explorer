@@ -17,6 +17,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import SafeHtml from "@/components/SafeHtml";
+import {
+  ADMIN_PARTNER_TYPE_OPTIONS,
+  PARTNER_MUSIC_STYLE_LABELS,
+  SPORTS_COMPETITION_LABELS,
+} from "@/lib/categoryConfig";
+
+const PARTNER_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  ADMIN_PARTNER_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 export default function V3EventDetail() {
   const { slug } = useParams<{ slug: string }>();
