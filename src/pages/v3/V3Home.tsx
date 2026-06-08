@@ -79,6 +79,7 @@ interface Ev {
   date_time: string; venue_name: string | null; category: string;
   sub_category?: string | null; featured: boolean; partner_id: string | null; ticket_url: string | null;
   video_url?: string | null;
+  transport_reservation_enabled?: boolean;
 }
 
 const normalizeEvent = (event: any): Ev | null => {
@@ -96,6 +97,7 @@ const normalizeEvent = (event: any): Ev | null => {
     partner_id: event.partner_id || null,
     ticket_url: event.ticket_url || null,
     video_url: event.video_url || null,
+    transport_reservation_enabled: Boolean(event.transport_reservation_enabled),
   };
 };
 
