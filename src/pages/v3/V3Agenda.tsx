@@ -230,43 +230,74 @@ export default function V3Agenda() {
           />
         </div>
 
-        {/* MENU UNIFICADO — atalhos + categorias dinâmicas, rolagem horizontal full-bleed */}
-        <div className="mt-4 -mx-5 px-5 pr-10 flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 py-2 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
-          {[
-            { key: "hoje", label: "🔥 Hoje" },
-            { key: "amanha", label: "🌅 Amanhã" },
-            { key: "fds", label: "🎉 Final de semana" },
-            { key: "expo2026", label: "🤠 Expo 2026" },
-            { key: "sertanejo", label: "🎸 Sertanejo" },
-            { key: "pagode", label: "🥁 Pagode" },
-            { key: "open bar", label: "🍺 Open Bar" },
-            { key: "eletr", label: "🎧 Eletrônico" },
-            { key: "funk", label: "🔊 Funk" },
-            { key: "todos", label: "✨ Tudo" },
-            ...categories.filter((c) => c !== "todos").map((c) => ({ key: c, label: `${categoryIcon(c)} ${c}` })),
-          ].map((chip) => {
-            const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
-            return (
-              <button
-                key={chip.key}
-                type="button"
-                onClick={() => { setSearchTerm(""); setActiveCategory(chip.key); }}
-                className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold whitespace-nowrap transition-all ${
-                  active
-                    ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
-                    : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                }`}
-                style={
-                  active
-                    ? { background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }
-                    : undefined
-                }
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* FILTROS AGRUPADOS — Tempo · Recursos · Gêneros */}
+        {(() => {
+          const groups: { title: string; chips: { key: string; label: string }[] }[] = [
+            {
+              title: "Tempo",
+              chips: [
+                { key: "todos", label: "✨ Tudo" },
+                { key: "hoje", label: "🔥 Hoje" },
+                { key: "amanha", label: "🌅 Amanhã" },
+                { key: "fds", label: "🎉 Final de semana" },
+              ],
+            },
+            {
+              title: "Recursos",
+              chips: [
+                { key: "carona", label: "🚗 Carona" },
+                { key: "futebol", label: "📺 Futebol" },
+                { key: "ingresso", label: "🎟 Ingresso" },
+              ],
+            },
+            {
+              title: "Gêneros",
+              chips: [
+                { key: "sertanejo", label: "🤠 Sertanejo" },
+                { key: "pagode", label: "🥁 Pagode" },
+                { key: "funk", label: "🔊 Funk" },
+                { key: "mpb", label: "🎼 MPB" },
+                { key: "rock", label: "🎸 Rock" },
+                { key: "eletronico", label: "🎧 Eletrônico" },
+              ],
+            },
+          ];
+          return (
+            <div className="mt-4 space-y-2">
+              {groups.map((g) => (
+                <div key={g.title} className="-mx-5 px-5 pr-10">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground/80 mb-1">
+                    {g.title}
+                  </p>
+                  <div className="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 py-1 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+                    {g.chips.map((chip) => {
+                      const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
+                      return (
+                        <button
+                          key={chip.key}
+                          type="button"
+                          onClick={() => selectCategory(chip.key)}
+                          className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition-all ${
+                            active
+                              ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
+                              : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                          }`}
+                          style={
+                            active
+                              ? { background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }
+                              : undefined
+                          }
+                        >
+                          {chip.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* ===== STORY CARD ===== */}
