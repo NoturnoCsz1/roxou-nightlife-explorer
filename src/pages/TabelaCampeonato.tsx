@@ -2,6 +2,7 @@ import { useParams, Navigate, Link } from "react-router-dom";
 import { ArrowLeft, Trophy, Calendar } from "lucide-react";
 import SEO from "@/components/SEO";
 import LeagueTable from "@/components/jogos/LeagueTable";
+import NextMatchesByLeague from "@/components/jogos/NextMatchesByLeague";
 
 interface LeagueMeta {
   slug: string;
@@ -10,6 +11,8 @@ interface LeagueMeta {
   topZone: number;
   relegationZone: number;
   description: string;
+  /** league_id em sports_matches (para fallback de próximos jogos) */
+  leagueId?: string;
   faq: { q: string; a: string }[];
 }
 
@@ -32,6 +35,7 @@ const LEAGUES: Record<string, LeagueMeta> = {
     longLabel: "CONMEBOL Libertadores",
     topZone: 2,
     relegationZone: 0,
+    leagueId: "4481",
     description: "Classificação completa da Copa Libertadores da América: grupos, pontos e jogos. A Roxou também indica onde assistir os jogos da Liberta em Presidente Prudente.",
     faq: [
       { q: "Quais clubes brasileiros estão na Libertadores?", a: "Acompanhe na Roxou a classificação completa da Libertadores e veja os clubes brasileiros em cada grupo." },
@@ -44,6 +48,7 @@ const LEAGUES: Record<string, LeagueMeta> = {
     longLabel: "UEFA Champions League",
     topZone: 8,
     relegationZone: 0,
+    leagueId: "4480",
     description: "Tabela da UEFA Champions League: pontos, jogos e classificação dos principais clubes da Europa. Encontre os bares em Presidente Prudente que transmitem a Champions na Roxou.",
     faq: [
       { q: "Como funciona o novo formato da Champions?", a: "A fase de liga reúne todos os times em uma tabela única — os 8 primeiros vão direto às oitavas. Confira a tabela atualizada na Roxou." },
@@ -99,6 +104,27 @@ export default function TabelaCampeonato() {
           showHeader={false}
           topZone={meta.topZone}
           relegationZone={meta.relegationZone}
+          emptyFallback={
+            <section className="rounded-xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-card/40 to-card/30 p-5 space-y-4">
+              <div>
+                <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-yellow-300 mb-1">
+                  <Trophy className="h-3 w-3" /> Tabela
+                </p>
+                <h2 className="font-display font-black text-lg">Classificação indisponível no momento</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Estamos aguardando a próxima atualização oficial. Enquanto isso, veja os próximos jogos da {meta.longLabel}.
+                </p>
+              </div>
+              {meta.leagueId && (
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <Calendar className="h-3 w-3" /> Próximos jogos
+                  </h3>
+                  <NextMatchesByLeague leagueId={meta.leagueId} leagueLabel={meta.longLabel} limit={8} />
+                </div>
+              )}
+            </section>
+          }
         />
 
         {/* SEO local */}
