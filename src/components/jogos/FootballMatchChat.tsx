@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Send, MessageCircle, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,18 +19,39 @@ interface ChatMessage {
   created_at: string;
 }
 
+interface ProfileInfo {
+  display_name: string | null;
+  nickname: string | null;
+  avatar_url: string | null;
+}
+
 const MAX_LEN = 280;
+const FALLBACK_NAME = "Torcedor Roxou";
 const FORBIDDEN = [
-  // racismo / ofensas graves / ameaças (pt-br básico)
   "macaco preto", "preto fedido", "viado", "viadinho", "bicha nojenta",
   "te mato", "vou te matar", "morre", "stupr",
-  // injection básico
   "<script", "javascript:", "drop table", "select * from", "; --", "union select",
 ];
 
 function containsForbidden(text: string): boolean {
   const lower = text.toLowerCase();
   return FORBIDDEN.some((w) => lower.includes(w));
+}
+
+/**
+ * Garante que nunca vamos exibir um e-mail (mesmo legado).
+ * Se vier algo com "@" ou pontuação típica de e-mail, devolvemos null.
+ */
+function sanitizeDisplayName(raw?: string | null): string | null {
+  if (!raw) return null;
+  const t = raw.trim();
+  if (!t) return null;
+  if (t.includes("@")) return null;
+  if (/^[a-z0-9._+-]+$/i.test(t) && t.length <= 24 && !t.includes(" ")) {
+    // handles tipo "contato", "joao.silva" — pode ser prefixo de e-mail. Trata como fraco.
+    return null;
+  }
+  return t;
 }
 
 function initials(name?: string | null): string {
@@ -49,12 +70,35 @@ function formatTime(iso: string): string {
 export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMatchChatProps) {
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ProfileInfo>>({});
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastSentRef = useRef<{ text: string; at: number } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Busca perfis públicos (display_name/nickname/avatar) dos autores das mensagens
+  const fetchProfiles = useCallback(async (userIds: string[]) => {
+    const missing = userIds.filter((id) => id && !profiles[id]);
+    if (missing.length === 0) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, nickname, avatar_url")
+      .in("user_id", missing);
+    if (!data) return;
+    setProfiles((prev) => {
+      const next = { ...prev };
+      data.forEach((p: any) => {
+        next[p.user_id] = {
+          display_name: p.display_name,
+          nickname: p.nickname,
+          avatar_url: p.avatar_url,
+        };
+      });
+      return next;
+    });
+  }, [profiles]);
 
   // Carregar últimas 50 + subscribe realtime
   useEffect(() => {
@@ -70,8 +114,11 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
       .limit(50)
       .then(({ data }) => {
         if (!active) return;
-        setMessages(((data ?? []) as ChatMessage[]).slice().reverse());
+        const list = ((data ?? []) as ChatMessage[]).slice().reverse();
+        setMessages(list);
         setLoading(false);
+        const ids = Array.from(new Set(list.map((m) => m.user_id).filter(Boolean)));
+        if (ids.length) fetchProfiles(ids);
       });
 
     const channel = supabase
@@ -88,6 +135,7 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
           const m = payload.new as ChatMessage;
           if (m.message && !((m as any).is_deleted)) {
             setMessages((prev) => (prev.some((p) => p.id === m.id) ? prev : [...prev, m]));
+            if (m.user_id) fetchProfiles([m.user_id]);
           }
         },
       )
@@ -97,6 +145,7 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
       active = false;
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchSlug]);
 
   // Auto-scroll
@@ -105,6 +154,17 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
   }, [messages.length]);
+
+  // Resolve nome público priorizando profile > metadata > fallback (nunca e-mail)
+  const resolveName = useCallback((m: ChatMessage): string => {
+    const p = profiles[m.user_id];
+    return (
+      sanitizeDisplayName(p?.display_name) ||
+      sanitizeDisplayName(p?.nickname) ||
+      sanitizeDisplayName(m.user_name) ||
+      FALLBACK_NAME
+    );
+  }, [profiles]);
 
   const remaining = useMemo(() => MAX_LEN - text.length, [text]);
   const canSend = text.trim().length > 0 && text.length <= MAX_LEN && !sending;
@@ -135,11 +195,16 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
     }
 
     setSending(true);
+
+    // Resolver nome do remetente SEM cair em email
+    const myProfile = profiles[user.id];
     const displayName =
-      (user.user_metadata?.display_name as string) ||
-      (user.user_metadata?.full_name as string) ||
-      user.email?.split("@")[0] ||
-      "Torcedor";
+      sanitizeDisplayName(myProfile?.display_name) ||
+      sanitizeDisplayName(myProfile?.nickname) ||
+      sanitizeDisplayName(user.user_metadata?.full_name as string | undefined) ||
+      sanitizeDisplayName(user.user_metadata?.name as string | undefined) ||
+      sanitizeDisplayName(user.user_metadata?.display_name as string | undefined) ||
+      FALLBACK_NAME;
 
     const { error: insertError } = await supabase.from("football_chat_messages").insert({
       match_slug: matchSlug,
@@ -168,7 +233,7 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
       <header className="mb-3">
         <h2 className="font-display font-black text-base md:text-lg flex items-center gap-2">
           <MessageCircle className="h-5 w-5 text-primary" />
-          💬 Chat Roxou do Jogo
+          🔥 Torcida Roxou
         </h2>
         <p className="text-xs text-muted-foreground mt-1">
           Comente, vibre e combine onde assistir {matchTitle} com a galera.
@@ -211,15 +276,28 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
             ) : (
               messages.map((m) => {
                 const mine = m.user_id === user?.id;
+                const name = resolveName(m);
+                const avatar = profiles[m.user_id]?.avatar_url || null;
                 return (
                   <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                    <div className="h-8 w-8 shrink-0 rounded-full bg-primary/20 text-primary text-[11px] font-bold flex items-center justify-center">
-                      {initials(m.user_name)}
+                    <div className="h-8 w-8 shrink-0 rounded-full bg-primary/20 text-primary text-[11px] font-bold flex items-center justify-center overflow-hidden">
+                      {avatar ? (
+                        <img
+                          src={avatar}
+                          alt={name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        initials(name)
+                      )}
                     </div>
                     <div className={`max-w-[78%] ${mine ? "text-right" : ""}`}>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-0.5">
                         <span className="font-semibold text-foreground/80 truncate max-w-[140px]">
-                          {m.user_name || "Torcedor"}
+                          {name}
                         </span>
                         <span>{formatTime(m.created_at)}</span>
                       </div>
