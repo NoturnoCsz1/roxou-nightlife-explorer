@@ -269,27 +269,43 @@ export default function V3Home() {
     enabled: venueRanks !== undefined,
   });
 
-  /* ─── DEDUPLICATION ─── */
+  /* ─── HERO PRIORITY ───
+   * Ordem de prioridade do destaque:
+   *   1. Eventos acontecendo hoje (SP)
+   *   2. Eventos nos próximos 7 dias
+   *   3. Próximos grandes eventos futuros
+   * Dentro de cada tier, prioriza featured e depois mais visualizados (trending).
+   */
   const heroEvents = useMemo(() => {
     const list = safeEvents(events);
-    const feat = list.filter(e => e.featured);
-    const rest = list.filter(e => !e.featured);
     const trendMap = new Map((trendingIds ?? []).map(t => [t.id, t.views]));
-    rest.sort((a, b) => (trendMap.get(b.id) || 0) - (trendMap.get(a.id) || 0));
-    const combined = [...feat, ...rest];
-    let unique = combined.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
-    // Fallback: complete with random future events when there are fewer than 4 highlights
-    if (unique.length < 4) {
-      const usedIds = new Set(unique.map(e => e.id));
-      const pool = list.filter(e => !usedIds.has(e.id));
-      // Fisher-Yates shuffle (stable per render via slice)
-      const shuffled = pool.slice();
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      unique = [...unique, ...shuffled.slice(0, 4 - unique.length)];
-    }
+    const weekLimit = TODAY_START + 7 * 24 * 60 * 60 * 1000;
+
+    const tierOf = (e: any): 0 | 1 | 2 => {
+      const dt = toSafeDate(e.date_time);
+      if (!dt) return 2;
+      if (isTodayFn(dt)) return 0;
+      const ts = dt.getTime();
+      if (ts >= TODAY_START && ts < weekLimit) return 1;
+      return 2;
+    };
+
+    const sorted = [...list].sort((a, b) => {
+      const ta = tierOf(a), tb = tierOf(b);
+      if (ta !== tb) return ta - tb;
+      // Featured primeiro dentro do tier
+      if (!!b.featured !== !!a.featured) return b.featured ? 1 : -1;
+      // Depois trending (views)
+      const va = trendMap.get(a.id) || 0;
+      const vb = trendMap.get(b.id) || 0;
+      if (vb !== va) return vb - va;
+      // Por fim, cronológico
+      const da = toSafeDate(a.date_time)?.getTime() ?? Infinity;
+      const db = toSafeDate(b.date_time)?.getTime() ?? Infinity;
+      return da - db;
+    });
+
+    const unique = sorted.filter((e, i, arr) => arr.findIndex(x => x.id === e.id) === i);
     return unique.slice(0, 4);
   }, [events, trendingIds]);
 
