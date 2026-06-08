@@ -194,6 +194,7 @@ Deno.serve(async (req) => {
           suggested_music_primary: { type: "string", description: "Estilo musical principal (ex: Sertanejo, Funk, Rock, Eletrônica)" },
           suggested_music_secondary: { type: "array", items: { type: "string" }, description: "Até 2 estilos secundários" },
           suggested_description: { type: "string", description: "Descrição curta (2-3 frases) em pt-BR" },
+          suggested_full_description: { type: "string", description: "Descrição completa opcional (4-6 frases) em pt-BR" },
           problems: { type: "array", items: { type: "string" }, description: "Problemas detectados nos dados atuais" },
           improvements: { type: "array", items: { type: "string" }, description: "Melhorias recomendadas (ex: adicionar logo, validar IG)" },
           confidence: { type: "string", enum: ["baixa", "media", "alta"] },
