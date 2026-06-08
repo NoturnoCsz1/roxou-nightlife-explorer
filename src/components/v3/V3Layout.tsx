@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck, Search } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck, Search, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
@@ -8,8 +8,8 @@ import AuraAvatar from "@/components/v3/AuraAvatar";
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
   { to: "/agenda", icon: CalendarDays, label: "Agenda" },
+  { to: "/jogos", icon: Trophy, label: "Jogos" },
   { to: "/transporte", icon: Car, label: "Caronas" },
-  { to: "/perto-de-mim", icon: MapPin, label: "Perto" },
   { to: "/perfil", icon: User, label: "Perfil" },
 ];
 
@@ -208,7 +208,9 @@ export default function V3Layout() {
             const isProfile = to === "/perfil";
             const active = to === "/"
               ? pathname === "/"
-              : pathname.startsWith(to);
+              : to === "/jogos"
+                ? pathname.startsWith("/jogos") || pathname.startsWith("/jogo/")
+                : pathname.startsWith(to);
             const isAura = to === "/ia";
             return (
               <button

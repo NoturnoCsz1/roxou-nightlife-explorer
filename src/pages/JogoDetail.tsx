@@ -366,74 +366,84 @@ export default function JogoDetail() {
           </section>
         )}
 
-        {/* Assista agora */}
-        <section>
-          <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
-            <Tv className="h-5 w-5 text-emerald-400" /> Assista agora
-          </h2>
+        {/* Assista agora — só se houver transmissão oficial ou link YouTube */}
+        {(hasOfficialStream || fallbackYoutube) && (
+          <section>
+            <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
+              <Tv className="h-5 w-5 text-emerald-400" /> Assista agora
+            </h2>
 
-          {hasOfficialStream ? (
-            <div className="space-y-3">
-              {streams.map((s) => {
-                const embed = toEmbedUrl(s.stream_url, s.stream_type);
-                return (
-                  <div key={s.id} className="rounded-2xl border border-emerald-500/40 bg-card/40 overflow-hidden">
-                    {embed && (
-                      <div className="aspect-video bg-black">
-                        <iframe
-                          src={embed}
-                          title={`Transmissão ${matchLabel}`}
-                          className="w-full h-full"
-                          allow="autoplay; encrypted-media; picture-in-picture"
-                          allowFullScreen
-                          loading="lazy"
-                        />
+            {hasOfficialStream ? (
+              <div className="space-y-3">
+                {streams.map((s) => {
+                  const embed = toEmbedUrl(s.stream_url, s.stream_type);
+                  return (
+                    <div key={s.id} className="rounded-2xl border border-emerald-500/40 bg-card/40 overflow-hidden">
+                      {embed && (
+                        <div className="aspect-video bg-black">
+                          <iframe
+                            src={embed}
+                            title={`Transmissão ${matchLabel}`}
+                            className="w-full h-full"
+                            allow="autoplay; encrypted-media; picture-in-picture"
+                            allowFullScreen
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-2 p-3">
+                        <span className="text-[11px] uppercase font-black tracking-wider text-emerald-300">
+                          {s.stream_type === "twitch" ? "Twitch" : s.stream_type === "youtube" ? "YouTube" : s.stream_type} {s.is_official && "· Oficial"}
+                        </span>
+                        <a
+                          href={s.stream_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 text-xs transition"
+                        >
+                          Abrir transmissão <ExternalLink className="h-3 w-3" />
+                        </a>
                       </div>
-                    )}
-                    <div className="flex items-center justify-between gap-2 p-3">
-                      <span className="text-[11px] uppercase font-black tracking-wider text-emerald-300">
-                        {s.stream_type === "twitch" ? "Twitch" : s.stream_type === "youtube" ? "YouTube" : s.stream_type} {s.is_official && "· Oficial"}
-                      </span>
-                      <a
-                        href={s.stream_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 text-xs transition"
-                      >
-                        Abrir transmissão <ExternalLink className="h-3 w-3" />
-                      </a>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : fallbackYoutube ? (
-            <a
-              href={fallbackYoutube}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
-              className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 text-sm transition"
-            >
-              <Youtube className="h-4 w-4" /> Assistir no YouTube
-            </a>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">
-              Sem transmissão oficial disponível no momento.
-            </p>
-          )}
-        </section>
+                  );
+                })}
+              </div>
+            ) : (
+              <a
+                href={fallbackYoutube!}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "stream_click" })}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 text-sm transition"
+              >
+                <Youtube className="h-4 w-4" /> Assistir no YouTube
+              </a>
+            )}
+          </section>
+        )}
 
-        {/* Bares */}
-        <section>
-          <h2 className="font-display font-black text-lg mb-3 flex items-center gap-2">
+        {/* Bares — bloco forte: "onde assistir" */}
+        <section className="rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-card/60 to-background p-4 md:p-5 shadow-[0_0_30px_-12px_hsl(var(--primary)/0.6)]">
+          <h2 className="font-display font-black text-lg md:text-xl mb-1 flex items-center gap-2">
             <Beer className="h-5 w-5 text-primary" /> Onde assistir em Presidente Prudente
           </h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Bares parceiros que confirmaram transmissão de {matchLabel}.
+          </p>
           {venues.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Ainda não temos bares confirmados para esse jogo. Em breve indicaremos onde assistir.
-            </p>
+            <div className="rounded-xl border border-dashed border-primary/30 bg-background/40 p-5 text-center">
+              <p className="font-bold text-sm">Nenhum local confirmou transmissão ainda</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
+                Tem um bar? Cadastre sua transmissão na Roxou e apareça aqui para a torcida.
+              </p>
+              <Link
+                to="/contato?assunto=cadastrar-transmissao"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground font-bold text-xs px-4 py-2 hover:bg-primary/90 transition"
+              >
+                Cadastrar transmissão
+              </Link>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {venues.map((v: any) => (
@@ -475,7 +485,7 @@ export default function JogoDetail() {
           )}
         </section>
 
-        {/* Chat Roxou do jogo */}
+        {/* Chat Roxou do jogo — compacto no mobile */}
         <div
           onFocus={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "chat_open" })}
           onClick={() => trackMatchEvent({ matchExternalId: match.external_id, matchSlug: match.slug, action: "chat_open" })}
@@ -483,28 +493,29 @@ export default function JogoDetail() {
           <FootballMatchChat
             matchSlug={match.slug}
             matchTitle={matchLabel}
+            compact
           />
         </div>
 
-        {/* FAQ */}
-        <section className="border-t border-border/40 pt-6">
-          <h2 className="font-display font-black text-lg mb-3">Perguntas frequentes</h2>
-          <div className="space-y-3 text-sm">
-            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
-              <summary className="cursor-pointer font-semibold">Que horas é {matchLabel}?</summary>
-              <p className="text-muted-foreground mt-2">
-                O jogo está marcado para {formatMatchTime(match.match_time)} (horário de Brasília).
+        {/* FAQ — compacto */}
+        <section className="border-t border-border/40 pt-4">
+          <h2 className="font-display font-black text-base mb-2">Perguntas frequentes</h2>
+          <div className="space-y-1.5 text-sm">
+            <details className="rounded-lg border border-border/30 bg-card/30 px-3 py-2">
+              <summary className="cursor-pointer font-semibold text-[13px]">Que horas começa?</summary>
+              <p className="text-muted-foreground text-xs mt-1.5">
+                {formatMatchTime(match.match_time)} (horário de Brasília).
               </p>
             </details>
-            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
-              <summary className="cursor-pointer font-semibold">Onde posso assistir em Presidente Prudente?</summary>
-              <p className="text-muted-foreground mt-2">
-                Confira a lista de bares parceiros acima e a transmissão oficial quando disponível.
+            <details className="rounded-lg border border-border/30 bg-card/30 px-3 py-2">
+              <summary className="cursor-pointer font-semibold text-[13px]">Onde assistir em Prudente?</summary>
+              <p className="text-muted-foreground text-xs mt-1.5">
+                Veja os bares parceiros acima. Sem bar confirmado? Acompanhe pelo chat ou pela transmissão oficial.
               </p>
             </details>
-            <details className="rounded-lg border border-border/40 bg-card/40 p-3">
-              <summary className="cursor-pointer font-semibold">Qual o campeonato?</summary>
-              <p className="text-muted-foreground mt-2">{match.league_label}.</p>
+            <details className="rounded-lg border border-border/30 bg-card/30 px-3 py-2">
+              <summary className="cursor-pointer font-semibold text-[13px]">Qual campeonato?</summary>
+              <p className="text-muted-foreground text-xs mt-1.5">{match.league_label}.</p>
             </details>
           </div>
         </section>

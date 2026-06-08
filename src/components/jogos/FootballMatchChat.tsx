@@ -8,6 +8,7 @@ import { sanitizeText } from "@/lib/sanitize";
 interface FootballMatchChatProps {
   matchSlug: string;
   matchTitle: string;
+  compact?: boolean;
 }
 
 interface ChatMessage {
@@ -67,7 +68,7 @@ function formatTime(iso: string): string {
   }
 }
 
-export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMatchChatProps) {
+export default function FootballMatchChat({ matchSlug, matchTitle, compact = false }: FootballMatchChatProps) {
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileInfo>>({});
@@ -229,15 +230,17 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
   }
 
   return (
-    <section className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card/60 to-background p-4 md:p-5 shadow-[0_0_30px_-15px_hsl(var(--primary)/0.5)]">
-      <header className="mb-3">
-        <h2 className="font-display font-black text-base md:text-lg flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
+    <section className={`rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/5 via-card/60 to-background shadow-[0_0_30px_-15px_hsl(var(--primary)/0.5)] ${compact ? "p-3 md:p-4" : "p-4 md:p-5"}`}>
+      <header className={compact ? "mb-2" : "mb-3"}>
+        <h2 className={`font-display font-black flex items-center gap-2 ${compact ? "text-sm md:text-base" : "text-base md:text-lg"}`}>
+          <MessageCircle className={compact ? "h-4 w-4 text-primary" : "h-5 w-5 text-primary"} />
           🔥 Torcida Roxou
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Comente, vibre e combine onde assistir {matchTitle} com a galera.
-        </p>
+        {!compact && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Comente, vibre e combine onde assistir {matchTitle} com a galera.
+          </p>
+        )}
       </header>
 
       {!user && !authLoading ? (
@@ -265,7 +268,7 @@ export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMat
         <>
           <div
             ref={listRef}
-            className="max-h-[360px] overflow-y-auto space-y-3 rounded-xl border border-border/30 bg-background/40 p-3"
+            className={`overflow-y-auto space-y-3 rounded-xl border border-border/30 bg-background/40 ${compact ? "max-h-[220px] md:max-h-[320px] p-2" : "max-h-[360px] p-3"}`}
           >
             {loading ? (
               <p className="text-xs text-muted-foreground text-center py-6">Carregando mensagens…</p>
