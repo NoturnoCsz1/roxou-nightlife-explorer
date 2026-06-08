@@ -12,8 +12,10 @@ const ATTRACTION_LABEL: Record<string, { label: string; emoji: string; short: st
   pagode:       { label: "Pagode",              emoji: "🥁", short: "pagode" },
   samba:        { label: "Samba",               emoji: "🥁", short: "samba" },
   eletronica:   { label: "Eletrônica / DJ Set", emoji: "🪩", short: "eletrônica" },
+  eletronico:   { label: "Eletrônica / DJ Set", emoji: "🪩", short: "eletrônica" },
   rock:         { label: "Rock ao vivo",        emoji: "🎸", short: "rock" },
   pop_rock:     { label: "Pop / Rock cover",    emoji: "🎤", short: "pop/rock" },
+  pop:          { label: "Pop ao vivo",         emoji: "🎤", short: "pop" },
   mpb:          { label: "MPB / Voz e violão",  emoji: "🎶", short: "MPB" },
   standup:      { label: "Stand-up Comedy",     emoji: "🎭", short: "stand-up" },
   universitario:{ label: "Festa universitária", emoji: "🎓", short: "festa universitária" },
@@ -23,12 +25,55 @@ const ATTRACTION_LABEL: Record<string, { label: string; emoji: string; short: st
   show:         { label: "Show ao vivo",        emoji: "🎤", short: "show" },
   cultural:     { label: "Evento cultural",     emoji: "🎭", short: "rolê cultural" },
   restaurante:  { label: "Gastronomia",         emoji: "🍽️", short: "gastronomia" },
+  acustico:     { label: "Música acústica",     emoji: "🎶", short: "som acústico" },
+  flashback:    { label: "Flashback",           emoji: "💿", short: "flashback" },
+  forro:        { label: "Forró",               emoji: "🪗", short: "forró" },
+  arrocha:      { label: "Arrocha",             emoji: "🎶", short: "arrocha" },
+  axe:          { label: "Axé",                 emoji: "🥁", short: "axé" },
+  rap_trap:     { label: "Rap / Trap",          emoji: "🎤", short: "rap/trap" },
+  open_format:  { label: "Open Format",         emoji: "🎚️", short: "open format" },
 };
 
-function resolveAttraction(category?: string, subCategory?: string) {
+function resolveAttraction(category?: string, subCategory?: string, partnerStyle?: string) {
+  // Prioridade: estilo do evento (sub) > estilo primário do local > categoria do evento.
   const sub = String(subCategory || "").toLowerCase().trim();
+  const ps  = String(partnerStyle || "").toLowerCase().trim();
   const cat = String(category || "").toLowerCase().trim();
-  return ATTRACTION_LABEL[sub] || ATTRACTION_LABEL[cat] || { label: "Música e resenha", emoji: "🎶", short: "rolê" };
+  return ATTRACTION_LABEL[sub]
+      || ATTRACTION_LABEL[ps]
+      || ATTRACTION_LABEL[cat]
+      || { label: "Música e resenha", emoji: "🎶", short: "rolê" };
+}
+
+// Label humano para `partner.type` quando entrar na frase narrativa
+const PARTNER_TYPE_LABEL: Record<string, string> = {
+  bar: "bar", restaurante: "restaurante", espetinho: "espetinho",
+  lounge: "lounge", balada: "balada", "casa de shows": "casa de shows",
+  pub: "pub", choperia: "choperia", adega: "adega", tabacaria: "tabacaria",
+  cultural: "espaço cultural", outro: "casa",
+};
+
+// Extrai um possível nome de artista do título (sem inventar).
+// Suporta: "FESTA com ARTISTA", "FESTA - ARTISTA", "FESTA | ARTISTA", "FESTA feat ARTISTA"
+function extractArtistFromTitle(title?: string): string {
+  const t = String(title || "").trim();
+  if (!t) return "";
+  const patterns: RegExp[] = [
+    /\b(?:com|c\/)\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/u,
+    /\s[-–—|]\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/u,
+    /\bfeat\.?\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/iu,
+  ];
+  for (const re of patterns) {
+    const m = t.match(re);
+    if (m && m[1]) {
+      const cand = m[1].trim().replace(/\s+/g, " ");
+      // evita pegar palavras genéricas curtas
+      if (cand.length >= 3 && !/^(ao vivo|hoje|live|show|festa|noite)$/i.test(cand)) {
+        return cand;
+      }
+    }
+  }
+  return "";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,6 +184,11 @@ type Ctx = {
   hype: string;           // 1-2 frases vindas da IA (opcional)
   cta: string;
   seed: number;
+  // 🆕 Novos campos do parceiro/evento
+  partnerTypeLabel: string;   // ex.: "restaurante", "bar"
+  partnerSummary: string;     // short_description (1 frase do local)
+  partnerSecondaryStyles: string[]; // labels curtos
+  artist: string;             // extraído do título (se houver)
 };
 
 function whenOpener(ctx: Ctx): string {
@@ -274,24 +324,72 @@ function tplMinimal(c: Ctx): string {
   return lines.join("");
 }
 
-const TEMPLATES = [tplDireto, tplChamada, tplCurto, tplAgenda, tplDescoberta, tplNoticia, tplHype, tplMinimal];
-const TEMPLATE_NAMES = ["direto", "chamada", "curto", "agenda", "descoberta", "noticia", "hype", "minimal"];
+// — Template 9: Narrativo do local (usa identidade do parceiro) —
+function tplVenueNarrative(c: Ctx): string {
+  const opener = c.isToday
+    ? "Hoje"
+    : `Nesta ${c.weekdayShort.toLowerCase()}`;
+
+  // Linha 1 — abertura com tipo de local + bairro/cidade
+  const typeLabel = c.partnerTypeLabel || "casa";
+  const localBit = c.neighborhood
+    ? `${typeLabel} em ${c.city || c.neighborhood}`
+    : c.city
+      ? `${typeLabel} em ${c.city}`
+      : typeLabel;
+  const venuePart = c.venue ? ` no ${c.venue}` : "";
+  const head = `${opener} tem ${c.attractionShort}${venuePart}, ${localBit}.`;
+
+  // Linha 2 — contexto curto do local (apenas se vier do banco)
+  const venueLine = c.partnerSummary
+    ? c.partnerSummary
+    : c.partnerSecondaryStyles.length
+      ? `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")}.`
+      : "";
+
+  // Linha 3 — atração + horário + artista (se extraído)
+  const artistBit = c.artist ? `${c.artist} comanda a noite` : `a atração comanda a noite`;
+  const timeBit = c.hasRealTime ? ` a partir das ${c.timeLabel}` : "";
+  const styleBit = c.attractionShort && c.attractionShort !== "rolê"
+    ? ` com repertório ${c.attractionShort}`
+    : "";
+  const line3 = c.artist
+    ? `${artistBit}${styleBit}${timeBit}.`
+    : `${c.title}${styleBit}${timeBit}.`;
+
+  const blocks: string[] = [];
+  blocks.push(`<p>${escapeHtml(head)}</p>`);
+  if (venueLine) blocks.push(`<p>${escapeHtml(venueLine)}</p>`);
+  blocks.push(`<p>${escapeHtml(line3)}</p>`);
+  blocks.push(`<p>${escapeHtml(c.cta)}</p>`);
+  return blocks.join("");
+}
+
+const TEMPLATES = [tplDireto, tplChamada, tplCurto, tplAgenda, tplDescoberta, tplNoticia, tplHype, tplMinimal, tplVenueNarrative];
+const TEMPLATE_NAMES = ["direto", "chamada", "curto", "agenda", "descoberta", "noticia", "hype", "minimal", "venue_narrative"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🧠 Escolha inteligente do template
 // ─────────────────────────────────────────────────────────────────────────────
-function chooseTemplate(seed: number, previousDescs: string[], hasMinimalData: boolean): number {
-  // Detecta os últimos templates usados no lote para evitar repetição
+function chooseTemplate(
+  seed: number,
+  previousDescs: string[],
+  hasMinimalData: boolean,
+  hasRichVenue: boolean,
+): number {
   const recent = (previousDescs || [])
     .map(detectTemplateId)
-    .filter((x): x is number => x !== null && x >= 1 && x <= 8)
+    .filter((x): x is number => x !== null && x >= 1 && x <= 9)
     .slice(-5)
-    .map((x) => x - 1); // converter para índice 0-based
+    .map((x) => x - 1);
 
-  // Se a info for muito limitada, prefere templates curtos/minimalistas
-  const preferred = hasMinimalData ? [2, 7, 4] : [0, 1, 2, 3, 4, 5, 6, 7];
+  // Pouca info → templates curtos. Info rica de parceiro → privilegia narrativo (T9).
+  const preferred = hasMinimalData
+    ? [2, 7, 4]
+    : hasRichVenue
+      ? [8, 0, 5, 1, 8, 3, 6, 8, 4] // T9 (idx 8) entra duas vezes para ganhar peso
+      : [0, 1, 2, 3, 4, 5, 6, 7];
 
-  // Começa pelo seed e busca o próximo não usado recentemente
   const start = ((Math.floor(seed) % preferred.length) + preferred.length) % preferred.length;
   for (let i = 0; i < preferred.length; i++) {
     const idx = preferred[(start + i) % preferred.length];
@@ -373,6 +471,9 @@ serve(async (req) => {
     let partnerType: string | null = partnerTypeIn || null;
     let partnerNeighborhood: string | null = neighborhood || null;
     let partnerCity: string | null = city || null;
+    let partnerSummary: string | null = venueDescIn || null;
+    let partnerMusicPrimary: string | null = null;
+    let partnerMusicSecondary: string[] = [];
 
     if (partner_id) {
       try {
@@ -381,32 +482,44 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, serviceKey);
         const { data: p } = await supabase
           .from("partners")
-          .select("type, neighborhood, city")
+          .select("type, neighborhood, city, short_description, full_description, music_style_primary, music_styles_secondary")
           .eq("id", partner_id)
           .maybeSingle();
         if (p) {
           if (!partnerType) partnerType = p.type || null;
           if (!partnerNeighborhood) partnerNeighborhood = p.neighborhood || null;
           if (!partnerCity) partnerCity = p.city || null;
+          if (!partnerSummary) {
+            // prefere short; full vira fallback truncado em 1 frase
+            partnerSummary = (p.short_description || "")
+              || (p.full_description ? String(p.full_description).split(/(?<=\.)\s/)[0] : "")
+              || null;
+          }
+          partnerMusicPrimary = (p as any).music_style_primary || null;
+          partnerMusicSecondary = Array.isArray((p as any).music_styles_secondary)
+            ? (p as any).music_styles_secondary.filter(Boolean)
+            : [];
         }
       } catch (_e) { /* segue */ }
     }
 
     const dateInfo = formatOfficialDate(date_time);
-    const attraction = resolveAttraction(category, sub_category);
+    const attraction = resolveAttraction(category, sub_category, partnerMusicPrimary || undefined);
 
     const cleanTitle = String(title || "").trim();
     const cleanVenue = String(venue_name || "").trim();
     const cleanCity = String(partnerCity || "").trim();
     const cleanNeighborhood = String(partnerNeighborhood || "").trim();
+    const artist = extractArtistFromTitle(cleanTitle);
 
     const seed = Number.isFinite(Number(seed_index)) ? Number(seed_index) : Math.floor(Math.random() * 9999);
 
-    // Detecta se temos pouca informação real
     const hasMinimalData = !cleanVenue && !cleanCity && !cleanNeighborhood;
+    const hasRichVenue = Boolean(
+      cleanVenue && (partnerType || partnerSummary || partnerMusicPrimary),
+    );
 
-    // Escolhe template evitando repetição
-    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData);
+    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue);
 
     // Gera hype curto (opcional) — só usado por T1 (e ignorado pelos outros)
     let hype = "";
@@ -417,8 +530,12 @@ serve(async (req) => {
       );
     }
 
-    // Escolhe CTA distinto do anterior
     const cta = pickFromBank(CTA_BANK, seed + tplIdx);
+
+    // Labels secundários (apenas os que conhecemos)
+    const secondaryLabels = partnerMusicSecondary
+      .map((v) => ATTRACTION_LABEL[String(v).toLowerCase()]?.short)
+      .filter((x): x is string => !!x);
 
     const ctx: Ctx = {
       title: cleanTitle,
@@ -438,7 +555,12 @@ serve(async (req) => {
       hype,
       cta,
       seed,
+      partnerTypeLabel: PARTNER_TYPE_LABEL[String(partnerType || "").toLowerCase()] || (partnerType || ""),
+      partnerSummary: stripForbidden(String(partnerSummary || "").trim()),
+      partnerSecondaryStyles: secondaryLabels,
+      artist,
     };
+
 
     const html = TEMPLATES[tplIdx](ctx);
 
