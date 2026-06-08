@@ -77,19 +77,19 @@ function extractArtistFromTitle(title?: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🎯 CTAs rotativos (sem clichês)
+// 🎯 CTAs rotativos (sem clichês, sem "não fique de fora" / "bora marcar")
 // ─────────────────────────────────────────────────────────────────────────────
 const CTA_BANK: string[] = [
-  "Confere os detalhes na Roxou.",
-  "Salva esse rolê e manda pra quem vai com você.",
-  "A agenda completa tá em roxou.com.br/agenda.",
-  "Confere esse e outros rolês na Roxou.",
-  "Marca quem não pode perder.",
-  "Já manda no grupo.",
-  "Acompanhe a agenda da cidade na Roxou.",
-  "Chama a galera e confere a programação na Roxou.",
-  "Veja mais detalhes na Roxou.",
-  "Mais informações na agenda da Roxou.",
+  "Programação completa na agenda da Roxou.",
+  "Veja o evento na Roxou e combine seu rolê.",
+  "Mais detalhes em roxou.com.br/agenda.",
+  "Confira o que rola na cidade pela Roxou.",
+  "A Roxou tem a agenda completa do fim de semana.",
+  "Saiba mais sobre o rolê na Roxou.",
+  "Veja a agenda da semana em roxou.com.br.",
+  "Acompanhe a programação local pela Roxou.",
+  "Encontre esse e outros rolês na Roxou.",
+  "Detalhes e ingressos pela página do evento na Roxou.",
 ];
 
 function pickFromBank<T>(bank: T[], seed: number): T {
@@ -134,7 +134,7 @@ function buildLocationLine(venue?: string | null, neighborhood?: string | null, 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🚫 Frases banidas (cara de IA / cara de release)
 // ─────────────────────────────────────────────────────────────────────────────
-const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar|ser [ée]pico)|energia contagiante|vibe contagiante|reserve sua data|celebrando|proporcionando|embalar a noite|a cidade vai parar|evento completo|compartilhe com a galera|clima de pura)\b/gi;
+const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar|ser [ée]pico)|energia contagiante|vibe contagiante|reserve sua data|celebrando|proporcionando|embalar a noite|a cidade vai parar|evento completo|compartilhe com a galera|clima de pura|bora marcar quem vai junto|mesa cheia e gente boa|rol[êe] confirmado|marca quem n[ãa]o pode perder|j[áa] manda no grupo)\b/gi;
 const FILLER_RE = /\b(?:em breve)\b/gi;
 
 function stripForbidden(s: string): string {
@@ -216,10 +216,11 @@ function tplDireto(c: Ctx): string {
 // — Template 2: Chamada de rolê —
 function tplChamada(c: Ctx): string {
   const opener = whenOpener(c);
-  const head = `${opener} combina com ${c.attractionShort}, mesa cheia e gente boa.`;
+  const head = `${opener} pede ${c.attractionShort} com som ao vivo e pegada de bairro.`;
+  const subjectBit = c.artist ? `${c.artist}` : c.title;
   const sub = c.venue
-    ? `${c.title} no ${c.venue}${c.city ? ` em ${c.city}` : ""}.`
-    : `${c.title}${c.city ? ` em ${c.city}` : ""}.`;
+    ? `${subjectBit} no ${c.venue}${c.city ? `, em ${c.city}` : ""}.`
+    : `${subjectBit}${c.city ? `, em ${c.city}` : ""}.`;
   const items: string[] = [];
   if (c.venue) items.push(`📍 ${escapeHtml(c.venue)}`);
   if (c.hasRealTime) items.push(`🕒 A partir das ${escapeHtml(c.timeLabel)}`);
@@ -228,20 +229,21 @@ function tplChamada(c: Ctx): string {
     `<p>${escapeHtml(head)}</p>`,
     `<p>${escapeHtml(sub)}</p>`,
     `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`,
-    `<p>Bora marcar quem vai junto?</p>`,
+    `<p>${escapeHtml(c.cta)}</p>`,
   ];
   return html.join("");
 }
 
 // — Template 3: Curto para Instagram —
 function tplCurto(c: Ctx): string {
-  const opener = c.isToday ? "Rolê confirmado hoje" : `${c.weekdayShort} com ${c.attractionShort} na área`;
-  const where = c.venue ? `${c.title} no ${c.venue}` : c.title;
+  const opener = c.isToday ? `Hoje com ${c.attractionShort} na cidade` : `${c.weekdayShort} com ${c.attractionShort} na área`;
+  const subject = c.artist ? c.artist : (c.venue || c.attractionLabel);
+  const where = c.venue && c.artist ? `${subject} no ${c.venue}` : subject;
   const when = c.hasRealTime ? `, a partir das ${c.timeLabel}` : "";
   return [
     `<p>${escapeHtml(opener)}. ${c.emoji}</p>`,
     `<p>${escapeHtml(`${where}${when}.`)}</p>`,
-    `<p>Mais detalhes na agenda da Roxou.</p>`,
+    `<p>${escapeHtml(c.cta)}</p>`,
   ].join("");
 }
 
@@ -293,10 +295,11 @@ function tplNoticia(c: Ctx): string {
 
 // — Template 7: Hype moderado —
 function tplHype(c: Ctx): string {
-  const head = `Tem som, tem mesa e tem rolê confirmado.`;
+  const head = `Som, mesa e ${c.attractionShort} na agenda.`;
+  const subject = c.artist ? c.artist : c.attractionLabel;
   const line = c.venue
-    ? `${c.title} no ${c.venue} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`
-    : `${c.title} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`;
+    ? `${subject} no ${c.venue} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`
+    : `${subject} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`;
   const items: string[] = [];
   if (c.city) items.push(`📍 ${escapeHtml(c.city)}`);
   if (c.hasRealTime) items.push(`🕒 ${escapeHtml(c.timeLabel)}`);
@@ -305,7 +308,7 @@ function tplHype(c: Ctx): string {
     `<p>${escapeHtml(head)}</p>`,
     `<p>${escapeHtml(line)}</p>`,
     `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`,
-    `<p>A agenda completa tá na Roxou.</p>`,
+    `<p>${escapeHtml(c.cta)}</p>`,
   ].join("");
 }
 
@@ -324,44 +327,78 @@ function tplMinimal(c: Ctx): string {
   return lines.join("");
 }
 
-// — Template 9: Narrativo do local (usa identidade do parceiro) —
+// — Template 9: Narrativo editorial (prioridade alta, 2–4 parágrafos) —
+// Regras: nunca repete o título cru; contextualiza pelo tipo do local +
+// bairro/cidade; quando houver artista, abre falando do show; quando for
+// bar/restaurante, contextualiza o ambiente.
 function tplVenueNarrative(c: Ctx): string {
-  const opener = c.isToday
-    ? "Hoje"
-    : `Nesta ${c.weekdayShort.toLowerCase()}`;
+  const ambientByType: Record<string, string> = {
+    bar: "A casa é parada típica de bar de bairro, com mesa na calçada e chope gelado.",
+    pub: "O pub mantém o clima de happy hour estendido, com cerveja artesanal e som médio.",
+    choperia: "A choperia é ponto certo para encerrar a semana no ritmo da rua.",
+    restaurante: "O restaurante combina cozinha do dia a dia com música ao vivo durante a noite.",
+    espetinho: "O espetinho é daqueles endereços de mesa na rua, chope e brasa direto.",
+    lounge: "O lounge aposta em iluminação baixa e drinks autorais para a noite.",
+    balada: "A balada entrega pista cheia e som alto até de madrugada.",
+    "casa de shows": "A casa de shows recebe atrações com palco montado e produção dedicada.",
+    adega: "A adega é endereço de carta de vinhos e ambiente intimista.",
+    tabacaria: "A tabacaria mistura narguilé, drinks e som ambiente para conversar.",
+    cultural: "O espaço cultural recebe programações que misturam música, arte e encontro.",
+  };
 
-  // Linha 1 — abertura com tipo de local + bairro/cidade
+  // ─── Parágrafo 1 — abertura editorial, sem citar o título ───
+  const opener = c.isToday ? "Hoje" : `Nesta ${c.weekdayShort.toLowerCase()}, ${c.dateShort},`;
   const typeLabel = c.partnerTypeLabel || "casa";
-  const localBit = c.neighborhood
-    ? `${typeLabel} em ${c.city || c.neighborhood}`
-    : c.city
-      ? `${typeLabel} em ${c.city}`
-      : typeLabel;
-  const venuePart = c.venue ? ` no ${c.venue}` : "";
-  const head = `${opener} tem ${c.attractionShort}${venuePart}, ${localBit}.`;
+  const localBit = c.neighborhood && c.city
+    ? `${typeLabel} no ${c.neighborhood}, em ${c.city}`
+    : c.neighborhood
+      ? `${typeLabel} no ${c.neighborhood}`
+      : c.city
+        ? `${typeLabel} em ${c.city}`
+        : typeLabel;
 
-  // Linha 2 — contexto curto do local (apenas se vier do banco)
-  const venueLine = c.partnerSummary
-    ? c.partnerSummary
-    : c.partnerSecondaryStyles.length
-      ? `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")}.`
-      : "";
+  let p1: string;
+  if (c.artist) {
+    // Foco no show
+    const venuePart = c.venue ? ` no ${c.venue}` : "";
+    p1 = `${opener} ${c.artist} sobe ao palco${venuePart}, ${localBit}, com repertório ${c.attractionShort}.`;
+  } else if (c.venue) {
+    p1 = `${opener} o ${c.venue} entra na agenda da cidade com programação de ${c.attractionShort}, ${localBit}.`;
+  } else {
+    p1 = `${opener} a noite tem ${c.attractionShort}${c.city ? ` em ${c.city}` : ""}.`;
+  }
 
-  // Linha 3 — atração + horário + artista (se extraído)
-  const artistBit = c.artist ? `${c.artist} comanda a noite` : `a atração comanda a noite`;
-  const timeBit = c.hasRealTime ? ` a partir das ${c.timeLabel}` : "";
-  const styleBit = c.attractionShort && c.attractionShort !== "rolê"
-    ? ` com repertório ${c.attractionShort}`
+  // ─── Parágrafo 2 — ambiente do local (curado pelo tipo + summary do parceiro) ───
+  const ambientLine = c.partnerTypeLabel
+    ? ambientByType[String(c.partnerTypeLabel).toLowerCase()] || ""
     : "";
-  const line3 = c.artist
-    ? `${artistBit}${styleBit}${timeBit}.`
-    : `${c.title}${styleBit}${timeBit}.`;
+  const p2Parts: string[] = [];
+  if (c.partnerSummary) p2Parts.push(c.partnerSummary);
+  if (ambientLine && !c.partnerSummary) p2Parts.push(ambientLine);
+  if (c.partnerSecondaryStyles.length) {
+    p2Parts.push(
+      `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")} ao longo da semana.`,
+    );
+  }
+  const p2 = p2Parts.join(" ").trim();
+
+  // ─── Parágrafo 3 — operação prática (horário + dia), sem listão ───
+  const timeBit = c.hasRealTime ? `a partir das ${c.timeLabel}` : "com horário a confirmar";
+  let p3: string;
+  if (c.artist) {
+    p3 = `O show começa ${timeBit}. ${c.isToday ? "É para hoje" : `É ${c.weekdayShort.toLowerCase()}, ${c.dateShort}`}, e a entrada acompanha a programação da casa.`;
+  } else {
+    p3 = `A programação rola ${timeBit}${c.isToday ? ", hoje mesmo" : `, ${c.weekdayShort.toLowerCase()}, ${c.dateShort}`}.`;
+  }
+
+  // ─── Parágrafo 4 — CTA variável ───
+  const p4 = c.cta;
 
   const blocks: string[] = [];
-  blocks.push(`<p>${escapeHtml(head)}</p>`);
-  if (venueLine) blocks.push(`<p>${escapeHtml(venueLine)}</p>`);
-  blocks.push(`<p>${escapeHtml(line3)}</p>`);
-  blocks.push(`<p>${escapeHtml(c.cta)}</p>`);
+  blocks.push(`<p>${escapeHtml(p1)}</p>`);
+  if (p2) blocks.push(`<p>${escapeHtml(p2)}</p>`);
+  blocks.push(`<p>${escapeHtml(p3)}</p>`);
+  blocks.push(`<p>${escapeHtml(p4)}</p>`);
   return blocks.join("");
 }
 
@@ -376,19 +413,25 @@ function chooseTemplate(
   previousDescs: string[],
   hasMinimalData: boolean,
   hasRichVenue: boolean,
+  hasArtist: boolean,
 ): number {
+  // T9 (índice 8) = narrativo editorial. Prioridade máxima quando dá:
+  // - artista identificado → sempre T9
+  // - parceiro com tipo/summary/estilo → quase sempre T9
+  if (hasArtist && !hasMinimalData) return 8;
+
   const recent = (previousDescs || [])
     .map(detectTemplateId)
     .filter((x): x is number => x !== null && x >= 1 && x <= 9)
     .slice(-5)
     .map((x) => x - 1);
 
-  // Pouca info → templates curtos. Info rica de parceiro → privilegia narrativo (T9).
+  // Pouca info → templates curtos. Info rica → T9 domina a rotação.
   const preferred = hasMinimalData
     ? [2, 7, 4]
     : hasRichVenue
-      ? [8, 0, 5, 1, 8, 3, 6, 8, 4] // T9 (idx 8) entra duas vezes para ganhar peso
-      : [0, 1, 2, 3, 4, 5, 6, 7];
+      ? [8, 8, 8, 8, 5, 8, 0, 8, 3] // T9 com peso ~6/9
+      : [8, 0, 8, 5, 1, 8, 3, 6, 4]; // T9 ainda majoritário mesmo sem parceiro rico
 
   const start = ((Math.floor(seed) % preferred.length) + preferred.length) % preferred.length;
   for (let i = 0; i < preferred.length; i++) {
@@ -519,7 +562,7 @@ serve(async (req) => {
       cleanVenue && (partnerType || partnerSummary || partnerMusicPrimary),
     );
 
-    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue);
+    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue, !!artist);
 
     // Gera hype curto (opcional) — só usado por T1 (e ignorado pelos outros)
     let hype = "";
