@@ -195,6 +195,7 @@ const EventoForm = () => {
     status: "draft", verification_source: "Instagram", featured: false, image_url: "",
     video_url: "",
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
+    transport_reservation_enabled: false,
     ...emptyTransmission(),
   });
 
@@ -269,6 +270,7 @@ const EventoForm = () => {
       ticket_url: (data as any).ticket_url || "",
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
+      transport_reservation_enabled: Boolean((data as any).transport_reservation_enabled),
       _sub: (data as any).sub_category || data.category,
       is_sports_transmission: Boolean((data as any).is_sports_transmission),
       sports_match_id: (data as any).sports_match_id || null,
@@ -742,6 +744,22 @@ const EventoForm = () => {
                 <label className="flex items-center gap-1.5 text-xs">
                   <input type="checkbox" checked={form.featured} onChange={(e) => handleChange("featured", e.target.checked)} className="accent-primary" />
                   Evento em destaque
+                </label>
+              </div>
+              <div className="col-span-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                <label className="flex items-start gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean((form as any).transport_reservation_enabled)}
+                    onChange={(e) => handleChange("transport_reservation_enabled" as any, e.target.checked)}
+                    className="accent-primary mt-0.5"
+                  />
+                  <span className="flex-1">
+                    <span className="font-semibold text-foreground">🚗 Ativar reserva de carona</span>
+                    <span className="block text-[10px] text-muted-foreground mt-0.5">
+                      Mostra o botão de reserva/carona na página pública deste evento.
+                    </span>
+                  </span>
                 </label>
               </div>
             </div>
