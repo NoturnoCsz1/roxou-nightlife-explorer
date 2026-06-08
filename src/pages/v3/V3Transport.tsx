@@ -219,8 +219,9 @@ export default function V3Transport() {
               ))}
             </div>
           ) : realEvents.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl v3-glass">
-              <p className="text-sm text-muted-foreground">Nenhum evento confirmado no momento.</p>
+            <div className="p-6 text-center rounded-2xl v3-glass space-y-1">
+              <p className="text-sm text-foreground font-semibold">🚗 Nenhum evento com carona ativa no momento.</p>
+              <p className="text-xs text-muted-foreground">Quando a Roxou liberar transporte para um evento, ele aparecerá aqui.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3">
