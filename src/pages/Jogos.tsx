@@ -326,6 +326,41 @@ export default function Jogos() {
 
       <main className="mx-auto max-w-5xl px-4 py-6 md:py-10 space-y-10 md:space-y-14">
 
+        {/* ═══════════ 🇧🇷 BRASIL NA COPA (prioridade máxima) ═══════════ */}
+        {brasilNaCopa.length > 0 && (
+          <Section
+            eyebrow="🇧🇷 Seleção Brasileira"
+            title="Brasil na Copa"
+            subtitle="Próximos jogos da Seleção na Copa do Mundo 2026"
+            icon={<Trophy className="h-4 w-4" />}
+            accent="yellow"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {brasilNaCopa.map((m) => (
+                <BrasilCopaCard key={m.external_id || m.slug} match={m} todayKey={today} />
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* ═══════════ 🌎 COPA DO MUNDO 2026 — agrupada por dia ═══════════ */}
+        {copaPorDia.length > 0 && (
+          <Section
+            eyebrow="🌎 Copa do Mundo 2026"
+            title="Todos os jogos da Copa"
+            subtitle="Agrupados por dia, no horário de Brasília"
+            icon={<Trophy className="h-4 w-4" />}
+            accent="yellow"
+          >
+            <div className="space-y-5">
+              {copaPorDia.map(([dayKey, list]) => (
+                <CopaDayBlock key={dayKey} dayKey={dayKey} matches={list} todayKey={today} />
+              ))}
+            </div>
+          </Section>
+        )}
+
+
         <Section
           id="onde-assistir"
           eyebrow="Bares transmitindo"
