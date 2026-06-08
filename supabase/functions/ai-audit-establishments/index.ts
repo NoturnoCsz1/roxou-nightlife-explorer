@@ -142,12 +142,44 @@ Deno.serve(async (req) => {
     } else if (mode === "suggest") {
       const e = body.establishment;
       if (!e) return json({ error: "missing establishment" }, 400);
+
+      // 1) Normaliza handle a partir de instagram | instagram_username | website
+      const handle = normalizeHandle(e.instagram || e.instagram_username || e.website);
+
+      // 2) Tenta ler contexto real do Instagram via Business Discovery (reutiliza instagram_accounts)
+      const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      let igCtx: { validated: boolean; reason: string; data: any } = {
+        validated: false, reason: handle ? "—" : "Sem @ cadastrado.", data: null,
+      };
+      if (handle && SERVICE_ROLE) {
+        const adminCli = createClient(Deno.env.get("SUPABASE_URL")!, SERVICE_ROLE, { auth: { persistSession: false } });
+        igCtx = await fetchInstagramContext(adminCli, handle);
+      }
+      igMetaOut = {
+        handle,
+        source: handle
+          ? (igCtx.validated ? "instagram_validated" : "instagram_not_validated")
+          : "cadastro",
+        reason: igCtx.reason,
+        followers_count: igCtx.data?.followers_count ?? null,
+        bio: igCtx.data?.biography ?? null,
+      };
+
+      const igBlock = igCtx.validated
+        ? `INSTAGRAM (fonte primária, dados reais — priorize sobre suposições):\n${JSON.stringify(igCtx.data, null, 2)}`
+        : `INSTAGRAM: indisponível (${igCtx.reason}). Use apenas os dados internos abaixo e marque confiança no máximo "media".`;
+
       userPrompt =
-        `Você é um assistente de curadoria da Roxou. Analise o estabelecimento abaixo e gere SUGESTÕES de melhoria de cadastro.\n` +
-        `Use nome, instagram, endereço, descrição e contexto para inferir categoria e estilos musicais.\n` +
-        `Se algum dado faltar, ainda assim arrisque a melhor sugestão plausível e indique baixa confiança.\n` +
-        `A descrição sugerida deve ter 2 a 3 frases, tom direto, sem clichês ("o melhor", "incrível", "imperdível"), em pt-BR.\n\n` +
-        `Estabelecimento:\n${JSON.stringify(e, null, 2)}`;
+        `Você é um assistente de curadoria da Roxou. Gere SUGESTÕES de cadastro para o estabelecimento abaixo.\n\n` +
+        `REGRAS:\n` +
+        `- Dados reais do Instagram (bio, nome do perfil, legendas recentes) têm PRIORIDADE sobre chute do modelo.\n` +
+        `- Não invente dados que não estão nas fontes (bio, captions, cadastro). Se faltar evidência, diga confiança "baixa".\n` +
+        `- Se o Instagram indicar categoria/estilo diferente do cadastro, prefira o Instagram e marque confiança "media" ou "alta" conforme a evidência.\n` +
+        `- Descrição sugerida: 2-3 frases, pt-BR, tom direto, sem clichês ("o melhor", "incrível", "imperdível").\n` +
+        `- Máximo 2 estilos secundários.\n\n` +
+        `${igBlock}\n\n` +
+        `CADASTRO INTERNO:\n${JSON.stringify(e, null, 2)}`;
+
       toolName = "suggest_establishment";
       toolSchema = {
         type: "object",
@@ -159,15 +191,16 @@ Deno.serve(async (req) => {
           },
           suggested_type_label: { type: "string", description: "Rótulo amigável (ex: 'Bar', 'Casa de Shows')" },
           suggested_music_primary: { type: "string", description: "Estilo musical principal (ex: Sertanejo, Funk, Rock, Eletrônica)" },
-          suggested_music_secondary: { type: "array", items: { type: "string" }, description: "Até 3 estilos secundários" },
+          suggested_music_secondary: { type: "array", items: { type: "string" }, description: "Até 2 estilos secundários" },
           suggested_description: { type: "string", description: "Descrição curta (2-3 frases) em pt-BR" },
           problems: { type: "array", items: { type: "string" }, description: "Problemas detectados nos dados atuais" },
           improvements: { type: "array", items: { type: "string" }, description: "Melhorias recomendadas (ex: adicionar logo, validar IG)" },
           confidence: { type: "string", enum: ["baixa", "media", "alta"] },
+          evidence: { type: "string", description: "1 frase: em que se baseou (ex: 'bio menciona sertanejo universitário')" },
         },
         required: [
           "suggested_type", "suggested_type_label", "suggested_music_primary",
-          "suggested_music_secondary", "suggested_description", "problems", "improvements", "confidence",
+          "suggested_music_secondary", "suggested_description", "problems", "improvements", "confidence", "evidence",
         ],
         additionalProperties: false,
       };
