@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -864,3 +864,127 @@ function SkeletonGrid({ count = 3 }: { count?: number }) {
     </div>
   );
 }
+
+/* ─── Componentes Copa do Mundo ─────────────────────────── */
+
+function useCountdown(targetIso: string) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000 * 30);
+    return () => clearInterval(id);
+  }, []);
+  const diff = new Date(targetIso).getTime() - now;
+  if (diff <= 0) return null;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (d > 0) return `Faltam ${d}d ${h}h`;
+  if (h > 0) return `Faltam ${h}h ${m}min`;
+  return `Faltam ${m}min`;
+}
+
+function dayLabel(dayKey: string, todayKey: string): string {
+  if (dayKey === todayKey) return "Hoje";
+  const tomorrow = (() => {
+    const d = new Date(todayKey + "T12:00:00-03:00");
+    d.setDate(d.getDate() + 1);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(d);
+  })();
+  if (dayKey === tomorrow) return "Amanhã";
+  return format(new Date(dayKey + "T12:00:00-03:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
+}
+
+function BrasilCopaCard({ match, todayKey }: { match: NormalizedMatch; todayKey: string }) {
+  const countdown = useCountdown(match.match_time);
+  const isToday = match.raw_date === todayKey;
+  const isLive = match.status === "live";
+  const status = isLive ? "Ao vivo" : isToday ? "Hoje" : dayLabel(match.raw_date, todayKey);
+  const statusClass = isLive
+    ? "bg-red-500/20 border-red-500/50 text-red-300 animate-pulse"
+    : isToday
+      ? "bg-[#FFDF00]/20 border-[#FFDF00]/50 text-[#FFDF00]"
+      : "bg-[#009B3A]/20 border-[#009B3A]/50 text-[#7CE2A1]";
+
+  return (
+    <Link
+      to={`/jogo/${match.slug}`}
+      className="block rounded-2xl border border-[#FFDF00]/50 bg-gradient-to-br from-[#009B3A]/15 via-card/60 to-[#FFDF00]/10 p-4 hover:-translate-y-0.5 hover:shadow-[0_0_45px_-10px_rgba(255,223,0,0.6)] transition-all"
+    >
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-[#FFDF00]">
+          🏆 {match.league_label || "Copa do Mundo"}
+        </span>
+        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClass}`}>
+          {status}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex-1 flex flex-col items-center text-center">
+          {match.home_badge ? (
+            <img src={match.home_badge} alt="" className="h-12 w-12 object-contain mb-1" loading="lazy" />
+          ) : (
+            <div className="h-12 w-12 rounded-full bg-muted/30 mb-1" />
+          )}
+          <span className="text-xs font-bold line-clamp-2">{match.home_team}</span>
+        </div>
+        <div className="flex flex-col items-center px-2">
+          <span className="text-2xl font-black text-[#FFDF00]">×</span>
+          <span className="text-[11px] text-muted-foreground mt-1 tabular-nums">
+            {formatMatchTime(match.match_time)}
+          </span>
+        </div>
+        <div className="flex-1 flex flex-col items-center text-center">
+          {match.away_badge ? (
+            <img src={match.away_badge} alt="" className="h-12 w-12 object-contain mb-1" loading="lazy" />
+          ) : (
+            <div className="h-12 w-12 rounded-full bg-muted/30 mb-1" />
+          )}
+          <span className="text-xs font-bold line-clamp-2">{match.away_team}</span>
+        </div>
+      </div>
+
+      {countdown && !isLive && (
+        <div className="text-center text-[11px] font-bold text-[#FFDF00] tabular-nums">
+          ⏱ {countdown}
+        </div>
+      )}
+    </Link>
+  );
+}
+
+function CopaDayBlock({ dayKey, matches, todayKey }: { dayKey: string; matches: NormalizedMatch[]; todayKey: string }) {
+  const label = dayLabel(dayKey, todayKey);
+  return (
+    <div>
+      <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-[#FFDF00] mb-2 flex items-center gap-1.5">
+        <Calendar className="h-3 w-3" /> {label}
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        {matches.map((m) => (
+          <Link
+            key={m.external_id || m.slug}
+            to={`/jogo/${m.slug}`}
+            className="flex items-center gap-3 rounded-xl border border-[#009B3A]/30 bg-card/40 p-3 hover:border-[#FFDF00]/50 hover:bg-card/70 transition"
+          >
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+              {m.home_badge && <img src={m.home_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
+              <span className="font-bold text-sm truncate">{m.home_team}</span>
+            </div>
+            <span className="text-[#FFDF00] font-bold text-sm">×</span>
+            <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
+              <span className="font-bold text-sm truncate text-right">{m.away_team}</span>
+              {m.away_badge && <img src={m.away_badge} alt="" loading="lazy" className="h-6 w-6 object-contain shrink-0" />}
+            </div>
+            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 hidden sm:inline">
+              {formatMatchTime(m.match_time)}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
