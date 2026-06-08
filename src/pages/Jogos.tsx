@@ -453,40 +453,64 @@ function Section({
   );
 }
 
-function HeroMatchStripe({ match, isToday }: { match: NormalizedMatch; isToday: boolean }) {
+function CarouselMatchCard({ match, todayKey }: { match: NormalizedMatch; todayKey: string }) {
   const dt = new Date(match.match_time);
-  const label = isToday
-    ? "Hoje"
-    : format(dt, "EEE d/MM", { locale: ptBR });
+  const tomorrow = (() => {
+    const d = new Date(todayKey + "T12:00:00-03:00");
+    d.setDate(d.getDate() + 1);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(d);
+  })();
+  const isToday = match.raw_date === todayKey;
+  const isTomorrow = match.raw_date === tomorrow;
+  const badgeLabel = isToday ? "Hoje" : isTomorrow ? "Amanhã" : "Próximo";
+  const badgeClass = isToday
+    ? "bg-primary/20 border-primary/50 text-primary"
+    : isTomorrow
+      ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-300"
+      : "bg-secondary/60 border-border/60 text-muted-foreground";
+  const dateLabel = isToday || isTomorrow ? formatMatchTime(match.match_time) : format(dt, "EEE d/MM · HH'h'mm", { locale: ptBR });
+
   return (
     <Link
       to={`/jogo/${match.slug}`}
-      className="group block rounded-xl md:rounded-2xl border border-border/60 bg-card/60 backdrop-blur-md px-3 py-2 md:p-3.5 hover:border-primary/50 hover:bg-card/80 transition-all"
+      className="snap-start shrink-0 w-[240px] rounded-2xl border border-border/60 bg-card/60 backdrop-blur-md p-3 hover:border-primary/50 hover:bg-card/80 transition-all flex flex-col gap-2"
     >
-      <div className="flex items-center gap-2.5 md:gap-4">
-        <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
-          {match.home_badge ? (
-            <img src={match.home_badge} alt={match.home_team} className="h-6 w-6 md:h-9 md:w-9 object-contain shrink-0" />
-          ) : (
-            <div className="h-6 w-6 md:h-9 md:w-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-[10px] md:text-xs font-black text-primary shrink-0">
-              {match.home_team[0]}
-            </div>
-          )}
-          <span className="font-display font-bold text-[12px] md:text-sm truncate">{match.home_team}</span>
-          <span className="text-muted-foreground/60 text-[10px] md:text-xs shrink-0">×</span>
-          <span className="font-display font-bold text-[12px] md:text-sm truncate">{match.away_team}</span>
-          {match.away_badge && (
-            <img src={match.away_badge} alt={match.away_team} className="h-6 w-6 md:h-9 md:w-9 object-contain shrink-0" />
-          )}
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-muted-foreground leading-tight">{label}</p>
-          <p className="text-[12px] md:text-sm font-black text-primary leading-tight">{formatMatchTime(match.match_time)}</p>
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${badgeClass}`}>
+          {badgeLabel}
+        </span>
+        <span className="text-[10px] font-bold text-primary tabular-nums">{dateLabel}</span>
       </div>
+
+      <div className="flex items-center gap-2 min-w-0">
+        {match.home_badge ? (
+          <img src={match.home_badge} alt="" className="h-5 w-5 object-contain shrink-0" loading="lazy" />
+        ) : (
+          <div className="h-5 w-5 rounded-full bg-primary/10 border border-primary/30 shrink-0" />
+        )}
+        <span className="font-display font-bold text-[12px] truncate flex-1">{match.home_team}</span>
+      </div>
+      <div className="flex items-center gap-2 min-w-0">
+        {match.away_badge ? (
+          <img src={match.away_badge} alt="" className="h-5 w-5 object-contain shrink-0" loading="lazy" />
+        ) : (
+          <div className="h-5 w-5 rounded-full bg-primary/10 border border-primary/30 shrink-0" />
+        )}
+        <span className="font-display font-bold text-[12px] truncate flex-1">{match.away_team}</span>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground truncate">{match.league_label}</p>
+
+      <span className="mt-auto inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 px-2 py-1 text-[11px] font-bold">
+        <Tv className="h-3 w-3" /> Onde assistir
+      </span>
     </Link>
   );
 }
+
+
 
 const CHANNEL_COLORS: Record<string, string> = {
   "GE TV": "bg-green-500/15 border-green-500/40 text-green-300",
