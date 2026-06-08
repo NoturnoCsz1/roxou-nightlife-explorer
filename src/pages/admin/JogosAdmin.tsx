@@ -133,7 +133,7 @@ export default function JogosAdmin() {
         .gte("match_time", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
         .order("match_time", { ascending: true })
         .limit(200);
-      return (data ?? []) as MatchRow[];
+      return (data ?? []) as unknown as MatchRow[];
     },
     staleTime: 60 * 1000,
   });
