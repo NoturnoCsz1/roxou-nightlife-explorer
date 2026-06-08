@@ -259,6 +259,58 @@ const EstabelecimentosAudit = () => {
   const [globalAI, setGlobalAI] = useState<GlobalAI | null>(null);
   const [globalBusy, setGlobalBusy] = useState(false);
 
+  // Estabelecimentos 2.1 — Assistente IA de Correção (apenas sugestões)
+  type SuggestAI = {
+    suggested_type: string;
+    suggested_type_label: string;
+    suggested_music_primary: string;
+    suggested_music_secondary: string[];
+    suggested_description: string;
+    problems: string[];
+    improvements: string[];
+    confidence: "baixa" | "media" | "alta";
+  };
+  const [suggestBusy, setSuggestBusy] = useState<string | null>(null);
+  const [suggestResult, setSuggestResult] = useState<Record<string, SuggestAI>>({});
+
+  async function suggestOne(e: Establishment) {
+    setSuggestBusy(e.id);
+    try {
+      const score = computeScore(e);
+      const payload = {
+        id: e.id,
+        name: e.name,
+        slug: e.slug,
+        instagram: e.instagram,
+        website: (e as any).website ?? null,
+        short_description: (e as any).short_description ?? null,
+        full_description: (e as any).full_description ?? e.description ?? null,
+        description: e.description ?? null,
+        address: e.address,
+        city: e.city,
+        neighborhood: e.neighborhood,
+        type: e.type,
+        music_style_primary: e.music_style_primary ?? null,
+        music_styles_secondary: e.music_styles_secondary ?? [],
+        coordinates: e.latitude != null && e.longitude != null
+          ? { lat: e.latitude, lng: e.longitude }
+          : null,
+        logo_url: e.logo_url ?? null,
+        instagram_validated: e.instagram_validated,
+        score,
+      };
+      const { data, error } = await supabase.functions.invoke("ai-audit-establishments", {
+        body: { mode: "suggest", establishment: payload },
+      });
+      if (error || !data?.result) throw new Error(data?.error || error?.message || "Falha");
+      setSuggestResult(prev => ({ ...prev, [e.id]: data.result }));
+    } catch (err: any) {
+      toast.error(err.message || "Falha ao gerar sugestões");
+    } finally {
+      setSuggestBusy(null);
+    }
+  }
+
   async function analyzeOne(e: Establishment) {
     setAiBusy(e.id);
     try {
