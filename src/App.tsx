@@ -115,7 +115,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* ========= ADMIN (central única de comando) ========= */}
-          <Route path="/admin/login" element={L(<AdminLogin />)} />
+          <Route path="/admin/login" element={<Navigate to="/admin/central" replace />} />
+          <Route path="/admin/central" element={L(<AdminLogin />)} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={L(<Dashboard />)} />
