@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import SEO from "@/components/SEO";
-import WorldCupRibbon from "@/components/season/WorldCupRibbon";
+
 import WorldCupBadge from "@/components/season/WorldCupBadge";
 import { worldCupTheme as wc } from "@/themes/worldCupTheme";
 import { supabase } from "@/integrations/supabase/client";
@@ -230,8 +230,8 @@ export default function Jogos() {
         ogType="website"
       />
 
-      {/* Ribbon sazonal — Copa do Mundo */}
-      <WorldCupRibbon className="mx-auto max-w-5xl" compact />
+      {/* Ribbon sazonal — Copa do Mundo (oculto na própria página /jogos; badge "Copa 2026" no header já cobre) */}
+
 
       {/* ═══════════ HEADER COMPACTO ═══════════ */}
       <header className="relative border-b border-border/40">
