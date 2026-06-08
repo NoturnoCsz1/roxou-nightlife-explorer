@@ -219,7 +219,18 @@ const EstabelecimentosAudit = () => {
   const [categoryF, setCategoryF] = useState<string>("");
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [noCoordsOnly, setNoCoordsOnly] = useState(false);
-  const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
+  // Filtros 2.0 — qualidade do perfil
+  type QualityFilter =
+    | "all"
+    | "needs_attention"
+    | "no_coords"
+    | "no_instagram"
+    | "no_description"
+    | "no_music_style"
+    | "no_logo"
+    | "ready_to_feature";
+  const [qualityFilter, setQualityFilter] = useState<QualityFilter>("all");
+  const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc" | "score_asc" | "score_desc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState<Record<string, { lat: string; lng: string; url: string }>>({});
 
