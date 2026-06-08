@@ -41,7 +41,7 @@ export function useFootballResults(opts: { range?: ResultsRange; leagueId?: stri
       const { from, to } = rangeWindow(range);
       let q = supabase
         .from("sports_matches")
-        .select("slug, home_team, away_team, home_badge, away_badge, home_score, away_score, league_label, round_label, match_time")
+        .select("slug, home_team, away_team, home_badge, away_badge, home_score, away_score, league_label, round_label, match_time, is_world_cup")
         .eq("status", "finished")
         .gte("match_time", from)
         .lte("match_time", to)

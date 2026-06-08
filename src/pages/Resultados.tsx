@@ -13,10 +13,11 @@ const FILTERS: { key: ResultsRange; label: string }[] = [
 
 const LEAGUE_FILTERS: { key: string; label: string }[] = [
   { key: "", label: "Todos" },
+  { key: "4429", label: "🏆 Copa do Mundo" },
   { key: "4351", label: "Brasileirão" },
   { key: "4356", label: "Copa do Brasil" },
   { key: "4481", label: "Libertadores" },
-  { key: "4482", label: "Champions" },
+  { key: "4480", label: "Champions" },
 ];
 
 export default function Resultados() {
