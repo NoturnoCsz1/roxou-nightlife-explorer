@@ -541,7 +541,6 @@ const EventDetail = () => {
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground">
                     {partner.name.slice(0, 2).toUpperCase()}
-              </div>
                   </div>
                 )}
                 <div>
