@@ -64,6 +64,7 @@ function Body({
   eventDate,
   imageUrl,
   onTicketClick,
+  transportEnabled = false,
   onClose,
 }: ReservationDrawerProps & { onClose: () => void }) {
   const navigate = useNavigate();
