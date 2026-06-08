@@ -181,20 +181,32 @@ export default function Jogos() {
     ).slice(0, 6);
   }, [matches]);
 
-  // ─── Próximo destaque para o Hero ─────────────────────────
-  const heroMatch = useMemo(() => {
+  // ─── Carrossel compacto (Hoje → Brasil → próximos 7d) ─────
+  const carouselMatches = useMemo(() => {
     const now = Date.now();
-    const future = matches
-      .filter((m) => m.status !== "finished" && new Date(m.match_time).getTime() > now)
-      .sort(
-        (a, b) =>
-          new Date(a.match_time).getTime() - new Date(b.match_time).getTime(),
-      );
-    const sel = future.find((m) => isBrazilSelecao(m) && m.is_world_cup);
-    if (sel) return sel;
-    const br = future.find((m) => isBrazilPriority(m) && !isSerieB(m));
-    return br || todays[0] || future[0] || null;
-  }, [matches, todays]);
+    const limit7d = now + 7 * 24 * 60 * 60 * 1000;
+    const future = matches.filter(
+      (m) => m.status !== "finished" && new Date(m.match_time).getTime() > now - 2 * 60 * 60 * 1000,
+    );
+    const todayList = sortMatchesByRelevance(future.filter((m) => m.raw_date === today));
+    const brasilList = sortMatchesByRelevance(
+      future.filter((m) => m.raw_date !== today && isBrazilPriority(m) && !isSerieB(m)),
+    );
+    const restList = future
+      .filter((m) => new Date(m.match_time).getTime() <= limit7d)
+      .sort((a, b) => new Date(a.match_time).getTime() - new Date(b.match_time).getTime());
+    const seen = new Set<string>();
+    const out: NormalizedMatch[] = [];
+    for (const m of [...todayList, ...brasilList, ...restList]) {
+      const k = m.external_id || m.slug;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(m);
+      if (out.length >= 12) break;
+    }
+    return out;
+  }, [matches, today]);
+
 
   const transmissionCount = transmissions.length;
   const liveCount = mergedLive.length;
