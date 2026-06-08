@@ -750,11 +750,20 @@ const EstabelecimentosAudit = () => {
             const flags = computeFlags(e);
             const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
             const meta = STATUS_META[cur];
+            const score = computeScore(e);
+            const tone = scoreTone(score);
             return (
               <div key={e.id} className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        title={`Score Roxou: ${score}/100 — ${tone.label}`}
+                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border tabular-nums ${tone.cls}`}
+                      >
+                        <Gauge className="h-3 w-3" />
+                        {score}
+                      </span>
                       <span className="text-sm font-semibold truncate">{e.name}</span>
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${meta.cls}`}>{meta.label}</span>
                       {/* Badges de qualidade — positivos */}
