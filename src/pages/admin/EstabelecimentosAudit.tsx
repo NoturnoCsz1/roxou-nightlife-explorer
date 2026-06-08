@@ -266,6 +266,7 @@ const EstabelecimentosAudit = () => {
     suggested_music_primary: string;
     suggested_music_secondary: string[];
     suggested_description: string;
+    suggested_full_description?: string;
     problems: string[];
     improvements: string[];
     confidence: "baixa" | "media" | "alta";
@@ -278,8 +279,88 @@ const EstabelecimentosAudit = () => {
       bio?: string | null;
     } | null;
   };
+  type ApplyKey = "type" | "music_style_primary" | "music_styles_secondary" | "short_description" | "full_description";
   const [suggestBusy, setSuggestBusy] = useState<string | null>(null);
   const [suggestResult, setSuggestResult] = useState<Record<string, SuggestAI>>({});
+  const [applySel, setApplySel] = useState<Record<string, Record<ApplyKey, boolean>>>({});
+  const [applyBusy, setApplyBusy] = useState<string | null>(null);
+
+  function defaultApplySel(e: Establishment, s: SuggestAI): Record<ApplyKey, boolean> {
+    const score = computeScore(e);
+    const lowScore = score < 60;
+    return {
+      type: !e.type?.trim() || e.type === "bar" /* default */ || lowScore && !!s.suggested_type,
+      music_style_primary: !e.music_style_primary?.trim(),
+      music_styles_secondary: !(e.music_styles_secondary && e.music_styles_secondary.length > 0),
+      short_description: !((e as any).short_description?.trim() || e.description?.trim()),
+      full_description: !!s.suggested_full_description && !((e as any).full_description?.trim()),
+    };
+  }
+
+  async function applySuggestions(e: Establishment) {
+    const s = suggestResult[e.id];
+    if (!s) return;
+    const sel = applySel[e.id] ?? defaultApplySel(e, s);
+    const update: Record<string, any> = {};
+    const changed: ApplyKey[] = [];
+    if (sel.type && s.suggested_type) { update.type = s.suggested_type; changed.push("type"); }
+    if (sel.music_style_primary && s.suggested_music_primary) {
+      update.music_style_primary = s.suggested_music_primary; changed.push("music_style_primary");
+    }
+    if (sel.music_styles_secondary && s.suggested_music_secondary?.length) {
+      update.music_styles_secondary = s.suggested_music_secondary.slice(0, 3);
+      changed.push("music_styles_secondary");
+    }
+    if (sel.short_description && s.suggested_description) {
+      update.short_description = s.suggested_description; changed.push("short_description");
+    }
+    if (sel.full_description && s.suggested_full_description) {
+      update.full_description = s.suggested_full_description; changed.push("full_description");
+    }
+    if (changed.length === 0) {
+      toast.info("Selecione ao menos um campo para aplicar.");
+      return;
+    }
+    setApplyBusy(e.id);
+    try {
+      const { error } = await supabase
+        .from("partners")
+        .update({ ...update, updated_at: new Date().toISOString() })
+        .eq("id", e.id);
+      if (error) throw error;
+
+      // Atualiza item local + recalcula score implícito (computeScore lê os campos atualizados)
+      setItems(prev => prev.map(p => p.id === e.id ? {
+        ...p,
+        ...update,
+        description: update.short_description ?? p.description,
+      } as Establishment : p));
+
+      // Best-effort: registra em automation_logs se o admin tiver permissão
+      try {
+        await supabase.from("automation_logs").insert({
+          job_name: "ai_establishment_suggestion",
+          status: "applied",
+          details: {
+            partner_id: e.id,
+            partner_slug: e.slug,
+            fields: changed,
+            confidence: s.confidence,
+            evidence: s.evidence ?? null,
+            ig_source: s.instagram?.source ?? null,
+          },
+        } as any);
+      } catch { /* sem permissão de insert ou tabela ausente — auditoria silenciosa */ }
+
+      toast.success(`Sugestões aplicadas (${changed.length} campo${changed.length > 1 ? "s" : ""}).`);
+      setSuggestResult(prev => { const n = { ...prev }; delete n[e.id]; return n; });
+      setApplySel(prev => { const n = { ...prev }; delete n[e.id]; return n; });
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao aplicar sugestões");
+    } finally {
+      setApplyBusy(null);
+    }
+  }
 
   async function suggestOne(e: Establishment) {
     setSuggestBusy(e.id);
