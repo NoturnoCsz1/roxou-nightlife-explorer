@@ -21,6 +21,11 @@ export type AdminEventFormInput = {
   opportunity_tags?: string[];
   ai_confidence?: string;
   needs_review?: boolean;
+  is_sports_transmission?: boolean;
+  sports_match_id?: string | null;
+  transmission_channel?: string | null;
+  transmission_url?: string | null;
+  transmission_notes?: string | null;
 };
 
 interface BuildEventPayloadOptions {
