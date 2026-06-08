@@ -182,20 +182,13 @@ const PopularVenues = () => {
               <div className="flex items-center gap-3 relative z-10">
                 {/* Avatar */}
                 <div className="relative">
-                  {top1.logo_url ? (
-                    <img
-                      src={top1.logo_url}
-                      alt={top1.name}
-                      className="h-16 w-16 rounded-xl object-cover border-2 border-primary/30"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center border-2 border-primary/30">
-                      <span className="text-xl font-black font-display text-primary">
-                        {top1.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
+                  <PartnerLogo
+                    src={top1.logo_url}
+                    alt={top1.name}
+                    size="lg"
+                    rounded="xl"
+                    interactive
+                  />
                   <div className="absolute -top-1.5 -left-1.5 flex items-center justify-center h-6 w-6 rounded-full bg-primary shadow-lg">
                     <Crown className="h-3 w-3 text-primary-foreground" />
                   </div>
