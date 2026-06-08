@@ -698,6 +698,8 @@ const EstabelecimentosAudit = () => {
             <option value="recent">Recentes</option>
             <option value="events_desc">Mais eventos</option>
             <option value="events_asc">Sem eventos</option>
+            <option value="score_asc">Score: pior → melhor</option>
+            <option value="score_desc">Score: melhor → pior</option>
           </select>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
             <input type="checkbox" checked={errorsOnly} onChange={e => setErrorsOnly(e.target.checked)} />
@@ -707,6 +709,32 @@ const EstabelecimentosAudit = () => {
             <input type="checkbox" checked={noCoordsOnly} onChange={e => setNoCoordsOnly(e.target.checked)} />
             Somente sem coordenadas
           </label>
+        </div>
+
+        {/* ── Filtros de qualidade (Estabelecimentos 2.0) ── */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {([
+            { k: "all",              label: "Todos" },
+            { k: "needs_attention",  label: "⚠️ Precisa atenção" },
+            { k: "no_coords",        label: "Sem coordenadas" },
+            { k: "no_instagram",     label: "Sem Instagram" },
+            { k: "no_description",   label: "Sem descrição" },
+            { k: "no_music_style",   label: "Sem estilo musical" },
+            { k: "no_logo",          label: "Sem logo" },
+            { k: "ready_to_feature", label: "✨ Pronto para destaque" },
+          ] as { k: QualityFilter; label: string }[]).map(({ k, label }) => (
+            <button
+              key={k}
+              onClick={() => setQualityFilter(k)}
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                qualityFilter === k
+                  ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.4)]"
+                  : "bg-secondary/60 text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
