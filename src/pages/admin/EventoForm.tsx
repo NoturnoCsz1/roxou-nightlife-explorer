@@ -270,6 +270,11 @@ const EventoForm = () => {
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
       _sub: (data as any).sub_category || data.category,
+      is_sports_transmission: Boolean((data as any).is_sports_transmission),
+      sports_match_id: (data as any).sports_match_id || null,
+      transmission_channel: (data as any).transmission_channel || null,
+      transmission_url: (data as any).transmission_url || null,
+      transmission_notes: (data as any).transmission_notes || null,
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     originalSnapshot.current = {
