@@ -131,18 +131,49 @@ export default function V3EventDetail() {
           )}
         </div>
 
-        {/* Reserve CTA — opens drawer with both options */}
-        <Button
-          onClick={() => setDrawerOpen(true)}
-          className="w-full rounded-xl h-12 text-sm font-bold uppercase tracking-wider gap-2 border-0 v3-pulse-glow text-white"
-          style={{
-            background:
-              "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
-          }}
-        >
-          <Sparkles className="w-4 h-4" />
-          Reservar agora
-        </Button>
+        {/* CTAs — carona (apenas se habilitado) e/ou ingresso */}
+        {(event as any).transport_reservation_enabled && (
+          <Button
+            onClick={() => setDrawerOpen(true)}
+            className="w-full rounded-xl h-12 text-sm font-bold uppercase tracking-wider gap-2 border-0 v3-pulse-glow text-white"
+            style={{
+              background:
+                "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))",
+            }}
+          >
+            <Sparkles className="w-4 h-4" />
+            🚗 Reservar carona
+          </Button>
+        )}
+
+        {event.ticket_url && (
+          <Button
+            onClick={async () => {
+              try {
+                trackEvent({
+                  event_type: "ticket_click",
+                  event_id: event.id,
+                  venue_id: event.partner_id || null,
+                  category: event.category || null,
+                  city: event.city || null,
+                  metadata: {
+                    slug: event.slug,
+                    title: event.title,
+                    venue_name: event.venue_name,
+                    ticket_url: event.ticket_url,
+                  },
+                });
+              } catch {
+                // fire-and-forget
+              }
+              window.open(event.ticket_url!, "_blank", "noopener,noreferrer");
+            }}
+            variant="outline"
+            className="w-full rounded-xl h-12 text-sm font-bold uppercase tracking-wider gap-2 border-primary/40 hover:border-primary text-foreground hover:bg-primary/10"
+          >
+            🎟 Comprar ingresso
+          </Button>
+        )}
 
         <div className="flex items-center gap-2 flex-wrap">
           <EventLivePresence eventId={event.id} />
