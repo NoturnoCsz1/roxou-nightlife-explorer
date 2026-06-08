@@ -746,6 +746,22 @@ const EventoForm = () => {
                   Evento em destaque
                 </label>
               </div>
+              <div className="col-span-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                <label className="flex items-start gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean((form as any).transport_reservation_enabled)}
+                    onChange={(e) => handleChange("transport_reservation_enabled" as any, e.target.checked)}
+                    className="accent-primary mt-0.5"
+                  />
+                  <span className="flex-1">
+                    <span className="font-semibold text-foreground">🚗 Ativar reserva de carona</span>
+                    <span className="block text-[10px] text-muted-foreground mt-0.5">
+                      Mostra o botão de reserva/carona na página pública deste evento.
+                    </span>
+                  </span>
+                </label>
+              </div>
             </div>
           )}
         </div>
