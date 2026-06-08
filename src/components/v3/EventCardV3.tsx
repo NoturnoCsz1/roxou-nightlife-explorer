@@ -18,6 +18,7 @@ interface EventCardV3Props {
   category: string;
   featured?: boolean;
   ticketUrl?: string | null;
+  transportEnabled?: boolean;
 }
 
 export default function EventCardV3({
@@ -30,6 +31,7 @@ export default function EventCardV3({
   category,
   featured,
   ticketUrl,
+  transportEnabled = false,
 }: EventCardV3Props) {
   const date = new Date(dateTime);
   const isWide = featured;
