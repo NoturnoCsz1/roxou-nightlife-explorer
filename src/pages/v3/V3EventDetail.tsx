@@ -149,6 +149,14 @@ export default function V3EventDetail() {
         </div>
         <EventPresence eventId={event.id} />
 
+        <TransmissionBlock
+          isSportsTransmission={(event as any).is_sports_transmission}
+          sportsMatchId={(event as any).sports_match_id}
+          channel={(event as any).transmission_channel}
+          url={(event as any).transmission_url}
+          notes={(event as any).transmission_notes}
+        />
+
         <ReservationDrawer
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
