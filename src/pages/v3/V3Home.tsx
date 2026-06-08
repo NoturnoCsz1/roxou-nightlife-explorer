@@ -1002,12 +1002,14 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           >
             <Trophy className="w-3.5 h-3.5" /> Jogos ao vivo
           </Link>
-          <Link
-            to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-foreground text-sm font-semibold active:scale-95 transition-all hover:bg-white/20"
-          >
-            <Car className="w-3.5 h-3.5" /> Como vou?
-          </Link>
+          {ev.transport_reservation_enabled && (
+            <Link
+              to={`/transporte?event=${encodeURIComponent(ev.title)}&venue=${encodeURIComponent(ev.venue_name || "")}&date=${ev.date_time}`}
+              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-white/10 backdrop-blur-md border border-white/25 text-foreground text-sm font-semibold active:scale-95 transition-all hover:bg-white/20"
+            >
+              <Car className="w-3.5 h-3.5" /> Como vou?
+            </Link>
+          )}
         </div>
       </div>
 
