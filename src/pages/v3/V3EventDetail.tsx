@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import ReservationDrawer from "@/components/v3/ReservationDrawer";
 import EventPresence from "@/components/v3/EventPresence";
+import TransmissionBlock from "@/components/TransmissionBlock";
 import { EventLivePresence } from "@/components/v3/EventLivePresence";
 import { V3DetailSkeleton } from "@/components/v3/V3Skeletons";
 import { Button } from "@/components/ui/button";
@@ -147,6 +148,14 @@ export default function V3EventDetail() {
           <EventLivePresence eventId={event.id} />
         </div>
         <EventPresence eventId={event.id} />
+
+        <TransmissionBlock
+          isSportsTransmission={(event as any).is_sports_transmission}
+          sportsMatchId={(event as any).sports_match_id}
+          channel={(event as any).transmission_channel}
+          url={(event as any).transmission_url}
+          notes={(event as any).transmission_notes}
+        />
 
         <ReservationDrawer
           open={drawerOpen}

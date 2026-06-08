@@ -26,6 +26,7 @@ import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
 import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
 import SafeHtml from "@/components/SafeHtml";
+import TransmissionBlock from "@/components/TransmissionBlock";
 
 const EventDetail = () => {
   const { slug } = useParams();
@@ -330,6 +331,16 @@ const EventDetail = () => {
               {time} · Horário de início
             </p>
           </div>
+        </div>
+
+        <div className="mb-3">
+          <TransmissionBlock
+            isSportsTransmission={(event as any).is_sports_transmission}
+            sportsMatchId={(event as any).sports_match_id}
+            channel={(event as any).transmission_channel}
+            url={(event as any).transmission_url}
+            notes={(event as any).transmission_notes}
+          />
         </div>
 
 
