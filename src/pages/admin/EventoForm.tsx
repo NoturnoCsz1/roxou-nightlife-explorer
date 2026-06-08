@@ -23,6 +23,7 @@ import { isoToSpLocal } from "@/lib/dateUtils";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
+import TransmissionSection, { emptyTransmission, type TransmissionFields } from "@/components/admin/TransmissionSection";
 
 type Partner = Tables<"partners">;
 
