@@ -44,7 +44,6 @@ const isWeekendSP = (dateStr: string): boolean => {
 
 export default function V3Agenda() {
   const [showShareCard, setShowShareCard] = useState(false);
-  const [showShareCard, setShowShareCard] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
