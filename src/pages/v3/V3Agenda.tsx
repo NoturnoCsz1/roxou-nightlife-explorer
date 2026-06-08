@@ -115,20 +115,36 @@ export default function V3Agenda() {
     let list = events;
     const cat = activeCategory.toLowerCase();
 
+  const RESOURCE_KEYS = new Set(["carona", "futebol", "ingresso"]);
+  const GENRE_KEYS = new Set(["sertanejo", "pagode", "funk", "mpb", "rock", "eletronico"]);
+
+  const norm = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const filteredEvents = useMemo(() => {
+    let list = events as any[];
+    const cat = activeCategory.toLowerCase();
+
     if (cat === "hoje") {
       list = list.filter((e) => isTodaySP(new Date(e.date_time)));
     } else if (cat === "amanha") {
       list = list.filter((e) => isTomorrowSP(new Date(e.date_time)));
     } else if (cat === "fds") {
       list = list.filter((e) => isWeekendSP(e.date_time));
-    } else if (cat === "expo2026") {
-      list = list.filter((e) => `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase().includes("expo"));
-    } else if (cat !== "todos") {
+    } else if (cat === "carona") {
+      list = list.filter((e) => !!e.transport_reservation_enabled);
+    } else if (cat === "ingresso") {
+      list = list.filter((e) => !!e.ticket_url);
+    } else if (cat === "futebol") {
+      list = list.filter(
+        (e) => !!e.is_sports_transmission || !!e.partners?.supports_sports,
+      );
+    } else if (GENRE_KEYS.has(cat)) {
       list = list.filter((e) => {
-        const hay = `${e.title} ${e.category || ""} ${(e as any).sub_category || ""}`.toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const needle = cat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return hay.includes(needle);
+        const sub = norm(String(e.sub_category || ""));
+        const primary = norm(String(e.partners?.music_style_primary || ""));
+        const needle = norm(cat);
+        return sub.includes(needle) || primary.includes(needle);
       });
     }
     const term = searchTerm.trim().toLowerCase();
