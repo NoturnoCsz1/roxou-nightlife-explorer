@@ -58,6 +58,11 @@ export function buildEventPayload(
     opportunity_tags: form.opportunity_tags || [],
     ai_confidence: form.ai_confidence || "medium",
     needs_review: Boolean(form.needs_review),
+    is_sports_transmission: Boolean(form.is_sports_transmission),
+    sports_match_id: form.sports_match_id || null,
+    transmission_channel: form.transmission_channel || null,
+    transmission_url: form.transmission_url || null,
+    transmission_notes: form.transmission_notes || null,
   };
 
   if (options.city) {
