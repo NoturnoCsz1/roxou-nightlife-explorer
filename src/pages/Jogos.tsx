@@ -499,32 +499,32 @@ function Section({
 function HeroMatchStripe({ match, isToday }: { match: NormalizedMatch; isToday: boolean }) {
   const dt = new Date(match.match_time);
   const label = isToday
-    ? "Próximo destaque · hoje"
-    : `Próximo destaque · ${format(dt, "EEE, d 'de' MMM", { locale: ptBR })}`;
+    ? "Hoje"
+    : format(dt, "EEE d/MM", { locale: ptBR });
   return (
     <Link
       to={`/jogo/${match.slug}`}
-      className="group block rounded-2xl border border-border/60 bg-card/60 backdrop-blur-md p-3.5 hover:border-primary/50 hover:bg-card/80 transition-all"
+      className="group block rounded-xl md:rounded-2xl border border-border/60 bg-card/60 backdrop-blur-md px-3 py-2 md:p-3.5 hover:border-primary/50 hover:bg-card/80 transition-all"
     >
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="flex items-center gap-2.5 md:gap-4">
+        <div className="flex items-center gap-1.5 md:gap-2 flex-1 min-w-0">
           {match.home_badge ? (
-            <img src={match.home_badge} alt={match.home_team} className="h-9 w-9 object-contain shrink-0" />
+            <img src={match.home_badge} alt={match.home_team} className="h-6 w-6 md:h-9 md:w-9 object-contain shrink-0" />
           ) : (
-            <div className="h-9 w-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-xs font-black text-primary shrink-0">
+            <div className="h-6 w-6 md:h-9 md:w-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-[10px] md:text-xs font-black text-primary shrink-0">
               {match.home_team[0]}
             </div>
           )}
-          <span className="font-display font-bold text-sm truncate">{match.home_team}</span>
-          <span className="text-muted-foreground/60 text-xs shrink-0">×</span>
-          <span className="font-display font-bold text-sm truncate">{match.away_team}</span>
+          <span className="font-display font-bold text-[12px] md:text-sm truncate">{match.home_team}</span>
+          <span className="text-muted-foreground/60 text-[10px] md:text-xs shrink-0">×</span>
+          <span className="font-display font-bold text-[12px] md:text-sm truncate">{match.away_team}</span>
           {match.away_badge && (
-            <img src={match.away_badge} alt={match.away_team} className="h-9 w-9 object-contain shrink-0" />
+            <img src={match.away_badge} alt={match.away_team} className="h-6 w-6 md:h-9 md:w-9 object-contain shrink-0" />
           )}
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="text-sm font-black text-primary">{formatMatchTime(match.match_time)}</p>
+          <p className="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-muted-foreground leading-tight">{label}</p>
+          <p className="text-[12px] md:text-sm font-black text-primary leading-tight">{formatMatchTime(match.match_time)}</p>
         </div>
       </div>
     </Link>
