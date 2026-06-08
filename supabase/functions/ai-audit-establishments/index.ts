@@ -177,7 +177,9 @@ Deno.serve(async (req) => {
         `- Não invente dados que não estão nas fontes (bio, captions, cadastro). Se faltar evidência, diga confiança "baixa".\n` +
         `- Se o Instagram indicar categoria/estilo diferente do cadastro, prefira o Instagram e marque confiança "media" ou "alta" conforme a evidência.\n` +
         `- Descrição sugerida: 2-3 frases, pt-BR, tom direto, sem clichês ("o melhor", "incrível", "imperdível").\n` +
-        `- Máximo 2 estilos secundários.\n\n` +
+        `- Máximo 2 estilos secundários.\n` +
+        `- ENDEREÇO: extraia suggested_address SOMENTE se houver evidência textual clara (bio, website, legenda recente) com padrões: R., Rua, Av., Avenida, Rod., Rodovia, Alameda, Praça, Travessa, Estrada, Vicinal, Distrito, Centro, Jardim, Vila, Parque, Bairro. Não invente. Se não houver evidência, retorne address_source="nao_encontrado" e omita suggested_address. Preencha address_confidence separadamente da confidence geral.\n\n` +
+
         `${igBlock}\n\n` +
         `CADASTRO INTERNO:\n${JSON.stringify(e, null, 2)}`;
 
