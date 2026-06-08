@@ -413,19 +413,25 @@ function chooseTemplate(
   previousDescs: string[],
   hasMinimalData: boolean,
   hasRichVenue: boolean,
+  hasArtist: boolean,
 ): number {
+  // T9 (índice 8) = narrativo editorial. Prioridade máxima quando dá:
+  // - artista identificado → sempre T9
+  // - parceiro com tipo/summary/estilo → quase sempre T9
+  if (hasArtist && !hasMinimalData) return 8;
+
   const recent = (previousDescs || [])
     .map(detectTemplateId)
     .filter((x): x is number => x !== null && x >= 1 && x <= 9)
     .slice(-5)
     .map((x) => x - 1);
 
-  // Pouca info → templates curtos. Info rica de parceiro → privilegia narrativo (T9).
+  // Pouca info → templates curtos. Info rica → T9 domina a rotação.
   const preferred = hasMinimalData
     ? [2, 7, 4]
     : hasRichVenue
-      ? [8, 0, 5, 1, 8, 3, 6, 8, 4] // T9 (idx 8) entra duas vezes para ganhar peso
-      : [0, 1, 2, 3, 4, 5, 6, 7];
+      ? [8, 8, 8, 8, 5, 8, 0, 8, 3] // T9 com peso ~6/9
+      : [8, 0, 8, 5, 1, 8, 3, 6, 4]; // T9 ainda majoritário mesmo sem parceiro rico
 
   const start = ((Math.floor(seed) % preferred.length) + preferred.length) % preferred.length;
   for (let i = 0; i < preferred.length; i++) {
