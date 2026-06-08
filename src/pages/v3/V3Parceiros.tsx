@@ -58,18 +58,25 @@ export default function V3Parceiros() {
         </p>
       </section>
 
-      {/* Destaque do mês */}
+      {/* Destaque do mês — Premium */}
       {spotlight && (
         <section className="px-4 mb-5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-            <Star className="h-3 w-3 text-primary" /> Destaque do mês
+          <div className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-200/90 mb-2 flex items-center gap-1.5">
+            <Crown className="h-3 w-3" /> Patrocínio Premium
           </div>
           <Link
             to={`/local/${spotlight.slug}`}
-            className="group relative block overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/20 via-background to-background p-5 shadow-[0_0_40px_-10px_hsl(var(--primary)/0.5)] transition hover:shadow-[0_0_60px_-10px_hsl(var(--primary)/0.7)]"
+            className="group relative block overflow-hidden rounded-2xl border border-amber-300/40 bg-gradient-to-br from-primary/25 via-amber-500/10 to-background p-5 shadow-[0_0_50px_-10px_hsl(45_95%_55%/0.5)] transition hover:shadow-[0_0_70px_-10px_hsl(45_95%_55%/0.7)]"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.25),transparent_60%)]" />
-            <div className="relative flex items-center gap-4">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.3),transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,hsl(45_95%_55%/0.18),transparent_55%)]" />
+
+            {/* Selo absoluto top-right */}
+            <div className="absolute top-3 right-3 z-10">
+              <SpotlightBadge variant="chip" />
+            </div>
+
+            <div className="relative flex items-center gap-4 mt-1">
               <PartnerLogo
                 src={spotlight.logo_url}
                 alt={spotlight.name}
@@ -84,11 +91,11 @@ export default function V3Parceiros() {
                   {typeLabel(spotlight.type)}
                 </div>
                 <div className="font-display text-lg font-black truncate">{spotlight.name}</div>
-                <div className="text-xs text-muted-foreground line-clamp-2">
+                <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                   {spotlight.short_description || `Parceiro destaque em ${spotlight.city}`}
                 </div>
               </div>
-              <ArrowRight className="h-5 w-5 text-primary flex-none transition group-hover:translate-x-1" />
+              <ArrowRight className="h-5 w-5 text-amber-200 flex-none transition group-hover:translate-x-1" />
             </div>
           </Link>
         </section>
