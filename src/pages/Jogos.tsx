@@ -230,8 +230,8 @@ export default function Jogos() {
         ogType="website"
       />
 
-      {/* Ribbon sazonal — Copa do Mundo */}
-      <WorldCupRibbon className="mx-auto max-w-5xl" compact />
+      {/* Ribbon sazonal — Copa do Mundo (oculto na própria página /jogos; badge "Copa 2026" no header já cobre) */}
+
 
       {/* ═══════════ HEADER COMPACTO ═══════════ */}
       <header className="relative border-b border-border/40">
