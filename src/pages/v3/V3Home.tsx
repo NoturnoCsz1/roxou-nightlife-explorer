@@ -279,14 +279,15 @@ export default function V3Home() {
   const heroEvents = useMemo(() => {
     const list = safeEvents(events);
     const trendMap = new Map((trendingIds ?? []).map(t => [t.id, t.views]));
-    const weekLimit = TODAY_START + 7 * 24 * 60 * 60 * 1000;
+    const todayStartTs = new Date(TODAY_START).getTime();
+    const weekLimit = todayStartTs + 7 * 24 * 60 * 60 * 1000;
 
     const tierOf = (e: any): 0 | 1 | 2 => {
       const dt = toSafeDate(e.date_time);
       if (!dt) return 2;
       if (isTodayFn(dt)) return 0;
       const ts = dt.getTime();
-      if (ts >= TODAY_START && ts < weekLimit) return 1;
+      if (ts >= todayStartTs && ts < weekLimit) return 1;
       return 2;
     };
 
