@@ -8,6 +8,7 @@ import { sanitizeText } from "@/lib/sanitize";
 interface FootballMatchChatProps {
   matchSlug: string;
   matchTitle: string;
+  compact?: boolean;
 }
 
 interface ChatMessage {
