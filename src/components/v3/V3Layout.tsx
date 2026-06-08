@@ -208,7 +208,9 @@ export default function V3Layout() {
             const isProfile = to === "/perfil";
             const active = to === "/"
               ? pathname === "/"
-              : pathname.startsWith(to);
+              : to === "/jogos"
+                ? pathname.startsWith("/jogos") || pathname.startsWith("/jogo/")
+                : pathname.startsWith(to);
             const isAura = to === "/ia";
             return (
               <button
