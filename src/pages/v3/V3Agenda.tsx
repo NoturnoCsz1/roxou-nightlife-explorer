@@ -307,9 +307,9 @@ export default function V3Agenda() {
           .slice(0, 2);
         if (featured.length === 0) return null;
         return (
-          <section className="mb-6">
-            <h2 className="font-display font-bold text-sm text-primary uppercase tracking-[0.22em] mb-3 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" />
+          <section className="mb-5">
+            <h2 className="font-display font-bold text-xs md:text-sm text-primary uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3" />
               🔥 Em destaque na Roxou
             </h2>
             <div className={`grid gap-3 ${featured.length > 1 ? "md:grid-cols-2" : ""}`}>
@@ -325,9 +325,9 @@ export default function V3Agenda() {
                   <Link
                     key={e.id}
                     to={`/evento/${e.slug}`}
-                    className="group relative block overflow-hidden rounded-3xl border border-primary/30 bg-card/40 shadow-[0_0_36px_hsl(var(--v3-neon)/0.22)] hover:shadow-[0_0_48px_hsl(var(--v3-neon)/0.38)] hover:border-primary/60 transition-all"
+                    className="group relative block overflow-hidden rounded-2xl md:rounded-3xl border border-primary/30 bg-card/40 shadow-[0_0_28px_hsl(var(--v3-neon)/0.22)] hover:shadow-[0_0_48px_hsl(var(--v3-neon)/0.38)] hover:border-primary/60 transition-all"
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden">
+                    <div className="relative aspect-[21/10] md:aspect-[16/10] overflow-hidden">
                       <img
                         src={e.image_url || "/placeholder.svg"}
                         alt={e.title}
@@ -335,13 +335,13 @@ export default function V3Agenda() {
                         loading="eager"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)]"
+                      <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)]"
                         style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}>
-                        <Sparkles className="w-3 h-3" /> Destaque
+                        <Sparkles className="w-2.5 h-2.5" /> Destaque
                       </span>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-display font-bold text-base md:text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                    <div className="p-3 md:p-4">
+                      <h3 className="font-display font-bold text-sm md:text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
                         {e.title}
                       </h3>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
