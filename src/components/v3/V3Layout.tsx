@@ -8,8 +8,8 @@ import AuraAvatar from "@/components/v3/AuraAvatar";
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
   { to: "/agenda", icon: CalendarDays, label: "Agenda" },
+  { to: "/jogos", icon: Trophy, label: "Jogos" },
   { to: "/transporte", icon: Car, label: "Caronas" },
-  { to: "/perto-de-mim", icon: MapPin, label: "Perto" },
   { to: "/perfil", icon: User, label: "Perfil" },
 ];
 
