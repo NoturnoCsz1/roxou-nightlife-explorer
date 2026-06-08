@@ -335,6 +335,16 @@ const EstabelecimentosAudit = () => {
     if (sel.full_description && s.suggested_full_description) {
       update.full_description = s.suggested_full_description; changed.push("full_description");
     }
+    if (sel.address && s.suggested_address) {
+      update.address = s.suggested_address;
+      if (s.suggested_neighborhood) update.neighborhood = s.suggested_neighborhood;
+      if (s.suggested_latitude != null) update.latitude = s.suggested_latitude;
+      if (s.suggested_longitude != null) update.longitude = s.suggested_longitude;
+      if (s.suggested_place_id) update.maps_place_id = s.suggested_place_id;
+      if (s.suggested_formatted_address) update.formatted_address = s.suggested_formatted_address;
+      changed.push("address");
+    }
+
     if (changed.length === 0) {
       toast.info("Selecione ao menos um campo para aplicar.");
       return;
