@@ -251,13 +251,13 @@ export default function FootballMatchChat({ matchSlug, matchTitle, compact = fal
           </p>
           <div className="flex items-center justify-center gap-2">
             <Link
-              to="/v3/auth"
+              to="/auth"
               className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground font-bold text-xs px-4 py-2 hover:bg-primary/90 transition"
             >
               <LogIn className="h-3.5 w-3.5" /> Entrar
             </Link>
             <Link
-              to="/v3/auth"
+              to="/auth"
               className="inline-flex items-center gap-1 rounded-full border border-primary/40 text-primary font-bold text-xs px-4 py-2 hover:bg-primary/10 transition"
             >
               Criar conta
