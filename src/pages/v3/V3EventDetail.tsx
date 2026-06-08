@@ -39,7 +39,7 @@ export default function V3EventDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from("events")
-        .select("*, partners:partner_id(name, slug, logo_url)")
+        .select("*, partners:partner_id(name, slug, logo_url, type, music_style_primary, music_styles_secondary, supports_sports, sports_competitions)")
         .eq("slug", slug!)
         .eq("status", "published")
         .maybeSingle();
