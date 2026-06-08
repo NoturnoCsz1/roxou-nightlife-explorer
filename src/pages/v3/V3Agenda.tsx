@@ -477,10 +477,10 @@ export default function V3Agenda() {
                   <div className="relative group">
                     <Link
                       to={`/evento/${e.slug}`}
-                      className="block rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.35)] active:scale-[0.98]"
+                      className="block rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 md:p-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.35)] active:scale-[0.98]"
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden shrink-0 bg-muted/30 ring-1 ring-white/10">
+                      <div className="flex items-start gap-2.5 md:gap-3">
+                        <div className="relative w-[104px] h-[104px] md:w-32 md:h-32 rounded-xl md:rounded-2xl overflow-hidden shrink-0 bg-muted/30 ring-1 ring-white/10">
                           <img
                             src={e.image_url || "/placeholder.svg"}
                             alt={e.title}
