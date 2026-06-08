@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
     let userPrompt = "";
     let toolName = "";
     let toolSchema: any = {};
+    let igMetaOut: any = null;
 
     if (mode === "single") {
       const e = body.establishment;
