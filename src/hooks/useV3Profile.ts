@@ -31,7 +31,35 @@ export function useV3Profile() {
 
       if (cancelled) return;
 
-      setProfile(profileRes.data ?? null);
+      let profileData = profileRes.data ?? null;
+
+      // Fallback defensivo: se o trigger handle_new_user não criou o profile
+      // (caso raro de race condition pós-login Google), faz upsert seguro.
+      // Não cria role nem altera permissões.
+      if (!profileData) {
+        const meta = (user.user_metadata ?? {}) as Record<string, any>;
+        const displayName =
+          meta.full_name || meta.name || user.email || "Torcedor Roxou";
+        const avatarUrl = meta.avatar_url || meta.picture || null;
+
+        const { data: upserted } = await supabase
+          .from("profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              display_name: displayName,
+              avatar_url: avatarUrl,
+            },
+            { onConflict: "user_id" }
+          )
+          .select("*")
+          .maybeSingle();
+
+        if (cancelled) return;
+        profileData = upserted ?? null;
+      }
+
+      setProfile(profileData);
       setRoles((rolesRes.data ?? []).map((r) => r.role));
       setLoading(false);
     };
