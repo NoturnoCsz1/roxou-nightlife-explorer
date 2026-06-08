@@ -271,6 +271,18 @@ const EstabelecimentosAudit = () => {
     improvements: string[];
     confidence: "baixa" | "media" | "alta";
     evidence?: string;
+    // 2.4 — endereço
+    suggested_address?: string | null;
+    suggested_neighborhood?: string | null;
+    suggested_latitude?: number | null;
+    suggested_longitude?: number | null;
+    suggested_place_id?: string | null;
+    suggested_formatted_address?: string | null;
+    address_source?: "instagram" | "website" | "cadastro" | "google_maps" | "ambos" | "nao_encontrado" | null;
+    address_confidence?: "baixa" | "media" | "alta" | null;
+    address_evidence?: string | null;
+    address_google_status?: string | null;
+    address_partial_match?: boolean | null;
     instagram?: {
       handle: string | null;
       source: "cadastro" | "instagram_validated" | "instagram_not_validated";
@@ -279,7 +291,7 @@ const EstabelecimentosAudit = () => {
       bio?: string | null;
     } | null;
   };
-  type ApplyKey = "type" | "music_style_primary" | "music_styles_secondary" | "short_description" | "full_description";
+  type ApplyKey = "type" | "music_style_primary" | "music_styles_secondary" | "short_description" | "full_description" | "address";
   const [suggestBusy, setSuggestBusy] = useState<string | null>(null);
   const [suggestResult, setSuggestResult] = useState<Record<string, SuggestAI>>({});
   const [applySel, setApplySel] = useState<Record<string, Record<ApplyKey, boolean>>>({});
@@ -288,14 +300,20 @@ const EstabelecimentosAudit = () => {
   function defaultApplySel(e: Establishment, s: SuggestAI): Record<ApplyKey, boolean> {
     const score = computeScore(e);
     const lowScore = score < 60;
+    const noAddress = !e.address?.trim();
+    const noCoords = e.latitude == null || e.longitude == null;
+    const addrOk = !!s.suggested_address && (s.address_confidence === "media" || s.address_confidence === "alta");
     return {
       type: !e.type?.trim() || e.type === "bar" /* default */ || lowScore && !!s.suggested_type,
       music_style_primary: !e.music_style_primary?.trim(),
       music_styles_secondary: !(e.music_styles_secondary && e.music_styles_secondary.length > 0),
       short_description: !((e as any).short_description?.trim() || e.description?.trim()),
       full_description: !!s.suggested_full_description && !((e as any).full_description?.trim()),
+      // 2.4: por padrão só marca se faltar endereço ou coords E confiança >= média
+      address: addrOk && (noAddress || noCoords),
     };
   }
+
 
   async function applySuggestions(e: Establishment) {
     const s = suggestResult[e.id];
@@ -317,6 +335,16 @@ const EstabelecimentosAudit = () => {
     if (sel.full_description && s.suggested_full_description) {
       update.full_description = s.suggested_full_description; changed.push("full_description");
     }
+    if (sel.address && s.suggested_address) {
+      update.address = s.suggested_address;
+      if (s.suggested_neighborhood) update.neighborhood = s.suggested_neighborhood;
+      if (s.suggested_latitude != null) update.latitude = s.suggested_latitude;
+      if (s.suggested_longitude != null) update.longitude = s.suggested_longitude;
+      if (s.suggested_place_id) update.maps_place_id = s.suggested_place_id;
+      if (s.suggested_formatted_address) update.formatted_address = s.suggested_formatted_address;
+      changed.push("address");
+    }
+
     if (changed.length === 0) {
       toast.info("Selecione ao menos um campo para aplicar.");
       return;
@@ -1286,6 +1314,59 @@ const EstabelecimentosAudit = () => {
                           </div>
                         )}
 
+                        {s.suggested_address && (
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-300">📍 Endereço sugerido</div>
+                              <div className="flex items-center gap-1">
+                                {s.address_source && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-200 border border-emerald-500/30">
+                                    {s.address_source === "ambos" ? "Instagram + Google Maps"
+                                      : s.address_source === "google_maps" ? "Google Maps"
+                                      : s.address_source === "instagram" ? "Instagram"
+                                      : s.address_source === "website" ? "Website"
+                                      : s.address_source === "cadastro" ? "Cadastro" : "—"}
+                                  </span>
+                                )}
+                                {s.address_confidence && (
+                                  <span className={`text-[9px] px-1.5 py-0.5 rounded border ${
+                                    s.address_confidence === "alta" ? "bg-emerald-500/20 text-emerald-200 border-emerald-500/40"
+                                    : s.address_confidence === "media" ? "bg-amber-500/20 text-amber-200 border-amber-500/40"
+                                    : "bg-rose-500/20 text-rose-200 border-rose-500/40"
+                                  }`}>
+                                    {s.address_confidence}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-[11px] text-foreground/90 font-medium">{s.suggested_formatted_address || s.suggested_address}</div>
+                            {s.suggested_neighborhood && (
+                              <div className="text-[10px] text-foreground/70">Bairro: <span className="text-foreground/90">{s.suggested_neighborhood}</span></div>
+                            )}
+                            {(s.suggested_latitude != null && s.suggested_longitude != null) && (
+                              <div className="text-[9px] text-muted-foreground font-mono">
+                                {s.suggested_latitude.toFixed(6)}, {s.suggested_longitude.toFixed(6)}
+                                {s.address_partial_match && <span className="ml-1 text-amber-400">(parcial)</span>}
+                              </div>
+                            )}
+                            {s.address_evidence && (
+                              <div className="text-[10px] italic text-foreground/70">↳ {s.address_evidence}</div>
+                            )}
+                            {s.address_confidence === "baixa" && (
+                              <div className="text-[10px] text-amber-300 bg-amber-500/10 rounded px-1.5 py-1 border border-amber-500/30">
+                                ⚠️ Confiança baixa — revise antes de aplicar.
+                              </div>
+                            )}
+                            {e.address?.trim() && (
+                              <div className="text-[10px] text-amber-300">
+                                ⚠️ Já existe endereço cadastrado. Aplicar irá sobrescrever — marque manualmente.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+
+
                         {s.problems?.length > 0 && (
                           <div>
                             <div className="text-[9px] uppercase tracking-wide text-amber-400 mb-0.5">Problemas encontrados</div>
@@ -1320,6 +1401,20 @@ const EstabelecimentosAudit = () => {
                           { k: "short_description", label: "Descrição curta", preview: s.suggested_description, enabled: !!s.suggested_description },
                           ...(s.suggested_full_description
                             ? [{ k: "full_description" as ApplyKey, label: "Descrição completa", preview: s.suggested_full_description, enabled: true }]
+                            : []),
+                          ...(s.suggested_address
+                            ? [{
+                                k: "address" as ApplyKey,
+                                label: e.address?.trim()
+                                  ? "Endereço e coordenadas (sobrescrever)"
+                                  : "Endereço e coordenadas",
+                                preview: [
+                                  s.suggested_formatted_address || s.suggested_address,
+                                  s.suggested_latitude != null && s.suggested_longitude != null
+                                    ? `· ${s.suggested_latitude.toFixed(4)},${s.suggested_longitude.toFixed(4)}` : "",
+                                ].filter(Boolean).join(" "),
+                                enabled: true,
+                              }]
                             : []),
                         ];
                         const anyChecked = rows.some(r => r.enabled && sel[r.k]);

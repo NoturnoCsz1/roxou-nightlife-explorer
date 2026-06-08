@@ -177,7 +177,9 @@ Deno.serve(async (req) => {
         `- Não invente dados que não estão nas fontes (bio, captions, cadastro). Se faltar evidência, diga confiança "baixa".\n` +
         `- Se o Instagram indicar categoria/estilo diferente do cadastro, prefira o Instagram e marque confiança "media" ou "alta" conforme a evidência.\n` +
         `- Descrição sugerida: 2-3 frases, pt-BR, tom direto, sem clichês ("o melhor", "incrível", "imperdível").\n` +
-        `- Máximo 2 estilos secundários.\n\n` +
+        `- Máximo 2 estilos secundários.\n` +
+        `- ENDEREÇO: extraia suggested_address SOMENTE se houver evidência textual clara (bio, website, legenda recente) com padrões: R., Rua, Av., Avenida, Rod., Rodovia, Alameda, Praça, Travessa, Estrada, Vicinal, Distrito, Centro, Jardim, Vila, Parque, Bairro. Não invente. Se não houver evidência, retorne address_source="nao_encontrado" e omita suggested_address. Preencha address_confidence separadamente da confidence geral.\n\n` +
+
         `${igBlock}\n\n` +
         `CADASTRO INTERNO:\n${JSON.stringify(e, null, 2)}`;
 
@@ -199,6 +201,12 @@ Deno.serve(async (req) => {
           improvements: { type: "array", items: { type: "string" }, description: "Melhorias recomendadas (ex: adicionar logo, validar IG)" },
           confidence: { type: "string", enum: ["baixa", "media", "alta"] },
           evidence: { type: "string", description: "1 frase: em que se baseou (ex: 'bio menciona sertanejo universitário')" },
+          // Estabelecimentos 2.4 — endereço sugerido
+          suggested_address: { type: "string", description: "Endereço textual sugerido (ex: 'Av. Brasil, 1234' ou 'Rua X, Centro'). Extraia APENAS de evidência clara em bio/website/legendas do Instagram, reconhecendo padrões: R., Rua, Av., Avenida, Rod., Rodovia, Alameda, Praça, Travessa, Estrada, Vicinal, Distrito, Centro, Jardim, Vila, Parque, Bairro. NUNCA invente." },
+          suggested_neighborhood: { type: "string", description: "Bairro identificado, se houver (ex: Centro, Vila Marcondes)." },
+          address_source: { type: "string", enum: ["instagram", "website", "cadastro", "nao_encontrado"], description: "Origem do endereço sugerido." },
+          address_confidence: { type: "string", enum: ["baixa", "media", "alta"], description: "Confiança do endereço, independente da confiança geral. Use 'baixa' se for inferência fraca." },
+          address_evidence: { type: "string", description: "1 frase com a evidência textual (ex: 'bio do Instagram menciona Av. Brasil, 1234 - Centro')." },
         },
         required: [
           "suggested_type", "suggested_type_label", "suggested_music_primary",
@@ -256,6 +264,50 @@ Deno.serve(async (req) => {
     const args = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) return json({ error: "AI returned no result" }, 500);
     const parsed = JSON.parse(args);
+
+    // Estabelecimentos 2.4 — valida endereço sugerido no Google Geocoding (se houver chave + sugestão)
+    if (mode === "suggest" && parsed?.suggested_address) {
+      const gKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+      if (gKey) {
+        try {
+          const e = body.establishment || {};
+          const cityFinal = (e.city || "Presidente Prudente").toString().trim();
+          const q = [parsed.suggested_address, parsed.suggested_neighborhood, cityFinal, "SP", "Brasil"]
+            .filter(Boolean).join(", ");
+          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&language=pt-BR&region=br&components=${encodeURIComponent("country:BR")}&key=${gKey}`;
+          const r = await fetch(url);
+          const gj = await r.json();
+          if (gj?.status === "OK" && gj.results?.[0]) {
+            const g = gj.results[0];
+            parsed.suggested_latitude = g.geometry?.location?.lat ?? null;
+            parsed.suggested_longitude = g.geometry?.location?.lng ?? null;
+            parsed.suggested_place_id = g.place_id ?? null;
+            parsed.suggested_formatted_address = g.formatted_address ?? null;
+            // neighborhood do Google se a IA não detectou
+            if (!parsed.suggested_neighborhood) {
+              const nb = (g.address_components || []).find((c: any) =>
+                c.types?.includes("sublocality") || c.types?.includes("neighborhood")
+              );
+              if (nb?.long_name) parsed.suggested_neighborhood = nb.long_name;
+            }
+            parsed.address_source = parsed.address_source && parsed.address_source !== "nao_encontrado"
+              ? "ambos" : "google_maps";
+            // se Google confirmou (não partial_match), sobe confiança mínima para "media"
+            if (!g.partial_match && (!parsed.address_confidence || parsed.address_confidence === "baixa")) {
+              parsed.address_confidence = "media";
+            }
+            parsed.address_google_status = "ok";
+            parsed.address_partial_match = !!g.partial_match;
+          } else {
+            parsed.address_google_status = gj?.status || "ZERO_RESULTS";
+          }
+        } catch (gerr) {
+          console.warn("geocode validation failed", gerr);
+          parsed.address_google_status = "error";
+        }
+      }
+    }
+
     return json({ result: parsed, instagram: igMetaOut });
   } catch (e: any) {
     console.error("ai-audit error", e);
