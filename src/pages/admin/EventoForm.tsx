@@ -270,6 +270,7 @@ const EventoForm = () => {
       ticket_url: (data as any).ticket_url || "",
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
+      transport_reservation_enabled: Boolean((data as any).transport_reservation_enabled),
       _sub: (data as any).sub_category || data.category,
       is_sports_transmission: Boolean((data as any).is_sports_transmission),
       sports_match_id: (data as any).sports_match_id || null,
