@@ -180,24 +180,24 @@ export default function V3Agenda() {
   }
 
   return (
-    <div className="pb-32 pt-4 max-w-5xl mx-auto px-4">
+    <div className="pb-28 pt-3 max-w-5xl mx-auto px-3 md:px-4">
       {/* ===== HEADER GRADIENTE NEON ===== */}
-      <div className="relative mb-5 rounded-3xl border border-primary/25 p-5 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
+      <div className="relative mb-4 rounded-2xl md:rounded-3xl border border-primary/25 p-3.5 md:p-5 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
         <div
-          className="absolute inset-0 opacity-90 -z-10 rounded-3xl overflow-hidden"
+          className="absolute inset-0 opacity-90 -z-10 rounded-2xl md:rounded-3xl overflow-hidden"
           style={{
             background:
               "radial-gradient(circle at 20% 0%, hsl(var(--v3-neon)/0.45), transparent 55%), radial-gradient(circle at 90% 100%, hsl(var(--v3-neon-soft)/0.35), transparent 55%), linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)))",
           }}
         />
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.28em] text-primary font-bold mb-2">
-              <Sparkles className="w-3 h-3" />
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-1 text-[9px] md:text-[10px] uppercase tracking-[0.24em] text-primary font-bold mb-1">
+              <Sparkles className="w-2.5 h-2.5" />
               Curadoria Roxou
             </p>
             <h1
-              className="font-display font-black text-3xl leading-tight"
+              className="font-display font-black text-xl md:text-3xl leading-tight"
               style={{
                 background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)), #fff)",
                 WebkitBackgroundClip: "text",
@@ -206,21 +206,21 @@ export default function V3Agenda() {
             >
               Agenda Completa
             </h1>
-            <p className="text-xs text-muted-foreground mt-1">Linha do tempo dos próximos rolês</p>
+            <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">Linha do tempo dos próximos rolês</p>
           </div>
           <button
             type="button"
             onClick={() => setShowShareCard((value) => !value)}
-            className="shrink-0 inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-bold text-primary-foreground v3-neon-hover active:scale-95 transition-transform shadow-[0_0_24px_hsl(var(--v3-neon)/0.4)]"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl md:rounded-2xl px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-xs font-bold text-primary-foreground v3-neon-hover active:scale-95 transition-transform shadow-[0_0_24px_hsl(var(--v3-neon)/0.4)]"
             style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="w-3.5 h-3.5" />
             Stories
           </button>
         </div>
 
         {/* SEARCH BAR — limitada para não esticar em ultra-wide */}
-        <div className="mt-4 max-w-[600px]">
+        <div className="mt-3 max-w-[600px]">
           <V3SearchBar
             events={events as any}
             value={searchTerm}
@@ -263,13 +263,13 @@ export default function V3Agenda() {
             },
           ];
           return (
-            <div className="mt-4 space-y-2">
+            <div className="mt-3 space-y-1.5">
               {groups.map((g) => (
-                <div key={g.title} className="-mx-5 px-5 pr-10">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground/80 mb-1">
+                <div key={g.title} className="-mx-3.5 md:-mx-5 px-3.5 md:px-5 pr-6 md:pr-10">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 mb-0.5">
                     {g.title}
                   </p>
-                  <div className="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 py-1 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+                  <div className="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-1.5 py-0.5 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
                     {g.chips.map((chip) => {
                       const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
                       return (
@@ -277,7 +277,7 @@ export default function V3Agenda() {
                           key={chip.key}
                           type="button"
                           onClick={() => selectCategory(chip.key)}
-                          className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition-all ${
+                          className={`shrink-0 snap-start inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] md:text-[11px] font-bold whitespace-nowrap transition-all ${
                             active
                               ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
                               : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
@@ -307,9 +307,9 @@ export default function V3Agenda() {
           .slice(0, 2);
         if (featured.length === 0) return null;
         return (
-          <section className="mb-6">
-            <h2 className="font-display font-bold text-sm text-primary uppercase tracking-[0.22em] mb-3 flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" />
+          <section className="mb-5">
+            <h2 className="font-display font-bold text-xs md:text-sm text-primary uppercase tracking-[0.2em] mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3" />
               🔥 Em destaque na Roxou
             </h2>
             <div className={`grid gap-3 ${featured.length > 1 ? "md:grid-cols-2" : ""}`}>
@@ -325,9 +325,9 @@ export default function V3Agenda() {
                   <Link
                     key={e.id}
                     to={`/evento/${e.slug}`}
-                    className="group relative block overflow-hidden rounded-3xl border border-primary/30 bg-card/40 shadow-[0_0_36px_hsl(var(--v3-neon)/0.22)] hover:shadow-[0_0_48px_hsl(var(--v3-neon)/0.38)] hover:border-primary/60 transition-all"
+                    className="group relative block overflow-hidden rounded-2xl md:rounded-3xl border border-primary/30 bg-card/40 shadow-[0_0_28px_hsl(var(--v3-neon)/0.22)] hover:shadow-[0_0_48px_hsl(var(--v3-neon)/0.38)] hover:border-primary/60 transition-all"
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden">
+                    <div className="relative aspect-[21/10] md:aspect-[16/10] overflow-hidden">
                       <img
                         src={e.image_url || "/placeholder.svg"}
                         alt={e.title}
@@ -335,13 +335,13 @@ export default function V3Agenda() {
                         loading="eager"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)]"
+                      <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] md:text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)]"
                         style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}>
-                        <Sparkles className="w-3 h-3" /> Destaque
+                        <Sparkles className="w-2.5 h-2.5" /> Destaque
                       </span>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-display font-bold text-base md:text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                    <div className="p-3 md:p-4">
+                      <h3 className="font-display font-bold text-sm md:text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
                         {e.title}
                       </h3>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
@@ -435,7 +435,7 @@ export default function V3Agenda() {
             <span className="h-1 w-6 rounded-full bg-gradient-to-r from-primary to-transparent" />
             {g.label}
           </h2>
-          <div className="relative ml-2 space-y-4 before:absolute before:left-[2.45rem] before:top-3 before:bottom-3 before:w-px before:bg-gradient-to-b before:from-primary/60 before:via-primary/20 before:to-transparent">
+          <div className="relative space-y-3 md:space-y-4 before:absolute before:left-[1.625rem] md:before:left-[2.45rem] before:top-3 before:bottom-3 before:w-px before:bg-gradient-to-b before:from-primary/60 before:via-primary/20 before:to-transparent">
             {g.events.map((e: any) => {
               const hasPOV = !!e.video_url;
               const p = e.partners || null;
@@ -458,16 +458,16 @@ export default function V3Agenda() {
               const ctaLabel = hasCarona ? "🚗 Carona" : hasTicket ? "🎟 Ingresso" : "Ver evento →";
 
               return (
-                <div key={e.id} className="relative grid grid-cols-[5rem_1fr] gap-3">
-                  <div className="relative z-10 flex flex-col items-center pt-3">
+                <div key={e.id} className="relative grid grid-cols-[3.25rem_1fr] md:grid-cols-[5rem_1fr] gap-2 md:gap-3">
+                  <div className="relative z-10 flex flex-col items-center pt-2.5">
                     <span
-                      className="rounded-full px-2.5 py-1.5 text-[10px] font-black text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)] ring-2 ring-background"
+                      className="rounded-full px-2 py-1 text-[10px] font-black text-primary-foreground shadow-[0_0_18px_hsl(var(--v3-neon)/0.5)] ring-2 ring-background"
                       style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}
                     >
                       {fmtTime(e.date_time)}
                     </span>
                     {isEventNow(e.date_time) && (
-                      <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-400">
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         AO VIVO
                       </span>
@@ -477,10 +477,10 @@ export default function V3Agenda() {
                   <div className="relative group">
                     <Link
                       to={`/evento/${e.slug}`}
-                      className="block rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.35)] active:scale-[0.98]"
+                      className="block rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 md:p-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.35)] active:scale-[0.98]"
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden shrink-0 bg-muted/30 ring-1 ring-white/10">
+                      <div className="flex items-start gap-2.5 md:gap-3">
+                        <div className="relative w-[104px] h-[104px] md:w-32 md:h-32 rounded-xl md:rounded-2xl overflow-hidden shrink-0 bg-muted/30 ring-1 ring-white/10">
                           <img
                             src={e.image_url || "/placeholder.svg"}
                             alt={e.title}
