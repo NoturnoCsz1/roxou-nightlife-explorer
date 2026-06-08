@@ -181,8 +181,8 @@ export default function V3Agenda() {
 
   return (
     <div className="pb-28 pt-3 max-w-5xl mx-auto px-3 md:px-4">
-      {/* ===== HEADER GRADIENTE NEON ===== */}
-      <div className="relative mb-4 rounded-2xl md:rounded-3xl border border-primary/25 p-3.5 md:p-5 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
+      {/* ===== HEADER GRADIENTE NEON — minimalista ===== */}
+      <div className="relative mb-3 rounded-2xl md:rounded-3xl border border-primary/25 p-2.5 md:p-4 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
         <div
           className="absolute inset-0 opacity-90 -z-10 rounded-2xl md:rounded-3xl overflow-hidden"
           style={{
@@ -190,28 +190,21 @@ export default function V3Agenda() {
               "radial-gradient(circle at 20% 0%, hsl(var(--v3-neon)/0.45), transparent 55%), radial-gradient(circle at 90% 100%, hsl(var(--v3-neon-soft)/0.35), transparent 55%), linear-gradient(135deg, hsl(var(--background)), hsl(var(--card)))",
           }}
         />
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="inline-flex items-center gap-1 text-[9px] md:text-[10px] uppercase tracking-[0.24em] text-primary font-bold mb-1">
-              <Sparkles className="w-2.5 h-2.5" />
-              Curadoria Roxou
-            </p>
-            <h1
-              className="font-display font-black text-xl md:text-3xl leading-tight"
-              style={{
-                background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)), #fff)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Agenda Completa
-            </h1>
-            <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">Linha do tempo dos próximos rolês</p>
-          </div>
+        <div className="flex items-center justify-between gap-2">
+          <h1
+            className="font-display font-black text-lg md:text-2xl leading-tight truncate"
+            style={{
+              background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)), #fff)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Agenda Completa
+          </h1>
           <button
             type="button"
             onClick={() => setShowShareCard((value) => !value)}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl md:rounded-2xl px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-xs font-bold text-primary-foreground v3-neon-hover active:scale-95 transition-transform shadow-[0_0_24px_hsl(var(--v3-neon)/0.4)]"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-xl md:rounded-2xl px-2.5 py-1.5 text-[11px] md:text-xs font-bold text-primary-foreground v3-neon-hover active:scale-95 transition-transform shadow-[0_0_24px_hsl(var(--v3-neon)/0.4)]"
             style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}
           >
             <Camera className="w-3.5 h-3.5" />
@@ -219,8 +212,8 @@ export default function V3Agenda() {
           </button>
         </div>
 
-        {/* SEARCH BAR — limitada para não esticar em ultra-wide */}
-        <div className="mt-3 max-w-[600px]">
+        {/* SEARCH BAR */}
+        <div className="mt-2 max-w-[600px]">
           <V3SearchBar
             events={events as any}
             value={searchTerm}
@@ -230,74 +223,39 @@ export default function V3Agenda() {
           />
         </div>
 
-        {/* FILTROS AGRUPADOS — Tempo · Recursos · Gêneros */}
-        {(() => {
-          const groups: { title: string; chips: { key: string; label: string }[] }[] = [
-            {
-              title: "Tempo",
-              chips: [
-                { key: "todos", label: "✨ Tudo" },
-                { key: "hoje", label: "🔥 Hoje" },
-                { key: "amanha", label: "🌅 Amanhã" },
-                { key: "fds", label: "🎉 Final de semana" },
-              ],
-            },
-            {
-              title: "Recursos",
-              chips: [
-                { key: "carona", label: "🚗 Carona" },
-                { key: "futebol", label: "📺 Futebol" },
-                { key: "ingresso", label: "🎟 Ingresso" },
-              ],
-            },
-            {
-              title: "Gêneros",
-              chips: [
-                { key: "sertanejo", label: "🤠 Sertanejo" },
-                { key: "pagode", label: "🥁 Pagode" },
-                { key: "funk", label: "🔊 Funk" },
-                { key: "mpb", label: "🎼 MPB" },
-                { key: "rock", label: "🎸 Rock" },
-                { key: "eletronico", label: "🎧 Eletrônico" },
-              ],
-            },
-          ];
-          return (
-            <div className="mt-3 space-y-1.5">
-              {groups.map((g) => (
-                <div key={g.title} className="-mx-3.5 md:-mx-5 px-3.5 md:px-5 pr-6 md:pr-10">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 mb-0.5">
-                    {g.title}
-                  </p>
-                  <div className="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-1.5 py-0.5 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
-                    {g.chips.map((chip) => {
-                      const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
-                      return (
-                        <button
-                          key={chip.key}
-                          type="button"
-                          onClick={() => selectCategory(chip.key)}
-                          className={`shrink-0 snap-start inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] md:text-[11px] font-bold whitespace-nowrap transition-all ${
-                            active
-                              ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
-                              : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                          }`}
-                          style={
-                            active
-                              ? { background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }
-                              : undefined
-                          }
-                        >
-                          {chip.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
+        {/* FILTROS — apenas Tempo */}
+        <div className="mt-2 -mx-2.5 md:-mx-4 px-2.5 md:px-4 pr-6 md:pr-10">
+          <div className="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-1.5 py-0.5 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+            {[
+              { key: "todos", label: "✨ Tudo" },
+              { key: "hoje", label: "🔥 Hoje" },
+              { key: "amanha", label: "🌅 Amanhã" },
+              { key: "fds", label: "🎉 Final de semana" },
+            ].map((chip) => {
+              const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
+              return (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => selectCategory(chip.key)}
+                  className={`shrink-0 snap-start inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10.5px] md:text-[11px] font-bold whitespace-nowrap transition-all ${
+                    active
+                      ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
+                      : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                  }`}
+                  style={
+                    active
+                      ? { background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }
+                      : undefined
+                  }
+                >
+                  {chip.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
 
       {/* ===== HERO — Em destaque na Roxou ===== */}
