@@ -15,6 +15,7 @@ import SEO from "@/components/SEO";
 import { toast } from "sonner";
 import { isTodaySP, isTomorrowSP, formatTime, formatWeekdaySP, getEventDateSP } from "@/lib/dateUtils";
 import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
+import SpotlightBadge from "@/components/partners/SpotlightBadge";
 
 const TOP_WEEK_THRESHOLD = 100;
 
