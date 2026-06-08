@@ -1099,6 +1099,110 @@ const EstabelecimentosAudit = () => {
                     </div>
                   );
                 })()}
+
+                {suggestResult[e.id] && (() => {
+                  const s = suggestResult[e.id];
+                  const confCls = s.confidence === "alta"
+                    ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40"
+                    : s.confidence === "media"
+                      ? "bg-sky-500/15 text-sky-400 border-sky-500/40"
+                      : "bg-amber-500/15 text-amber-400 border-amber-500/40";
+                  return (
+                    <div className="mt-2 rounded-lg border border-fuchsia-500/40 bg-gradient-to-br from-fuchsia-500/5 to-purple-500/5 p-3 space-y-2 relative">
+                      <button
+                        onClick={() => setSuggestResult(prev => { const n = { ...prev }; delete n[e.id]; return n; })}
+                        className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Wand2 className="h-3.5 w-3.5 text-fuchsia-400" />
+                        <span className="text-[11px] font-bold uppercase tracking-wide">Sugestões da IA</span>
+                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${confCls}`}>
+                          confiança {s.confidence}
+                        </span>
+                      </div>
+
+                      <div className="grid gap-2 text-[11px]">
+                        <div>
+                          <div className="text-[9px] uppercase tracking-wide text-muted-foreground mb-0.5">Categoria sugerida</div>
+                          <div className="font-semibold text-foreground/90">🍻 {s.suggested_type_label}</div>
+                        </div>
+
+                        {s.suggested_music_primary && (
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wide text-muted-foreground mb-0.5">Estilo principal</div>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-secondary/60 px-2 py-0.5 text-[10px] font-semibold">
+                              🎵 {s.suggested_music_primary}
+                            </span>
+                          </div>
+                        )}
+
+                        {s.suggested_music_secondary?.length > 0 && (
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wide text-muted-foreground mb-0.5">Estilos secundários</div>
+                            <div className="flex flex-wrap gap-1">
+                              {s.suggested_music_secondary.map((m, i) => (
+                                <span key={i} className="inline-flex items-center gap-1 rounded-full bg-secondary/40 px-2 py-0.5 text-[10px]">
+                                  🎶 {m}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {s.suggested_description && (
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wide text-muted-foreground mb-0.5">Descrição sugerida</div>
+                            <p className="text-[11px] leading-snug text-foreground/85 italic">"{s.suggested_description}"</p>
+                          </div>
+                        )}
+
+                        {s.problems?.length > 0 && (
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wide text-amber-400 mb-0.5">Problemas encontrados</div>
+                            <ul className="space-y-0.5">
+                              {s.problems.map((p, i) => (
+                                <li key={i} className="text-[10px] text-foreground/80">• {p}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {s.improvements?.length > 0 && (
+                          <div>
+                            <div className="text-[9px] uppercase tracking-wide text-primary mb-0.5">Melhorias recomendadas</div>
+                            <ul className="space-y-0.5">
+                              {s.improvements.map((m, i) => (
+                                <li key={i} className="text-[10px] text-foreground/80">• {m}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1.5 border-t border-border/40">
+                        <button
+                          disabled
+                          className="inline-flex items-center gap-1 rounded-lg bg-secondary/40 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground cursor-not-allowed"
+                          title="Aplicação automática chegará em breve"
+                        >
+                          <Lock className="h-3 w-3" />
+                          Aplicar sugestões
+                        </button>
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30">
+                          Em breve
+                        </span>
+                        <Link
+                          to={`/admin/parceiros/${e.id}/editar`}
+                          className="ml-auto inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary"
+                        >
+                          <Edit2 className="h-3 w-3" /> Editar manualmente
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
