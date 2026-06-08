@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Search, ExternalLink, MapPin, Instagram as InstagramIcon, CheckCircle2,
   AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon, RefreshCw,
-  Image as ImageIcon, FileText, Music, Flame, Gauge,
+  Image as ImageIcon, FileText, Music, Flame, Gauge, Wand2, Lock,
 } from "lucide-react";
 
 const FLAG_LABELS: Record<string, string> = {
