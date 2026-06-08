@@ -1131,6 +1131,45 @@ const EstabelecimentosAudit = () => {
                         </span>
                       </div>
 
+                      {(() => {
+                        const ig = s.instagram;
+                        const src = ig?.source ?? "cadastro";
+                        const meta = src === "instagram_validated"
+                          ? { label: "Instagram validado", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/40", icon: "✅" }
+                          : src === "instagram_not_validated"
+                            ? { label: "Instagram não validado", cls: "bg-amber-500/15 text-amber-300 border-amber-500/40", icon: "⚠️" }
+                            : { label: "Cadastro interno", cls: "bg-secondary/40 text-muted-foreground border-border/40", icon: "📋" };
+                        return (
+                          <div className="rounded-md border border-border/30 bg-background/40 px-2 py-1.5 text-[10px] space-y-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-semibold uppercase tracking-wide text-muted-foreground">Fonte usada pela IA:</span>
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border ${meta.cls}`}>
+                                {meta.icon} {meta.label}
+                              </span>
+                              {ig?.handle && (
+                                <a
+                                  href={`https://instagram.com/${ig.handle}`}
+                                  target="_blank" rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-0.5 text-fuchsia-300 hover:underline"
+                                >
+                                  <InstagramIcon className="h-2.5 w-2.5" /> @{ig.handle}
+                                </a>
+                              )}
+                              {typeof ig?.followers_count === "number" && (
+                                <span className="text-muted-foreground">· {ig.followers_count.toLocaleString("pt-BR")} seguidores</span>
+                              )}
+                            </div>
+                            {src === "instagram_not_validated" && (
+                              <p className="text-amber-300/80">Não foi possível validar o Instagram{ig?.reason && ig.reason !== "—" ? ` — ${ig.reason}` : "."}</p>
+                            )}
+                            {s.evidence && (
+                              <p className="text-muted-foreground italic">Base: {s.evidence}</p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+
                       <div className="grid gap-2 text-[11px]">
                         <div>
                           <div className="text-[9px] uppercase tracking-wide text-muted-foreground mb-0.5">Categoria sugerida</div>
