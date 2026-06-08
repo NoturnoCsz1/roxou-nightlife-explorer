@@ -227,113 +227,58 @@ export default function Jogos() {
         ogType="website"
       />
 
-      {/* ═══════════ HERO ═══════════ */}
-      <header className="relative overflow-hidden border-b border-border/40">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-emerald-950/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.25),transparent_60%)]" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-primary/10 blur-[80px] rounded-full" />
-
-        <div className="relative mx-auto max-w-4xl px-5 pt-6 pb-4 md:pt-12 md:pb-8 text-center">
-          <div className="inline-flex items-center gap-1.5 mb-2.5 md:mb-5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 md:px-4 md:py-1.5">
-            <Tv className="h-3 w-3 md:h-3.5 md:w-3.5 text-primary" />
-            <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-primary">
-              Roxou Jogos
-            </span>
-          </div>
-
-          <h1
-            className="font-display font-black leading-[1.05] tracking-tight mb-2 md:mb-4 text-balance mx-auto max-w-[20ch] bg-gradient-to-br from-foreground via-foreground to-primary/80 bg-clip-text text-transparent"
-            style={{ fontSize: "clamp(1.35rem, 5vw, 3.4rem)" }}
-          >
-            Onde assistir futebol em Prudente
+      {/* ═══════════ HEADER COMPACTO ═══════════ */}
+      <header className="relative border-b border-border/40">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background to-background pointer-events-none" />
+        <div className="relative mx-auto max-w-5xl px-4 pt-4 pb-3">
+          <h1 className="font-display font-black text-lg md:text-2xl text-foreground leading-tight flex items-center gap-2">
+            <span aria-hidden>⚽</span> Jogos na Roxou
           </h1>
-
-          <p className="text-muted-foreground text-[12px] md:text-lg mb-3 md:mb-7 mx-auto max-w-[52ch] text-balance leading-snug">
-            Jogos ao vivo, bares transmitindo e a programação da semana.
+          <p className="text-[12px] md:text-sm text-muted-foreground mt-0.5">
+            Veja onde assistir futebol em Prudente
+            {liveCount > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 text-red-400 font-bold">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
+                </span>
+                {liveCount} ao vivo
+              </span>
+            )}
           </p>
-
-          {/* CTA + mini stats */}
-          <div className="flex flex-col items-center gap-2.5 md:gap-4">
-            <a
-              href="#onde-assistir"
-              className="inline-flex items-center gap-1.5 md:gap-2 rounded-full bg-primary text-primary-foreground px-4 py-2 md:px-7 md:py-3.5 text-[12px] md:text-sm font-bold shadow-[0_0_24px_-6px_hsl(var(--primary))] hover:scale-[1.03] active:scale-95 transition"
-            >
-              <Beer className="h-3.5 w-3.5 md:h-4 md:w-4" />
-              Ver locais transmitindo
-              <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
-            </a>
-
-            <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 md:gap-x-5 text-[10.5px] md:text-[12px] text-muted-foreground">
-              {liveCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-red-400 font-bold">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
-                  </span>
-                  {liveCount} ao vivo
-                </span>
-              )}
-              {transmissionCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-emerald-300 font-medium">
-                  📺 {transmissionCount} transmissões
-                </span>
-              )}
-              {barsCount > 0 && (
-                <span className="inline-flex items-center gap-1 font-medium">
-                  🍻 {barsCount} bares
-                </span>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* Hero match destacado — faixa compacta */}
-        {heroMatch && (
-          <div className="relative mx-auto max-w-3xl px-4 pb-3 md:pb-8 -mt-1 md:-mt-2">
-            <HeroMatchStripe match={heroMatch} isToday={heroMatch.raw_date === today} />
-          </div>
-        )}
-      </header>
-
-      <main className="mx-auto max-w-5xl px-4 py-6 md:py-10 space-y-10 md:space-y-14">
-        {/* ═══════════ JOGOS DE HOJE ═══════════ */}
-        <Section
-          eyebrow="Hoje"
-          title="Jogos de hoje"
-          subtitle="Os principais confrontos das próximas horas"
-          icon={<Calendar className="h-4 w-4" />}
-        >
+        {/* Carrossel horizontal */}
+        <div className="relative mx-auto max-w-5xl pb-4">
           {isLoading ? (
-            <SkeletonGrid count={3} />
-          ) : isError ? (
-            <EmptyCard
-              icon="⚠️"
-              title="A agenda está sendo atualizada"
-              body="Volte em alguns minutos para ver os jogos do dia."
-            />
-          ) : todays.length === 0 ? (
-            <EmptyCard
-              icon="📅"
-              title="Sem jogos importantes hoje"
-              body="Confira os próximos jogos do Brasil mais abaixo."
-            />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {todays.map((m) => (
-                <MatchCard
-                  key={m.external_id || m.slug}
-                  match={m}
-                  venuesCount={metaMap[m.slug]?.venuesCount}
-                  hasStream={metaMap[m.slug]?.hasStream}
-                  hasActiveChat={metaMap[m.slug]?.hasActiveChat}
-                  compact
+            <div className="flex gap-3 overflow-x-auto px-4 scrollbar-hide snap-x snap-mandatory">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="snap-start shrink-0 w-[240px] h-[132px] rounded-2xl bg-card/40 border border-border/40 animate-pulse"
                 />
               ))}
             </div>
+          ) : carouselMatches.length === 0 ? (
+            <div className="mx-4">
+              <EmptyCard
+                icon="📅"
+                title="Nenhum jogo nos próximos dias"
+                body="Volte em breve para conferir a próxima rodada."
+              />
+            </div>
+          ) : (
+            <div className="flex gap-3 overflow-x-auto px-4 scrollbar-hide snap-x snap-mandatory">
+              {carouselMatches.map((m) => (
+                <CarouselMatchCard key={m.external_id || m.slug} match={m} todayKey={today} />
+              ))}
+            </div>
           )}
-        </Section>
+        </div>
+      </header>
 
-        {/* ═══════════ ONDE ASSISTIR EM PRUDENTE ═══════════ */}
+      <main className="mx-auto max-w-5xl px-4 py-6 md:py-10 space-y-10 md:space-y-14">
+
         <Section
           id="onde-assistir"
           eyebrow="Bares transmitindo"
