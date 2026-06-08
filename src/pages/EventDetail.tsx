@@ -330,6 +330,7 @@ const EventDetail = () => {
               <Clock className="h-3 w-3 text-primary" />
               {time} · Horário de início
             </p>
+          </div>
         </div>
 
         <div className="mb-3">
@@ -340,7 +341,6 @@ const EventDetail = () => {
             url={(event as any).transmission_url}
             notes={(event as any).transmission_notes}
           />
-        </div>
         </div>
 
 
