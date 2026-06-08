@@ -17,6 +17,8 @@ export interface LeagueTableProps {
   relegationZone?: number;
   /** Mostrar link "ver tabela completa" */
   showFullLink?: boolean;
+  /** Conteúdo renderizado quando standings está vazio (ex: Libertadores sem dados) */
+  emptyFallback?: React.ReactNode;
 }
 
 interface StandingRow {
@@ -42,6 +44,7 @@ function LeagueTableInner({
   topZone = 4,
   relegationZone = 0,
   showFullLink = false,
+  emptyFallback,
 }: LeagueTableProps) {
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["league-standings", leagueSlug, limit ?? "all"],
@@ -70,7 +73,7 @@ function LeagueTableInner({
     );
   }
 
-  if (!rows.length) return null;
+  if (!rows.length) return emptyFallback ? <>{emptyFallback}</> : null;
 
   const total = rows.length;
 
