@@ -13,6 +13,9 @@ import {
   ExternalLink,
 } from "lucide-react";
 import SEO from "@/components/SEO";
+import WorldCupRibbon from "@/components/season/WorldCupRibbon";
+import WorldCupBadge from "@/components/season/WorldCupBadge";
+import { worldCupTheme as wc } from "@/themes/worldCupTheme";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getFeaturedFootballEvents,
