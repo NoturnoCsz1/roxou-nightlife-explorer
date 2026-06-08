@@ -96,22 +96,24 @@ export default function EventCardV3({
             </div>
           )}
 
-          {/* Reserve CTA — opens drawer */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setDrawerOpen(true);
-            }}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold uppercase tracking-wider text-white v3-neon-hover"
-            style={{
-              background:
-                "linear-gradient(135deg, hsl(var(--v3-neon) / 0.9), hsl(var(--v3-neon-soft) / 0.9))",
-            }}
-          >
-            <Sparkles className="w-3 h-3" />
-            Reservar
-          </button>
+          {/* Reserve CTA — opens drawer (only if transport OR ticket available) */}
+          {(transportEnabled || !!ticketUrl) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDrawerOpen(true);
+              }}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-bold uppercase tracking-wider text-white v3-neon-hover"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(var(--v3-neon) / 0.9), hsl(var(--v3-neon-soft) / 0.9))",
+              }}
+            >
+              <Sparkles className="w-3 h-3" />
+              {transportEnabled ? "Reservar" : "Ingresso"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -124,6 +126,7 @@ export default function EventCardV3({
         venueName={venueName}
         eventDate={dateTime}
         imageUrl={imageUrl}
+        transportEnabled={transportEnabled}
       />
     </>
   );
