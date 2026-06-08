@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import PartnerLogo from "@/components/partners/PartnerLogo";
 
 interface Partner {
   id: string;
