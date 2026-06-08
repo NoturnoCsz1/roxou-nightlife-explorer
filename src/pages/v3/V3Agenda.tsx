@@ -3,11 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, addHours, isWithinInterval } from "date-fns";
 import { isTodaySP, isTomorrowSP, getStartOfTodaySP, getDateKeySP, dateKeySPToAnchorDate, formatDateHeaderSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
-import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles } from "lucide-react";
+import { CalendarDays, MapPin, Heart, Camera, Car, Video, Sparkles, Ticket, Tv } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import {
+  ADMIN_PARTNER_TYPE_OPTIONS,
+  PARTNER_MUSIC_STYLE_LABELS,
+} from "@/lib/categoryConfig";
+
+const PARTNER_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  ADMIN_PARTNER_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 
@@ -20,18 +28,6 @@ const categoryIcon = (category?: string | null) => {
   return "📍";
 };
 
-const mapsUrl = (address?: string | null, venue?: string | null) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || venue || "Presidente Prudente")}`;
-
-const uberUrl = (address?: string | null, venue?: string | null) => {
-  const q = encodeURIComponent(address || venue || "Presidente Prudente");
-  return `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${q}`;
-};
-
-const noveNoveUrl = (address?: string | null, venue?: string | null) => {
-  const q = encodeURIComponent(address || venue || "Presidente Prudente");
-  return `https://99app.com/?dropoff=${q}`;
-};
 
 const isEventNow = (dateTime: string) => {
   const start = new Date(dateTime);
@@ -47,7 +43,6 @@ const isWeekendSP = (dateStr: string): boolean => {
 };
 
 export default function V3Agenda() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,11 +72,15 @@ export default function V3Agenda() {
       // Converte para UTC puro (formato "Z") — PostgREST rejeita offset -03:00 diretamente.
       // getStartOfTodaySP() garante que o corte seja a meia-noite civil de SP, não do browser.
       const startOfTodaySPUtc = new Date(getStartOfTodaySP()).toISOString();
-      const { data } = await supabase.from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,address,category,video_url")
+      const { data } = await supabase
+        .from("events")
+        .select(
+          "id,slug,title,image_url,date_time,venue_name,address,category,video_url,partner_id,sub_category,ticket_url,featured,transport_reservation_enabled,is_sports_transmission,sports_match_id,partners:partner_id(id,slug,name,logo_url,type,music_style_primary,music_styles_secondary,supports_sports)",
+        )
         .eq("status", "published")
         .gte("date_time", startOfTodaySPUtc)
-        .order("date_time").limit(100);
+        .order("date_time")
+        .limit(100);
       return data || [];
     },
   });
@@ -297,11 +296,28 @@ export default function V3Agenda() {
           </h2>
           <div className="relative ml-2 space-y-4 before:absolute before:left-[2.45rem] before:top-3 before:bottom-3 before:w-px before:bg-gradient-to-b before:from-primary/60 before:via-primary/20 before:to-transparent">
             {g.events.map((e: any) => {
-              const expanded = expandedId === e.id;
               const hasPOV = !!e.video_url;
+              const p = e.partners || null;
+              const hasCarona = !!e.transport_reservation_enabled;
+              const hasTicket = !!e.ticket_url;
+              const hasSports = !!e.is_sports_transmission;
+              const musicLabel = p?.music_style_primary
+                ? PARTNER_MUSIC_STYLE_LABELS[p.music_style_primary] || p.music_style_primary
+                : null;
+              const typeLabel = p?.type ? PARTNER_TYPE_LABELS[p.type] || p.type : null;
+
+              type Badge = { key: string; label: string; icon: any; className: string };
+              const badges: Badge[] = [];
+              if (hasCarona) badges.push({ key: "carona", label: "Carona", icon: Car, className: "border-primary/40 bg-primary/15 text-primary" });
+              if (hasTicket) badges.push({ key: "ticket", label: "Ingresso", icon: Ticket, className: "border-amber-400/40 bg-amber-400/10 text-amber-300" });
+              if (hasSports) badges.push({ key: "sports", label: "Futebol", icon: Tv, className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" });
+              if (musicLabel && badges.length < 4) badges.push({ key: "music", label: musicLabel, icon: null, className: "border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-200" });
+              if (typeLabel && badges.length < 4) badges.push({ key: "type", label: typeLabel, icon: null, className: "border-border/40 bg-card/60 text-muted-foreground" });
+
+              const ctaLabel = hasCarona ? "🚗 Carona" : hasTicket ? "🎟 Ingresso" : "Ver evento →";
+
               return (
                 <div key={e.id} className="relative grid grid-cols-[5rem_1fr] gap-3">
-                  {/* TIMELINE NODE + BADGE NEON */}
                   <div className="relative z-10 flex flex-col items-center pt-3">
                     <span
                       className="rounded-full px-2.5 py-1.5 text-[10px] font-black text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)] ring-2 ring-background"
@@ -317,100 +333,75 @@ export default function V3Agenda() {
                     )}
                   </div>
 
-                  {/* GLASS CARD COM HOVER NEON */}
-                  <button
-                    type="button"
-                    onClick={() => setExpandedId(expanded ? null : e.id)}
-                    className="group text-left rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.35)] active:scale-[0.98]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-muted/30 ring-1 ring-white/10">
-                        <img
-                          src={e.image_url || "/placeholder.svg"}
-                          alt={e.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        {hasPOV && (
-                          <span className="absolute bottom-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--v3-neon)/0.7)]">
-                            <Video className="w-2.5 h-2.5" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display font-semibold text-sm text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-                          <span className="mr-1.5" aria-hidden="true">{categoryIcon(e.category)}</span>
-                          {e.title}
-                        </h3>
-                        {e.venue_name && (
-                          <div className="flex items-center gap-1 mt-1 text-muted-foreground">
-                            <MapPin className="w-3 h-3 text-primary" />
-                            <span className="text-[10px] truncate">{e.venue_name}</span>
-                          </div>
-                        )}
-                        {hasPOV && (
-                          <span className="inline-flex items-center gap-1 mt-1.5 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary uppercase tracking-wider">
-                            <Video className="w-2.5 h-2.5" />
-                            POV disponível
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* AÇÕES RÁPIDAS */}
-                    <div
-                      className={`grid transition-all duration-300 ${
-                        expanded ? "grid-rows-[1fr] opacity-100 mt-3" : "grid-rows-[0fr] opacity-0"
-                      }`}
+                  <div className="relative group">
+                    <Link
+                      to={`/evento/${e.slug}`}
+                      className="block rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-xl transition-all duration-300 hover:border-primary/50 hover:bg-white/[0.07] hover:shadow-[0_0_28px_hsl(var(--v3-neon)/0.35)] active:scale-[0.98]"
                     >
-                      <div className="overflow-hidden">
-                        <div className="grid grid-cols-2 gap-2">
-                          <a
-                            href={mapsUrl(e.address, e.venue_name)}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(event) => event.stopPropagation()}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-[11px] font-bold text-primary hover:bg-primary/20 transition-colors"
-                          >
-                            <MapPin className="w-3.5 h-3.5" />
-                            Ver no Mapa
-                          </a>
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleSave(e.id);
-                            }}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/45 bg-secondary/55 px-3 py-2 text-[11px] font-bold text-secondary-foreground cursor-pointer"
-                          >
-                            <Heart className={`w-3.5 h-3.5 ${isSaved(e.id) ? "fill-primary text-primary" : ""}`} />
-                            {isSaved(e.id) ? "Salvo" : "Salvar"}
-                          </span>
-                          <a
-                            href={uberUrl(e.address, e.venue_name)}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(event) => event.stopPropagation()}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-black/60 px-3 py-2 text-[11px] font-bold text-white hover:bg-black/80 transition-colors"
-                          >
-                            <Car className="w-3.5 h-3.5" />
-                            Uber
-                          </a>
-                          <a
-                            href={noveNoveUrl(e.address, e.venue_name)}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(event) => event.stopPropagation()}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-yellow-400/30 bg-yellow-400/10 px-3 py-2 text-[11px] font-bold text-yellow-300 hover:bg-yellow-400/20 transition-colors"
-                          >
-                            <Car className="w-3.5 h-3.5" />
-                            99
-                          </a>
+                      <div className="flex items-start gap-3">
+                        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden shrink-0 bg-muted/30 ring-1 ring-white/10">
+                          <img
+                            src={e.image_url || "/placeholder.svg"}
+                            alt={e.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                          {hasPOV && (
+                            <span className="absolute bottom-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground shadow-[0_0_10px_hsl(var(--v3-neon)/0.7)]">
+                              <Video className="w-2.5 h-2.5" />
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 pr-8">
+                          <h3 className="font-display font-semibold text-sm md:text-base text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                            <span className="mr-1.5" aria-hidden="true">{categoryIcon(e.category)}</span>
+                            {e.title}
+                          </h3>
+                          {e.venue_name && (
+                            <div className="flex items-center gap-1 mt-1 text-muted-foreground">
+                              <MapPin className="w-3 h-3 text-primary" />
+                              <span className="text-[11px] truncate">{e.venue_name}</span>
+                            </div>
+                          )}
+
+                          {badges.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {badges.slice(0, 4).map((b) => {
+                                const Icon = b.icon;
+                                return (
+                                  <span
+                                    key={b.key}
+                                    className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${b.className}`}
+                                  >
+                                    {Icon && <Icon className="w-2.5 h-2.5" />}
+                                    {b.key === "music" ? `🎵 ${b.label}` : b.key === "type" ? `🍻 ${b.label}` : b.label}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          <div className="mt-2 text-[11px] font-semibold text-primary/90 group-hover:text-primary transition-colors">
+                            {ctaLabel}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </Link>
+
+                    <button
+                      type="button"
+                      aria-label={isSaved(e.id) ? "Remover dos salvos" : "Salvar evento"}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleSave(e.id);
+                      }}
+                      className="absolute top-2 right-2 inline-flex items-center justify-center w-8 h-8 rounded-full border border-border/45 bg-background/70 backdrop-blur-md text-muted-foreground hover:text-primary hover:border-primary/50 transition-colors"
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${isSaved(e.id) ? "fill-primary text-primary" : ""}`} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
