@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
+import SpotlightBadge from "@/components/partners/SpotlightBadge";
 
 interface Partner {
   id: string;
