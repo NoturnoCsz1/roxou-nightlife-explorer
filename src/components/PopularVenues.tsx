@@ -231,20 +231,13 @@ const PopularVenues = () => {
                   >
                     {/* Position + Avatar */}
                     <div className="relative shrink-0">
-                      {v.logo_url ? (
-                        <img
-                          src={v.logo_url}
-                          alt={v.name}
-                          className="h-10 w-10 rounded-lg object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-lg bg-secondary/60 flex items-center justify-center">
-                          <span className="text-sm font-bold font-display text-muted-foreground">
-                            {v.name.charAt(0)}
-                          </span>
-                        </div>
-                      )}
+                      <PartnerLogo
+                        src={v.logo_url}
+                        alt={v.name}
+                        size="sm"
+                        rounded="lg"
+                        interactive
+                      />
                       <div className="absolute -top-1 -left-1 h-4.5 w-4.5 flex items-center justify-center rounded-full bg-secondary text-[9px] font-black text-foreground border border-border/40"
                         style={{ height: "18px", width: "18px" }}
                       >
