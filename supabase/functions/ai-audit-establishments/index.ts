@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
     const args = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) return json({ error: "AI returned no result" }, 500);
     const parsed = JSON.parse(args);
-    return json({ result: parsed });
+    return json({ result: parsed, instagram: igMetaOut });
   } catch (e: any) {
     console.error("ai-audit error", e);
     return json({ error: String(e?.message || e) }, 500);
