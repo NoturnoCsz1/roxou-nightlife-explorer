@@ -1605,8 +1605,6 @@ function CommandCenter({
           todayCount={todayCount}
           weekEventsCount={safeWeekEvents.length}
           partnerRankMap={partnerRankMap}
-          onPauseAutoplay={() => setIsHeroPaused(true)}
-          onResumeAutoplay={() => setIsHeroPaused(false)}
         />
       )}
 
