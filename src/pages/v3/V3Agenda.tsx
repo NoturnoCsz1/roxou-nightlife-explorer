@@ -49,22 +49,39 @@ export default function V3Agenda() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedEvents();
 
-  // Sincroniza ?q= -> activeCategory (para vínculos vindos da Home/IA)
+  // Sincroniza ?cat= (canônico) e ?q= (legado) -> activeCategory
   useEffect(() => {
+    const cat = searchParams.get("cat");
+    if (cat) {
+      setActiveCategory(cat);
+      return;
+    }
     const q = searchParams.get("q");
     if (!q) return;
     const map: Record<string, string> = {
       hoje: "hoje", amanha: "amanha", "amanhã": "amanha",
       "final de semana": "fds", fds: "fds",
-      expo: "expo2026", "expo 2026": "expo2026",
-      sertanejo: "sertanejo", pagode: "pagode", "open bar": "open bar",
-      eletronico: "eletr", "eletrônico": "eletr", funk: "funk",
+      sertanejo: "sertanejo", pagode: "pagode",
+      eletronico: "eletronico", "eletrônico": "eletronico",
+      funk: "funk", rock: "rock", mpb: "mpb",
+      carona: "carona", futebol: "futebol", ingresso: "ingresso",
     };
     const key = map[q.trim().toLowerCase()];
     if (key) setActiveCategory(key);
     else setSearchTerm(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Persiste filtro ativo na URL
+  const selectCategory = (key: string) => {
+    setSearchTerm("");
+    setActiveCategory(key);
+    const next = new URLSearchParams(searchParams);
+    if (key === "todos") next.delete("cat");
+    else next.set("cat", key);
+    next.delete("q");
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["v3-agenda"],
