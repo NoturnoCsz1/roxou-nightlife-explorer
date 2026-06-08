@@ -147,6 +147,11 @@ const LocalDetail = () => {
       </header>
 
       <main className="mx-auto max-w-lg md:max-w-4xl px-4 md:px-6 mt-5 md:mt-8 space-y-6">
+        {/* Banner Destaque do Mês */}
+        {(partner as any).featured_home && (
+          <SpotlightBadge variant="banner" />
+        )}
+
         {/* Partner Info */}
         <div className="rounded-2xl bg-card p-5 card-shadow">
           <div className="flex items-start gap-4">
@@ -163,6 +168,7 @@ const LocalDetail = () => {
                 {partner.verified_partner && (
                   <span className="text-[10px] font-bold uppercase tracking-wider gradient-primary text-primary-foreground px-2 py-0.5 rounded-md">Verificado</span>
                 )}
+                {(partner as any).featured_home && <SpotlightBadge variant="chip" />}
                 {partner.aura_partner_summary && (
                   <span className="text-[9px] font-bold uppercase tracking-wider bg-primary/15 text-primary px-1.5 py-0.5 rounded">✨ Aura</span>
                 )}
