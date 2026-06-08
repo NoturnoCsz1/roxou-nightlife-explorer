@@ -199,6 +199,12 @@ Deno.serve(async (req) => {
           improvements: { type: "array", items: { type: "string" }, description: "Melhorias recomendadas (ex: adicionar logo, validar IG)" },
           confidence: { type: "string", enum: ["baixa", "media", "alta"] },
           evidence: { type: "string", description: "1 frase: em que se baseou (ex: 'bio menciona sertanejo universitário')" },
+          // Estabelecimentos 2.4 — endereço sugerido
+          suggested_address: { type: "string", description: "Endereço textual sugerido (ex: 'Av. Brasil, 1234' ou 'Rua X, Centro'). Extraia APENAS de evidência clara em bio/website/legendas do Instagram, reconhecendo padrões: R., Rua, Av., Avenida, Rod., Rodovia, Alameda, Praça, Travessa, Estrada, Vicinal, Distrito, Centro, Jardim, Vila, Parque, Bairro. NUNCA invente." },
+          suggested_neighborhood: { type: "string", description: "Bairro identificado, se houver (ex: Centro, Vila Marcondes)." },
+          address_source: { type: "string", enum: ["instagram", "website", "cadastro", "nao_encontrado"], description: "Origem do endereço sugerido." },
+          address_confidence: { type: "string", enum: ["baixa", "media", "alta"], description: "Confiança do endereço, independente da confiança geral. Use 'baixa' se for inferência fraca." },
+          address_evidence: { type: "string", description: "1 frase com a evidência textual (ex: 'bio do Instagram menciona Av. Brasil, 1234 - Centro')." },
         },
         required: [
           "suggested_type", "suggested_type_label", "suggested_music_primary",
