@@ -158,7 +158,7 @@ export default function V3Home() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url")
+        .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url,transport_reservation_enabled")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .lt("date_time", TODAY_END)
