@@ -324,8 +324,49 @@ function tplMinimal(c: Ctx): string {
   return lines.join("");
 }
 
-const TEMPLATES = [tplDireto, tplChamada, tplCurto, tplAgenda, tplDescoberta, tplNoticia, tplHype, tplMinimal];
-const TEMPLATE_NAMES = ["direto", "chamada", "curto", "agenda", "descoberta", "noticia", "hype", "minimal"];
+// — Template 9: Narrativo do local (usa identidade do parceiro) —
+function tplVenueNarrative(c: Ctx): string {
+  const opener = c.isToday
+    ? "Hoje"
+    : `Nesta ${c.weekdayShort.toLowerCase()}`;
+
+  // Linha 1 — abertura com tipo de local + bairro/cidade
+  const typeLabel = c.partnerTypeLabel || "casa";
+  const localBit = c.neighborhood
+    ? `${typeLabel} em ${c.city || c.neighborhood}`
+    : c.city
+      ? `${typeLabel} em ${c.city}`
+      : typeLabel;
+  const venuePart = c.venue ? ` no ${c.venue}` : "";
+  const head = `${opener} tem ${c.attractionShort}${venuePart}, ${localBit}.`;
+
+  // Linha 2 — contexto curto do local (apenas se vier do banco)
+  const venueLine = c.partnerSummary
+    ? c.partnerSummary
+    : c.partnerSecondaryStyles.length
+      ? `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")}.`
+      : "";
+
+  // Linha 3 — atração + horário + artista (se extraído)
+  const artistBit = c.artist ? `${c.artist} comanda a noite` : `a atração comanda a noite`;
+  const timeBit = c.hasRealTime ? ` a partir das ${c.timeLabel}` : "";
+  const styleBit = c.attractionShort && c.attractionShort !== "rolê"
+    ? ` com repertório ${c.attractionShort}`
+    : "";
+  const line3 = c.artist
+    ? `${artistBit}${styleBit}${timeBit}.`
+    : `${c.title}${styleBit}${timeBit}.`;
+
+  const blocks: string[] = [];
+  blocks.push(`<p>${escapeHtml(head)}</p>`);
+  if (venueLine) blocks.push(`<p>${escapeHtml(venueLine)}</p>`);
+  blocks.push(`<p>${escapeHtml(line3)}</p>`);
+  blocks.push(`<p>${escapeHtml(c.cta)}</p>`);
+  return blocks.join("");
+}
+
+const TEMPLATES = [tplDireto, tplChamada, tplCurto, tplAgenda, tplDescoberta, tplNoticia, tplHype, tplMinimal, tplVenueNarrative];
+const TEMPLATE_NAMES = ["direto", "chamada", "curto", "agenda", "descoberta", "noticia", "hype", "minimal", "venue_narrative"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🧠 Escolha inteligente do template
