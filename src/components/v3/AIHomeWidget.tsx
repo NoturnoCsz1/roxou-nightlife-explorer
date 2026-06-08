@@ -59,9 +59,9 @@ export default function AIHomeWidget() {
           </div>
 
           <div className="relative mt-4 grid grid-cols-1 gap-2">
-            <WidgetLine icon={CloudSun} label="Clima" text={data?.weather || (isLoading ? "Calculando clima de Prudente..." : "—")} />
-            <WidgetLine icon={PiggyBank} label="Economia" text={data?.economy_tip || (isLoading ? "Buscando happy hours e atalhos pra gastar menos." : "—")} />
-            <WidgetLine icon={Sparkles} label="Roxou indica" text={data?.role_suggestion || (isLoading ? "Cruzando agenda, bares e horários da noite." : "—")} />
+            <WidgetLine icon={CloudSun} label="Clima" text={data?.weather} loading={isLoading} />
+            <WidgetLine icon={PiggyBank} label="Economia" text={data?.economy_tip} loading={isLoading} />
+            <WidgetLine icon={Sparkles} label="Roxou indica" text={data?.role_suggestion} loading={isLoading} />
           </div>
         </div>
       </Link>
@@ -69,13 +69,21 @@ export default function AIHomeWidget() {
   );
 }
 
-function WidgetLine({ icon: Icon, label, text }: { icon: any; label: string; text: string }) {
+function WidgetLine({ icon: Icon, label, text, loading }: { icon: any; label: string; text?: string; loading?: boolean }) {
   return (
     <div className="flex items-start gap-2 rounded-2xl border border-border/25 bg-background/25 px-3 py-2">
       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        <span className="font-black text-foreground">{label}: </span>{text}
-      </p>
+      {loading && !text ? (
+        <div className="flex-1 py-0.5 space-y-1.5" aria-hidden="true">
+          <div className="v3-skeleton h-2.5 w-20 rounded-full" />
+          <div className="v3-skeleton h-2 w-full rounded-full" />
+          <div className="v3-skeleton h-2 w-3/4 rounded-full" />
+        </div>
+      ) : (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          <span className="font-black text-foreground">{label}: </span>{text || "—"}
+        </p>
+      )}
     </div>
   );
 }
