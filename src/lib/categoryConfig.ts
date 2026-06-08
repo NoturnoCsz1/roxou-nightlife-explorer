@@ -111,18 +111,70 @@ export function parseCategoryKey(key: string): { value: string; sub: string } {
 
 /**
  * New admin-facing partner type options.
+ * Futebol is NOT a partner type — it's modeled via the `supports_sports` flag.
  */
 export const ADMIN_PARTNER_TYPE_OPTIONS = [
   { value: "bar", label: "Bar" },
-  { value: "balada", label: "Balada" },
-  { value: "universitario", label: "Universitário" },
   { value: "restaurante", label: "Restaurante" },
+  { value: "espetinho", label: "Espetinho" },
+  { value: "lounge", label: "Lounge" },
+  { value: "balada", label: "Balada" },
   { value: "casa de shows", label: "Casa de Shows" },
   { value: "pub", label: "Pub" },
-  { value: "lounge", label: "Lounge" },
+  { value: "choperia", label: "Choperia" },
+  { value: "adega", label: "Adega" },
+  { value: "tabacaria", label: "Tabacaria" },
   { value: "cultural", label: "Cultural" },
   { value: "outro", label: "Outro" },
 ] as const;
+
+/**
+ * Musical styles for partners (primary + up to 2 secondary).
+ * Used to enrich AI-generated descriptions and event context.
+ */
+export const PARTNER_MUSIC_STYLES = [
+  { value: "sertanejo", label: "Sertanejo" },
+  { value: "pagode", label: "Pagode" },
+  { value: "mpb", label: "MPB" },
+  { value: "rock", label: "Rock" },
+  { value: "eletronico", label: "Eletrônico" },
+  { value: "funk", label: "Funk" },
+  { value: "flashback", label: "Flashback" },
+  { value: "universitario", label: "Universitário" },
+  { value: "samba", label: "Samba" },
+  { value: "acustico", label: "Acústico" },
+  { value: "open_format", label: "Open Format" },
+  { value: "pop", label: "Pop" },
+  { value: "rap_trap", label: "Rap/Trap" },
+  { value: "forro", label: "Forró" },
+  { value: "arrocha", label: "Arrocha" },
+  { value: "axe", label: "Axé" },
+] as const;
+
+export type PartnerMusicStyleValue = (typeof PARTNER_MUSIC_STYLES)[number]["value"];
+
+export const PARTNER_MUSIC_STYLE_LABELS: Record<string, string> = Object.fromEntries(
+  PARTNER_MUSIC_STYLES.map((s) => [s.value, s.label]),
+);
+
+/**
+ * Sports competitions a venue can broadcast (gated by `supports_sports`).
+ */
+export const SPORTS_COMPETITIONS = [
+  { value: "brasileirao", label: "Brasileirão" },
+  { value: "libertadores", label: "Libertadores" },
+  { value: "copa_do_brasil", label: "Copa do Brasil" },
+  { value: "champions", label: "Champions" },
+  { value: "selecao_brasileira", label: "Seleção Brasileira" },
+  { value: "paulistao", label: "Paulistão" },
+  { value: "sul_americana", label: "Sul-Americana" },
+] as const;
+
+export type SportsCompetitionValue = (typeof SPORTS_COMPETITIONS)[number]["value"];
+
+export const SPORTS_COMPETITION_LABELS: Record<string, string> = Object.fromEntries(
+  SPORTS_COMPETITIONS.map((c) => [c.value, c.label]),
+);
 
 /**
  * Get the display label for an event, preferring the sub_category.
