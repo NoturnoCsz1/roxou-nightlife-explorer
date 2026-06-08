@@ -68,7 +68,7 @@ function formatTime(iso: string): string {
   }
 }
 
-export default function FootballMatchChat({ matchSlug, matchTitle }: FootballMatchChatProps) {
+export default function FootballMatchChat({ matchSlug, matchTitle, compact = false }: FootballMatchChatProps) {
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileInfo>>({});
