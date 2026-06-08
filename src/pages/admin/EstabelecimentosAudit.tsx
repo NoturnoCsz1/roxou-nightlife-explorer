@@ -311,7 +311,7 @@ const EstabelecimentosAudit = () => {
         body: { mode: "suggest", establishment: payload },
       });
       if (error || !data?.result) throw new Error(data?.error || error?.message || "Falha");
-      setSuggestResult(prev => ({ ...prev, [e.id]: data.result }));
+      setSuggestResult(prev => ({ ...prev, [e.id]: { ...data.result, instagram: data.instagram ?? null } }));
     } catch (err: any) {
       toast.error(err.message || "Falha ao gerar sugestões");
     } finally {
