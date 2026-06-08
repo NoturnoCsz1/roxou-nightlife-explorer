@@ -216,10 +216,11 @@ function tplDireto(c: Ctx): string {
 // — Template 2: Chamada de rolê —
 function tplChamada(c: Ctx): string {
   const opener = whenOpener(c);
-  const head = `${opener} combina com ${c.attractionShort}, mesa cheia e gente boa.`;
+  const head = `${opener} pede ${c.attractionShort} com som ao vivo e pegada de bairro.`;
+  const subjectBit = c.artist ? `${c.artist}` : c.title;
   const sub = c.venue
-    ? `${c.title} no ${c.venue}${c.city ? ` em ${c.city}` : ""}.`
-    : `${c.title}${c.city ? ` em ${c.city}` : ""}.`;
+    ? `${subjectBit} no ${c.venue}${c.city ? `, em ${c.city}` : ""}.`
+    : `${subjectBit}${c.city ? `, em ${c.city}` : ""}.`;
   const items: string[] = [];
   if (c.venue) items.push(`📍 ${escapeHtml(c.venue)}`);
   if (c.hasRealTime) items.push(`🕒 A partir das ${escapeHtml(c.timeLabel)}`);
@@ -228,20 +229,21 @@ function tplChamada(c: Ctx): string {
     `<p>${escapeHtml(head)}</p>`,
     `<p>${escapeHtml(sub)}</p>`,
     `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`,
-    `<p>Bora marcar quem vai junto?</p>`,
+    `<p>${escapeHtml(c.cta)}</p>`,
   ];
   return html.join("");
 }
 
 // — Template 3: Curto para Instagram —
 function tplCurto(c: Ctx): string {
-  const opener = c.isToday ? "Rolê confirmado hoje" : `${c.weekdayShort} com ${c.attractionShort} na área`;
-  const where = c.venue ? `${c.title} no ${c.venue}` : c.title;
+  const opener = c.isToday ? `Hoje com ${c.attractionShort} na cidade` : `${c.weekdayShort} com ${c.attractionShort} na área`;
+  const subject = c.artist ? c.artist : (c.venue || c.attractionLabel);
+  const where = c.venue && c.artist ? `${subject} no ${c.venue}` : subject;
   const when = c.hasRealTime ? `, a partir das ${c.timeLabel}` : "";
   return [
     `<p>${escapeHtml(opener)}. ${c.emoji}</p>`,
     `<p>${escapeHtml(`${where}${when}.`)}</p>`,
-    `<p>Mais detalhes na agenda da Roxou.</p>`,
+    `<p>${escapeHtml(c.cta)}</p>`,
   ].join("");
 }
 
@@ -293,10 +295,11 @@ function tplNoticia(c: Ctx): string {
 
 // — Template 7: Hype moderado —
 function tplHype(c: Ctx): string {
-  const head = `Tem som, tem mesa e tem rolê confirmado.`;
+  const head = `Som, mesa e ${c.attractionShort} na agenda.`;
+  const subject = c.artist ? c.artist : c.attractionLabel;
   const line = c.venue
-    ? `${c.title} no ${c.venue} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`
-    : `${c.title} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`;
+    ? `${subject} no ${c.venue} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`
+    : `${subject} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`;
   const items: string[] = [];
   if (c.city) items.push(`📍 ${escapeHtml(c.city)}`);
   if (c.hasRealTime) items.push(`🕒 ${escapeHtml(c.timeLabel)}`);
@@ -305,7 +308,7 @@ function tplHype(c: Ctx): string {
     `<p>${escapeHtml(head)}</p>`,
     `<p>${escapeHtml(line)}</p>`,
     `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`,
-    `<p>A agenda completa tá na Roxou.</p>`,
+    `<p>${escapeHtml(c.cta)}</p>`,
   ].join("");
 }
 
