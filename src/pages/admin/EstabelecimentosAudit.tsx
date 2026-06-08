@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Search, ExternalLink, MapPin, Instagram as InstagramIcon, CheckCircle2,
   AlertTriangle, Star, ShieldCheck, Ban, Edit2, Loader2, Eye, Sparkles, X, Map as MapIcon, RefreshCw,
+  Image as ImageIcon, FileText, Music, Flame, Gauge,
 } from "lucide-react";
 
 const FLAG_LABELS: Record<string, string> = {
@@ -35,11 +36,49 @@ interface Establishment {
   longitude: number | null;
   maps_place_id?: string | null;
   formatted_address?: string | null;
+  description?: string | null;
+  logo_url?: string | null;
+  music_style_primary?: string | null;
+  music_styles_secondary?: string[] | null;
   updated_at: string | null;
   created_at: string;
 }
 
 interface Metrics { eventCount: number; }
+
+// ============================================================
+// Score Roxou (0–100) — quanto mais completo o perfil, maior.
+// ============================================================
+const SCORE_WEIGHTS = {
+  logo: 15,
+  coordinates: 15,
+  address: 10,
+  instagram: 15,
+  description: 15,
+  category: 10,
+  music_style: 10,
+  instagram_validated: 10,
+} as const;
+
+function computeScore(e: Establishment): number {
+  let s = 0;
+  if (e.logo_url?.trim()) s += SCORE_WEIGHTS.logo;
+  if (e.latitude != null && e.longitude != null) s += SCORE_WEIGHTS.coordinates;
+  if (e.address?.trim()) s += SCORE_WEIGHTS.address;
+  if (e.instagram?.trim()) s += SCORE_WEIGHTS.instagram;
+  if (e.description?.trim()) s += SCORE_WEIGHTS.description;
+  if (e.type?.trim()) s += SCORE_WEIGHTS.category;
+  if (e.music_style_primary?.trim()) s += SCORE_WEIGHTS.music_style;
+  if (e.instagram_validated) s += SCORE_WEIGHTS.instagram_validated;
+  return Math.min(100, s);
+}
+
+function scoreTone(score: number): { cls: string; label: string } {
+  if (score >= 90) return { cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/40", label: "Excelente" };
+  if (score >= 70) return { cls: "bg-sky-500/15 text-sky-400 border-sky-500/40", label: "Bom" };
+  if (score >= 50) return { cls: "bg-amber-500/15 text-amber-400 border-amber-500/40", label: "Atenção" };
+  return { cls: "bg-destructive/15 text-destructive border-destructive/40", label: "Crítico" };
+}
 
 const STATUS_META: Record<Status, { label: string; cls: string }> = {
   draft:      { label: "Rascunho",   cls: "bg-muted/40 text-muted-foreground" },
@@ -180,7 +219,18 @@ const EstabelecimentosAudit = () => {
   const [categoryF, setCategoryF] = useState<string>("");
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [noCoordsOnly, setNoCoordsOnly] = useState(false);
-  const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc">("recent");
+  // Filtros 2.0 — qualidade do perfil
+  type QualityFilter =
+    | "all"
+    | "needs_attention"
+    | "no_coords"
+    | "no_instagram"
+    | "no_description"
+    | "no_music_style"
+    | "no_logo"
+    | "ready_to_feature";
+  const [qualityFilter, setQualityFilter] = useState<QualityFilter>("all");
+  const [orderBy, setOrderBy] = useState<"recent" | "events_desc" | "events_asc" | "score_asc" | "score_desc">("recent");
   const [busy, setBusy] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState<Record<string, { lat: string; lng: string; url: string }>>({});
 
@@ -297,25 +347,58 @@ const EstabelecimentosAudit = () => {
       if (categoryF && e.type !== categoryF) return false;
       if (errorsOnly && computeFlags(e).length === 0) return false;
       if (noCoordsOnly && e.latitude != null && e.longitude != null) return false;
+      // Quality filter chips
+      const score = computeScore(e);
+      if (qualityFilter === "needs_attention" && score >= 60) return false;
+      if (qualityFilter === "no_coords" && !(e.latitude == null || e.longitude == null)) return false;
+      if (qualityFilter === "no_instagram" && !!e.instagram?.trim()) return false;
+      if (qualityFilter === "no_description" && !!e.description?.trim()) return false;
+      if (qualityFilter === "no_music_style" && !!e.music_style_primary?.trim()) return false;
+      if (qualityFilter === "no_logo" && !!e.logo_url?.trim()) return false;
+      if (qualityFilter === "ready_to_feature" && score < 90) return false;
       return true;
     });
     if (orderBy === "events_desc") arr = [...arr].sort((a, b) => (metrics[b.id]?.eventCount || 0) - (metrics[a.id]?.eventCount || 0));
     if (orderBy === "events_asc") arr = [...arr].sort((a, b) => (metrics[a.id]?.eventCount || 0) - (metrics[b.id]?.eventCount || 0));
+    if (orderBy === "score_asc") arr = [...arr].sort((a, b) => computeScore(a) - computeScore(b));
+    if (orderBy === "score_desc") arr = [...arr].sort((a, b) => computeScore(b) - computeScore(a));
     return arr;
-  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, noCoordsOnly, orderBy, metrics]);
+  }, [items, search, statusFilter, cityF, categoryF, errorsOnly, noCoordsOnly, qualityFilter, orderBy, metrics]);
 
   const stats = useMemo(() => {
     const total = items.length;
     let ativo = 0, destaque = 0, oficial = 0, errors = 0;
+    let completos = 0, precisamAtencao = 0;
+    let semLogo = 0, semCoords = 0, semInstagram = 0, semDescricao = 0, semEstilo = 0;
+    let scoreSum = 0;
     items.forEach(e => {
       const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
       if (cur === "ativo") ativo++;
       if (cur === "destaque") destaque++;
       if (cur === "oficial") oficial++;
       if (computeFlags(e).length > 0) errors++;
+      const score = computeScore(e);
+      scoreSum += score;
+      if (score >= 90) completos++;
+      if (score < 60) precisamAtencao++;
+      if (!e.logo_url?.trim()) semLogo++;
+      if (e.latitude == null || e.longitude == null) semCoords++;
+      if (!e.instagram?.trim()) semInstagram++;
+      if (!e.description?.trim()) semDescricao++;
+      if (!e.music_style_primary?.trim()) semEstilo++;
     });
-    return { total, ativo, destaque, oficial, errors };
+    const avgScore = total > 0 ? Math.round(scoreSum / total) : 0;
+    return { total, ativo, destaque, oficial, errors, completos, precisamAtencao, semLogo, semCoords, semInstagram, semDescricao, semEstilo, avgScore };
   }, [items, metrics]);
+
+  // Top 5 piores scores — seção "Corrigir primeiro"
+  const fixFirst = useMemo(() => {
+    return [...items]
+      .map(e => ({ e, score: computeScore(e) }))
+      .filter(x => x.score < 90)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 5);
+  }, [items]);
 
   async function patch(id: string, payload: Partial<Establishment>) {
     setBusy(id);
@@ -497,14 +580,84 @@ const EstabelecimentosAudit = () => {
         </div>
       )}
 
-      {/* Métricas */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-        <Stat label="Total" value={stats.total} />
-        <Stat label="Ativos" value={stats.ativo} tone="green" />
-        <Stat label="Destaque" value={stats.destaque} tone="amber" />
-        <Stat label="Oficiais" value={stats.oficial} tone="primary" />
-        <Stat label="Com erro" value={stats.errors} tone="red" />
+      {/* ── Métricas 2.0: Dashboard rico no topo ── */}
+      <div className="space-y-2">
+        {/* Linha 1 — visão geral + score médio */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <Stat label="Total" value={stats.total} icon={<Eye className="h-3 w-3" />} />
+          <Stat label="Completos (≥90)" value={stats.completos} tone="green" icon={<CheckCircle2 className="h-3 w-3" />} />
+          <Stat label="Precisam atenção (<60)" value={stats.precisamAtencao} tone="red" icon={<AlertTriangle className="h-3 w-3" />} />
+          <Stat label="Score médio" value={stats.avgScore} tone={stats.avgScore >= 70 ? "green" : stats.avgScore >= 50 ? "amber" : "red"} icon={<Gauge className="h-3 w-3" />} />
+        </div>
+        {/* Linha 2 — gaps de qualidade clicáveis */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <Stat label="Sem logo" value={stats.semLogo} tone="amber" icon={<ImageIcon className="h-3 w-3" />} onClick={() => setQualityFilter("no_logo")} active={qualityFilter === "no_logo"} />
+          <Stat label="Sem coordenadas" value={stats.semCoords} tone="amber" icon={<MapPin className="h-3 w-3" />} onClick={() => setQualityFilter("no_coords")} active={qualityFilter === "no_coords"} />
+          <Stat label="Sem Instagram" value={stats.semInstagram} tone="amber" icon={<InstagramIcon className="h-3 w-3" />} onClick={() => setQualityFilter("no_instagram")} active={qualityFilter === "no_instagram"} />
+          <Stat label="Sem descrição" value={stats.semDescricao} tone="amber" icon={<FileText className="h-3 w-3" />} onClick={() => setQualityFilter("no_description")} active={qualityFilter === "no_description"} />
+          <Stat label="Sem estilo musical" value={stats.semEstilo} tone="amber" icon={<Music className="h-3 w-3" />} onClick={() => setQualityFilter("no_music_style")} active={qualityFilter === "no_music_style"} />
+        </div>
+        {/* Linha 3 — status legado (compactado) */}
+        <div className="grid grid-cols-4 gap-2">
+          <Stat label="Ativos" value={stats.ativo} tone="green" />
+          <Stat label="Destaque" value={stats.destaque} tone="amber" />
+          <Stat label="Oficiais" value={stats.oficial} tone="primary" />
+          <Stat label="Com erro" value={stats.errors} tone="red" />
+        </div>
       </div>
+
+      {/* ── 🔥 Corrigir primeiro — top 5 piores scores ── */}
+      {fixFirst.length > 0 && (
+        <div className="rounded-xl border border-destructive/30 bg-gradient-to-br from-destructive/10 via-card to-card p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <Flame className="h-4 w-4 text-destructive" />
+              <h2 className="text-sm font-bold">🔥 Corrigir primeiro</h2>
+              <span className="text-[10px] text-muted-foreground">os {fixFirst.length} perfis com pior Score Roxou</span>
+            </div>
+            <button
+              onClick={() => { setQualityFilter("needs_attention"); setOrderBy("score_asc"); }}
+              className="text-[10px] font-semibold text-destructive hover:underline"
+            >
+              Ver todos com atenção →
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {fixFirst.map(({ e, score }) => {
+              const tone = scoreTone(score);
+              const flags = computeFlags(e);
+              return (
+                <div key={e.id} className="flex items-center gap-2 rounded-lg bg-card/80 border border-border/30 p-2">
+                  <div className={`flex items-center justify-center min-w-[42px] h-9 rounded-md border ${tone.cls} font-bold text-sm tabular-nums`}>
+                    {score}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-semibold truncate">{e.name}</span>
+                      <span className="text-[9px] text-muted-foreground">/{e.slug}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap gap-1.5">
+                      {!e.logo_url && <span className="text-amber-400">sem logo</span>}
+                      {(e.latitude == null || e.longitude == null) && <span className="text-amber-400">sem coords</span>}
+                      {!e.instagram && <span className="text-amber-400">sem instagram</span>}
+                      {!e.description && <span className="text-amber-400">sem descrição</span>}
+                      {!e.music_style_primary && <span className="text-amber-400">sem estilo</span>}
+                      {!e.type && <span className="text-amber-400">sem categoria</span>}
+                      {flags.length === 0 && score < 90 && <span className="text-muted-foreground">perfil incompleto</span>}
+                    </div>
+                  </div>
+                  <Link
+                    to={`/admin/parceiros/${e.id}/editar`}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground hover:opacity-90"
+                  >
+                    <Edit2 className="h-2.5 w-2.5" /> Corrigir
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="space-y-2">
@@ -545,6 +698,8 @@ const EstabelecimentosAudit = () => {
             <option value="recent">Recentes</option>
             <option value="events_desc">Mais eventos</option>
             <option value="events_asc">Sem eventos</option>
+            <option value="score_asc">Score: pior → melhor</option>
+            <option value="score_desc">Score: melhor → pior</option>
           </select>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
             <input type="checkbox" checked={errorsOnly} onChange={e => setErrorsOnly(e.target.checked)} />
@@ -554,6 +709,32 @@ const EstabelecimentosAudit = () => {
             <input type="checkbox" checked={noCoordsOnly} onChange={e => setNoCoordsOnly(e.target.checked)} />
             Somente sem coordenadas
           </label>
+        </div>
+
+        {/* ── Filtros de qualidade (Estabelecimentos 2.0) ── */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {([
+            { k: "all",              label: "Todos" },
+            { k: "needs_attention",  label: "⚠️ Precisa atenção" },
+            { k: "no_coords",        label: "Sem coordenadas" },
+            { k: "no_instagram",     label: "Sem Instagram" },
+            { k: "no_description",   label: "Sem descrição" },
+            { k: "no_music_style",   label: "Sem estilo musical" },
+            { k: "no_logo",          label: "Sem logo" },
+            { k: "ready_to_feature", label: "✨ Pronto para destaque" },
+          ] as { k: QualityFilter; label: string }[]).map(({ k, label }) => (
+            <button
+              key={k}
+              onClick={() => setQualityFilter(k)}
+              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
+                qualityFilter === k
+                  ? "bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.4)]"
+                  : "bg-secondary/60 text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -569,11 +750,20 @@ const EstabelecimentosAudit = () => {
             const flags = computeFlags(e);
             const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
             const meta = STATUS_META[cur];
+            const score = computeScore(e);
+            const tone = scoreTone(score);
             return (
               <div key={e.id} className="rounded-xl border border-border/40 bg-card p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        title={`Score Roxou: ${score}/100 — ${tone.label}`}
+                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border tabular-nums ${tone.cls}`}
+                      >
+                        <Gauge className="h-3 w-3" />
+                        {score}
+                      </span>
                       <span className="text-sm font-semibold truncate">{e.name}</span>
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${meta.cls}`}>{meta.label}</span>
                       {/* Badges de qualidade — positivos */}
@@ -892,7 +1082,21 @@ const EstabelecimentosAudit = () => {
   );
 };
 
-function Stat({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "green" | "amber" | "primary" | "red" }) {
+function Stat({
+  label,
+  value,
+  tone = "default",
+  icon,
+  onClick,
+  active,
+}: {
+  label: string;
+  value: number;
+  tone?: "default" | "green" | "amber" | "primary" | "red";
+  icon?: React.ReactNode;
+  onClick?: () => void;
+  active?: boolean;
+}) {
   const tones: Record<string, string> = {
     default: "text-foreground",
     green: "text-green-400",
@@ -900,12 +1104,26 @@ function Stat({ label, value, tone = "default" }: { label: string; value: number
     primary: "text-primary",
     red: "text-destructive",
   };
-  return (
-    <div className="rounded-xl border border-border/40 bg-card p-2.5">
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+  const base = `rounded-xl border bg-card p-2.5 transition ${
+    active ? "border-primary/60 shadow-[0_0_14px_hsl(var(--primary)/0.35)]" : "border-border/40"
+  } ${onClick ? "text-left hover:border-primary/40 hover:bg-card/80 cursor-pointer" : ""}`;
+  const inner = (
+    <>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+        {icon}
+        {label}
+      </p>
       <p className={`text-xl font-bold ${tones[tone]}`}>{value}</p>
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={base}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={base}>{inner}</div>;
 }
 
 export default EstabelecimentosAudit;
