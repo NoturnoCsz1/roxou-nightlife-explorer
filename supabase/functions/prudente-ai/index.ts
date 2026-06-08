@@ -216,6 +216,7 @@ serve(async (req) => {
       return json(args ? JSON.parse(args) : { story_ideas: [], offer_copy: "", ideal_post_time: "18h30", weather_reason: "Clima local usado como sinal de intenção." });
     }
 
+    if (!user) return json({ error: "auth_required", message: "Faça login pra conversar com a Aura." }, 401);
     const { data: vip } = await supabase.from("vip_subscriptions").select("status,expires_at").eq("user_id", user.id).maybeSingle();
     const isVip = vip?.status === "active" && (!vip.expires_at || new Date(vip.expires_at).getTime() > Date.now());
     const usageDate = dayKey();
