@@ -371,18 +371,25 @@ const TEMPLATE_NAMES = ["direto", "chamada", "curto", "agenda", "descoberta", "n
 // ─────────────────────────────────────────────────────────────────────────────
 // 🧠 Escolha inteligente do template
 // ─────────────────────────────────────────────────────────────────────────────
-function chooseTemplate(seed: number, previousDescs: string[], hasMinimalData: boolean): number {
-  // Detecta os últimos templates usados no lote para evitar repetição
+function chooseTemplate(
+  seed: number,
+  previousDescs: string[],
+  hasMinimalData: boolean,
+  hasRichVenue: boolean,
+): number {
   const recent = (previousDescs || [])
     .map(detectTemplateId)
-    .filter((x): x is number => x !== null && x >= 1 && x <= 8)
+    .filter((x): x is number => x !== null && x >= 1 && x <= 9)
     .slice(-5)
-    .map((x) => x - 1); // converter para índice 0-based
+    .map((x) => x - 1);
 
-  // Se a info for muito limitada, prefere templates curtos/minimalistas
-  const preferred = hasMinimalData ? [2, 7, 4] : [0, 1, 2, 3, 4, 5, 6, 7];
+  // Pouca info → templates curtos. Info rica de parceiro → privilegia narrativo (T9).
+  const preferred = hasMinimalData
+    ? [2, 7, 4]
+    : hasRichVenue
+      ? [8, 0, 5, 1, 8, 3, 6, 8, 4] // T9 (idx 8) entra duas vezes para ganhar peso
+      : [0, 1, 2, 3, 4, 5, 6, 7];
 
-  // Começa pelo seed e busca o próximo não usado recentemente
   const start = ((Math.floor(seed) % preferred.length) + preferred.length) % preferred.length;
   for (let i = 0; i < preferred.length; i++) {
     const idx = preferred[(start + i) % preferred.length];
