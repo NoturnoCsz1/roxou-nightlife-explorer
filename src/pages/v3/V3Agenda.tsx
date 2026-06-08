@@ -49,22 +49,39 @@ export default function V3Agenda() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { isSaved, toggleSave } = useSavedEvents();
 
-  // Sincroniza ?q= -> activeCategory (para vínculos vindos da Home/IA)
+  // Sincroniza ?cat= (canônico) e ?q= (legado) -> activeCategory
   useEffect(() => {
+    const cat = searchParams.get("cat");
+    if (cat) {
+      setActiveCategory(cat);
+      return;
+    }
     const q = searchParams.get("q");
     if (!q) return;
     const map: Record<string, string> = {
       hoje: "hoje", amanha: "amanha", "amanhã": "amanha",
       "final de semana": "fds", fds: "fds",
-      expo: "expo2026", "expo 2026": "expo2026",
-      sertanejo: "sertanejo", pagode: "pagode", "open bar": "open bar",
-      eletronico: "eletr", "eletrônico": "eletr", funk: "funk",
+      sertanejo: "sertanejo", pagode: "pagode",
+      eletronico: "eletronico", "eletrônico": "eletronico",
+      funk: "funk", rock: "rock", mpb: "mpb",
+      carona: "carona", futebol: "futebol", ingresso: "ingresso",
     };
     const key = map[q.trim().toLowerCase()];
     if (key) setActiveCategory(key);
     else setSearchTerm(q);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // Persiste filtro ativo na URL
+  const selectCategory = (key: string) => {
+    setSearchTerm("");
+    setActiveCategory(key);
+    const next = new URLSearchParams(searchParams);
+    if (key === "todos") next.delete("cat");
+    else next.set("cat", key);
+    next.delete("q");
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["v3-agenda"],
@@ -85,17 +102,14 @@ export default function V3Agenda() {
     },
   });
 
-  /* Categorias dinâmicas (a partir dos próprios eventos) */
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    events.forEach((e) => {
-      if (e.category) set.add(e.category);
-    });
-    return ["todos", ...Array.from(set).slice(0, 12)];
-  }, [events]);
+  const RESOURCE_KEYS = new Set(["carona", "futebol", "ingresso"]);
+  const GENRE_KEYS = new Set(["sertanejo", "pagode", "funk", "mpb", "rock", "eletronico"]);
+  const norm = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
 
   const filteredEvents = useMemo(() => {
-    let list = events;
+    let list = events as any[];
     const cat = activeCategory.toLowerCase();
 
     if (cat === "hoje") {
@@ -104,14 +118,20 @@ export default function V3Agenda() {
       list = list.filter((e) => isTomorrowSP(new Date(e.date_time)));
     } else if (cat === "fds") {
       list = list.filter((e) => isWeekendSP(e.date_time));
-    } else if (cat === "expo2026") {
-      list = list.filter((e) => `${e.title} ${e.venue_name || ""} ${e.category || ""}`.toLowerCase().includes("expo"));
-    } else if (cat !== "todos") {
+    } else if (cat === "carona") {
+      list = list.filter((e) => !!e.transport_reservation_enabled);
+    } else if (cat === "ingresso") {
+      list = list.filter((e) => !!e.ticket_url);
+    } else if (cat === "futebol") {
+      list = list.filter(
+        (e) => !!e.is_sports_transmission || !!e.partners?.supports_sports,
+      );
+    } else if (GENRE_KEYS.has(cat)) {
       list = list.filter((e) => {
-        const hay = `${e.title} ${e.category || ""} ${(e as any).sub_category || ""}`.toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const needle = cat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return hay.includes(needle);
+        const sub = norm(String(e.sub_category || ""));
+        const primary = norm(String(e.partners?.music_style_primary || ""));
+        const needle = norm(cat);
+        return sub.includes(needle) || primary.includes(needle);
       });
     }
     const term = searchTerm.trim().toLowerCase();
@@ -210,44 +230,165 @@ export default function V3Agenda() {
           />
         </div>
 
-        {/* MENU UNIFICADO — atalhos + categorias dinâmicas, rolagem horizontal full-bleed */}
-        <div className="mt-4 -mx-5 px-5 pr-10 flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 py-2 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
-          {[
-            { key: "hoje", label: "🔥 Hoje" },
-            { key: "amanha", label: "🌅 Amanhã" },
-            { key: "fds", label: "🎉 Final de semana" },
-            { key: "expo2026", label: "🤠 Expo 2026" },
-            { key: "sertanejo", label: "🎸 Sertanejo" },
-            { key: "pagode", label: "🥁 Pagode" },
-            { key: "open bar", label: "🍺 Open Bar" },
-            { key: "eletr", label: "🎧 Eletrônico" },
-            { key: "funk", label: "🔊 Funk" },
-            { key: "todos", label: "✨ Tudo" },
-            ...categories.filter((c) => c !== "todos").map((c) => ({ key: c, label: `${categoryIcon(c)} ${c}` })),
-          ].map((chip) => {
-            const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
-            return (
-              <button
-                key={chip.key}
-                type="button"
-                onClick={() => { setSearchTerm(""); setActiveCategory(chip.key); }}
-                className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold whitespace-nowrap transition-all ${
-                  active
-                    ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
-                    : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                }`}
-                style={
-                  active
-                    ? { background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }
-                    : undefined
-                }
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* FILTROS AGRUPADOS — Tempo · Recursos · Gêneros */}
+        {(() => {
+          const groups: { title: string; chips: { key: string; label: string }[] }[] = [
+            {
+              title: "Tempo",
+              chips: [
+                { key: "todos", label: "✨ Tudo" },
+                { key: "hoje", label: "🔥 Hoje" },
+                { key: "amanha", label: "🌅 Amanhã" },
+                { key: "fds", label: "🎉 Final de semana" },
+              ],
+            },
+            {
+              title: "Recursos",
+              chips: [
+                { key: "carona", label: "🚗 Carona" },
+                { key: "futebol", label: "📺 Futebol" },
+                { key: "ingresso", label: "🎟 Ingresso" },
+              ],
+            },
+            {
+              title: "Gêneros",
+              chips: [
+                { key: "sertanejo", label: "🤠 Sertanejo" },
+                { key: "pagode", label: "🥁 Pagode" },
+                { key: "funk", label: "🔊 Funk" },
+                { key: "mpb", label: "🎼 MPB" },
+                { key: "rock", label: "🎸 Rock" },
+                { key: "eletronico", label: "🎧 Eletrônico" },
+              ],
+            },
+          ];
+          return (
+            <div className="mt-4 space-y-2">
+              {groups.map((g) => (
+                <div key={g.title} className="-mx-5 px-5 pr-10">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground/80 mb-1">
+                    {g.title}
+                  </p>
+                  <div className="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 py-1 scrollbar-hide [-webkit-overflow-scrolling:touch] snap-x">
+                    {g.chips.map((chip) => {
+                      const active = activeCategory.toLowerCase() === chip.key.toLowerCase();
+                      return (
+                        <button
+                          key={chip.key}
+                          type="button"
+                          onClick={() => selectCategory(chip.key)}
+                          className={`shrink-0 snap-start inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition-all ${
+                            active
+                              ? "text-primary-foreground shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-primary/60"
+                              : "border border-border/40 bg-card/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                          }`}
+                          style={
+                            active
+                              ? { background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }
+                              : undefined
+                          }
+                        >
+                          {chip.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
+
+      {/* ===== HERO — Em destaque na Roxou ===== */}
+      {(() => {
+        const featured = (events as any[])
+          .filter((e) => !!e.featured)
+          .slice(0, 2);
+        if (featured.length === 0) return null;
+        return (
+          <section className="mb-6">
+            <h2 className="font-display font-bold text-sm text-primary uppercase tracking-[0.22em] mb-3 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              🔥 Em destaque na Roxou
+            </h2>
+            <div className={`grid gap-3 ${featured.length > 1 ? "md:grid-cols-2" : ""}`}>
+              {featured.map((e) => {
+                const p = e.partners || null;
+                const hasCarona = !!e.transport_reservation_enabled;
+                const hasTicket = !!e.ticket_url;
+                const hasSports = !!e.is_sports_transmission;
+                const musicLabel = p?.music_style_primary
+                  ? PARTNER_MUSIC_STYLE_LABELS[p.music_style_primary] || p.music_style_primary
+                  : null;
+                return (
+                  <Link
+                    key={e.id}
+                    to={`/evento/${e.slug}`}
+                    className="group relative block overflow-hidden rounded-3xl border border-primary/30 bg-card/40 shadow-[0_0_36px_hsl(var(--v3-neon)/0.22)] hover:shadow-[0_0_48px_hsl(var(--v3-neon)/0.38)] hover:border-primary/60 transition-all"
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                      <img
+                        src={e.image_url || "/placeholder.svg"}
+                        alt={e.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="eager"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                      <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_22px_hsl(var(--v3-neon)/0.55)]"
+                        style={{ background: "linear-gradient(135deg, hsl(var(--v3-neon)), hsl(var(--v3-neon-soft)))" }}>
+                        <Sparkles className="w-3 h-3" /> Destaque
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-display font-bold text-base md:text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                        {e.title}
+                      </h3>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarDays className="w-3 h-3 text-primary" />
+                          <span className="capitalize">{format(new Date(e.date_time), "EEE, d 'de' MMM · HH'h'mm", { locale: ptBR })}</span>
+                        </span>
+                        {e.venue_name && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-primary" />
+                            {e.venue_name}
+                          </span>
+                        )}
+                      </div>
+                      {(hasCarona || hasTicket || hasSports || musicLabel) && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {hasCarona && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                              <Car className="w-2.5 h-2.5" /> Carona
+                            </span>
+                          )}
+                          {hasTicket && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-300">
+                              <Ticket className="w-2.5 h-2.5" /> Ingresso
+                            </span>
+                          )}
+                          {hasSports && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+                              <Tv className="w-2.5 h-2.5" /> Futebol
+                            </span>
+                          )}
+                          {musicLabel && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fuchsia-200">
+                              🎵 {musicLabel}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
+
 
       {/* ===== STORY CARD ===== */}
       {showShareCard && shareGroup && (
