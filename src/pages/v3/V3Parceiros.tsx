@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Instagram, MapPin, ArrowRight, Star } from "lucide-react";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
+import PartnerLogo from "@/components/partners/PartnerLogo";
 
 type Partner = {
   id: string;
@@ -69,13 +70,15 @@ export default function V3Parceiros() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.25),transparent_60%)]" />
             <div className="relative flex items-center gap-4">
-              <div className="h-20 w-20 flex-none rounded-xl bg-card/80 ring-1 ring-white/10 overflow-hidden flex items-center justify-center">
-                {spotlight.logo_url ? (
-                  <img src={spotlight.logo_url} alt={spotlight.name} fetchPriority="high" decoding="async" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-black text-primary">{spotlight.name[0]}</span>
-                )}
-              </div>
+              <PartnerLogo
+                src={spotlight.logo_url}
+                alt={spotlight.name}
+                size="xl"
+                rounded="xl"
+                interactive
+                loading="eager"
+                fetchPriority="high"
+              />
               <div className="min-w-0 flex-1">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-primary">
                   {typeLabel(spotlight.type)}
@@ -116,17 +119,13 @@ export default function V3Parceiros() {
                 onClick={() => import("@/lib/ga").then(m => m.trackPartnerClick(p.id, p.name))}
                 className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 transition hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.6)]"
               >
-                <div className="aspect-square w-full rounded-xl overflow-hidden bg-background/50 ring-1 ring-white/5 mb-2 flex items-center justify-center">
-                  {p.logo_url ? (
-                    <img
-                      src={p.logo_url}
-                      alt={p.name}
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                  ) : (
-                    <span className="text-3xl font-black text-primary/60">{p.name[0]}</span>
-                  )}
-                </div>
+                <PartnerLogo
+                  src={p.logo_url}
+                  alt={p.name}
+                  rounded="xl"
+                  interactive
+                  className="aspect-square h-auto w-full mb-2 p-3"
+                />
                 <div className="text-[9px] font-bold uppercase tracking-wider text-primary">
                   {typeLabel(p.type)}
                 </div>
