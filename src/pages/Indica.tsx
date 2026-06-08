@@ -130,20 +130,7 @@ function PartnerCard({ partner }: { partner: Partner }) {
       className="group rounded-2xl border border-border/40 bg-card p-4 flex gap-3 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.08)] transition-all duration-200"
     >
       {/* Logo */}
-      <div className="h-14 w-14 rounded-xl bg-secondary/60 flex items-center justify-center shrink-0 overflow-hidden">
-        {partner.logo_url ? (
-          <img
-            src={partner.logo_url}
-            alt={partner.name}
-            className="h-full w-full object-cover rounded-xl"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : (
-          <span className="text-lg font-bold text-muted-foreground/40">
-            {partner.name.charAt(0)}
-          </span>
-        )}
-      </div>
+      <PartnerLogo src={partner.logo_url} alt={partner.name} size="md" rounded="xl" interactive />
 
       {/* Info */}
       <div className="flex-1 min-w-0">
