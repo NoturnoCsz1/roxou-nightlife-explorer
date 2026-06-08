@@ -197,6 +197,8 @@ const App = () => (
             <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
             <Route path="rankings" element={<V3Rankings />} />
             <Route path="comunidade" element={<V3Community />} />
+            <Route path="jogos" element={L(<Jogos />)} />
+            <Route path="jogo/:slug" element={L(<JogoDetail />)} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
 
