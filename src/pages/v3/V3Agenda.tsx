@@ -409,7 +409,7 @@ export default function V3Agenda() {
               const badges: Badge[] = [];
               if (hasCarona) badges.push({ key: "carona", label: "Carona", icon: Car, className: "border-primary/40 bg-primary/15 text-primary" });
               if (hasTicket) badges.push({ key: "ticket", label: "Ingresso", icon: Ticket, className: "border-amber-400/40 bg-amber-400/10 text-amber-300" });
-              if (hasSports) badges.push({ key: "sports", label: "Futebol", icon: Tv, className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" });
+              if (hasSports) badges.push({ key: "sports", label: "⚽ Clima de Copa", icon: null, className: "border-[#009B3A]/45 bg-[#009B3A]/10 text-[#7CE2A1]" });
               if (musicLabel && badges.length < 4) badges.push({ key: "music", label: musicLabel, icon: null, className: "border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-200" });
               if (typeLabel && badges.length < 4) badges.push({ key: "type", label: typeLabel, icon: null, className: "border-border/40 bg-card/60 text-muted-foreground" });
 
