@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { TrendingUp, Crown, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import PartnerLogo from "@/components/partners/PartnerLogo";
 
 interface PopularVenue {
   id: string;
