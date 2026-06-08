@@ -26,6 +26,7 @@ import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from
 import { generateICS, downloadICS } from "@/lib/calendarUtils";
 import { categoryConfig, getCategoryLabel } from "@/lib/categoryConfig";
 import SafeHtml from "@/components/SafeHtml";
+import TransmissionBlock from "@/components/TransmissionBlock";
 
 const EventDetail = () => {
   const { slug } = useParams();
