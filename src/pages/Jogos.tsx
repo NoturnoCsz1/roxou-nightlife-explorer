@@ -443,8 +443,6 @@ export default function Jogos() {
         </Section>
       </main>
 
-      {/* Lazy load LeagueTable to keep bundle warm for /tabela routes */}
-      <Suspense fallback={null}><div className="hidden"><LeagueTable league="brasileirao" /></div></Suspense>
     </div>
   );
 }
