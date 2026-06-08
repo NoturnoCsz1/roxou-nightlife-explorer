@@ -39,6 +39,7 @@ import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import ExpoCountdownPill from "@/components/v3/home/ExpoCountdownPill";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
+import WorldCupRibbon from "@/components/season/WorldCupRibbon";
 
 // Wrapper que injeta PremiumEventCard (definido abaixo neste arquivo) no TodayTimeline extraído.
 const TodayTimeline = (props: Omit<React.ComponentProps<typeof TodayTimelineRaw>, "Card">) => (
@@ -545,6 +546,9 @@ export default function V3Home() {
           ]
         } as any}
       />
+
+      {/* ══════ Ribbon sazonal — Copa do Mundo 2026 ══════ */}
+      <WorldCupRibbon className="mx-auto max-w-7xl" />
 
       {/* ══════ MOBILE: IMMERSIVE HERO ══════ */}
       <div className="lg:hidden">
