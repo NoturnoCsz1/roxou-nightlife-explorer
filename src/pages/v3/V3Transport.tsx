@@ -115,6 +115,7 @@ export default function V3Transport() {
         .from("events")
         .select("id,slug,title,date_time,venue_name,address,image_url")
         .eq("status", "published")
+        .eq("transport_reservation_enabled", true)
         .gte("date_time", new Date().toISOString())
         .order("date_time")
         .limit(8);
