@@ -264,6 +264,50 @@ Deno.serve(async (req) => {
     const args = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!args) return json({ error: "AI returned no result" }, 500);
     const parsed = JSON.parse(args);
+
+    // Estabelecimentos 2.4 — valida endereço sugerido no Google Geocoding (se houver chave + sugestão)
+    if (mode === "suggest" && parsed?.suggested_address) {
+      const gKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+      if (gKey) {
+        try {
+          const e = body.establishment || {};
+          const cityFinal = (e.city || "Presidente Prudente").toString().trim();
+          const q = [parsed.suggested_address, parsed.suggested_neighborhood, cityFinal, "SP", "Brasil"]
+            .filter(Boolean).join(", ");
+          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&language=pt-BR&region=br&components=${encodeURIComponent("country:BR")}&key=${gKey}`;
+          const r = await fetch(url);
+          const gj = await r.json();
+          if (gj?.status === "OK" && gj.results?.[0]) {
+            const g = gj.results[0];
+            parsed.suggested_latitude = g.geometry?.location?.lat ?? null;
+            parsed.suggested_longitude = g.geometry?.location?.lng ?? null;
+            parsed.suggested_place_id = g.place_id ?? null;
+            parsed.suggested_formatted_address = g.formatted_address ?? null;
+            // neighborhood do Google se a IA não detectou
+            if (!parsed.suggested_neighborhood) {
+              const nb = (g.address_components || []).find((c: any) =>
+                c.types?.includes("sublocality") || c.types?.includes("neighborhood")
+              );
+              if (nb?.long_name) parsed.suggested_neighborhood = nb.long_name;
+            }
+            parsed.address_source = parsed.address_source && parsed.address_source !== "nao_encontrado"
+              ? "ambos" : "google_maps";
+            // se Google confirmou (não partial_match), sobe confiança mínima para "media"
+            if (!g.partial_match && (!parsed.address_confidence || parsed.address_confidence === "baixa")) {
+              parsed.address_confidence = "media";
+            }
+            parsed.address_google_status = "ok";
+            parsed.address_partial_match = !!g.partial_match;
+          } else {
+            parsed.address_google_status = gj?.status || "ZERO_RESULTS";
+          }
+        } catch (gerr) {
+          console.warn("geocode validation failed", gerr);
+          parsed.address_google_status = "error";
+        }
+      }
+    }
+
     return json({ result: parsed, instagram: igMetaOut });
   } catch (e: any) {
     console.error("ai-audit error", e);
