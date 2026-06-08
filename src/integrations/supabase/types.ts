@@ -1060,6 +1060,7 @@ export type Database = {
           transmission_channel: string | null
           transmission_notes: string | null
           transmission_url: string | null
+          transport_reservation_enabled: boolean
           trending_score: number | null
           venue_name: string | null
           verification_source: string | null
@@ -1107,6 +1108,7 @@ export type Database = {
           transmission_channel?: string | null
           transmission_notes?: string | null
           transmission_url?: string | null
+          transport_reservation_enabled?: boolean
           trending_score?: number | null
           venue_name?: string | null
           verification_source?: string | null
@@ -1154,6 +1156,7 @@ export type Database = {
           transmission_channel?: string | null
           transmission_notes?: string | null
           transmission_url?: string | null
+          transport_reservation_enabled?: boolean
           trending_score?: number | null
           venue_name?: string | null
           verification_source?: string | null
@@ -1813,10 +1816,13 @@ export type Database = {
           longitude: number | null
           manual_locked_fields: string[] | null
           maps_place_id: string | null
+          music_style_primary: string | null
+          music_styles_secondary: string[]
           name: string
           neighborhood: string | null
           short_description: string | null
           slug: string
+          sports_competitions: string[]
           status: string
           supports_sports: boolean
           type: string
@@ -1859,10 +1865,13 @@ export type Database = {
           longitude?: number | null
           manual_locked_fields?: string[] | null
           maps_place_id?: string | null
+          music_style_primary?: string | null
+          music_styles_secondary?: string[]
           name: string
           neighborhood?: string | null
           short_description?: string | null
           slug: string
+          sports_competitions?: string[]
           status?: string
           supports_sports?: boolean
           type?: string
@@ -1905,10 +1914,13 @@ export type Database = {
           longitude?: number | null
           manual_locked_fields?: string[] | null
           maps_place_id?: string | null
+          music_style_primary?: string | null
+          music_styles_secondary?: string[]
           name?: string
           neighborhood?: string | null
           short_description?: string | null
           slug?: string
+          sports_competitions?: string[]
           status?: string
           supports_sports?: boolean
           type?: string
