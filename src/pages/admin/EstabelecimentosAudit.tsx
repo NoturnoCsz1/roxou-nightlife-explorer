@@ -928,6 +928,15 @@ const EstabelecimentosAudit = () => {
                     {aiBusy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Analisar com IA
                   </button>
+                  <button
+                    disabled={suggestBusy === e.id}
+                    onClick={() => suggestOne(e)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-fuchsia-500/15 px-2.5 py-1 text-[10px] font-semibold text-fuchsia-300 hover:bg-fuchsia-500/25"
+                    title="Gera sugestões de categoria, estilo e descrição (não salva)"
+                  >
+                    {suggestBusy === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                    ⚡ Analisar com IA
+                  </button>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([e.name, e.address, e.city || "Presidente Prudente", "SP"].filter(Boolean).join(", "))}`}
                     target="_blank" rel="noopener noreferrer"
