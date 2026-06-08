@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Instagram, MapPin, ArrowRight, Star } from "lucide-react";
 import { ADMIN_PARTNER_TYPE_OPTIONS } from "@/lib/categoryConfig";
+import PartnerLogo from "@/components/partners/PartnerLogo";
 
 type Partner = {
   id: string;
