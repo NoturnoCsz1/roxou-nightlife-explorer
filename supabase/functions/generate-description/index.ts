@@ -562,7 +562,7 @@ serve(async (req) => {
       cleanVenue && (partnerType || partnerSummary || partnerMusicPrimary),
     );
 
-    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue);
+    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue, !!artist);
 
     // Gera hype curto (opcional) — só usado por T1 (e ignorado pelos outros)
     let hype = "";
