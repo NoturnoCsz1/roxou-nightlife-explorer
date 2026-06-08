@@ -184,6 +184,11 @@ type Ctx = {
   hype: string;           // 1-2 frases vindas da IA (opcional)
   cta: string;
   seed: number;
+  // 🆕 Novos campos do parceiro/evento
+  partnerTypeLabel: string;   // ex.: "restaurante", "bar"
+  partnerSummary: string;     // short_description (1 frase do local)
+  partnerSecondaryStyles: string[]; // labels curtos
+  artist: string;             // extraído do título (se houver)
 };
 
 function whenOpener(ctx: Ctx): string {
