@@ -85,11 +85,15 @@ export default function V3Agenda() {
       // Converte para UTC puro (formato "Z") — PostgREST rejeita offset -03:00 diretamente.
       // getStartOfTodaySP() garante que o corte seja a meia-noite civil de SP, não do browser.
       const startOfTodaySPUtc = new Date(getStartOfTodaySP()).toISOString();
-      const { data } = await supabase.from("events")
-        .select("id,slug,title,image_url,date_time,venue_name,address,category,video_url")
+      const { data } = await supabase
+        .from("events")
+        .select(
+          "id,slug,title,image_url,date_time,venue_name,address,category,video_url,partner_id,sub_category,ticket_url,is_featured,transport_reservation_enabled,is_sports_transmission,sports_match_id,partners:partner_id(id,slug,name,logo_url,type,music_style_primary,music_styles_secondary,supports_sports)",
+        )
         .eq("status", "published")
         .gte("date_time", startOfTodaySPUtc)
-        .order("date_time").limit(100);
+        .order("date_time")
+        .limit(100);
       return data || [];
     },
   });
