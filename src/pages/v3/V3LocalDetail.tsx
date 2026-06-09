@@ -518,29 +518,6 @@ export default function V3LocalDetail() {
         </div>
 
 
-        <div className="flex gap-2">
-          {user && (
-            <button
-              onClick={() => toggleFollow(partner.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                followed
-                  ? "bg-primary/10 text-primary border border-primary/25"
-                  : "gradient-primary text-primary-foreground neon-glow"
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${followed ? "fill-primary" : ""}`} />
-              {followed ? "Seguindo" : "Seguir"}
-            </button>
-          )}
-          <button
-            onClick={() => sharePartner(partner)}
-            aria-label="Compartilhar"
-            className={`${user ? "" : "flex-1 "}flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold bg-card border border-border/40 text-foreground hover:border-primary/40 transition-all`}
-          >
-            <Share2 className="w-3.5 h-3.5 text-primary" />
-            Compartilhar
-          </button>
-        </div>
 
         {partner.address && (
           <a href={mapsUrl || "#"}
