@@ -494,6 +494,15 @@ export default function V3Home() {
   const maxViews = venueRanks[0]?.views || 1;
   const isLoading = loadingEvents;
 
+  // [HOME DEBUG] temporário — remover após diagnóstico do loading infinito
+  useEffect(() => {
+    console.log("[HOME] featured", featured?.length);
+    console.log("[HOME] today", rawTodayEvents?.length);
+    console.log("[HOME] loading", isLoading, "(raw:", loadingEventsRaw, "timedOut:", loadingTimedOut, ")");
+    console.log("[HOME] error", eventsError || todayError);
+  }, [featured, rawTodayEvents, isLoading, loadingEventsRaw, loadingTimedOut, eventsError, todayError]);
+
+
   const partnerRankMap = useMemo(() => {
     const m = new Map<string, number>();
     (venueRanks ?? []).forEach((v, i) => m.set(v.id, i + 1));
