@@ -25,5 +25,5 @@ verify_jwt = false
 [functions.oneshot-geocode]
 verify_jwt = false
 
-[functions._gmaps-audit]
+[functions.gmaps-audit]
 verify_jwt = false
