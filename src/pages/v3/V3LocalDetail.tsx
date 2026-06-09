@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { isTodaySP, isTomorrowSP, formatTime, formatWeekdaySP, getEventDateSP } from "@/lib/dateUtils";
 import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
+import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
+import { buildPartnerRichDescription } from "@/lib/partnerDescription";
 
 const TOP_WEEK_THRESHOLD = 100;
 
