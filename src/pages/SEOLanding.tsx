@@ -36,7 +36,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "eventos-hoje-em-presidente-prudente": {
     slug: "eventos-hoje-em-presidente-prudente",
     title: `Eventos Hoje em ${CITY}`,
-    metaTitle: `Eventos Hoje em ${CITY} — O que fazer hoje | ROXOU`,
+    metaTitle: `Eventos Hoje em ${CITY} | ROXOU`,
     metaDescription: `Descubra todos os eventos, festas, baladas e shows acontecendo HOJE em ${CITY}. Atualizado em tempo real.`,
     heading: `🔥 Eventos Hoje em ${CITY}`,
     intro: `Confira o que rola hoje à noite em ${CITY}. Festas, baladas, shows ao vivo e bares — tudo num só lugar, atualizado em tempo real.`,
@@ -56,7 +56,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "eventos-amanha-em-presidente-prudente": {
     slug: "eventos-amanha-em-presidente-prudente",
     title: `Eventos Amanhã em ${CITY}`,
-    metaTitle: `Eventos Amanhã em ${CITY} — Festas e Shows | ROXOU`,
+    metaTitle: `Eventos Amanhã em ${CITY} | ROXOU`,
     metaDescription: `Veja os eventos confirmados para amanhã em ${CITY}. Baladas, shows, bares e festas.`,
     heading: `📅 Eventos Amanhã em ${CITY}`,
     intro: `Planeje sua noite! Veja todos os eventos confirmados para amanhã em ${CITY}.`,
@@ -70,7 +70,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "eventos-fim-de-semana-em-presidente-prudente": {
     slug: "eventos-fim-de-semana-em-presidente-prudente",
     title: `Eventos no Fim de Semana em ${CITY}`,
-    metaTitle: `Eventos Fim de Semana em ${CITY} — Sábado e Domingo | ROXOU`,
+    metaTitle: `Eventos Fim de Semana em ${CITY} | ROXOU`,
     metaDescription: `Agenda completa do fim de semana em ${CITY}. Festas, baladas, shows e bares no sábado e domingo.`,
     heading: `🎉 Fim de Semana em ${CITY}`,
     intro: `Os melhores eventos do fim de semana em ${CITY}. Sábado e domingo com festas, shows e baladas.`,
@@ -89,7 +89,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "baladas-em-presidente-prudente": {
     slug: "baladas-em-presidente-prudente",
     title: `Baladas em ${CITY}`,
-    metaTitle: `Baladas em ${CITY} — Festas Universitárias e Noite | ROXOU`,
+    metaTitle: `Baladas em ${CITY} — Festas e Noite | ROXOU`,
     metaDescription: `As melhores baladas e festas universitárias em ${CITY}. Veja a programação atualizada.`,
     heading: `🎧 Baladas em ${CITY}`,
     intro: `As melhores baladas e festas universitárias de ${CITY}. Eletrônica, funk, sertanejo universitário e mais.`,
@@ -108,7 +108,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "bares-em-presidente-prudente": {
     slug: "bares-em-presidente-prudente",
     title: `Bares em ${CITY}`,
-    metaTitle: `Bares em ${CITY} — Melhores Bares e Happy Hours | ROXOU`,
+    metaTitle: `Bares em ${CITY} — Happy Hour | ROXOU`,
     metaDescription: `Descubra os melhores bares de ${CITY}. Eventos, happy hours e programação ao vivo.`,
     heading: `🍻 Bares em ${CITY}`,
     intro: `Os melhores bares de ${CITY} com eventos, happy hours e música ao vivo. Encontre onde curtir hoje.`,
@@ -126,7 +126,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "shows-em-presidente-prudente": {
     slug: "shows-em-presidente-prudente",
     title: `Shows em ${CITY}`,
-    metaTitle: `Shows em ${CITY} — Shows ao Vivo e Apresentações | ROXOU`,
+    metaTitle: `Shows ao Vivo em ${CITY} | ROXOU`,
     metaDescription: `Agenda de shows ao vivo em ${CITY}. Rock, pop, MPB, sertanejo e mais.`,
     heading: `🎤 Shows em ${CITY}`,
     intro: `Shows ao vivo em ${CITY}: rock, pop, MPB, sertanejo e muito mais. Confira a programação atualizada.`,
@@ -141,7 +141,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "pagode-em-presidente-prudente": {
     slug: "pagode-em-presidente-prudente",
     title: `Pagode em ${CITY}`,
-    metaTitle: `Pagode em ${CITY} — Samba e Pagode ao Vivo | ROXOU`,
+    metaTitle: `Pagode e Samba em ${CITY} | ROXOU`,
     metaDescription: `Eventos de pagode e samba em ${CITY}. Veja onde curtir pagode ao vivo.`,
     heading: `🥁 Pagode em ${CITY}`,
     intro: `Os melhores eventos de samba e pagode em ${CITY}. Roda de samba, pagode ao vivo e muito mais.`,
@@ -170,7 +170,7 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "sertanejo-em-presidente-prudente": {
     slug: "sertanejo-em-presidente-prudente",
     title: `Sertanejo em ${CITY}`,
-    metaTitle: `Sertanejo em ${CITY} — Shows e Festas Sertanejas | ROXOU`,
+    metaTitle: `Sertanejo em ${CITY} — Shows e Festas | ROXOU`,
     metaDescription: `Shows de sertanejo e sertanejo universitário em ${CITY}. Veja a programação.`,
     heading: `🤠 Sertanejo em ${CITY}`,
     intro: `Os melhores eventos de sertanejo e sertanejo universitário em ${CITY}. Shows ao vivo e festas.`,

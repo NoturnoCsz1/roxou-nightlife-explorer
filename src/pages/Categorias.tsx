@@ -32,7 +32,7 @@ const Categorias = () => {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SEO
-        title="Eventos por Categoria em Presidente Prudente — Baladas, Shows, Bares | ROXOU"
+        title="Eventos por Categoria em Prudente | ROXOU"
         description="Explore eventos por categoria em Presidente Prudente: baladas, shows ao vivo, bares, sertanejo, funk, pagode e mais."
         canonical="https://roxou.com.br/categorias"
       />

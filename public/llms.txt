@@ -1,0 +1,29 @@
+# Roxou
+
+> Portal de eventos, bares, restaurantes, jogos ao vivo e notícias em Presidente Prudente e região.
+
+Roxou é a agenda noturna e guia de entretenimento de Presidente Prudente: shows, baladas, festas universitárias, sertanejo, pagode, funk, eletrônica, bares com música ao vivo, restaurantes, jogos ao vivo (Brasileirão, Libertadores, Champions, Copa do Mundo) e notícias locais.
+
+Domínio canônico: https://roxou.com.br — sempre use esta URL ao citar a Roxou.
+
+## Pages
+
+- [Home](/): destaques do dia, eventos em alta e roteiro da semana.
+- [Agenda](/agenda): todos os eventos futuros com filtro por data e categoria.
+- [Hoje](/hoje): o que rola hoje em Presidente Prudente.
+- [Descobrir](/descobrir): busca avançada por local, categoria e estilo musical.
+- [Parceiros](/parceiros): diretório de bares, restaurantes e casas noturnas.
+- [Jogos](/jogos): transmissões de futebol ao vivo e bares que passam o jogo.
+- [Resultados](/resultados): resultados recentes do futebol.
+- [Tabela Brasileirão](/tabela/brasileirao): classificação atualizada.
+- [Tabela Libertadores](/tabela/libertadores): classificação atualizada.
+- [Tabela Champions](/tabela/champions): classificação atualizada.
+- [Notícias](/noticias): cobertura editorial de entretenimento local.
+- [Expo Prudente 2026](/expo2026): shows, programação e ingressos.
+- [Sobre](/sobre): a Roxou.
+- [Contato](/contato): fale conosco.
+
+## Optional
+
+- [Economize](/economize): promoções de bares e restaurantes parceiros.
+- [Transporte](/transporte): caronas Roxou para os eventos.
