@@ -600,23 +600,19 @@ export default function V3LocalDetail() {
           </div>
         )}
 
-        {/* Instagram Feed — Premium placeholder ready for real integration */}
+        {/* Instagram Feed — posts reais sincronizados (partners.instagram_recent_posts) */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Instagram className="w-4 h-4 text-primary" />
             <h2 className="font-display font-bold text-base text-foreground">Últimos posts</h2>
           </div>
-          {partner.instagram ? (
-            <InstagramFeedPlaceholder handle={partner.instagram} partnerId={partner.id} />
-          ) : (
-            <div className="py-10 rounded-xl bg-card border border-border/20 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-3">
-                <Instagram className="w-6 h-6 text-muted-foreground/20" />
-              </div>
-              <p className="text-xs text-muted-foreground font-medium">Instagram não conectado</p>
-              <p className="text-[10px] text-muted-foreground/50 mt-1">Em breve, posts do Instagram aparecerão aqui</p>
-            </div>
-          )}
+          <PartnerInstagramFeed
+            handle={partner.instagram}
+            posts={(partner as any).instagram_recent_posts}
+            profilePictureUrl={(partner as any).instagram_profile_picture_url}
+            followersCount={(partner as any).instagram_followers_count}
+            lastSyncAt={(partner as any).instagram_last_sync_at}
+          />
         </div>
 
         {/* Related partners — cross-sell */}
