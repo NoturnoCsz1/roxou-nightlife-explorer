@@ -388,8 +388,21 @@ export default function V3LocalDetail() {
       </div>
 
       <div className="px-4 space-y-4 mt-4">
-        {partner.short_description && (
-          <p className="text-sm text-muted-foreground leading-relaxed">{partner.short_description}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {buildPartnerRichDescription(partner as any)}
+        </p>
+
+        {Array.isArray((partner as any).aura_partner_tags) && (partner as any).aura_partner_tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {((partner as any).aura_partner_tags as string[]).slice(0, 6).map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] font-bold text-foreground bg-primary/10 border border-primary/25 rounded-full px-2 py-0.5 capitalize"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
 
         <AuraVenueRankingBadges
