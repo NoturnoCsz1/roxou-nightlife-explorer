@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
           update_error: upd.error?.message,
         });
       } else {
-        results.push({ slug: p.slug, ok: false, error: g.error });
+        results.push({ slug: p.slug, ok: false, error: g.error, message: (g as any).message, tried: (g as any).tried });
       }
     } catch (e: any) {
       results.push({ slug: p.slug, ok: false, error: e?.message || String(e) });
