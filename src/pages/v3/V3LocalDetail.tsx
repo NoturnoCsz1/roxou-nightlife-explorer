@@ -306,24 +306,47 @@ export default function V3LocalDetail() {
         </div>
       )}
 
-      {/* Header — refined composition */}
-      <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
+      {/* Header — premium hero com capa (IG profile pic em blur) */}
+      <div className="relative h-[230px] overflow-hidden flex items-end">
+        {/* Camada de capa: IG profile pic em blur, com fallback gradiente */}
+        <div className="absolute inset-0">
+          {(partner as any).instagram_profile_picture_url || partner.logo_url ? (
+            <>
+              <img
+                src={(partner as any).instagram_profile_picture_url || partner.logo_url || ""}
+                alt=""
+                aria-hidden
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover scale-125 blur-2xl opacity-60"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/40" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8" />
+          )}
+        </div>
+
         <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
           <ArrowLeft className="w-4 h-4 text-white" />
         </Link>
-        <div className="px-4 pb-4 flex items-end gap-3.5 w-full">
-          {partner.logo_url ? (
+
+        <div className="relative px-4 pb-4 flex items-end gap-3.5 w-full">
+          {partner.logo_url || (partner as any).instagram_profile_picture_url ? (
             <img
-              src={optimizedImageUrl(partner.logo_url, 192, 80) || partner.logo_url}
-              srcSet={optimizedSrcSet(partner.logo_url, [96, 192, 288], 80)}
-              sizes="68px"
+              src={optimizedImageUrl(partner.logo_url || (partner as any).instagram_profile_picture_url, 192, 80) || partner.logo_url || (partner as any).instagram_profile_picture_url}
+              srcSet={partner.logo_url ? optimizedSrcSet(partner.logo_url, [96, 192, 288], 80) : undefined}
+              sizes="76px"
               alt={partner.name}
               fetchPriority="high"
               decoding="async"
-              className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg"
+              referrerPolicy="no-referrer"
+              className="w-[76px] h-[76px] rounded-2xl object-cover border-2 border-background shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)]"
             />
           ) : (
-            <div className="w-[68px] h-[68px] rounded-xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
+            <div className="w-[76px] h-[76px] rounded-2xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
               {partner.name[0]}
             </div>
           )}
@@ -335,6 +358,9 @@ export default function V3LocalDetail() {
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
+              {partner.neighborhood && (
+                <span className="text-[11px] text-muted-foreground">• {partner.neighborhood}</span>
+              )}
               {isTopWeek && (
                 <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30 backdrop-blur-sm">
                   <Flame className="w-2.5 h-2.5" /> Top da semana
@@ -351,6 +377,11 @@ export default function V3LocalDetail() {
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Heart className="w-3 h-3" /> {followerCount}
               </span>
+              {typeof (partner as any).instagram_followers_count === "number" && (partner as any).instagram_followers_count > 0 && (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Instagram className="w-3 h-3" /> {Number((partner as any).instagram_followers_count).toLocaleString("pt-BR")}
+                </span>
+              )}
             </div>
           </div>
         </div>
