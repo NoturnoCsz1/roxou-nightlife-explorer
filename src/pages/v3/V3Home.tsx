@@ -133,16 +133,17 @@ export default function V3Home() {
   const futureCutoffISO = new Date(now.getTime() - LIVE_TOLERANCE_MS).toISOString();
 
   /* ─── EVENTS (apenas futuros / em andamento) ─── */
-  const { data: events = [], isLoading: loadingEvents, error: eventsError } = useQuery<Ev[]>({
+  const { data: events = [], isLoading: loadingEventsRaw, error: eventsError } = useQuery<Ev[]>({
     queryKey: ["v3-events", TODAY_KEY],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { data, error } = await supabase
         .from("events")
           .select("id,slug,title,image_url,date_time,venue_name,category,sub_category,featured,partner_id,ticket_url,video_url,transport_reservation_enabled")
         .eq("status", "published")
         .gte("date_time", futureCutoffISO)
         .order("date_time", { ascending: true })
-        .limit(80);
+        .limit(80)
+        .abortSignal(signal);
       if (error) {
         console.error("[V3Home] erro ao carregar eventos", error);
         throw error;
@@ -151,8 +152,23 @@ export default function V3Home() {
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    retry: 2,
+    retry: 1,
+    placeholderData: (prev) => prev,
   });
+
+  // 🔒 Safety release: jamais deixe a Home presa em skeleton por mais de 12s.
+  // Se a query principal travar (rede instável, retry backoff, fetch pendente),
+  // libera o render mesmo sem dados — seções vazias mostram seus próprios fallbacks.
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
+  useEffect(() => {
+    if (!loadingEventsRaw) { setLoadingTimedOut(false); return; }
+    const t = setTimeout(() => {
+      console.warn("[V3Home] events query > 12s — liberando skeleton com fallback");
+      setLoadingTimedOut(true);
+    }, 12_000);
+    return () => clearTimeout(t);
+  }, [loadingEventsRaw]);
+  const loadingEvents = loadingEventsRaw && !loadingTimedOut;
 
   const { data: rawTodayEvents = [], isLoading: loadingToday, error: todayError } = useQuery<Ev[]>({
     queryKey: ["v3-today-events", TODAY_KEY],
