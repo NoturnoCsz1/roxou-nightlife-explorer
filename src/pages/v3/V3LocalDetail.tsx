@@ -299,17 +299,10 @@ export default function V3LocalDetail() {
         <span className="text-foreground/80 truncate">{partner.name}</span>
       </nav>
 
-      {/* Banner premium — Destaque do Mês */}
-      {(partner as any).featured_home && (
-        <div className="px-4 pt-3">
-          <SpotlightBadge variant="banner" />
-        </div>
-      )}
-
-      {/* Header — premium hero com capa (IG profile pic em blur) */}
-      <div className="relative h-[230px] overflow-hidden flex items-end">
-        {/* Camada de capa: IG profile pic em blur, com fallback gradiente */}
-        <div className="absolute inset-0">
+      {/* ═══════════ HERO PREMIUM (mobile-first landing) ═══════════ */}
+      <section className="relative mt-2">
+        {/* Camada de capa — IG profile pic em blur ou gradiente */}
+        <div className="absolute inset-x-0 top-0 h-[260px] overflow-hidden pointer-events-none">
           {(partner as any).instagram_profile_picture_url || partner.logo_url ? (
             <>
               <img
@@ -317,53 +310,70 @@ export default function V3LocalDetail() {
                 alt=""
                 aria-hidden
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover scale-125 blur-2xl opacity-60"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
+                className="w-full h-full object-cover scale-125 blur-3xl opacity-70"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/40" />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/70 to-background" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.18),transparent_60%)]" />
             </>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-accent/10" />
           )}
         </div>
 
-        <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
+        {/* Botão voltar — flutuante */}
+        <Link
+          to="/"
+          aria-label="Voltar"
+          className="absolute top-3 left-3 z-20 w-9 h-9 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center border border-white/10"
+        >
           <ArrowLeft className="w-4 h-4 text-white" />
         </Link>
 
-        <div className="relative px-4 pb-4 flex items-end gap-3.5 w-full">
+        {/* Selo flutuante "Destaque do Mês" — integrado ao hero */}
+        {(partner as any).featured_home && (
+          <div className="absolute top-3 right-3 z-20">
+            <SpotlightBadge variant="chip" />
+          </div>
+        )}
+
+        {/* Conteúdo do hero */}
+        <div className="relative z-10 px-4 pt-14 pb-4 flex items-end gap-4">
           {partner.logo_url || (partner as any).instagram_profile_picture_url ? (
             <img
-              src={optimizedImageUrl(partner.logo_url || (partner as any).instagram_profile_picture_url, 192, 80) || partner.logo_url || (partner as any).instagram_profile_picture_url}
-              srcSet={partner.logo_url ? optimizedSrcSet(partner.logo_url, [96, 192, 288], 80) : undefined}
-              sizes="76px"
+              src={
+                optimizedImageUrl(partner.logo_url || (partner as any).instagram_profile_picture_url, 240, 85) ||
+                partner.logo_url ||
+                (partner as any).instagram_profile_picture_url
+              }
+              srcSet={partner.logo_url ? optimizedSrcSet(partner.logo_url, [120, 240, 360], 85) : undefined}
+              sizes="96px"
               alt={partner.name}
               fetchPriority="high"
               decoding="async"
               referrerPolicy="no-referrer"
-              className="w-[76px] h-[76px] rounded-2xl object-cover border-2 border-background shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)]"
+              className="w-24 h-24 rounded-2xl object-cover border-2 border-background ring-1 ring-primary/30 shadow-[0_14px_40px_-12px_hsl(var(--primary)/0.6)]"
             />
           ) : (
-            <div className="w-[76px] h-[76px] rounded-2xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
+            <div className="w-24 h-24 rounded-2xl bg-primary/15 flex items-center justify-center text-3xl font-display font-bold text-primary border-2 border-background ring-1 ring-primary/30 shadow-[0_14px_40px_-12px_hsl(var(--primary)/0.6)]">
               {partner.name[0]}
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="font-display font-bold text-xl text-foreground truncate">{partner.name}</h1>
+          <div className="flex-1 min-w-0 pb-1">
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-display font-extrabold text-[22px] leading-tight text-foreground truncate">
+                {partner.name}
+              </h1>
               {partner.verified_partner && <BadgeCheck className="w-5 h-5 text-accent shrink-0" />}
-              {(partner as any).featured_home && <SpotlightBadge variant="chip" />}
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
+            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+              <span className="text-[11px] font-bold text-primary uppercase tracking-wide">{partner.type}</span>
               {partner.neighborhood && (
-                <span className="text-[11px] text-muted-foreground">• {partner.neighborhood}</span>
+                <span className="text-[11px] text-muted-foreground">· {partner.neighborhood}</span>
               )}
               {isTopWeek && (
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30 backdrop-blur-sm">
-                  <Flame className="w-2.5 h-2.5" /> Top da semana
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30">
+                  <Flame className="w-2.5 h-2.5" /> Top
                 </span>
               )}
             </div>
@@ -385,26 +395,111 @@ export default function V3LocalDetail() {
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Bio + tags premium — colado ao hero, ainda dentro da capa */}
+        <div className="relative z-10 px-4 pb-4 space-y-3">
+          <p className="text-[13px] text-foreground/85 leading-relaxed">
+            {buildPartnerRichDescription(partner as any)}
+          </p>
+
+          {Array.isArray((partner as any).aura_partner_tags) && (partner as any).aura_partner_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {((partner as any).aura_partner_tags as string[]).slice(0, 6).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-[10px] font-bold text-foreground/90 bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 rounded-full px-2.5 py-0.5 capitalize backdrop-blur-sm"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* CTAs principais — primeira dobra. Grid 2x2 premium */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {mapsUrl && (
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => {
+                  try {
+                    trackEvent({
+                      event_type: "maps_click",
+                      venue_id: partner.id,
+                      city: partner.city || null,
+                      category: partner.type || null,
+                      metadata: { slug: partner.slug, name: partner.name, target_url: mapsUrl, channel: "maps", address: partner.address },
+                    });
+                  } catch {}
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl gradient-primary text-primary-foreground px-3 py-3 text-[12px] font-bold neon-glow active:scale-[0.98] transition-transform">
+                <Navigation className="w-4 h-4" /> Como Chegar
+              </a>
+            )}
+            {instagramUrl && (
+              <a href={instagramUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => {
+                  try {
+                    trackEvent({
+                      event_type: "instagram_click",
+                      venue_id: partner.id,
+                      city: partner.city || null,
+                      category: partner.type || null,
+                      metadata: { slug: partner.slug, name: partner.name, target_url: instagramUrl, channel: "instagram" },
+                    });
+                  } catch {}
+                  import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl v3-glass border border-primary/30 px-3 py-3 text-[12px] font-bold text-foreground active:scale-[0.98] transition-transform">
+                <Instagram className="w-4 h-4 text-primary" /> Instagram
+              </a>
+            )}
+            {user ? (
+              <button
+                onClick={() => toggleFollow(partner.id)}
+                className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-[12px] font-bold transition-all ${
+                  followed
+                    ? "bg-primary/15 text-primary border border-primary/30"
+                    : "v3-glass border border-border/50 text-foreground hover:border-primary/40"
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${followed ? "fill-primary text-primary" : "text-primary"}`} />
+                {followed ? "Seguindo" : "Seguir"}
+              </button>
+            ) : whatsappUrl ? (
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => {
+                  try {
+                    trackEvent({
+                      event_type: "whatsapp_click",
+                      venue_id: partner.id,
+                      city: partner.city || null,
+                      category: partner.type || null,
+                      metadata: { slug: partner.slug, name: partner.name, target_url: whatsappUrl, channel: "whatsapp" },
+                    });
+                  } catch {}
+                  import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl v3-glass border border-border/50 px-3 py-2.5 text-[12px] font-bold text-foreground">
+                <MessageCircle className="w-3.5 h-3.5 text-primary" /> Reservar
+              </a>
+            ) : (
+              <button
+                onClick={() => sharePartner(partner)}
+                className="flex items-center justify-center gap-2 rounded-2xl v3-glass border border-border/50 px-3 py-2.5 text-[12px] font-bold text-foreground">
+                <Share2 className="w-3.5 h-3.5 text-primary" /> Compartilhar
+              </button>
+            )}
+            <button
+              onClick={() => sharePartner(partner)}
+              aria-label="Compartilhar"
+              className="flex items-center justify-center gap-2 rounded-2xl v3-glass border border-border/50 px-3 py-2.5 text-[12px] font-bold text-foreground hover:border-primary/40 transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5 text-primary" /> Compartilhar
+            </button>
+          </div>
+        </div>
+      </section>
 
       <div className="px-4 space-y-4 mt-4">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {buildPartnerRichDescription(partner as any)}
-        </p>
-
-        {Array.isArray((partner as any).aura_partner_tags) && (partner as any).aura_partner_tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {((partner as any).aura_partner_tags as string[]).slice(0, 6).map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] font-bold text-foreground bg-primary/10 border border-primary/25 rounded-full px-2 py-0.5 capitalize"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
         <AuraVenueRankingBadges
           partner={partner}
           events={events}
@@ -422,102 +517,7 @@ export default function V3LocalDetail() {
           </div>
         </div>
 
-        {/* Actions — quick utility buttons */}
-        <div className="grid grid-cols-3 gap-2">
-          {mapsUrl && (
-            <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-              onClick={() => {
-                try {
-                  trackEvent({
-                    event_type: "maps_click",
-                    venue_id: partner.id,
-                    city: partner.city || null,
-                    category: partner.type || null,
-                    metadata: {
-                      slug: partner.slug,
-                      name: partner.name,
-                      target_url: mapsUrl,
-                      channel: "maps",
-                      address: partner.address,
-                    },
-                  });
-                } catch {}
-              }}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
-              <Navigation className="w-4 h-4 text-primary" /> Como Chegar
-            </a>
-          )}
-          {instagramUrl && (
-            <a href={instagramUrl} target="_blank" rel="noopener noreferrer"
-              onClick={() => {
-                try {
-                  trackEvent({
-                    event_type: "instagram_click",
-                    venue_id: partner.id,
-                    city: partner.city || null,
-                    category: partner.type || null,
-                    metadata: {
-                      slug: partner.slug,
-                      name: partner.name,
-                      target_url: instagramUrl,
-                      channel: "instagram",
-                    },
-                  });
-                } catch {}
-                import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
-              }}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
-              <Instagram className="w-4 h-4 text-primary" /> Instagram
-            </a>
-          )}
-          {whatsappUrl && (
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-              onClick={() => {
-                try {
-                  trackEvent({
-                    event_type: "whatsapp_click",
-                    venue_id: partner.id,
-                    city: partner.city || null,
-                    category: partner.type || null,
-                    metadata: {
-                      slug: partner.slug,
-                      name: partner.name,
-                      target_url: whatsappUrl,
-                      channel: "whatsapp",
-                    },
-                  });
-                } catch {}
-                import("@/lib/ga").then(m => m.trackPartnerClick(partner.id, partner.name));
-              }}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl v3-glass px-2 py-3 text-center text-[10px] font-bold text-foreground border border-border/40 hover:border-primary/40 v3-neon-hover transition-all">
-              <MessageCircle className="w-4 h-4 text-primary" /> Reservar
-            </a>
-          )}
-        </div>
 
-        <div className="flex gap-2">
-          {user && (
-            <button
-              onClick={() => toggleFollow(partner.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                followed
-                  ? "bg-primary/10 text-primary border border-primary/25"
-                  : "gradient-primary text-primary-foreground neon-glow"
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${followed ? "fill-primary" : ""}`} />
-              {followed ? "Seguindo" : "Seguir"}
-            </button>
-          )}
-          <button
-            onClick={() => sharePartner(partner)}
-            aria-label="Compartilhar"
-            className={`${user ? "" : "flex-1 "}flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold bg-card border border-border/40 text-foreground hover:border-primary/40 transition-all`}
-          >
-            <Share2 className="w-3.5 h-3.5 text-primary" />
-            Compartilhar
-          </button>
-        </div>
 
         {partner.address && (
           <a href={mapsUrl || "#"}
