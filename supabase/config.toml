@@ -22,3 +22,5 @@ verify_jwt = false
 
 [functions.aura-autoreels-generate]
 verify_jwt = false
+[functions.oneshot-geocode]
+verify_jwt = false
