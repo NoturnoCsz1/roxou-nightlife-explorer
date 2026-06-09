@@ -84,7 +84,7 @@ async function geocode(p: any, apiKey: string) {
     if (data.status === "OK" && data.results?.length) {
       return { ok: true, result: data.results[0], usedQuery: query };
     }
-    if (data.status === "REQUEST_DENIED") return { ok: false, error: "REQUEST_DENIED" };
+    if (data.status === "REQUEST_DENIED") return { ok: false, error: "REQUEST_DENIED", message: data.error_message, tried: query };
   }
   return { ok: false, error: lastStatus };
 }
