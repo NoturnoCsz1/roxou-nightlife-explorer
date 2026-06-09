@@ -22,3 +22,6 @@ verify_jwt = false
 
 [functions.aura-autoreels-generate]
 verify_jwt = false
+
+[functions.oneshot-ig-sync]
+verify_jwt = false
