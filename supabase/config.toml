@@ -23,8 +23,7 @@ verify_jwt = false
 [functions.aura-autoreels-generate]
 verify_jwt = false
 
-[functions.gmaps-keytest]
-verify_jwt = false
+
 
 
 
