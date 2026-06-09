@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, Image, CalendarDays, Eye, Heart, Clock, Navigation, Share2, Flame, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, CalendarDays, Eye, Heart, Clock, Navigation, Share2, Flame, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { isTodaySP, isTomorrowSP, formatTime, formatWeekdaySP, getEventDateSP } from "@/lib/dateUtils";
 import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
+import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
+import { buildPartnerRichDescription } from "@/lib/partnerDescription";
 
 const TOP_WEEK_THRESHOLD = 100;
 
@@ -304,24 +306,47 @@ export default function V3LocalDetail() {
         </div>
       )}
 
-      {/* Header — refined composition */}
-      <div className="relative h-[210px] bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8 flex items-end">
+      {/* Header — premium hero com capa (IG profile pic em blur) */}
+      <div className="relative h-[230px] overflow-hidden flex items-end">
+        {/* Camada de capa: IG profile pic em blur, com fallback gradiente */}
+        <div className="absolute inset-0">
+          {(partner as any).instagram_profile_picture_url || partner.logo_url ? (
+            <>
+              <img
+                src={(partner as any).instagram_profile_picture_url || partner.logo_url || ""}
+                alt=""
+                aria-hidden
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover scale-125 blur-2xl opacity-60"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/40" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-accent/8" />
+          )}
+        </div>
+
         <Link to="/" className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
           <ArrowLeft className="w-4 h-4 text-white" />
         </Link>
-        <div className="px-4 pb-4 flex items-end gap-3.5 w-full">
-          {partner.logo_url ? (
+
+        <div className="relative px-4 pb-4 flex items-end gap-3.5 w-full">
+          {partner.logo_url || (partner as any).instagram_profile_picture_url ? (
             <img
-              src={optimizedImageUrl(partner.logo_url, 192, 80) || partner.logo_url}
-              srcSet={optimizedSrcSet(partner.logo_url, [96, 192, 288], 80)}
-              sizes="68px"
+              src={optimizedImageUrl(partner.logo_url || (partner as any).instagram_profile_picture_url, 192, 80) || partner.logo_url || (partner as any).instagram_profile_picture_url}
+              srcSet={partner.logo_url ? optimizedSrcSet(partner.logo_url, [96, 192, 288], 80) : undefined}
+              sizes="76px"
               alt={partner.name}
               fetchPriority="high"
               decoding="async"
-              className="w-[68px] h-[68px] rounded-xl object-cover border-2 border-background shadow-lg"
+              referrerPolicy="no-referrer"
+              className="w-[76px] h-[76px] rounded-2xl object-cover border-2 border-background shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)]"
             />
           ) : (
-            <div className="w-[68px] h-[68px] rounded-xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
+            <div className="w-[76px] h-[76px] rounded-2xl bg-primary/15 flex items-center justify-center text-2xl font-display font-bold text-primary border-2 border-background">
               {partner.name[0]}
             </div>
           )}
@@ -333,6 +358,9 @@ export default function V3LocalDetail() {
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] text-primary font-medium capitalize">{partner.type}</span>
+              {partner.neighborhood && (
+                <span className="text-[11px] text-muted-foreground">• {partner.neighborhood}</span>
+              )}
               {isTopWeek && (
                 <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-primary/15 text-primary border border-primary/30 backdrop-blur-sm">
                   <Flame className="w-2.5 h-2.5" /> Top da semana
@@ -349,14 +377,32 @@ export default function V3LocalDetail() {
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Heart className="w-3 h-3" /> {followerCount}
               </span>
+              {typeof (partner as any).instagram_followers_count === "number" && (partner as any).instagram_followers_count > 0 && (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Instagram className="w-3 h-3" /> {Number((partner as any).instagram_followers_count).toLocaleString("pt-BR")}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       <div className="px-4 space-y-4 mt-4">
-        {partner.short_description && (
-          <p className="text-sm text-muted-foreground leading-relaxed">{partner.short_description}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {buildPartnerRichDescription(partner as any)}
+        </p>
+
+        {Array.isArray((partner as any).aura_partner_tags) && (partner as any).aura_partner_tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {((partner as any).aura_partner_tags as string[]).slice(0, 6).map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] font-bold text-foreground bg-primary/10 border border-primary/25 rounded-full px-2 py-0.5 capitalize"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         )}
 
         <AuraVenueRankingBadges
@@ -554,23 +600,19 @@ export default function V3LocalDetail() {
           </div>
         )}
 
-        {/* Instagram Feed — Premium placeholder ready for real integration */}
+        {/* Instagram Feed — posts reais sincronizados (partners.instagram_recent_posts) */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Instagram className="w-4 h-4 text-primary" />
             <h2 className="font-display font-bold text-base text-foreground">Últimos posts</h2>
           </div>
-          {partner.instagram ? (
-            <InstagramFeedPlaceholder handle={partner.instagram} partnerId={partner.id} />
-          ) : (
-            <div className="py-10 rounded-xl bg-card border border-border/20 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-3">
-                <Instagram className="w-6 h-6 text-muted-foreground/20" />
-              </div>
-              <p className="text-xs text-muted-foreground font-medium">Instagram não conectado</p>
-              <p className="text-[10px] text-muted-foreground/50 mt-1">Em breve, posts do Instagram aparecerão aqui</p>
-            </div>
-          )}
+          <PartnerInstagramFeed
+            handle={partner.instagram}
+            posts={(partner as any).instagram_recent_posts}
+            profilePictureUrl={(partner as any).instagram_profile_picture_url}
+            followersCount={(partner as any).instagram_followers_count}
+            lastSyncAt={(partner as any).instagram_last_sync_at}
+          />
         </div>
 
         {/* Related partners — cross-sell */}
@@ -644,75 +686,6 @@ export default function V3LocalDetail() {
   );
 }
 
-/**
- * Instagram Feed component — currently a premium placeholder.
- * Structured to accept real posts data via props when the Instagram API integration is ready.
- * Replace `posts` with actual data from instagram_imports or a dedicated partner_instagram_posts table.
- */
-function InstagramFeedPlaceholder({ handle, partnerId }: { handle: string; partnerId: string }) {
-  // Future: fetch real posts from DB
-  // const { data: posts = [] } = useQuery({ queryKey: ["partner-ig-posts", partnerId], ... });
-  const posts: { id: string; image_url: string; permalink: string; caption?: string }[] = [];
-  const cleanHandle = handle.replace("@", "");
-
-  if (posts.length > 0) {
-    // Real posts grid — ready for when data arrives
-    return (
-      <div>
-        <div className="grid grid-cols-3 gap-1.5">
-          {posts.slice(0, 9).map(post => (
-            <a key={post.id} href={post.permalink} target="_blank" rel="noopener noreferrer"
-              className="aspect-square rounded-lg overflow-hidden relative group">
-              <img
-                src={optimizedImageUrl(post.image_url, 320, 70) || post.image_url}
-                srcSet={optimizedSrcSet(post.image_url, [240, 480], 70)}
-                sizes="(max-width: 640px) 30vw, 200px"
-                alt=""
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                <Instagram className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </a>
-          ))}
-        </div>
-        <a href={`https://instagram.com/${cleanHandle}`} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 mt-3 py-2.5 rounded-xl bg-card border border-border/30 text-[11px] text-primary font-semibold hover:border-primary/30 transition-colors">
-          <Instagram className="w-3.5 h-3.5" /> Ver mais no Instagram
-        </a>
-      </div>
-    );
-  }
-
-  // Premium placeholder grid
-  return (
-    <div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {[0, 1, 2, 3, 4, 5].map(i => (
-          <a key={i} href={`https://instagram.com/${cleanHandle}`}
-            target="_blank" rel="noopener noreferrer"
-            className="aspect-square rounded-lg overflow-hidden relative group">
-            <div className="w-full h-full bg-gradient-to-br from-card via-card to-primary/5 flex items-center justify-center">
-              <Image className="w-6 h-6 text-muted-foreground/15" />
-            </div>
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Instagram className="w-4 h-4 text-primary/40" />
-            </div>
-          </a>
-        ))}
-      </div>
-      <a href={`https://instagram.com/${cleanHandle}`}
-        target="_blank" rel="noopener noreferrer"
-        className="flex items-center justify-center gap-1.5 mt-3 py-2.5 rounded-xl bg-card border border-border/30 text-[11px] text-primary font-semibold hover:border-primary/30 transition-colors">
-        <Instagram className="w-3.5 h-3.5" /> Seguir no Instagram
-      </a>
-      <p className="text-[9px] text-muted-foreground/50 text-center mt-1.5">
-        Em breve, os posts reais aparecerão aqui automaticamente
-      </p>
-    </div>
-  );
-}
 
 /**
  * NextEventCard — bloco premium de urgência mostrando o próximo evento do local.
