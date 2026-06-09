@@ -68,7 +68,7 @@ export default function AuraVenueInsights({ partner, events }: Props) {
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
                 {c.label}
               </p>
-              <p className="text-xs font-bold text-foreground truncate">{c.value}</p>
+              <p className="text-xs font-bold text-foreground leading-tight line-clamp-2 break-words">{c.value}</p>
             </div>
           </div>
         ))}
