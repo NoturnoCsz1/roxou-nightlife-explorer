@@ -248,6 +248,7 @@ const EventoForm = () => {
           category: duplicateData.category,
           sub_category: (duplicateData as any).sub_category,
           partner_id: duplicateData.partner_id || undefined,
+          time_is_unknown: Boolean((duplicateData as any).time_is_unknown),
         });
       }
     }
