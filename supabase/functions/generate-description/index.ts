@@ -499,6 +499,7 @@ serve(async (req) => {
       venue_description: venueDescIn,
       partner_type: partnerTypeIn,
       previous_descriptions = [],
+      time_is_unknown = false,
     } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
