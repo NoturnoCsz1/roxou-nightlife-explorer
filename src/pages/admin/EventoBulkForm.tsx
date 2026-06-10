@@ -543,6 +543,28 @@ const EventoBulkForm = () => {
     setItems((prev) => prev.filter((it) => it.localId !== localId));
   }
   function addBlankItem() {
+    const bd = batchDefaultsRef.current;
+    const base = emptyEventForm();
+    if (bd.enabled) {
+      if (bd.date && bd.time) {
+        base.date_time = `${bd.date}T${bd.time}`;
+        base.time_is_unknown = false;
+      } else if (bd.date) {
+        base.date_time = `${bd.date}T00:00`;
+        base.time_is_unknown = true;
+      }
+      if (bd.category) base.category = bd.category;
+      if (bd.sub_category) (base as any)._sub = bd.sub_category;
+      if (bd.partner_id) {
+        const p = partners.find((x) => x.id === bd.partner_id);
+        if (p) {
+          base.partner_id = p.id;
+          base.venue_name = p.name;
+          base.address = p.address || "";
+          base.instagram = p.instagram || "";
+        }
+      }
+    }
     setItems((prev) => [
       ...prev,
       {
@@ -551,7 +573,7 @@ const EventoBulkForm = () => {
         thumbDataUrl: "",
         status: "ready",
         expanded: true,
-        form: emptyEventForm(),
+        form: base,
       },
     ]);
   }
