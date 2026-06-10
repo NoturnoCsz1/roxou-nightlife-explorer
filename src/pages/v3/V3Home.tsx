@@ -2326,16 +2326,12 @@ function PremiumEventCard({ ev, size = "md", premium, isTrending, partnerRank, t
 /* ─── SKELETONS ─── */
 function HeroSkeleton() {
   return (
-    <div className="relative h-[380px] bg-card animate-pulse">
+    <div className="relative h-[200px] md:h-[380px] bg-card/40 animate-pulse">
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
-        <div className="h-3 w-16 bg-secondary/60 rounded" />
-        <div className="h-8 w-3/4 bg-secondary/60 rounded" />
-        <div className="h-4 w-1/2 bg-secondary/40 rounded" />
-        <div className="flex gap-2 pt-1">
-          <div className="h-10 w-28 rounded-full bg-secondary/50" />
-          <div className="h-10 w-36 rounded-full bg-secondary/30" />
-        </div>
+      <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+        <div className="h-3 w-16 bg-secondary/40 rounded" />
+        <div className="h-5 md:h-8 w-3/4 bg-secondary/40 rounded" />
+        <div className="h-3 md:h-4 w-1/2 bg-secondary/30 rounded" />
       </div>
     </div>
   );
