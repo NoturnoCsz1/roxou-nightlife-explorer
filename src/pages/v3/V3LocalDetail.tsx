@@ -18,6 +18,8 @@ import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
 import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
 import { buildPartnerRichDescription } from "@/lib/partnerDescription";
+import { usePartnerAwards, formatAwardPeriod } from "@/hooks/usePartnerAwards";
+import { Trophy } from "lucide-react";
 
 const TOP_WEEK_THRESHOLD = 100;
 
