@@ -20,6 +20,8 @@ import {
 } from "@/lib/eventDuplicateDetector";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 
+import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
+
 type Partner = Tables<"partners">;
 type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error";
 
