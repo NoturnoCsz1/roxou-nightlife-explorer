@@ -261,7 +261,7 @@ serve(async (req) => {
   if (!auth.ok) return auth.response;
 
   try {
-    const { image_url, current_year, verified_partners = [], admin_feedback = [] } = await req.json();
+    const { image_url, current_year, verified_partners = [], admin_feedback = [], batch_defaults = null } = await req.json();
     if (!image_url) {
       return new Response(JSON.stringify({ error: "image_url required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -296,7 +296,7 @@ serve(async (req) => {
           {
             role: "user",
             content: [
-              { type: "text", text: `Extraia metadados deste flyer. Ano base: ${year}. Use o DNA dos parceiros para definir categoria/gênero quando o local bater. Parceiros verificados:\n${verifiedPartnersText}\n\nResponda apenas JSON.` },
+              { type: "text", text: `Extraia metadados deste flyer. Ano base: ${year}. Use o DNA dos parceiros para definir categoria/gênero quando o local bater. Parceiros verificados:\n${verifiedPartnersText}\n\n${batch_defaults && (batch_defaults.date || batch_defaults.time || batch_defaults.partner_name || batch_defaults.category) ? `🧭 PADRÕES DO LOTE FORNECIDOS PELO ADMIN (use SOMENTE como contexto — NÃO inclua no JSON se o flyer não confirma; o servidor aplica como fallback):\n${batch_defaults.date ? `- data padrão: ${batch_defaults.date}\n` : ""}${batch_defaults.time ? `- horário padrão: ${batch_defaults.time}\n` : ""}${batch_defaults.partner_name ? `- local padrão: ${batch_defaults.partner_name}\n` : ""}${batch_defaults.category ? `- categoria padrão: ${batch_defaults.category}\n` : ""}${batch_defaults.sub_category ? `- sub-categoria padrão: ${batch_defaults.sub_category}\n` : ""}\n⚠️ NUNCA invente horário só porque o admin forneceu um padrão. Continue retornando time_is_unknown=true se o flyer não mostrar hora clara — o servidor decide se usa o padrão.\n\n` : ""}Responda apenas JSON.` },
               { type: "image_url", image_url: { url: image_url } },
             ],
           },

@@ -20,6 +20,8 @@ import {
 } from "@/lib/eventDuplicateDetector";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 
+import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
+
 type Partner = Tables<"partners">;
 type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error";
 
@@ -104,6 +106,26 @@ type AdminFeedback = {
   corrected_sub_category: string | null;
 };
 
+type BatchDefaults = {
+  enabled: boolean;
+  mode: "all" | "missing";
+  date: string;        // YYYY-MM-DD
+  time: string;        // HH:MM
+  partner_id: string;
+  category: string;
+  sub_category: string;
+};
+
+const emptyBatchDefaults = (): BatchDefaults => ({
+  enabled: false,
+  mode: "missing",
+  date: "",
+  time: "",
+  partner_id: "",
+  category: "",
+  sub_category: "",
+});
+
 const EventoBulkForm = () => {
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
@@ -116,6 +138,9 @@ const EventoBulkForm = () => {
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
   const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
   const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
+  const [batchDefaults, setBatchDefaults] = useState<BatchDefaults>(emptyBatchDefaults);
+  const batchDefaultsRef = useRef<BatchDefaults>(emptyBatchDefaults());
+  useEffect(() => { batchDefaultsRef.current = batchDefaults; }, [batchDefaults]);
   const inputRef = useRef<HTMLInputElement>(null);
   // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
   const fileMapRef = useRef<Map<string, File>>(new Map());
@@ -253,6 +278,8 @@ const EventoBulkForm = () => {
       patchForm(localId, { image_url: publicUrl });
 
       // 2. AI extract — wait fully and validate before downstream calls
+      const bdNow = batchDefaultsRef.current;
+      const bdPartner = bdNow.enabled && bdNow.partner_id ? partners.find((p) => p.id === bdNow.partner_id) : null;
       const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
         body: {
           image_url: publicUrl,
@@ -267,6 +294,15 @@ const EventoBulkForm = () => {
               sub_category: p.sub_category,
             })),
           admin_feedback: adminFeedback,
+          batch_defaults: bdNow.enabled ? {
+            date: bdNow.date || null,
+            time: bdNow.time || null,
+            partner_id: bdNow.partner_id || null,
+            partner_name: bdPartner?.name || null,
+            category: bdNow.category || null,
+            sub_category: bdNow.sub_category || null,
+            mode: bdNow.mode,
+          } : null,
         },
       });
       if (extractResp.error) throw extractResp.error;
@@ -317,22 +353,69 @@ const EventoBulkForm = () => {
           const upperTitle = (data.title || it.form.title || "").toUpperCase();
           // Se a confiança é baixa, não pré-preencher a data — força admin a digitar
           const safeDateInput = lowDateConfidence ? "" : dateInput;
+          const extractedDateTime = safeDateInput || it.form.date_time;
+
+          // === 🧭 Aplicação dos PADRÕES DO LOTE ===
+          const bd = batchDefaultsRef.current;
+          const force = bd.enabled && bd.mode === "all";
+          const fillMissing = bd.enabled && bd.mode === "missing";
+          const pickBatch = <T,>(extractedVal: T, batchVal: T | "" | null | undefined, extractedExists: boolean): T => {
+            if (!bd.enabled || !batchVal) return extractedVal;
+            if (force) return batchVal as T;
+            if (fillMissing && !extractedExists) return batchVal as T;
+            return extractedVal;
+          };
+
+          // date_time: combina batch date + batch time quando aplicável
+          const extractedHasDate = !!extractedDateTime && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(extractedDateTime);
+          const extractedHasTime = extractedHasDate && data.time_is_unknown !== true;
+          let finalDateTime = extractedDateTime;
+          let finalTimeIsUnknown: boolean = data.time_is_unknown === true || !extractedHasTime;
+          if (bd.enabled && (bd.date || bd.time)) {
+            const useBatchDate = force ? !!bd.date : fillMissing ? (!extractedHasDate && !!bd.date) : false;
+            const useBatchTime = force ? !!bd.time : fillMissing ? (!extractedHasTime && !!bd.time) : false;
+            const baseDate = useBatchDate ? bd.date : (extractedHasDate ? extractedDateTime.slice(0, 10) : "");
+            const baseTime = useBatchTime ? bd.time : (extractedHasTime ? extractedDateTime.slice(11, 16) : "");
+            if (baseDate && baseTime) {
+              finalDateTime = `${baseDate}T${baseTime}`;
+              finalTimeIsUnknown = false;
+            } else if (baseDate) {
+              finalDateTime = `${baseDate}T00:00`;
+              finalTimeIsUnknown = true;
+            }
+          }
+
+          // venue/partner
+          const batchPartner = bd.enabled && bd.partner_id ? partners.find((p) => p.id === bd.partner_id) : null;
+          const partnerObj = pickBatch(matched, batchPartner, !!matched);
+          const finalCategory = pickBatch(
+            data.category || it.form.category,
+            bd.category,
+            !!data.category,
+          );
+          const finalSub = pickBatch(
+            data.sub_category || "",
+            bd.sub_category,
+            !!data.sub_category,
+          );
+
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
             image_hash: imageHash,
             title: upperTitle,
             slug: upperTitle ? slugify(upperTitle) : it.form.slug,
-            date_time: safeDateInput || it.form.date_time,
-            category: data.category || it.form.category,
-            venue_name: matched ? matched.name : (data.venue_name || ""),
-            address: matched ? (matched.address || "") : (data.address || ""),
-            instagram: matched ? (matched.instagram || "") : (data.instagram || ""),
-            partner_id: matched ? matched.id : "",
+            date_time: finalDateTime,
+            time_is_unknown: finalTimeIsUnknown,
+            category: finalCategory,
+            venue_name: partnerObj ? partnerObj.name : (data.venue_name || ""),
+            address: partnerObj ? (partnerObj.address || "") : (data.address || ""),
+            instagram: partnerObj ? (partnerObj.instagram || "") : (data.instagram || ""),
+            partner_id: partnerObj ? partnerObj.id : "",
             ticket_url: "",
             verification_source: "instagram",
             opportunity_tags: data.opportunity_tags || [],
-            ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
+            ...(finalSub ? { _sub: finalSub } as any : {}),
             ...(data.ai_confidence ? { ai_confidence: data.ai_confidence } as any : {}),
             needs_review: finalNeedsReview,
           } as EventFormData;
@@ -460,6 +543,28 @@ const EventoBulkForm = () => {
     setItems((prev) => prev.filter((it) => it.localId !== localId));
   }
   function addBlankItem() {
+    const bd = batchDefaultsRef.current;
+    const base = emptyEventForm();
+    if (bd.enabled) {
+      if (bd.date && bd.time) {
+        base.date_time = `${bd.date}T${bd.time}`;
+        base.time_is_unknown = false;
+      } else if (bd.date) {
+        base.date_time = `${bd.date}T00:00`;
+        base.time_is_unknown = true;
+      }
+      if (bd.category) base.category = bd.category;
+      if (bd.sub_category) (base as any)._sub = bd.sub_category;
+      if (bd.partner_id) {
+        const p = partners.find((x) => x.id === bd.partner_id);
+        if (p) {
+          base.partner_id = p.id;
+          base.venue_name = p.name;
+          base.address = p.address || "";
+          base.instagram = p.instagram || "";
+        }
+      }
+    }
     setItems((prev) => [
       ...prev,
       {
@@ -468,7 +573,7 @@ const EventoBulkForm = () => {
         thumbDataUrl: "",
         status: "ready",
         expanded: true,
-        form: emptyEventForm(),
+        form: base,
       },
     ]);
   }
@@ -711,6 +816,13 @@ const EventoBulkForm = () => {
           </p>
         </div>
       )}
+
+      {/* === 🧭 Padrões do Lote (opcional) === */}
+      <BatchDefaultsSection
+        value={batchDefaults}
+        onChange={setBatchDefaults}
+        partners={partners}
+      />
 
       {/* Dropzone */}
       <div
@@ -1086,5 +1198,132 @@ const ReviewRow = memo(ReviewRowBase, (prev, next) => {
     prev.index === next.index
   );
 });
+
+/* ──────────────────────────────────────────────
+   Padrões do Lote — campos globais opcionais
+────────────────────────────────────────────── */
+interface BatchDefaultsSectionProps {
+  value: BatchDefaults;
+  onChange: (next: BatchDefaults) => void;
+  partners: Partner[];
+}
+
+function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectionProps) {
+  const set = (patch: Partial<BatchDefaults>) => onChange({ ...value, ...patch });
+  const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
+
+  return (
+    <div className={`mb-4 rounded-xl border ${value.enabled ? "border-primary/40 bg-primary/5" : "border-border/40 bg-card/40"} p-3 transition`}>
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={value.enabled}
+          onChange={(e) => set({ enabled: e.target.checked })}
+          className="h-3.5 w-3.5 accent-primary"
+        />
+        <span className="text-xs font-semibold text-foreground">🧭 Informações padrão do lote</span>
+        <span className="text-[10px] text-muted-foreground">(opcional)</span>
+      </label>
+
+      {value.enabled && (
+        <div className="mt-3 space-y-2.5">
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Essas informações serão usadas para preencher eventos do lote e evitar dados inventados pela IA.
+            Quando o flyer não informa data/horário/local/categoria, os padrões abaixo são aplicados conforme o modo escolhido.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Data padrão</label>
+              <input
+                type="date"
+                className={inputCls}
+                value={value.date}
+                onChange={(e) => set({ date: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Horário padrão</label>
+              <input
+                type="time"
+                className={inputCls}
+                value={value.time}
+                onChange={(e) => set({ time: e.target.value })}
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-[10px] font-medium text-muted-foreground">Local padrão (parceiro)</label>
+              <select
+                className={inputCls}
+                value={value.partner_id}
+                onChange={(e) => set({ partner_id: e.target.value })}
+              >
+                <option value="">— Sem padrão —</option>
+                {partners.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Categoria padrão</label>
+              <select
+                className={inputCls}
+                value={value.category}
+                onChange={(e) => set({ category: e.target.value, sub_category: supportsGenre(e.target.value) ? value.sub_category : "" })}
+              >
+                <option value="">— Sem padrão —</option>
+                {ADMIN_MAIN_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            {supportsGenre(value.category) && (
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground">Gênero padrão</label>
+                <select
+                  className={inputCls}
+                  value={value.sub_category}
+                  onChange={(e) => set({ sub_category: e.target.value })}
+                >
+                  <option value="">— Sem padrão —</option>
+                  {ADMIN_MUSICAL_SUBS.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-border/30">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="batch-mode"
+                checked={value.mode === "missing"}
+                onChange={() => set({ mode: "missing" })}
+                className="h-3 w-3 accent-primary"
+              />
+              <span className="text-[11px] text-foreground">
+                <strong>Usar apenas quando faltar</strong> — preserva dados do flyer e completa o resto
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="batch-mode"
+                checked={value.mode === "all"}
+                onChange={() => set({ mode: "all" })}
+                className="h-3 w-3 accent-primary"
+              />
+              <span className="text-[11px] text-foreground">
+                <strong>Aplicar em todos os eventos</strong> — sobrescreve dados extraídos pela IA
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default EventoBulkForm;
