@@ -284,6 +284,7 @@ const EventoForm = () => {
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
       transport_reservation_enabled: Boolean((data as any).transport_reservation_enabled),
+      time_is_unknown: Boolean((data as any).time_is_unknown),
       _sub: (data as any).sub_category || data.category,
       is_sports_transmission: Boolean((data as any).is_sports_transmission),
       sports_match_id: (data as any).sports_match_id || null,
