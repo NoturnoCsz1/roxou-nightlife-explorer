@@ -547,7 +547,7 @@ serve(async (req) => {
       } catch (_e) { /* segue */ }
     }
 
-    const dateInfo = formatOfficialDate(date_time);
+    const dateInfo = formatOfficialDate(date_time, Boolean(time_is_unknown));
     const attraction = resolveAttraction(category, sub_category, partnerMusicPrimary || undefined);
 
     const cleanTitle = String(title || "").trim();
