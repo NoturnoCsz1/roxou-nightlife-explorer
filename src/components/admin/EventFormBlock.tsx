@@ -13,6 +13,7 @@ export type EventFormData = {
   title: string;
   slug: string;
   date_time: string;
+  time_is_unknown?: boolean;
   category: string;
   partner_id: string;
   venue_name: string;
@@ -29,7 +30,7 @@ export type EventFormData = {
 };
 
 export const emptyEventForm = (): EventFormData => ({
-  title: "", slug: "", date_time: "", category: "festa", partner_id: "",
+  title: "", slug: "", date_time: "", time_is_unknown: false, category: "festa", partner_id: "",
   venue_name: "", address: "", instagram: "", description: "",
   status: "draft", verification_source: "instagram", featured: false, image_url: "",
   ticket_url: "", image_hash: "",
