@@ -173,7 +173,7 @@ export default function V3Layout() {
             </nav>
           </aside>
 
-          <main key={pathname} className="flex-1 min-w-0 pb-16 lg:pb-0 v3-page-fade">
+          <main key={pathname} className="flex-1 min-w-0 pb-[calc(80px+env(safe-area-inset-bottom))] lg:pb-0 v3-page-fade">
             <Outlet />
           </main>
         </div>
