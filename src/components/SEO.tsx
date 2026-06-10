@@ -32,6 +32,9 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
     setMeta("og:description", description, "property");
     setMeta("og:type", ogType, "property");
     setMeta("og:image", ogImage, "property");
+    setMeta("og:image:width", "1200", "property");
+    setMeta("og:image:height", "630", "property");
+    setMeta("og:image:alt", title, "property");
     setMeta("og:locale", locale, "property");
     setMeta("og:site_name", "ROXOU", "property");
     setMeta("twitter:card", "summary_large_image", "name");
