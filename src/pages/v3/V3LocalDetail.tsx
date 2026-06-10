@@ -162,6 +162,11 @@ export default function V3LocalDetail() {
     enabled: !!partner?.id && !!partner?.city,
   });
 
+  /* premiações Roxou ativas para o parceiro */
+  const { awards: partnerAwards } = usePartnerAwards(partner?.id);
+
+
+
   if (!partner) {
     return (
       <div className="p-8 text-center">
