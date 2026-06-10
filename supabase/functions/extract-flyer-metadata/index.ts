@@ -653,6 +653,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       title,
       date_iso: dateIso,
+      time_is_unknown: dateIso ? timeIsUnknown : true,
       date_needs_review,
       date_validation_note,
       date_confidence_score,
