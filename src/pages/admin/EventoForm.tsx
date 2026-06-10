@@ -131,21 +131,33 @@ const EventoForm = () => {
       });
       if (error) throw error;
       const meta: any = data || {};
-      // Date fallback: keep existing if AI uncertain; default time to 20:00
+      // ⚠️ Sem fallback de horário. Se a IA marcou time_is_unknown ou
+      // não devolveu horário válido, preservamos isso e o admin confirma.
       let nextDateTime = form.date_time;
-      if (meta.date) {
-        const time = meta.time && /^\d{2}:\d{2}$/.test(meta.time) ? meta.time : "20:00";
-        nextDateTime = `${meta.date}T${time}`;
+      let nextTimeUnknown = (form as any).time_is_unknown ?? false;
+      if (meta.date_iso) {
+        // formato vindo da edge: "YYYY-MM-DDTHH:MM"
+        nextDateTime = String(meta.date_iso).slice(0, 16);
+        nextTimeUnknown = Boolean(meta.time_is_unknown);
+      } else if (meta.date) {
+        const hasRealTime = meta.time && /^\d{2}:\d{2}$/.test(meta.time);
+        nextDateTime = `${meta.date}T${hasRealTime ? meta.time : "00:00"}`;
+        nextTimeUnknown = !hasRealTime || Boolean(meta.time_is_unknown);
       }
       setForm((prev) => ({
         ...prev,
         title: meta.title ? String(meta.title).toUpperCase() : prev.title,
         date_time: nextDateTime,
+        time_is_unknown: nextTimeUnknown,
         venue_name: meta.venue_name || prev.venue_name,
         category: meta.category || prev.category,
         ...(meta.sub_category ? { _sub: meta.sub_category } : {}),
       } as any));
-      toast.success("Flyer re-processado pela IA. Revise os campos antes de salvar.");
+      toast.success(
+        nextTimeUnknown
+          ? "Flyer re-processado. ⚠ Horário não detectado — marcado como 'a confirmar'."
+          : "Flyer re-processado pela IA. Revise os campos antes de salvar.",
+      );
     } catch (err: any) {
       toast.error(err?.message || "Falha ao re-processar com IA");
     } finally {
@@ -153,7 +165,7 @@ const EventoForm = () => {
     }
   }
 
-  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string }) {
+  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string; time_is_unknown?: boolean }) {
     setGeneratingDesc(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
@@ -196,6 +208,7 @@ const EventoForm = () => {
     video_url: "",
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
     transport_reservation_enabled: false,
+    time_is_unknown: false,
     ...emptyTransmission(),
   });
 
@@ -235,6 +248,7 @@ const EventoForm = () => {
           category: duplicateData.category,
           sub_category: (duplicateData as any).sub_category,
           partner_id: duplicateData.partner_id || undefined,
+          time_is_unknown: Boolean((duplicateData as any).time_is_unknown),
         });
       }
     }
@@ -271,6 +285,7 @@ const EventoForm = () => {
       image_hash: (data as any).image_hash || "",
       opportunity_tags: (data as any).opportunity_tags || [],
       transport_reservation_enabled: Boolean((data as any).transport_reservation_enabled),
+      time_is_unknown: Boolean((data as any).time_is_unknown),
       _sub: (data as any).sub_category || data.category,
       is_sports_transmission: Boolean((data as any).is_sports_transmission),
       sports_match_id: (data as any).sports_match_id || null,
@@ -515,7 +530,7 @@ const EventoForm = () => {
             onClick={reprocessFlyerWithAi}
             disabled={reprocessing}
             className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
-            title="Pedir para a IA reler o flyer (mantém 20:00 como fallback)"
+            title="Pedir para a IA reler o flyer (sem inventar horário; se não houver, marca como 'a confirmar')"
           >
             {reprocessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             {reprocessing ? "Re-processando..." : "Re-processar com IA"}
@@ -596,7 +611,12 @@ const EventoForm = () => {
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Data e Hora *</label>
-              <DateTimePickerSP value={form.date_time} onChange={(v) => handleChange("date_time", v)} />
+              <DateTimePickerSP
+                value={form.date_time}
+                onChange={(v) => handleChange("date_time", v)}
+                timeIsUnknown={Boolean((form as any).time_is_unknown)}
+                onTimeIsUnknownChange={(v) => setForm((prev) => ({ ...prev, time_is_unknown: v } as any))}
+              />
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
@@ -716,6 +736,7 @@ const EventoForm = () => {
                       category: form.category,
                       sub_category: (form as any)._sub,
                       partner_id: form.partner_id || undefined,
+                      time_is_unknown: Boolean((form as any).time_is_unknown),
                     })}
                     className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
                   >
@@ -844,7 +865,14 @@ const EventoForm = () => {
         open={igModalOpen}
         onClose={() => setIgModalOpen(false)}
         onImport={(data) => {
-          const dateTime = data.date && data.time ? `${data.date}T${data.time}` : data.date ? `${data.date}T22:00` : "";
+          // ⚠️ Sem fallback "T22:00". Se IG não trouxe horário, marca como a confirmar.
+          const igHasTime = Boolean(data.time && /^\d{2}:\d{2}$/.test(data.time));
+          const dateTime = data.date && igHasTime
+            ? `${data.date}T${data.time}`
+            : data.date
+              ? `${data.date}T00:00`
+              : "";
+          const igTimeIsUnknown = Boolean(data.date) && !igHasTime;
 
           let autoLinked: Partner | undefined;
           let suggested: Partner | undefined;
@@ -879,6 +907,7 @@ const EventoForm = () => {
             slug: data.title ? slugify(data.title) : prev.slug,
             description: data.description || prev.description,
             date_time: dateTime || prev.date_time,
+            time_is_unknown: dateTime ? igTimeIsUnknown : (prev as any).time_is_unknown,
             category: data.category || prev.category,
             venue_name: autoLinked?.name || data.venue_name || prev.venue_name,
             address: autoLinked?.address || prev.address,

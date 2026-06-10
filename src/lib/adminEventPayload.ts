@@ -27,6 +27,7 @@ export type AdminEventFormInput = {
   transmission_url?: string | null;
   transmission_notes?: string | null;
   transport_reservation_enabled?: boolean;
+  time_is_unknown?: boolean;
 };
 
 interface BuildEventPayloadOptions {
@@ -65,6 +66,7 @@ export function buildEventPayload(
     transmission_url: form.transmission_url || null,
     transmission_notes: form.transmission_notes || null,
     transport_reservation_enabled: Boolean(form.transport_reservation_enabled),
+    time_is_unknown: Boolean(form.time_is_unknown),
   };
 
   if (options.city) {
