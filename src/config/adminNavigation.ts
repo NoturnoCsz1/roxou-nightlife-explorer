@@ -11,6 +11,7 @@ import {
   Film,
   Shield,
   Sparkles,
+  Palette,
   Search,
   Trophy,
   type LucideIcon,
