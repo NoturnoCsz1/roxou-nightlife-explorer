@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import SafeHtml from "@/components/SafeHtml";
+import SEO from "@/components/SEO";
 import {
   ADMIN_PARTNER_TYPE_OPTIONS,
   PARTNER_MUSIC_STYLE_LABELS,
