@@ -578,7 +578,12 @@ export default function V3Home() {
       {/* ══════ MOBILE: IMMERSIVE HERO ══════ */}
       <div className="lg:hidden">
         <HomeSectionBoundary name="Hero mobile" fallback={<EmptyHero />}>
-          {isLoading ? <HeroSkeleton /> : hero ? (
+          {isLoading ? (
+            <div
+              aria-hidden
+              className="h-[96px] w-full bg-gradient-to-b from-card/40 to-transparent opacity-40"
+            />
+          ) : hero ? (
             <div className="relative group -mt-14">
               <div className="relative">
                 <ImmersiveHero
