@@ -610,7 +610,12 @@ const EventoForm = () => {
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Data e Hora *</label>
-              <DateTimePickerSP value={form.date_time} onChange={(v) => handleChange("date_time", v)} />
+              <DateTimePickerSP
+                value={form.date_time}
+                onChange={(v) => handleChange("date_time", v)}
+                timeIsUnknown={Boolean((form as any).time_is_unknown)}
+                onTimeIsUnknownChange={(v) => setForm((prev) => ({ ...prev, time_is_unknown: v } as any))}
+              />
             </div>
             <div>
               <label className="text-[11px] font-medium text-muted-foreground">Categoria</label>
