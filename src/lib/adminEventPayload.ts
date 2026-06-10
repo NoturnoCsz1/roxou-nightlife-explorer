@@ -27,6 +27,7 @@ export type AdminEventFormInput = {
   transmission_url?: string | null;
   transmission_notes?: string | null;
   transport_reservation_enabled?: boolean;
+  time_is_unknown?: boolean;
 };
 
 interface BuildEventPayloadOptions {
