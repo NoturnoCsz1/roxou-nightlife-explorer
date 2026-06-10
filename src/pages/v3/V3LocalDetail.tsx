@@ -172,7 +172,6 @@ export default function V3LocalDetail() {
   }
 
   const followed = partner ? isFollowed(partner.id) : false;
-  const { awards: partnerAwards } = usePartnerAwards(partner.id);
   const operatingStatus = getOperatingStatus(partner.type);
   const mapsUrl = partner.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${partner.address}, ${partner.city || ""}`)}`
