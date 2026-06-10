@@ -185,7 +185,7 @@ const EventDetail = () => {
         title={`${event.title} — ${dateFormatted} em ${event.venue_name || "Presidente Prudente"} | ROXOU`}
         description={`${event.title} acontece ${dateFormatted} às ${time} em ${event.venue_name || "Presidente Prudente"}. Veja local, horário, como chegar e ingressos.`}
         canonical={`https://roxou.com.br/evento/${event.slug}`}
-        ogImage={event.image_url || "https://roxou.com.br/og-image.png"}
+        ogImage={event.image_url || (event as any).banner_url || (event as any).flyer_url || "https://roxou.com.br/og-image.png"}
         ogType="article"
         jsonLd={{
           "@context": "https://schema.org",
