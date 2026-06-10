@@ -579,12 +579,9 @@ export default function V3Home() {
       <div className="lg:hidden">
         <HomeSectionBoundary name="Hero mobile" fallback={<EmptyHero />}>
           {isLoading ? (
-            <div
-              aria-hidden
-              className="h-[96px] w-full bg-gradient-to-b from-card/40 to-transparent opacity-40"
-            />
+            <div aria-hidden className="h-[96px] w-full bg-background" />
           ) : hero ? (
-            <div className="relative group -mt-14">
+            <div className="relative z-10 group overflow-hidden bg-background">
               <div className="relative">
                 <ImmersiveHero
                   ev={hero}
@@ -600,6 +597,7 @@ export default function V3Home() {
               </div>
             </div>
           ) : <EmptyHero />}
+
         </HomeSectionBoundary>
 
         {/* Eventos de hoje — logo abaixo do hero */}
