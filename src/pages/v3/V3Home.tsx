@@ -1030,7 +1030,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
           </Link>
           <Link
             to="/jogos"
-            className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-sm font-semibold active:scale-95 transition-all hover:bg-amber-500/30"
+            className="hidden lg:inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-sm font-semibold active:scale-95 transition-all hover:bg-amber-500/30"
           >
             <Trophy className="w-3.5 h-3.5" /> Jogos ao vivo
           </Link>
