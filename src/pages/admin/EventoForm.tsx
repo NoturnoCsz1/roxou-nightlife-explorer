@@ -863,7 +863,14 @@ const EventoForm = () => {
         open={igModalOpen}
         onClose={() => setIgModalOpen(false)}
         onImport={(data) => {
-          const dateTime = data.date && data.time ? `${data.date}T${data.time}` : data.date ? `${data.date}T22:00` : "";
+          // ⚠️ Sem fallback "T22:00". Se IG não trouxe horário, marca como a confirmar.
+          const igHasTime = Boolean(data.time && /^\d{2}:\d{2}$/.test(data.time));
+          const dateTime = data.date && igHasTime
+            ? `${data.date}T${data.time}`
+            : data.date
+              ? `${data.date}T00:00`
+              : "";
+          const igTimeIsUnknown = Boolean(data.date) && !igHasTime;
 
           let autoLinked: Partner | undefined;
           let suggested: Partner | undefined;
