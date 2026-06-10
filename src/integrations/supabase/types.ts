@@ -1705,6 +1705,63 @@ export type Database = {
           },
         ]
       }
+      partner_awards: {
+        Row: {
+          active: boolean
+          award_type: string
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          month: number | null
+          partner_id: string
+          title: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          active?: boolean
+          award_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          month?: number | null
+          partner_id: string
+          title: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          active?: boolean
+          award_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          month?: number | null
+          partner_id?: string
+          title?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_awards_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_awards_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_radar_memory: {
         Row: {
           common_genres: string[]
