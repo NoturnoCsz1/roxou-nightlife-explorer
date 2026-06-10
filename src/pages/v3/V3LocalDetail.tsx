@@ -18,6 +18,7 @@ import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
 import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
 import { buildPartnerRichDescription } from "@/lib/partnerDescription";
+import { usePartnerAwards, formatAwardPeriod } from "@/hooks/usePartnerAwards";
 
 const TOP_WEEK_THRESHOLD = 100;
 
@@ -160,6 +161,11 @@ export default function V3LocalDetail() {
     },
     enabled: !!partner?.id && !!partner?.city,
   });
+
+  /* premiações Roxou ativas para o parceiro */
+  const { awards: partnerAwards } = usePartnerAwards(partner?.id);
+
+
 
   if (!partner) {
     return (
@@ -395,6 +401,29 @@ export default function V3LocalDetail() {
             </div>
           </div>
         </div>
+
+        {/* 🏆 Premiações Roxou (badges) */}
+        {partnerAwards.length > 0 && (
+          <div className="relative z-10 px-4 pb-3 flex flex-wrap gap-2">
+            {partnerAwards.map((aw) => (
+              <Link
+                key={aw.id}
+                to="/bar-do-mes"
+                className="group inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-amber-400/15 to-amber-500/10 px-3 py-1.5 text-[11px] font-bold text-amber-200 hover:from-amber-500/25 hover:to-amber-500/15 transition shadow-[0_8px_24px_-10px_rgba(251,191,36,0.5)]"
+              >
+                <span aria-hidden className="text-base leading-none">🏆</span>
+                <span className="leading-tight">
+                  {aw.title}
+                  {aw.month && aw.year && (
+                    <span className="block text-[9px] font-semibold uppercase tracking-wider text-amber-200/80">
+                      {formatAwardPeriod(aw.month, aw.year)}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Bio + tags premium — colado ao hero, ainda dentro da capa */}
         <div className="relative z-10 px-4 pb-4 space-y-3">

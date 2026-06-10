@@ -57,6 +57,8 @@ const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
 const Editores = lazy(() => import("./pages/admin/Editores"));
 const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
 const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
+const Premiacoes = lazy(() => import("./pages/admin/Premiacoes"));
+const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
 // V3 (padrão)
 import V3Layout from "./components/v3/V3Layout";
@@ -140,6 +142,7 @@ const App = () => (
             <Route path="noticias" element={L(<NoticiasList />)} />
             <Route path="noticias/novo" element={L(<NoticiaForm />)} />
             <Route path="noticias/:id/editar" element={L(<NoticiaForm />)} />
+            <Route path="premiacoes" element={L(<Premiacoes />)} />
           </Route>
 
           {/* ========= AUTH ========= */}
@@ -214,6 +217,9 @@ const App = () => (
             <Route path="local/:slug" element={L(<LegacyLocalDetail />)} />
             <Route path="local/:slug/eventos" element={L(<LegacyLocalEventos />)} />
           </Route>
+
+          {/* ─── Premiações Roxou (página pública) ─── */}
+          <Route path="/bar-do-mes" element={L(<BarDoMes />)} />
 
           {/* ─── SEO Landings (/:landingSlug validado pelo próprio componente) ─── */}
           <Route path="/:landingSlug" element={L(<SEOLanding />)} />

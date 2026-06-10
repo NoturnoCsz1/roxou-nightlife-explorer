@@ -38,6 +38,7 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/aura", icon: Sparkles, label: "Aura" },
   { to: "/admin/eventos", icon: CalendarDays, label: "Eventos" },
   { to: "/admin/jogos", icon: Trophy, label: "Jogos" },
+  { to: "/admin/premiacoes", icon: Trophy, label: "Premiações" },
   { to: "/admin/radar-ia", icon: Radar, label: "Radar IA" },
   { to: "/admin/autoreels", icon: Film, label: "AutoReels" },
   { to: "/admin/security", icon: Shield, label: "Segurança" },
