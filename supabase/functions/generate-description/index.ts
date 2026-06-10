@@ -100,20 +100,20 @@ function pickFromBank<T>(bank: T[], seed: number): T {
 // ─────────────────────────────────────────────────────────────────────────────
 // 📅 Datas oficiais (timezone SP)
 // ─────────────────────────────────────────────────────────────────────────────
-function formatOfficialDate(iso: string) {
+function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
   const dt = new Date(iso);
   const dateLong = dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
   const dateShort = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
   const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
   const timeLabel = time.replace(":", "h").replace(/^0/, "");
   const weekdayFull = dt.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
-  // Sexta, Sábado, Domingo... (capitalized, sem "-feira")
   const weekdayShort = weekdayFull
     .replace("-feira", "")
     .replace(/^./, (c) => c.toUpperCase());
-  // Hora válida? (00:00 é sinal de "sem hora")
-  const hasRealTime = !(dt.getUTCHours() === 0 && dt.getUTCMinutes() === 0 && time === "00:00");
-  // Hoje (SP)?
+  // 🆕 Fonte única da verdade: flag explícita do evento.
+  // Não tentamos mais inferir "sem hora" por UTC/00:00 (heurística quebrada
+  // por timezone SP). Se o admin/IA marcou time_is_unknown=true, respeitamos.
+  const hasRealTime = !timeIsUnknown;
   const todaySP = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const eventDaySP = dt.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const isToday = todaySP === eventDaySP;
