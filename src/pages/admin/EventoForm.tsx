@@ -131,21 +131,33 @@ const EventoForm = () => {
       });
       if (error) throw error;
       const meta: any = data || {};
-      // Date fallback: keep existing if AI uncertain; default time to 20:00
+      // ⚠️ Sem fallback de horário. Se a IA marcou time_is_unknown ou
+      // não devolveu horário válido, preservamos isso e o admin confirma.
       let nextDateTime = form.date_time;
-      if (meta.date) {
-        const time = meta.time && /^\d{2}:\d{2}$/.test(meta.time) ? meta.time : "20:00";
-        nextDateTime = `${meta.date}T${time}`;
+      let nextTimeUnknown = (form as any).time_is_unknown ?? false;
+      if (meta.date_iso) {
+        // formato vindo da edge: "YYYY-MM-DDTHH:MM"
+        nextDateTime = String(meta.date_iso).slice(0, 16);
+        nextTimeUnknown = Boolean(meta.time_is_unknown);
+      } else if (meta.date) {
+        const hasRealTime = meta.time && /^\d{2}:\d{2}$/.test(meta.time);
+        nextDateTime = `${meta.date}T${hasRealTime ? meta.time : "00:00"}`;
+        nextTimeUnknown = !hasRealTime || Boolean(meta.time_is_unknown);
       }
       setForm((prev) => ({
         ...prev,
         title: meta.title ? String(meta.title).toUpperCase() : prev.title,
         date_time: nextDateTime,
+        time_is_unknown: nextTimeUnknown,
         venue_name: meta.venue_name || prev.venue_name,
         category: meta.category || prev.category,
         ...(meta.sub_category ? { _sub: meta.sub_category } : {}),
       } as any));
-      toast.success("Flyer re-processado pela IA. Revise os campos antes de salvar.");
+      toast.success(
+        nextTimeUnknown
+          ? "Flyer re-processado. ⚠ Horário não detectado — marcado como 'a confirmar'."
+          : "Flyer re-processado pela IA. Revise os campos antes de salvar.",
+      );
     } catch (err: any) {
       toast.error(err?.message || "Falha ao re-processar com IA");
     } finally {
