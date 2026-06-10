@@ -93,7 +93,8 @@ Receba a imagem de um flyer e responda APENAS com JSON válido (sem markdown, se
 
 {
   "title": string,            // Título RICO em CAIXA ALTA (máx 80). Formato "[ATRAÇÃO] NO [LOCAL] [FRASE DE IMPACTO]". NÃO copie literalmente. Sem hífens, dois pontos ou barras. Frase nasce do gênero+artista+local.
-  "date_iso": string|null,    // "YYYY-MM-DDTHH:MM" fuso SP. SEMPRE assuma o ano ${BASE_YEAR} como base. Se não houver horário, use 20:00. Se você tiver MENOS de 80% de certeza sobre a data, retorne null.
+  "date_iso": string|null,    // "YYYY-MM-DDTHH:MM" fuso SP. SEMPRE assuma o ano ${BASE_YEAR} como base. Se você tiver MENOS de 80% de certeza sobre a data, retorne null. ⚠️ NUNCA invente horário. Se o flyer NÃO mostra horário claramente, retorne APENAS a data ("YYYY-MM-DD", sem o T...) e marque "time_is_unknown": true.
+  "time_is_unknown": boolean, // true quando o flyer NÃO mostra horário claro. false quando você leu um horário explícito no flyer.
   "date_day": number|null,    // Dia do mês lido no flyer (1-31), independente do ano.
   "date_month": number|null,  // Mês lido no flyer (1-12).
   "date_weekday": string|null,// Dia da semana escrito no flyer (sabado, sexta, domingo...). null se não aparecer.
