@@ -529,7 +529,7 @@ const EventoForm = () => {
             onClick={reprocessFlyerWithAi}
             disabled={reprocessing}
             className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-50"
-            title="Pedir para a IA reler o flyer (mantém 20:00 como fallback)"
+            title="Pedir para a IA reler o flyer (sem inventar horário; se não houver, marca como 'a confirmar')"
           >
             {reprocessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
             {reprocessing ? "Re-processando..." : "Re-processar com IA"}
