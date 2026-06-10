@@ -261,7 +261,7 @@ serve(async (req) => {
   if (!auth.ok) return auth.response;
 
   try {
-    const { image_url, current_year, verified_partners = [], admin_feedback = [] } = await req.json();
+    const { image_url, current_year, verified_partners = [], admin_feedback = [], batch_defaults = null } = await req.json();
     if (!image_url) {
       return new Response(JSON.stringify({ error: "image_url required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
