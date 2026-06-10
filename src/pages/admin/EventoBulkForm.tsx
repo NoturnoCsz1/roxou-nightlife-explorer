@@ -1199,4 +1199,131 @@ const ReviewRow = memo(ReviewRowBase, (prev, next) => {
   );
 });
 
+/* ──────────────────────────────────────────────
+   Padrões do Lote — campos globais opcionais
+────────────────────────────────────────────── */
+interface BatchDefaultsSectionProps {
+  value: BatchDefaults;
+  onChange: (next: BatchDefaults) => void;
+  partners: Partner[];
+}
+
+function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectionProps) {
+  const set = (patch: Partial<BatchDefaults>) => onChange({ ...value, ...patch });
+  const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
+
+  return (
+    <div className={`mb-4 rounded-xl border ${value.enabled ? "border-primary/40 bg-primary/5" : "border-border/40 bg-card/40"} p-3 transition`}>
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={value.enabled}
+          onChange={(e) => set({ enabled: e.target.checked })}
+          className="h-3.5 w-3.5 accent-primary"
+        />
+        <span className="text-xs font-semibold text-foreground">🧭 Informações padrão do lote</span>
+        <span className="text-[10px] text-muted-foreground">(opcional)</span>
+      </label>
+
+      {value.enabled && (
+        <div className="mt-3 space-y-2.5">
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Essas informações serão usadas para preencher eventos do lote e evitar dados inventados pela IA.
+            Quando o flyer não informa data/horário/local/categoria, os padrões abaixo são aplicados conforme o modo escolhido.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Data padrão</label>
+              <input
+                type="date"
+                className={inputCls}
+                value={value.date}
+                onChange={(e) => set({ date: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Horário padrão</label>
+              <input
+                type="time"
+                className={inputCls}
+                value={value.time}
+                onChange={(e) => set({ time: e.target.value })}
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-[10px] font-medium text-muted-foreground">Local padrão (parceiro)</label>
+              <select
+                className={inputCls}
+                value={value.partner_id}
+                onChange={(e) => set({ partner_id: e.target.value })}
+              >
+                <option value="">— Sem padrão —</option>
+                {partners.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-muted-foreground">Categoria padrão</label>
+              <select
+                className={inputCls}
+                value={value.category}
+                onChange={(e) => set({ category: e.target.value, sub_category: supportsGenre(e.target.value) ? value.sub_category : "" })}
+              >
+                <option value="">— Sem padrão —</option>
+                {ADMIN_MAIN_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            {supportsGenre(value.category) && (
+              <div>
+                <label className="text-[10px] font-medium text-muted-foreground">Gênero padrão</label>
+                <select
+                  className={inputCls}
+                  value={value.sub_category}
+                  onChange={(e) => set({ sub_category: e.target.value })}
+                >
+                  <option value="">— Sem padrão —</option>
+                  {ADMIN_MUSICAL_SUBS.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-border/30">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="batch-mode"
+                checked={value.mode === "missing"}
+                onChange={() => set({ mode: "missing" })}
+                className="h-3 w-3 accent-primary"
+              />
+              <span className="text-[11px] text-foreground">
+                <strong>Usar apenas quando faltar</strong> — preserva dados do flyer e completa o resto
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="batch-mode"
+                checked={value.mode === "all"}
+                onChange={() => set({ mode: "all" })}
+                className="h-3 w-3 accent-primary"
+              />
+              <span className="text-[11px] text-foreground">
+                <strong>Aplicar em todos os eventos</strong> — sobrescreve dados extraídos pela IA
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default EventoBulkForm;
