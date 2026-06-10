@@ -85,8 +85,21 @@ export default function V3EventDetail() {
   const date = new Date(event.date_time);
   const saved = isSaved(event.id);
 
+  const ogImg =
+    event.image_url ||
+    (event as any).banner_url ||
+    (event as any).flyer_url ||
+    undefined;
+
   return (
     <div className="pb-8">
+      <SEO
+        title={`${event.title} | Roxou`}
+        description={(event.description?.replace(/<[^>]+>/g, "").slice(0, 155)) || `${event.title} — ${event.venue_name || "Presidente Prudente"}`}
+        canonical={`https://roxou.com.br/evento/${event.slug}`}
+        ogImage={ogImg}
+        ogType="article"
+      />
       {/* Image */}
       <div className="relative h-[260px] overflow-hidden">
         <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" fetchPriority="high" decoding="async" />
