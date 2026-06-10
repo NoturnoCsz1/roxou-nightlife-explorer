@@ -905,6 +905,7 @@ const EventoForm = () => {
             slug: data.title ? slugify(data.title) : prev.slug,
             description: data.description || prev.description,
             date_time: dateTime || prev.date_time,
+            time_is_unknown: dateTime ? igTimeIsUnknown : (prev as any).time_is_unknown,
             category: data.category || prev.category,
             venue_name: autoLinked?.name || data.venue_name || prev.venue_name,
             address: autoLinked?.address || prev.address,
