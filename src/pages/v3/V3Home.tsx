@@ -156,16 +156,16 @@ export default function V3Home() {
     placeholderData: (prev) => prev,
   });
 
-  // 🔒 Safety release: jamais deixe a Home presa em skeleton por mais de 12s.
+  // 🔒 Safety release: nunca prender a Home em skeleton por mais de 4s.
   // Se a query principal travar (rede instável, retry backoff, fetch pendente),
   // libera o render mesmo sem dados — seções vazias mostram seus próprios fallbacks.
   const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   useEffect(() => {
     if (!loadingEventsRaw) { setLoadingTimedOut(false); return; }
     const t = setTimeout(() => {
-      console.warn("[V3Home] events query > 12s — liberando skeleton com fallback");
+      console.warn("[V3Home] events query > 4s — liberando skeleton com fallback");
       setLoadingTimedOut(true);
-    }, 12_000);
+    }, 4_000);
     return () => clearTimeout(t);
   }, [loadingEventsRaw]);
   const loadingEvents = loadingEventsRaw && !loadingTimedOut;
