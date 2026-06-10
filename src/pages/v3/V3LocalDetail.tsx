@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, CalendarDays, Eye, Heart, Clock, Navigation, Share2, Flame, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, Instagram, MessageCircle, BadgeCheck, CalendarDays, Eye, Heart, Clock, Navigation, Share2, Flame, ChevronRight, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
 import EventCardV3 from "@/components/v3/EventCardV3";
