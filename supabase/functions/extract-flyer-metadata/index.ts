@@ -156,14 +156,26 @@ function safeJson(text: string): any {
   return null;
 }
 
-function ensureDefaultTime(dateIso: unknown): string | null {
-  if (typeof dateIso !== "string" || !dateIso.trim()) return null;
+/**
+ * Normaliza o date_iso vindo da IA SEM inventar horário.
+ * Retorna { iso, timeIsUnknown }:
+ *  - Se a IA mandou só "YYYY-MM-DD" → iso="YYYY-MM-DDT00:00", timeIsUnknown=true
+ *  - Se a IA mandou "YYYY-MM-DDTHH" ou "YYYY-MM-DDTHH:MM" → iso normalizado, timeIsUnknown=false
+ *  - Se vier vazio/null/inválido → iso=null, timeIsUnknown=true
+ */
+function normalizeAiDate(dateIso: unknown): { iso: string | null; timeIsUnknown: boolean } {
+  if (typeof dateIso !== "string" || !dateIso.trim()) return { iso: null, timeIsUnknown: true };
   const trimmed = dateIso.trim();
   const dateOnly = trimmed.match(/^(\d{4}-\d{2}-\d{2})$/);
-  if (dateOnly) return `${dateOnly[1]}T20:00`;
+  if (dateOnly) return { iso: `${dateOnly[1]}T00:00`, timeIsUnknown: true };
   const dateHour = trimmed.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2})(?::(\d{2}))?/);
-  if (dateHour) return `${dateHour[1]}T${dateHour[2].padStart(2, "0")}:${dateHour[3] || "00"}`;
-  return trimmed;
+  if (dateHour) {
+    return {
+      iso: `${dateHour[1]}T${dateHour[2].padStart(2, "0")}:${dateHour[3] || "00"}`,
+      timeIsUnknown: false,
+    };
+  }
+  return { iso: trimmed, timeIsUnknown: false };
 }
 
 function normText(value: unknown): string {
