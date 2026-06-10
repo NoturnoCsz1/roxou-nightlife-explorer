@@ -476,7 +476,11 @@ serve(async (req) => {
     }
 
     // ============== 📅 Calendário Real V4 ==============
-    let dateIso: string | null = ensureDefaultTime(parsed.date_iso);
+    const aiNormalized = normalizeAiDate(parsed.date_iso);
+    let dateIso: string | null = aiNormalized.iso;
+    let timeIsUnknown: boolean = aiNormalized.timeIsUnknown;
+    // se a IA explicitamente sinalizou time_is_unknown, respeita
+    if (parsed.time_is_unknown === true) timeIsUnknown = true;
     let date_validation_note: string | null = null;
     let date_needs_review = false;
 
@@ -487,11 +491,18 @@ serve(async (req) => {
     if (aiDay) {
       const resolved = resolveCalendarDate({ day: aiDay, month: aiMonth, weekday: weekdayIdx, baseYear: BASE_YEAR });
       if (resolved.date) {
-        // preserva hora declarada pela IA (se houver) ou 20:00
+        // preserva hora declarada pela IA (se houver). Sem hora → 00:00 + timeIsUnknown=true.
         const hourMatch = (parsed.date_iso || "").toString().match(/T(\d{1,2}):?(\d{2})?/);
-        const hh = hourMatch ? hourMatch[1].padStart(2, "0") : "20";
-        const mm = hourMatch && hourMatch[2] ? hourMatch[2] : "00";
-        dateIso = `${resolved.date}T${hh}:${mm}`;
+        if (hourMatch) {
+          const hh = hourMatch[1].padStart(2, "0");
+          const mm = hourMatch[2] || "00";
+          dateIso = `${resolved.date}T${hh}:${mm}`;
+          // hora explícita encontrada → confirma timeIsUnknown=false só se a IA não negou
+          if (parsed.time_is_unknown !== true) timeIsUnknown = false;
+        } else {
+          dateIso = `${resolved.date}T00:00`;
+          timeIsUnknown = true;
+        }
         if (resolved.reason) {
           date_validation_note = resolved.reason;
         }
@@ -503,22 +514,24 @@ serve(async (req) => {
     }
 
     // ============== 📅 Trava de data retroativa ==============
-    // Se a data resolvida (ou retornada direto pela IA) já passou, marcamos como REVISAR
-    // e tentamos sugerir o próximo mês onde dia+weekday batem (caso tenhamos esses dados).
     if (dateIso) {
       const eventDate = new Date(`${dateIso}-03:00`);
       const now = new Date();
       const todayBrasilia = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
       todayBrasilia.setHours(0, 0, 0, 0);
       if (!isNaN(eventDate.getTime()) && eventDate < todayBrasilia) {
-        // tenta corrigir buscando próximo mês válido a partir de HOJE
         if (aiDay && weekdayIdx !== null) {
           const future = resolveCalendarDate({ day: aiDay, month: null, weekday: weekdayIdx, baseYear: BASE_YEAR });
           if (future.date) {
             const hourMatch = dateIso.match(/T(\d{1,2}):?(\d{2})?/);
-            const hh = hourMatch ? hourMatch[1].padStart(2, "0") : "20";
-            const mm = hourMatch && hourMatch[2] ? hourMatch[2] : "00";
-            dateIso = `${future.date}T${hh}:${mm}`;
+            if (hourMatch && !timeIsUnknown) {
+              const hh = hourMatch[1].padStart(2, "0");
+              const mm = hourMatch[2] || "00";
+              dateIso = `${future.date}T${hh}:${mm}`;
+            } else {
+              dateIso = `${future.date}T00:00`;
+              timeIsUnknown = true;
+            }
             date_validation_note = `[REVISAR DATA RETROATIVA] Data lida já passou; sugerido próximo ${WEEKDAY_NAMES[weekdayIdx][0]} ${future.date}.`;
           } else {
             date_validation_note = `[REVISAR DATA RETROATIVA] Data lida (${dateIso.slice(0,10)}) já passou e nenhum mês futuro compatível encontrado.`;
