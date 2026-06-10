@@ -736,6 +736,7 @@ const EventoForm = () => {
                       category: form.category,
                       sub_category: (form as any)._sub,
                       partner_id: form.partner_id || undefined,
+                      time_is_unknown: Boolean((form as any).time_is_unknown),
                     })}
                     className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition disabled:opacity-50"
                   >
