@@ -572,8 +572,7 @@ export default function V3Home() {
         } as any}
       />
 
-      {/* ══════ Ribbon sazonal — Copa do Mundo 2026 ══════ */}
-      <WorldCupRibbon className="mx-auto max-w-7xl" />
+      {/* Ribbon Copa do Mundo removida — acesso via BottomNav e seção "Jogos ao vivo hoje" */}
 
       {/* ══════ MOBILE: IMMERSIVE HERO ══════ */}
       <div className="lg:hidden">
