@@ -817,6 +817,13 @@ const EventoBulkForm = () => {
         </div>
       )}
 
+      {/* === 🧭 Padrões do Lote (opcional) === */}
+      <BatchDefaultsSection
+        value={batchDefaults}
+        onChange={setBatchDefaults}
+        partners={partners}
+      />
+
       {/* Dropzone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
