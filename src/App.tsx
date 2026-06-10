@@ -144,6 +144,7 @@ const App = () => (
             <Route path="noticias/novo" element={L(<NoticiaForm />)} />
             <Route path="noticias/:id/editar" element={L(<NoticiaForm />)} />
             <Route path="premiacoes" element={L(<Premiacoes />)} />
+            <Route path="artes" element={L(<Artes />)} />
           </Route>
 
           {/* ========= AUTH ========= */}
