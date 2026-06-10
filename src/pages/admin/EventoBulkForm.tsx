@@ -353,22 +353,69 @@ const EventoBulkForm = () => {
           const upperTitle = (data.title || it.form.title || "").toUpperCase();
           // Se a confiança é baixa, não pré-preencher a data — força admin a digitar
           const safeDateInput = lowDateConfidence ? "" : dateInput;
+          const extractedDateTime = safeDateInput || it.form.date_time;
+
+          // === 🧭 Aplicação dos PADRÕES DO LOTE ===
+          const bd = batchDefaultsRef.current;
+          const force = bd.enabled && bd.mode === "all";
+          const fillMissing = bd.enabled && bd.mode === "missing";
+          const pickBatch = <T,>(extractedVal: T, batchVal: T | "" | null | undefined, extractedExists: boolean): T => {
+            if (!bd.enabled || !batchVal) return extractedVal;
+            if (force) return batchVal as T;
+            if (fillMissing && !extractedExists) return batchVal as T;
+            return extractedVal;
+          };
+
+          // date_time: combina batch date + batch time quando aplicável
+          const extractedHasDate = !!extractedDateTime && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(extractedDateTime);
+          const extractedHasTime = extractedHasDate && data.time_is_unknown !== true;
+          let finalDateTime = extractedDateTime;
+          let finalTimeIsUnknown: boolean = data.time_is_unknown === true || !extractedHasTime;
+          if (bd.enabled && (bd.date || bd.time)) {
+            const useBatchDate = force ? !!bd.date : fillMissing ? (!extractedHasDate && !!bd.date) : false;
+            const useBatchTime = force ? !!bd.time : fillMissing ? (!extractedHasTime && !!bd.time) : false;
+            const baseDate = useBatchDate ? bd.date : (extractedHasDate ? extractedDateTime.slice(0, 10) : "");
+            const baseTime = useBatchTime ? bd.time : (extractedHasTime ? extractedDateTime.slice(11, 16) : "");
+            if (baseDate && baseTime) {
+              finalDateTime = `${baseDate}T${baseTime}`;
+              finalTimeIsUnknown = false;
+            } else if (baseDate) {
+              finalDateTime = `${baseDate}T00:00`;
+              finalTimeIsUnknown = true;
+            }
+          }
+
+          // venue/partner
+          const batchPartner = bd.enabled && bd.partner_id ? partners.find((p) => p.id === bd.partner_id) : null;
+          const partnerObj = pickBatch(matched, batchPartner, !!matched);
+          const finalCategory = pickBatch(
+            data.category || it.form.category,
+            bd.category,
+            !!data.category,
+          );
+          const finalSub = pickBatch(
+            data.sub_category || "",
+            bd.sub_category,
+            !!data.sub_category,
+          );
+
           const next: EventFormData = {
             ...it.form,
             image_url: publicUrl,
             image_hash: imageHash,
             title: upperTitle,
             slug: upperTitle ? slugify(upperTitle) : it.form.slug,
-            date_time: safeDateInput || it.form.date_time,
-            category: data.category || it.form.category,
-            venue_name: matched ? matched.name : (data.venue_name || ""),
-            address: matched ? (matched.address || "") : (data.address || ""),
-            instagram: matched ? (matched.instagram || "") : (data.instagram || ""),
-            partner_id: matched ? matched.id : "",
+            date_time: finalDateTime,
+            time_is_unknown: finalTimeIsUnknown,
+            category: finalCategory,
+            venue_name: partnerObj ? partnerObj.name : (data.venue_name || ""),
+            address: partnerObj ? (partnerObj.address || "") : (data.address || ""),
+            instagram: partnerObj ? (partnerObj.instagram || "") : (data.instagram || ""),
+            partner_id: partnerObj ? partnerObj.id : "",
             ticket_url: "",
             verification_source: "instagram",
             opportunity_tags: data.opportunity_tags || [],
-            ...(data.sub_category ? { _sub: data.sub_category } as any : {}),
+            ...(finalSub ? { _sub: finalSub } as any : {}),
             ...(data.ai_confidence ? { ai_confidence: data.ai_confidence } as any : {}),
             needs_review: finalNeedsReview,
           } as EventFormData;
