@@ -919,7 +919,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
 
   return (
     <div
-      className="relative h-[88vh] min-h-[560px] max-h-[820px] lg:h-auto lg:min-h-[460px] lg:max-h-[560px] lg:aspect-auto overflow-hidden"
+      className="relative h-[72svh] min-h-[480px] max-h-[640px] lg:h-auto lg:min-h-[460px] lg:max-h-[560px] lg:aspect-auto overflow-hidden"
       onTouchStart={(e) => {
         const t = e.touches[0];
         touchRef.current = { x: t.clientX, y: t.clientY };
@@ -976,7 +976,7 @@ function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onCh
       </div>
 
       {/* Bottom content — compacto e premium */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 lg:p-10 lg:pb-10 space-y-3 lg:space-y-4 z-10 max-w-[88%] sm:max-w-[80%] lg:max-w-[55%]">
+      <div className="absolute bottom-0 left-0 right-0 p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:p-10 lg:pb-10 space-y-3 lg:space-y-4 z-10 max-w-[88%] sm:max-w-[80%] lg:max-w-[55%]">
         <div className="space-y-2">
           <span className="inline-block text-[10px] font-semibold text-primary/80 uppercase tracking-[0.28em]">
             {ev.category}
