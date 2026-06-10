@@ -278,6 +278,8 @@ const EventoBulkForm = () => {
       patchForm(localId, { image_url: publicUrl });
 
       // 2. AI extract — wait fully and validate before downstream calls
+      const bdNow = batchDefaultsRef.current;
+      const bdPartner = bdNow.enabled && bdNow.partner_id ? partners.find((p) => p.id === bdNow.partner_id) : null;
       const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
         body: {
           image_url: publicUrl,
@@ -292,6 +294,15 @@ const EventoBulkForm = () => {
               sub_category: p.sub_category,
             })),
           admin_feedback: adminFeedback,
+          batch_defaults: bdNow.enabled ? {
+            date: bdNow.date || null,
+            time: bdNow.time || null,
+            partner_id: bdNow.partner_id || null,
+            partner_name: bdPartner?.name || null,
+            category: bdNow.category || null,
+            sub_category: bdNow.sub_category || null,
+            mode: bdNow.mode,
+          } : null,
         },
       });
       if (extractResp.error) throw extractResp.error;
