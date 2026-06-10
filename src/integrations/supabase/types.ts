@@ -1056,6 +1056,7 @@ export type Database = {
           status: string
           sub_category: string | null
           ticket_url: string | null
+          time_is_unknown: boolean
           title: string
           transmission_channel: string | null
           transmission_notes: string | null
@@ -1104,6 +1105,7 @@ export type Database = {
           status?: string
           sub_category?: string | null
           ticket_url?: string | null
+          time_is_unknown?: boolean
           title: string
           transmission_channel?: string | null
           transmission_notes?: string | null
@@ -1152,6 +1154,7 @@ export type Database = {
           status?: string
           sub_category?: string | null
           ticket_url?: string | null
+          time_is_unknown?: boolean
           title?: string
           transmission_channel?: string | null
           transmission_notes?: string | null
