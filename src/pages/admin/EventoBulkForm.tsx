@@ -106,6 +106,26 @@ type AdminFeedback = {
   corrected_sub_category: string | null;
 };
 
+type BatchDefaults = {
+  enabled: boolean;
+  mode: "all" | "missing";
+  date: string;        // YYYY-MM-DD
+  time: string;        // HH:MM
+  partner_id: string;
+  category: string;
+  sub_category: string;
+};
+
+const emptyBatchDefaults = (): BatchDefaults => ({
+  enabled: false,
+  mode: "missing",
+  date: "",
+  time: "",
+  partner_id: "",
+  category: "",
+  sub_category: "",
+});
+
 const EventoBulkForm = () => {
   const navigate = useNavigate();
   const { cityFilter } = useAdminProfile();
@@ -118,6 +138,9 @@ const EventoBulkForm = () => {
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
   const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
   const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
+  const [batchDefaults, setBatchDefaults] = useState<BatchDefaults>(emptyBatchDefaults);
+  const batchDefaultsRef = useRef<BatchDefaults>(emptyBatchDefaults());
+  useEffect(() => { batchDefaultsRef.current = batchDefaults; }, [batchDefaults]);
   const inputRef = useRef<HTMLInputElement>(null);
   // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
   const fileMapRef = useRef<Map<string, File>>(new Map());
