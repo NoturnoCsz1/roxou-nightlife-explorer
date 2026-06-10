@@ -208,6 +208,7 @@ const EventoForm = () => {
     video_url: "",
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
     transport_reservation_enabled: false,
+    time_is_unknown: false,
     ...emptyTransmission(),
   });
 
