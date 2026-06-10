@@ -75,7 +75,13 @@ const BarDoMes = () => {
 
   return (
     <>
-      <SEO title={PAGE_TITLE} description={PAGE_DESC} canonical={CANONICAL} jsonLd={jsonLd} />
+      <SEO
+        title={PAGE_TITLE}
+        description={PAGE_DESC}
+        canonical={CANONICAL}
+        ogImage={champion?.image_url || champion?.partner?.logo_url || undefined}
+        jsonLd={jsonLd}
+      />
 
       <div className="min-h-screen bg-background pb-24">
         {/* Top bar */}
