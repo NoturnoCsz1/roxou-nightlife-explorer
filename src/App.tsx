@@ -218,6 +218,9 @@ const App = () => (
             <Route path="local/:slug/eventos" element={L(<LegacyLocalEventos />)} />
           </Route>
 
+          {/* ─── Premiações Roxou (página pública) ─── */}
+          <Route path="/bar-do-mes" element={L(<BarDoMes />)} />
+
           {/* ─── SEO Landings (/:landingSlug validado pelo próprio componente) ─── */}
           <Route path="/:landingSlug" element={L(<SEOLanding />)} />
 
