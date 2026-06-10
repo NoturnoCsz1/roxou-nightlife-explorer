@@ -288,7 +288,12 @@ export default function V3LocalDetail() {
         title={seoTitle}
         description={seoDescription}
         canonical={canonical}
-        ogImage={partner.logo_url || undefined}
+        ogImage={
+          (partner as any).cover_image_url ||
+          partner.logo_url ||
+          (partner as any).instagram_profile_picture_url ||
+          undefined
+        }
         keywords={seoKeywords}
         jsonLd={jsonLd}
       />
