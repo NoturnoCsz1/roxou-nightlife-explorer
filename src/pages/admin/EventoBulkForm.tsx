@@ -731,11 +731,22 @@ const EventoBulkForm = () => {
       else clear.push(it);
     }
 
-    if (blocked.length && !confirm(
-      `${blocked.length} evento(s) confirmados como duplicados (score ≥ 80) serão bloqueados.\n${review.length} enviados como rascunho para revisão.\n${clear.length} serão ${status === "published" ? "publicados" : "salvos como rascunho"}.\n\nContinuar?`,
-    )) {
+    const dupNames = [...blocked, ...review].map((b) => `• ${b.form.title}`).join("\n");
+    const summary =
+      `📦 Resumo do lote\n` +
+      `─────────────────\n` +
+      `Eventos processados: ${ready.length}\n` +
+      `Novos: ${clear.length}\n` +
+      `Duplicados: ${blocked.length + review.length}` +
+      (dupNames ? `\n\nDuplicados encontrados:\n${dupNames}` : "") +
+      `\n\n${blocked.length} bloqueado(s) (score ≥ 80).` +
+      `\n${review.length} salvo(s) como rascunho para revisão.` +
+      `\n${clear.length} será(ão) ${status === "published" ? "publicado(s)" : "salvo(s) como rascunho"}.` +
+      `\n\nContinuar?`;
+    if ((blocked.length || review.length) && !confirm(summary)) {
       return;
     }
+
 
     const toInsert = [...clear, ...review];
     if (!toInsert.length) {
