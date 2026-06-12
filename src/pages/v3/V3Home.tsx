@@ -606,6 +606,12 @@ export default function V3Home() {
           ) : null}
         </HomeSectionBoundary>
 
+        {/* Destaque Copa do Mundo 2026 — logo abaixo de "Hoje na Roxou" */}
+        <HomeSectionBoundary name="Copa Highlight (mobile)" silent>
+          <CopaHighlightCard />
+        </HomeSectionBoundary>
+
+
         {/* Jogos ao vivo — posição nobre no mobile, logo após eventos de hoje */}
         {!isLoading && !hasHomeDataError && (
           <HomeSectionBoundary name="Jogos mobile" silent>
