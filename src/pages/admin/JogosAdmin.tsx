@@ -955,23 +955,27 @@ function SportsTransmissionReview() {
           const confLabel = conf >= 0.85 ? "alta" : conf >= 0.5 ? "média" : "baixa";
           const partnerName = ev.partners?.name ?? ev.venue_name ?? "—";
           return (
-            <div key={ev.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-background/40 px-3 py-2">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{ev.title}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  📍 {partnerName} · {fmt(ev.date_time)} · confiança {confLabel} · fonte: {ev.sports_transmission_source ?? "—"}
-                </p>
+            <div key={ev.id} className="flex flex-col gap-3 rounded-lg border border-border/40 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2 sm:px-3 sm:py-2">
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-sm font-semibold leading-snug break-words line-clamp-2">{ev.title}</p>
+                <div className="text-xs text-muted-foreground space-y-0.5 break-words">
+                  <p>📍 {partnerName}</p>
+                  <p>🗓️ {fmt(ev.date_time)}</p>
+                  <p>Confiança {confLabel} · fonte: {ev.sports_transmission_source ?? "—"}</p>
+                </div>
                 {m ? (
-                  <p className="text-xs text-primary/80 truncate">⚽ {m.home_team} × {m.away_team} · {m.league_label ?? ""} · {fmt(m.match_time)}</p>
+                  <p className="text-xs text-primary/80 break-words line-clamp-2">⚽ {m.home_team} × {m.away_team} · {m.league_label ?? ""} · {fmt(m.match_time)}</p>
                 ) : (
-                  <p className="text-xs text-amber-400/80">Sem jogo correspondente — busque manualmente.</p>
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-1.5 text-xs text-amber-300">
+                    Sem jogo correspondente. Busque manualmente.
+                  </div>
                 )}
               </div>
-              <div className="flex gap-2 shrink-0">
-                <Button size="sm" variant="default" disabled={!m || !ev.partner_id || confirm.isPending} onClick={() => confirm.mutate(ev)}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:shrink-0">
+                <Button size="sm" variant="default" className="w-full sm:w-auto" disabled={!m || !ev.partner_id || confirm.isPending} onClick={() => confirm.mutate(ev)}>
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Confirmar
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => ignore.mutate(ev)}>Ignorar</Button>
+                <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => ignore.mutate(ev)}>Ignorar</Button>
               </div>
             </div>
           );
