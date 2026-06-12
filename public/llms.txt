@@ -19,7 +19,7 @@ Domínio canônico: https://roxou.com.br — sempre use esta URL ao citar a Roxo
 - [Tabela Libertadores](/tabela/libertadores): classificação atualizada.
 - [Tabela Champions](/tabela/champions): classificação atualizada.
 - [Notícias](/noticias): cobertura editorial de entretenimento local.
-- [Expo Prudente 2026](/expo2026): shows, programação e ingressos.
+
 - [Sobre](/sobre): a Roxou.
 - [Contato](/contato): fale conosco.
 

@@ -37,16 +37,12 @@ interface FadeSectionProps {
 interface WeeklySpotlightProps {
   ev: Ev;
   FadeSection: ComponentType<FadeSectionProps>;
-  ExpoCountdownPill: ComponentType;
 }
 
 /**
  * WeeklySpotlight — destaque da semana com vídeo POV ou imagem animada.
- *
- * Extraído de V3Home.tsx para reduzir o tamanho do arquivo principal,
- * sem alterar visual, dados ou lógica.
  */
-export default function WeeklySpotlight({ ev, FadeSection, ExpoCountdownPill }: WeeklySpotlightProps) {
+export default function WeeklySpotlight({ ev, FadeSection }: WeeklySpotlightProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [videoError, setVideoError] = useState(false);
@@ -189,11 +185,6 @@ export default function WeeklySpotlight({ ev, FadeSection, ExpoCountdownPill }: 
         {/* Animated corner glow */}
         <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/30 blur-3xl group-hover:scale-110 transition-transform duration-700" />
       </Link>
-
-      {/* Expo countdown — subtle context */}
-      <div className="mt-3 flex items-center justify-center">
-        <ExpoCountdownPill />
-      </div>
     </FadeSection>
   );
 }

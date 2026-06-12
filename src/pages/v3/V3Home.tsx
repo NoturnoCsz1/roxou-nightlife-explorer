@@ -30,14 +30,12 @@ import SmartImage from "@/components/v3/SmartImage";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import { User as UserIcon } from "lucide-react";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
-import ExpoHighlightBanner from "@/components/v3/home/ExpoHighlightBanner";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
-import ExpoCountdownPill from "@/components/v3/home/ExpoCountdownPill";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 import WorldCupRibbon from "@/components/season/WorldCupRibbon";
 
@@ -516,10 +514,10 @@ export default function V3Home() {
       {/* SEO da home — JSON-LD WebSite + Organization + EntertainmentBusiness */}
       <SEO
         title="Roxou | Eventos, Bares, Restaurantes e Jogos ao Vivo em Presidente Prudente"
-        description="A Roxou reúne eventos, shows, bares, restaurantes, música ao vivo, porções, chopp, jogos ao vivo e rolês em Presidente Prudente e região. Veja o que acontece hoje, no fim de semana e na Expo Prudente 2026."
+        description="A Roxou reúne eventos, shows, bares, restaurantes, música ao vivo, porções, chopp, jogos ao vivo e rolês em Presidente Prudente e região. Veja o que acontece hoje e no fim de semana."
         canonical="https://roxou.com.br/"
         ogType="website"
-        keywords="eventos Presidente Prudente, bares Presidente Prudente, restaurantes Presidente Prudente, música ao vivo Prudente, jogos ao vivo Prudente, Expo Prudente 2026, baladas Prudente, shows Prudente"
+        keywords="eventos Presidente Prudente, bares Presidente Prudente, restaurantes Presidente Prudente, música ao vivo Prudente, jogos ao vivo Prudente, baladas Prudente, shows Prudente"
         jsonLd={{
           "@context": "https://schema.org",
           "@graph": [
@@ -564,8 +562,7 @@ export default function V3Home() {
                 "porções em Presidente Prudente",
                 "chopp em Presidente Prudente",
                 "jogos ao vivo em Presidente Prudente",
-                "baladas em Presidente Prudente",
-                "Expo Prudente 2026"
+                "baladas em Presidente Prudente"
               ]
             }
           ]
@@ -662,14 +659,11 @@ export default function V3Home() {
         </HomeSectionBoundary>
       </div>
 
-      {/* ══════ NOTÍCIAS / EXPO — após layout principal ══════ */}
+      {/* ══════ NOTÍCIAS — após layout principal ══════ */}
       {!isLoading && !hasHomeDataError && (
         <div className="max-w-5xl mx-auto min-h-[200px] px-4 lg:px-6">
           <HomeSectionBoundary name="Notícias trending" silent>
             <LatestNewsSection variant="trending" limit={6} />
-          </HomeSectionBoundary>
-          <HomeSectionBoundary name="Expo highlight" silent>
-            <ExpoHighlightBanner />
           </HomeSectionBoundary>
           <HomeSectionBoundary name="Notícias mais vistas" silent>
             <MostViewedNews />
@@ -700,7 +694,7 @@ export default function V3Home() {
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       <HomeSectionBoundary name="Destaque da semana" silent>
-        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />}
+        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} />}
       </HomeSectionBoundary>
 
       <HomeSectionBoundary name="AI widget" silent>
@@ -1780,40 +1774,6 @@ function CommandCenter({
             <HomeJogosCard />
           </div>
 
-          {/* EXPO PRUDENTE 2026 — banner cinematográfico full-width */}
-          <div
-            className="rounded-3xl overflow-hidden relative"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--v3-neon)/0.28) 0%, hsl(270 80% 8%) 50%, hsl(var(--v3-neon-soft)/0.18) 100%)",
-              border: "1px solid hsl(var(--v3-neon)/0.3)",
-              boxShadow: "0 0 60px -20px hsl(var(--primary)/0.45)",
-            }}
-          >
-            <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 15% 50%, hsl(var(--primary)), transparent 40%), radial-gradient(circle at 85% 50%, hsl(var(--accent)), transparent 40%)" }} />
-            <div className="relative flex items-center justify-between px-8 py-8">
-              <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80">Cobertura especial</p>
-                <h2 className="font-display font-black text-foreground leading-tight" style={{ fontSize: "clamp(20px, 2.2vw, 30px)" }}>
-                  Expo Prudente 2026
-                </h2>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Atrações confirmadas, shows, programação e notícias em tempo real.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 shrink-0">
-                <Link
-                  to="/expo2026"
-                  className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-bold text-sm neon-glow hover:bg-primary/90 active:scale-95 transition-all whitespace-nowrap"
-                >
-                  ACOMPANHAR COBERTURA <ArrowRight className="w-4 h-4" />
-                </Link>
-                <Link to="/expo2026/programacao" className="text-center text-[11px] font-semibold text-primary/70 hover:text-primary transition-colors">
-                  Ver programação completa
-                </Link>
-              </div>
-            </div>
-          </div>
-
           {/* DESTAQUES DA SEMANA — 1 grande + 4 menores (editorial) */}
           {safeFeatured.length >= 2 && (
             <div className="space-y-4">
@@ -1970,7 +1930,7 @@ function CommandCenter({
                 <Gem className="w-5 h-5 text-accent" />
                 <h2 className="font-display font-extrabold text-2xl text-foreground">Destaque da semana</h2>
               </div>
-              <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} ExpoCountdownPill={ExpoCountdownPill} />
+              <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} />
             </div>
           )}
 

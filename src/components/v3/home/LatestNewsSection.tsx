@@ -31,26 +31,15 @@ export default function LatestNewsSection({
   const { data: items = [] } = useQuery<NewsItem[]>({
     queryKey: ["v3-home-news", variant, limit],
     queryFn: async () => {
-      const [roxou, expo] = await Promise.all([
-        supabase
-          .from("roxou_news")
-          .select("id,slug,title,cover_image_url,category,published_at")
-          .eq("status", "published")
-          .order("published_at", { ascending: false })
-          .limit(limit),
-        supabase
-          .from("expo_news")
-          .select("id,slug,title,cover_image_url,category,published_at")
-          .eq("status", "published")
-          .order("published_at", { ascending: false })
-          .limit(limit),
-      ]);
-      const r: NewsItem[] = (roxou.data || []).map((n: any) => ({ ...n, source: "roxou" }));
-      const e: NewsItem[] = (expo.data || []).map((n: any) => ({ ...n, source: "expo" }));
-      const merged = [...r, ...e]
-        .filter((n) => n.published_at)
-        .sort((a, b) => new Date(b.published_at!).getTime() - new Date(a.published_at!).getTime());
-      return merged.slice(0, limit);
+      const { data } = await supabase
+        .from("roxou_news")
+        .select("id,slug,title,cover_image_url,category,published_at")
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(limit);
+      return (data || [])
+        .filter((n: any) => n.published_at)
+        .map((n: any) => ({ ...n, source: "roxou" as const }));
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -69,7 +58,7 @@ export default function LatestNewsSection({
   const canPaginate = items.length > PER_PAGE_DESKTOP;
 
   const renderCard = (n: NewsItem, sizing: string) => {
-    const href = n.source === "expo" ? `/expo2026/noticia/${n.slug}` : `/noticia/${n.slug}`;
+    const href = `/noticia/${n.slug}`;
     const dateLabel = n.published_at ? format(new Date(n.published_at), "d MMM", { locale: ptBR }) : null;
     return (
       <Link
@@ -86,11 +75,6 @@ export default function LatestNewsSection({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
           <div className="absolute top-2 left-2 flex items-center gap-1.5">
-            {n.source === "expo" && (
-              <span className="px-2 py-0.5 rounded-full bg-primary/90 text-[9px] font-extrabold text-primary-foreground uppercase tracking-wider backdrop-blur-sm">
-                🎡 Expo 2026
-              </span>
-            )}
             {isTrending && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/90 text-[9px] font-extrabold text-accent-foreground uppercase tracking-wider">
                 <Flame className="w-2.5 h-2.5" /> Em alta

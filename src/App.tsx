@@ -24,16 +24,10 @@ import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
 
-// Hot site Expo / Notícias (lazy — rotas raras)
-const Expo2026 = lazy(() => import("./pages/Expo2026"));
-const Expo2026Contato = lazy(() => import("./pages/Expo2026Contato"));
+// Notícias (lazy — rotas raras)
 const Contato = lazy(() => import("./pages/Contato"));
-const ExpoNoticia = lazy(() => import("./pages/ExpoNoticia"));
 const RoxouNoticias = lazy(() => import("./pages/RoxouNoticias"));
 const RoxouNoticia = lazy(() => import("./pages/RoxouNoticia"));
-const ExpoShows = lazy(() => import("./pages/expo/ExpoShows"));
-const ExpoProgramacao = lazy(() => import("./pages/expo/ExpoProgramacao"));
-const ExpoIngressos = lazy(() => import("./pages/expo/ExpoIngressos"));
 
 // Admin (lazy — rotas privadas/raras)
 import AdminLayout from "./components/admin/AdminLayout";
@@ -152,14 +146,14 @@ const App = () => (
           <Route path="/auth/*" element={<V3Auth />} />
           <Route path="/seguranca/revisao" element={L(<SegurancaRevisao />)} />
 
-          {/* ========= HOT SITE EXPO 2026 ========= */}
-          <Route path="/expo2026" element={L(<Expo2026 />)} />
-          <Route path="/expo2026/contato" element={L(<Expo2026Contato />)} />
+          {/* ========= CONTATO ========= */}
           <Route path="/contato" element={L(<Contato />)} />
-          <Route path="/expo2026/shows" element={L(<ExpoShows />)} />
-          <Route path="/expo2026/programacao" element={L(<ExpoProgramacao />)} />
-          <Route path="/expo2026/ingressos" element={L(<ExpoIngressos />)} />
-          <Route path="/expo2026/noticia/:slug" element={L(<ExpoNoticia />)} />
+
+          {/* ========= EXPO 2026 — DESATIVADA (redireciona para Home) ========= */}
+          <Route path="/expo2026" element={<Navigate to="/" replace />} />
+          <Route path="/expo2026/*" element={<Navigate to="/" replace />} />
+          <Route path="/expoprudente" element={<Navigate to="/" replace />} />
+          <Route path="/expoprudente/*" element={<Navigate to="/" replace />} />
 
           {/* ========= NOTÍCIAS ROXOU ========= */}
           <Route path="/noticias" element={L(<RoxouNoticias />)} />
