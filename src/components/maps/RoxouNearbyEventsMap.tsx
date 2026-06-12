@@ -119,7 +119,7 @@ function FitAll({ points }: { points: LatLng[] }) {
 }
 
 export default function RoxouNearbyEventsMap({
-  userLocation, events, height = 420, showCTAs = true, selectionMode = false, onMapClick,
+  userLocation, events, height = 420, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
 }: Props) {
   const navigate = useNavigate();
 
@@ -128,6 +128,10 @@ export default function RoxouNearbyEventsMap({
     if (userLocation) pts.push(userLocation);
     return pts;
   }, [events, userLocation]);
+
+  const heatPoints = useMemo<Array<[number, number, number]>>(() => {
+    return events.map((e) => [e.lat, e.lng, Math.max(0.2, Math.min(1, e.heat ?? 0.4))]);
+  }, [events]);
 
   const center: LatLng = userLocation || (events[0] ? { lat: events[0].lat, lng: events[0].lng } : { lat: -22.1207, lng: -51.3889 });
 
@@ -146,11 +150,14 @@ export default function RoxouNearbyEventsMap({
         <FitAll points={allPoints} />
         {selectionMode && onMapClick && <ClickHandler onClick={onMapClick} />}
 
+        {heatmap && heatPoints.length > 0 && <HeatLayer points={heatPoints} />}
+
         {userLocation && (
           <Marker position={[userLocation.lat, userLocation.lng]} icon={USER_ICON}>
             <Popup>Você está aqui</Popup>
           </Marker>
         )}
+
 
         <MarkerClusterGroup
           chunkedLoading
