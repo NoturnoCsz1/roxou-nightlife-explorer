@@ -503,6 +503,16 @@ export default function PertoDeMim() {
                       </span>
                     )}
                   </div>
+                  {e.badges && e.badges.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {e.badges.slice(0, 3).map((b, i) => (
+                        <span key={i} className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-primary/15 border border-primary/30 text-primary">
+                          {b}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       size="sm"
