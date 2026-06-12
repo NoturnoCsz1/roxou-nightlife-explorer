@@ -573,6 +573,66 @@ const EventoBulkForm = () => {
     ]);
   }
 
+  /**
+   * Aplica padrões do lote em TODOS os eventos já carregados, em uma única
+   * atualização de estado. Evita reprocessar IA e evita re-render a cada
+   * tecla nos campos de padrão.
+   */
+  const applyBatchDefaultsToAll = useCallback(() => {
+    const bd = batchDefaultsRef.current;
+    if (!bd.enabled) {
+      toast.info("Ative os padrões antes de aplicar.");
+      return;
+    }
+    const partner = bd.partner_id ? partners.find((p) => p.id === bd.partner_id) || null : null;
+    let touched = 0;
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.status !== "ready") return it;
+        const force = bd.mode === "all";
+        const fillMissing = bd.mode === "missing";
+        const f = it.form;
+        const hasDate = !!f.date_time && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(f.date_time);
+        const hasTime = hasDate && f.time_is_unknown !== true;
+        const next: EventFormData = { ...f };
+        let changed = false;
+
+        if (bd.date || bd.time) {
+          const useBatchDate = force ? !!bd.date : fillMissing ? (!hasDate && !!bd.date) : false;
+          const useBatchTime = force ? !!bd.time : fillMissing ? (!hasTime && !!bd.time) : false;
+          const baseDate = useBatchDate ? bd.date : (hasDate ? f.date_time.slice(0, 10) : "");
+          const baseTime = useBatchTime ? bd.time : (hasTime ? f.date_time.slice(11, 16) : "");
+          if (baseDate && baseTime) {
+            const dt = `${baseDate}T${baseTime}`;
+            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = false; changed = true; }
+          } else if (baseDate) {
+            const dt = `${baseDate}T00:00`;
+            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = true; changed = true; }
+          }
+        }
+        if (bd.partner_id && partner && (force || (fillMissing && !f.partner_id))) {
+          if (next.partner_id !== partner.id) {
+            next.partner_id = partner.id;
+            next.venue_name = partner.name;
+            next.address = partner.address || "";
+            next.instagram = partner.instagram || "";
+            changed = true;
+          }
+        }
+        if (bd.category && (force || (fillMissing && !f.category))) {
+          if (next.category !== bd.category) { next.category = bd.category; changed = true; }
+        }
+        if (bd.sub_category && (force || (fillMissing && !(f as any)._sub))) {
+          if ((next as any)._sub !== bd.sub_category) { (next as any)._sub = bd.sub_category; changed = true; }
+        }
+        if (changed) touched++;
+        return changed ? { ...it, form: next } : it;
+      }),
+    );
+    toast.success(`Padrões aplicados em ${touched} evento(s).`);
+  }, [partners]);
+
+
   async function handleGenerateDescription(localId: string) {
     const it = items.find((x) => x.localId === localId);
     if (!it || !it.form.title) return;
