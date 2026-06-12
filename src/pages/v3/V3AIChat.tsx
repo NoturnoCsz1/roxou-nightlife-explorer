@@ -300,7 +300,7 @@ export default function V3AIChat() {
 
 
       {/* Input bar — rounded-full neon */}
-      <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
+      <form onSubmit={send} className="border-t border-white/8 bg-background/85 backdrop-blur-xl px-3 sm:px-4 py-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
         <div className="max-w-3xl mx-auto">
           <div
             className={`relative flex items-center gap-2 rounded-full bg-background/60 backdrop-blur px-2 py-1.5 border transition-all duration-300 ${
