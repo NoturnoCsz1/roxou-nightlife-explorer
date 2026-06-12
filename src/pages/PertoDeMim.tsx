@@ -328,13 +328,67 @@ export default function PertoDeMim() {
               </div>
             )}
 
+            {/* Map mode toggle */}
+            <div className="flex items-center gap-2 rounded-full bg-card/50 border border-border/40 p-1 w-fit mx-auto">
+              <button
+                onClick={() => setShowHeatmap(false)}
+                className={`flex items-center gap-1.5 rounded-full px-3 h-8 text-[11px] font-semibold transition ${
+                  !showHeatmap ? "bg-primary text-primary-foreground shadow-[0_0_14px_-4px_hsl(var(--primary))]" : "text-muted-foreground"
+                }`}
+              >
+                <MapIcon className="w-3.5 h-3.5" /> Mapa normal
+              </button>
+              <button
+                onClick={() => setShowHeatmap(true)}
+                className={`flex items-center gap-1.5 rounded-full px-3 h-8 text-[11px] font-semibold transition ${
+                  showHeatmap ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-[0_0_14px_-4px_rgba(236,72,153,0.8)]" : "text-muted-foreground"
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" /> Mapa de calor
+              </button>
+            </div>
+
             <RoxouNearbyEventsMap
               userLocation={realLocation}
               events={sorted.map((s) => s.e)}
               height={420}
+              heatmap={showHeatmap}
               selectionMode={selectionMode}
               onMapClick={handleMapClick}
             />
+
+            {/* Bombando perto de você */}
+            {trending.length > 0 && (
+              <section className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/60 to-pink-500/10 p-3 space-y-2 backdrop-blur-md">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold flex items-center gap-1.5 text-foreground">
+                    <Flame className="w-4 h-4 text-orange-400" /> Bombando perto de você
+                  </h2>
+                </div>
+                <ul className="space-y-1.5">
+                  {trending.map((t) => (
+                    <li key={t.id}>
+                      <button
+                        onClick={() => navigate(t.slug ? `/evento/${t.slug}` : `/evento/${t.id}`)}
+                        className="w-full text-left flex items-start gap-2 group"
+                      >
+                        <span className="text-primary mt-0.5">•</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate group-hover:text-primary transition">
+                            {t.venue_name || t.title}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {t.badges?.slice(0, 2).join(" · ")}
+                            {t._dist != null && ` · ${t._dist.toFixed(1)} km`}
+                          </p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
 
             {/* Quick category filters */}
             <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
