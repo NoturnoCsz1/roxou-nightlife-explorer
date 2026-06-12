@@ -5,8 +5,27 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.heat";
 import { useNavigate } from "react-router-dom";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
+
+function HeatLayer({ points }: { points: Array<[number, number, number]> }) {
+  const map = useMap();
+  useEffect(() => {
+    // @ts-expect-error leaflet.heat augments L
+    const layer = L.heatLayer(points, {
+      radius: 32,
+      blur: 24,
+      maxZoom: 16,
+      minOpacity: 0.35,
+      gradient: { 0.2: "#7c3aed", 0.4: "#a855f7", 0.6: "#ec4899", 0.8: "#f97316", 1.0: "#fde047" },
+    });
+    layer.addTo(map);
+    return () => { layer.remove(); };
+  }, [map, points]);
+  return null;
+}
+
 
 export interface NearbyEvent {
   id: string;
