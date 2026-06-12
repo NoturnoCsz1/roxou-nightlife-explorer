@@ -73,6 +73,70 @@ export default function V3AIChat() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, sending]);
 
+  // GPS — same pattern used in /perto-de-mim
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 }
+    );
+  }, []);
+
+  // Enrich cards with lat/lng once they arrive (batched, dedup by id)
+  useEffect(() => {
+    const eventIds = new Set<string>();
+    const partnerIds = new Set<string>();
+    for (const m of messages) {
+      if (m.role !== "assistant" || !m.cards) continue;
+      for (const c of m.cards) {
+        if (c.lat != null && c.lng != null) continue;
+        if (c.type === "event") eventIds.add(c.id);
+        else partnerIds.add(c.id);
+      }
+    }
+    if (!eventIds.size && !partnerIds.size) return;
+    (async () => {
+      const coords: Record<string, { lat: number | null; lng: number | null; type: "event" | "partner" }> = {};
+      if (eventIds.size) {
+        const { data } = await supabase.from("events").select("id,latitude,longitude,partner_id").in("id", Array.from(eventIds));
+        const missingPartner = new Set<string>();
+        (data || []).forEach((e: any) => {
+          coords[`event:${e.id}`] = { lat: e.latitude, lng: e.longitude, type: "event" };
+          if ((e.latitude == null || e.longitude == null) && e.partner_id) missingPartner.add(e.partner_id);
+        });
+        if (missingPartner.size) {
+          const { data: ps } = await supabase.from("partners").select("id,latitude,longitude").in("id", Array.from(missingPartner));
+          const pMap: Record<string, any> = {};
+          (ps || []).forEach((p: any) => { pMap[p.id] = p; });
+          (data || []).forEach((e: any) => {
+            const c = coords[`event:${e.id}`];
+            if (c && (c.lat == null || c.lng == null) && e.partner_id && pMap[e.partner_id]) {
+              c.lat = pMap[e.partner_id].latitude;
+              c.lng = pMap[e.partner_id].longitude;
+            }
+          });
+        }
+      }
+      if (partnerIds.size) {
+        const { data } = await supabase.from("partners").select("id,latitude,longitude").in("id", Array.from(partnerIds));
+        (data || []).forEach((p: any) => { coords[`partner:${p.id}`] = { lat: p.latitude, lng: p.longitude, type: "partner" }; });
+      }
+      setMessages((prev) => prev.map((m) => {
+        if (m.role !== "assistant" || !m.cards) return m;
+        let changed = false;
+        const next = m.cards.map((c) => {
+          if (c.lat != null && c.lng != null) return c;
+          const found = coords[`${c.type}:${c.id}`];
+          if (!found || found.lat == null || found.lng == null) return c;
+          changed = true;
+          return { ...c, lat: found.lat, lng: found.lng };
+        });
+        return changed ? { ...m, cards: next } : m;
+      }));
+    })();
+  }, [messages]);
+
   async function sendText(text: string) {
     if (!text || sending) return;
     setInput("");
