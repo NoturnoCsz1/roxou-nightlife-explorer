@@ -447,48 +447,48 @@ const RichEventCard = memo(function RichEventCard({ card, userLoc }: { card: Act
 
 function Bubble({ msg }: { msg: Msg }) {
   const mine = msg.role === "user";
-  return (
-    <div className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-      {!mine && <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />}
-      <div
-        className={`max-w-[82%] rounded-3xl px-4 py-3 text-sm leading-relaxed ${
-          mine
-            ? "gradient-primary text-primary-foreground rounded-br-lg shadow-[0_0_18px_hsl(var(--v3-neon)/0.35)]"
-            : "v3-glass border border-white/10 text-foreground rounded-bl-lg"
-        }`}
-      >
-        {mine ? (
-          msg.content.split("\n").map((line, i) => <p key={i} className="mb-1 last:mb-0">{line}</p>)
-        ) : (
-          <div className="prudente-md">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
-                strong: ({ node, ...props }) => <strong className="font-black text-primary v3-neon-text" {...props} />,
-                em: ({ node, ...props }) => <em className="text-foreground/90 italic" {...props} />,
-                ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-1" {...props} />,
-                ol: ({ node, ...props }) => <ol className="my-2 space-y-1.5 pl-5 list-decimal" {...props} />,
-                li: ({ node, children, ...props }) => (
-                  <li className="flex gap-2 leading-relaxed" {...props}>
-                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--v3-neon))]" />
-                    <span className="flex-1">{children}</span>
-                  </li>
-                ),
-                a: ({ node, ...props }) => <a className="text-primary underline underline-offset-2 hover:text-accent" target="_blank" rel="noopener noreferrer" {...props} />,
-                code: ({ node, ...props }) => <code className="rounded bg-primary/15 px-1.5 py-0.5 text-[12px] text-primary" {...props} />,
-                h1: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
-                h2: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
-                h3: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-sm font-black text-foreground" {...props} />,
-                blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-primary/50 pl-3 italic text-muted-foreground" {...props} />,
-              }}
-            >
-              {msg.content}
-            </ReactMarkdown>
-          </div>
-        )}
+  if (mine) {
+    return (
+      <div className="flex justify-end gap-2">
+        <div className="max-w-[85%] sm:max-w-[75%] rounded-3xl rounded-br-lg px-4 py-2.5 text-sm leading-relaxed gradient-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--v3-neon)/0.35)]">
+          {msg.content.split("\n").map((line, i) => <p key={i} className="mb-1 last:mb-0">{line}</p>)}
+        </div>
       </div>
-      {mine && <div className="mt-1 h-7 w-7 shrink-0 rounded-xl bg-secondary flex items-center justify-center"><User className="h-4 w-4 text-muted-foreground" /></div>}
+    );
+  }
+  return (
+    <div className="flex gap-2.5">
+      <AuraAvatar className="mt-1 h-8 w-8 shrink-0 rounded-2xl" />
+      <div className="min-w-0 flex-1">
+        <p className="mb-1 text-[10px] font-black uppercase tracking-[0.14em] text-primary/80">Aura</p>
+        <div className="prudente-md text-[14px] leading-relaxed text-foreground">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ node, ...props }) => <p className="mb-2.5 last:mb-0 leading-relaxed" {...props} />,
+              strong: ({ node, ...props }) => <strong className="font-black text-primary v3-neon-text" {...props} />,
+              em: ({ node, ...props }) => <em className="text-foreground/90 italic" {...props} />,
+              ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-1" {...props} />,
+              ol: ({ node, ...props }) => <ol className="my-2 space-y-1.5 pl-5 list-decimal" {...props} />,
+              li: ({ node, children, ...props }) => (
+                <li className="flex gap-2 leading-relaxed" {...props}>
+                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--v3-neon))]" />
+                  <span className="flex-1">{children}</span>
+                </li>
+              ),
+              a: ({ node, ...props }) => <a className="text-primary underline underline-offset-2 hover:text-accent" target="_blank" rel="noopener noreferrer" {...props} />,
+              code: ({ node, ...props }) => <code className="rounded bg-primary/15 px-1.5 py-0.5 text-[12px] text-primary" {...props} />,
+              h1: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
+              h2: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
+              h3: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-sm font-black text-foreground" {...props} />,
+              blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-primary/50 pl-3 italic text-muted-foreground" {...props} />,
+            }}
+          >
+            {msg.content}
+          </ReactMarkdown>
+        </div>
+      </div>
     </div>
   );
 }
+
