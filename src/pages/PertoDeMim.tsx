@@ -47,7 +47,10 @@ export default function PertoDeMim() {
   const [requesting, setRequesting] = useState(false);
 
   const [events, setEvents] = useState<NearbyEvent[]>([]);
+  const [awardPartnerIds, setAwardPartnerIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
 
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [radiusKm, setRadiusKm] = useState<number>(5);
