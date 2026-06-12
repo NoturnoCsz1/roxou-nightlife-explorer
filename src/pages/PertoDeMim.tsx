@@ -199,15 +199,53 @@ export default function PertoDeMim() {
     return out;
   }, [events, activeFilter, realLocation, radiusKm]);
 
+  // Scoring + badges. Pure memo: only recomputes when filtered/location/awards change.
+  const scored = useMemo(() => {
+    const nowMs = Date.now();
+    const startOfTomorrow = (() => { const d = new Date(); d.setHours(24, 0, 0, 0); return d.getTime(); })();
+    const enriched = filtered.map((e) => {
+      const evMs = new Date(e.date_time).getTime();
+      const happeningNow = evMs <= nowMs + 60 * 60 * 1000 && evMs + 4 * 60 * 60 * 1000 >= nowMs; // ±starts within 1h or already running last 4h
+      const isToday = evMs < startOfTomorrow && evMs >= new Date().setHours(0, 0, 0, 0);
+      const cat = `${e.category ?? ""} ${e.sub_category ?? ""} ${e.title}`.toLowerCase();
+      const liveMusic = /(musica|música|show|live|sertanejo|samba|rock|pagode|dj|eletronica|eletrônica|acustico|acústico)/.test(cat);
+      const sports = Boolean(e.is_sports_transmission) || /(jogo|futebol|transmiss)/.test(cat);
+      const partnerAwarded = e.partner_id ? awardPartnerIds.has(e.partner_id) : false;
+      const isPartner = Boolean(e.partner_id);
+      const dist = realLocation ? haversineKm(realLocation, { lat: e.lat, lng: e.lng }) : null;
+
+      // Distance: more points when closer (max 40 at <0.3km, 0 at >=20km)
+      let distScore = 0;
+      if (dist != null) distScore = Math.max(0, 40 - Math.min(40, dist * 2));
+
+      let score = distScore;
+      const badges: string[] = [];
+      if (happeningNow) { score += 50; badges.push("🔥 Bombando agora"); }
+      else if (isToday) { score += 30; badges.push("✨ Hoje"); }
+      if (liveMusic) { score += 20; badges.push("🎵 Música ao vivo"); }
+      if (sports) { score += 20; badges.push("⚽ Transmissão"); }
+      if (partnerAwarded) { score += 15; badges.push("🏆 Premiado"); }
+      if (isPartner) score += 10;
+
+      // Heat weight 0..1 for heatmap
+      const heat = Math.min(1, 0.25 + score / 130);
+      return { ...e, score, heat, badges, _dist: dist };
+    });
+    return enriched;
+  }, [filtered, realLocation, awardPartnerIds]);
+
   const sorted = useMemo(() => {
-    if (realLocation) {
-      return [...filtered]
-        .map((e) => ({ e, d: haversineKm(realLocation, { lat: e.lat, lng: e.lng }) }))
-        .sort((a, b) => a.d - b.d)
-        .slice(0, 50);
-    }
-    return filtered.slice(0, 50).map((e) => ({ e, d: null as number | null }));
-  }, [filtered, realLocation]);
+    const arr = [...scored].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    return arr.slice(0, 50).map((e) => ({ e, d: e._dist as number | null }));
+  }, [scored]);
+
+  const trending = useMemo(() => {
+    return [...scored]
+      .filter((e) => (e.badges?.length ?? 0) > 0)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, 3);
+  }, [scored]);
+
 
   const handleMapClick = (loc: LatLng) => {
     setManualLocation(loc);
