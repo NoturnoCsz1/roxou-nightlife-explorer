@@ -61,20 +61,12 @@ const NoticiaForm = () => {
   useEffect(() => {
     if (!editing) return;
     (async () => {
-      // tenta primeiro no escopo atual; se não encontrar, tenta o outro
-      const tryTables: ("roxou_news" | "expo_news")[] = scope === "expo" ? ["expo_news", "roxou_news"] : ["roxou_news", "expo_news"];
-      let data: any = null;
-      let foundScope: Scope = scope;
-      for (const t of tryTables) {
-        const { data: row } = await supabase.from(t).select("*").eq("id", id).maybeSingle();
-        if (row) { data = row; foundScope = t === "expo_news" ? "expo" : "roxou"; break; }
-      }
+      const { data } = await supabase.from("roxou_news").select("*").eq("id", id).maybeSingle();
       if (!data) {
         toast({ title: "Não encontrado", variant: "destructive" });
         navigate("/admin/noticias");
         return;
       }
-      setScope(foundScope);
       setForm({
         title: data.title ?? "",
         slug: data.slug ?? "",
@@ -91,7 +83,7 @@ const NoticiaForm = () => {
       setSlugTouched(true);
       setLoading(false);
     })();
-  }, [id, editing, navigate, scope]);
+  }, [id, editing, navigate]);
 
   const updateTitle = (rawTitle: string) => {
     const title = rawTitle.toUpperCase();
@@ -112,10 +104,8 @@ const NoticiaForm = () => {
       ? `${slugify(form.seo_keyword)}-${baseSlug}`.replace(/-+/g, "-").slice(0, 90)
       : baseSlug;
 
-    const seoFooter = scope === "expo"
-      ? `\n\n<p><em>Cobertura oficial Expo Prudente 2026 em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/expo2026">Veja tudo da Expo Prudente 2026</a>.</p>`
-      : `\n\n<p><em>Notícias de bares, festas, baladas, restaurantes e shows em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/noticias">Veja todas as notícias da Roxou</a>.</p>`;
-    const sentinelText = scope === "expo" ? "Expo Prudente 2026 em Presidente Prudente" : "Notícias de bares, festas, baladas";
+    const seoFooter = `\n\n<p><em>Notícias de bares, festas, baladas, restaurantes e shows em Presidente Prudente — ROXOU.</em> <a href="https://roxou.com.br/noticias">Veja todas as notícias da Roxou</a>.</p>`;
+    const sentinelText = "Notícias de bares, festas, baladas";
     const contentWithSeo = form.content?.includes(sentinelText)
       ? form.content
       : (form.content || "") + seoFooter;
@@ -145,12 +135,10 @@ const NoticiaForm = () => {
     if (error) { setSaving(false); return toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); }
 
     if (autoPublishIG && payload.status === "published" && saved?.cover_image_url) {
-      const slugPath = scope === "expo" ? `expo2026/noticia/${saved.slug}` : `noticia/${saved.slug}`;
-      const utmCampaign = scope === "expo" ? "expo2026" : "roxou_news";
-      const tags = scope === "expo"
-        ? "#expoprudente #prudente #shows #eventos #presidenteprudente #expo2026"
-        : "#roxou #prudente #presidenteprudente #baladasprudente #baresprudente #festasprudente";
-      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 ${scope === "expo" ? "Expo Prudente 2026" : "Roxou — Presidente Prudente"}\n👉 roxou.com.br/${slugPath}?utm_source=instagram&utm_medium=organic&utm_campaign=${utmCampaign}\n\n${tags}`;
+      const slugPath = `noticia/${saved.slug}`;
+      const utmCampaign = "roxou_news";
+      const tags = "#roxou #prudente #presidenteprudente #baladasprudente #baresprudente #festasprudente";
+      const caption = `🔥 ${saved.title}\n\n${saved.excerpt || ""}\n\n📍 Roxou — Presidente Prudente\n👉 roxou.com.br/${slugPath}?utm_source=instagram&utm_medium=organic&utm_campaign=${utmCampaign}\n\n${tags}`;
       const { data: userData } = await supabase.auth.getUser();
       const { data: postRow, error: postErr } = await supabase.from("instagram_posts").insert({
         caption,
@@ -188,26 +176,14 @@ const NoticiaForm = () => {
         <div>
           <h1 className="text-xl font-black font-display flex items-center gap-2">
             {editing ? "Editar notícia" : "Nova notícia"}
-            {scope === "expo" ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-400/30 text-orange-300">
-                <Flame className="h-2.5 w-2.5" /> Expo 2026
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-primary/20 border border-primary/30 text-primary">
-                <Sparkles className="h-2.5 w-2.5" /> Roxou
-              </span>
-            )}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-primary/20 border border-primary/30 text-primary">
+              <Sparkles className="h-2.5 w-2.5" /> Roxou
+            </span>
           </h1>
           <p className="text-xs text-muted-foreground">
-            {scope === "expo" ? "Conteúdo do hot site /expo2026" : "Notícias da Roxou (bares, festas, baladas, restaurantes, shows)"}
+            Notícias da Roxou (bares, festas, baladas, restaurantes, shows)
           </p>
         </div>
-        {!editing && (
-          <div className="ml-auto flex items-center gap-1 p-1 rounded-lg border border-border/60 bg-card/40">
-            <button type="button" onClick={() => setScope("roxou")} className={`px-2 py-1 rounded text-[11px] font-bold ${scope === "roxou" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Roxou</button>
-            <button type="button" onClick={() => setScope("expo")} className={`px-2 py-1 rounded text-[11px] font-bold ${scope === "expo" ? "bg-gradient-to-r from-orange-500 to-yellow-400 text-black" : "text-muted-foreground"}`}>Expo 2026</button>
-          </div>
-        )}
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); persist(false); }} className="space-y-5 max-w-3xl">
