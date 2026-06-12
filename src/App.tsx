@@ -198,6 +198,7 @@ const App = () => (
             <Route path="rankings" element={<V3Rankings />} />
             <Route path="comunidade" element={<V3Community />} />
             <Route path="jogos" element={L(<Jogos />)} />
+            <Route path="copa-do-mundo-2026" element={L(<CopaDoMundo2026 />)} />
             <Route path="jogo/:slug" element={L(<JogoDetail />)} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
