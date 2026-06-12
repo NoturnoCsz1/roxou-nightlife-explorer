@@ -348,9 +348,9 @@ export default function V3AIChat() {
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-2 animate-fade-in">
-      <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />
-      <div className="v3-glass rounded-3xl rounded-bl-lg px-5 py-3.5 flex items-center gap-1.5">
+    <div className="flex gap-2.5 animate-fade-in">
+      <AuraAvatar className="mt-1 h-8 w-8 shrink-0 rounded-2xl" />
+      <div className="flex items-center gap-1.5 pt-3">
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "0ms" }} />
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "200ms" }} />
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "400ms" }} />
@@ -358,6 +358,7 @@ function TypingIndicator() {
     </div>
   );
 }
+
 
 const RichEventCard = memo(function RichEventCard({ card, userLoc }: { card: ActionCard; userLoc: { lat: number; lng: number } | null }) {
   const isEvent = card.type === "event";
