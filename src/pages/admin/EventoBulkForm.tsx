@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Plus, Send, Sparkles, Loader2, Upload, X, ChevronDown, ChevronUp,
@@ -174,7 +174,8 @@ const EventoBulkForm = () => {
   }, [cityFilter]);
 
   // Detect duplicates: slug exists in DB or appears more than once in current items
-  function getDuplicateSet(): Set<string> {
+  // Memoizado: só recomputa quando items ou dbEvents mudam (não em cada keystroke do BatchDefaults).
+  const duplicateIds = useMemo<Set<string>>(() => {
     const dup = new Set<string>();
     const counts = new Map<string, number>();
     const imageHashes = new Set(dbEvents.map((e) => e.image_hash).filter(Boolean));
@@ -196,14 +197,15 @@ const EventoBulkForm = () => {
       }
     }
     return dup;
-  }
-  const duplicateIds = getDuplicateSet();
+  }, [items, dbEvents, dbSlugs]);
 
   /**
    * Validação inteligente (aditiva): score 0–100 por item, comparando
    * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
+   * Memoizado para evitar O(items × dbEvents) em cada render (era a maior
+   * causa de lag ao digitar nos Padrões do Lote).
    */
-  const smartDuplicates = (() => {
+  const smartDuplicates = useMemo<Map<string, DuplicateConfidenceResult>>(() => {
     const map = new Map<string, DuplicateConfidenceResult>();
     if (!dbEvents.length) return map;
     const existing: (DuplicateConfidenceExisting & { dedupe_key?: string | null })[] = dbEvents.map((e) => ({
@@ -237,18 +239,11 @@ const EventoBulkForm = () => {
       );
       if (result.decision !== "clear") {
         map.set(it.localId, result);
-        console.warn("[DuplicateEventCheck]", {
-          localId: it.localId,
-          title: it.form.title,
-          score: result.duplicate_score,
-          decision: result.decision,
-          matched: result.matched_event_title,
-          fields: result.matched_fields,
-        });
       }
     }
     return map;
-  })();
+  }, [items, dbEvents]);
+
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
     setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
@@ -578,6 +573,66 @@ const EventoBulkForm = () => {
     ]);
   }
 
+  /**
+   * Aplica padrões do lote em TODOS os eventos já carregados, em uma única
+   * atualização de estado. Evita reprocessar IA e evita re-render a cada
+   * tecla nos campos de padrão.
+   */
+  const applyBatchDefaultsToAll = useCallback(() => {
+    const bd = batchDefaultsRef.current;
+    if (!bd.enabled) {
+      toast.info("Ative os padrões antes de aplicar.");
+      return;
+    }
+    const partner = bd.partner_id ? partners.find((p) => p.id === bd.partner_id) || null : null;
+    let touched = 0;
+    setItems((prev) =>
+      prev.map((it) => {
+        if (it.status !== "ready") return it;
+        const force = bd.mode === "all";
+        const fillMissing = bd.mode === "missing";
+        const f = it.form;
+        const hasDate = !!f.date_time && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(f.date_time);
+        const hasTime = hasDate && f.time_is_unknown !== true;
+        const next: EventFormData = { ...f };
+        let changed = false;
+
+        if (bd.date || bd.time) {
+          const useBatchDate = force ? !!bd.date : fillMissing ? (!hasDate && !!bd.date) : false;
+          const useBatchTime = force ? !!bd.time : fillMissing ? (!hasTime && !!bd.time) : false;
+          const baseDate = useBatchDate ? bd.date : (hasDate ? f.date_time.slice(0, 10) : "");
+          const baseTime = useBatchTime ? bd.time : (hasTime ? f.date_time.slice(11, 16) : "");
+          if (baseDate && baseTime) {
+            const dt = `${baseDate}T${baseTime}`;
+            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = false; changed = true; }
+          } else if (baseDate) {
+            const dt = `${baseDate}T00:00`;
+            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = true; changed = true; }
+          }
+        }
+        if (bd.partner_id && partner && (force || (fillMissing && !f.partner_id))) {
+          if (next.partner_id !== partner.id) {
+            next.partner_id = partner.id;
+            next.venue_name = partner.name;
+            next.address = partner.address || "";
+            next.instagram = partner.instagram || "";
+            changed = true;
+          }
+        }
+        if (bd.category && (force || (fillMissing && !f.category))) {
+          if (next.category !== bd.category) { next.category = bd.category; changed = true; }
+        }
+        if (bd.sub_category && (force || (fillMissing && !(f as any)._sub))) {
+          if ((next as any)._sub !== bd.sub_category) { (next as any)._sub = bd.sub_category; changed = true; }
+        }
+        if (changed) touched++;
+        return changed ? { ...it, form: next } : it;
+      }),
+    );
+    toast.success(`Padrões aplicados em ${touched} evento(s).`);
+  }, [partners]);
+
+
   async function handleGenerateDescription(localId: string) {
     const it = items.find((x) => x.localId === localId);
     if (!it || !it.form.title) return;
@@ -676,11 +731,22 @@ const EventoBulkForm = () => {
       else clear.push(it);
     }
 
-    if (blocked.length && !confirm(
-      `${blocked.length} evento(s) confirmados como duplicados (score ≥ 80) serão bloqueados.\n${review.length} enviados como rascunho para revisão.\n${clear.length} serão ${status === "published" ? "publicados" : "salvos como rascunho"}.\n\nContinuar?`,
-    )) {
+    const dupNames = [...blocked, ...review].map((b) => `• ${b.form.title}`).join("\n");
+    const summary =
+      `📦 Resumo do lote\n` +
+      `─────────────────\n` +
+      `Eventos processados: ${ready.length}\n` +
+      `Novos: ${clear.length}\n` +
+      `Duplicados: ${blocked.length + review.length}` +
+      (dupNames ? `\n\nDuplicados encontrados:\n${dupNames}` : "") +
+      `\n\n${blocked.length} bloqueado(s) (score ≥ 80).` +
+      `\n${review.length} salvo(s) como rascunho para revisão.` +
+      `\n${clear.length} será(ão) ${status === "published" ? "publicado(s)" : "salvo(s) como rascunho"}.` +
+      `\n\nContinuar?`;
+    if ((blocked.length || review.length) && !confirm(summary)) {
       return;
     }
+
 
     const toInsert = [...clear, ...review];
     if (!toInsert.length) {
@@ -822,7 +888,10 @@ const EventoBulkForm = () => {
         value={batchDefaults}
         onChange={setBatchDefaults}
         partners={partners}
+        onApply={applyBatchDefaultsToAll}
+        hasItems={items.length > 0}
       />
+
 
       {/* Dropzone */}
       <div
@@ -1206,11 +1275,22 @@ interface BatchDefaultsSectionProps {
   value: BatchDefaults;
   onChange: (next: BatchDefaults) => void;
   partners: Partner[];
+  onApply: () => void;
+  hasItems: boolean;
 }
 
-function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectionProps) {
+const BatchDefaultsSection = memo(function BatchDefaultsSection({
+  value, onChange, partners, onApply, hasItems,
+}: BatchDefaultsSectionProps) {
   const set = (patch: Partial<BatchDefaults>) => onChange({ ...value, ...patch });
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
+  const partnerName = value.partner_id ? partners.find((p) => p.id === value.partner_id)?.name : null;
+  const previewParts = [
+    value.date ? `Data: ${value.date.split("-").reverse().join("/")}` : null,
+    value.time ? `Hora: ${value.time}` : null,
+    partnerName ? `Local: ${partnerName}` : null,
+    value.category ? `Categoria: ${value.category}` : null,
+  ].filter(Boolean);
 
   return (
     <div className={`mb-4 rounded-xl border ${value.enabled ? "border-primary/40 bg-primary/5" : "border-border/40 bg-card/40"} p-3 transition`}>
@@ -1221,16 +1301,21 @@ function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectio
           onChange={(e) => set({ enabled: e.target.checked })}
           className="h-3.5 w-3.5 accent-primary"
         />
-        <span className="text-xs font-semibold text-foreground">🧭 Informações padrão do lote</span>
+        <span className="text-xs font-semibold text-foreground">🧭 Preencher automaticamente eventos sem informações</span>
         <span className="text-[10px] text-muted-foreground">(opcional)</span>
       </label>
 
       {value.enabled && (
         <div className="mt-3 space-y-2.5">
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
-            Essas informações serão usadas para preencher eventos do lote e evitar dados inventados pela IA.
-            Quando o flyer não informa data/horário/local/categoria, os padrões abaixo são aplicados conforme o modo escolhido.
-          </p>
+          {previewParts.length > 0 && (
+            <div className="rounded-md border border-primary/20 bg-background/60 px-2.5 py-2 text-[10px] text-muted-foreground leading-relaxed">
+              <div className="text-foreground font-semibold mb-1">Padrões definidos</div>
+              {previewParts.map((p, i) => <div key={i}>{p}</div>)}
+              <div className="mt-1.5 opacity-80">
+                Quando o flyer não informar esses dados, a Roxou utilizará os valores acima.
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -1304,7 +1389,7 @@ function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectio
                 className="h-3 w-3 accent-primary"
               />
               <span className="text-[11px] text-foreground">
-                <strong>Usar apenas quando faltar</strong> — preserva dados do flyer e completa o resto
+                ✅ <strong>Completar apenas dados ausentes</strong> <span className="opacity-70">(recomendado)</span>
               </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -1316,14 +1401,27 @@ function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectio
                 className="h-3 w-3 accent-primary"
               />
               <span className="text-[11px] text-foreground">
-                <strong>Aplicar em todos os eventos</strong> — sobrescreve dados extraídos pela IA
+                ⚠️ <strong>Substituir todos os dados pelos valores acima</strong>
               </span>
             </label>
           </div>
+
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={!hasItems}
+            className="admin-glow w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-40"
+          >
+            Aplicar padrões ao lote
+          </button>
+          <p className="text-[10px] text-muted-foreground -mt-1">
+            Os padrões são aplicados apenas quando você clicar no botão — digitar aqui não reprocessa eventos.
+          </p>
         </div>
       )}
     </div>
   );
-}
+});
+
 
 export default EventoBulkForm;
