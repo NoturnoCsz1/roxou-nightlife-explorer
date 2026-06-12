@@ -49,30 +49,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://roxou.com.br/expo2026</loc>
-    <lastmod>2026-06-09</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/shows</loc>
-    <lastmod>2026-06-09</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/programacao</loc>
-    <lastmod>2026-06-09</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/ingressos</loc>
-    <lastmod>2026-06-09</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://roxou.com.br/jogos</loc>
     <lastmod>2026-06-09</lastmod>
     <changefreq>hourly</changefreq>
@@ -459,42 +435,6 @@
   <url>
     <loc>https://roxou.com.br/local/vo-laura-gourmet</loc>
     <lastmod>2026-03-07</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/noticia/show-icaro-e-gilmar-expo-prudente-2026-icaro-gilmar-sao-confirmados-na-expo-prudente-2026-</loc>
-    <lastmod>2026-05-26</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/noticia/show-ze-neto-e-cristiano-expo-prudente-2026-ze-neto-cristiano-sao-confirmados-na-expo-prud</loc>
-    <lastmod>2026-05-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/noticia/show-leonardo-expo-prudente-2026-leonardo-e-confirmado-na-expo-prudente-2026-e-agita-fas-d</loc>
-    <lastmod>2026-05-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/noticia/zeze-di-camargo-e-luciano-expo-prudente-2026-11-setembro-zeze-di-camargo-e-luciano-expo-pr</loc>
-    <lastmod>2026-05-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/noticia/gusttavo-lima-expo-prudente-2026-10-setembro-gusttavo-lima-abre-a-expo-prudente-2026-no-di</loc>
-    <lastmod>2026-05-05</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://roxou.com.br/expo2026/noticia/expo-prudente-2026-expo-prudente-2026-expo-prudente-2026-ja-tem-empresa-definida-prefeitur</loc>
-    <lastmod>2026-05-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
