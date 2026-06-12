@@ -2663,6 +2663,7 @@ export type Database = {
           updated_at: string
           venue_name: string | null
           views_count: number
+          world_cup_phase: string | null
           youtube_url: string | null
         }
         Insert: {
@@ -2695,6 +2696,7 @@ export type Database = {
           updated_at?: string
           venue_name?: string | null
           views_count?: number
+          world_cup_phase?: string | null
           youtube_url?: string | null
         }
         Update: {
@@ -2727,6 +2729,7 @@ export type Database = {
           updated_at?: string
           venue_name?: string | null
           views_count?: number
+          world_cup_phase?: string | null
           youtube_url?: string | null
         }
         Relationships: []
