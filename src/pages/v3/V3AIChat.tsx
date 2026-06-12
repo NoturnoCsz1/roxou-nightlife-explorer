@@ -354,22 +354,33 @@ function TypingIndicator() {
   );
 }
 
-function RichEventCard({ card }: { card: ActionCard }) {
+const RichEventCard = memo(function RichEventCard({ card, userLoc }: { card: ActionCard; userLoc: { lat: number; lng: number } | null }) {
   const isEvent = card.type === "event";
   const dt = card.date_time ? new Date(card.date_time) : null;
   const timeLabel = dt
     ? dt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     : null;
 
-  const mapsHref = card.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.title} ${card.address}`)}`
-    : card.subtitle
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.subtitle} Presidente Prudente`)}`
-    : null;
+  const distanceKm = useMemo(() => {
+    if (!userLoc || card.lat == null || card.lng == null) return null;
+    return haversineKm(userLoc, { lat: card.lat, lng: card.lng });
+  }, [userLoc, card.lat, card.lng]);
 
-  const uberHref = card.address
-    ? `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(card.address)}`
-    : "https://m.uber.com/";
+  const distanceLabel = distanceKm == null
+    ? null
+    : distanceKm < 1
+    ? `${Math.round(distanceKm * 1000)} m`
+    : `${distanceKm.toFixed(1)} km`;
+
+  const mapsHref = card.lat != null && card.lng != null
+    ? `https://www.google.com/maps/dir/?api=1&destination=${card.lat},${card.lng}`
+    : card.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.title} ${card.address}`)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.title} Presidente Prudente`)}`;
+
+  const rideHref = isEvent
+    ? `/pedir-carona?eventId=${card.id}`
+    : `/transporte?venue=${encodeURIComponent(card.title)}`;
 
   return (
     <div className="group relative overflow-hidden rounded-2xl v3-glass border border-primary/20 transition-all hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--v3-neon)/0.25)]">
@@ -379,6 +390,11 @@ function RichEventCard({ card }: { card: ActionCard }) {
           {isEvent && card.video_url && (
             <span className="absolute top-1 right-1 rounded-full bg-primary/90 p-1 backdrop-blur">
               <Video className="h-2.5 w-2.5 text-primary-foreground" />
+            </span>
+          )}
+          {distanceLabel && (
+            <span className="absolute bottom-1 left-1 inline-flex items-center gap-0.5 rounded-full bg-background/85 backdrop-blur px-1.5 py-0.5 text-[9px] font-black text-primary">
+              <Navigation className="h-2.5 w-2.5" /> {distanceLabel}
             </span>
           )}
         </div>
@@ -399,38 +415,30 @@ function RichEventCard({ card }: { card: ActionCard }) {
 
       {/* Quick action bar */}
       <div className="flex items-center gap-1 border-t border-white/5 bg-background/30 px-2 py-1.5">
-        <a
-          href={uberHref}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to={card.href}
           className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-foreground/80 hover:bg-primary/15 hover:text-primary transition"
         >
-          <Car className="h-3 w-3" /> Uber/99
+          <Sparkles className="h-3 w-3" /> Ver local
+        </Link>
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-foreground/80 hover:bg-primary/15 hover:text-primary transition border-l border-white/5"
+        >
+          <MapPin className="h-3 w-3" /> Como chegar
         </a>
-        {mapsHref && (
-          <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-foreground/80 hover:bg-primary/15 hover:text-primary transition border-l border-white/5"
-          >
-            <MapPin className="h-3 w-3" /> Mapa
-          </a>
-        )}
-        {isEvent && card.video_url && (
-          <a
-            href={card.video_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-primary hover:bg-primary/15 transition border-l border-white/5"
-          >
-            <Video className="h-3 w-3" /> POV
-          </a>
-        )}
+        <Link
+          to={rideHref}
+          className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-primary hover:bg-primary/15 transition border-l border-white/5"
+        >
+          <Car className="h-3 w-3" /> Pedir carona
+        </Link>
       </div>
     </div>
   );
-}
+});
 
 function Bubble({ msg }: { msg: Msg }) {
   const mine = msg.role === "user";
