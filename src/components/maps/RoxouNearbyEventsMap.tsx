@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from "react-leaflet";
+import { useEffect, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { useNavigate } from "react-router-dom";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 
@@ -13,6 +16,9 @@ export interface NearbyEvent {
   date_time: string;
   lat: number;
   lng: number;
+  category?: string | null;
+  sub_category?: string | null;
+  image_url?: string | null;
   transport_reservation_enabled?: boolean;
 }
 
@@ -21,7 +27,7 @@ interface Props {
   events: NearbyEvent[];
   height?: number | string;
   showCTAs?: boolean;
-  heatmap?: boolean;
+  heatmap?: boolean; // legacy, ignored — clusters are used now
   selectionMode?: boolean;
   onMapClick?: (loc: LatLng) => void;
 }
@@ -36,20 +42,45 @@ function ClickHandler({ onClick }: { onClick: (loc: LatLng) => void }) {
 }
 
 const EVENT_ICON = L.divIcon({
-  html: `<div style="width:24px;height:30px;filter:drop-shadow(0 0 6px rgba(168,85,247,0.85));">
-    <svg viewBox="0 0 24 32" width="24" height="30" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 0C5.4 0 0 5.4 0 12c0 8.4 12 20 12 20s12-11.6 12-20C24 5.4 18.6 0 12 0z" fill="#a855f7"/>
+  html: `<div style="position:relative;width:30px;height:38px;filter:drop-shadow(0 0 8px rgba(168,85,247,0.95));">
+    <svg viewBox="0 0 24 32" width="30" height="38" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#c084fc"/>
+        <stop offset="100%" stop-color="#7c3aed"/>
+      </linearGradient></defs>
+      <path d="M12 0C5.4 0 0 5.4 0 12c0 8.4 12 20 12 20s12-11.6 12-20C24 5.4 18.6 0 12 0z" fill="url(#g)"/>
       <circle cx="12" cy="12" r="4.5" fill="#1a1025"/>
+      <circle cx="12" cy="12" r="2" fill="#fff"/>
     </svg></div>`,
   className: "roxou-leaflet-pin",
-  iconSize: [24, 30], iconAnchor: [12, 28], popupAnchor: [0, -26],
+  iconSize: [30, 38], iconAnchor: [15, 36], popupAnchor: [0, -32],
 });
 
 const USER_ICON = L.divIcon({
-  html: `<div style="width:20px;height:20px;border-radius:50%;background:#22c55e;border:3px solid #1a1025;box-shadow:0 0 10px rgba(34,197,94,0.8);"></div>`,
+  html: `<div style="position:relative;width:22px;height:22px;">
+    <div style="position:absolute;inset:-8px;border-radius:50%;background:rgba(34,197,94,0.25);animation:roxouPulse 2s ease-out infinite;"></div>
+    <div style="position:absolute;inset:0;border-radius:50%;background:#22c55e;border:3px solid #0f0518;box-shadow:0 0 12px rgba(34,197,94,0.9);"></div>
+    <style>@keyframes roxouPulse{0%{transform:scale(0.6);opacity:.9}100%{transform:scale(1.8);opacity:0}}</style>
+  </div>`,
   className: "roxou-leaflet-user",
-  iconSize: [20, 20], iconAnchor: [10, 10],
+  iconSize: [22, 22], iconAnchor: [11, 11],
 });
+
+function clusterIconCreate(cluster: any) {
+  const n = cluster.getChildCount();
+  const size = n < 10 ? 38 : n < 50 ? 46 : 54;
+  return L.divIcon({
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;
+      background:radial-gradient(circle at 30% 30%, #c084fc, #7c3aed 70%);
+      color:#fff;display:flex;align-items:center;justify-content:center;
+      font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:${n < 100 ? 14 : 12}px;
+      border:2px solid rgba(255,255,255,0.25);
+      box-shadow:0 0 16px rgba(168,85,247,0.85), inset 0 0 12px rgba(255,255,255,0.15);">
+      ${n}</div>`,
+    className: "roxou-cluster",
+    iconSize: [size, size],
+  });
+}
 
 function FitAll({ points }: { points: LatLng[] }) {
   const map = useMap();
@@ -65,7 +96,7 @@ function FitAll({ points }: { points: LatLng[] }) {
 }
 
 export default function RoxouNearbyEventsMap({
-  userLocation, events, height = 360, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
+  userLocation, events, height = 420, showCTAs = true, selectionMode = false, onMapClick,
 }: Props) {
   const navigate = useNavigate();
 
@@ -77,45 +108,20 @@ export default function RoxouNearbyEventsMap({
 
   const center: LatLng = userLocation || (events[0] ? { lat: events[0].lat, lng: events[0].lng } : { lat: -22.1207, lng: -51.3889 });
 
-  // Simple heat: cluster proximity via grid
-  const heatCircles = useMemo(() => {
-    if (!heatmap) return [];
-    const grid = new Map<string, { lat: number; lng: number; n: number }>();
-    for (const e of events) {
-      const key = `${e.lat.toFixed(2)}_${e.lng.toFixed(2)}`;
-      const g = grid.get(key);
-      if (g) { g.n += 1; g.lat = (g.lat + e.lat) / 2; g.lng = (g.lng + e.lng) / 2; }
-      else grid.set(key, { lat: e.lat, lng: e.lng, n: 1 });
-    }
-    return Array.from(grid.values());
-  }, [heatmap, events]);
-
   return (
-    <div style={{ height, borderRadius: 12, overflow: "hidden", border: "1px solid hsl(var(--border))" }}>
+    <div style={{ height, borderRadius: 16, overflow: "hidden", border: "1px solid hsl(var(--border))" }}>
       <MapContainer
         center={[center.lat, center.lng]}
         zoom={13}
-        style={{ width: "100%", height: "100%", background: "#1a1025" }}
+        style={{ width: "100%", height: "100%", background: "#0f0518" }}
         scrollWheelZoom={false}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap, &copy; CARTO'
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         <FitAll points={allPoints} />
         {selectionMode && onMapClick && <ClickHandler onClick={onMapClick} />}
-
-        {heatCircles.map((c, i) => (
-          <Circle
-            key={`h-${i}`}
-            center={[c.lat, c.lng]}
-            radius={300 + c.n * 250}
-            pathOptions={{
-              color: "#a855f7", weight: 0,
-              fillColor: "#a855f7", fillOpacity: Math.min(0.45, 0.12 + c.n * 0.08),
-            }}
-          />
-        ))}
 
         {userLocation && (
           <Marker position={[userLocation.lat, userLocation.lng]} icon={USER_ICON}>
@@ -123,41 +129,54 @@ export default function RoxouNearbyEventsMap({
           </Marker>
         )}
 
-        {events.map((e) => {
-          const dist = userLocation ? haversineKm(userLocation, { lat: e.lat, lng: e.lng }) : null;
-          return (
-            <Marker key={e.id} position={[e.lat, e.lng]} icon={EVENT_ICON}>
-              <Popup>
-                <div style={{ minWidth: 180 }}>
-                  <strong style={{ fontSize: 13 }}>{e.title}</strong>
-                  {e.venue_name && <div style={{ fontSize: 11, color: "#666" }}>{e.venue_name}</div>}
-                  <div style={{ fontSize: 11, color: "#666" }}>
-                    {new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-                  </div>
-                  {dist != null && (
-                    <div style={{ fontSize: 11, color: "#a855f7", fontWeight: 600, marginTop: 4 }}>
-                      {dist.toFixed(1)} km de você
+        <MarkerClusterGroup
+          chunkedLoading
+          showCoverageOnHover={false}
+          spiderfyOnMaxZoom
+          maxClusterRadius={55}
+          iconCreateFunction={clusterIconCreate}
+        >
+          {events.map((e) => {
+            const dist = userLocation ? haversineKm(userLocation, { lat: e.lat, lng: e.lng }) : null;
+            return (
+              <Marker key={e.id} position={[e.lat, e.lng]} icon={EVENT_ICON}>
+                <Popup maxWidth={260} minWidth={220}>
+                  <div style={{ minWidth: 200, fontFamily: "Inter, sans-serif" }}>
+                    {e.image_url && (
+                      <div style={{ width: "100%", height: 110, borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "#1a1025" }}>
+                        <img src={e.image_url} alt={e.title} loading="lazy"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    )}
+                    <strong style={{ fontSize: 14, color: "#1a1025", display: "block", lineHeight: 1.2 }}>{e.title}</strong>
+                    {e.venue_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{e.venue_name}</div>}
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
+                      {new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                     </div>
-                  )}
-                  {showCTAs && (
-                    <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                      <button
-                        onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}
-                        style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "#a855f7", color: "#fff", fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer" }}
-                      >Ver evento</button>
-                      {e.transport_reservation_enabled && (
+                    {dist != null && (
+                      <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700, marginTop: 6 }}>
+                        📍 {dist.toFixed(1)} km de você
+                      </div>
+                    )}
+                    {showCTAs && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                         <button
-                          onClick={() => navigate(`/pedir-carona?eventId=${e.id}`)}
-                          style={{ flex: 1, padding: "6px 8px", borderRadius: 8, background: "transparent", color: "#a855f7", border: "1px solid #a855f7", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-                        >Pedir carona</button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+                          onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}
+                          style={{ flex: 1, padding: "8px 8px", borderRadius: 10, background: "linear-gradient(135deg,#a855f7,#7c3aed)", color: "#fff", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}
+                        >Ver local</button>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{ flex: 1, padding: "8px 8px", borderRadius: 10, background: "transparent", color: "#7c3aed", border: "1px solid #7c3aed", fontSize: 12, fontWeight: 700, cursor: "pointer", textAlign: "center", textDecoration: "none" }}
+                        >Como chegar</a>
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MarkerClusterGroup>
       </MapContainer>
     </div>
   );
