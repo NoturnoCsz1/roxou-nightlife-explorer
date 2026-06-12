@@ -1275,11 +1275,22 @@ interface BatchDefaultsSectionProps {
   value: BatchDefaults;
   onChange: (next: BatchDefaults) => void;
   partners: Partner[];
+  onApply: () => void;
+  hasItems: boolean;
 }
 
-function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectionProps) {
+const BatchDefaultsSection = memo(function BatchDefaultsSection({
+  value, onChange, partners, onApply, hasItems,
+}: BatchDefaultsSectionProps) {
   const set = (patch: Partial<BatchDefaults>) => onChange({ ...value, ...patch });
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
+  const partnerName = value.partner_id ? partners.find((p) => p.id === value.partner_id)?.name : null;
+  const previewParts = [
+    value.date ? `Data: ${value.date.split("-").reverse().join("/")}` : null,
+    value.time ? `Hora: ${value.time}` : null,
+    partnerName ? `Local: ${partnerName}` : null,
+    value.category ? `Categoria: ${value.category}` : null,
+  ].filter(Boolean);
 
   return (
     <div className={`mb-4 rounded-xl border ${value.enabled ? "border-primary/40 bg-primary/5" : "border-border/40 bg-card/40"} p-3 transition`}>
@@ -1290,16 +1301,21 @@ function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectio
           onChange={(e) => set({ enabled: e.target.checked })}
           className="h-3.5 w-3.5 accent-primary"
         />
-        <span className="text-xs font-semibold text-foreground">🧭 Informações padrão do lote</span>
+        <span className="text-xs font-semibold text-foreground">🧭 Preencher automaticamente eventos sem informações</span>
         <span className="text-[10px] text-muted-foreground">(opcional)</span>
       </label>
 
       {value.enabled && (
         <div className="mt-3 space-y-2.5">
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
-            Essas informações serão usadas para preencher eventos do lote e evitar dados inventados pela IA.
-            Quando o flyer não informa data/horário/local/categoria, os padrões abaixo são aplicados conforme o modo escolhido.
-          </p>
+          {previewParts.length > 0 && (
+            <div className="rounded-md border border-primary/20 bg-background/60 px-2.5 py-2 text-[10px] text-muted-foreground leading-relaxed">
+              <div className="text-foreground font-semibold mb-1">Padrões definidos</div>
+              {previewParts.map((p, i) => <div key={i}>{p}</div>)}
+              <div className="mt-1.5 opacity-80">
+                Quando o flyer não informar esses dados, a Roxou utilizará os valores acima.
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -1373,7 +1389,7 @@ function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectio
                 className="h-3 w-3 accent-primary"
               />
               <span className="text-[11px] text-foreground">
-                <strong>Usar apenas quando faltar</strong> — preserva dados do flyer e completa o resto
+                ✅ <strong>Completar apenas dados ausentes</strong> <span className="opacity-70">(recomendado)</span>
               </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -1385,14 +1401,27 @@ function BatchDefaultsSection({ value, onChange, partners }: BatchDefaultsSectio
                 className="h-3 w-3 accent-primary"
               />
               <span className="text-[11px] text-foreground">
-                <strong>Aplicar em todos os eventos</strong> — sobrescreve dados extraídos pela IA
+                ⚠️ <strong>Substituir todos os dados pelos valores acima</strong>
               </span>
             </label>
           </div>
+
+          <button
+            type="button"
+            onClick={onApply}
+            disabled={!hasItems}
+            className="admin-glow w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-[11px] font-semibold text-primary hover:bg-primary/20 transition disabled:opacity-40"
+          >
+            Aplicar padrões ao lote
+          </button>
+          <p className="text-[10px] text-muted-foreground -mt-1">
+            Os padrões são aplicados apenas quando você clicar no botão — digitar aqui não reprocessa eventos.
+          </p>
         </div>
       )}
     </div>
   );
-}
+});
+
 
 export default EventoBulkForm;
