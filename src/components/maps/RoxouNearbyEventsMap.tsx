@@ -183,11 +183,19 @@ export default function RoxouNearbyEventsMap({
                     <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
                       {new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                     </div>
+                    {e.badges && e.badges.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                        {e.badges.map((b, i) => (
+                          <span key={i} style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 999, background: "linear-gradient(135deg,#a855f7,#ec4899)", color: "#fff" }}>{b}</span>
+                        ))}
+                      </div>
+                    )}
                     {dist != null && (
                       <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700, marginTop: 6 }}>
                         📍 {dist.toFixed(1)} km de você
                       </div>
                     )}
+
                     {showCTAs && (
                       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                         <button
