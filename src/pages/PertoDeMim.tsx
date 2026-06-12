@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X, RefreshCw, Flame, Map as MapIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import RoxouNearbyEventsMap, { type NearbyEvent } from "@/components/maps/RoxouNearbyEventsMap";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 import SEO from "@/components/SEO";
+
 
 const ACCURACY_THRESHOLD_M = 1000;
 const MANUAL_KEY = "roxou:manualLocation";
@@ -46,7 +47,10 @@ export default function PertoDeMim() {
   const [requesting, setRequesting] = useState(false);
 
   const [events, setEvents] = useState<NearbyEvent[]>([]);
+  const [awardPartnerIds, setAwardPartnerIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+
 
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [radiusKm, setRadiusKm] = useState<number>(5);
@@ -122,15 +126,24 @@ export default function PertoDeMim() {
     (async () => {
       setLoading(true);
       const now = new Date().toISOString();
-      const { data: evts } = await supabase
-        .from("events")
-        .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url")
-        .eq("status", "published")
-        .gt("date_time", now)
-        .order("date_time", { ascending: true })
-        .limit(200);
+      const [eventsRes, awardsRes] = await Promise.all([
+        supabase
+          .from("events")
+          .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url,is_sports_transmission")
+          .eq("status", "published")
+          .gt("date_time", now)
+          .order("date_time", { ascending: true })
+          .limit(200),
+        supabase
+          .from("partner_awards")
+          .select("partner_id")
+          .eq("active", true),
+      ]);
 
-      const list = evts || [];
+      const list = eventsRes.data || [];
+      const awards = awardsRes.data || [];
+      setAwardPartnerIds(new Set(awards.map((a: any) => a.partner_id)));
+
       const partnerIds = [
         ...new Set(
           list.filter((e) => e.partner_id && (e.latitude == null || e.longitude == null)).map((e) => e.partner_id!)
@@ -152,9 +165,11 @@ export default function PertoDeMim() {
           return {
             id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name,
             date_time: e.date_time, lat, lng,
+            partner_id: (e as any).partner_id ?? null,
             category: (e as any).category ?? null,
             sub_category: (e as any).sub_category ?? null,
             image_url: (e as any).image_url ?? null,
+            is_sports_transmission: Boolean((e as any).is_sports_transmission),
             transport_reservation_enabled: Boolean((e as any).transport_reservation_enabled),
           } as NearbyEvent;
         })
@@ -164,6 +179,7 @@ export default function PertoDeMim() {
       setLoading(false);
     })();
   }, []);
+
 
   const filtered = useMemo(() => {
     let out = events;
@@ -183,15 +199,53 @@ export default function PertoDeMim() {
     return out;
   }, [events, activeFilter, realLocation, radiusKm]);
 
+  // Scoring + badges. Pure memo: only recomputes when filtered/location/awards change.
+  const scored = useMemo(() => {
+    const nowMs = Date.now();
+    const startOfTomorrow = (() => { const d = new Date(); d.setHours(24, 0, 0, 0); return d.getTime(); })();
+    const enriched = filtered.map((e) => {
+      const evMs = new Date(e.date_time).getTime();
+      const happeningNow = evMs <= nowMs + 60 * 60 * 1000 && evMs + 4 * 60 * 60 * 1000 >= nowMs; // ±starts within 1h or already running last 4h
+      const isToday = evMs < startOfTomorrow && evMs >= new Date().setHours(0, 0, 0, 0);
+      const cat = `${e.category ?? ""} ${e.sub_category ?? ""} ${e.title}`.toLowerCase();
+      const liveMusic = /(musica|música|show|live|sertanejo|samba|rock|pagode|dj|eletronica|eletrônica|acustico|acústico)/.test(cat);
+      const sports = Boolean(e.is_sports_transmission) || /(jogo|futebol|transmiss)/.test(cat);
+      const partnerAwarded = e.partner_id ? awardPartnerIds.has(e.partner_id) : false;
+      const isPartner = Boolean(e.partner_id);
+      const dist = realLocation ? haversineKm(realLocation, { lat: e.lat, lng: e.lng }) : null;
+
+      // Distance: more points when closer (max 40 at <0.3km, 0 at >=20km)
+      let distScore = 0;
+      if (dist != null) distScore = Math.max(0, 40 - Math.min(40, dist * 2));
+
+      let score = distScore;
+      const badges: string[] = [];
+      if (happeningNow) { score += 50; badges.push("🔥 Bombando agora"); }
+      else if (isToday) { score += 30; badges.push("✨ Hoje"); }
+      if (liveMusic) { score += 20; badges.push("🎵 Música ao vivo"); }
+      if (sports) { score += 20; badges.push("⚽ Transmissão"); }
+      if (partnerAwarded) { score += 15; badges.push("🏆 Premiado"); }
+      if (isPartner) score += 10;
+
+      // Heat weight 0..1 for heatmap
+      const heat = Math.min(1, 0.25 + score / 130);
+      return { ...e, score, heat, badges, _dist: dist };
+    });
+    return enriched;
+  }, [filtered, realLocation, awardPartnerIds]);
+
   const sorted = useMemo(() => {
-    if (realLocation) {
-      return [...filtered]
-        .map((e) => ({ e, d: haversineKm(realLocation, { lat: e.lat, lng: e.lng }) }))
-        .sort((a, b) => a.d - b.d)
-        .slice(0, 50);
-    }
-    return filtered.slice(0, 50).map((e) => ({ e, d: null as number | null }));
-  }, [filtered, realLocation]);
+    const arr = [...scored].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    return arr.slice(0, 50).map((e) => ({ e, d: e._dist as number | null }));
+  }, [scored]);
+
+  const trending = useMemo(() => {
+    return [...scored]
+      .filter((e) => (e.badges?.length ?? 0) > 0)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, 3);
+  }, [scored]);
+
 
   const handleMapClick = (loc: LatLng) => {
     setManualLocation(loc);
@@ -274,13 +328,67 @@ export default function PertoDeMim() {
               </div>
             )}
 
+            {/* Map mode toggle */}
+            <div className="flex items-center gap-2 rounded-full bg-card/50 border border-border/40 p-1 w-fit mx-auto">
+              <button
+                onClick={() => setShowHeatmap(false)}
+                className={`flex items-center gap-1.5 rounded-full px-3 h-8 text-[11px] font-semibold transition ${
+                  !showHeatmap ? "bg-primary text-primary-foreground shadow-[0_0_14px_-4px_hsl(var(--primary))]" : "text-muted-foreground"
+                }`}
+              >
+                <MapIcon className="w-3.5 h-3.5" /> Mapa normal
+              </button>
+              <button
+                onClick={() => setShowHeatmap(true)}
+                className={`flex items-center gap-1.5 rounded-full px-3 h-8 text-[11px] font-semibold transition ${
+                  showHeatmap ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-[0_0_14px_-4px_rgba(236,72,153,0.8)]" : "text-muted-foreground"
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" /> Mapa de calor
+              </button>
+            </div>
+
             <RoxouNearbyEventsMap
               userLocation={realLocation}
               events={sorted.map((s) => s.e)}
               height={420}
+              heatmap={showHeatmap}
               selectionMode={selectionMode}
               onMapClick={handleMapClick}
             />
+
+            {/* Bombando perto de você */}
+            {trending.length > 0 && (
+              <section className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-card/60 to-pink-500/10 p-3 space-y-2 backdrop-blur-md">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold flex items-center gap-1.5 text-foreground">
+                    <Flame className="w-4 h-4 text-orange-400" /> Bombando perto de você
+                  </h2>
+                </div>
+                <ul className="space-y-1.5">
+                  {trending.map((t) => (
+                    <li key={t.id}>
+                      <button
+                        onClick={() => navigate(t.slug ? `/evento/${t.slug}` : `/evento/${t.id}`)}
+                        className="w-full text-left flex items-start gap-2 group"
+                      >
+                        <span className="text-primary mt-0.5">•</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate group-hover:text-primary transition">
+                            {t.venue_name || t.title}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {t.badges?.slice(0, 2).join(" · ")}
+                            {t._dist != null && ` · ${t._dist.toFixed(1)} km`}
+                          </p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
 
             {/* Quick category filters */}
             <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
@@ -395,6 +503,16 @@ export default function PertoDeMim() {
                       </span>
                     )}
                   </div>
+                  {e.badges && e.badges.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {e.badges.slice(0, 3).map((b, i) => (
+                        <span key={i} className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-primary/15 border border-primary/30 text-primary">
+                          {b}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       size="sm"

@@ -5,8 +5,27 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.heat";
 import { useNavigate } from "react-router-dom";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
+
+function HeatLayer({ points }: { points: Array<[number, number, number]> }) {
+  const map = useMap();
+  useEffect(() => {
+    const layer = (L as any).heatLayer(points, {
+
+      radius: 32,
+      blur: 24,
+      maxZoom: 16,
+      minOpacity: 0.35,
+      gradient: { 0.2: "#7c3aed", 0.4: "#a855f7", 0.6: "#ec4899", 0.8: "#f97316", 1.0: "#fde047" },
+    });
+    layer.addTo(map);
+    return () => { layer.remove(); };
+  }, [map, points]);
+  return null;
+}
+
 
 export interface NearbyEvent {
   id: string;
@@ -20,17 +39,24 @@ export interface NearbyEvent {
   sub_category?: string | null;
   image_url?: string | null;
   transport_reservation_enabled?: boolean;
+  partner_id?: string | null;
+  is_sports_transmission?: boolean;
+  score?: number;
+  heat?: number; // 0..1 contribution weight for heat layer
+  badges?: string[];
 }
+
 
 interface Props {
   userLocation?: LatLng | null;
   events: NearbyEvent[];
   height?: number | string;
   showCTAs?: boolean;
-  heatmap?: boolean; // legacy, ignored — clusters are used now
+  heatmap?: boolean;
   selectionMode?: boolean;
   onMapClick?: (loc: LatLng) => void;
 }
+
 
 function ClickHandler({ onClick }: { onClick: (loc: LatLng) => void }) {
   useMapEvents({
@@ -96,7 +122,7 @@ function FitAll({ points }: { points: LatLng[] }) {
 }
 
 export default function RoxouNearbyEventsMap({
-  userLocation, events, height = 420, showCTAs = true, selectionMode = false, onMapClick,
+  userLocation, events, height = 420, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
 }: Props) {
   const navigate = useNavigate();
 
@@ -105,6 +131,10 @@ export default function RoxouNearbyEventsMap({
     if (userLocation) pts.push(userLocation);
     return pts;
   }, [events, userLocation]);
+
+  const heatPoints = useMemo<Array<[number, number, number]>>(() => {
+    return events.map((e) => [e.lat, e.lng, Math.max(0.2, Math.min(1, e.heat ?? 0.4))]);
+  }, [events]);
 
   const center: LatLng = userLocation || (events[0] ? { lat: events[0].lat, lng: events[0].lng } : { lat: -22.1207, lng: -51.3889 });
 
@@ -123,11 +153,14 @@ export default function RoxouNearbyEventsMap({
         <FitAll points={allPoints} />
         {selectionMode && onMapClick && <ClickHandler onClick={onMapClick} />}
 
+        {heatmap && heatPoints.length > 0 && <HeatLayer points={heatPoints} />}
+
         {userLocation && (
           <Marker position={[userLocation.lat, userLocation.lng]} icon={USER_ICON}>
             <Popup>Você está aqui</Popup>
           </Marker>
         )}
+
 
         <MarkerClusterGroup
           chunkedLoading
@@ -153,11 +186,19 @@ export default function RoxouNearbyEventsMap({
                     <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
                       {new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                     </div>
+                    {e.badges && e.badges.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                        {e.badges.map((b, i) => (
+                          <span key={i} style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 999, background: "linear-gradient(135deg,#a855f7,#ec4899)", color: "#fff" }}>{b}</span>
+                        ))}
+                      </div>
+                    )}
                     {dist != null && (
                       <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700, marginTop: 6 }}>
                         📍 {dist.toFixed(1)} km de você
                       </div>
                     )}
+
                     {showCTAs && (
                       <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
                         <button
