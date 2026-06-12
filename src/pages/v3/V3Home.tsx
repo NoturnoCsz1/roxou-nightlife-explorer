@@ -1998,7 +1998,7 @@ function DesktopNavPanel({ todayCount }: { todayCount: number }) {
     { to: "/parceiros", label: "Parceiros", icon: Users },
     { to: "/agenda", label: "Agenda", icon: CalendarDays },
     { to: "/economize", label: "Economize", icon: PiggyBank },
-    { to: "/expo2026", label: "Expo Prudente", icon: Newspaper },
+    { to: "/noticias", label: "Notícias", icon: Newspaper },
   ];
   return (
     <div className="rounded-3xl v3-glass-strong p-4">
@@ -2383,13 +2383,12 @@ function Rail({ title, subtitle, children }: { title: string; subtitle?: string;
 
 /* (CategoryChips is imported from shared component) */
 
-/* ─── QUICK FILTER TABS — Hoje · 7 dias · Expo 2026 ─── */
+/* ─── QUICK FILTER TABS — Hoje · 7 dias ─── */
 
 function QuickFilterTabs({ todayCount, weekCount }: { todayCount: number; weekCount: number }) {
   const tabs = [
     { key: "hoje", label: "Hoje", count: todayCount, to: "/agenda?filter=today", icon: Flame },
     { key: "semana", label: "Próx. 7 dias", count: weekCount, to: "/agenda?filter=week", icon: CalendarDays },
-    { key: "expo", label: "Expo 2026", count: null, to: "/expo2026", icon: Sparkles, special: true },
   ];
   return (
     <FadeSection className="px-4 pt-3 pb-1">
