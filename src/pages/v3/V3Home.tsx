@@ -35,6 +35,7 @@ import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/H
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
+import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 import WorldCupRibbon from "@/components/season/WorldCupRibbon";
@@ -605,6 +606,12 @@ export default function V3Home() {
           ) : null}
         </HomeSectionBoundary>
 
+        {/* Destaque Copa do Mundo 2026 — logo abaixo de "Hoje na Roxou" */}
+        <HomeSectionBoundary name="Copa Highlight (mobile)" silent>
+          <CopaHighlightCard />
+        </HomeSectionBoundary>
+
+
         {/* Jogos ao vivo — posição nobre no mobile, logo após eventos de hoje */}
         {!isLoading && !hasHomeDataError && (
           <HomeSectionBoundary name="Jogos mobile" silent>
@@ -656,6 +663,13 @@ export default function V3Home() {
               events={events ?? []}
             />
           )}
+        </HomeSectionBoundary>
+      </div>
+
+      {/* Destaque Copa do Mundo 2026 — desktop, abaixo do CommandCenter (que contém "Hoje na Roxou") */}
+      <div className="hidden lg:block max-w-5xl mx-auto">
+        <HomeSectionBoundary name="Copa Highlight (desktop)" silent>
+          <CopaHighlightCard />
         </HomeSectionBoundary>
       </div>
 
