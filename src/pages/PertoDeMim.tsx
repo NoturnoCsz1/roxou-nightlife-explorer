@@ -126,15 +126,24 @@ export default function PertoDeMim() {
     (async () => {
       setLoading(true);
       const now = new Date().toISOString();
-      const { data: evts } = await supabase
-        .from("events")
-        .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url")
-        .eq("status", "published")
-        .gt("date_time", now)
-        .order("date_time", { ascending: true })
-        .limit(200);
+      const [eventsRes, awardsRes] = await Promise.all([
+        supabase
+          .from("events")
+          .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url,is_sports_transmission")
+          .eq("status", "published")
+          .gt("date_time", now)
+          .order("date_time", { ascending: true })
+          .limit(200),
+        supabase
+          .from("partner_awards")
+          .select("partner_id")
+          .eq("active", true),
+      ]);
 
-      const list = evts || [];
+      const list = eventsRes.data || [];
+      const awards = awardsRes.data || [];
+      setAwardPartnerIds(new Set(awards.map((a: any) => a.partner_id)));
+
       const partnerIds = [
         ...new Set(
           list.filter((e) => e.partner_id && (e.latitude == null || e.longitude == null)).map((e) => e.partner_id!)
@@ -156,9 +165,11 @@ export default function PertoDeMim() {
           return {
             id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name,
             date_time: e.date_time, lat, lng,
+            partner_id: (e as any).partner_id ?? null,
             category: (e as any).category ?? null,
             sub_category: (e as any).sub_category ?? null,
             image_url: (e as any).image_url ?? null,
+            is_sports_transmission: Boolean((e as any).is_sports_transmission),
             transport_reservation_enabled: Boolean((e as any).transport_reservation_enabled),
           } as NearbyEvent;
         })
@@ -168,6 +179,7 @@ export default function PertoDeMim() {
       setLoading(false);
     })();
   }, []);
+
 
   const filtered = useMemo(() => {
     let out = events;
