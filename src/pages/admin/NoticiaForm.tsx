@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Save, Instagram, Sparkles, Image as ImageIcon, Rocket, Flame } from "lucide-react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { ArrowLeft, Save, Instagram, Sparkles, Image as ImageIcon, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -11,20 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImageUpload from "@/components/admin/ImageUpload";
 
-type Scope = "roxou" | "expo";
-
-const CATEGORIES_EXPO = [
-  { value: "geral", label: "Geral" },
-  { value: "atracoes", label: "Atrações" },
-  { value: "shows", label: "Shows" },
-  { value: "bastidores", label: "Bastidores" },
-  { value: "info", label: "Informações úteis" },
-  { value: "rodeio", label: "Rodeio" },
-  { value: "gastronomia", label: "Gastronomia" },
-  { value: "avisos", label: "Avisos" },
-];
-
-const CATEGORIES_ROXOU = [
+const CATEGORIES = [
   { value: "geral", label: "Geral" },
   { value: "bares", label: "Bares" },
   { value: "festas", label: "Festas" },
@@ -49,12 +36,9 @@ function slugify(s: string) {
 const NoticiaForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const editing = Boolean(id);
-  const [scope, setScope] = useState<Scope>(((params.get("scope") as Scope) === "expo" ? "expo" : "roxou"));
-  const table = scope === "expo" ? "expo_news" : "roxou_news";
-  const CATEGORIES = scope === "expo" ? CATEGORIES_EXPO : CATEGORIES_ROXOU;
-  const backTo = `/admin/noticias?scope=${scope}`;
+  const table = "roxou_news";
+  const backTo = `/admin/noticias`;
 
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
