@@ -220,9 +220,9 @@ export default function V3AIChat() {
         </div>
       </header>
 
-      {/* Conversation */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto space-y-4">
+      {/* Conversation — full-bleed mobile, centered desktop */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 pt-4 pb-6 scroll-smooth">
+        <div className="max-w-2xl mx-auto space-y-5">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center pt-6 pb-2 space-y-6 animate-fade-in">
               <div className="relative">
@@ -260,14 +260,14 @@ export default function V3AIChat() {
             <div key={msg.id} className="space-y-2 animate-fade-in">
               <Bubble msg={msg} />
               {msg.role === "assistant" && msg.cards && msg.cards.length > 0 && (
-                <div className="ml-9 grid gap-2.5">
+                <div className="ml-10 grid gap-2.5">
                   {msg.cards.map((card) => <RichEventCard key={`${card.type}-${card.id}`} card={card} userLoc={userLoc} />)}
                 </div>
               )}
               {msg.role === "assistant" && index === messages.length - 1 && !sending && (
-                <div className="ml-9 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <div className="ml-10 flex gap-2 overflow-x-auto pb-1 pr-4 scrollbar-hide">
                   {FOLLOW_UPS.map((suggestion) => (
-                    <button key={suggestion} onClick={() => sendText(suggestion)} className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black text-primary transition hover:bg-primary/20">
+                    <button key={suggestion} onClick={() => sendText(suggestion)} className="shrink-0 whitespace-nowrap rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black text-primary transition hover:bg-primary/20">
                       {suggestion}
                     </button>
                   ))}
@@ -280,6 +280,7 @@ export default function V3AIChat() {
           <div ref={bottomRef} />
         </div>
       </div>
+
 
       {/* Quick prompt chips — sticky above input, horizontal scroll on mobile */}
       <div className="v3-glass-strong border-t border-primary/15 pt-2">
