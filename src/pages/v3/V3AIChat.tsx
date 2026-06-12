@@ -281,21 +281,22 @@ export default function V3AIChat() {
         </div>
       </div>
 
-      {/* Quick prompt chips — sticky above input */}
-      <div className="v3-glass-strong border-t border-primary/15 px-3 pt-2">
-        <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+      {/* Quick prompt chips — sticky above input, horizontal scroll on mobile */}
+      <div className="v3-glass-strong border-t border-primary/15 pt-2">
+        <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory pl-4 pr-6 lg:justify-center lg:flex-wrap lg:px-4">
           {QUICK_PROMPTS.map((q) => (
             <button
               key={q.label}
               onClick={() => sendText(q.prompt)}
               disabled={sending}
-              className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary hover:bg-primary/20 hover:border-primary/50 transition disabled:opacity-50 active:scale-95"
+              className="snap-start shrink-0 whitespace-nowrap rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary hover:bg-primary/20 hover:border-primary/50 transition disabled:opacity-50 active:scale-95"
             >
               {q.label}
             </button>
           ))}
         </div>
       </div>
+
 
       {/* Input bar — rounded-full neon */}
       <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
