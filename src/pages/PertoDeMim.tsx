@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X, RefreshCw, Flame, Map as MapIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import RoxouNearbyEventsMap, { type NearbyEvent } from "@/components/maps/RoxouNearbyEventsMap";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 import SEO from "@/components/SEO";
+
 
 const ACCURACY_THRESHOLD_M = 1000;
 const MANUAL_KEY = "roxou:manualLocation";
