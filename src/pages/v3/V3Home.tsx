@@ -2393,26 +2393,14 @@ function QuickFilterTabs({ todayCount, weekCount }: { todayCount: number; weekCo
   return (
     <FadeSection className="px-4 pt-3 pb-1">
       <div className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-        {tabs.map(({ key, label, count, to, icon: Icon, special }) => (
+        {tabs.map(({ key, label, count, to, icon: Icon }) => (
           <Link
             key={key}
             to={to}
-            className={`shrink-0 snap-start group inline-flex items-center gap-2 rounded-2xl px-4 py-3 border transition-all active:scale-95 ${
-              special
-                ? "border-primary/50 v3-pulse-glow"
-                : "border-border/40 v3-glass hover:border-primary/40"
-            }`}
-            style={
-              special
-                ? {
-                    background:
-                      "linear-gradient(135deg, hsl(var(--v3-neon) / 0.25), hsl(var(--v3-neon-soft) / 0.18))",
-                  }
-                : undefined
-            }
+            className="shrink-0 snap-start group inline-flex items-center gap-2 rounded-2xl px-4 py-3 border transition-all active:scale-95 border-border/40 v3-glass hover:border-primary/40"
           >
-            <Icon className={`w-4 h-4 ${special ? "text-primary drop-shadow-[0_0_8px_hsl(var(--primary))]" : "text-foreground/80 group-hover:text-primary"}`} />
-            <span className={`text-[12px] font-extrabold uppercase tracking-wider ${special ? "text-foreground" : "text-foreground"}`}>
+            <Icon className="w-4 h-4 text-foreground/80 group-hover:text-primary" />
+            <span className="text-[12px] font-extrabold uppercase tracking-wider text-foreground">
               {label}
             </span>
             {count !== null && count > 0 && (
@@ -2420,7 +2408,6 @@ function QuickFilterTabs({ todayCount, weekCount }: { todayCount: number; weekCo
                 {count}
               </span>
             )}
-            {special && <ArrowRight className="w-3.5 h-3.5 text-primary" />}
           </Link>
         ))}
       </div>
