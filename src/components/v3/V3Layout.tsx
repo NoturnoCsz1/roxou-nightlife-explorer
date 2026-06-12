@@ -55,6 +55,7 @@ export default function V3Layout() {
             {[
               { to: "/agenda",    label: "Agenda"    },
               { to: "/jogos",     label: "Jogos"     },
+              { to: "/copa-do-mundo-2026", label: "Copa 2026" },
               { to: "/noticias",  label: "Notícias"  },
               { to: "/parceiros", label: "Parceiros" },
             ].map(({ to, label }) => {
