@@ -192,15 +192,18 @@ export default function V3AIChat() {
         offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" }
       }}
     />
-    <div className="fixed inset-0 lg:inset-x-0 lg:top-14 lg:bottom-0 z-50 lg:z-10 flex flex-col overflow-hidden bg-background" style={{ height: "100dvh" }}>
+    <div className="fixed inset-0 lg:inset-x-0 lg:top-16 lg:bottom-0 z-[60] lg:z-10 flex flex-col overflow-hidden bg-background" style={{ height: "100dvh" }}>
       {/* Background neon glow ambient */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/15 blur-[120px]" />
         <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-accent/10 blur-[100px]" />
       </div>
 
-      {/* Header glass */}
-      <header className="v3-glass-strong border-b border-primary/15 px-4 py-3">
+      {/* Header glass — respects iOS status bar / notch */}
+      <header
+        className="relative z-10 v3-glass-strong border-b border-primary/15 px-4 pb-3 lg:pt-3"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
         <div className="flex items-center gap-3 max-w-3xl mx-auto">
           <Link to="/" className="rounded-full p-2 hover:bg-white/5 transition"><ArrowLeft className="h-5 w-5 text-muted-foreground" /></Link>
           <div className="relative">
