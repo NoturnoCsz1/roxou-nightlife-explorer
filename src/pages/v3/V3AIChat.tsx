@@ -1,12 +1,13 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, memo, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Bot, Crown, Loader2, Send, Sparkles, User, MapPin, Car, Video, Beer, Music, PartyPopper, Wine } from "lucide-react";
+import { ArrowLeft, Crown, Loader2, Send, Sparkles, User, MapPin, Car, Video, Beer, Music, Calendar, Trophy, Navigation } from "lucide-react";
 import AuraAvatar from "@/components/v3/AuraAvatar";
 import SEO from "@/components/SEO";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
+import { haversineKm } from "@/lib/geoUtils";
 import VIPPaywallModal from "@/components/v3/VIPPaywallModal";
 import { toast } from "sonner";
 
@@ -20,14 +21,27 @@ type ActionCard = {
   video_url?: string | null;
   date_time?: string | null;
   href: string;
+  lat?: number | null;
+  lng?: number | null;
+  distanceKm?: number | null;
 };
 type Msg = { id: string; role: "user" | "assistant"; content: string; created_at?: string; cards?: ActionCard[] };
 
-const STARTER_CARDS = [
-  { icon: Music, label: "Sertanejo", prompt: "Qual o melhor rolê sertanejo essa semana em Prudente?", gradient: "from-amber-500/20 to-orange-500/10" },
-  { icon: Beer, label: "Open Bar", prompt: "Tem alguma festa com open bar rolando hoje ou no fim de semana?", gradient: "from-purple-500/20 to-fuchsia-500/10" },
-  { icon: PartyPopper, label: "Expo 2026", prompt: "Como estão os preparativos da Expo Prudente 2026? O que rola por lá?", gradient: "from-pink-500/20 to-rose-500/10" },
-  { icon: Wine, label: "Happy Hour", prompt: "Onde tem happy hour bom hoje em Presidente Prudente?", gradient: "from-cyan-500/20 to-blue-500/10" },
+const HERO_CHIPS: { icon: any; label: string; prompt: string }[] = [
+  { icon: Beer, label: "🍻 Happy Hour", prompt: "Onde tem happy hour hoje em Presidente Prudente?" },
+  { icon: Music, label: "🎵 Música ao vivo", prompt: "Onde tem música ao vivo hoje em Prudente?" },
+  { icon: Trophy, label: "⚽ Futebol", prompt: "Onde assistir o jogo hoje sem pagar couvert?" },
+  { icon: Calendar, label: "📅 Agenda", prompt: "O que tem na agenda de hoje em Prudente?" },
+  { icon: Car, label: "🚕 Transporte", prompt: "Como peço uma carona segura agora?" },
+];
+
+const QUICK_PROMPTS: { label: string; prompt: string }[] = [
+  { label: "🍻 Happy Hour hoje", prompt: "Onde tem happy hour hoje em Presidente Prudente?" },
+  { label: "🎵 Música ao vivo", prompt: "Onde tem música ao vivo hoje em Prudente?" },
+  { label: "⚽ Onde assistir jogo", prompt: "Onde assistir o jogo hoje sem pagar couvert?" },
+  { label: "📅 Agenda de hoje", prompt: "O que tem na agenda de hoje em Prudente?" },
+  { label: "📍 Perto de mim", prompt: "Quais lugares legais estão perto de mim agora?" },
+  { label: "🚕 Pedir carona", prompt: "Quero pedir uma carona, como funciona?" },
 ];
 
 const FOLLOW_UPS = ["Pedir Carona", "Ver bares perto de mim", "Onde economizar hoje?", "Qual rolê combina comigo?"];
