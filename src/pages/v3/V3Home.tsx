@@ -666,6 +666,13 @@ export default function V3Home() {
         </HomeSectionBoundary>
       </div>
 
+      {/* Destaque Copa do Mundo 2026 — desktop, abaixo do CommandCenter (que contém "Hoje na Roxou") */}
+      <div className="hidden lg:block max-w-5xl mx-auto">
+        <HomeSectionBoundary name="Copa Highlight (desktop)" silent>
+          <CopaHighlightCard />
+        </HomeSectionBoundary>
+      </div>
+
       {/* ══════ NOTÍCIAS — após layout principal ══════ */}
       {!isLoading && !hasHomeDataError && (
         <div className="max-w-5xl mx-auto min-h-[200px] px-4 lg:px-6">
