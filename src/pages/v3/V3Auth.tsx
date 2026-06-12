@@ -29,22 +29,33 @@ export default function V3Auth() {
   };
 
   return (
-    <div className="px-4 py-6 max-w-md mx-auto space-y-8">
-      <div className="flex items-center gap-3">
-        <Link to="/" className="p-2 -ml-2 rounded-xl hover:bg-card transition-colors">
-          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-        </Link>
-        <div>
-          <h1 className="font-display font-bold text-xl text-foreground">Entrar na Roxou</h1>
-          <p className="text-xs text-muted-foreground">É rápido e seguro</p>
-        </div>
+    <div className="px-4 pt-3 pb-8 max-w-md mx-auto">
+      {/* Voltar — discreto, alinhado ao topo */}
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1 -ml-1 mb-3 px-2 py-1 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+      </Link>
+
+      {/* Header compacto: logo + título imediatos */}
+      <div className="text-center mb-4">
+        <p
+          className="font-display font-black text-2xl text-primary"
+          style={{ textShadow: "0 0 24px hsl(var(--primary)/0.5)" }}
+        >
+          ROXOU
+        </p>
+        <h1 className="mt-2 font-display font-bold text-xl text-foreground leading-tight">
+          Entrar na Roxou
+        </h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          É rápido, seguro e sem senha.
+        </p>
       </div>
 
-      <div className="rounded-2xl border border-border/40 bg-card/60 p-6 space-y-5">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Entre com Google para salvar eventos, comentar nos jogos e usar a Roxou.
-        </p>
-
+      {/* Card de login — CTA dentro da primeira dobra */}
+      <div className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-3">
         <Button
           variant="outline"
           onClick={handleGoogle}
@@ -64,6 +75,12 @@ export default function V3Auth() {
           Ao continuar, você concorda com os termos de uso da Roxou.
         </p>
       </div>
+
+      {/* Benefícios — abaixo da dobra, não empurra o CTA */}
+      <p className="mt-4 text-[11px] text-muted-foreground/80 text-center leading-relaxed px-2">
+        Entrando você pode salvar eventos, comentar nos jogos
+        <br className="hidden sm:inline" /> e pedir caronas.
+      </p>
     </div>
   );
 }
