@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster";
 import "leaflet.heat";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 
 function HeatLayer({ points }: { points: Array<[number, number, number]> }) {
