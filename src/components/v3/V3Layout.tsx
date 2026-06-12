@@ -55,7 +55,6 @@ export default function V3Layout() {
             {[
               { to: "/agenda",    label: "Agenda"    },
               { to: "/jogos",     label: "Jogos"     },
-              { to: "/expo2026",  label: "Expo 2026" },
               { to: "/noticias",  label: "Notícias"  },
               { to: "/parceiros", label: "Parceiros" },
             ].map(({ to, label }) => {
