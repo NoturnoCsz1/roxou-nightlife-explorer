@@ -174,7 +174,8 @@ const EventoBulkForm = () => {
   }, [cityFilter]);
 
   // Detect duplicates: slug exists in DB or appears more than once in current items
-  function getDuplicateSet(): Set<string> {
+  // Memoizado: só recomputa quando items ou dbEvents mudam (não em cada keystroke do BatchDefaults).
+  const duplicateIds = useMemo<Set<string>>(() => {
     const dup = new Set<string>();
     const counts = new Map<string, number>();
     const imageHashes = new Set(dbEvents.map((e) => e.image_hash).filter(Boolean));
@@ -196,14 +197,15 @@ const EventoBulkForm = () => {
       }
     }
     return dup;
-  }
-  const duplicateIds = getDuplicateSet();
+  }, [items, dbEvents, dbSlugs]);
 
   /**
    * Validação inteligente (aditiva): score 0–100 por item, comparando
    * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
+   * Memoizado para evitar O(items × dbEvents) em cada render (era a maior
+   * causa de lag ao digitar nos Padrões do Lote).
    */
-  const smartDuplicates = (() => {
+  const smartDuplicates = useMemo<Map<string, DuplicateConfidenceResult>>(() => {
     const map = new Map<string, DuplicateConfidenceResult>();
     if (!dbEvents.length) return map;
     const existing: (DuplicateConfidenceExisting & { dedupe_key?: string | null })[] = dbEvents.map((e) => ({
@@ -237,18 +239,11 @@ const EventoBulkForm = () => {
       );
       if (result.decision !== "clear") {
         map.set(it.localId, result);
-        console.warn("[DuplicateEventCheck]", {
-          localId: it.localId,
-          title: it.form.title,
-          score: result.duplicate_score,
-          decision: result.decision,
-          matched: result.matched_event_title,
-          fields: result.matched_fields,
-        });
       }
     }
     return map;
-  })();
+  }, [items, dbEvents]);
+
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
     setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, ...patch } : it)));
