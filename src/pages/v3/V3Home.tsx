@@ -35,6 +35,7 @@ import { HomeSectionBoundary, HomeSectionFallback } from "@/components/v3/home/H
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
+import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 import WorldCupRibbon from "@/components/season/WorldCupRibbon";
