@@ -49,6 +49,7 @@ const FOLLOW_UPS = ["Pedir Carona", "Ver bares perto de mim", "Onde economizar h
 export default function V3AIChat() {
   const navigate = useNavigate();
   const { user, loading } = useV3Profile();
+  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
