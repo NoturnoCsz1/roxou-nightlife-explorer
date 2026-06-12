@@ -120,6 +120,63 @@ function FitAll({ points }: { points: LatLng[] }) {
   }, [points.length]); // eslint-disable-line
   return null;
 }
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function buildPopupHtml(e: NearbyEvent, userLocation: LatLng | null | undefined, showCTAs: boolean): string {
+  const dist = userLocation ? haversineKm(userLocation, { lat: e.lat, lng: e.lng }) : null;
+  const dateStr = new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const target = e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`;
+  return `
+    <div style="min-width:200px;font-family:Inter,sans-serif">
+      ${e.image_url ? `<div style="width:100%;height:110px;border-radius:10px;overflow:hidden;margin-bottom:8px;background:#1a1025"><img src="${escapeHtml(e.image_url)}" alt="${escapeHtml(e.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" /></div>` : ""}
+      <strong style="font-size:14px;color:#1a1025;display:block;line-height:1.2">${escapeHtml(e.title)}</strong>
+      ${e.venue_name ? `<div style="font-size:11px;color:#555;margin-top:2px">${escapeHtml(e.venue_name)}</div>` : ""}
+      <div style="font-size:11px;color:#888;margin-top:2px">${escapeHtml(dateStr)}</div>
+      ${e.badges && e.badges.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${e.badges.map(b => `<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff">${escapeHtml(b)}</span>`).join("")}</div>` : ""}
+      ${dist != null ? `<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-top:6px">📍 ${dist.toFixed(1)} km de você</div>` : ""}
+      ${showCTAs ? `<div style="display:flex;gap:6px;margin-top:10px">
+        <button data-roxou-nav="${escapeHtml(target)}" style="flex:1;padding:8px;border-radius:10px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">Ver local</button>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}" target="_blank" rel="noopener noreferrer" style="flex:1;padding:8px;border-radius:10px;background:transparent;color:#7c3aed;border:1px solid #7c3aed;font-size:12px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none">Como chegar</a>
+      </div>` : ""}
+    </div>`;
+}
+
+function ClusterLayer({
+  events, userLocation, showCTAs, navigate,
+}: { events: NearbyEvent[]; userLocation?: LatLng | null; showCTAs: boolean; navigate: NavigateFunction }) {
+  const map = useMap();
+  useEffect(() => {
+    const group = (L as any).markerClusterGroup({
+      chunkedLoading: true,
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 55,
+      iconCreateFunction: clusterIconCreate,
+    });
+    events.forEach((e) => {
+      const m = L.marker([e.lat, e.lng], { icon: EVENT_ICON });
+      m.bindPopup(buildPopupHtml(e, userLocation, showCTAs), { maxWidth: 260, minWidth: 220 });
+      m.on("popupopen", (ev: any) => {
+        const node: HTMLElement = ev.popup.getElement();
+        if (!node) return;
+        const btn = node.querySelector<HTMLButtonElement>("button[data-roxou-nav]");
+        if (btn) {
+          btn.onclick = () => {
+            const to = btn.getAttribute("data-roxou-nav");
+            if (to) navigate(to);
+          };
+        }
+      });
+      group.addLayer(m);
+    });
+    map.addLayer(group);
+    return () => { map.removeLayer(group); };
+  }, [map, events, userLocation, showCTAs, navigate]);
+  return null;
+}
+
 
 export default function RoxouNearbyEventsMap({
   userLocation, events, height = 420, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
