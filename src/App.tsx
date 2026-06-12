@@ -89,6 +89,7 @@ const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 const SEOLanding = lazy(() => import("./pages/SEOLanding"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 import PedirCaronaGate from "./components/PedirCaronaGate";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*) — lazy
@@ -197,6 +198,7 @@ const App = () => (
             <Route path="rankings" element={<V3Rankings />} />
             <Route path="comunidade" element={<V3Community />} />
             <Route path="jogos" element={L(<Jogos />)} />
+            <Route path="copa-do-mundo-2026" element={L(<CopaDoMundo2026 />)} />
             <Route path="jogo/:slug" element={L(<JogoDetail />)} />
             <Route path="auth" element={<V3Auth />} />
           </Route>
