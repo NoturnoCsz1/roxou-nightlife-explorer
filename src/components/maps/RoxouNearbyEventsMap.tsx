@@ -39,6 +39,9 @@ export interface NearbyEvent {
   sub_category?: string | null;
   image_url?: string | null;
   transport_reservation_enabled?: boolean;
+  score?: number;
+  heat?: number; // 0..1 contribution weight for heat layer
+  badges?: string[];
 }
 
 interface Props {
@@ -46,10 +49,11 @@ interface Props {
   events: NearbyEvent[];
   height?: number | string;
   showCTAs?: boolean;
-  heatmap?: boolean; // legacy, ignored — clusters are used now
+  heatmap?: boolean;
   selectionMode?: boolean;
   onMapClick?: (loc: LatLng) => void;
 }
+
 
 function ClickHandler({ onClick }: { onClick: (loc: LatLng) => void }) {
   useMapEvents({
