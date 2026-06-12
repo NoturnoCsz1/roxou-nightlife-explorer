@@ -258,7 +258,7 @@ export default function V3AIChat() {
               <Bubble msg={msg} />
               {msg.role === "assistant" && msg.cards && msg.cards.length > 0 && (
                 <div className="ml-9 grid gap-2.5">
-                  {msg.cards.map((card) => <RichEventCard key={`${card.type}-${card.id}`} card={card} />)}
+                  {msg.cards.map((card) => <RichEventCard key={`${card.type}-${card.id}`} card={card} userLoc={userLoc} />)}
                 </div>
               )}
               {msg.role === "assistant" && index === messages.length - 1 && !sending && (
