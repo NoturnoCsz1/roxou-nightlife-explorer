@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,37 +8,55 @@ import RoxouNearbyEventsMap, { type NearbyEvent } from "@/components/maps/RoxouN
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 import SEO from "@/components/SEO";
 
-// Apenas referência visual quando GPS ainda não foi confirmado.
-const PP_REFERENCE: LatLng = { lat: -22.1207, lng: -51.3889 };
 const ACCURACY_THRESHOLD_M = 1000;
-const STORAGE_KEY = "roxou:manualLocation";
+const MANUAL_KEY = "roxou:manualLocation";
+const LAST_GPS_KEY = "roxou:lastGps";
+
+interface SavedGps { lat: number; lng: number; accuracy: number; ts: number; }
+
+const QUICK_FILTERS = [
+  { key: "all", label: "Todos", emoji: "✨" },
+  { key: "bares", label: "Bares", emoji: "🍺", match: ["bar", "boteco", "pub"] },
+  { key: "restaurantes", label: "Restaurantes", emoji: "🍔", match: ["restaurante", "gastronomia", "food"] },
+  { key: "musica", label: "Música ao vivo", emoji: "🎵", match: ["musica", "música", "show", "live", "sertanejo", "samba", "rock", "pagode", "dj", "eletronica", "eletrônica"] },
+  { key: "eventos", label: "Eventos", emoji: "🎉", match: ["festa", "evento", "balada", "festival"] },
+  { key: "jogos", label: "Jogos", emoji: "⚽", match: ["jogo", "futebol", "esporte", "transmissao", "transmissão"] },
+] as const;
+
+const DISTANCE_OPTIONS = [1, 3, 5, 10, 20] as const;
+
+function readJSON<T>(key: string): T | null {
+  try { const raw = localStorage.getItem(key); return raw ? (JSON.parse(raw) as T) : null; } catch { return null; }
+}
 
 export default function PertoDeMim() {
   const navigate = useNavigate();
-  const [gpsLocation, setGpsLocation] = useState<LatLng | null>(null);
-  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
-  const [manualLocation, setManualLocation] = useState<LatLng | null>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (typeof parsed?.lat === "number" && typeof parsed?.lng === "number") return parsed;
-    } catch {}
-    return null;
+  const watchIdRef = useRef<number | null>(null);
+
+  const [gpsLocation, setGpsLocation] = useState<LatLng | null>(() => {
+    const saved = readJSON<SavedGps>(LAST_GPS_KEY);
+    return saved ? { lat: saved.lat, lng: saved.lng } : null;
   });
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(() => readJSON<SavedGps>(LAST_GPS_KEY)?.accuracy ?? null);
+  const [gpsTs, setGpsTs] = useState<number | null>(() => readJSON<SavedGps>(LAST_GPS_KEY)?.ts ?? null);
+
+  const [manualLocation, setManualLocation] = useState<LatLng | null>(() => readJSON<LatLng>(MANUAL_KEY));
   const [selectionMode, setSelectionMode] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [requesting, setRequesting] = useState(false);
+
   const [events, setEvents] = useState<NearbyEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // GPS só é "real" se accuracy <= ACCURACY_THRESHOLD_M.
-  const gpsIsAccurate = gpsLocation != null && gpsAccuracy != null && gpsAccuracy <= ACCURACY_THRESHOLD_M;
-  // Manual sempre vence se existir; senão só GPS preciso.
-  const realLocation: LatLng | null = manualLocation || (gpsIsAccurate ? gpsLocation : null);
-  const isUsingFallback = !realLocation;
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [radiusKm, setRadiusKm] = useState<number>(5);
 
-  const requestGeolocation = () => {
+  const gpsIsAccurate = gpsLocation != null && gpsAccuracy != null && gpsAccuracy <= ACCURACY_THRESHOLD_M;
+  const realLocation: LatLng | null = manualLocation || (gpsIsAccurate ? gpsLocation : gpsLocation);
+  const isUsingFallback = !manualLocation && !gpsIsAccurate;
+
+  // GPS: single high-accuracy read on demand
+  const requestGeolocation = (force = false) => {
     if (!navigator.geolocation) {
       setGeoError("Geolocalização não suportada neste navegador.");
       return;
@@ -48,29 +66,57 @@ export default function PertoDeMim() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords;
-        // eslint-disable-next-line no-console
-        console.log("[PertoDeMim] geo success", { latitude, longitude, accuracy });
         setGpsLocation({ lat: latitude, lng: longitude });
         setGpsAccuracy(accuracy);
+        const ts = Date.now();
+        setGpsTs(ts);
+        try { localStorage.setItem(LAST_GPS_KEY, JSON.stringify({ lat: latitude, lng: longitude, accuracy, ts })); } catch {}
         setRequesting(false);
         if (accuracy > ACCURACY_THRESHOLD_M) {
-          toast.warning(`GPS impreciso (±${Math.round(accuracy)}m). Escolha sua localização manualmente.`);
+          toast.warning(`GPS impreciso (±${Math.round(accuracy)}m). Tente novamente em área aberta ou escolha manualmente.`);
+        } else if (force) {
+          toast.success(`Localização atualizada (±${Math.round(accuracy)}m)`);
         }
       },
       (err) => {
-        // eslint-disable-next-line no-console
-        console.warn("[PertoDeMim] geo error", { code: err.code, message: err.message });
+        console.warn("[PertoDeMim] geo error", err);
         setGeoError("Não conseguimos acessar sua localização. Ative o GPS ou escolha manualmente no mapa.");
         setRequesting(false);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: force ? 0 : 30000 }
     );
   };
 
+  // Background watch (battery-friendly)
   useEffect(() => {
-    if (!manualLocation) requestGeolocation();
+    if (manualLocation) return;
+    if (!navigator.geolocation || !("watchPosition" in navigator.geolocation)) return;
+    requestGeolocation(false);
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        // Only accept updates that improve or roughly match previous accuracy
+        setGpsLocation((prev) => {
+          if (!prev) return { lat: latitude, lng: longitude };
+          const moved = haversineKm(prev, { lat: latitude, lng: longitude }) * 1000;
+          if (moved < 15 && gpsAccuracy && accuracy > gpsAccuracy * 1.5) return prev;
+          return { lat: latitude, lng: longitude };
+        });
+        setGpsAccuracy(accuracy);
+        const ts = Date.now();
+        setGpsTs(ts);
+        try { localStorage.setItem(LAST_GPS_KEY, JSON.stringify({ lat: latitude, lng: longitude, accuracy, ts })); } catch {}
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
+    );
+    watchIdRef.current = id;
+    return () => {
+      if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [manualLocation]);
 
   useEffect(() => {
     (async () => {
@@ -78,11 +124,11 @@ export default function PertoDeMim() {
       const now = new Date().toISOString();
       const { data: evts } = await supabase
         .from("events")
-        .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled")
+        .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url")
         .eq("status", "published")
         .gt("date_time", now)
         .order("date_time", { ascending: true })
-        .limit(150);
+        .limit(200);
 
       const list = evts || [];
       const partnerIds = [
@@ -106,6 +152,9 @@ export default function PertoDeMim() {
           return {
             id: e.id, title: e.title, slug: e.slug, venue_name: e.venue_name,
             date_time: e.date_time, lat, lng,
+            category: (e as any).category ?? null,
+            sub_category: (e as any).sub_category ?? null,
+            image_url: (e as any).image_url ?? null,
             transport_reservation_enabled: Boolean((e as any).transport_reservation_enabled),
           } as NearbyEvent;
         })
@@ -116,28 +165,59 @@ export default function PertoDeMim() {
     })();
   }, []);
 
-  const sorted = realLocation
-    ? [...events]
+  const filtered = useMemo(() => {
+    let out = events;
+    if (activeFilter !== "all") {
+      const f = QUICK_FILTERS.find((x) => x.key === activeFilter);
+      const tokens = (f as any)?.match as string[] | undefined;
+      if (tokens?.length) {
+        out = out.filter((e) => {
+          const hay = `${e.category ?? ""} ${e.sub_category ?? ""} ${e.title}`.toLowerCase();
+          return tokens.some((t) => hay.includes(t));
+        });
+      }
+    }
+    if (realLocation) {
+      out = out.filter((e) => haversineKm(realLocation, { lat: e.lat, lng: e.lng }) <= radiusKm);
+    }
+    return out;
+  }, [events, activeFilter, realLocation, radiusKm]);
+
+  const sorted = useMemo(() => {
+    if (realLocation) {
+      return [...filtered]
         .map((e) => ({ e, d: haversineKm(realLocation, { lat: e.lat, lng: e.lng }) }))
         .sort((a, b) => a.d - b.d)
-        .slice(0, 30)
-    : events.slice(0, 30).map((e) => ({ e, d: null as number | null }));
+        .slice(0, 50);
+    }
+    return filtered.slice(0, 50).map((e) => ({ e, d: null as number | null }));
+  }, [filtered, realLocation]);
 
   const handleMapClick = (loc: LatLng) => {
     setManualLocation(loc);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(loc)); } catch {}
+    try { localStorage.setItem(MANUAL_KEY, JSON.stringify(loc)); } catch {}
     setSelectionMode(false);
     toast.success("Localização manual definida.");
   };
 
   const clearManualLocation = () => {
     setManualLocation(null);
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    try { localStorage.removeItem(MANUAL_KEY); } catch {}
     toast.info("Localização manual removida.");
   };
 
+  const lastUpdatedLabel = (() => {
+    if (manualLocation) return "manual";
+    if (!gpsTs) return "—";
+    const diff = Math.floor((Date.now() - gpsTs) / 1000);
+    if (diff < 10) return "agora";
+    if (diff < 60) return `${diff}s atrás`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} min atrás`;
+    return `${Math.floor(diff / 3600)}h atrás`;
+  })();
+
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-24 overflow-x-clip">
       <SEO
         title="Rolês perto de você | ROXOU"
         description="Encontre eventos, festas e shows próximos da sua localização."
@@ -149,11 +229,17 @@ export default function PertoDeMim() {
           <Link to="/" className="p-2 -ml-2 rounded-xl hover:bg-card">
             <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </Link>
-          <div>
-            <h1 className="font-display font-bold text-lg">Rolês perto de você</h1>
-            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              {manualLocation ? "Localização manual" : gpsIsAccurate ? "Sua localização (GPS)" : "Localização não confirmada"}
+          <div className="min-w-0">
+            <h1 className="font-display font-bold text-lg truncate">Rolês perto de você</h1>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1 truncate">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              {manualLocation
+                ? "Localização manual"
+                : gpsIsAccurate
+                ? `GPS · ±${Math.round(gpsAccuracy!)}m · ${lastUpdatedLabel}`
+                : gpsLocation
+                ? `GPS impreciso (±${Math.round(gpsAccuracy ?? 0)}m)`
+                : "Localização não confirmada"}
             </p>
           </div>
         </div>
@@ -175,9 +261,9 @@ export default function PertoDeMim() {
               <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-[12px] text-amber-100 flex gap-2">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <p>
-                  {gpsLocation && !gpsIsAccurate
-                    ? `Sua localização está muito imprecisa (±${Math.round(gpsAccuracy!)}m). Ative o GPS do celular ou escolha sua localização manualmente no mapa.`
-                    : "Mapa centralizado em Presidente Prudente apenas como referência. Confirme sua localização para ver eventos próximos."}
+                  {gpsLocation
+                    ? `Localização imprecisa (±${Math.round(gpsAccuracy ?? 0)}m). Toque em "Atualizar" ou escolha sua localização no mapa.`
+                    : "Confirme sua localização para ver eventos próximos."}
                 </p>
               </div>
             )}
@@ -191,29 +277,85 @@ export default function PertoDeMim() {
             <RoxouNearbyEventsMap
               userLocation={realLocation}
               events={sorted.map((s) => s.e)}
-              height={340}
-              heatmap
+              height={420}
               selectionMode={selectionMode}
               onMapClick={handleMapClick}
             />
 
-            <div className="grid grid-cols-2 gap-2">
+            {/* Quick category filters */}
+            <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2 w-max pb-1">
+                {QUICK_FILTERS.map((f) => {
+                  const active = activeFilter === f.key;
+                  return (
+                    <button
+                      key={f.key}
+                      onClick={() => setActiveFilter(f.key)}
+                      className={`flex items-center gap-1.5 rounded-full px-3 h-9 text-xs font-semibold whitespace-nowrap border transition ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary shadow-[0_0_18px_-4px_hsl(var(--primary)/0.7)]"
+                          : "bg-card/60 border-border/40 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span>{f.emoji}</span> {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Distance radius */}
+            <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2 w-max">
+                {DISTANCE_OPTIONS.map((d) => {
+                  const active = radiusKm === d;
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => setRadiusKm(d)}
+                      className={`rounded-full px-3 h-8 text-[11px] font-semibold whitespace-nowrap border transition ${
+                        active
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card/40 border-border/40 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      até {d} km
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground">
+              <strong className="text-foreground">{sorted.length}</strong> {sorted.length === 1 ? "local encontrado" : "locais encontrados"} em até {radiusKm} km
+            </p>
+
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
-                className="rounded-xl gap-2"
+                className="rounded-xl gap-1.5 h-11 text-xs"
                 disabled={requesting}
-                onClick={requestGeolocation}
+                onClick={() => requestGeolocation(true)}
               >
-                <Crosshair className="w-4 h-4" />
-                {requesting ? "Buscando..." : "Usar minha localização"}
+                <RefreshCw className={`w-3.5 h-3.5 ${requesting ? "animate-spin" : ""}`} />
+                {requesting ? "..." : "Atualizar"}
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-xl gap-1.5 h-11 text-xs"
+                disabled={requesting}
+                onClick={() => requestGeolocation(true)}
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                GPS
               </Button>
               <Button
                 variant={selectionMode ? "default" : "outline"}
-                className="rounded-xl gap-2"
+                className="rounded-xl gap-1.5 h-11 text-xs"
                 onClick={() => setSelectionMode((v) => !v)}
               >
-                <MapPin className="w-4 h-4" />
-                {selectionMode ? "Cancelar" : "Escolher no mapa"}
+                <MapPin className="w-3.5 h-3.5" />
+                {selectionMode ? "Cancelar" : "Mapa"}
               </Button>
             </div>
 
@@ -230,10 +372,12 @@ export default function PertoDeMim() {
 
             <section className="space-y-2">
               <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mt-2">
-                <Calendar className="w-3.5 h-3.5" /> Próximos {sorted.length} rolês
+                <Calendar className="w-3.5 h-3.5" /> {sorted.length > 0 ? `Próximos ${sorted.length} rolês` : "Nenhum rolê neste raio"}
               </h2>
               {sorted.length === 0 && (
-                <p className="text-sm text-muted-foreground py-6 text-center">Nenhum evento com localização cadastrada.</p>
+                <p className="text-sm text-muted-foreground py-6 text-center">
+                  Aumente o raio ou troque o filtro para ver mais opções.
+                </p>
               )}
               {sorted.map(({ e, d }) => (
                 <div key={e.id} className="rounded-2xl border border-border/40 bg-card/40 backdrop-blur-md p-3 space-y-2">
@@ -254,18 +398,18 @@ export default function PertoDeMim() {
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       size="sm"
-                      className="rounded-lg text-[11px] h-8"
+                      className="rounded-lg text-[11px] h-9"
                       onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}
                     >
-                      Ver
+                      Ver local
                     </Button>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-border/40 text-[11px] font-medium h-8 hover:border-primary/40"
+                      className="inline-flex items-center justify-center gap-1 rounded-lg border border-border/40 text-[11px] font-medium h-9 hover:border-primary/40"
                     >
-                      <Navigation className="w-3 h-3" /> Ir
+                      <Navigation className="w-3 h-3" /> Como chegar
                     </a>
                   </div>
                 </div>
