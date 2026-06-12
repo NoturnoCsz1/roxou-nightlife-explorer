@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster";
 import "leaflet.heat";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, type NavigateFunction } from "react-router-dom";
 import { haversineKm, type LatLng } from "@/lib/geoUtils";
 
 function HeatLayer({ points }: { points: Array<[number, number, number]> }) {
@@ -120,6 +120,63 @@ function FitAll({ points }: { points: LatLng[] }) {
   }, [points.length]); // eslint-disable-line
   return null;
 }
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function buildPopupHtml(e: NearbyEvent, userLocation: LatLng | null | undefined, showCTAs: boolean): string {
+  const dist = userLocation ? haversineKm(userLocation, { lat: e.lat, lng: e.lng }) : null;
+  const dateStr = new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+  const target = e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`;
+  return `
+    <div style="min-width:200px;font-family:Inter,sans-serif">
+      ${e.image_url ? `<div style="width:100%;height:110px;border-radius:10px;overflow:hidden;margin-bottom:8px;background:#1a1025"><img src="${escapeHtml(e.image_url)}" alt="${escapeHtml(e.title)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" /></div>` : ""}
+      <strong style="font-size:14px;color:#1a1025;display:block;line-height:1.2">${escapeHtml(e.title)}</strong>
+      ${e.venue_name ? `<div style="font-size:11px;color:#555;margin-top:2px">${escapeHtml(e.venue_name)}</div>` : ""}
+      <div style="font-size:11px;color:#888;margin-top:2px">${escapeHtml(dateStr)}</div>
+      ${e.badges && e.badges.length ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${e.badges.map(b => `<span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff">${escapeHtml(b)}</span>`).join("")}</div>` : ""}
+      ${dist != null ? `<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-top:6px">📍 ${dist.toFixed(1)} km de você</div>` : ""}
+      ${showCTAs ? `<div style="display:flex;gap:6px;margin-top:10px">
+        <button data-roxou-nav="${escapeHtml(target)}" style="flex:1;padding:8px;border-radius:10px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer">Ver local</button>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}" target="_blank" rel="noopener noreferrer" style="flex:1;padding:8px;border-radius:10px;background:transparent;color:#7c3aed;border:1px solid #7c3aed;font-size:12px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none">Como chegar</a>
+      </div>` : ""}
+    </div>`;
+}
+
+function ClusterLayer({
+  events, userLocation, showCTAs, navigate,
+}: { events: NearbyEvent[]; userLocation?: LatLng | null; showCTAs: boolean; navigate: NavigateFunction }) {
+  const map = useMap();
+  useEffect(() => {
+    const group = (L as any).markerClusterGroup({
+      chunkedLoading: true,
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 55,
+      iconCreateFunction: clusterIconCreate,
+    });
+    events.forEach((e) => {
+      const m = L.marker([e.lat, e.lng], { icon: EVENT_ICON });
+      m.bindPopup(buildPopupHtml(e, userLocation, showCTAs), { maxWidth: 260, minWidth: 220 });
+      m.on("popupopen", (ev: any) => {
+        const node: HTMLElement = ev.popup.getElement();
+        if (!node) return;
+        const btn = node.querySelector<HTMLButtonElement>("button[data-roxou-nav]");
+        if (btn) {
+          btn.onclick = () => {
+            const to = btn.getAttribute("data-roxou-nav");
+            if (to) navigate(to);
+          };
+        }
+      });
+      group.addLayer(m);
+    });
+    map.addLayer(group);
+    return () => { map.removeLayer(group); };
+  }, [map, events, userLocation, showCTAs, navigate]);
+  return null;
+}
+
 
 export default function RoxouNearbyEventsMap({
   userLocation, events, height = 420, showCTAs = true, heatmap = false, selectionMode = false, onMapClick,
@@ -162,62 +219,13 @@ export default function RoxouNearbyEventsMap({
         )}
 
 
-        <MarkerClusterGroup
-          chunkedLoading
-          showCoverageOnHover={false}
-          spiderfyOnMaxZoom
-          maxClusterRadius={55}
-          iconCreateFunction={clusterIconCreate}
-        >
-          {events.map((e) => {
-            const dist = userLocation ? haversineKm(userLocation, { lat: e.lat, lng: e.lng }) : null;
-            return (
-              <Marker key={e.id} position={[e.lat, e.lng]} icon={EVENT_ICON}>
-                <Popup maxWidth={260} minWidth={220}>
-                  <div style={{ minWidth: 200, fontFamily: "Inter, sans-serif" }}>
-                    {e.image_url && (
-                      <div style={{ width: "100%", height: 110, borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "#1a1025" }}>
-                        <img src={e.image_url} alt={e.title} loading="lazy"
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      </div>
-                    )}
-                    <strong style={{ fontSize: 14, color: "#1a1025", display: "block", lineHeight: 1.2 }}>{e.title}</strong>
-                    {e.venue_name && <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{e.venue_name}</div>}
-                    <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
-                      {new Date(e.date_time).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
-                    </div>
-                    {e.badges && e.badges.length > 0 && (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                        {e.badges.map((b, i) => (
-                          <span key={i} style={{ fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 999, background: "linear-gradient(135deg,#a855f7,#ec4899)", color: "#fff" }}>{b}</span>
-                        ))}
-                      </div>
-                    )}
-                    {dist != null && (
-                      <div style={{ fontSize: 11, color: "#7c3aed", fontWeight: 700, marginTop: 6 }}>
-                        📍 {dist.toFixed(1)} km de você
-                      </div>
-                    )}
+        <ClusterLayer
+          events={events}
+          userLocation={userLocation}
+          showCTAs={showCTAs}
+          navigate={navigate}
+        />
 
-                    {showCTAs && (
-                      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                        <button
-                          onClick={() => navigate(e.slug ? `/evento/${e.slug}` : `/evento/${e.id}`)}
-                          style={{ flex: 1, padding: "8px 8px", borderRadius: 10, background: "linear-gradient(135deg,#a855f7,#7c3aed)", color: "#fff", fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer" }}
-                        >Ver local</button>
-                        <a
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`}
-                          target="_blank" rel="noopener noreferrer"
-                          style={{ flex: 1, padding: "8px 8px", borderRadius: 10, background: "transparent", color: "#7c3aed", border: "1px solid #7c3aed", fontSize: 12, fontWeight: 700, cursor: "pointer", textAlign: "center", textDecoration: "none" }}
-                        >Como chegar</a>
-                      </div>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MarkerClusterGroup>
       </MapContainer>
     </div>
   );
