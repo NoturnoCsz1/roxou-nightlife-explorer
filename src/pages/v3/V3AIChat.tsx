@@ -220,9 +220,9 @@ export default function V3AIChat() {
         </div>
       </header>
 
-      {/* Conversation */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="max-w-3xl mx-auto space-y-4">
+      {/* Conversation — full-bleed mobile, centered desktop */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 pt-4 pb-6 scroll-smooth">
+        <div className="max-w-2xl mx-auto space-y-5">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center pt-6 pb-2 space-y-6 animate-fade-in">
               <div className="relative">
@@ -260,14 +260,14 @@ export default function V3AIChat() {
             <div key={msg.id} className="space-y-2 animate-fade-in">
               <Bubble msg={msg} />
               {msg.role === "assistant" && msg.cards && msg.cards.length > 0 && (
-                <div className="ml-9 grid gap-2.5">
+                <div className="ml-10 grid gap-2.5">
                   {msg.cards.map((card) => <RichEventCard key={`${card.type}-${card.id}`} card={card} userLoc={userLoc} />)}
                 </div>
               )}
               {msg.role === "assistant" && index === messages.length - 1 && !sending && (
-                <div className="ml-9 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <div className="ml-10 flex gap-2 overflow-x-auto pb-1 pr-4 scrollbar-hide">
                   {FOLLOW_UPS.map((suggestion) => (
-                    <button key={suggestion} onClick={() => sendText(suggestion)} className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black text-primary transition hover:bg-primary/20">
+                    <button key={suggestion} onClick={() => sendText(suggestion)} className="shrink-0 whitespace-nowrap rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black text-primary transition hover:bg-primary/20">
                       {suggestion}
                     </button>
                   ))}
@@ -281,8 +281,9 @@ export default function V3AIChat() {
         </div>
       </div>
 
+
       {/* Quick prompt chips — sticky above input, horizontal scroll on mobile */}
-      <div className="v3-glass-strong border-t border-primary/15 pt-2">
+      <div className="border-t border-white/8 bg-background/70 backdrop-blur-xl pt-2">
         <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory pl-4 pr-6 lg:justify-center lg:flex-wrap lg:px-4">
           {QUICK_PROMPTS.map((q) => (
             <button
@@ -299,7 +300,7 @@ export default function V3AIChat() {
 
 
       {/* Input bar — rounded-full neon */}
-      <form onSubmit={send} className="v3-glass-strong border-t border-primary/15 px-4 py-3 pb-[env(safe-area-inset-bottom)]">
+      <form onSubmit={send} className="border-t border-white/8 bg-background/85 backdrop-blur-xl px-3 sm:px-4 py-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}>
         <div className="max-w-3xl mx-auto">
           <div
             className={`relative flex items-center gap-2 rounded-full bg-background/60 backdrop-blur px-2 py-1.5 border transition-all duration-300 ${
@@ -347,9 +348,9 @@ export default function V3AIChat() {
 
 function TypingIndicator() {
   return (
-    <div className="flex gap-2 animate-fade-in">
-      <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />
-      <div className="v3-glass rounded-3xl rounded-bl-lg px-5 py-3.5 flex items-center gap-1.5">
+    <div className="flex gap-2.5 animate-fade-in">
+      <AuraAvatar className="mt-1 h-8 w-8 shrink-0 rounded-2xl" />
+      <div className="flex items-center gap-1.5 pt-3">
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "0ms" }} />
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "200ms" }} />
         <span className="h-2 w-2 rounded-full bg-primary v3-pulse-glow" style={{ animationDelay: "400ms" }} />
@@ -357,6 +358,7 @@ function TypingIndicator() {
     </div>
   );
 }
+
 
 const RichEventCard = memo(function RichEventCard({ card, userLoc }: { card: ActionCard; userLoc: { lat: number; lng: number } | null }) {
   const isEvent = card.type === "event";
@@ -446,48 +448,48 @@ const RichEventCard = memo(function RichEventCard({ card, userLoc }: { card: Act
 
 function Bubble({ msg }: { msg: Msg }) {
   const mine = msg.role === "user";
-  return (
-    <div className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-      {!mine && <AuraAvatar className="mt-1 h-7 w-7 shrink-0 rounded-xl" />}
-      <div
-        className={`max-w-[82%] rounded-3xl px-4 py-3 text-sm leading-relaxed ${
-          mine
-            ? "gradient-primary text-primary-foreground rounded-br-lg shadow-[0_0_18px_hsl(var(--v3-neon)/0.35)]"
-            : "v3-glass border border-white/10 text-foreground rounded-bl-lg"
-        }`}
-      >
-        {mine ? (
-          msg.content.split("\n").map((line, i) => <p key={i} className="mb-1 last:mb-0">{line}</p>)
-        ) : (
-          <div className="prudente-md">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
-                strong: ({ node, ...props }) => <strong className="font-black text-primary v3-neon-text" {...props} />,
-                em: ({ node, ...props }) => <em className="text-foreground/90 italic" {...props} />,
-                ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-1" {...props} />,
-                ol: ({ node, ...props }) => <ol className="my-2 space-y-1.5 pl-5 list-decimal" {...props} />,
-                li: ({ node, children, ...props }) => (
-                  <li className="flex gap-2 leading-relaxed" {...props}>
-                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--v3-neon))]" />
-                    <span className="flex-1">{children}</span>
-                  </li>
-                ),
-                a: ({ node, ...props }) => <a className="text-primary underline underline-offset-2 hover:text-accent" target="_blank" rel="noopener noreferrer" {...props} />,
-                code: ({ node, ...props }) => <code className="rounded bg-primary/15 px-1.5 py-0.5 text-[12px] text-primary" {...props} />,
-                h1: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
-                h2: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
-                h3: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-sm font-black text-foreground" {...props} />,
-                blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-primary/50 pl-3 italic text-muted-foreground" {...props} />,
-              }}
-            >
-              {msg.content}
-            </ReactMarkdown>
-          </div>
-        )}
+  if (mine) {
+    return (
+      <div className="flex justify-end gap-2">
+        <div className="max-w-[85%] sm:max-w-[75%] rounded-3xl rounded-br-lg px-4 py-2.5 text-sm leading-relaxed gradient-primary text-primary-foreground shadow-[0_0_18px_hsl(var(--v3-neon)/0.35)]">
+          {msg.content.split("\n").map((line, i) => <p key={i} className="mb-1 last:mb-0">{line}</p>)}
+        </div>
       </div>
-      {mine && <div className="mt-1 h-7 w-7 shrink-0 rounded-xl bg-secondary flex items-center justify-center"><User className="h-4 w-4 text-muted-foreground" /></div>}
+    );
+  }
+  return (
+    <div className="flex gap-2.5">
+      <AuraAvatar className="mt-1 h-8 w-8 shrink-0 rounded-2xl" />
+      <div className="min-w-0 flex-1">
+        <p className="mb-1 text-[10px] font-black uppercase tracking-[0.14em] text-primary/80">Aura</p>
+        <div className="prudente-md text-[14px] leading-relaxed text-foreground">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p: ({ node, ...props }) => <p className="mb-2.5 last:mb-0 leading-relaxed" {...props} />,
+              strong: ({ node, ...props }) => <strong className="font-black text-primary v3-neon-text" {...props} />,
+              em: ({ node, ...props }) => <em className="text-foreground/90 italic" {...props} />,
+              ul: ({ node, ...props }) => <ul className="my-2 space-y-1.5 pl-1" {...props} />,
+              ol: ({ node, ...props }) => <ol className="my-2 space-y-1.5 pl-5 list-decimal" {...props} />,
+              li: ({ node, children, ...props }) => (
+                <li className="flex gap-2 leading-relaxed" {...props}>
+                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--v3-neon))]" />
+                  <span className="flex-1">{children}</span>
+                </li>
+              ),
+              a: ({ node, ...props }) => <a className="text-primary underline underline-offset-2 hover:text-accent" target="_blank" rel="noopener noreferrer" {...props} />,
+              code: ({ node, ...props }) => <code className="rounded bg-primary/15 px-1.5 py-0.5 text-[12px] text-primary" {...props} />,
+              h1: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
+              h2: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-base font-black text-foreground" {...props} />,
+              h3: ({ node, ...props }) => <h3 className="mt-2 mb-1 font-display text-sm font-black text-foreground" {...props} />,
+              blockquote: ({ node, ...props }) => <blockquote className="border-l-2 border-primary/50 pl-3 italic text-muted-foreground" {...props} />,
+            }}
+          >
+            {msg.content}
+          </ReactMarkdown>
+        </div>
+      </div>
     </div>
   );
 }
+
