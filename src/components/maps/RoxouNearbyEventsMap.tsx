@@ -12,8 +12,8 @@ import { haversineKm, type LatLng } from "@/lib/geoUtils";
 function HeatLayer({ points }: { points: Array<[number, number, number]> }) {
   const map = useMap();
   useEffect(() => {
-    // @ts-expect-error leaflet.heat augments L
-    const layer = L.heatLayer(points, {
+    const layer = (L as any).heatLayer(points, {
+
       radius: 32,
       blur: 24,
       maxZoom: 16,
