@@ -395,7 +395,7 @@ export default function JogosAdmin() {
   }, [matches, metaMap]);
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-6 min-w-0 overflow-x-clip">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="font-display font-black text-2xl flex items-center gap-2">
@@ -493,7 +493,7 @@ export default function JogosAdmin() {
                         </span>
                       )}
                     </div>
-                    <p className="font-bold text-sm leading-tight">{m.home_team} × {m.away_team}</p>
+                    <p className="font-bold text-sm leading-tight break-words">{m.home_team} × {m.away_team}</p>
                     <p className="text-[11px] text-muted-foreground mt-1">{fmt(m.match_time)} · 👁 {m.views_count}</p>
                     {meta && (meta.venuesCount > 0 || meta.hasStream || meta.hasActiveChat) && (
                       <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px] font-bold">
@@ -740,7 +740,7 @@ export default function JogosAdmin() {
                     placeholder="https://youtube.com/watch?v=…"
                     value={streamUrl}
                     onChange={(e) => setStreamUrl(e.target.value)}
-                    className="flex-1 min-w-[200px]"
+                    className="w-full sm:flex-1 sm:min-w-[180px] min-w-0"
                   />
                   <Button onClick={() => addStream.mutate()} disabled={!streamUrl.trim() || addStream.isPending}>
                     <Plus className="h-4 w-4 mr-1" /> Adicionar
