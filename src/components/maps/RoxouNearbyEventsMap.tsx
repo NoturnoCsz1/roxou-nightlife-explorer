@@ -39,10 +39,13 @@ export interface NearbyEvent {
   sub_category?: string | null;
   image_url?: string | null;
   transport_reservation_enabled?: boolean;
+  partner_id?: string | null;
+  is_sports_transmission?: boolean;
   score?: number;
   heat?: number; // 0..1 contribution weight for heat layer
   badges?: string[];
 }
+
 
 interface Props {
   userLocation?: LatLng | null;
