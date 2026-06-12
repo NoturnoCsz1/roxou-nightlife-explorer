@@ -888,7 +888,10 @@ const EventoBulkForm = () => {
         value={batchDefaults}
         onChange={setBatchDefaults}
         partners={partners}
+        onApply={applyBatchDefaultsToAll}
+        hasItems={items.length > 0}
       />
+
 
       {/* Dropzone */}
       <div
