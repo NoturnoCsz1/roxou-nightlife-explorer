@@ -283,7 +283,7 @@ export default function V3AIChat() {
 
 
       {/* Quick prompt chips — sticky above input, horizontal scroll on mobile */}
-      <div className="v3-glass-strong border-t border-primary/15 pt-2">
+      <div className="border-t border-white/8 bg-background/70 backdrop-blur-xl pt-2">
         <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory pl-4 pr-6 lg:justify-center lg:flex-wrap lg:px-4">
           {QUICK_PROMPTS.map((q) => (
             <button
