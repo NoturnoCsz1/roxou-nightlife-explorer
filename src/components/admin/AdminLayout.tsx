@@ -74,7 +74,7 @@ const AdminLayout = () => {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-5xl px-3 py-4 pb-20">
+      <main className="mx-auto max-w-5xl px-3 py-4 pb-20 overflow-x-clip">
         <Outlet />
       </main>
 
