@@ -1,12 +1,13 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, memo, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Bot, Crown, Loader2, Send, Sparkles, User, MapPin, Car, Video, Beer, Music, PartyPopper, Wine } from "lucide-react";
+import { ArrowLeft, Crown, Loader2, Send, Sparkles, User, MapPin, Car, Video, Beer, Music, Calendar, Trophy, Navigation } from "lucide-react";
 import AuraAvatar from "@/components/v3/AuraAvatar";
 import SEO from "@/components/SEO";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
+import { haversineKm } from "@/lib/geoUtils";
 import VIPPaywallModal from "@/components/v3/VIPPaywallModal";
 import { toast } from "sonner";
 
@@ -20,14 +21,27 @@ type ActionCard = {
   video_url?: string | null;
   date_time?: string | null;
   href: string;
+  lat?: number | null;
+  lng?: number | null;
+  distanceKm?: number | null;
 };
 type Msg = { id: string; role: "user" | "assistant"; content: string; created_at?: string; cards?: ActionCard[] };
 
-const STARTER_CARDS = [
-  { icon: Music, label: "Sertanejo", prompt: "Qual o melhor rolê sertanejo essa semana em Prudente?", gradient: "from-amber-500/20 to-orange-500/10" },
-  { icon: Beer, label: "Open Bar", prompt: "Tem alguma festa com open bar rolando hoje ou no fim de semana?", gradient: "from-purple-500/20 to-fuchsia-500/10" },
-  { icon: PartyPopper, label: "Expo 2026", prompt: "Como estão os preparativos da Expo Prudente 2026? O que rola por lá?", gradient: "from-pink-500/20 to-rose-500/10" },
-  { icon: Wine, label: "Happy Hour", prompt: "Onde tem happy hour bom hoje em Presidente Prudente?", gradient: "from-cyan-500/20 to-blue-500/10" },
+const HERO_CHIPS: { icon: any; label: string; prompt: string }[] = [
+  { icon: Beer, label: "🍻 Happy Hour", prompt: "Onde tem happy hour hoje em Presidente Prudente?" },
+  { icon: Music, label: "🎵 Música ao vivo", prompt: "Onde tem música ao vivo hoje em Prudente?" },
+  { icon: Trophy, label: "⚽ Futebol", prompt: "Onde assistir o jogo hoje sem pagar couvert?" },
+  { icon: Calendar, label: "📅 Agenda", prompt: "O que tem na agenda de hoje em Prudente?" },
+  { icon: Car, label: "🚕 Transporte", prompt: "Como peço uma carona segura agora?" },
+];
+
+const QUICK_PROMPTS: { label: string; prompt: string }[] = [
+  { label: "🍻 Happy Hour hoje", prompt: "Onde tem happy hour hoje em Presidente Prudente?" },
+  { label: "🎵 Música ao vivo", prompt: "Onde tem música ao vivo hoje em Prudente?" },
+  { label: "⚽ Onde assistir jogo", prompt: "Onde assistir o jogo hoje sem pagar couvert?" },
+  { label: "📅 Agenda de hoje", prompt: "O que tem na agenda de hoje em Prudente?" },
+  { label: "📍 Perto de mim", prompt: "Quais lugares legais estão perto de mim agora?" },
+  { label: "🚕 Pedir carona", prompt: "Quero pedir uma carona, como funciona?" },
 ];
 
 const FOLLOW_UPS = ["Pedir Carona", "Ver bares perto de mim", "Onde economizar hoje?", "Qual rolê combina comigo?"];
@@ -35,6 +49,7 @@ const FOLLOW_UPS = ["Pedir Carona", "Ver bares perto de mim", "Onde economizar h
 export default function V3AIChat() {
   const navigate = useNavigate();
   const { user, loading } = useV3Profile();
+  const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -57,6 +72,70 @@ export default function V3AIChat() {
   }, [user]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, sending]);
+
+  // GPS — same pattern used in /perto-de-mim
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 }
+    );
+  }, []);
+
+  // Enrich cards with lat/lng once they arrive (batched, dedup by id)
+  useEffect(() => {
+    const eventIds = new Set<string>();
+    const partnerIds = new Set<string>();
+    for (const m of messages) {
+      if (m.role !== "assistant" || !m.cards) continue;
+      for (const c of m.cards) {
+        if (c.lat != null && c.lng != null) continue;
+        if (c.type === "event") eventIds.add(c.id);
+        else partnerIds.add(c.id);
+      }
+    }
+    if (!eventIds.size && !partnerIds.size) return;
+    (async () => {
+      const coords: Record<string, { lat: number | null; lng: number | null; type: "event" | "partner" }> = {};
+      if (eventIds.size) {
+        const { data } = await supabase.from("events").select("id,latitude,longitude,partner_id").in("id", Array.from(eventIds));
+        const missingPartner = new Set<string>();
+        (data || []).forEach((e: any) => {
+          coords[`event:${e.id}`] = { lat: e.latitude, lng: e.longitude, type: "event" };
+          if ((e.latitude == null || e.longitude == null) && e.partner_id) missingPartner.add(e.partner_id);
+        });
+        if (missingPartner.size) {
+          const { data: ps } = await supabase.from("partners").select("id,latitude,longitude").in("id", Array.from(missingPartner));
+          const pMap: Record<string, any> = {};
+          (ps || []).forEach((p: any) => { pMap[p.id] = p; });
+          (data || []).forEach((e: any) => {
+            const c = coords[`event:${e.id}`];
+            if (c && (c.lat == null || c.lng == null) && e.partner_id && pMap[e.partner_id]) {
+              c.lat = pMap[e.partner_id].latitude;
+              c.lng = pMap[e.partner_id].longitude;
+            }
+          });
+        }
+      }
+      if (partnerIds.size) {
+        const { data } = await supabase.from("partners").select("id,latitude,longitude").in("id", Array.from(partnerIds));
+        (data || []).forEach((p: any) => { coords[`partner:${p.id}`] = { lat: p.latitude, lng: p.longitude, type: "partner" }; });
+      }
+      setMessages((prev) => prev.map((m) => {
+        if (m.role !== "assistant" || !m.cards) return m;
+        let changed = false;
+        const next = m.cards.map((c) => {
+          if (c.lat != null && c.lng != null) return c;
+          const found = coords[`${c.type}:${c.id}`];
+          if (!found || found.lat == null || found.lng == null) return c;
+          changed = true;
+          return { ...c, lat: found.lat, lng: found.lng };
+        });
+        return changed ? { ...m, cards: next } : m;
+      }));
+    })();
+  }, [messages]);
 
   async function sendText(text: string) {
     if (!text || sending) return;
@@ -159,24 +238,15 @@ export default function V3AIChat() {
                 </p>
               </div>
 
-              {/* Starter cards grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md pt-2">
-                {STARTER_CARDS.map(({ icon: Icon, label, prompt, gradient }) => (
+              {/* Hero chips */}
+              <div className="flex flex-wrap justify-center gap-2 w-full max-w-md pt-1">
+                {HERO_CHIPS.map(({ icon: Icon, label, prompt }) => (
                   <button
                     key={label}
                     onClick={() => sendText(prompt)}
-                    className={`group relative overflow-hidden rounded-2xl v3-glass border border-white/10 p-4 text-left transition-all hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_0_24px_hsl(var(--v3-neon)/0.25)]`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-2 text-xs font-black text-primary hover:bg-primary/20 hover:border-primary/60 transition active:scale-95"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-60 group-hover:opacity-100 transition-opacity`} />
-                    <div className="relative flex flex-col gap-2">
-                      <div className="h-9 w-9 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-                        <Icon className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-foreground">{label}</p>
-                        <p className="text-[10px] text-muted-foreground line-clamp-2 mt-0.5">{prompt}</p>
-                      </div>
-                    </div>
+                    <Icon className="h-3.5 w-3.5" /> {label}
                   </button>
                 ))}
               </div>
@@ -188,7 +258,7 @@ export default function V3AIChat() {
               <Bubble msg={msg} />
               {msg.role === "assistant" && msg.cards && msg.cards.length > 0 && (
                 <div className="ml-9 grid gap-2.5">
-                  {msg.cards.map((card) => <RichEventCard key={`${card.type}-${card.id}`} card={card} />)}
+                  {msg.cards.map((card) => <RichEventCard key={`${card.type}-${card.id}`} card={card} userLoc={userLoc} />)}
                 </div>
               )}
               {msg.role === "assistant" && index === messages.length - 1 && !sending && (
@@ -205,6 +275,22 @@ export default function V3AIChat() {
 
           {sending && <TypingIndicator />}
           <div ref={bottomRef} />
+        </div>
+      </div>
+
+      {/* Quick prompt chips — sticky above input */}
+      <div className="v3-glass-strong border-t border-primary/15 px-3 pt-2">
+        <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          {QUICK_PROMPTS.map((q) => (
+            <button
+              key={q.label}
+              onClick={() => sendText(q.prompt)}
+              disabled={sending}
+              className="shrink-0 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary hover:bg-primary/20 hover:border-primary/50 transition disabled:opacity-50 active:scale-95"
+            >
+              {q.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -268,22 +354,33 @@ function TypingIndicator() {
   );
 }
 
-function RichEventCard({ card }: { card: ActionCard }) {
+const RichEventCard = memo(function RichEventCard({ card, userLoc }: { card: ActionCard; userLoc: { lat: number; lng: number } | null }) {
   const isEvent = card.type === "event";
   const dt = card.date_time ? new Date(card.date_time) : null;
   const timeLabel = dt
     ? dt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     : null;
 
-  const mapsHref = card.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.title} ${card.address}`)}`
-    : card.subtitle
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.subtitle} Presidente Prudente`)}`
-    : null;
+  const distanceKm = useMemo(() => {
+    if (!userLoc || card.lat == null || card.lng == null) return null;
+    return haversineKm(userLoc, { lat: card.lat, lng: card.lng });
+  }, [userLoc, card.lat, card.lng]);
 
-  const uberHref = card.address
-    ? `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(card.address)}`
-    : "https://m.uber.com/";
+  const distanceLabel = distanceKm == null
+    ? null
+    : distanceKm < 1
+    ? `${Math.round(distanceKm * 1000)} m`
+    : `${distanceKm.toFixed(1)} km`;
+
+  const mapsHref = card.lat != null && card.lng != null
+    ? `https://www.google.com/maps/dir/?api=1&destination=${card.lat},${card.lng}`
+    : card.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.title} ${card.address}`)}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.title} Presidente Prudente`)}`;
+
+  const rideHref = isEvent
+    ? `/pedir-carona?eventId=${card.id}`
+    : `/transporte?venue=${encodeURIComponent(card.title)}`;
 
   return (
     <div className="group relative overflow-hidden rounded-2xl v3-glass border border-primary/20 transition-all hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--v3-neon)/0.25)]">
@@ -293,6 +390,11 @@ function RichEventCard({ card }: { card: ActionCard }) {
           {isEvent && card.video_url && (
             <span className="absolute top-1 right-1 rounded-full bg-primary/90 p-1 backdrop-blur">
               <Video className="h-2.5 w-2.5 text-primary-foreground" />
+            </span>
+          )}
+          {distanceLabel && (
+            <span className="absolute bottom-1 left-1 inline-flex items-center gap-0.5 rounded-full bg-background/85 backdrop-blur px-1.5 py-0.5 text-[9px] font-black text-primary">
+              <Navigation className="h-2.5 w-2.5" /> {distanceLabel}
             </span>
           )}
         </div>
@@ -313,38 +415,30 @@ function RichEventCard({ card }: { card: ActionCard }) {
 
       {/* Quick action bar */}
       <div className="flex items-center gap-1 border-t border-white/5 bg-background/30 px-2 py-1.5">
-        <a
-          href={uberHref}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to={card.href}
           className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-foreground/80 hover:bg-primary/15 hover:text-primary transition"
         >
-          <Car className="h-3 w-3" /> Uber/99
+          <Sparkles className="h-3 w-3" /> Ver local
+        </Link>
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-foreground/80 hover:bg-primary/15 hover:text-primary transition border-l border-white/5"
+        >
+          <MapPin className="h-3 w-3" /> Como chegar
         </a>
-        {mapsHref && (
-          <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-foreground/80 hover:bg-primary/15 hover:text-primary transition border-l border-white/5"
-          >
-            <MapPin className="h-3 w-3" /> Mapa
-          </a>
-        )}
-        {isEvent && card.video_url && (
-          <a
-            href={card.video_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-primary hover:bg-primary/15 transition border-l border-white/5"
-          >
-            <Video className="h-3 w-3" /> POV
-          </a>
-        )}
+        <Link
+          to={rideHref}
+          className="flex-1 flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[10px] font-black text-primary hover:bg-primary/15 transition border-l border-white/5"
+        >
+          <Car className="h-3 w-3" /> Pedir carona
+        </Link>
       </div>
     </div>
   );
-}
+});
 
 function Bubble({ msg }: { msg: Msg }) {
   const mine = msg.role === "user";
