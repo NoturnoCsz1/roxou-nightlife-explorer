@@ -600,7 +600,7 @@ const StoryAgendaDoDia = () => {
             Story Agenda do Dia
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Selecione os eventos de hoje e gere os Stories 1080×1920 (até 8 por Story).
+            Selecione os eventos de hoje e gere os Stories 1080×1920 (até 6 por Story).
           </p>
         </div>
         <div className="flex gap-2">
