@@ -85,7 +85,7 @@ function formatTimeSP(iso: string): string {
 function formatTodayHeader(): string {
   const now = new Date();
   const sp = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  return `${WEEKDAY_PT[sp.getDay()]}, ${sp.getDate()} de ${MONTH_PT[sp.getMonth()]}`;
+  return `${WEEKDAY_PT[sp.getDay()]} • ${sp.getDate()} de ${MONTH_PT[sp.getMonth()]}`;
 }
 
 function shortTitle(raw: string): string {
@@ -182,66 +182,90 @@ function renderStory(canvas: HTMLCanvasElement, page: StoryPage, totalPages: num
 
   // ===== Header =====
   ctx.textAlign = "center";
+
+  // Logo ROXOU com glow neon
+  ctx.save();
+  ctx.shadowColor = COLORS.purple;
+  ctx.shadowBlur = 30;
   ctx.fillStyle = COLORS.purpleLight;
-  ctx.font = "900 42px 'Inter', system-ui, sans-serif";
-  ctx.fillText("R O X O U", W / 2, 110);
+  ctx.font = "900 58px 'Space Grotesk', 'Inter', sans-serif";
+  ctx.fillText("R O X O U", W / 2, 130);
+  ctx.restore();
 
   ctx.fillStyle = COLORS.muted;
-  ctx.font = "600 26px 'Inter', sans-serif";
-  ctx.fillText("AGENDA DO DIA · JUNHO 2026", W / 2, 150);
+  ctx.font = "700 24px 'Inter', sans-serif";
+  ctx.fillText("AGENDA DE HOJE", W / 2, 172);
 
   ctx.fillStyle = COLORS.white;
-  ctx.font = "900 74px 'Space Grotesk', 'Inter', sans-serif";
-  ctx.fillText("🔥 O QUE ROLA HOJE", W / 2, 240);
+  ctx.font = "900 70px 'Space Grotesk', 'Inter', sans-serif";
+  ctx.fillText("🔥 O QUE ROLA HOJE?", W / 2, 258);
   ctx.fillStyle = COLORS.purpleLight;
-  ctx.fillText("EM PRUDENTE?", W / 2, 320);
+  ctx.font = "900 52px 'Space Grotesk', 'Inter', sans-serif";
+  ctx.fillText("EM PRESIDENTE PRUDENTE", W / 2, 320);
 
   ctx.fillStyle = COLORS.muted;
-  ctx.font = "500 30px 'Inter', sans-serif";
-  ctx.fillText("Festas, bares e baladas — tudo na ROXOU.", W / 2, 372);
+  ctx.font = "500 26px 'Inter', sans-serif";
+  ctx.fillText("Bares • Festas • Baladas • Copa do Mundo", W / 2, 366);
 
+  // Badge data dourado
+  const dateLabel = `📅  ${subtitle}`;
+  ctx.font = "800 28px 'Inter', sans-serif";
+  const dbw = ctx.measureText(dateLabel).width + 52;
+  const dbx = (W - dbw) / 2;
+  const dby = 394;
+  ctx.fillStyle = "rgba(247,201,72,0.14)";
+  roundRect(ctx, dbx, dby, dbw, 56, 28);
+  ctx.fill();
+  ctx.strokeStyle = COLORS.gold;
+  ctx.lineWidth = 2;
+  roundRect(ctx, dbx, dby, dbw, 56, 28);
+  ctx.stroke();
   ctx.fillStyle = COLORS.gold;
-  ctx.font = "700 34px 'Inter', sans-serif";
-  ctx.fillText(subtitle, W / 2, 422);
+  ctx.textBaseline = "middle";
+  ctx.fillText(dateLabel, W / 2, dby + 30);
+  ctx.textBaseline = "alphabetic";
 
   if (totalPages > 1) {
     ctx.fillStyle = COLORS.purpleLight;
-    ctx.font = "700 24px 'Inter', sans-serif";
-    ctx.fillText(`Parte ${page.page} de ${totalPages}`, W / 2, 458);
+    ctx.font = "700 22px 'Inter', sans-serif";
+    ctx.fillText(`Parte ${page.page} de ${totalPages}`, W / 2, dby + 92);
   }
 
   // ===== Cards =====
-  const listTop = 500;
-  const listBottom = H - 340;
+  const listTop = 510;
+  const listBottom = H - 320;
   const slots = page.events.length;
-  const gap = 18;
-  const cardH = Math.min(180, Math.floor((listBottom - listTop - gap * (slots - 1)) / Math.max(slots, 1)));
+  const gap = 20;
+  const cardH = Math.min(210, Math.floor((listBottom - listTop - gap * (slots - 1)) / Math.max(slots, 1)));
   const cardW = W - 100;
   const cardX = 50;
 
   page.events.forEach((ev, i) => {
     const y = listTop + i * (cardH + gap);
 
-    // Glass
+    // Glass card
     ctx.fillStyle = ev.featured_partner ? "rgba(247,201,72,0.10)" : COLORS.glass;
     roundRect(ctx, cardX, y, cardW, cardH, 28);
     ctx.fill();
 
-    // Glow dourado para parceiro destaque
     if (ev.featured_partner) {
       ctx.save();
       ctx.shadowColor = COLORS.gold;
-      ctx.shadowBlur = 30;
+      ctx.shadowBlur = 32;
       ctx.strokeStyle = COLORS.gold;
       ctx.lineWidth = 4;
       roundRect(ctx, cardX, y, cardW, cardH, 28);
       ctx.stroke();
       ctx.restore();
     } else if (ev.is_copa) {
+      ctx.save();
+      ctx.shadowColor = COLORS.green;
+      ctx.shadowBlur = 18;
       ctx.strokeStyle = COLORS.green;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 3;
       roundRect(ctx, cardX, y, cardW, cardH, 28);
       ctx.stroke();
+      ctx.restore();
     } else {
       ctx.strokeStyle = COLORS.glassBorder;
       ctx.lineWidth = 1.5;
@@ -249,7 +273,7 @@ function renderStory(canvas: HTMLCanvasElement, page: StoryPage, totalPages: num
       ctx.stroke();
     }
 
-    // Pill horário
+    // Pill horário (roxo neon)
     const timeText = ev.time_label;
     ctx.font = "800 36px 'Space Grotesk', sans-serif";
     const tw = ctx.measureText(timeText).width;
@@ -260,37 +284,60 @@ function renderStory(canvas: HTMLCanvasElement, page: StoryPage, totalPages: num
     const pillGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
     pillGrad.addColorStop(0, COLORS.purple);
     pillGrad.addColorStop(1, COLORS.purpleLight);
+    ctx.save();
+    ctx.shadowColor = COLORS.purple;
+    ctx.shadowBlur = 18;
     ctx.fillStyle = pillGrad;
     roundRect(ctx, pillX, pillY, pillW, pillH, 28);
     ctx.fill();
+    ctx.restore();
     ctx.fillStyle = COLORS.white;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(timeText, pillX + pillW / 2, pillY + pillH / 2 + 2);
 
-    // Badges no topo direito
+    // Badges direita
     let badgeX = cardX + cardW - 22;
     ctx.textBaseline = "middle";
     ctx.textAlign = "right";
     if (ev.featured_partner) {
       ctx.font = "800 22px 'Inter', sans-serif";
-      const label = "🏆 PARCEIRO DESTAQUE ROXOU";
+      const label = "🏆 DESTAQUE DO MÊS";
       const bw = ctx.measureText(label).width + 28;
+      ctx.save();
+      ctx.shadowColor = COLORS.gold;
+      ctx.shadowBlur = 20;
       ctx.fillStyle = COLORS.gold;
       roundRect(ctx, badgeX - bw, pillY, bw, pillH, 26);
       ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,0.45)";
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, badgeX - bw, pillY, bw, pillH, 26);
+      ctx.stroke();
       ctx.fillStyle = COLORS.bgDeep;
       ctx.fillText(label, badgeX - 14, pillY + pillH / 2);
       badgeX = badgeX - bw - 10;
     }
     if (ev.is_copa) {
       ctx.font = "800 20px 'Inter', sans-serif";
-      const label = "⚽ TRANSMISSÃO DA COPA";
+      const label = "⚽ COPA";
       const bw = ctx.measureText(label).width + 24;
       ctx.fillStyle = COLORS.green;
       roundRect(ctx, badgeX - bw, pillY, bw, pillH, 26);
       ctx.fill();
       ctx.fillStyle = COLORS.bgDeep;
+      ctx.fillText(label, badgeX - 12, pillY + pillH / 2);
+      badgeX = badgeX - bw - 10;
+    }
+    if (ev.featured && !ev.featured_partner) {
+      ctx.font = "800 20px 'Inter', sans-serif";
+      const label = "⭐ EM DESTAQUE";
+      const bw = ctx.measureText(label).width + 24;
+      ctx.fillStyle = COLORS.purple;
+      roundRect(ctx, badgeX - bw, pillY, bw, pillH, 26);
+      ctx.fill();
+      ctx.fillStyle = COLORS.white;
       ctx.fillText(label, badgeX - 12, pillY + pillH / 2);
     }
 
@@ -300,55 +347,66 @@ function renderStory(canvas: HTMLCanvasElement, page: StoryPage, totalPages: num
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
 
+    // Título com prefixo contextual (🎤 música ao vivo, ⚽ copa)
+    let prefix = "";
+    if (ev.is_copa) prefix = "⚽ ";
+    else if (ev.is_live_music) prefix = "🎤 ";
+
     ctx.fillStyle = COLORS.white;
     ctx.font = "900 42px 'Space Grotesk', sans-serif";
     const titleMax = cardW - 52;
-    let title = ev.short_title;
+    const fullTitle = (prefix + ev.short_title).toUpperCase();
+    let title = fullTitle;
     while (ctx.measureText(title).width > titleMax && title.length > 4) title = title.slice(0, -2);
-    if (title !== ev.short_title) title = title.replace(/…?$/, "…");
-    ctx.fillText(title, textX, textY + 30);
+    if (title !== fullTitle) title = title.replace(/…?$/, "…");
+    ctx.fillText(title, textX, textY + 32);
 
-    ctx.fillStyle = COLORS.muted;
-    ctx.font = "500 28px 'Inter', sans-serif";
+    // Local — cinza claro
+    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    ctx.font = "500 26px 'Inter', sans-serif";
     const venue = `📍 ${ev.venue_name || "Local a confirmar"}`;
     let venueTxt = venue;
     while (ctx.measureText(venueTxt).width > titleMax && venueTxt.length > 6) venueTxt = venueTxt.slice(0, -2);
-    ctx.fillText(venueTxt, textX, textY + 70);
+    ctx.fillText(venueTxt, textX, textY + 72);
 
+    // Instagram (somente se existir, sem 📸)
     if (ev.partner_instagram) {
       ctx.fillStyle = COLORS.purpleLight;
-      ctx.font = "700 26px 'Inter', sans-serif";
-      ctx.fillText(`📸 @${ev.partner_instagram}`, textX, textY + 108);
+      ctx.font = "700 22px 'Inter', sans-serif";
+      ctx.fillText(`@${ev.partner_instagram}`, textX, textY + 108);
     }
   });
 
   // ===== Rodapé =====
   ctx.textAlign = "center";
 
-  // Linha dourada
   ctx.strokeStyle = COLORS.gold;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(W / 2 - 140, H - 260);
-  ctx.lineTo(W / 2 + 140, H - 260);
+  ctx.moveTo(W / 2 - 140, H - 230);
+  ctx.lineTo(W / 2 + 140, H - 230);
   ctx.stroke();
 
   ctx.fillStyle = COLORS.white;
-  ctx.font = "700 32px 'Inter', sans-serif";
-  ctx.fillText("🌐 Acesse: roxou.com.br", W / 2, H - 210);
+  ctx.font = "800 38px 'Inter', sans-serif";
+  ctx.fillText("🌐 roxou.com.br", W / 2, H - 178);
 
   ctx.fillStyle = COLORS.muted;
   ctx.font = "500 26px 'Inter', sans-serif";
-  ctx.fillText("Fique por dentro de tudo que rola em Prudente", W / 2, H - 160);
-  ctx.fillText("em um único lugar.", W / 2, H - 126);
+  ctx.fillText("Tudo que rola em Prudente", W / 2, H - 128);
+  ctx.fillText("em um único lugar.", W / 2, H - 94);
 
+  ctx.save();
+  ctx.shadowColor = COLORS.purple;
+  ctx.shadowBlur = 22;
   ctx.fillStyle = COLORS.gold;
-  ctx.font = "900 44px 'Space Grotesk', sans-serif";
-  ctx.fillText("R O X O U", W / 2, H - 70);
+  ctx.font = "900 42px 'Space Grotesk', sans-serif";
+  ctx.fillText("R O X O U", W / 2, H - 44);
+  ctx.restore();
 
   ctx.fillStyle = COLORS.purpleLight;
-  ctx.font = "600 22px 'Inter', sans-serif";
-  ctx.fillText("Agenda atualizada em tempo real • Roxou", W / 2, H - 32);
+  ctx.font = "700 24px 'Inter', sans-serif";
+  ctx.fillText("@roxou.pp", W / 2, H - 14);
 }
 
 // ===== Página =====
@@ -469,7 +527,7 @@ const StoryAgendaDoDia = () => {
     }
     setGenerating(true);
     try {
-      const pages = chunk(selectedEvents, 8);
+      const pages = chunk(selectedEvents, 6);
       const subtitle = formatTodayHeader();
 
       const built: StoryPage[] = pages.map((evts, idx) => ({
@@ -506,15 +564,14 @@ const StoryAgendaDoDia = () => {
     const s = stories[idx];
     if (!s) return;
     const lines = [
-      "🔥 O QUE ROLA HOJE EM PRUDENTE",
-      formatTodayHeader(),
+      "🔥 O QUE ROLA HOJE EM PRUDENTE?",
       "",
-      ...s.events.map((e) => `${e.time_label} — ${e.short_title} 📍 ${e.venue_name || ""}${e.partner_instagram ? ` 📸 @${e.partner_instagram}` : ""}${e.featured_partner ? " 🏆" : ""}${e.is_copa ? " ⚽" : ""}`),
+      "Bares, festas, baladas e transmissões da Copa do Mundo você encontra na Roxou.",
       "",
-      s.caption,
+      "🌐 roxou.com.br",
+      "📲 @roxou.pp",
       "",
-      "🌐 Acesse: roxou.com.br",
-      "Fique por dentro de tudo que rola em Prudente em um único lugar.",
+      "#PresidentePrudente #Roxou #AgendaPrudente #OQueRolaHoje #CopaDoMundo #RoleEmPrudente",
     ];
     await navigator.clipboard.writeText(lines.join("\n"));
     setCopiedIdx(idx);
@@ -543,7 +600,7 @@ const StoryAgendaDoDia = () => {
             Story Agenda do Dia
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Selecione os eventos de hoje e gere os Stories 1080×1920 (até 8 por Story).
+            Selecione os eventos de hoje e gere os Stories 1080×1920 (até 6 por Story).
           </p>
         </div>
         <div className="flex gap-2">
@@ -592,7 +649,7 @@ const StoryAgendaDoDia = () => {
                   <span className="font-semibold text-foreground truncate">{e.short_title}</span>
                   {e.featured_partner && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-yellow-500">
-                      <Trophy className="h-3 w-3" /> Parceiro Destaque Roxou
+                      <Trophy className="h-3 w-3" /> Destaque do mês
                     </span>
                   )}
                   {e.is_copa && (
