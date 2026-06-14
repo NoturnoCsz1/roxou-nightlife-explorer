@@ -152,6 +152,11 @@ const EventoForm = () => {
         venue_name: meta.venue_name || prev.venue_name,
         category: meta.category || prev.category,
         ...(meta.sub_category ? { _sub: meta.sub_category } : {}),
+        // ✨ Contexto bruto do flyer p/ alimentar generate-description sem alucinação
+        flyer_text: typeof meta.flyer_text === "string" ? meta.flyer_text : prev.flyer_text,
+        artists: Array.isArray(meta.artists) ? meta.artists : prev.artists,
+        price: typeof meta.price === "string" ? meta.price : prev.price,
+        official_source_url: typeof meta.official_source_url === "string" ? meta.official_source_url : prev.official_source_url,
       } as any));
       toast.success(
         nextTimeUnknown
@@ -165,30 +170,55 @@ const EventoForm = () => {
     }
   }
 
-  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string; time_is_unknown?: boolean }) {
+  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string; time_is_unknown?: boolean; flyer_text?: string; artists?: string[]; price?: string; ticket_url?: string; instagram?: string; official_source_url?: string }) {
     setGeneratingDesc(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
-        body: info,
+        body: {
+          ...info,
+          // Enriquecimento Fase 2A (vem do flyer ou do próprio form)
+          flyer_text: info.flyer_text ?? (form as any).flyer_text ?? "",
+          artists: info.artists ?? (form as any).artists ?? [],
+          price: info.price ?? (form as any).price ?? "",
+          ticket_url: info.ticket_url ?? form.ticket_url ?? "",
+          instagram: info.instagram ?? form.instagram ?? "",
+          official_source_url: info.official_source_url ?? (form as any).official_source_url ?? "",
+        },
       });
       if (error) throw error;
-      const rich = data?.descricao_rica || data?.description;
-      const chamada = data?.chamada_site as string | undefined;
-      if (rich) {
-        setForm((prev) => ({
-          ...prev,
-          description: prev.description || rich,
-          // Sugere a chamada como título apenas se ainda estiver vazio
-          title: prev.title || chamada || prev.title,
-        }));
-        if (chamada) {
-          toast.success(`Copy gerada! Chamada sugerida: "${chamada}"`);
-        } else {
-          toast.success("Descrição gerada automaticamente!");
-        }
+      const rich: string = data?.description_html || data?.descricao_rica || data?.description || "";
+      const chamada: string | undefined = data?.title || data?.chamada_site;
+      const shortSummary: string = data?.short_summary || "";
+      const metaTitle: string = data?.meta_title || "";
+      const metaDescription: string = data?.meta_description || "";
+      const igCaption: string = data?.instagram_caption || "";
+      const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+      const confidence: number | null =
+        typeof data?.ai_confidence_score === "number" ? data.ai_confidence_score : null;
+
+      setForm((prev) => ({
+        ...prev,
+        // 'Gerar Hype' agora sempre atualiza descrição com a nova versão validada
+        description: rich || prev.description,
+        title: prev.title || chamada || prev.title,
+        short_summary: shortSummary || prev.short_summary,
+        meta_title: metaTitle || prev.meta_title,
+        meta_description: metaDescription || prev.meta_description,
+        instagram_caption: igCaption || prev.instagram_caption,
+        ai_warnings: warnings,
+        ai_confidence_score: confidence ?? prev.ai_confidence_score,
+      }));
+
+      if (warnings.length > 0) {
+        toast.warning(`Copy gerada com ${warnings.length} aviso${warnings.length > 1 ? "s" : ""}. Revise antes de publicar.`);
+      } else if (chamada) {
+        toast.success(`Copy gerada! Chamada: "${chamada}"`);
+      } else {
+        toast.success("Descrição gerada pela IA (gpt-5-mini).");
       }
     } catch (err: any) {
       console.error("Erro ao gerar descrição:", err);
+      toast.error(err?.message || "Falha ao gerar descrição");
     } finally {
       setGeneratingDesc(false);
     }
@@ -209,6 +239,18 @@ const EventoForm = () => {
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
     transport_reservation_enabled: false,
     time_is_unknown: false,
+    // ✨ Fase 2A — IA enriquecida (gpt-5-mini)
+    short_summary: "",
+    meta_title: "",
+    meta_description: "",
+    instagram_caption: "",
+    ai_confidence_score: null as number | null,
+    ai_warnings: [] as string[],
+    // Contexto vindo do flyer (não persistido como coluna; usado p/ re-gerar)
+    flyer_text: "",
+    artists: [] as string[],
+    price: "",
+    official_source_url: "",
     ...emptyTransmission(),
   });
 
@@ -292,6 +334,21 @@ const EventoForm = () => {
       transmission_channel: (data as any).transmission_channel || null,
       transmission_url: (data as any).transmission_url || null,
       transmission_notes: (data as any).transmission_notes || null,
+      short_summary: (data as any).short_summary || "",
+      meta_title: (data as any).meta_title || "",
+      meta_description: (data as any).meta_description || "",
+      instagram_caption: (data as any).instagram_caption || "",
+      ai_confidence_score:
+        typeof (data as any).ai_confidence_score === "number"
+          ? (data as any).ai_confidence_score
+          : null,
+      ai_warnings: Array.isArray((data as any).ai_warnings)
+        ? (data as any).ai_warnings
+        : [],
+      flyer_text: "",
+      artists: [],
+      price: "",
+      official_source_url: "",
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     originalSnapshot.current = {
@@ -745,6 +802,64 @@ const EventoForm = () => {
                   </button>
                 </div>
                 <textarea className={`${inputClass} min-h-[60px]`} value={form.description} onChange={(e) => handleChange("description", e.target.value)} placeholder={generatingDesc ? "Injetando hype..." : "Aguardando o toque da IA..."} />
+                {form.ai_warnings && form.ai_warnings.length > 0 && (
+                  <div className="mt-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[10px] text-amber-300">
+                    <strong className="uppercase tracking-wide">⚠ Avisos da IA ({form.ai_warnings.length})</strong>
+                    <ul className="mt-0.5 list-disc pl-4 space-y-0.5">
+                      {form.ai_warnings.map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="col-span-2 space-y-2 rounded-lg border border-border/30 bg-secondary/20 p-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 text-primary" /> SEO & Instagram
+                  {typeof form.ai_confidence_score === "number" && (
+                    <span className="ml-auto rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                      IA {form.ai_confidence_score}%
+                    </span>
+                  )}
+                </p>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Meta título (SEO · ≤70)</label>
+                  <input
+                    className={inputClass}
+                    maxLength={70}
+                    value={form.meta_title}
+                    onChange={(e) => handleChange("meta_title", e.target.value)}
+                    placeholder="Título p/ Google (gerado pela IA)"
+                  />
+                  <p className="text-[9px] text-muted-foreground/70 mt-0.5">{form.meta_title.length}/70</p>
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Meta descrição (SEO · ≤165)</label>
+                  <textarea
+                    className={`${inputClass} min-h-[44px]`}
+                    maxLength={165}
+                    value={form.meta_description}
+                    onChange={(e) => handleChange("meta_description", e.target.value)}
+                    placeholder="Resumo para resultados de busca"
+                  />
+                  <p className="text-[9px] text-muted-foreground/70 mt-0.5">{form.meta_description.length}/165</p>
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Resumo curto (cards/lista)</label>
+                  <input
+                    className={inputClass}
+                    value={form.short_summary}
+                    onChange={(e) => handleChange("short_summary", e.target.value)}
+                    placeholder="1 frase de impacto"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Legenda Instagram</label>
+                  <textarea
+                    className={`${inputClass} min-h-[80px]`}
+                    value={form.instagram_caption}
+                    onChange={(e) => handleChange("instagram_caption", e.target.value)}
+                    placeholder="Caption pronta p/ colar no IG (gerada pela IA)"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Status</label>

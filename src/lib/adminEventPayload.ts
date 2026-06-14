@@ -28,6 +28,13 @@ export type AdminEventFormInput = {
   transmission_notes?: string | null;
   transport_reservation_enabled?: boolean;
   time_is_unknown?: boolean;
+  // ✨ Fase 2A — campos enriquecidos pela IA (gpt-5-mini)
+  short_summary?: string;
+  meta_title?: string;
+  meta_description?: string;
+  instagram_caption?: string;
+  ai_confidence_score?: number | null;
+  ai_warnings?: string[] | null;
 };
 
 interface BuildEventPayloadOptions {
@@ -67,6 +74,13 @@ export function buildEventPayload(
     transmission_notes: form.transmission_notes || null,
     transport_reservation_enabled: Boolean(form.transport_reservation_enabled),
     time_is_unknown: Boolean(form.time_is_unknown),
+    short_summary: form.short_summary || null,
+    meta_title: form.meta_title || null,
+    meta_description: form.meta_description || null,
+    instagram_caption: form.instagram_caption || null,
+    ai_confidence_score:
+      typeof form.ai_confidence_score === "number" ? form.ai_confidence_score : null,
+    ai_warnings: form.ai_warnings && form.ai_warnings.length ? form.ai_warnings : null,
   };
 
   if (options.city) {
