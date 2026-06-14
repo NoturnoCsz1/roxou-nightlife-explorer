@@ -209,6 +209,18 @@ const EventoForm = () => {
     ticket_url: "", image_hash: "", opportunity_tags: [] as string[],
     transport_reservation_enabled: false,
     time_is_unknown: false,
+    // ✨ Fase 2A — IA enriquecida (gpt-5-mini)
+    short_summary: "",
+    meta_title: "",
+    meta_description: "",
+    instagram_caption: "",
+    ai_confidence_score: null as number | null,
+    ai_warnings: [] as string[],
+    // Contexto vindo do flyer (não persistido como coluna; usado p/ re-gerar)
+    flyer_text: "",
+    artists: [] as string[],
+    price: "",
+    official_source_url: "",
     ...emptyTransmission(),
   });
 
