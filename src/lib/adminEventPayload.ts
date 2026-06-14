@@ -28,6 +28,13 @@ export type AdminEventFormInput = {
   transmission_notes?: string | null;
   transport_reservation_enabled?: boolean;
   time_is_unknown?: boolean;
+  // ✨ Fase 2A — campos enriquecidos pela IA (gpt-5-mini)
+  short_summary?: string;
+  meta_title?: string;
+  meta_description?: string;
+  instagram_caption?: string;
+  ai_confidence_score?: number | null;
+  ai_warnings?: string[] | null;
 };
 
 interface BuildEventPayloadOptions {
