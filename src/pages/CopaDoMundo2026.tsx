@@ -56,22 +56,26 @@ export default function CopaDoMundo2026() {
 
   const nextBrasil = useMemo(() => {
     const now = Date.now();
-    return matches.find(
-      (m) =>
-        (isBrazilianTeam(m.home_team) || isBrazilianTeam(m.away_team)) &&
-        new Date(m.match_time).getTime() > now - 2 * 60 * 60 * 1000 &&
-        m.status !== "finished",
-    );
+    return matches.find((m) => {
+      if (!isCopaDoMundoMatch(m)) return false;
+      const isSelecao =
+        isBrazilNationalTeam(m.home_team) || isBrazilNationalTeam(m.away_team);
+      if (!isSelecao) return false;
+      if (m.status === "finished") return false;
+      return new Date(m.match_time).getTime() > now - 2 * 60 * 60 * 1000;
+    });
   }, [matches]);
 
   const jogosHoje = useMemo(
     () =>
-      matches.filter((m) => m.raw_date === today && m.status !== "finished").slice(0, 10),
+      matches
+        .filter((m) => isCopaDoMundoMatch(m) && m.raw_date === today && m.status !== "finished")
+        .slice(0, 10),
     [matches, today],
   );
 
   const adversario = nextBrasil
-    ? isBrazilianTeam(nextBrasil.home_team)
+    ? isBrazilNationalTeam(nextBrasil.home_team)
       ? nextBrasil.away_team
       : nextBrasil.home_team
     : null;
