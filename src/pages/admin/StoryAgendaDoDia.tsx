@@ -17,7 +17,7 @@ type EventRow = {
   sub_category: string | null;
   partner_id: string | null;
   image_url: string | null;
-  is_featured?: boolean | null;
+  featured?: boolean | null;
 };
 
 type PartnerInfo = { id: string; name: string; instagram: string | null };
@@ -370,7 +370,7 @@ const StoryAgendaDoDia = () => {
 
       const { data: rows, error } = await supabase
         .from("events")
-        .select("id, title, venue_name, date_time, category, sub_category, partner_id, image_url, is_featured")
+        .select("id, title, venue_name, date_time, category, sub_category, partner_id, image_url, featured")
         .eq("status", "published")
         .gte("date_time", start)
         .lt("date_time", end)
@@ -428,7 +428,7 @@ const StoryAgendaDoDia = () => {
       const auto = new Set<string>();
       enriched.forEach((e) => {
         if (e.incomplete) return;
-        if (e.featured_partner || e.is_featured || e.is_copa || e.is_live_music) auto.add(e.id);
+        if (e.featured_partner || e.featured || e.is_copa || e.is_live_music) auto.add(e.id);
       });
       setSelected(auto);
     } catch (e: any) {
@@ -455,7 +455,7 @@ const StoryAgendaDoDia = () => {
   function onlyCopa() { setSelected(new Set(events.filter(e => e.is_copa).map(e => e.id))); }
   function onlyBars() { setSelected(new Set(events.filter(e => e.is_bar).map(e => e.id))); }
   function onlyLive() { setSelected(new Set(events.filter(e => e.is_live_music).map(e => e.id))); }
-  function onlyHighlighted() { setSelected(new Set(events.filter(e => e.is_featured).map(e => e.id))); }
+  function onlyHighlighted() { setSelected(new Set(events.filter(e => e.featured).map(e => e.id))); }
 
   const selectedEvents = useMemo(
     () => events.filter((e) => selected.has(e.id)),
@@ -600,7 +600,7 @@ const StoryAgendaDoDia = () => {
                       <Tv className="h-3 w-3" /> Copa
                     </span>
                   )}
-                  {e.is_featured && (
+                  {e.featured && (
                     <span className="text-[10px] font-bold uppercase text-primary">⭐ Em destaque</span>
                   )}
                   {e.incomplete && (
