@@ -53,6 +53,7 @@ const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
 const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
 const Premiacoes = lazy(() => import("./pages/admin/Premiacoes"));
 const Artes = lazy(() => import("./pages/admin/Artes"));
+const StoryAgendaDoDia = lazy(() => import("./pages/admin/StoryAgendaDoDia"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
 // V3 (padrão)
@@ -140,6 +141,7 @@ const App = () => (
             <Route path="noticias/:id/editar" element={L(<NoticiaForm />)} />
             <Route path="premiacoes" element={L(<Premiacoes />)} />
             <Route path="artes" element={L(<Artes />)} />
+            <Route path="story-agenda" element={L(<StoryAgendaDoDia />)} />
           </Route>
 
           {/* ========= AUTH ========= */}
