@@ -192,31 +192,99 @@ const EventoBulkForm = () => {
     });
   }, [cityFilter]);
 
-  // Detect duplicates: slug exists in DB or appears more than once in current items
-  // Memoizado: só recomputa quando items ou dbEvents mudam (não em cada keystroke do BatchDefaults).
-  const duplicateIds = useMemo<Set<string>>(() => {
-    const dup = new Set<string>();
-    const counts = new Map<string, number>();
-    const imageHashes = new Set(dbEvents.map((e) => e.image_hash).filter(Boolean));
+  // ════════════════════════════════════════════════════════════════════
+  // Classificação de itens — separa claramente:
+  //   • incomplete       → faltam title/date/venue (NÃO é duplicado)
+  //   • confirmedReal    → mesmo image_hash em DB, mesmo slug em DB,
+  //                        slug repetido no lote, OU score >= 95
+  //   • possibleDup      → score 60–94 (warning, permite publicar)
+  //
+  // ❌ Não é mais "duplicado" automaticamente por:
+  //    - mesma categoria, mesmo local, mesma data, título parecido <95
+  //    - assinatura (título+venue+dia) sem image_hash nem score alto
+  // ════════════════════════════════════════════════════════════════════
+  const itemFlags = useMemo(() => {
+    const incompleteIds = new Set<string>();
+    const confirmedRealIds = new Set<string>();
+    const possibleDupIds = new Set<string>();
+    const reasonById = new Map<string, string>();
+
+    const dbHashSet = new Set<string>(
+      dbEvents.map((e) => e.image_hash).filter((h): h is string => !!h),
+    );
+    const slugCounts = new Map<string, number>();
     for (const it of items) {
       const s = (it.form.slug || "").trim();
-      if (!s) continue;
-      counts.set(s, (counts.get(s) || 0) + 1);
+      if (s) slugCounts.set(s, (slugCounts.get(s) || 0) + 1);
     }
+
     for (const it of items) {
-      const s = (it.form.slug || "").trim();
-      if (!s) continue;
-      const sameSignature = dbEvents.some((e) =>
-        normalize(e.title) === normalize(it.form.title) &&
-        normalize(e.venue_name || "") === normalize(it.form.venue_name || "") &&
-        e.date_time?.slice(0, 10) === it.form.date_time?.slice(0, 10),
-      );
-      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1 || (!!it.form.image_hash && imageHashes.has(it.form.image_hash)) || sameSignature) {
-        dup.add(it.localId);
+      const f = it.form;
+      const hasTitle = !!(f.title || "").trim();
+      const hasDate = !!(f.date_time || "").trim();
+      const hasVenue = !!(f.venue_name || "").trim();
+      if (!hasTitle || !hasDate || !hasVenue) {
+        incompleteIds.add(it.localId);
+        const missing = [
+          !hasTitle && "título",
+          !hasDate && "data",
+          !hasVenue && "local",
+        ].filter(Boolean).join(", ");
+        reasonById.set(it.localId, `Dados incompletos: faltam ${missing}.`);
+        continue;
+      }
+
+      const slug = (f.slug || "").trim();
+      const hashHit = !!f.image_hash && dbHashSet.has(f.image_hash);
+      const slugHitDb = !!slug && dbSlugs.has(slug);
+      const slugRepeatedInBatch = !!slug && (slugCounts.get(slug) || 0) > 1;
+
+      if (hashHit) {
+        confirmedRealIds.add(it.localId);
+        const matched = dbEvents.find((e) => e.image_hash === f.image_hash);
+        reasonById.set(
+          it.localId,
+          matched
+            ? `Mesmo flyer (image_hash) do evento já cadastrado: "${matched.title}".`
+            : `Mesmo flyer (image_hash) já cadastrado.`,
+        );
+        continue;
+      }
+      if (slugHitDb) {
+        confirmedRealIds.add(it.localId);
+        reasonById.set(it.localId, `Slug "${slug}" já existe na agenda.`);
+        continue;
+      }
+      if (slugRepeatedInBatch) {
+        confirmedRealIds.add(it.localId);
+        reasonById.set(it.localId, `Slug "${slug}" repetido neste lote.`);
+        continue;
+      }
+
+      const sd = smartDuplicates.get(it.localId);
+      if (sd && sd.duplicate_score >= 95) {
+        confirmedRealIds.add(it.localId);
+        reasonById.set(
+          it.localId,
+          `Score ${sd.duplicate_score}/100 — coincide com "${sd.matched_event_title ?? "evento existente"}".`,
+        );
+      } else if (sd && sd.level !== "none") {
+        possibleDupIds.add(it.localId);
+        reasonById.set(
+          it.localId,
+          `Possível duplicado (${sd.duplicate_score}/100) — similar a "${sd.matched_event_title ?? "evento existente"}".`,
+        );
       }
     }
-    return dup;
+
+    return { incompleteIds, confirmedRealIds, possibleDupIds, reasonById };
+  // smartDuplicates é declarado abaixo; o JS hoist do `const` em useMemo não
+  // é um problema pois esta memo só executa após o primeiro render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, dbEvents, dbSlugs]);
+
+  // Compat: duplicateIds = só duplicados REAIS confirmados.
+  const duplicateIds = itemFlags.confirmedRealIds;
 
   /**
    * Validação inteligente (aditiva): score 0–100 por item, comparando
