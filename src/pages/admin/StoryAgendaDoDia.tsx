@@ -649,7 +649,7 @@ const StoryAgendaDoDia = () => {
                   <span className="font-semibold text-foreground truncate">{e.short_title}</span>
                   {e.featured_partner && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase text-yellow-500">
-                      <Trophy className="h-3 w-3" /> Parceiro Destaque Roxou
+                      <Trophy className="h-3 w-3" /> Destaque do mês
                     </span>
                   )}
                   {e.is_copa && (
