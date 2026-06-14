@@ -153,6 +153,17 @@ const EventoBulkForm = () => {
   });
   const bulkAiAbortRef = useRef(false);
 
+  // Itens que o admin escolheu publicar mesmo sendo "possível duplicado"
+  const [forcePublishIds, setForcePublishIds] = useState<Set<string>>(new Set());
+  const toggleForcePublish = useCallback((localId: string) => {
+    setForcePublishIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(localId)) next.delete(localId);
+      else next.add(localId);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
     if (cityFilter) q = q.eq("city", cityFilter);
