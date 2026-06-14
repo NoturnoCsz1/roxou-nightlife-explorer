@@ -108,10 +108,10 @@ export default function CopaHighlightCard() {
             ) : (
               <>
                 <p className="mt-2 font-display font-black text-lg leading-tight">
-                  A Copa está chegando
+                  Aguardando próximo jogo do Brasil na Copa
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Em breve, os próximos jogos da Seleção.
+                  Confira todos os jogos enquanto isso.
                 </p>
               </>
             )}
