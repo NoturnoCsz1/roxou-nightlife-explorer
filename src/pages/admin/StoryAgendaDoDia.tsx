@@ -179,6 +179,7 @@ function renderStory(
   totalPages: number,
   subtitle: string,
   mode: Mode,
+  totalSelected: number,
 ) {
   const meta = MODES[mode];
   canvas.width = W;
@@ -230,30 +231,36 @@ function renderStory(
   ctx.shadowBlur = 30;
   ctx.fillStyle = COLORS.purpleLight;
   ctx.font = "900 64px 'Space Grotesk', 'Inter', sans-serif";
-  ctx.fillText("R O X O U", W / 2, 120);
+  ctx.fillText("R O X O U", W / 2, 118);
   ctx.restore();
 
   ctx.fillStyle = COLORS.muted;
   ctx.font = "700 22px 'Inter', sans-serif";
-  ctx.fillText("AGENDA DE HOJE", W / 2, 158);
+  ctx.fillText("AGENDA DE HOJE", W / 2, 152);
 
-  // Headline
+  // Headline (mais impacto)
   ctx.fillStyle = COLORS.white;
-  ctx.font = "900 62px 'Space Grotesk', 'Inter', sans-serif";
-  ctx.fillText(meta.headline, W / 2, 238);
+  ctx.font = "900 70px 'Space Grotesk', 'Inter', sans-serif";
+  ctx.fillText(meta.headline, W / 2, 232);
   ctx.fillStyle = COLORS.purpleLight;
-  ctx.font = "900 46px 'Space Grotesk', 'Inter', sans-serif";
-  ctx.fillText(meta.sub, W / 2, 298);
+  ctx.font = "900 52px 'Space Grotesk', 'Inter', sans-serif";
+  ctx.fillText(meta.sub, W / 2, 296);
+
+  // Linha de contagem
+  ctx.fillStyle = COLORS.goldSoft;
+  ctx.font = "700 26px 'Inter', sans-serif";
+  const n = totalSelected;
+  const countLine = `🍻 ${n} ${n === 1 ? "evento" : "eventos"} para curtir hoje em Prudente`;
+  ctx.fillText(countLine, W / 2, 340);
 
   // Ribbon Copa (verde + dourado)
   ctx.font = "800 22px 'Inter', sans-serif";
   const ribbon = meta.ribbon;
   const rw = ctx.measureText(ribbon).width + 56;
   const rx = (W - rw) / 2;
-  const ry = 330;
+  const ry = 370;
   ctx.save();
-  ctx.shadowColor = COLORS.green;
-  ctx.shadowBlur = 18;
+  ctx.shadowColor = COLORS.green; ctx.shadowBlur = 18;
   ctx.fillStyle = "rgba(0,208,132,0.18)";
   roundRect(ctx, rx, ry, rw, 50, 25); ctx.fill();
   ctx.restore();
@@ -269,29 +276,29 @@ function renderStory(
   ctx.font = "800 26px 'Inter', sans-serif";
   const dbw = ctx.measureText(dateLabel).width + 48;
   const dbx = (W - dbw) / 2;
-  const dby = ry + 70;
+  const dby = ry + 68;
   ctx.fillStyle = "rgba(247,201,72,0.14)";
-  roundRect(ctx, dbx, dby, dbw, 52, 26); ctx.fill();
+  roundRect(ctx, dbx, dby, dbw, 50, 25); ctx.fill();
   ctx.strokeStyle = COLORS.gold; ctx.lineWidth = 2;
-  roundRect(ctx, dbx, dby, dbw, 52, 26); ctx.stroke();
+  roundRect(ctx, dbx, dby, dbw, 50, 25); ctx.stroke();
   ctx.fillStyle = COLORS.gold;
   ctx.textBaseline = "middle";
-  ctx.fillText(dateLabel, W / 2, dby + 27);
+  ctx.fillText(dateLabel, W / 2, dby + 26);
   ctx.textBaseline = "alphabetic";
 
   if (totalPages > 1) {
     ctx.fillStyle = COLORS.purpleLight;
     ctx.font = "700 20px 'Inter', sans-serif";
-    ctx.fillText(`Parte ${page.page} de ${totalPages}`, W / 2, dby + 82);
+    ctx.fillText(`Parte ${page.page} de ${totalPages}`, W / 2, dby + 78);
   }
 
-  // ===== CARDS =====
-  // Card "130px" no design ref → compactos. Render: ~210-260 conforme nº de itens.
-  const listTop = 540;
-  const listBottom = H - 360;
+  // ===== ÁREA DE CARDS — FOOTER FIXO RESERVADO =====
+  const FOOTER_HEIGHT = 360;                  // área reservada para rodapé
+  const listTop = 560;
+  const listBottom = H - FOOTER_HEIGHT;       // fim absoluto da lista
   const slots = page.events.length;
   const gap = 22;
-  const cardH = Math.max(190, Math.min(260, Math.floor((listBottom - listTop - gap * (slots - 1)) / Math.max(slots, 1))));
+  const cardH = Math.max(180, Math.min(250, Math.floor((listBottom - listTop - gap * Math.max(slots - 1, 0)) / Math.max(slots, 1))));
   const cardW = W - 100;
   const cardX = 50;
 
@@ -304,9 +311,14 @@ function renderStory(
 
     // Bordas/destaques
     if (ev.featured_partner) {
-      // Borda DUPLA dourada + glow
+      // Glow dourado premium
       ctx.save();
-      ctx.shadowColor = COLORS.gold; ctx.shadowBlur = 38;
+      ctx.shadowColor = "rgba(247,201,72,0.55)"; ctx.shadowBlur = 60;
+      ctx.strokeStyle = COLORS.gold; ctx.lineWidth = 4;
+      roundRect(ctx, cardX, y, cardW, cardH, 28); ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.shadowColor = "rgba(247,201,72,0.35)"; ctx.shadowBlur = 25;
       ctx.strokeStyle = COLORS.gold; ctx.lineWidth = 4;
       roundRect(ctx, cardX, y, cardW, cardH, 28); ctx.stroke();
       ctx.restore();
@@ -325,10 +337,10 @@ function renderStory(
 
     // Time pill
     const timeText = ev.time_label;
-    ctx.font = "800 34px 'Space Grotesk', sans-serif";
+    ctx.font = "800 32px 'Space Grotesk', sans-serif";
     const tw = ctx.measureText(timeText).width;
-    const pillW = tw + 40;
-    const pillH = 50;
+    const pillW = tw + 38;
+    const pillH = 46;
     const pillX = cardX + 22;
     const pillY = y + 22;
     const pillGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
@@ -337,57 +349,60 @@ function renderStory(
     ctx.save();
     ctx.shadowColor = COLORS.purple; ctx.shadowBlur = 18;
     ctx.fillStyle = pillGrad;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 26); ctx.fill();
+    roundRect(ctx, pillX, pillY, pillW, pillH, 24); ctx.fill();
     ctx.restore();
     ctx.fillStyle = COLORS.white;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(timeText, pillX + pillW / 2, pillY + pillH / 2 + 2);
+    ctx.fillText(timeText, pillX + pillW / 2, pillY + pillH / 2 + 1);
 
-    // Badges direita
+    // Badges direita (reduzidas)
     let badgeX = cardX + cardW - 22;
+    const badgeH = 38;
+    const badgeY = pillY + (pillH - badgeH) / 2;
     ctx.textBaseline = "middle"; ctx.textAlign = "right";
 
     if (ev.featured_partner) {
-      ctx.font = "900 20px 'Inter', sans-serif";
+      ctx.font = "900 15px 'Inter', sans-serif";
       const label = "👑 DESTAQUE ROXOU";
-      const bw = ctx.measureText(label).width + 28;
+      const bw = Math.min(ctx.measureText(label).width + 20, 230);
       ctx.save();
-      ctx.shadowColor = COLORS.gold; ctx.shadowBlur = 24;
+      ctx.shadowColor = "rgba(247,201,72,0.55)"; ctx.shadowBlur = 18;
       ctx.fillStyle = COLORS.gold;
-      roundRect(ctx, badgeX - bw, pillY, bw, pillH, 24); ctx.fill();
+      roundRect(ctx, badgeX - bw, badgeY, bw, badgeH, 19); ctx.fill();
       ctx.restore();
-      // borda dupla dourada
-      ctx.strokeStyle = COLORS.goldSoft; ctx.lineWidth = 2;
-      roundRect(ctx, badgeX - bw, pillY, bw, pillH, 24); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,255,255,0.55)"; ctx.lineWidth = 1;
-      roundRect(ctx, badgeX - bw + 4, pillY + 4, bw - 8, pillH - 8, 20); ctx.stroke();
+      ctx.strokeStyle = COLORS.goldSoft; ctx.lineWidth = 1.5;
+      roundRect(ctx, badgeX - bw, badgeY, bw, badgeH, 19); ctx.stroke();
       ctx.fillStyle = COLORS.bgDeep;
-      ctx.fillText(label, badgeX - 14, pillY + pillH / 2);
-      badgeX = badgeX - bw - 10;
+      ctx.fillText(label, badgeX - 10, badgeY + badgeH / 2 + 1);
+      badgeX = badgeX - bw - 8;
     }
 
     if (ev.is_copa) {
-      ctx.font = "900 20px 'Inter', sans-serif";
-      const label = "⚽ COPA";
-      const bw = ctx.measureText(label).width + 24;
+      ctx.font = "900 15px 'Inter', sans-serif";
+      // tenta versão completa, senão reduz
+      let label = ev.kind === "match" ? "🇧🇷 TRANSMISSÃO DA COPA" : "⚽ COPA DO MUNDO";
+      let bw = ctx.measureText(label).width + 18;
+      const availableW = badgeX - (pillX + pillW + 12);
+      if (bw > availableW) { label = "⚽ COPA DO MUNDO"; bw = ctx.measureText(label).width + 18; }
+      if (bw > availableW) { label = "⚽ COPA"; bw = ctx.measureText(label).width + 18; }
       ctx.save();
-      ctx.shadowColor = COLORS.green; ctx.shadowBlur = 22;
+      ctx.shadowColor = COLORS.green; ctx.shadowBlur = 18;
       ctx.fillStyle = COLORS.green;
-      roundRect(ctx, badgeX - bw, pillY, bw, pillH, 24); ctx.fill();
+      roundRect(ctx, badgeX - bw, badgeY, bw, badgeH, 19); ctx.fill();
       ctx.restore();
       ctx.fillStyle = COLORS.bgDeep;
-      ctx.fillText(label, badgeX - 12, pillY + pillH / 2);
-      badgeX = badgeX - bw - 10;
+      ctx.fillText(label, badgeX - 9, badgeY + badgeH / 2 + 1);
+      badgeX = badgeX - bw - 8;
     }
 
     if (ev.featured && !ev.featured_partner) {
-      ctx.font = "800 18px 'Inter', sans-serif";
+      ctx.font = "800 14px 'Inter', sans-serif";
       const label = "⭐ EM DESTAQUE";
-      const bw = ctx.measureText(label).width + 22;
+      const bw = ctx.measureText(label).width + 18;
       ctx.fillStyle = COLORS.purple;
-      roundRect(ctx, badgeX - bw, pillY, bw, pillH, 24); ctx.fill();
+      roundRect(ctx, badgeX - bw, badgeY, bw, badgeH, 19); ctx.fill();
       ctx.fillStyle = COLORS.white;
-      ctx.fillText(label, badgeX - 11, pillY + pillH / 2);
+      ctx.fillText(label, badgeX - 9, badgeY + badgeH / 2 + 1);
     }
 
     // Conteúdo textual
@@ -418,58 +433,69 @@ function renderStory(
       ctx.textAlign = "left";
     }
 
-    // Subtítulo / local
+    // Local + Instagram inline na mesma linha
     if (ev.subtitle) {
-      ctx.fillStyle = "rgba(255,255,255,0.78)";
-      ctx.font = "500 24px 'Inter', sans-serif";
-      let venueTxt = `📍 ${ev.subtitle}`;
-      while (ctx.measureText(venueTxt).width > titleMax && venueTxt.length > 6) venueTxt = venueTxt.slice(0, -2);
-      ctx.fillText(venueTxt, textX, baseY + 64);
-    }
+      const venueLabel = `📍 ${ev.subtitle}`;
+      const igLabel = ev.instagram ? `  •  @${ev.instagram}` : "";
 
-    // Instagram
-    if (ev.instagram) {
-      ctx.fillStyle = COLORS.purpleLight;
-      ctx.font = "700 22px 'Inter', sans-serif";
-      ctx.fillText(`@${ev.instagram}`, textX, baseY + 98);
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.font = "500 24px 'Inter', sans-serif";
+      let venueTxt = venueLabel;
+      // mede IG (menor) para reservar espaço
+      ctx.save();
+      ctx.font = "600 20px 'Inter', sans-serif";
+      const igW = igLabel ? ctx.measureText(igLabel).width : 0;
+      ctx.restore();
+      while (ctx.measureText(venueTxt).width + igW > titleMax && venueTxt.length > 6) {
+        venueTxt = venueTxt.slice(0, -2);
+      }
+      if (venueTxt !== venueLabel) venueTxt = venueTxt.replace(/…?$/, "…");
+      ctx.fillText(venueTxt, textX, baseY + 70);
+
+      if (igLabel) {
+        const venueW = ctx.measureText(venueTxt).width;
+        ctx.fillStyle = "#D9B3FF";
+        ctx.font = "600 20px 'Inter', sans-serif";
+        ctx.fillText(igLabel, textX + venueW, baseY + 70);
+      }
+    } else if (ev.instagram) {
+      ctx.fillStyle = "#D9B3FF";
+      ctx.font = "600 20px 'Inter', sans-serif";
+      ctx.fillText(`@${ev.instagram}`, textX, baseY + 70);
     }
   });
 
-  // ===== RODAPÉ =====
+  // ===== RODAPÉ (área fixa, nunca sobrepõe cards) =====
+  const footerTop = listBottom + 28;
   ctx.textAlign = "center";
 
   // Separador dourado
   ctx.strokeStyle = COLORS.gold; ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(W / 2 - 140, H - 290);
-  ctx.lineTo(W / 2 + 140, H - 290);
+  ctx.moveTo(W / 2 - 140, footerTop);
+  ctx.lineTo(W / 2 + 140, footerTop);
   ctx.stroke();
 
   ctx.fillStyle = COLORS.white;
-  ctx.font = "800 38px 'Inter', sans-serif";
-  ctx.fillText("🌐 roxou.com.br", W / 2, H - 232);
+  ctx.font = "800 40px 'Inter', sans-serif";
+  ctx.fillText("🌐 roxou.com.br", W / 2, footerTop + 58);
 
   ctx.fillStyle = COLORS.muted;
   ctx.font = "500 26px 'Inter', sans-serif";
-  ctx.fillText("Tudo que rola em Prudente", W / 2, H - 184);
-  ctx.fillText("em um único lugar.", W / 2, H - 150);
+  ctx.fillText("Tudo que rola em Prudente", W / 2, footerTop + 106);
+  ctx.fillText("em um único lugar.", W / 2, footerTop + 140);
 
   ctx.fillStyle = COLORS.purpleLight;
-  ctx.font = "800 28px 'Inter', sans-serif";
-  ctx.fillText("📲 @roxou.pp", W / 2, H - 100);
+  ctx.font = "800 30px 'Inter', sans-serif";
+  ctx.fillText("📲 @roxou.pp", W / 2, footerTop + 196);
 
   // CTA final
   ctx.save();
-  ctx.shadowColor = COLORS.gold; ctx.shadowBlur = 18;
+  ctx.shadowColor = COLORS.gold; ctx.shadowBlur = 20;
   ctx.fillStyle = COLORS.gold;
-  ctx.font = "900 26px 'Inter', sans-serif";
-  ctx.fillText("👇 MARQUE QUEM VAI SAIR HOJE", W / 2, H - 50);
+  ctx.font = "900 28px 'Inter', sans-serif";
+  ctx.fillText("👇 QUEM VAI SAIR HOJE COM VOCÊ?", W / 2, footerTop + 258);
   ctx.restore();
-
-  // Roxou mini
-  ctx.fillStyle = "rgba(200,108,255,0.55)";
-  ctx.font = "700 18px 'Space Grotesk', sans-serif";
-  ctx.fillText("R O X O U  ·  PRESIDENTE PRUDENTE", W / 2, H - 18);
 }
 
 // ===================================================================
@@ -734,7 +760,7 @@ const StoryAgendaDoDia = () => {
     }
     setGenerating(true);
     try {
-      const pages = chunk(selectedItems, 6);
+      const pages = chunk(selectedItems, 5);
       const subtitle = formatTodayHeader();
       const meta = MODES[mode];
 
@@ -748,7 +774,7 @@ const StoryAgendaDoDia = () => {
         built.forEach((p, i) => {
           const c = canvasRefs.current[i];
           if (!c) return;
-          renderStory(c, p, built.length, subtitle, mode);
+          renderStory(c, p, built.length, subtitle, mode, selectedItems.length);
           const url = c.toDataURL("image/png");
           setStories((prev) => prev.map((s, j) => (j === i ? { ...s, imageUrl: url } : s)));
         });
