@@ -1129,15 +1129,37 @@ const EventoBulkForm = () => {
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Revisão do lote
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleBulkGenerateAi}
+                disabled={bulkAiRunning}
+                className="admin-glow flex items-center gap-1 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50"
+                title="Gera título, descrição, SEO e legenda Instagram para todos os itens elegíveis (gpt-5-mini)"
+              >
+                {bulkAiRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                {bulkAiRunning
+                  ? `Gerando ${bulkAiProgress.current} de ${bulkAiProgress.total}…`
+                  : "✨ Gerar títulos e descrições do lote com IA"}
+              </button>
+              {bulkAiRunning && (
+                <button
+                  type="button"
+                  onClick={cancelBulkAi}
+                  className="flex items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-[11px] font-semibold text-destructive hover:bg-destructive/20 transition"
+                >
+                  <X className="h-3 w-3" /> Parar
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleGenerateAllCaptions}
-                disabled={bulkGenerating}
-                className="admin-glow flex items-center gap-1 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-1.5 text-[11px] font-semibold text-primary-foreground hover:opacity-95 transition disabled:opacity-50"
+                disabled={bulkGenerating || bulkAiRunning}
+                className="flex items-center gap-1 rounded-lg border border-border/50 bg-secondary/30 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-secondary/50 transition disabled:opacity-50"
+                title="(Legado) preenche apenas descrição em itens sem texto"
               >
                 {bulkGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                {bulkGenerating ? "Gerando legendas..." : "✨ Gerar Legendas do Lote"}
+                {bulkGenerating ? "Gerando..." : "Só descrições vazias"}
               </button>
               <button
                 type="button"
@@ -1148,6 +1170,28 @@ const EventoBulkForm = () => {
               </button>
             </div>
           </div>
+
+          {/* ✨ Contadores Fase 2B */}
+          {(bulkAiRunning || bulkAiCounts.generated + bulkAiCounts.review + bulkAiCounts.duplicatesSkipped + bulkAiCounts.errors > 0) && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-emerald-300/80">Gerados c/ IA</p>
+                <p className="text-sm font-bold text-emerald-200">{bulkAiCounts.generated}</p>
+              </div>
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-amber-300/80">Revisar (conf&lt;70)</p>
+                <p className="text-sm font-bold text-amber-200">{bulkAiCounts.review}</p>
+              </div>
+              <div className="rounded-lg border border-muted-foreground/30 bg-secondary/30 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-muted-foreground">Duplicados ignorados</p>
+                <p className="text-sm font-bold text-foreground">{bulkAiCounts.duplicatesSkipped}</p>
+              </div>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-destructive/80">Erros</p>
+                <p className="text-sm font-bold text-destructive">{bulkAiCounts.errors}</p>
+              </div>
+            </div>
+          )}
 
           {items.map((it, idx) => (
             <ReviewRow
