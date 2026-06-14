@@ -1300,13 +1300,40 @@ const EventoBulkForm = () => {
             </div>
           )}
 
+          {/* Resumo de classificação do lote */}
+          {readyCount > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-destructive/80">Duplicados reais</p>
+                <p className="text-sm font-bold text-destructive">{itemFlags.confirmedRealIds.size}</p>
+              </div>
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-amber-300/80">Possíveis duplicados</p>
+                <p className="text-sm font-bold text-amber-200">{itemFlags.possibleDupIds.size}</p>
+              </div>
+              <div className="rounded-lg border border-muted-foreground/30 bg-secondary/30 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-muted-foreground">Dados incompletos</p>
+                <p className="text-sm font-bold text-foreground">{itemFlags.incompleteIds.size}</p>
+              </div>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-destructive/80">Erros</p>
+                <p className="text-sm font-bold text-destructive">{errorCount}</p>
+              </div>
+            </div>
+          )}
+
           {items.map((it, idx) => (
             <ReviewRow
               key={it.localId}
               index={idx}
               item={it}
               partners={partners}
-              isDuplicate={duplicateIds.has(it.localId)}
+              isDuplicate={itemFlags.confirmedRealIds.has(it.localId)}
+              isPossibleDup={itemFlags.possibleDupIds.has(it.localId)}
+              isIncomplete={itemFlags.incompleteIds.has(it.localId)}
+              classificationReason={itemFlags.reasonById.get(it.localId)}
+              forcePublish={forcePublishIds.has(it.localId)}
+              onToggleForcePublish={() => toggleForcePublish(it.localId)}
               smartDup={smartDuplicates.get(it.localId)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
