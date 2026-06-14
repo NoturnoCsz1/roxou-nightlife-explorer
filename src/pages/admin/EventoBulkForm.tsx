@@ -1598,6 +1598,10 @@ const ReviewRow = memo(ReviewRowBase, (prev, next) => {
     prev.item === next.item &&
     prev.partners === next.partners &&
     prev.isDuplicate === next.isDuplicate &&
+    prev.isPossibleDup === next.isPossibleDup &&
+    prev.isIncomplete === next.isIncomplete &&
+    prev.classificationReason === next.classificationReason &&
+    prev.forcePublish === next.forcePublish &&
     prev.smartDup === next.smartDup &&
     prev.generatingDesc === next.generatingDesc &&
     prev.index === next.index
