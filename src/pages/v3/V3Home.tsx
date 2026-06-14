@@ -1186,8 +1186,10 @@ function BentoGrid() {
           </div>
         </Link>
 
-        {/* Category visual cards */}
-        {quickCats.map((cat) => <CategoryBentoCard key={cat.categoryKey} {...cat} />)}
+        {/* Category visual cards — hidden on mobile to declutter Home, visible on desktop */}
+        <div className="hidden lg:contents">
+          {quickCats.map((cat) => <CategoryBentoCard key={cat.categoryKey} {...cat} />)}
+        </div>
       </div>
     </FadeSection>
   );
