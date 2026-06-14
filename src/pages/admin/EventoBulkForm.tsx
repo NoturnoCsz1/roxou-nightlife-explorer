@@ -145,6 +145,14 @@ const EventoBulkForm = () => {
   // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
   const fileMapRef = useRef<Map<string, File>>(new Map());
 
+  // ✨ Fase 2B — geração de títulos + descrições em lote (gpt-5-mini)
+  const [bulkAiRunning, setBulkAiRunning] = useState(false);
+  const [bulkAiProgress, setBulkAiProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [bulkAiCounts, setBulkAiCounts] = useState<{ generated: number; review: number; duplicatesSkipped: number; errors: number }>({
+    generated: 0, review: 0, duplicatesSkipped: 0, errors: 0,
+  });
+  const bulkAiAbortRef = useRef(false);
+
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
     if (cityFilter) q = q.eq("city", cityFilter);
