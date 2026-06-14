@@ -5,7 +5,8 @@ import { Trophy, ArrowRight, Calendar, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   sportsMatchRowToNormalized,
-  isBrazilianTeam,
+  isBrazilNationalTeam,
+  isCopaDoMundoMatch,
   formatMatchTime,
   type NormalizedMatch,
   type SportsMatchRow,
