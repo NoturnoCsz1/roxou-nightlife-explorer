@@ -527,7 +527,7 @@ const StoryAgendaDoDia = () => {
     }
     setGenerating(true);
     try {
-      const pages = chunk(selectedEvents, 8);
+      const pages = chunk(selectedEvents, 6);
       const subtitle = formatTodayHeader();
 
       const built: StoryPage[] = pages.map((evts, idx) => ({
