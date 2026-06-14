@@ -1021,6 +1021,8 @@ export type Database = {
         Row: {
           address: string | null
           ai_confidence: string
+          ai_confidence_score: number | null
+          ai_warnings: Json | null
           aura_badge: string | null
           aura_pick: boolean
           aura_score: number | null
@@ -1041,14 +1043,18 @@ export type Database = {
           image_hash: string | null
           image_url: string | null
           instagram: string | null
+          instagram_caption: string | null
           is_sports_transmission: boolean
           latitude: number | null
           longitude: number | null
           maps_place_id: string | null
+          meta_description: string | null
+          meta_title: string | null
           needs_review: boolean
           opportunity_tags: string[]
           original_detected_title: string | null
           partner_id: string | null
+          short_summary: string | null
           slug: string
           sports_match_id: string | null
           sports_transmission_confidence: number | null
@@ -1070,6 +1076,8 @@ export type Database = {
         Insert: {
           address?: string | null
           ai_confidence?: string
+          ai_confidence_score?: number | null
+          ai_warnings?: Json | null
           aura_badge?: string | null
           aura_pick?: boolean
           aura_score?: number | null
@@ -1090,14 +1098,18 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          instagram_caption?: string | null
           is_sports_transmission?: boolean
           latitude?: number | null
           longitude?: number | null
           maps_place_id?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
           needs_review?: boolean
           opportunity_tags?: string[]
           original_detected_title?: string | null
           partner_id?: string | null
+          short_summary?: string | null
           slug: string
           sports_match_id?: string | null
           sports_transmission_confidence?: number | null
@@ -1119,6 +1131,8 @@ export type Database = {
         Update: {
           address?: string | null
           ai_confidence?: string
+          ai_confidence_score?: number | null
+          ai_warnings?: Json | null
           aura_badge?: string | null
           aura_pick?: boolean
           aura_score?: number | null
@@ -1139,14 +1153,18 @@ export type Database = {
           image_hash?: string | null
           image_url?: string | null
           instagram?: string | null
+          instagram_caption?: string | null
           is_sports_transmission?: boolean
           latitude?: number | null
           longitude?: number | null
           maps_place_id?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
           needs_review?: boolean
           opportunity_tags?: string[]
           original_detected_title?: string | null
           partner_id?: string | null
+          short_summary?: string | null
           slug?: string
           sports_match_id?: string | null
           sports_transmission_confidence?: number | null
