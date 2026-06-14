@@ -85,7 +85,7 @@ function formatTimeSP(iso: string): string {
 function formatTodayHeader(): string {
   const now = new Date();
   const sp = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  return `${WEEKDAY_PT[sp.getDay()]}, ${sp.getDate()} de ${MONTH_PT[sp.getMonth()]}`;
+  return `${WEEKDAY_PT[sp.getDay()]} • ${sp.getDate()} de ${MONTH_PT[sp.getMonth()]}`;
 }
 
 function shortTitle(raw: string): string {
