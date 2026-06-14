@@ -904,65 +904,85 @@ const EventoBulkForm = () => {
       toast.error("Nenhum evento pronto para salvar");
       return;
     }
-    const invalid = ready.findIndex((it) => !it.form.title || !it.form.slug || !it.form.date_time);
-    if (invalid !== -1) {
-      toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
-      return;
-    }
 
-    // dedupe interno do lote (mesma slug+título)
-    const seen = new Set<string>();
-    for (const it of ready) {
-      const k = `${it.form.slug}|${it.form.title.toLowerCase()}`;
-      if (seen.has(k)) {
-        toast.error(`Duplicidade interna no lote: ${it.form.title}`);
-        return;
-      }
-      seen.add(k);
-    }
-
-    // Classifica pela ferramenta central
-    const blocked: BulkItem[] = [];
-    const review: BulkItem[] = [];
+    // ── Classificação fina ─────────────────────────────────────────────
+    //   incomplete   → faltam dados essenciais (bloqueia, não é duplicado)
+    //   confirmed    → duplicado real (image_hash, slug, score>=95)
+    //   possible     → possível duplicado (60–94) → permite c/ Publicar mesmo assim
+    //   clear        → ok
+    const incomplete: BulkItem[] = [];
+    const confirmed: BulkItem[] = [];
+    const possibleBlocked: BulkItem[] = []; // possible sem forçar
+    const possibleForced: BulkItem[] = []; // possible com forçar
     const clear: BulkItem[] = [];
     for (const it of ready) {
-      const sd = smartDuplicates.get(it.localId);
-      if (sd?.decision === "confirmed") blocked.push(it);
-      else if (sd?.decision === "review") review.push(it);
-      else clear.push(it);
+      if (itemFlags.incompleteIds.has(it.localId)) {
+        incomplete.push(it);
+      } else if (itemFlags.confirmedRealIds.has(it.localId)) {
+        confirmed.push(it);
+      } else if (itemFlags.possibleDupIds.has(it.localId)) {
+        if (forcePublishIds.has(it.localId)) possibleForced.push(it);
+        else possibleBlocked.push(it);
+      } else {
+        clear.push(it);
+      }
     }
 
-    const dupNames = [...blocked, ...review].map((b) => `• ${b.form.title}`).join("\n");
-    const summary =
-      `📦 Resumo do lote\n` +
-      `─────────────────\n` +
-      `Eventos processados: ${ready.length}\n` +
-      `Novos: ${clear.length}\n` +
-      `Duplicados: ${blocked.length + review.length}` +
-      (dupNames ? `\n\nDuplicados encontrados:\n${dupNames}` : "") +
-      `\n\n${blocked.length} bloqueado(s) (score ≥ 80).` +
-      `\n${review.length} salvo(s) como rascunho para revisão.` +
-      `\n${clear.length} será(ão) ${status === "published" ? "publicado(s)" : "salvo(s) como rascunho"}.` +
-      `\n\nContinuar?`;
-    if ((blocked.length || review.length) && !confirm(summary)) {
-      return;
-    }
+    const toInsert = [...clear, ...possibleForced];
 
-
-    const toInsert = [...clear, ...review];
     if (!toInsert.length) {
-      toast.warning(`Todos os ${blocked.length} eventos foram bloqueados por duplicidade.`);
+      const lines = ready.map((it, idx) => {
+        const i = idx + 1;
+        const titulo = it.form.title || "(sem título)";
+        if (itemFlags.confirmedRealIds.has(it.localId)) {
+          return `• Evento ${i} — ${titulo}: duplicado real já existente`;
+        }
+        if (itemFlags.possibleDupIds.has(it.localId)) {
+          return `• Evento ${i} — ${titulo}: possível duplicado (use "Publicar mesmo assim" no item)`;
+        }
+        if (itemFlags.incompleteIds.has(it.localId)) {
+          return `• Evento ${i} — ${titulo}: dados incompletos`;
+        }
+        return `• Evento ${i} — ${titulo}: pronto`;
+      }).join("\n");
+      toast.warning(
+        `Nenhum evento foi publicado. Verifique os itens marcados abaixo.\n\n${lines}`,
+        { duration: 14000 },
+      );
       return;
+    }
+
+    // Confirmação se vai pular ou forçar duplicados
+    if (confirmed.length || possibleBlocked.length || possibleForced.length || incomplete.length) {
+      const summary =
+        `📦 Resumo do lote\n` +
+        `─────────────────\n` +
+        `Eventos prontos: ${ready.length}\n` +
+        `✅ Novos (sem suspeita): ${clear.length}\n` +
+        (possibleForced.length ? `⚠ Possíveis duplicados forçados pelo admin: ${possibleForced.length}\n` : "") +
+        (possibleBlocked.length ? `⚠ Possíveis duplicados ignorados: ${possibleBlocked.length}\n` : "") +
+        (confirmed.length ? `🚫 Duplicados reais (não serão enviados): ${confirmed.length}\n` : "") +
+        (incomplete.length ? `📝 Dados incompletos (não serão enviados): ${incomplete.length}\n` : "") +
+        `\nSerão ${status === "published" ? "publicados" : "salvos como rascunho"}: ${toInsert.length}\n\nContinuar?`;
+      if (!confirm(summary)) return;
     }
 
     setSaving(true);
     const nowIso = new Date().toISOString();
 
-    // === Guard de ingestão por item ===
-    const guarded: Array<{ it: BulkItem; payload: any; guard: Awaited<ReturnType<typeof validateBeforePublish>>; blocked: boolean }> = [];
+    // === Guard de ingestão por item — IMPORTANTE ===
+    // O guard ainda pode retornar MESMO_FLYER/DUPLICATA, mas no fluxo em lote
+    // a CLASSIFICAÇÃO acima já é a fonte de verdade. Guard só bloqueia
+    // motivos que NÃO são duplicidade: FORA_DO_ESCOPO e EVENTO_NO_PASSADO.
+    const guarded: Array<{
+      it: BulkItem;
+      payload: any;
+      guard: Awaited<ReturnType<typeof validateBeforePublish>>;
+      blocked: boolean;
+      blockReason?: string;
+    }> = [];
     for (const it of toInsert) {
-      const sd = smartDuplicates.get(it.localId);
-      const isReview = sd?.decision === "review";
+      const isPossible = itemFlags.possibleDupIds.has(it.localId);
       const guard = await validateBeforePublish({
         source: "bulk",
         title: it.form.title,
@@ -973,10 +993,10 @@ const EventoBulkForm = () => {
         image_url: it.form.image_url,
         image_hash: it.form.image_hash,
       });
-      const hardBlocks = guard.blockReasons.filter(
-        (r) => r === "MESMO_FLYER" || r === "DUPLICATA" || r === "FORA_DO_ESCOPO" || r === "EVENTO_NO_PASSADO",
-      );
-      const needsReview = isReview || guard.recommendedNeedsReview;
+      // Somente motivos NÃO-duplicidade bloqueiam aqui:
+      const NON_DUP_BLOCKS = new Set(["FORA_DO_ESCOPO", "EVENTO_NO_PASSADO"]);
+      const hardBlocks = guard.blockReasons.filter((r) => NON_DUP_BLOCKS.has(r));
+      const needsReview = isPossible || guard.recommendedNeedsReview;
       const itemStatus: "draft" | "published" = (needsReview || hardBlocks.length) ? "draft" : status;
       const base = buildEventPayload(
         { ...it.form, needs_review: needsReview || (it.form as any).needs_review },
@@ -996,7 +1016,13 @@ const EventoBulkForm = () => {
         }),
         duplicate_checked_at: nowIso,
       };
-      guarded.push({ it, payload, guard, blocked: hardBlocks.length > 0 });
+      guarded.push({
+        it,
+        payload,
+        guard,
+        blocked: hardBlocks.length > 0,
+        blockReason: hardBlocks.map((r) => REASON_LABELS[r] || r).join(", "),
+      });
     }
 
     const guardBlocked = guarded.filter((g) => g.blocked);
@@ -1004,7 +1030,13 @@ const EventoBulkForm = () => {
 
     if (!payloads.length) {
       setSaving(false);
-      toast.warning(`Todos os ${guardBlocked.length + blocked.length} eventos foram bloqueados (duplicidade ou guard).`);
+      const lines = guardBlocked
+        .map((g, idx) => `• Evento ${idx + 1} — ${g.it.form.title || "(sem título)"}: ${g.blockReason || "validação"}`)
+        .join("\n");
+      toast.warning(
+        `Nenhum evento foi publicado. Verifique os itens marcados abaixo.\n\n${lines}`,
+        { duration: 14000 },
+      );
       return;
     }
 
@@ -1012,7 +1044,6 @@ const EventoBulkForm = () => {
       const { data: insertedRows, error } = await supabase.from("events").insert(payloads as any).select("id");
       if (error) throw error;
 
-      // Persiste logs (best-effort, em paralelo)
       const ids = insertedRows || [];
       await Promise.all(
         guarded
@@ -1021,14 +1052,14 @@ const EventoBulkForm = () => {
       );
       await Promise.all(guardBlocked.map((g) => persistValidationLog(g.guard.validationLog)));
 
-      const blockedTotal = blocked.length + guardBlocked.length;
+      const skippedTotal = confirmed.length + possibleBlocked.length + incomplete.length + guardBlocked.length;
       toast.success(
-        `Lote: ${clear.length} criado(s) • ${review.length} em revisão • ${blockedTotal} bloqueado(s)`,
+        `Lote: ${clear.length} novo(s) • ${possibleForced.length} forçado(s) • ${skippedTotal} não enviado(s)`,
         { duration: 8000 },
       );
       if (guardBlocked.length) {
         const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
-        toast.warning(`Motivos de bloqueio: ${reasons.join(", ")}`, { duration: 9000 });
+        toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
       }
       navigate("/admin/eventos");
     } catch (err: any) {
@@ -1037,6 +1068,7 @@ const EventoBulkForm = () => {
       setSaving(false);
     }
   }
+
 
   const readyCount = items.filter((it) => it.status === "ready").length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
