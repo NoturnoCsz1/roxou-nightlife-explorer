@@ -564,15 +564,14 @@ const StoryAgendaDoDia = () => {
     const s = stories[idx];
     if (!s) return;
     const lines = [
-      "🔥 O QUE ROLA HOJE EM PRUDENTE",
-      formatTodayHeader(),
+      "🔥 O QUE ROLA HOJE EM PRUDENTE?",
       "",
-      ...s.events.map((e) => `${e.time_label} — ${e.short_title} 📍 ${e.venue_name || ""}${e.partner_instagram ? ` 📸 @${e.partner_instagram}` : ""}${e.featured_partner ? " 🏆" : ""}${e.is_copa ? " ⚽" : ""}`),
+      "Bares, festas, baladas e transmissões da Copa do Mundo você encontra na Roxou.",
       "",
-      s.caption,
+      "🌐 roxou.com.br",
+      "📲 @roxou.pp",
       "",
-      "🌐 Acesse: roxou.com.br",
-      "Fique por dentro de tudo que rola em Prudente em um único lugar.",
+      "#PresidentePrudente #Roxou #AgendaPrudente #OQueRolaHoje #CopaDoMundo #RoleEmPrudente",
     ];
     await navigator.clipboard.writeText(lines.join("\n"));
     setCopiedIdx(idx);
