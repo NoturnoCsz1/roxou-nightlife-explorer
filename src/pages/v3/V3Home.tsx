@@ -708,7 +708,14 @@ export default function V3Home() {
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       <HomeSectionBoundary name="Destaque da semana" silent>
-        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} />}
+        {(safeEvents(events).length > 0) && (
+          <WeeklySpotlight
+            ev={weeklyHighlight ?? undefined}
+            events={safeEvents(events)}
+            partnerAwardIds={new Set(partnerRankMap.keys())}
+            FadeSection={FadeSection}
+          />
+        )}
       </HomeSectionBoundary>
 
       <HomeSectionBoundary name="AI widget" silent>
