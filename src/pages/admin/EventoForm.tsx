@@ -304,6 +304,21 @@ const EventoForm = () => {
       transmission_channel: (data as any).transmission_channel || null,
       transmission_url: (data as any).transmission_url || null,
       transmission_notes: (data as any).transmission_notes || null,
+      short_summary: (data as any).short_summary || "",
+      meta_title: (data as any).meta_title || "",
+      meta_description: (data as any).meta_description || "",
+      instagram_caption: (data as any).instagram_caption || "",
+      ai_confidence_score:
+        typeof (data as any).ai_confidence_score === "number"
+          ? (data as any).ai_confidence_score
+          : null,
+      ai_warnings: Array.isArray((data as any).ai_warnings)
+        ? (data as any).ai_warnings
+        : [],
+      flyer_text: "",
+      artists: [],
+      price: "",
+      official_source_url: "",
     } as any);
     if (!data.partner_id && (data.venue_name || data.address)) setManualVenue(true);
     originalSnapshot.current = {
