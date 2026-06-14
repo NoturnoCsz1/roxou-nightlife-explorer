@@ -690,6 +690,124 @@ const EventoBulkForm = () => {
     toast.success("Legendas do lote geradas!");
   }
 
+  /**
+   * ✨ Fase 2B — Gera títulos + descrições + SEO + caption IG para todos os itens
+   * elegíveis do lote, usando a edge function generate-description (gpt-5-mini).
+   *
+   * Regras de pular item:
+   *   - status !== "ready"
+   *   - item marcado como duplicado (duplicateIds)
+   *   - smartDuplicates.decision === "confirmed"
+   *   - sem título OU sem (venue_name + date_time)
+   *
+   * Concorrência: 2 chamadas simultâneas, com progresso e botão Parar.
+   * Confidence < 70 → marca needs_review (vai p/ rascunho mesmo se admin clicar Publicar).
+   */
+  async function handleBulkGenerateAi() {
+    if (bulkAiRunning) return;
+    const eligible = items.filter((it) => {
+      if (it.status !== "ready") return false;
+      if (!it.form.title) return false;
+      if (!it.form.venue_name || !it.form.date_time) return false;
+      const sd = smartDuplicates.get(it.localId);
+      if (sd?.decision === "confirmed") return false;
+      if (duplicateIds.has(it.localId)) return false;
+      return true;
+    });
+
+    const duplicatesSkipped = items.filter(
+      (it) => duplicateIds.has(it.localId) || smartDuplicates.get(it.localId)?.decision === "confirmed",
+    ).length;
+
+    if (!eligible.length) {
+      toast.info(`Nenhum item elegível. ${duplicatesSkipped} duplicado(s) ignorado(s).`);
+      return;
+    }
+
+    bulkAiAbortRef.current = false;
+    setBulkAiRunning(true);
+    setBulkAiCounts({ generated: 0, review: 0, duplicatesSkipped, errors: 0 });
+    setBulkAiProgress({ current: 0, total: eligible.length });
+    toast.info(`Gerando ${eligible.length} descrição(ões) com IA...`);
+
+    let completed = 0;
+    const CONCURRENCY = 2;
+    let cursor = 0;
+
+    async function processOne(it: BulkItem) {
+      if (bulkAiAbortRef.current) return;
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-description", {
+          body: {
+            title: it.form.title,
+            venue_name: it.form.venue_name,
+            address: it.form.address,
+            date_time: it.form.date_time,
+            category: it.form.category,
+            sub_category: (it.form as any)._sub || "",
+            partner_id: it.form.partner_id || undefined,
+            time_is_unknown: Boolean(it.form.time_is_unknown),
+            ticket_url: it.form.ticket_url || "",
+            instagram: it.form.instagram || "",
+          },
+        });
+        if (error) throw error;
+
+        const rich: string = data?.description_html || data?.descricao_rica || data?.description || "";
+        const chamada: string | undefined = data?.title || data?.chamada_site;
+        const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+        const confidence: number | null =
+          typeof data?.ai_confidence_score === "number" ? data.ai_confidence_score : null;
+        const lowConfidence = typeof confidence === "number" && confidence < 70;
+
+        patchForm(it.localId, {
+          title: chamada || it.form.title,
+          description: rich || it.form.description,
+          short_summary: data?.short_summary || "",
+          meta_title: data?.meta_title || "",
+          meta_description: data?.meta_description || "",
+          instagram_caption: data?.instagram_caption || "",
+          ai_confidence_score: confidence,
+          ai_warnings: warnings,
+          needs_review: lowConfidence || warnings.length > 0,
+        });
+
+        setBulkAiCounts((c) => ({
+          ...c,
+          generated: c.generated + 1,
+          review: c.review + (lowConfidence || warnings.length > 0 ? 1 : 0),
+        }));
+      } catch (err: any) {
+        console.error("[bulk-ai] item failed", it.localId, err);
+        setBulkAiCounts((c) => ({ ...c, errors: c.errors + 1 }));
+      } finally {
+        completed += 1;
+        setBulkAiProgress({ current: completed, total: eligible.length });
+      }
+    }
+
+    async function worker() {
+      while (!bulkAiAbortRef.current) {
+        const i = cursor++;
+        if (i >= eligible.length) return;
+        await processOne(eligible[i]);
+      }
+    }
+
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, eligible.length) }, worker));
+
+    setBulkAiRunning(false);
+    if (bulkAiAbortRef.current) {
+      toast.warning(`Geração interrompida. ${completed}/${eligible.length} processados.`);
+    } else {
+      toast.success(`✅ ${completed} descrição(ões) geradas pela IA.`);
+    }
+  }
+
+  function cancelBulkAi() {
+    bulkAiAbortRef.current = true;
+  }
+
   function handlePartnerSelect(localId: string, partnerId: string) {
     if (!partnerId) {
       patchForm(localId, { partner_id: "" });
