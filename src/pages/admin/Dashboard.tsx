@@ -162,16 +162,19 @@ const Dashboard = () => {
     const since7d = new Date(); since7d.setDate(since7d.getDate() - 7);
     const since7dISO = since7d.toISOString();
 
-    let eventsQ = supabase.from("events").select("id, title, slug, status, date_time, created_at, image_url, description");
-    let partnersQ = supabase.from("partners").select("id, name, created_at");
+    let eventsQ = supabase.from("events").select("id, title, slug, status, date_time, created_at, image_url, description").limit(5000);
+    let partnersQ = supabase.from("partners").select("id, name, created_at").limit(5000);
+    let totalEventsQ = supabase.from("events").select("id", { count: "exact", head: true });
     if (cityFilter) {
       eventsQ = eventsQ.eq("city", cityFilter);
       partnersQ = partnersQ.eq("city", cityFilter);
+      totalEventsQ = totalEventsQ.eq("city", cityFilter);
     }
 
-    const [eventsRes, partnersRes, sessionsRes, viewsCountRes, clicksCountRes] = await Promise.all([
+    const [eventsRes, partnersRes, totalEventsRes, sessionsRes, viewsCountRes, clicksCountRes] = await Promise.all([
       eventsQ,
       partnersQ,
+      totalEventsQ,
       supabase.from("visitor_sessions").select("id", { count: "exact", head: true }),
       supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", since7dISO),
       supabase.from("ticket_clicks").select("id", { count: "exact", head: true }).gte("created_at", since7dISO),
@@ -187,12 +190,13 @@ const Dashboard = () => {
     const yesterdayEvts = published.filter(e => e.date_time >= yesterdayStart.toISOString() && e.date_time < todayStart.toISOString());
     const lastWeekEvts = published.filter(e => e.date_time >= lastWeekRefDate.toISOString() && e.date_time <= lastWeekRefAhead.toISOString());
 
-    setKpis({ today: todayEvts.length, week: weekEvts.length, total: evts.length });
+    setKpis({ today: todayEvts.length, week: weekEvts.length, total: totalEventsRes.count ?? evts.length });
     setKpiGrowth({
       today: todayEvts.length - yesterdayEvts.length,
       week: weekEvts.length - lastWeekEvts.length,
     });
     setPerf({ views: viewsCountRes.count ?? 0, visitors: sessionsRes.count ?? 0, clicks: clicksCountRes.count ?? 0 });
+
 
     // Pending actions: published events missing image or description
     const noCover = published.filter(e => !e.image_url || e.image_url.trim() === "").length;
