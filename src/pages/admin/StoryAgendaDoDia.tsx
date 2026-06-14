@@ -760,7 +760,7 @@ const StoryAgendaDoDia = () => {
     }
     setGenerating(true);
     try {
-      const pages = chunk(selectedItems, 6);
+      const pages = chunk(selectedItems, 5);
       const subtitle = formatTodayHeader();
       const meta = MODES[mode];
 
