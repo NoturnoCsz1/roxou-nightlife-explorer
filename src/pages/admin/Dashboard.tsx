@@ -268,22 +268,35 @@ const Dashboard = () => {
       const fiveMin = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const thirtyMin = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const [activeRes, pvRes, sessionsRes] = await Promise.all([
-        supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("last_seen_at", fiveMin),
+
+      // visitor_sessions can be stale (anon upsert blocked by RLS).
+      // Use page_views as source of truth and fall back to analytics_events.
+      const [pvActive, pvCount, pvDay, aeActive, aeDay] = await Promise.all([
+        supabase.from("page_views").select("session_id").gte("created_at", fiveMin).limit(2000),
         supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", thirtyMin),
-        supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("started_at", since24h),
+        supabase.from("page_views").select("session_id").gte("created_at", since24h).limit(5000),
+        supabase.from("analytics_events").select("session_id").gte("created_at", fiveMin).limit(2000),
+        supabase.from("analytics_events").select("session_id").gte("created_at", since24h).limit(5000),
       ]);
+
+      const uniq = (rows: Array<{ session_id: string | null }> | null) =>
+        new Set((rows ?? []).map(r => r.session_id).filter(Boolean)).size;
+
+      const activeUsers = Math.max(uniq(pvActive.data), uniq(aeActive.data));
+      const sessions = Math.max(uniq(pvDay.data), uniq(aeDay.data));
+
       if (!cancelled) {
         setRealtime({
-          activeUsers: activeRes.count ?? 0,
-          pageViews: pvRes.count ?? 0,
-          sessions: sessionsRes.count ?? 0,
+          activeUsers,
+          pageViews: pvCount.count ?? 0,
+          sessions,
         });
       }
     };
     poll();
     const interval = setInterval(poll, 30000);
     return () => { cancelled = true; clearInterval(interval); };
+
   }, []);
 
   // Instagram stats — null until OAuth /insights is wired (avoids misleading zeros)
