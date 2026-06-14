@@ -192,6 +192,49 @@ const EventoBulkForm = () => {
     });
   }, [cityFilter]);
 
+  /**
+   * Validação inteligente (aditiva): score 0–100 por item, comparando
+   * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
+   */
+  const smartDuplicates = useMemo<Map<string, DuplicateConfidenceResult>>(() => {
+    const map = new Map<string, DuplicateConfidenceResult>();
+    if (!dbEvents.length) return map;
+    const existing: (DuplicateConfidenceExisting & { dedupe_key?: string | null })[] = dbEvents.map((e) => ({
+      id: e.id,
+      title: e.title,
+      date_time: e.date_time,
+      venue_name: e.venue_name,
+      image_hash: e.image_hash,
+      slug: e.slug,
+      flyer_fingerprint: generateFlyerFingerprint({ image_hash: e.image_hash }),
+    }));
+    for (const it of items) {
+      if (!it.form.title || !it.form.date_time) continue;
+      const fp = generateFlyerFingerprint({
+        image_hash: it.form.image_hash,
+        image_url: it.form.image_url,
+      });
+      const result = findPossibleDuplicateEvent(
+        {
+          id: undefined,
+          title: it.form.title,
+          date_time: it.form.date_time,
+          venue_name: it.form.venue_name,
+          address: it.form.address,
+          instagram: it.form.instagram,
+          partner_id: it.form.partner_id || null,
+          image_hash: it.form.image_hash,
+          flyer_fingerprint: fp,
+        },
+        existing,
+      );
+      if (result.decision !== "clear") {
+        map.set(it.localId, result);
+      }
+    }
+    return map;
+  }, [items, dbEvents]);
+
   // ════════════════════════════════════════════════════════════════════
   // Classificação de itens — separa claramente:
   //   • incomplete       → faltam title/date/venue (NÃO é duplicado)
@@ -245,7 +288,7 @@ const EventoBulkForm = () => {
         reasonById.set(
           it.localId,
           matched
-            ? `Mesmo flyer (image_hash) do evento já cadastrado: "${matched.title}".`
+            ? `Mesmo flyer (image_hash) já cadastrado em: "${matched.title}".`
             : `Mesmo flyer (image_hash) já cadastrado.`,
         );
         continue;
@@ -278,58 +321,11 @@ const EventoBulkForm = () => {
     }
 
     return { incompleteIds, confirmedRealIds, possibleDupIds, reasonById };
-  // smartDuplicates é declarado abaixo; o JS hoist do `const` em useMemo não
-  // é um problema pois esta memo só executa após o primeiro render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, dbEvents, dbSlugs]);
+  }, [items, dbEvents, dbSlugs, smartDuplicates]);
 
   // Compat: duplicateIds = só duplicados REAIS confirmados.
   const duplicateIds = itemFlags.confirmedRealIds;
 
-  /**
-   * Validação inteligente (aditiva): score 0–100 por item, comparando
-   * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
-   * Memoizado para evitar O(items × dbEvents) em cada render (era a maior
-   * causa de lag ao digitar nos Padrões do Lote).
-   */
-  const smartDuplicates = useMemo<Map<string, DuplicateConfidenceResult>>(() => {
-    const map = new Map<string, DuplicateConfidenceResult>();
-    if (!dbEvents.length) return map;
-    const existing: (DuplicateConfidenceExisting & { dedupe_key?: string | null })[] = dbEvents.map((e) => ({
-      id: e.id,
-      title: e.title,
-      date_time: e.date_time,
-      venue_name: e.venue_name,
-      image_hash: e.image_hash,
-      slug: e.slug,
-      flyer_fingerprint: generateFlyerFingerprint({ image_hash: e.image_hash }),
-    }));
-    for (const it of items) {
-      if (!it.form.title || !it.form.date_time) continue;
-      const fp = generateFlyerFingerprint({
-        image_hash: it.form.image_hash,
-        image_url: it.form.image_url,
-      });
-      const result = findPossibleDuplicateEvent(
-        {
-          id: undefined,
-          title: it.form.title,
-          date_time: it.form.date_time,
-          venue_name: it.form.venue_name,
-          address: it.form.address,
-          instagram: it.form.instagram,
-          partner_id: it.form.partner_id || null,
-          image_hash: it.form.image_hash,
-          flyer_fingerprint: fp,
-        },
-        existing,
-      );
-      if (result.decision !== "clear") {
-        map.set(it.localId, result);
-      }
-    }
-    return map;
-  }, [items, dbEvents]);
 
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
