@@ -153,6 +153,17 @@ const EventoBulkForm = () => {
   });
   const bulkAiAbortRef = useRef(false);
 
+  // Itens que o admin escolheu publicar mesmo sendo "possível duplicado"
+  const [forcePublishIds, setForcePublishIds] = useState<Set<string>>(new Set());
+  const toggleForcePublish = useCallback((localId: string) => {
+    setForcePublishIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(localId)) next.delete(localId);
+      else next.add(localId);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
     if (cityFilter) q = q.eq("city", cityFilter);
@@ -181,37 +192,9 @@ const EventoBulkForm = () => {
     });
   }, [cityFilter]);
 
-  // Detect duplicates: slug exists in DB or appears more than once in current items
-  // Memoizado: só recomputa quando items ou dbEvents mudam (não em cada keystroke do BatchDefaults).
-  const duplicateIds = useMemo<Set<string>>(() => {
-    const dup = new Set<string>();
-    const counts = new Map<string, number>();
-    const imageHashes = new Set(dbEvents.map((e) => e.image_hash).filter(Boolean));
-    for (const it of items) {
-      const s = (it.form.slug || "").trim();
-      if (!s) continue;
-      counts.set(s, (counts.get(s) || 0) + 1);
-    }
-    for (const it of items) {
-      const s = (it.form.slug || "").trim();
-      if (!s) continue;
-      const sameSignature = dbEvents.some((e) =>
-        normalize(e.title) === normalize(it.form.title) &&
-        normalize(e.venue_name || "") === normalize(it.form.venue_name || "") &&
-        e.date_time?.slice(0, 10) === it.form.date_time?.slice(0, 10),
-      );
-      if (dbSlugs.has(s) || (counts.get(s) || 0) > 1 || (!!it.form.image_hash && imageHashes.has(it.form.image_hash)) || sameSignature) {
-        dup.add(it.localId);
-      }
-    }
-    return dup;
-  }, [items, dbEvents, dbSlugs]);
-
   /**
    * Validação inteligente (aditiva): score 0–100 por item, comparando
    * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
-   * Memoizado para evitar O(items × dbEvents) em cada render (era a maior
-   * causa de lag ao digitar nos Padrões do Lote).
    */
   const smartDuplicates = useMemo<Map<string, DuplicateConfidenceResult>>(() => {
     const map = new Map<string, DuplicateConfidenceResult>();
@@ -251,6 +234,98 @@ const EventoBulkForm = () => {
     }
     return map;
   }, [items, dbEvents]);
+
+  // ════════════════════════════════════════════════════════════════════
+  // Classificação de itens — separa claramente:
+  //   • incomplete       → faltam title/date/venue (NÃO é duplicado)
+  //   • confirmedReal    → mesmo image_hash em DB, mesmo slug em DB,
+  //                        slug repetido no lote, OU score >= 95
+  //   • possibleDup      → score 60–94 (warning, permite publicar)
+  //
+  // ❌ Não é mais "duplicado" automaticamente por:
+  //    - mesma categoria, mesmo local, mesma data, título parecido <95
+  //    - assinatura (título+venue+dia) sem image_hash nem score alto
+  // ════════════════════════════════════════════════════════════════════
+  const itemFlags = useMemo(() => {
+    const incompleteIds = new Set<string>();
+    const confirmedRealIds = new Set<string>();
+    const possibleDupIds = new Set<string>();
+    const reasonById = new Map<string, string>();
+
+    const dbHashSet = new Set<string>(
+      dbEvents.map((e) => e.image_hash).filter((h): h is string => !!h),
+    );
+    const slugCounts = new Map<string, number>();
+    for (const it of items) {
+      const s = (it.form.slug || "").trim();
+      if (s) slugCounts.set(s, (slugCounts.get(s) || 0) + 1);
+    }
+
+    for (const it of items) {
+      const f = it.form;
+      const hasTitle = !!(f.title || "").trim();
+      const hasDate = !!(f.date_time || "").trim();
+      const hasVenue = !!(f.venue_name || "").trim();
+      if (!hasTitle || !hasDate || !hasVenue) {
+        incompleteIds.add(it.localId);
+        const missing = [
+          !hasTitle && "título",
+          !hasDate && "data",
+          !hasVenue && "local",
+        ].filter(Boolean).join(", ");
+        reasonById.set(it.localId, `Dados incompletos: faltam ${missing}.`);
+        continue;
+      }
+
+      const slug = (f.slug || "").trim();
+      const hashHit = !!f.image_hash && dbHashSet.has(f.image_hash);
+      const slugHitDb = !!slug && dbSlugs.has(slug);
+      const slugRepeatedInBatch = !!slug && (slugCounts.get(slug) || 0) > 1;
+
+      if (hashHit) {
+        confirmedRealIds.add(it.localId);
+        const matched = dbEvents.find((e) => e.image_hash === f.image_hash);
+        reasonById.set(
+          it.localId,
+          matched
+            ? `Mesmo flyer (image_hash) já cadastrado em: "${matched.title}".`
+            : `Mesmo flyer (image_hash) já cadastrado.`,
+        );
+        continue;
+      }
+      if (slugHitDb) {
+        confirmedRealIds.add(it.localId);
+        reasonById.set(it.localId, `Slug "${slug}" já existe na agenda.`);
+        continue;
+      }
+      if (slugRepeatedInBatch) {
+        confirmedRealIds.add(it.localId);
+        reasonById.set(it.localId, `Slug "${slug}" repetido neste lote.`);
+        continue;
+      }
+
+      const sd = smartDuplicates.get(it.localId);
+      if (sd && sd.duplicate_score >= 95) {
+        confirmedRealIds.add(it.localId);
+        reasonById.set(
+          it.localId,
+          `Score ${sd.duplicate_score}/100 — coincide com "${sd.matched_event_title ?? "evento existente"}".`,
+        );
+      } else if (sd && sd.level !== "none") {
+        possibleDupIds.add(it.localId);
+        reasonById.set(
+          it.localId,
+          `Possível duplicado (${sd.duplicate_score}/100) — similar a "${sd.matched_event_title ?? "evento existente"}".`,
+        );
+      }
+    }
+
+    return { incompleteIds, confirmedRealIds, possibleDupIds, reasonById };
+  }, [items, dbEvents, dbSlugs, smartDuplicates]);
+
+  // Compat: duplicateIds = só duplicados REAIS confirmados.
+  const duplicateIds = itemFlags.confirmedRealIds;
+
 
 
   function patchItem(localId: string, patch: Partial<BulkItem>) {
@@ -829,65 +904,85 @@ const EventoBulkForm = () => {
       toast.error("Nenhum evento pronto para salvar");
       return;
     }
-    const invalid = ready.findIndex((it) => !it.form.title || !it.form.slug || !it.form.date_time);
-    if (invalid !== -1) {
-      toast.error(`Evento ${invalid + 1}: Título, slug e data são obrigatórios`);
-      return;
-    }
 
-    // dedupe interno do lote (mesma slug+título)
-    const seen = new Set<string>();
-    for (const it of ready) {
-      const k = `${it.form.slug}|${it.form.title.toLowerCase()}`;
-      if (seen.has(k)) {
-        toast.error(`Duplicidade interna no lote: ${it.form.title}`);
-        return;
-      }
-      seen.add(k);
-    }
-
-    // Classifica pela ferramenta central
-    const blocked: BulkItem[] = [];
-    const review: BulkItem[] = [];
+    // ── Classificação fina ─────────────────────────────────────────────
+    //   incomplete   → faltam dados essenciais (bloqueia, não é duplicado)
+    //   confirmed    → duplicado real (image_hash, slug, score>=95)
+    //   possible     → possível duplicado (60–94) → permite c/ Publicar mesmo assim
+    //   clear        → ok
+    const incomplete: BulkItem[] = [];
+    const confirmed: BulkItem[] = [];
+    const possibleBlocked: BulkItem[] = []; // possible sem forçar
+    const possibleForced: BulkItem[] = []; // possible com forçar
     const clear: BulkItem[] = [];
     for (const it of ready) {
-      const sd = smartDuplicates.get(it.localId);
-      if (sd?.decision === "confirmed") blocked.push(it);
-      else if (sd?.decision === "review") review.push(it);
-      else clear.push(it);
+      if (itemFlags.incompleteIds.has(it.localId)) {
+        incomplete.push(it);
+      } else if (itemFlags.confirmedRealIds.has(it.localId)) {
+        confirmed.push(it);
+      } else if (itemFlags.possibleDupIds.has(it.localId)) {
+        if (forcePublishIds.has(it.localId)) possibleForced.push(it);
+        else possibleBlocked.push(it);
+      } else {
+        clear.push(it);
+      }
     }
 
-    const dupNames = [...blocked, ...review].map((b) => `• ${b.form.title}`).join("\n");
-    const summary =
-      `📦 Resumo do lote\n` +
-      `─────────────────\n` +
-      `Eventos processados: ${ready.length}\n` +
-      `Novos: ${clear.length}\n` +
-      `Duplicados: ${blocked.length + review.length}` +
-      (dupNames ? `\n\nDuplicados encontrados:\n${dupNames}` : "") +
-      `\n\n${blocked.length} bloqueado(s) (score ≥ 80).` +
-      `\n${review.length} salvo(s) como rascunho para revisão.` +
-      `\n${clear.length} será(ão) ${status === "published" ? "publicado(s)" : "salvo(s) como rascunho"}.` +
-      `\n\nContinuar?`;
-    if ((blocked.length || review.length) && !confirm(summary)) {
-      return;
-    }
+    const toInsert = [...clear, ...possibleForced];
 
-
-    const toInsert = [...clear, ...review];
     if (!toInsert.length) {
-      toast.warning(`Todos os ${blocked.length} eventos foram bloqueados por duplicidade.`);
+      const lines = ready.map((it, idx) => {
+        const i = idx + 1;
+        const titulo = it.form.title || "(sem título)";
+        if (itemFlags.confirmedRealIds.has(it.localId)) {
+          return `• Evento ${i} — ${titulo}: duplicado real já existente`;
+        }
+        if (itemFlags.possibleDupIds.has(it.localId)) {
+          return `• Evento ${i} — ${titulo}: possível duplicado (use "Publicar mesmo assim" no item)`;
+        }
+        if (itemFlags.incompleteIds.has(it.localId)) {
+          return `• Evento ${i} — ${titulo}: dados incompletos`;
+        }
+        return `• Evento ${i} — ${titulo}: pronto`;
+      }).join("\n");
+      toast.warning(
+        `Nenhum evento foi publicado. Verifique os itens marcados abaixo.\n\n${lines}`,
+        { duration: 14000 },
+      );
       return;
+    }
+
+    // Confirmação se vai pular ou forçar duplicados
+    if (confirmed.length || possibleBlocked.length || possibleForced.length || incomplete.length) {
+      const summary =
+        `📦 Resumo do lote\n` +
+        `─────────────────\n` +
+        `Eventos prontos: ${ready.length}\n` +
+        `✅ Novos (sem suspeita): ${clear.length}\n` +
+        (possibleForced.length ? `⚠ Possíveis duplicados forçados pelo admin: ${possibleForced.length}\n` : "") +
+        (possibleBlocked.length ? `⚠ Possíveis duplicados ignorados: ${possibleBlocked.length}\n` : "") +
+        (confirmed.length ? `🚫 Duplicados reais (não serão enviados): ${confirmed.length}\n` : "") +
+        (incomplete.length ? `📝 Dados incompletos (não serão enviados): ${incomplete.length}\n` : "") +
+        `\nSerão ${status === "published" ? "publicados" : "salvos como rascunho"}: ${toInsert.length}\n\nContinuar?`;
+      if (!confirm(summary)) return;
     }
 
     setSaving(true);
     const nowIso = new Date().toISOString();
 
-    // === Guard de ingestão por item ===
-    const guarded: Array<{ it: BulkItem; payload: any; guard: Awaited<ReturnType<typeof validateBeforePublish>>; blocked: boolean }> = [];
+    // === Guard de ingestão por item — IMPORTANTE ===
+    // O guard ainda pode retornar MESMO_FLYER/DUPLICATA, mas no fluxo em lote
+    // a CLASSIFICAÇÃO acima já é a fonte de verdade. Guard só bloqueia
+    // motivos que NÃO são duplicidade: FORA_DO_ESCOPO e EVENTO_NO_PASSADO.
+    const guarded: Array<{
+      it: BulkItem;
+      payload: any;
+      guard: Awaited<ReturnType<typeof validateBeforePublish>>;
+      blocked: boolean;
+      blockReason?: string;
+    }> = [];
     for (const it of toInsert) {
-      const sd = smartDuplicates.get(it.localId);
-      const isReview = sd?.decision === "review";
+      const isPossible = itemFlags.possibleDupIds.has(it.localId);
       const guard = await validateBeforePublish({
         source: "bulk",
         title: it.form.title,
@@ -898,10 +993,10 @@ const EventoBulkForm = () => {
         image_url: it.form.image_url,
         image_hash: it.form.image_hash,
       });
-      const hardBlocks = guard.blockReasons.filter(
-        (r) => r === "MESMO_FLYER" || r === "DUPLICATA" || r === "FORA_DO_ESCOPO" || r === "EVENTO_NO_PASSADO",
-      );
-      const needsReview = isReview || guard.recommendedNeedsReview;
+      // Somente motivos NÃO-duplicidade bloqueiam aqui:
+      const NON_DUP_BLOCKS = new Set(["FORA_DO_ESCOPO", "EVENTO_NO_PASSADO"]);
+      const hardBlocks = guard.blockReasons.filter((r) => NON_DUP_BLOCKS.has(r));
+      const needsReview = isPossible || guard.recommendedNeedsReview;
       const itemStatus: "draft" | "published" = (needsReview || hardBlocks.length) ? "draft" : status;
       const base = buildEventPayload(
         { ...it.form, needs_review: needsReview || (it.form as any).needs_review },
@@ -921,7 +1016,13 @@ const EventoBulkForm = () => {
         }),
         duplicate_checked_at: nowIso,
       };
-      guarded.push({ it, payload, guard, blocked: hardBlocks.length > 0 });
+      guarded.push({
+        it,
+        payload,
+        guard,
+        blocked: hardBlocks.length > 0,
+        blockReason: hardBlocks.map((r) => REASON_LABELS[r] || r).join(", "),
+      });
     }
 
     const guardBlocked = guarded.filter((g) => g.blocked);
@@ -929,7 +1030,13 @@ const EventoBulkForm = () => {
 
     if (!payloads.length) {
       setSaving(false);
-      toast.warning(`Todos os ${guardBlocked.length + blocked.length} eventos foram bloqueados (duplicidade ou guard).`);
+      const lines = guardBlocked
+        .map((g, idx) => `• Evento ${idx + 1} — ${g.it.form.title || "(sem título)"}: ${g.blockReason || "validação"}`)
+        .join("\n");
+      toast.warning(
+        `Nenhum evento foi publicado. Verifique os itens marcados abaixo.\n\n${lines}`,
+        { duration: 14000 },
+      );
       return;
     }
 
@@ -937,7 +1044,6 @@ const EventoBulkForm = () => {
       const { data: insertedRows, error } = await supabase.from("events").insert(payloads as any).select("id");
       if (error) throw error;
 
-      // Persiste logs (best-effort, em paralelo)
       const ids = insertedRows || [];
       await Promise.all(
         guarded
@@ -946,14 +1052,14 @@ const EventoBulkForm = () => {
       );
       await Promise.all(guardBlocked.map((g) => persistValidationLog(g.guard.validationLog)));
 
-      const blockedTotal = blocked.length + guardBlocked.length;
+      const skippedTotal = confirmed.length + possibleBlocked.length + incomplete.length + guardBlocked.length;
       toast.success(
-        `Lote: ${clear.length} criado(s) • ${review.length} em revisão • ${blockedTotal} bloqueado(s)`,
+        `Lote: ${clear.length} novo(s) • ${possibleForced.length} forçado(s) • ${skippedTotal} não enviado(s)`,
         { duration: 8000 },
       );
       if (guardBlocked.length) {
         const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
-        toast.warning(`Motivos de bloqueio: ${reasons.join(", ")}`, { duration: 9000 });
+        toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
       }
       navigate("/admin/eventos");
     } catch (err: any) {
@@ -962,6 +1068,7 @@ const EventoBulkForm = () => {
       setSaving(false);
     }
   }
+
 
   const readyCount = items.filter((it) => it.status === "ready").length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
@@ -1193,13 +1300,40 @@ const EventoBulkForm = () => {
             </div>
           )}
 
+          {/* Resumo de classificação do lote */}
+          {readyCount > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-destructive/80">Duplicados reais</p>
+                <p className="text-sm font-bold text-destructive">{itemFlags.confirmedRealIds.size}</p>
+              </div>
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-amber-300/80">Possíveis duplicados</p>
+                <p className="text-sm font-bold text-amber-200">{itemFlags.possibleDupIds.size}</p>
+              </div>
+              <div className="rounded-lg border border-muted-foreground/30 bg-secondary/30 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-muted-foreground">Dados incompletos</p>
+                <p className="text-sm font-bold text-foreground">{itemFlags.incompleteIds.size}</p>
+              </div>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5">
+                <p className="text-[9px] uppercase tracking-wide text-destructive/80">Erros</p>
+                <p className="text-sm font-bold text-destructive">{errorCount}</p>
+              </div>
+            </div>
+          )}
+
           {items.map((it, idx) => (
             <ReviewRow
               key={it.localId}
               index={idx}
               item={it}
               partners={partners}
-              isDuplicate={duplicateIds.has(it.localId)}
+              isDuplicate={itemFlags.confirmedRealIds.has(it.localId)}
+              isPossibleDup={itemFlags.possibleDupIds.has(it.localId)}
+              isIncomplete={itemFlags.incompleteIds.has(it.localId)}
+              classificationReason={itemFlags.reasonById.get(it.localId)}
+              forcePublish={forcePublishIds.has(it.localId)}
+              onToggleForcePublish={() => toggleForcePublish(it.localId)}
               smartDup={smartDuplicates.get(it.localId)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
@@ -1252,6 +1386,11 @@ interface ReviewRowProps {
   item: BulkItem;
   partners: Partner[];
   isDuplicate?: boolean;
+  isPossibleDup?: boolean;
+  isIncomplete?: boolean;
+  classificationReason?: string;
+  forcePublish?: boolean;
+  onToggleForcePublish?: () => void;
   smartDup?: DuplicateConfidenceResult;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
@@ -1263,64 +1402,91 @@ interface ReviewRowProps {
 }
 
 function ReviewRowBase({
-  index, item, partners, isDuplicate, smartDup, onPartnerChange, onChangeForm,
+  index, item, partners, isDuplicate, isPossibleDup, isIncomplete,
+  classificationReason, forcePublish, onToggleForcePublish,
+  smartDup, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
+  const containerCls = isDuplicate
+    ? "border-destructive/80 ring-2 ring-destructive/40 shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
+    : isPossibleDup
+    ? "border-amber-500/60 ring-1 ring-amber-500/30"
+    : isIncomplete
+    ? "border-muted-foreground/40 ring-1 ring-muted-foreground/20"
+    : "border-border/40";
+
   return (
-    <div className={`rounded-xl border bg-card overflow-hidden transition ${
-      isDuplicate
-        ? "border-destructive/80 ring-2 ring-destructive/40 animate-pulse shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
-        : "border-border/40"
-    }`}>
+    <div className={`rounded-xl border bg-card overflow-hidden transition ${containerCls}`}>
       {isDuplicate && (
-        <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-1.5 text-[10px] font-semibold text-destructive flex items-center gap-1.5">
-          <AlertCircle className="h-3 w-3" />
-          ⚠️ CONTEÚDO DUPLICADO: Verifique se este evento já foi cadastrado.
+        <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-2 text-[11px] font-semibold text-destructive flex items-start gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div>🚫 Duplicado real — não será enviado</div>
+            {classificationReason && (
+              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="rounded-md border border-destructive/40 px-2 py-0.5 text-[10px] font-semibold hover:bg-destructive/20 transition shrink-0"
+          >
+            Editar
+          </button>
         </div>
       )}
-      {item.categoryWarning && !isDuplicate && (
+      {!isDuplicate && isPossibleDup && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 text-[11px] font-semibold text-amber-500 flex items-start gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div>⚠ Possível duplicado — revise antes de publicar</div>
+            {classificationReason && (
+              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+            )}
+            {smartDup?.matched_fields?.length ? (
+              <div className="opacity-75 font-normal mt-0.5">
+                Coincidências: {smartDup.matched_fields.join(" • ")}
+              </div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleForcePublish}
+            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition shrink-0 ${
+              forcePublish
+                ? "bg-amber-500/30 text-amber-100 border border-amber-400"
+                : "border border-amber-500/40 hover:bg-amber-500/20"
+            }`}
+          >
+            {forcePublish ? "✓ Publicar mesmo assim" : "Publicar mesmo assim"}
+          </button>
+        </div>
+      )}
+      {!isDuplicate && !isPossibleDup && isIncomplete && (
+        <div className="bg-secondary/40 border-b border-muted-foreground/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground flex items-start gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div>📝 Revisar dados incompletos</div>
+            {classificationReason && (
+              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="rounded-md border border-muted-foreground/40 px-2 py-0.5 text-[10px] font-semibold hover:bg-secondary transition shrink-0"
+          >
+            Editar dados
+          </button>
+        </div>
+      )}
+      {item.categoryWarning && !isDuplicate && !isPossibleDup && !isIncomplete && (
         <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
           <AlertCircle className="h-3 w-3" />
           ⚠️ Verifique a categoria: {item.categoryWarning}
-        </div>
-      )}
-      {!isDuplicate && smartDup && smartDup.level !== "none" && (
-        <div
-          className={`border-b px-3 py-1.5 text-[10px] font-semibold flex items-start gap-1.5 ${
-            smartDup.level === "almost_certain"
-              ? "bg-destructive/10 border-destructive/30 text-destructive"
-              : smartDup.level === "strong"
-              ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
-              : "bg-amber-500/10 border-amber-500/30 text-amber-500"
-          }`}
-        >
-          <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-          <div className="flex-1 min-w-0">
-            {smartDup.level === "almost_certain" && "🚨 Duplicado detectado"}
-            {smartDup.level === "strong" && "⚠ Forte suspeita de duplicado"}
-            {smartDup.level === "possible" && "⚠ Possível duplicado"}
-            {" — "}
-            <span className="font-bold">{smartDup.duplicate_score}/100</span>
-            {smartDup.matched_event_title && (
-              <>
-                {" • similar a: "}
-                <span className="font-bold truncate">{smartDup.matched_event_title}</span>
-                {smartDup.matched_event_date && (
-                  <span className="opacity-75">
-                    {" ("}{smartDup.matched_event_date.slice(0, 10)}{")"}
-                  </span>
-                )}
-              </>
-            )}
-            {smartDup.matched_fields.length > 0 && (
-              <div className="opacity-80 font-normal mt-0.5">
-                Coincidências: {smartDup.matched_fields.join(" • ")}
-              </div>
-            )}
-          </div>
         </div>
       )}
       <div className="flex items-stretch gap-2 p-2">
@@ -1432,6 +1598,10 @@ const ReviewRow = memo(ReviewRowBase, (prev, next) => {
     prev.item === next.item &&
     prev.partners === next.partners &&
     prev.isDuplicate === next.isDuplicate &&
+    prev.isPossibleDup === next.isPossibleDup &&
+    prev.isIncomplete === next.isIncomplete &&
+    prev.classificationReason === next.classificationReason &&
+    prev.forcePublish === next.forcePublish &&
     prev.smartDup === next.smartDup &&
     prev.generatingDesc === next.generatingDesc &&
     prev.index === next.index
