@@ -7,7 +7,8 @@ import MatchCard from "@/components/jogos/MatchCard";
 import { supabase } from "@/integrations/supabase/client";
 import {
   sportsMatchRowToNormalized,
-  isBrazilianTeam,
+  isBrazilNationalTeam,
+  isCopaDoMundoMatch,
   formatMatchTime,
   type NormalizedMatch,
   type SportsMatchRow,
