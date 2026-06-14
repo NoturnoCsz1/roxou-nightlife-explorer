@@ -170,30 +170,55 @@ const EventoForm = () => {
     }
   }
 
-  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string; time_is_unknown?: boolean }) {
+  async function generateDescription(info: { title: string; venue_name?: string; address?: string; date_time?: string; category?: string; sub_category?: string; partner_id?: string; image_url?: string; time_is_unknown?: boolean; flyer_text?: string; artists?: string[]; price?: string; ticket_url?: string; instagram?: string; official_source_url?: string }) {
     setGeneratingDesc(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-description", {
-        body: info,
+        body: {
+          ...info,
+          // Enriquecimento Fase 2A (vem do flyer ou do próprio form)
+          flyer_text: info.flyer_text ?? (form as any).flyer_text ?? "",
+          artists: info.artists ?? (form as any).artists ?? [],
+          price: info.price ?? (form as any).price ?? "",
+          ticket_url: info.ticket_url ?? form.ticket_url ?? "",
+          instagram: info.instagram ?? form.instagram ?? "",
+          official_source_url: info.official_source_url ?? (form as any).official_source_url ?? "",
+        },
       });
       if (error) throw error;
-      const rich = data?.descricao_rica || data?.description;
-      const chamada = data?.chamada_site as string | undefined;
-      if (rich) {
-        setForm((prev) => ({
-          ...prev,
-          description: prev.description || rich,
-          // Sugere a chamada como título apenas se ainda estiver vazio
-          title: prev.title || chamada || prev.title,
-        }));
-        if (chamada) {
-          toast.success(`Copy gerada! Chamada sugerida: "${chamada}"`);
-        } else {
-          toast.success("Descrição gerada automaticamente!");
-        }
+      const rich: string = data?.description_html || data?.descricao_rica || data?.description || "";
+      const chamada: string | undefined = data?.title || data?.chamada_site;
+      const shortSummary: string = data?.short_summary || "";
+      const metaTitle: string = data?.meta_title || "";
+      const metaDescription: string = data?.meta_description || "";
+      const igCaption: string = data?.instagram_caption || "";
+      const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+      const confidence: number | null =
+        typeof data?.ai_confidence_score === "number" ? data.ai_confidence_score : null;
+
+      setForm((prev) => ({
+        ...prev,
+        // 'Gerar Hype' agora sempre atualiza descrição com a nova versão validada
+        description: rich || prev.description,
+        title: prev.title || chamada || prev.title,
+        short_summary: shortSummary || prev.short_summary,
+        meta_title: metaTitle || prev.meta_title,
+        meta_description: metaDescription || prev.meta_description,
+        instagram_caption: igCaption || prev.instagram_caption,
+        ai_warnings: warnings,
+        ai_confidence_score: confidence ?? prev.ai_confidence_score,
+      }));
+
+      if (warnings.length > 0) {
+        toast.warning(`Copy gerada com ${warnings.length} aviso${warnings.length > 1 ? "s" : ""}. Revise antes de publicar.`);
+      } else if (chamada) {
+        toast.success(`Copy gerada! Chamada: "${chamada}"`);
+      } else {
+        toast.success("Descrição gerada pela IA (gpt-5-mini).");
       }
     } catch (err: any) {
       console.error("Erro ao gerar descrição:", err);
+      toast.error(err?.message || "Falha ao gerar descrição");
     } finally {
       setGeneratingDesc(false);
     }
