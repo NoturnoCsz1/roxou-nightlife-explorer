@@ -162,16 +162,19 @@ const Dashboard = () => {
     const since7d = new Date(); since7d.setDate(since7d.getDate() - 7);
     const since7dISO = since7d.toISOString();
 
-    let eventsQ = supabase.from("events").select("id, title, slug, status, date_time, created_at, image_url, description");
-    let partnersQ = supabase.from("partners").select("id, name, created_at");
+    let eventsQ = supabase.from("events").select("id, title, slug, status, date_time, created_at, image_url, description").limit(5000);
+    let partnersQ = supabase.from("partners").select("id, name, created_at").limit(5000);
+    let totalEventsQ = supabase.from("events").select("id", { count: "exact", head: true });
     if (cityFilter) {
       eventsQ = eventsQ.eq("city", cityFilter);
       partnersQ = partnersQ.eq("city", cityFilter);
+      totalEventsQ = totalEventsQ.eq("city", cityFilter);
     }
 
-    const [eventsRes, partnersRes, sessionsRes, viewsCountRes, clicksCountRes] = await Promise.all([
+    const [eventsRes, partnersRes, totalEventsRes, sessionsRes, viewsCountRes, clicksCountRes] = await Promise.all([
       eventsQ,
       partnersQ,
+      totalEventsQ,
       supabase.from("visitor_sessions").select("id", { count: "exact", head: true }),
       supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", since7dISO),
       supabase.from("ticket_clicks").select("id", { count: "exact", head: true }).gte("created_at", since7dISO),
@@ -187,12 +190,13 @@ const Dashboard = () => {
     const yesterdayEvts = published.filter(e => e.date_time >= yesterdayStart.toISOString() && e.date_time < todayStart.toISOString());
     const lastWeekEvts = published.filter(e => e.date_time >= lastWeekRefDate.toISOString() && e.date_time <= lastWeekRefAhead.toISOString());
 
-    setKpis({ today: todayEvts.length, week: weekEvts.length, total: evts.length });
+    setKpis({ today: todayEvts.length, week: weekEvts.length, total: totalEventsRes.count ?? evts.length });
     setKpiGrowth({
       today: todayEvts.length - yesterdayEvts.length,
       week: weekEvts.length - lastWeekEvts.length,
     });
     setPerf({ views: viewsCountRes.count ?? 0, visitors: sessionsRes.count ?? 0, clicks: clicksCountRes.count ?? 0 });
+
 
     // Pending actions: published events missing image or description
     const noCover = published.filter(e => !e.image_url || e.image_url.trim() === "").length;
@@ -264,22 +268,35 @@ const Dashboard = () => {
       const fiveMin = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const thirtyMin = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const [activeRes, pvRes, sessionsRes] = await Promise.all([
-        supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("last_seen_at", fiveMin),
+
+      // visitor_sessions can be stale (anon upsert blocked by RLS).
+      // Use page_views as source of truth and fall back to analytics_events.
+      const [pvActive, pvCount, pvDay, aeActive, aeDay] = await Promise.all([
+        supabase.from("page_views").select("session_id").gte("created_at", fiveMin).limit(2000),
         supabase.from("page_views").select("id", { count: "exact", head: true }).gte("created_at", thirtyMin),
-        supabase.from("visitor_sessions").select("id", { count: "exact", head: true }).gte("started_at", since24h),
+        supabase.from("page_views").select("session_id").gte("created_at", since24h).limit(5000),
+        supabase.from("analytics_events").select("session_id").gte("created_at", fiveMin).limit(2000),
+        supabase.from("analytics_events").select("session_id").gte("created_at", since24h).limit(5000),
       ]);
+
+      const uniq = (rows: Array<{ session_id: string | null }> | null) =>
+        new Set((rows ?? []).map(r => r.session_id).filter(Boolean)).size;
+
+      const activeUsers = Math.max(uniq(pvActive.data), uniq(aeActive.data));
+      const sessions = Math.max(uniq(pvDay.data), uniq(aeDay.data));
+
       if (!cancelled) {
         setRealtime({
-          activeUsers: activeRes.count ?? 0,
-          pageViews: pvRes.count ?? 0,
-          sessions: sessionsRes.count ?? 0,
+          activeUsers,
+          pageViews: pvCount.count ?? 0,
+          sessions,
         });
       }
     };
     poll();
     const interval = setInterval(poll, 30000);
     return () => { cancelled = true; clearInterval(interval); };
+
   }, []);
 
   // Instagram stats — null until OAuth /insights is wired (avoids misleading zeros)
