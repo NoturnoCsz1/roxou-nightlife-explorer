@@ -650,6 +650,12 @@ serve(async (req) => {
     }
     const needsReview = aiConfidence === "low" || genre_needs_review || date_needs_review;
 
+    // ============== 🧾 Texto bruto + artistas (anti-invenção downstream) ==============
+    const flyerText: string = typeof parsed.flyer_text === "string" ? parsed.flyer_text.slice(0, 600) : "";
+    const artists: string[] = Array.isArray(parsed.artists)
+      ? parsed.artists.filter((x: unknown): x is string => typeof x === "string" && x.trim().length > 1).slice(0, 6)
+      : [];
+
     return new Response(JSON.stringify({
       title,
       date_iso: dateIso,
@@ -674,6 +680,8 @@ serve(async (req) => {
       category_override_reason,
       dna_applied,
       admin_feedback_applied,
+      flyer_text: flyerText,
+      artists,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
