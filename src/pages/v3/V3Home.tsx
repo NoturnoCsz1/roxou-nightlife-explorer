@@ -708,7 +708,14 @@ export default function V3Home() {
 
       {/* ══════ 1.7 DESTAQUE DA SEMANA — vídeo POV ══════ */}
       <HomeSectionBoundary name="Destaque da semana" silent>
-        {weeklyHighlight && <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} />}
+        {(safeEvents(events).length > 0) && (
+          <WeeklySpotlight
+            ev={weeklyHighlight ?? undefined}
+            events={safeEvents(events)}
+            partnerAwardIds={new Set(partnerRankMap.keys())}
+            FadeSection={FadeSection}
+          />
+        )}
       </HomeSectionBoundary>
 
       <HomeSectionBoundary name="AI widget" silent>
@@ -1937,14 +1944,19 @@ function CommandCenter({
             </div>
           )}
 
-          {/* DESTAQUE DA SEMANA */}
-          {weeklyHighlight && (
+          {/* DESTAQUE DA SEMANA — hero editorial rotativo */}
+          {safeEvents(events).length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <Gem className="w-5 h-5 text-accent" />
                 <h2 className="font-display font-extrabold text-2xl text-foreground">Destaque da semana</h2>
               </div>
-              <WeeklySpotlight ev={weeklyHighlight} FadeSection={FadeSection} />
+              <WeeklySpotlight
+                ev={weeklyHighlight ?? undefined}
+                events={safeEvents(events)}
+                partnerAwardIds={new Set(partnerRankMap.keys())}
+                FadeSection={FadeSection}
+              />
             </div>
           )}
 
