@@ -736,6 +736,16 @@ export function mergeMatches(apiList: NormalizedMatch[], dbList: NormalizedMatch
 const SELECAO_RE = /\bbrasil\b|brazil/i;
 const SELECAO_LEAGUE_RE = /world\s*cup|copa\s*do\s*mundo|eliminat|qualif|amistos|friendl|copa\s*am[eé]rica|nations\s*league/i;
 
+/**
+ * Match estrito da Seleção Brasileira (não pega clubes com "Brasil" no nome,
+ * tipo "Brasil de Pelotas", "Brasiliense", "Brasil-RS").
+ * Aceita só "Brasil" / "Brazil" puro (com possíveis sufixos tipo "(W)", "U20").
+ */
+const SELECAO_STRICT_RE = /^\s*bra(s|z)il\s*(\(.+\))?\s*(u\d+|sub.?\d+|w|f|fem|feminino)?\s*$/i;
+export function isBrazilNationalTeam(team: string): boolean {
+  return SELECAO_STRICT_RE.test((team || "").trim());
+}
+
 export function isBrazilSelecao(m: NormalizedMatch): boolean {
   const hasBrasil = SELECAO_RE.test(m.home_team) || SELECAO_RE.test(m.away_team);
   if (!hasBrasil) return false;
