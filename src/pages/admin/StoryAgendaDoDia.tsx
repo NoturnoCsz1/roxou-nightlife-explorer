@@ -774,7 +774,7 @@ const StoryAgendaDoDia = () => {
         built.forEach((p, i) => {
           const c = canvasRefs.current[i];
           if (!c) return;
-          renderStory(c, p, built.length, subtitle, mode);
+          renderStory(c, p, built.length, subtitle, mode, selectedItems.length);
           const url = c.toDataURL("image/png");
           setStories((prev) => prev.map((s, j) => (j === i ? { ...s, imageUrl: url } : s)));
         });
