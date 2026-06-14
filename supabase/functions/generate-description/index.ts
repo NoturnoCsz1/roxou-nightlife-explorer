@@ -1,105 +1,46 @@
+// supabase/functions/generate-description/index.ts
+//
+// ⚡ V5 — Geração 100% IA (OpenAI via Lovable Gateway) com validação anti-invenção.
+//
+// Saída JSON enriquecida:
+//   title, description_html, short_summary, meta_title, meta_description,
+//   instagram_caption, safety_notes[], warnings[]
+//
+// Saída retrocompatível (consumidores antigos):
+//   description, description_html, chamada_site, caption_style, caption_confidence
+//
+// Fluxo:
+//   1. Enriquece com dados do parceiro (mesmo enrich que a versão anterior).
+//   2. Monta um prompt rigoroso para OpenAI (gpt-5-mini via Gateway).
+//   3. Pede JSON estruturado.
+//   4. Passa a resposta por validadores que REMOVEM/REGENERAM trechos
+//      contendo dados inventados (horários, preços, "oficial", artistas fora
+//      da lista, etc).
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireAdmin, corsHeaders } from "../_shared/requireAdmin.ts";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🎵 Mapeamento de gênero/categoria para "tipo de atração"
+// Helpers básicos
 // ─────────────────────────────────────────────────────────────────────────────
-const ATTRACTION_LABEL: Record<string, { label: string; emoji: string; short: string }> = {
-  sertanejo:    { label: "Sertanejo ao vivo",   emoji: "🤠", short: "sertanejo" },
-  funk:         { label: "Funk",                emoji: "🔊", short: "funk" },
-  pagode_samba: { label: "Pagode e Samba",      emoji: "🥁", short: "pagode e samba" },
-  pagode:       { label: "Pagode",              emoji: "🥁", short: "pagode" },
-  samba:        { label: "Samba",               emoji: "🥁", short: "samba" },
-  eletronica:   { label: "Eletrônica / DJ Set", emoji: "🪩", short: "eletrônica" },
-  eletronico:   { label: "Eletrônica / DJ Set", emoji: "🪩", short: "eletrônica" },
-  rock:         { label: "Rock ao vivo",        emoji: "🎸", short: "rock" },
-  pop_rock:     { label: "Pop / Rock cover",    emoji: "🎤", short: "pop/rock" },
-  pop:          { label: "Pop ao vivo",         emoji: "🎤", short: "pop" },
-  mpb:          { label: "MPB / Voz e violão",  emoji: "🎶", short: "MPB" },
-  standup:      { label: "Stand-up Comedy",     emoji: "🎭", short: "stand-up" },
-  universitario:{ label: "Festa universitária", emoji: "🎓", short: "festa universitária" },
-  festa:        { label: "Festa",               emoji: "🎉", short: "festa" },
-  balada:       { label: "Balada",              emoji: "🪩", short: "balada" },
-  bar:          { label: "Bar / Música ao vivo",emoji: "🍺", short: "música ao vivo" },
-  show:         { label: "Show ao vivo",        emoji: "🎤", short: "show" },
-  cultural:     { label: "Evento cultural",     emoji: "🎭", short: "rolê cultural" },
-  restaurante:  { label: "Gastronomia",         emoji: "🍽️", short: "gastronomia" },
-  acustico:     { label: "Música acústica",     emoji: "🎶", short: "som acústico" },
-  flashback:    { label: "Flashback",           emoji: "💿", short: "flashback" },
-  forro:        { label: "Forró",               emoji: "🪗", short: "forró" },
-  arrocha:      { label: "Arrocha",             emoji: "🎶", short: "arrocha" },
-  axe:          { label: "Axé",                 emoji: "🥁", short: "axé" },
-  rap_trap:     { label: "Rap / Trap",          emoji: "🎤", short: "rap/trap" },
-  open_format:  { label: "Open Format",         emoji: "🎚️", short: "open format" },
-};
-
-function resolveAttraction(category?: string, subCategory?: string, partnerStyle?: string) {
-  // Prioridade: estilo do evento (sub) > estilo primário do local > categoria do evento.
-  const sub = String(subCategory || "").toLowerCase().trim();
-  const ps  = String(partnerStyle || "").toLowerCase().trim();
-  const cat = String(category || "").toLowerCase().trim();
-  return ATTRACTION_LABEL[sub]
-      || ATTRACTION_LABEL[ps]
-      || ATTRACTION_LABEL[cat]
-      || { label: "Música e resenha", emoji: "🎶", short: "rolê" };
+function escapeHtml(s: string): string {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-// Label humano para `partner.type` quando entrar na frase narrativa
-const PARTNER_TYPE_LABEL: Record<string, string> = {
-  bar: "bar", restaurante: "restaurante", espetinho: "espetinho",
-  lounge: "lounge", balada: "balada", "casa de shows": "casa de shows",
-  pub: "pub", choperia: "choperia", adega: "adega", tabacaria: "tabacaria",
-  cultural: "espaço cultural", outro: "casa",
-};
-
-// Extrai um possível nome de artista do título (sem inventar).
-// Suporta: "FESTA com ARTISTA", "FESTA - ARTISTA", "FESTA | ARTISTA", "FESTA feat ARTISTA"
-function extractArtistFromTitle(title?: string): string {
-  const t = String(title || "").trim();
-  if (!t) return "";
-  const patterns: RegExp[] = [
-    /\b(?:com|c\/)\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/u,
-    /\s[-–—|]\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/u,
-    /\bfeat\.?\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÀ-ÿ' .&]{1,40})$/iu,
-  ];
-  for (const re of patterns) {
-    const m = t.match(re);
-    if (m && m[1]) {
-      const cand = m[1].trim().replace(/\s+/g, " ");
-      // evita pegar palavras genéricas curtas
-      if (cand.length >= 3 && !/^(ao vivo|hoje|live|show|festa|noite)$/i.test(cand)) {
-        return cand;
-      }
-    }
-  }
-  return "";
+function normText(s: unknown): string {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🎯 CTAs rotativos (sem clichês, sem "não fique de fora" / "bora marcar")
-// ─────────────────────────────────────────────────────────────────────────────
-const CTA_BANK: string[] = [
-  "Programação completa na agenda da Roxou.",
-  "Veja o evento na Roxou e combine seu rolê.",
-  "Mais detalhes em roxou.com.br/agenda.",
-  "Confira o que rola na cidade pela Roxou.",
-  "A Roxou tem a agenda completa do fim de semana.",
-  "Saiba mais sobre o rolê na Roxou.",
-  "Veja a agenda da semana em roxou.com.br.",
-  "Acompanhe a programação local pela Roxou.",
-  "Encontre esse e outros rolês na Roxou.",
-  "Detalhes e ingressos pela página do evento na Roxou.",
-];
-
-function pickFromBank<T>(bank: T[], seed: number): T {
-  const idx = ((Math.floor(seed) % bank.length) + bank.length) % bank.length;
-  return bank[idx];
+function safeJson(text: string): any {
+  let t = String(text || "").trim();
+  t = t.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  try { return JSON.parse(t); } catch {}
+  const m = t.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
+  return null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 📅 Datas oficiais (timezone SP)
-// ─────────────────────────────────────────────────────────────────────────────
 function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
   const dt = new Date(iso);
   const dateLong = dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
@@ -107,12 +48,7 @@ function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
   const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
   const timeLabel = time.replace(":", "h").replace(/^0/, "");
   const weekdayFull = dt.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
-  const weekdayShort = weekdayFull
-    .replace("-feira", "")
-    .replace(/^./, (c) => c.toUpperCase());
-  // 🆕 Fonte única da verdade: flag explícita do evento.
-  // Não tentamos mais inferir "sem hora" por UTC/00:00 (heurística quebrada
-  // por timezone SP). Se o admin/IA marcou time_is_unknown=true, respeitamos.
+  const weekdayShort = weekdayFull.replace("-feira", "").replace(/^./, (c) => c.toUpperCase());
   const hasRealTime = !timeIsUnknown;
   const todaySP = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const eventDaySP = dt.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -121,357 +57,250 @@ function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 📍 Localização
+// HTML sanitizer (server-side, sem libs externas — DOMPurify continua no front)
+// Permite apenas <p>, <strong>, <em>, <ul>, <li>, <br>. Remove qualquer outra tag.
 // ─────────────────────────────────────────────────────────────────────────────
-function buildLocationLine(venue?: string | null, neighborhood?: string | null, city?: string | null) {
-  const parts: string[] = [];
-  if (venue) parts.push(venue);
-  const loc = [neighborhood, city].filter(Boolean).join(", ");
-  if (parts.length && loc) return `${parts.join(" ")} — ${loc}`;
-  return parts.join(" ") || loc || "";
+const ALLOWED_TAGS = new Set(["p", "strong", "em", "ul", "li", "br"]);
+function sanitizeHtml(html: string): string {
+  if (!html) return "";
+  return String(html).replace(/<\/?([a-z0-9]+)(\s[^>]*)?>/gi, (match, tag) => {
+    return ALLOWED_TAGS.has(String(tag).toLowerCase()) ? match.replace(/\s[^>]*/, "") : "";
+  }).replace(/\s{2,}/g, " ").trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🚫 Frases banidas (cara de IA / cara de release)
+// 🚫 Termos banidos no estilo Roxou (cara de IA / release / clichê)
 // ─────────────────────────────────────────────────────────────────────────────
-const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar|ser [ée]pico)|energia contagiante|vibe contagiante|reserve sua data|celebrando|proporcionando|embalar a noite|a cidade vai parar|evento completo|compartilhe com a galera|clima de pura|bora marcar quem vai junto|mesa cheia e gente boa|rol[êe] confirmado|marca quem n[ãa]o pode perder|j[áa] manda no grupo)\b/gi;
-const FILLER_RE = /\b(?:em breve)\b/gi;
+const FORBIDDEN_RE = /\b(?:imperd[ií]vel|n[ãa]o (?:perca|fique de fora)|prepare-se|preparem-se|venha curtir|vem curtir|noite inesquec[ií]vel|experi[êe]ncia [úu]nica|promete (?:ser|agitar)|energia contagiante|vibe contagiante|reserve sua data|celebrando|proporcionando|embalar a noite|a cidade vai parar|evento completo|clima de pura|melhor noite da sua vida|garantido|confirmado oficialmente|organiza[çc][ãa]o confirmou)\b/gi;
+
+// Termos que só podem aparecer se houver fonte oficial (`official_source_url`)
+const OFFICIAL_ONLY_RE = /\b(oficial|confirmado|garantido|anunciado oficialmente|organiza[çc][ãa]o confirmou)\b/gi;
+
+// Detectores de horário tipo "17h", "19:00", "20h30", "às 21h"
+const TIME_DETECT_RE = /(?:\b[àa]s\s+)?\b\d{1,2}\s*(?:h|:|hs)\s*\d{0,2}\b/gi;
+
+// Detectores de preço/couvert/open bar
+const PRICE_TERMS_RE = /\b(?:R\$|reais?|couvert|entrada\s+gratuita|entrada\s+free|open\s+bar|open\s+food|gr[aá]tis|free|promo[çc][ãa]o|cupom|desconto|preço|valor|ingresso|combo)\b/gi;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Anti-invenção de horário: remove qualquer menção a hora se time_is_unknown.
+// Funciona em texto plano e dentro de HTML simples.
+// ─────────────────────────────────────────────────────────────────────────────
+function stripTimes(s: string): string {
+  if (!s) return s;
+  return s
+    .replace(TIME_DETECT_RE, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .replace(/\(\s*\)/g, "")
+    .trim();
+}
+
+function stripPriceMentions(s: string): string {
+  if (!s) return s;
+  // remove a frase inteira que contém termo de preço (até o próximo ponto)
+  return s.replace(/[^.<>]*\b(?:R\$|reais?|couvert|entrada\s+gratuita|entrada\s+free|open\s+bar|open\s+food|gr[aá]tis|free|promo[çc][ãa]o|cupom|desconto|preço|valor|ingresso|combo)\b[^.<>]*\.?/gi, "").replace(/\s{2,}/g, " ").trim();
+}
+
+function stripOfficialClaims(s: string): string {
+  if (!s) return s;
+  return s.replace(OFFICIAL_ONLY_RE, "").replace(/\s{2,}/g, " ").trim();
+}
 
 function stripForbidden(s: string): string {
-  return (s || "").replace(FORBIDDEN_RE, "").replace(FILLER_RE, "").replace(/\s{2,}/g, " ").replace(/\s+\./g, ".").trim();
-}
-
-function escapeHtml(s: string): string {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  return (s || "").replace(FORBIDDEN_RE, "").replace(/\s{2,}/g, " ").replace(/\s+\./g, ".").trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🧩 Detectar template usado em descrições anteriores (fingerprint)
+// Validação anti-invenção em bloco. Recebe o objeto da IA e devolve {clean, warnings}.
 // ─────────────────────────────────────────────────────────────────────────────
-function detectTemplateId(text: string): number | null {
-  const t = (text || "").toLowerCase();
-  if (!t) return null;
-  if (t.includes("o que você precisa saber")) return 0; // legado — evitar
-  if (t.includes("bora marcar")) return 2;
-  if (t.includes("mais detalhes na agenda")) return 3;
-  if (t.includes("data:") && t.includes("horário:") && t.includes("local:")) return 4;
-  if (t.includes("salva esse rolê") || t.includes("procurando um rolê")) return 5;
-  if (t.includes("ganha clima")) return 6;
-  if (t.includes("tem batuque") || t.includes("rolê confirmado")) return 7;
-  // Minimalista: muito curto, várias linhas
-  if (text.length < 180 && (text.match(/\n/g)?.length || 0) >= 3) return 8;
-  return 1; // default direto
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 🎬 8 TEMPLATES — cada um devolve HTML pronto
-// ─────────────────────────────────────────────────────────────────────────────
-type Ctx = {
-  title: string;
-  venue: string;          // pode ser ""
-  attractionLabel: string;
-  attractionShort: string;
-  emoji: string;
-  weekdayShort: string;   // "Sexta"
-  dateShort: string;      // "29/05"
-  dateLong: string;       // "29 de maio"
-  timeLabel: string;      // "17h"
-  hasRealTime: boolean;
-  isToday: boolean;
-  city: string;
-  neighborhood: string;
-  locationLine: string;
-  hype: string;           // 1-2 frases vindas da IA (opcional)
-  cta: string;
-  seed: number;
-  // 🆕 Novos campos do parceiro/evento
-  partnerTypeLabel: string;   // ex.: "restaurante", "bar"
-  partnerSummary: string;     // short_description (1 frase do local)
-  partnerSecondaryStyles: string[]; // labels curtos
-  artist: string;             // extraído do título (se houver)
+type ValidationCtx = {
+  hasTime: boolean;
+  hasPrice: boolean;
+  hasOfficialSource: boolean;
+  knownArtists: Set<string>;
+  knownVenue: string;
+  flyerText: string;
+  confidenceScore: number; // 0–100
 };
 
-function whenOpener(ctx: Ctx): string {
-  if (ctx.isToday) return "Hoje";
-  return ctx.weekdayShort || "Nesta data";
+const TEXT_FIELDS = ["title", "description_html", "short_summary", "meta_title", "meta_description", "instagram_caption"] as const;
+
+function validateAndClean(ai: any, ctx: ValidationCtx): { clean: any; warnings: string[]; safety_notes: string[] } {
+  const out: any = { ...ai };
+  const warnings: string[] = Array.isArray(ai?.warnings) ? [...ai.warnings] : [];
+  const safety: string[] = Array.isArray(ai?.safety_notes) ? [...ai.safety_notes] : [];
+
+  for (const f of TEXT_FIELDS) {
+    if (typeof out[f] !== "string") { out[f] = ""; continue; }
+    let v = out[f];
+
+    // 1. Forbidden style + filler
+    v = stripForbidden(v);
+
+    // 2. Sem horário no flyer → nenhum horário no texto.
+    if (!ctx.hasTime) {
+      const before = v;
+      v = stripTimes(v);
+      if (before !== v) safety.push(`Horário removido de "${f}" (time_is_unknown=true).`);
+    }
+
+    // 3. Sem preço informado → remove qualquer menção a preço/couvert/open bar.
+    if (!ctx.hasPrice) {
+      const before = v;
+      v = stripPriceMentions(v);
+      if (before !== v) safety.push(`Menção a preço/couvert removida de "${f}" (sem dado oficial).`);
+    }
+
+    // 4. Sem fonte oficial → remove termos "oficial", "confirmado", "garantido".
+    if (!ctx.hasOfficialSource) {
+      const before = v;
+      v = stripOfficialClaims(v);
+      if (before !== v) safety.push(`Termos de oficialidade removidos de "${f}" (sem official_source_url).`);
+    }
+
+    out[f] = v.trim();
+  }
+
+  // 5. HTML: sanitize tags
+  if (out.description_html) out.description_html = sanitizeHtml(out.description_html);
+
+  // 6. Limites de tamanho de SEO
+  if (out.meta_title && out.meta_title.length > 70) out.meta_title = out.meta_title.slice(0, 67).trim() + "…";
+  if (out.meta_description && out.meta_description.length > 165) out.meta_description = out.meta_description.slice(0, 162).trim() + "…";
+  if (out.title && out.title.length > 80) out.title = out.title.slice(0, 77).trim() + "…";
+
+  // 7. Sinaliza baixa confiança
+  if (ctx.confidenceScore < 70) {
+    warnings.push("Revisar manualmente antes de publicar (confiança da IA abaixo de 70).");
+  }
+
+  // 8. Se descrição ficou vazia depois da limpeza, sinaliza
+  if (!out.description_html || out.description_html.length < 40) {
+    warnings.push("Descrição muito curta após validação. Edite manualmente.");
+  }
+
+  return { clean: out, warnings: Array.from(new Set(warnings)), safety_notes: Array.from(new Set(safety)) };
 }
 
-// — Template 1: Direto e popular —
-function tplDireto(c: Ctx): string {
-  const opener = whenOpener(c);
-  const venuePart = c.venue ? ` no ${c.venue}` : "";
-  const head = `${opener} tem ${c.attractionShort}${venuePart}.`;
-  const lines: string[] = [];
-  lines.push(`<p>${escapeHtml(head)}</p>`);
-  if (c.hype) lines.push(`<p>${escapeHtml(c.hype)}</p>`);
-  const items: string[] = [];
-  items.push(`📅 ${escapeHtml(c.weekdayShort)}, ${escapeHtml(c.dateShort)}`);
-  if (c.hasRealTime) items.push(`🕒 ${escapeHtml(c.timeLabel)}`);
-  if (c.venue) items.push(`📍 ${escapeHtml(c.venue)}`);
-  lines.push(`<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`);
-  lines.push(`<p>${escapeHtml(c.cta)}</p>`);
-  return lines.join("");
+// ─────────────────────────────────────────────────────────────────────────────
+// 🤖 Chamada principal à IA — OpenAI via Lovable Gateway
+// ─────────────────────────────────────────────────────────────────────────────
+type AIInput = {
+  event_title: string;
+  artists: string[];
+  date_long: string;
+  date_short: string;
+  weekday: string;
+  time_label: string | null;
+  time_is_unknown: boolean;
+  is_today: boolean;
+  venue_name: string;
+  venue_description: string;
+  venue_neighborhood: string;
+  venue_address: string;
+  venue_type: string;
+  city: string;
+  category: string;
+  sub_category: string;
+  music_style: string;
+  price: string;
+  ticket_url: string;
+  instagram: string;
+  flyer_text: string;
+  official_source_url: string;
+  confidence_score: number;
+};
+
+function buildSystemPrompt(): string {
+  return `Você é redator da ROXOU — agenda independente da noite do interior de SP (Presidente Prudente). Estilo: humano, direto, regional, jovem, leve. PROIBIDO parecer release de assessoria ou texto genérico de IA.
+
+Você recebe DADOS REAIS do evento. NUNCA invente:
+- horário (se time_is_unknown=true, NUNCA escreva nenhuma hora);
+- preço, couvert, open bar, promoção (se price vier vazio, NÃO mencione preço);
+- artista que não esteja na lista "artists" nem no flyer_text;
+- local (use exatamente venue_name);
+- endereço.
+
+Devolva APENAS JSON válido neste formato (sem markdown, sem comentários):
+{
+  "title": "Título otimizado, máx 70 caracteres, claro e pesquisável. SEM clickbait. SEM 'oficial/confirmado/garantido' a menos que haja official_source_url. Pode incluir artista (se na lista) e local (se ajudar SEO).",
+  "description_html": "HTML usando APENAS <p>, <strong>, <em>, <ul>, <li>, <br>. 3 a 4 parágrafos:\\n  1) o que é o evento;\\n  2) contexto do local/vibe/público;\\n  3) infos práticas (data, horário SE confirmado, local, preço SE confirmado, link SE existir);\\n  4) CTA leve para ver na Roxou.",
+  "short_summary": "Frase única, máx 140 caracteres, vendendo o evento sem clichê.",
+  "meta_title": "SEO, máx 60 caracteres. Formato '<tema> em <local>/<cidade> - Roxou' ou similar.",
+  "meta_description": "SEO, máx 155 caracteres. Direto, com palavras-chave naturais.",
+  "instagram_caption": "Legenda pronta para colar no Instagram. Primeira linha forte. Emojis moderados (no máx 4). Estrutura:\\n🔥 [Título curto]\\n\\nResumo do evento.\\n\\n📍 Local:\\n🗓 Data:\\n🕒 Horário: (se confirmado, senão 'a confirmar')\\n\\n👉 Veja mais na Roxou:\\nroxou.com.br/agenda\\n\\n⚠️ A Roxou é uma página independente de divulgação e entretenimento. Consulte sempre os canais oficiais do evento ou estabelecimento para informações finais.",
+  "safety_notes": [],
+  "warnings": []
 }
 
-// — Template 2: Chamada de rolê —
-function tplChamada(c: Ctx): string {
-  const opener = whenOpener(c);
-  const head = `${opener} pede ${c.attractionShort} com som ao vivo e pegada de bairro.`;
-  const subjectBit = c.artist ? `${c.artist}` : c.title;
-  const sub = c.venue
-    ? `${subjectBit} no ${c.venue}${c.city ? `, em ${c.city}` : ""}.`
-    : `${subjectBit}${c.city ? `, em ${c.city}` : ""}.`;
-  const items: string[] = [];
-  if (c.venue) items.push(`📍 ${escapeHtml(c.venue)}`);
-  if (c.hasRealTime) items.push(`🕒 A partir das ${escapeHtml(c.timeLabel)}`);
-  items.push(`${c.emoji} ${escapeHtml(c.attractionLabel)}`);
-  const html = [
-    `<p>${escapeHtml(head)}</p>`,
-    `<p>${escapeHtml(sub)}</p>`,
-    `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`,
-    `<p>${escapeHtml(c.cta)}</p>`,
-  ];
-  return html.join("");
+⛔ Frases banidas: "imperdível", "noite inesquecível", "experiência única", "não perca", "prepare-se", "vibe contagiante", "celebrando", "embalar a noite", "a melhor noite da sua vida".
+⛔ Não copie literalmente o flyer. Reescreva com voz Roxou.
+⛔ Se time_is_unknown=true, escreva "horário a confirmar" ou OMITA o horário. NUNCA chute "17h", "20h" ou "22h".
+⛔ Não use h1/h2/scripts/links HTML no description_html.`;
 }
 
-// — Template 3: Curto para Instagram —
-function tplCurto(c: Ctx): string {
-  const opener = c.isToday ? `Hoje com ${c.attractionShort} na cidade` : `${c.weekdayShort} com ${c.attractionShort} na área`;
-  const subject = c.artist ? c.artist : (c.venue || c.attractionLabel);
-  const where = c.venue && c.artist ? `${subject} no ${c.venue}` : subject;
-  const when = c.hasRealTime ? `, a partir das ${c.timeLabel}` : "";
-  return [
-    `<p>${escapeHtml(opener)}. ${c.emoji}</p>`,
-    `<p>${escapeHtml(`${where}${when}.`)}</p>`,
-    `<p>${escapeHtml(c.cta)}</p>`,
-  ].join("");
-}
-
-// — Template 4: Agenda informativa —
-function tplAgenda(c: Ctx): string {
-  const lead = c.venue
-    ? `A programação de ${c.weekdayShort.toLowerCase()} tem ${c.attractionShort} no ${c.venue}.`
-    : `A programação de ${c.weekdayShort.toLowerCase()} tem ${c.title}.`;
-  const items: string[] = [`Data: ${c.dateShort}`];
-  if (c.hasRealTime) items.push(`Horário: ${c.timeLabel}`);
-  if (c.venue) items.push(`Local: ${c.venue}`);
-  if (c.city) items.push(`Cidade: ${c.city}`);
-  return [
-    `<p>${escapeHtml(lead)}</p>`,
-    `<ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`,
-    `<p>Veja o evento completo na Roxou.</p>`,
-  ].join("");
-}
-
-// — Template 5: Tom de descoberta —
-function tplDescoberta(c: Ctx): string {
-  const q = c.isToday
-    ? "Procurando um rolê pra hoje?"
-    : `Procurando um rolê pra ${c.weekdayShort.toLowerCase()}?`;
-  const body = c.venue
-    ? `O ${c.venue} recebe ${c.title}${c.city ? ` em ${c.city}` : ""}.`
-    : `${c.title}${c.city ? ` em ${c.city}` : ""}.`;
-  return [
-    `<p>${escapeHtml(q)}</p>`,
-    `<p>${escapeHtml(body)}</p>`,
-    `<p>Salva esse rolê e manda pra quem curte ${escapeHtml(c.attractionShort)}.</p>`,
-  ].join("");
-}
-
-// — Template 6: Tom de notícia local —
-function tplNoticia(c: Ctx): string {
-  const where = c.city ? ` em ${c.city}` : "";
-  const venuePart = c.venue ? ` no ${c.venue}` : "";
-  const lead = `${c.weekdayShort}${where} ganha clima de ${c.attractionShort}${venuePart}.`;
-  const second = c.hasRealTime
-    ? `${c.title} é a atração para animar o público a partir das ${c.timeLabel}.`
-    : `${c.title} é a atração confirmada na agenda do dia.`;
-  return [
-    `<p>${escapeHtml(lead)}</p>`,
-    `<p>${escapeHtml(second)}</p>`,
-    `<p>Confira a agenda completa na Roxou.</p>`,
-  ].join("");
-}
-
-// — Template 7: Hype moderado —
-function tplHype(c: Ctx): string {
-  const head = `Som, mesa e ${c.attractionShort} na agenda.`;
-  const subject = c.artist ? c.artist : c.attractionLabel;
-  const line = c.venue
-    ? `${subject} no ${c.venue} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`
-    : `${subject} ${c.isToday ? "hoje" : `nesta ${c.weekdayShort.toLowerCase()}`}, ${c.dateShort}.`;
-  const items: string[] = [];
-  if (c.city) items.push(`📍 ${escapeHtml(c.city)}`);
-  if (c.hasRealTime) items.push(`🕒 ${escapeHtml(c.timeLabel)}`);
-  items.push(`${c.emoji} ${escapeHtml(c.attractionLabel)}`);
-  return [
-    `<p>${escapeHtml(head)}</p>`,
-    `<p>${escapeHtml(line)}</p>`,
-    `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`,
-    `<p>${escapeHtml(c.cta)}</p>`,
-  ].join("");
-}
-
-// — Template 8: Minimalista —
-function tplMinimal(c: Ctx): string {
-  const lines: string[] = [];
-  lines.push(`<p>${escapeHtml(c.title)}.</p>`);
-  if (c.venue) lines.push(`<p>${escapeHtml(c.venue)}.</p>`);
-  const when = c.hasRealTime
-    ? `${c.weekdayShort}, ${c.dateShort}, às ${c.timeLabel}.`
-    : `${c.weekdayShort}, ${c.dateShort}.`;
-  lines.push(`<p>${escapeHtml(when)}</p>`);
-  const tail = c.city ? `${c.attractionShort} em ${c.city}.` : `${c.attractionShort}.`;
-  lines.push(`<p>${escapeHtml(tail.charAt(0).toUpperCase() + tail.slice(1))}</p>`);
-  lines.push(`<p>Confira na Roxou.</p>`);
-  return lines.join("");
-}
-
-// — Template 9: Narrativo editorial (prioridade alta, 2–4 parágrafos) —
-// Regras: nunca repete o título cru; contextualiza pelo tipo do local +
-// bairro/cidade; quando houver artista, abre falando do show; quando for
-// bar/restaurante, contextualiza o ambiente.
-function tplVenueNarrative(c: Ctx): string {
-  const ambientByType: Record<string, string> = {
-    bar: "A casa é parada típica de bar de bairro, com mesa na calçada e chope gelado.",
-    pub: "O pub mantém o clima de happy hour estendido, com cerveja artesanal e som médio.",
-    choperia: "A choperia é ponto certo para encerrar a semana no ritmo da rua.",
-    restaurante: "O restaurante combina cozinha do dia a dia com música ao vivo durante a noite.",
-    espetinho: "O espetinho é daqueles endereços de mesa na rua, chope e brasa direto.",
-    lounge: "O lounge aposta em iluminação baixa e drinks autorais para a noite.",
-    balada: "A balada entrega pista cheia e som alto até de madrugada.",
-    "casa de shows": "A casa de shows recebe atrações com palco montado e produção dedicada.",
-    adega: "A adega é endereço de carta de vinhos e ambiente intimista.",
-    tabacaria: "A tabacaria mistura narguilé, drinks e som ambiente para conversar.",
-    cultural: "O espaço cultural recebe programações que misturam música, arte e encontro.",
+function buildUserPrompt(data: AIInput): string {
+  const fields = {
+    event_title: data.event_title,
+    artists: data.artists,
+    date: { weekday: data.weekday, long: data.date_long, short: data.date_short, is_today: data.is_today },
+    time: data.time_is_unknown ? null : data.time_label,
+    time_is_unknown: data.time_is_unknown,
+    venue: {
+      name: data.venue_name || null,
+      type: data.venue_type || null,
+      description: data.venue_description || null,
+      neighborhood: data.venue_neighborhood || null,
+      address: data.venue_address || null,
+    },
+    city: data.city || null,
+    category: data.category,
+    sub_category: data.sub_category,
+    music_style: data.music_style || null,
+    price: data.price || null,
+    ticket_url: data.ticket_url || null,
+    instagram: data.instagram || null,
+    flyer_text: data.flyer_text || null,
+    official_source_url: data.official_source_url || null,
+    confidence_score: data.confidence_score,
   };
-
-  // ─── Parágrafo 1 — abertura editorial, sem citar o título ───
-  const opener = c.isToday ? "Hoje" : `Nesta ${c.weekdayShort.toLowerCase()}, ${c.dateShort},`;
-  const typeLabel = c.partnerTypeLabel || "casa";
-  const localBit = c.neighborhood && c.city
-    ? `${typeLabel} no ${c.neighborhood}, em ${c.city}`
-    : c.neighborhood
-      ? `${typeLabel} no ${c.neighborhood}`
-      : c.city
-        ? `${typeLabel} em ${c.city}`
-        : typeLabel;
-
-  let p1: string;
-  if (c.artist) {
-    // Foco no show
-    const venuePart = c.venue ? ` no ${c.venue}` : "";
-    p1 = `${opener} ${c.artist} sobe ao palco${venuePart}, ${localBit}, com repertório ${c.attractionShort}.`;
-  } else if (c.venue) {
-    p1 = `${opener} o ${c.venue} entra na agenda da cidade com programação de ${c.attractionShort}, ${localBit}.`;
-  } else {
-    p1 = `${opener} a noite tem ${c.attractionShort}${c.city ? ` em ${c.city}` : ""}.`;
-  }
-
-  // ─── Parágrafo 2 — ambiente do local (curado pelo tipo + summary do parceiro) ───
-  const ambientLine = c.partnerTypeLabel
-    ? ambientByType[String(c.partnerTypeLabel).toLowerCase()] || ""
-    : "";
-  const p2Parts: string[] = [];
-  if (c.partnerSummary) p2Parts.push(c.partnerSummary);
-  if (ambientLine && !c.partnerSummary) p2Parts.push(ambientLine);
-  if (c.partnerSecondaryStyles.length) {
-    p2Parts.push(
-      `A casa também costuma rodar ${c.partnerSecondaryStyles.slice(0, 2).join(" e ")} ao longo da semana.`,
-    );
-  }
-  const p2 = p2Parts.join(" ").trim();
-
-  // ─── Parágrafo 3 — operação prática (horário + dia), sem listão ───
-  const timeBit = c.hasRealTime ? `a partir das ${c.timeLabel}` : "com horário a confirmar";
-  let p3: string;
-  if (c.artist) {
-    p3 = `O show começa ${timeBit}. ${c.isToday ? "É para hoje" : `É ${c.weekdayShort.toLowerCase()}, ${c.dateShort}`}, e a entrada acompanha a programação da casa.`;
-  } else {
-    p3 = `A programação rola ${timeBit}${c.isToday ? ", hoje mesmo" : `, ${c.weekdayShort.toLowerCase()}, ${c.dateShort}`}.`;
-  }
-
-  // ─── Parágrafo 4 — CTA variável ───
-  const p4 = c.cta;
-
-  const blocks: string[] = [];
-  blocks.push(`<p>${escapeHtml(p1)}</p>`);
-  if (p2) blocks.push(`<p>${escapeHtml(p2)}</p>`);
-  blocks.push(`<p>${escapeHtml(p3)}</p>`);
-  blocks.push(`<p>${escapeHtml(p4)}</p>`);
-  return blocks.join("");
+  return `DADOS DO EVENTO:\n${JSON.stringify(fields, null, 2)}\n\nGere agora o JSON pedido. Lembre: nada de inventar.`;
 }
 
-const TEMPLATES = [tplDireto, tplChamada, tplCurto, tplAgenda, tplDescoberta, tplNoticia, tplHype, tplMinimal, tplVenueNarrative];
-const TEMPLATE_NAMES = ["direto", "chamada", "curto", "agenda", "descoberta", "noticia", "hype", "minimal", "venue_narrative"];
+async function callOpenAI(input: AIInput, apiKey: string): Promise<any> {
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "openai/gpt-5-mini",
+      messages: [
+        { role: "system", content: buildSystemPrompt() },
+        { role: "user", content: buildUserPrompt(input) },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 🧠 Escolha inteligente do template
-// ─────────────────────────────────────────────────────────────────────────────
-function chooseTemplate(
-  seed: number,
-  previousDescs: string[],
-  hasMinimalData: boolean,
-  hasRichVenue: boolean,
-  hasArtist: boolean,
-): number {
-  // T9 (índice 8) = narrativo editorial. Prioridade máxima quando dá:
-  // - artista identificado → sempre T9
-  // - parceiro com tipo/summary/estilo → quase sempre T9
-  if (hasArtist && !hasMinimalData) return 8;
-
-  const recent = (previousDescs || [])
-    .map(detectTemplateId)
-    .filter((x): x is number => x !== null && x >= 1 && x <= 9)
-    .slice(-5)
-    .map((x) => x - 1);
-
-  // Pouca info → templates curtos. Info rica → T9 domina a rotação.
-  const preferred = hasMinimalData
-    ? [2, 7, 4]
-    : hasRichVenue
-      ? [8, 8, 8, 8, 5, 8, 0, 8, 3] // T9 com peso ~6/9
-      : [8, 0, 8, 5, 1, 8, 3, 6, 4]; // T9 ainda majoritário mesmo sem parceiro rico
-
-  const start = ((Math.floor(seed) % preferred.length) + preferred.length) % preferred.length;
-  for (let i = 0; i < preferred.length; i++) {
-    const idx = preferred[(start + i) % preferred.length];
-    if (!recent.includes(idx)) return idx;
+  if (resp.status === 429) {
+    const err: any = new Error("rate_limited");
+    err.status = 429;
+    throw err;
   }
-  return preferred[start];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 🤖 Geração opcional de hype curto (1-2 frases) via IA
-// ─────────────────────────────────────────────────────────────────────────────
-async function generateHype(
-  ctx: Pick<Ctx, "title" | "venue" | "attractionLabel" | "city">,
-  apiKey: string,
-): Promise<string> {
-  try {
-    const sys = `Você escreve para a Roxou, agenda de rolês do interior de SP. Tom: humano, direto, local, sem exagero, sem release. Proibido: "imperdível", "não perca", "prepare-se", "noite inesquecível", "experiência única", "celebrando", "embalar a noite", "em breve". Tarefa: gere UMA frase curta (no máximo 22 palavras) que contextualize o evento com personalidade. NÃO cite data, hora, dia da semana, preço ou ingresso. NÃO invente atração ou artista. Use só o que vier nos dados. Sem emoji. Sem aspas.`;
-    const usr = [
-      `Evento: ${ctx.title}`,
-      ctx.venue ? `Local: ${ctx.venue}` : null,
-      `Tipo: ${ctx.attractionLabel}`,
-      ctx.city ? `Cidade: ${ctx.city}` : null,
-    ].filter(Boolean).join("\n");
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: sys }, { role: "user", content: usr }],
-        temperature: 0.95,
-      }),
-    });
-    if (!resp.ok) return "";
-    const data = await resp.json();
-    const raw = data.choices?.[0]?.message?.content || "";
-    return stripForbidden(String(raw).replace(/^["'`]+|["'`]+$/g, "").split("\n")[0] || "").slice(0, 220);
-  } catch {
-    return "";
+  if (resp.status === 402) {
+    const err: any = new Error("payment_required");
+    err.status = 402;
+    throw err;
   }
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`AI gateway error ${resp.status}: ${txt}`);
+  }
+  const data = await resp.json();
+  const raw = data.choices?.[0]?.message?.content?.trim() || "";
+  const parsed = safeJson(raw);
+  if (!parsed) throw new Error("Resposta da IA não é JSON válido.");
+  return parsed;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -487,19 +316,30 @@ serve(async (req) => {
     const body = await req.json();
     const {
       title,
+      event_title_raw,
+      event_title_suggested,
+      artists: artistsIn,
       venue_name,
       date_time,
+      time_is_unknown = false,
       category,
       sub_category,
-      seed_index,
+      music_style,
       neighborhood,
       address,
       city,
       partner_id,
       venue_description: venueDescIn,
       partner_type: partnerTypeIn,
-      previous_descriptions = [],
-      time_is_unknown = false,
+      price,
+      ticket_url,
+      instagram,
+      flyer_text,
+      official_source_url,
+      confidence_score,
+      // legados/compat
+      seed_index: _seed_index,
+      previous_descriptions: _previous_descriptions = [],
     } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -511,13 +351,12 @@ serve(async (req) => {
       });
     }
 
-    // Enriquecimento opcional via partner
+    // Enriquecimento via partner
     let partnerType: string | null = partnerTypeIn || null;
     let partnerNeighborhood: string | null = neighborhood || null;
     let partnerCity: string | null = city || null;
     let partnerSummary: string | null = venueDescIn || null;
-    let partnerMusicPrimary: string | null = null;
-    let partnerMusicSecondary: string[] = [];
+    let partnerMusicPrimary: string | null = music_style || null;
 
     if (partner_id) {
       try {
@@ -526,125 +365,127 @@ serve(async (req) => {
         const supabase = createClient(supabaseUrl, serviceKey);
         const { data: p } = await supabase
           .from("partners")
-          .select("type, neighborhood, city, short_description, full_description, music_style_primary, music_styles_secondary")
+          .select("type, neighborhood, city, short_description, full_description, music_style_primary, address")
           .eq("id", partner_id)
           .maybeSingle();
         if (p) {
-          if (!partnerType) partnerType = p.type || null;
-          if (!partnerNeighborhood) partnerNeighborhood = p.neighborhood || null;
-          if (!partnerCity) partnerCity = p.city || null;
+          if (!partnerType) partnerType = (p as any).type || null;
+          if (!partnerNeighborhood) partnerNeighborhood = (p as any).neighborhood || null;
+          if (!partnerCity) partnerCity = (p as any).city || null;
           if (!partnerSummary) {
-            // prefere short; full vira fallback truncado em 1 frase
-            partnerSummary = (p.short_description || "")
-              || (p.full_description ? String(p.full_description).split(/(?<=\.)\s/)[0] : "")
+            partnerSummary = ((p as any).short_description || "")
+              || ((p as any).full_description ? String((p as any).full_description).split(/(?<=\.)\s/)[0] : "")
               || null;
           }
-          partnerMusicPrimary = (p as any).music_style_primary || null;
-          partnerMusicSecondary = Array.isArray((p as any).music_styles_secondary)
-            ? (p as any).music_styles_secondary.filter(Boolean)
-            : [];
+          if (!partnerMusicPrimary) partnerMusicPrimary = (p as any).music_style_primary || null;
         }
       } catch (_e) { /* segue */ }
     }
 
     const dateInfo = formatOfficialDate(date_time, Boolean(time_is_unknown));
-    const attraction = resolveAttraction(category, sub_category, partnerMusicPrimary || undefined);
-
-    const cleanTitle = String(title || "").trim();
-    const cleanVenue = String(venue_name || "").trim();
-    const cleanCity = String(partnerCity || "").trim();
-    const cleanNeighborhood = String(partnerNeighborhood || "").trim();
-    const artist = extractArtistFromTitle(cleanTitle);
-
-    const seed = Number.isFinite(Number(seed_index)) ? Number(seed_index) : Math.floor(Math.random() * 9999);
-
-    const hasMinimalData = !cleanVenue && !cleanCity && !cleanNeighborhood;
-    const hasRichVenue = Boolean(
-      cleanVenue && (partnerType || partnerSummary || partnerMusicPrimary),
+    const cleanTitle = String(title || event_title_suggested || event_title_raw || "").trim();
+    const knownArtists = new Set<string>(
+      (Array.isArray(artistsIn) ? artistsIn : [])
+        .filter((x: unknown): x is string => typeof x === "string" && x.trim().length > 1)
+        .map((x) => normText(x)),
     );
 
-    const tplIdx = chooseTemplate(seed, previous_descriptions, hasMinimalData, hasRichVenue, !!artist);
-
-    // Gera hype curto (opcional) — só usado por T1 (e ignorado pelos outros)
-    let hype = "";
-    if (tplIdx === 0) {
-      hype = await generateHype(
-        { title: cleanTitle, venue: cleanVenue, attractionLabel: attraction.label, city: cleanCity },
-        LOVABLE_API_KEY,
-      );
-    }
-
-    const cta = pickFromBank(CTA_BANK, seed + tplIdx);
-
-    // Labels secundários (apenas os que conhecemos)
-    const secondaryLabels = partnerMusicSecondary
-      .map((v) => ATTRACTION_LABEL[String(v).toLowerCase()]?.short)
-      .filter((x): x is string => !!x);
-
-    const ctx: Ctx = {
-      title: cleanTitle,
-      venue: cleanVenue,
-      attractionLabel: attraction.label,
-      attractionShort: attraction.short,
-      emoji: attraction.emoji,
-      weekdayShort: dateInfo.weekdayShort,
-      dateShort: dateInfo.dateShort,
-      dateLong: dateInfo.dateLong,
-      timeLabel: dateInfo.timeLabel,
-      hasRealTime: dateInfo.hasRealTime,
-      isToday: dateInfo.isToday,
-      city: cleanCity,
-      neighborhood: cleanNeighborhood,
-      locationLine: buildLocationLine(cleanVenue, cleanNeighborhood, cleanCity),
-      hype,
-      cta,
-      seed,
-      partnerTypeLabel: PARTNER_TYPE_LABEL[String(partnerType || "").toLowerCase()] || (partnerType || ""),
-      partnerSummary: stripForbidden(String(partnerSummary || "").trim()),
-      partnerSecondaryStyles: secondaryLabels,
-      artist,
+    const aiInput: AIInput = {
+      event_title: cleanTitle,
+      artists: Array.from(knownArtists),
+      date_long: dateInfo.dateLong,
+      date_short: dateInfo.dateShort,
+      weekday: dateInfo.weekdayShort,
+      time_label: dateInfo.timeLabel,
+      time_is_unknown: !dateInfo.hasRealTime,
+      is_today: dateInfo.isToday,
+      venue_name: String(venue_name || "").trim(),
+      venue_description: String(partnerSummary || "").trim(),
+      venue_neighborhood: String(partnerNeighborhood || "").trim(),
+      venue_address: String(address || "").trim(),
+      venue_type: String(partnerType || "").trim(),
+      city: String(partnerCity || "").trim(),
+      category: String(category || "").trim(),
+      sub_category: String(sub_category || "").trim(),
+      music_style: String(partnerMusicPrimary || "").trim(),
+      price: String(price || "").trim(),
+      ticket_url: String(ticket_url || "").trim(),
+      instagram: String(instagram || "").trim(),
+      flyer_text: String(flyer_text || "").trim(),
+      official_source_url: String(official_source_url || "").trim(),
+      confidence_score: Number.isFinite(Number(confidence_score)) ? Number(confidence_score) : 80,
     };
 
+    // 1. IA
+    let ai: any;
+    try {
+      ai = await callOpenAI(aiInput, LOVABLE_API_KEY);
+    } catch (err: any) {
+      if (err?.status === 429) {
+        return new Response(JSON.stringify({ error: "rate_limited", message: "IA com limite atingido. Tente em alguns segundos." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (err?.status === 402) {
+        return new Response(JSON.stringify({ error: "payment_required", message: "Créditos da workspace esgotados. Recarregue para continuar gerando descrições." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw err;
+    }
 
-    const html = TEMPLATES[tplIdx](ctx);
+    // 2. Validação anti-invenção
+    const ctx: ValidationCtx = {
+      hasTime: !aiInput.time_is_unknown,
+      hasPrice: aiInput.price.length > 0,
+      hasOfficialSource: aiInput.official_source_url.length > 0,
+      knownArtists,
+      knownVenue: normText(aiInput.venue_name),
+      flyerText: normText(aiInput.flyer_text),
+      confidenceScore: aiInput.confidence_score,
+    };
+    const { clean, warnings, safety_notes } = validateAndClean(ai, ctx);
 
-    // chamada para o card (mantida)
-    const chamadaSite = cleanTitle.length > 60 ? cleanTitle.slice(0, 57) + "..." : cleanTitle;
-
-    // Warnings de informação faltante
-    const warnings: string[] = [];
-    if (!cleanVenue) warnings.push("sem_local");
-    if (!cleanCity && !cleanNeighborhood) warnings.push("sem_cidade");
-    if (!dateInfo.hasRealTime) warnings.push("sem_horario");
-
-    const captionConfidence = warnings.length === 0 ? "high" : warnings.length === 1 ? "medium" : "low";
-
-    console.log("[generate-description]", {
-      template: TEMPLATE_NAMES[tplIdx],
-      tplIdx,
-      seed,
-      hasMinimalData,
+    // 3. Resposta — campos novos + retrocompat
+    const description_html = clean.description_html || "";
+    const responsePayload = {
+      // ✨ Novos
+      title: clean.title || cleanTitle,
+      description_html,
+      short_summary: clean.short_summary || "",
+      meta_title: clean.meta_title || "",
+      meta_description: clean.meta_description || "",
+      instagram_caption: clean.instagram_caption || "",
+      safety_notes,
       warnings,
-      previousCount: Array.isArray(previous_descriptions) ? previous_descriptions.length : 0,
+      ai_confidence_score: aiInput.confidence_score,
+      // 🔁 Retrocompat
+      chamada_site: (clean.title || cleanTitle).length > 60 ? (clean.title || cleanTitle).slice(0, 57) + "..." : (clean.title || cleanTitle),
+      descricao_rica: description_html,
+      description: description_html,
+      caption_style: "openai_structured",
+      caption_template_id: 99,
+      caption_confidence: warnings.length === 0 ? "high" : warnings.length === 1 ? "medium" : "low",
+      caption_warnings: warnings,
+      used_flyer: Boolean(aiInput.flyer_text),
+    };
+
+    console.log("[generate-description] v5", {
+      model: "openai/gpt-5-mini",
+      hasTime: ctx.hasTime,
+      hasPrice: ctx.hasPrice,
+      hasOfficial: ctx.hasOfficialSource,
+      warningsCount: warnings.length,
+      safetyCount: safety_notes.length,
+      confidence: aiInput.confidence_score,
     });
 
-    return new Response(
-      JSON.stringify({
-        chamada_site: chamadaSite,
-        descricao_rica: html,
-        description: html,
-        description_html: html,
-        caption_style: TEMPLATE_NAMES[tplIdx],
-        caption_template_id: tplIdx + 1,
-        caption_confidence: captionConfidence,
-        caption_warnings: warnings,
-        used_flyer: false,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify(responsePayload), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err: any) {
     console.error("generate-description error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: err?.message || "internal_error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

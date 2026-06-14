@@ -290,18 +290,18 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        // 🔁 OpenAI via Lovable Gateway (multimodal, mais preciso na leitura de flyer)
+        model: "openai/gpt-5-mini",
         messages: [
           { role: "system", content: systemPrompt },
           {
             role: "user",
             content: [
-              { type: "text", text: `Extraia metadados deste flyer. Ano base: ${year}. Use o DNA dos parceiros para definir categoria/gênero quando o local bater. Parceiros verificados:\n${verifiedPartnersText}\n\n${batch_defaults && (batch_defaults.date || batch_defaults.time || batch_defaults.partner_name || batch_defaults.category) ? `🧭 PADRÕES DO LOTE FORNECIDOS PELO ADMIN (use SOMENTE como contexto — NÃO inclua no JSON se o flyer não confirma; o servidor aplica como fallback):\n${batch_defaults.date ? `- data padrão: ${batch_defaults.date}\n` : ""}${batch_defaults.time ? `- horário padrão: ${batch_defaults.time}\n` : ""}${batch_defaults.partner_name ? `- local padrão: ${batch_defaults.partner_name}\n` : ""}${batch_defaults.category ? `- categoria padrão: ${batch_defaults.category}\n` : ""}${batch_defaults.sub_category ? `- sub-categoria padrão: ${batch_defaults.sub_category}\n` : ""}\n⚠️ NUNCA invente horário só porque o admin forneceu um padrão. Continue retornando time_is_unknown=true se o flyer não mostrar hora clara — o servidor decide se usa o padrão.\n\n` : ""}Responda apenas JSON.` },
+              { type: "text", text: `Extraia metadados deste flyer. Ano base: ${year}. Use o DNA dos parceiros para definir categoria/gênero quando o local bater. Parceiros verificados:\n${verifiedPartnersText}\n\n${batch_defaults && (batch_defaults.date || batch_defaults.time || batch_defaults.partner_name || batch_defaults.category) ? `🧭 PADRÕES DO LOTE FORNECIDOS PELO ADMIN (use SOMENTE como contexto — NÃO inclua no JSON se o flyer não confirma; o servidor aplica como fallback):\n${batch_defaults.date ? `- data padrão: ${batch_defaults.date}\n` : ""}${batch_defaults.time ? `- horário padrão: ${batch_defaults.time}\n` : ""}${batch_defaults.partner_name ? `- local padrão: ${batch_defaults.partner_name}\n` : ""}${batch_defaults.category ? `- categoria padrão: ${batch_defaults.category}\n` : ""}${batch_defaults.sub_category ? `- sub-categoria padrão: ${batch_defaults.sub_category}\n` : ""}\n⚠️ NUNCA invente horário só porque o admin forneceu um padrão. Continue retornando time_is_unknown=true se o flyer não mostrar hora clara — o servidor decide se usa o padrão.\n⚠️ NUNCA invente preço, artista, link ou Instagram que não esteja LITERALMENTE no flyer. Prefira null a inventar.\n\n` : "⚠️ NUNCA invente preço, artista, link ou Instagram que não esteja LITERALMENTE no flyer. Prefira null a inventar.\n\n"}Também devolva no JSON: \"flyer_text\": string com o TEXTO BRUTO transcrito do flyer (até 600 caracteres), \"artists\": string[] com nomes que aparecem como atração principal (vazio se não houver). Responda apenas JSON.` },
               { type: "image_url", image_url: { url: image_url } },
             ],
           },
         ],
-        temperature: 0.6,
       }),
     });
 
@@ -650,6 +650,12 @@ serve(async (req) => {
     }
     const needsReview = aiConfidence === "low" || genre_needs_review || date_needs_review;
 
+    // ============== 🧾 Texto bruto + artistas (anti-invenção downstream) ==============
+    const flyerText: string = typeof parsed.flyer_text === "string" ? parsed.flyer_text.slice(0, 600) : "";
+    const artists: string[] = Array.isArray(parsed.artists)
+      ? parsed.artists.filter((x: unknown): x is string => typeof x === "string" && x.trim().length > 1).slice(0, 6)
+      : [];
+
     return new Response(JSON.stringify({
       title,
       date_iso: dateIso,
@@ -674,6 +680,8 @@ serve(async (req) => {
       category_override_reason,
       dna_applied,
       admin_feedback_applied,
+      flyer_text: flyerText,
+      artists,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
