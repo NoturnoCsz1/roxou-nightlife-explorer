@@ -1386,6 +1386,11 @@ interface ReviewRowProps {
   item: BulkItem;
   partners: Partner[];
   isDuplicate?: boolean;
+  isPossibleDup?: boolean;
+  isIncomplete?: boolean;
+  classificationReason?: string;
+  forcePublish?: boolean;
+  onToggleForcePublish?: () => void;
   smartDup?: DuplicateConfidenceResult;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
@@ -1397,64 +1402,91 @@ interface ReviewRowProps {
 }
 
 function ReviewRowBase({
-  index, item, partners, isDuplicate, smartDup, onPartnerChange, onChangeForm,
+  index, item, partners, isDuplicate, isPossibleDup, isIncomplete,
+  classificationReason, forcePublish, onToggleForcePublish,
+  smartDup, onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
+  const containerCls = isDuplicate
+    ? "border-destructive/80 ring-2 ring-destructive/40 shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
+    : isPossibleDup
+    ? "border-amber-500/60 ring-1 ring-amber-500/30"
+    : isIncomplete
+    ? "border-muted-foreground/40 ring-1 ring-muted-foreground/20"
+    : "border-border/40";
+
   return (
-    <div className={`rounded-xl border bg-card overflow-hidden transition ${
-      isDuplicate
-        ? "border-destructive/80 ring-2 ring-destructive/40 animate-pulse shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
-        : "border-border/40"
-    }`}>
+    <div className={`rounded-xl border bg-card overflow-hidden transition ${containerCls}`}>
       {isDuplicate && (
-        <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-1.5 text-[10px] font-semibold text-destructive flex items-center gap-1.5">
-          <AlertCircle className="h-3 w-3" />
-          ⚠️ CONTEÚDO DUPLICADO: Verifique se este evento já foi cadastrado.
+        <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-2 text-[11px] font-semibold text-destructive flex items-start gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div>🚫 Duplicado real — não será enviado</div>
+            {classificationReason && (
+              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="rounded-md border border-destructive/40 px-2 py-0.5 text-[10px] font-semibold hover:bg-destructive/20 transition shrink-0"
+          >
+            Editar
+          </button>
         </div>
       )}
-      {item.categoryWarning && !isDuplicate && (
+      {!isDuplicate && isPossibleDup && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 text-[11px] font-semibold text-amber-500 flex items-start gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div>⚠ Possível duplicado — revise antes de publicar</div>
+            {classificationReason && (
+              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+            )}
+            {smartDup?.matched_fields?.length ? (
+              <div className="opacity-75 font-normal mt-0.5">
+                Coincidências: {smartDup.matched_fields.join(" • ")}
+              </div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleForcePublish}
+            className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition shrink-0 ${
+              forcePublish
+                ? "bg-amber-500/30 text-amber-100 border border-amber-400"
+                : "border border-amber-500/40 hover:bg-amber-500/20"
+            }`}
+          >
+            {forcePublish ? "✓ Publicar mesmo assim" : "Publicar mesmo assim"}
+          </button>
+        </div>
+      )}
+      {!isDuplicate && !isPossibleDup && isIncomplete && (
+        <div className="bg-secondary/40 border-b border-muted-foreground/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground flex items-start gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div>📝 Revisar dados incompletos</div>
+            {classificationReason && (
+              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="rounded-md border border-muted-foreground/40 px-2 py-0.5 text-[10px] font-semibold hover:bg-secondary transition shrink-0"
+          >
+            Editar dados
+          </button>
+        </div>
+      )}
+      {item.categoryWarning && !isDuplicate && !isPossibleDup && !isIncomplete && (
         <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
           <AlertCircle className="h-3 w-3" />
           ⚠️ Verifique a categoria: {item.categoryWarning}
-        </div>
-      )}
-      {!isDuplicate && smartDup && smartDup.level !== "none" && (
-        <div
-          className={`border-b px-3 py-1.5 text-[10px] font-semibold flex items-start gap-1.5 ${
-            smartDup.level === "almost_certain"
-              ? "bg-destructive/10 border-destructive/30 text-destructive"
-              : smartDup.level === "strong"
-              ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
-              : "bg-amber-500/10 border-amber-500/30 text-amber-500"
-          }`}
-        >
-          <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
-          <div className="flex-1 min-w-0">
-            {smartDup.level === "almost_certain" && "🚨 Duplicado detectado"}
-            {smartDup.level === "strong" && "⚠ Forte suspeita de duplicado"}
-            {smartDup.level === "possible" && "⚠ Possível duplicado"}
-            {" — "}
-            <span className="font-bold">{smartDup.duplicate_score}/100</span>
-            {smartDup.matched_event_title && (
-              <>
-                {" • similar a: "}
-                <span className="font-bold truncate">{smartDup.matched_event_title}</span>
-                {smartDup.matched_event_date && (
-                  <span className="opacity-75">
-                    {" ("}{smartDup.matched_event_date.slice(0, 10)}{")"}
-                  </span>
-                )}
-              </>
-            )}
-            {smartDup.matched_fields.length > 0 && (
-              <div className="opacity-80 font-normal mt-0.5">
-                Coincidências: {smartDup.matched_fields.join(" • ")}
-              </div>
-            )}
-          </div>
         </div>
       )}
       <div className="flex items-stretch gap-2 p-2">
