@@ -152,6 +152,11 @@ const EventoForm = () => {
         venue_name: meta.venue_name || prev.venue_name,
         category: meta.category || prev.category,
         ...(meta.sub_category ? { _sub: meta.sub_category } : {}),
+        // ✨ Contexto bruto do flyer p/ alimentar generate-description sem alucinação
+        flyer_text: typeof meta.flyer_text === "string" ? meta.flyer_text : prev.flyer_text,
+        artists: Array.isArray(meta.artists) ? meta.artists : prev.artists,
+        price: typeof meta.price === "string" ? meta.price : prev.price,
+        official_source_url: typeof meta.official_source_url === "string" ? meta.official_source_url : prev.official_source_url,
       } as any));
       toast.success(
         nextTimeUnknown
