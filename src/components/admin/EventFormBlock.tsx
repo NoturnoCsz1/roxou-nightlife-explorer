@@ -27,6 +27,14 @@ export type EventFormData = {
   image_hash?: string;
   ticket_url: string;
   opportunity_tags?: string[];
+  // ✨ Fase 2B — campos enriquecidos pela IA (gpt-5-mini)
+  short_summary?: string;
+  meta_title?: string;
+  meta_description?: string;
+  instagram_caption?: string;
+  ai_confidence_score?: number | null;
+  ai_warnings?: string[];
+  needs_review?: boolean;
 };
 
 export const emptyEventForm = (): EventFormData => ({
@@ -35,6 +43,8 @@ export const emptyEventForm = (): EventFormData => ({
   status: "draft", verification_source: "instagram", featured: false, image_url: "",
   ticket_url: "", image_hash: "",
   opportunity_tags: [],
+  short_summary: "", meta_title: "", meta_description: "", instagram_caption: "",
+  ai_confidence_score: null, ai_warnings: [], needs_review: false,
 });
 
 export function slugify(str: string) {
