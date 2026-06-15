@@ -215,9 +215,10 @@ const InstagramAdmin = () => {
     if (!silent) setSyncing(true);
     setSyncStage("loading");
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=sync`,
-        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+        { headers }
       );
       const result = await res.json();
       if (result.ok) {
