@@ -1,15 +1,11 @@
 import type React from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { buildEventPayload } from "@/lib/adminEventPayload";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
-import {
-  validateBeforePublish,
-  persistValidationLog,
-  REASON_LABELS,
-} from "@/lib/eventIngestionGuard";
-import { buildRoxouCaption, slugify } from "./helpers";
+import { slugify } from "./helpers";
+import { buildHandleSubmit } from "./eventoFormSubmit";
 import type { DuplicateCandidate, EventoFormState, Partner } from "./types";
+
 
 /**
  * Dependências do "agente" de ações do EventoForm.
