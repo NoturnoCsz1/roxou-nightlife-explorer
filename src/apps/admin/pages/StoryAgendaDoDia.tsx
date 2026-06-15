@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps -- preservado do original (Fase 6B: movimentação física apenas) */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, Download, RefreshCw, Copy, Check, Trophy, Tv, CheckSquare, Square } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
