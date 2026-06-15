@@ -2,7 +2,7 @@
 import EventoFormSectionHeader from "./EventoFormSectionHeader";
 import EventoFormAiSection from "./EventoFormAiSection";
 import EventoFormSeoSection from "./EventoFormSeoSection";
-import { INPUT_CLASS } from "./types";
+import { INPUT_CLASS } from "./constants";
 import type { UseEventoFormReturn } from "./useEventoForm";
 
 interface Props {

@@ -15,7 +15,7 @@ interface Props {
   ctx: UseEventoFormReturn;
 }
 
-export default function EventoFormActions({ ctx }: Props) {
+export default function EventoFormHeader({ ctx }: Props) {
   const {
     isEdit,
     form,

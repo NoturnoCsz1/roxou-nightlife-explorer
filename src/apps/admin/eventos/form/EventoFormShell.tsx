@@ -2,7 +2,7 @@
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import TransmissionSection, { type TransmissionFields } from "@/components/admin/TransmissionSection";
 import { Save } from "lucide-react";
-import EventoFormActions from "./EventoFormActions";
+import EventoFormHeader from "./EventoFormHeader";
 import EventoFormBasicSection from "./EventoFormBasicSection";
 import EventoFormPartnerSection from "./EventoFormPartnerSection";
 import EventoFormScheduleSection from "./EventoFormScheduleSection";
@@ -15,7 +15,7 @@ export default function EventoFormShell() {
 
   return (
     <div className="md:ml-44 max-w-5xl">
-      <EventoFormActions ctx={ctx} />
+      <EventoFormHeader ctx={ctx} />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
         <form onSubmit={handleSubmit} className="max-w-xl space-y-4">

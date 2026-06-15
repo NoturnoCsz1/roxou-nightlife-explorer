@@ -3,7 +3,7 @@ import type React from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
-import { slugify } from "./helpers";
+import { slugify } from "./utils";
 import { buildHandleSubmit } from "./eventoFormSubmit";
 import type { DuplicateCandidate, EventoFormState, Partner } from "./types";
 

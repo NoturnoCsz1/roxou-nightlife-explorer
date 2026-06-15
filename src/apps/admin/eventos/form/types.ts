@@ -48,6 +48,3 @@ export type DuplicateCandidate = {
 } | null;
 
 export type SectionsState = { venue: boolean; content: boolean; media: boolean };
-
-export const INPUT_CLASS =
-  "w-full rounded-lg border border-border/50 bg-background px-3 py-2 text-sm outline-none focus:border-primary/50 transition";

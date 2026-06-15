@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import { INPUT_CLASS } from "./types";
+import { INPUT_CLASS } from "./constants";
 import type { UseEventoFormReturn } from "./useEventoForm";
 
 interface Props {

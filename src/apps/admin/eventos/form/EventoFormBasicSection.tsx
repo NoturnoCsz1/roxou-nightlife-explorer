@@ -5,7 +5,7 @@ import {
   ADMIN_MUSICAL_SUBS,
   supportsGenre,
 } from "@/lib/categoryConfig";
-import { INPUT_CLASS } from "./types";
+import { INPUT_CLASS } from "./constants";
 import type { UseEventoFormReturn } from "./useEventoForm";
 
 interface Props {

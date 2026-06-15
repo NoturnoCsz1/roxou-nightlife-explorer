@@ -1,5 +1,5 @@
 import EventoFormSectionHeader from "./EventoFormSectionHeader";
-import { INPUT_CLASS } from "./types";
+import { INPUT_CLASS } from "./constants";
 import type { UseEventoFormReturn } from "./useEventoForm";
 
 interface Props {
