@@ -17,7 +17,7 @@ export default function V3Home() {
   const data = useHomeData();
   const {
     events, rawTodayEvents, trendingIds, venueRanks, featuredPartners,
-    heroEvents, trending, todayEvents, featured, weekEvents, weeklyHighlight,
+    heroEvents, trending, featured, weekEvents, weeklyHighlight,
     partnerRankMap, trendingIdSet, todayCount, maxViews,
     isLoading, loadingEventsRaw, loadingTimedOut, loadingToday, loadingTrending, loadingVenues,
     eventsError, todayError, hasHomeDataError,
