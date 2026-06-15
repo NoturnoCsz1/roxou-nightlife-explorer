@@ -25,6 +25,7 @@ import {
 import {
   eventDayStr,
   getChecklist,
+  getQualityScore,
   isAiOrigin,
   needsReview,
   normalizeAiTitle,
