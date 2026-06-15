@@ -729,7 +729,7 @@ const StoryAgendaDoDia = () => {
     }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [mode]);
+  useEffect(() => { load(); }, [mode]);
 
   function toggle(id: string) {
     setSelected((prev) => {
