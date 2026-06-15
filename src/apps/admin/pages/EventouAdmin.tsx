@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original (Fase 6H) */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Globe, Loader2, Plus, Eye, XCircle, Trash2, ExternalLink, RefreshCw, MapPin, Calendar, Copy, Instagram, Star, AlertTriangle, CheckCircle2, Ban, Filter, ImageIcon, Users, Clock, User, ClipboardCopy } from "lucide-react";
