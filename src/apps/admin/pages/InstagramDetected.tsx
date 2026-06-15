@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps -- preservado do original (Fase 6E) */
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Instagram, Loader2, CheckCircle, XCircle, Clock, ExternalLink, Trash2, Eye, RefreshCw } from "lucide-react";
