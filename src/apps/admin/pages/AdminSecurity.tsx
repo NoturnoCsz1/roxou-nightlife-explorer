@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original (Fase 6H) */
 import { useEffect, useState } from "react";
 import { Shield, AlertTriangle, Flag, Ban, Eye, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
