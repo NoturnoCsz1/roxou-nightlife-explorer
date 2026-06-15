@@ -42,7 +42,7 @@ const EventoBulkForm = lazy(() => import("./pages/admin/EventoBulkForm"));
 const Sugestoes = lazy(() => import("./apps/admin/pages/Sugestoes"));
 const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
 const InstagramAdminPage = lazy(() => import("./apps/admin/pages/InstagramAdmin"));
-const RadarIA = lazy(() => import("./pages/admin/RadarIA"));
+const RadarIA = lazy(() => import("./apps/admin/pages/RadarIA"));
 const AutoReels = lazy(() => import("./apps/admin/pages/AutoReels"));
 const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
 const AuraCommand = lazy(() => import("./pages/admin/AuraCommand"));
