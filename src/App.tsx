@@ -38,7 +38,7 @@ const ParceiroForm = lazy(() => import("./apps/admin/pages/ParceiroForm"));
 const EstabelecimentosAudit = lazy(() => import("./apps/admin/pages/EstabelecimentosAudit"));
 const EventosList = lazy(() => import("./apps/admin/pages/EventosList"));
 const EventoForm = lazy(() => import("./apps/admin/pages/EventoForm"));
-const EventoBulkForm = lazy(() => import("./pages/admin/EventoBulkForm"));
+const EventoBulkForm = lazy(() => import("./apps/admin/pages/EventoBulkForm"));
 const Sugestoes = lazy(() => import("./apps/admin/pages/Sugestoes"));
 const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
 const InstagramAdminPage = lazy(() => import("./apps/admin/pages/InstagramAdmin"));
