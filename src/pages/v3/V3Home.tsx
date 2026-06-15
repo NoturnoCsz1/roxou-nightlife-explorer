@@ -194,8 +194,6 @@ export default function V3Home() {
         events={events}
       />
 
-      {/* `todayEvents`, `maxViews` e contadores são consumidos via props acima — referência aqui evita warnings */}
-      {void todayEvents}{void maxViews}
     </div>
   );
 }
