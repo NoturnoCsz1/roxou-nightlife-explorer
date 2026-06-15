@@ -9,14 +9,14 @@ export function useHomeCarousels(heroEvents: Ev[]) {
   const [isHeroPaused, setIsHeroPaused] = useState(false);
 
   // Autoplay do hero — avança a cada 4500ms, para com > 1 evento
+  const total = (heroEvents ?? []).length;
   useEffect(() => {
-    const total = (heroEvents ?? []).length;
     if (total <= 1 || isHeroPaused) return;
     const id = setInterval(() => {
       setHeroIdx(prev => (prev + 1) % total);
     }, 4500);
     return () => clearInterval(id);
-  }, [(heroEvents ?? []).length, isHeroPaused]);
+  }, [total, isHeroPaused]);
 
   return { heroIdx, setHeroIdx, isHeroPaused, setIsHeroPaused };
 }
