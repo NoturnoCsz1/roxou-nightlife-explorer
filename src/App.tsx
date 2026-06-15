@@ -51,9 +51,9 @@ const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
 const Editores = lazy(() => import("./pages/admin/Editores"));
 const NoticiasList = lazy(() => import("./pages/admin/NoticiasList"));
 const NoticiaForm = lazy(() => import("./pages/admin/NoticiaForm"));
-const Premiacoes = lazy(() => import("./pages/admin/Premiacoes"));
-const Artes = lazy(() => import("./pages/admin/Artes"));
-const StoryAgendaDoDia = lazy(() => import("./pages/admin/StoryAgendaDoDia"));
+const Premiacoes = lazy(() => import("./apps/admin/pages/Premiacoes"));
+const Artes = lazy(() => import("./apps/admin/pages/Artes"));
+const StoryAgendaDoDia = lazy(() => import("./apps/admin/pages/StoryAgendaDoDia"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
 // V3 (público) — somente Home/Layout/Auth ficam eager (LCP + entrada).
