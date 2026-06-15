@@ -350,14 +350,23 @@ export default function PertoDeMim() {
               </button>
             </div>
 
-            <RoxouNearbyEventsMap
-              userLocation={realLocation}
-              events={sorted.map((s) => s.e)}
-              height={420}
-              heatmap={showHeatmap}
-              selectionMode={selectionMode}
-              onMapClick={handleMapClick}
-            />
+            <Suspense
+              fallback={
+                <div
+                  style={{ height: 420 }}
+                  className="w-full rounded-xl bg-white/5 border border-white/10 animate-pulse"
+                />
+              }
+            >
+              <RoxouNearbyEventsMap
+                userLocation={realLocation}
+                events={sorted.map((s) => s.e)}
+                height={420}
+                heatmap={showHeatmap}
+                selectionMode={selectionMode}
+                onMapClick={handleMapClick}
+              />
+            </Suspense>
 
             {/* Bombando perto de você */}
             {trending.length > 0 && (
