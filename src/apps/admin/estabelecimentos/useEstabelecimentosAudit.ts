@@ -234,6 +234,7 @@ export function useEstabelecimentosAudit() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- comportamento idêntico ao original (Fase 3A)
   useEffect(() => { load(); }, []);
 
   async function load() {
@@ -314,6 +315,7 @@ export function useEstabelecimentosAudit() {
     });
     const avgScore = total > 0 ? Math.round(scoreSum / total) : 0;
     return { total, ativo, destaque, oficial, errors, completos, precisamAtencao, semLogo, semCoords, semInstagram, semDescricao, semEstilo, avgScore };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps idênticas ao original (Fase 3A)
   }, [items, metrics]);
 
   const fixFirst = useMemo(() => {
