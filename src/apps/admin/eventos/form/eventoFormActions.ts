@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import type React from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
