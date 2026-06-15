@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps -- preservado do original (Fase 6G) */
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original (Fase 6G) */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -97,7 +97,7 @@ function formatDateForInput(iso: string | null): string {
       const pad = (n: number) => String(n).padStart(2, "0");
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
-  } catch {}
+  } catch { /* ignore parse errors */ }
   return "";
 }
 
