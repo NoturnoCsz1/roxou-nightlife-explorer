@@ -533,8 +533,8 @@ const RadarIA = () => {
     setLoading(false);
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tab, filters]);
-  useEffect(() => { clearSelection(); /* eslint-disable-next-line */ }, [tab]);
+  useEffect(() => { load(); }, [tab, filters]);
+  useEffect(() => { clearSelection(); }, [tab]);
 
   async function triggerScan() {
     setScanning(true);
