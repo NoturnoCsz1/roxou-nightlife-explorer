@@ -76,7 +76,6 @@ export default function V3Home() {
     }
     console.log("[Sorriso ℹ️] mainEvents (CommandCenter) = merge de trending + featured + weekEvents, excluindo usedIds.");
     console.groupEnd();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, rawTodayEvents, heroEvents, trending, featured, weekEvents, weeklyHighlight]);
 
   // [HOME DEBUG] temporário — preservado da implementação original.
