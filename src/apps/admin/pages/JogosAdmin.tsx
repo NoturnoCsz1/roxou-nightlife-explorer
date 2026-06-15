@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/exhaustive-deps -- preservado do original (Fase 6D) */
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original (Fase 6D) */
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
