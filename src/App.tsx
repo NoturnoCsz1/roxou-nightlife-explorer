@@ -31,7 +31,7 @@ const RoxouNoticia = lazy(() => import("./pages/RoxouNoticia"));
 
 // Admin (lazy — rotas privadas/raras)
 import AdminLayout from "./components/admin/AdminLayout";
-const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminLogin = lazy(() => import("./apps/admin/pages/AdminLogin"));
 const Dashboard = lazy(() => import("./apps/admin/pages/Dashboard"));
 const ParceirosList = lazy(() => import("./apps/admin/pages/ParceirosList"));
 const ParceiroForm = lazy(() => import("./apps/admin/pages/ParceiroForm"));
@@ -40,15 +40,15 @@ const EventosList = lazy(() => import("./apps/admin/pages/EventosList"));
 const EventoForm = lazy(() => import("./apps/admin/pages/EventoForm"));
 const EventoBulkForm = lazy(() => import("./apps/admin/pages/EventoBulkForm"));
 const Sugestoes = lazy(() => import("./apps/admin/pages/Sugestoes"));
-const EventouAdmin = lazy(() => import("./pages/admin/EventouAdmin"));
+const EventouAdmin = lazy(() => import("./apps/admin/pages/EventouAdmin"));
 const InstagramAdminPage = lazy(() => import("./apps/admin/pages/InstagramAdmin"));
 const RadarIA = lazy(() => import("./apps/admin/pages/RadarIA"));
 const AutoReels = lazy(() => import("./apps/admin/pages/AutoReels"));
-const AdminSecurity = lazy(() => import("./pages/admin/AdminSecurity"));
-const AuraCommand = lazy(() => import("./pages/admin/AuraCommand"));
+const AdminSecurity = lazy(() => import("./apps/admin/pages/AdminSecurity"));
+const AuraCommand = lazy(() => import("./apps/admin/pages/AuraCommand"));
 const JogosAdmin = lazy(() => import("./apps/admin/pages/JogosAdmin"));
 const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
-const Editores = lazy(() => import("./pages/admin/Editores"));
+const Editores = lazy(() => import("./apps/admin/pages/Editores"));
 const NoticiasList = lazy(() => import("./apps/admin/pages/NoticiasList"));
 const NoticiaForm = lazy(() => import("./apps/admin/pages/NoticiaForm"));
 const Premiacoes = lazy(() => import("./apps/admin/pages/Premiacoes"));
