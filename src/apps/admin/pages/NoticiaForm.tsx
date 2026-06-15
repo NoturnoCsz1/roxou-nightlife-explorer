@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original (Fase 6C) */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, Save, Instagram, Sparkles, Image as ImageIcon, Rocket } from "lucide-react";

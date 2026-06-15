@@ -30,7 +30,7 @@ const NoticiasList = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(); }, []);
 
   const remove = async (id: string) => {
     if (!confirm("Excluir esta notícia?")) return;
