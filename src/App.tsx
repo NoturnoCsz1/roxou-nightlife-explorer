@@ -169,7 +169,7 @@ const App = () => (
           <Route path="/cadastro-motorista" element={L(<CadastroMotorista />)} />
           {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
           <Route path="/pedir-carona" element={<PedirCaronaGate />} />
-          <Route path="/parceiros" element={<V3Parceiros />} />
+          <Route path="/parceiros" element={L(<V3Parceiros />)} />
           <Route path="/resultados" element={L(<Resultados />)} />
           <Route path="/tabela/:slug" element={L(<TabelaCampeonato />)} />
 
@@ -179,27 +179,27 @@ const App = () => (
 
           <Route path="/" element={<V3Layout />}>
             <Route index element={<V3Home />} />
-            <Route path="descobrir" element={<V3Discover />} />
-            <Route path="agenda" element={<V3Agenda />} />
-            <Route path="perfil" element={<V3Profile />} />
-            <Route path="perfil/editar" element={<V3ProfileEdit />} />
-            <Route path="evento/:slug" element={<V3EventDetail />} />
-            <Route path="local/:slug" element={<V3LocalDetail />} />
-            <Route path="transporte" element={<V3Transport />} />
+            <Route path="descobrir" element={L(<V3Discover />)} />
+            <Route path="agenda" element={L(<V3Agenda />)} />
+            <Route path="perfil" element={L(<V3Profile />)} />
+            <Route path="perfil/editar" element={L(<V3ProfileEdit />)} />
+            <Route path="evento/:slug" element={L(<V3EventDetail />)} />
+            <Route path="local/:slug" element={L(<V3LocalDetail />)} />
+            <Route path="transporte" element={L(<V3Transport />)} />
             {/* pedir-carona desativado do fluxo público (redirecionado em rota raiz) */}
-            <Route path="motorista" element={<V3DriverBoard />} />
-            <Route path="chat/:requestId" element={<V3Chat />} />
-            <Route path="meus-pedidos" element={<V3MyRides />} />
-            <Route path="terms" element={<V3Terms />} />
-            <Route path="privacy" element={<V3Privacy />} />
-            <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
-            <Route path="economize" element={<V3Economize />} />
-            <Route path="ia" element={<V3AIChat />} />
-            <Route path="sobre" element={<V3Sobre />} />
-            <Route path="contato" element={<V3Contato />} />
+            <Route path="motorista" element={L(<V3DriverBoard />)} />
+            <Route path="chat/:requestId" element={L(<V3Chat />)} />
+            <Route path="meus-pedidos" element={L(<V3MyRides />)} />
+            <Route path="terms" element={L(<V3Terms />)} />
+            <Route path="privacy" element={L(<V3Privacy />)} />
+            <Route path="terms-acceptance" element={L(<V3TermsAcceptance />)} />
+            <Route path="economize" element={L(<V3Economize />)} />
+            <Route path="ia" element={L(<V3AIChat />)} />
+            <Route path="sobre" element={L(<V3Sobre />)} />
+            <Route path="contato" element={L(<V3Contato />)} />
             <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
-            <Route path="rankings" element={<V3Rankings />} />
-            <Route path="comunidade" element={<V3Community />} />
+            <Route path="rankings" element={L(<V3Rankings />)} />
+            <Route path="comunidade" element={L(<V3Community />)} />
             <Route path="jogos" element={L(<Jogos />)} />
             <Route path="copa-do-mundo-2026" element={L(<CopaDoMundo2026 />)} />
             <Route path="jogo/:slug" element={L(<JogoDetail />)} />
