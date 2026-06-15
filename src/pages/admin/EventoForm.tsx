@@ -1,11 +1,4 @@
-import EventoFormShell from "@/apps/admin/eventos/form/EventoFormShell";
-
-/**
- * Shell page — Fase 3C1.
- * Toda a lógica e composição visual vivem em `src/apps/admin/eventos/form/`.
- * Comportamento, queries Supabase, chamadas a Edge Functions, payloads e
- * ordem de execução foram preservados literalmente (ver useEventoForm.ts).
- */
-const EventoForm = () => <EventoFormShell />;
-
-export default EventoForm;
+// Re-export temporário (Fase 6A). A página foi movida para
+// `src/apps/admin/pages/EventoForm.tsx`. Mantido aqui para preservar
+// qualquer import legado durante a migração para apps/.
+export { default } from "@/apps/admin/pages/EventoForm";
