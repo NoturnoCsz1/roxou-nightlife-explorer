@@ -1,5 +1,7 @@
+import { lazy, Suspense } from "react";
 import { ExternalLink, X } from "lucide-react";
-import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
+// Lazy: leaflet só carrega quando o modal abre (Fase 7)
+const RoxouVenueMap = lazy(() => import("@/components/maps/RoxouVenueMap"));
 import type { Establishment } from "./types";
 
 interface Props {
