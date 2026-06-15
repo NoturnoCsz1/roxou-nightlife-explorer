@@ -104,12 +104,23 @@ const InstagramAdmin = () => {
     setLoading(false);
   }
 
+  async function getAuthHeaders() {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) throw new Error("Sessão expirada. Faça login novamente.");
+    return {
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
+    };
+  }
+
   async function handleConnect() {
     setConnecting(true);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=auth_url`,
-        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+        { headers }
       );
       const result = await res.json();
       if (result.authUrl) {
@@ -128,9 +139,10 @@ const InstagramAdmin = () => {
     setTesting(true);
     setTestResult(null);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=test`,
-        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+        { headers }
       );
       const result = await res.json();
       setTestResult(result);
@@ -203,9 +215,10 @@ const InstagramAdmin = () => {
     if (!silent) setSyncing(true);
     setSyncStage("loading");
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/instagram-oauth?action=sync`,
-        { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } }
+        { headers }
       );
       const result = await res.json();
       if (result.ok) {
