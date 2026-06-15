@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks -- preservado do original (Fase 6H) */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
