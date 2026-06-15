@@ -5,9 +5,14 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@public/*": ["./src/apps/public/*"],
+      "@admin/*": ["./src/apps/admin/*"],
+      "@partner/*": ["./src/apps/partner/*"],
+      "@transport/*": ["./src/apps/transport/*"],
+      "@games/*": ["./src/apps/games/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@services/*": ["./src/services/*"]
     },
     "skipLibCheck": true,
     "strictNullChecks": false

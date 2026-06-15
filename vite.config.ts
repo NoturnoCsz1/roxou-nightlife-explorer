@@ -80,6 +80,13 @@ preview: {
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@public": path.resolve(__dirname, "./src/apps/public"),
+      "@admin": path.resolve(__dirname, "./src/apps/admin"),
+      "@partner": path.resolve(__dirname, "./src/apps/partner"),
+      "@transport": path.resolve(__dirname, "./src/apps/transport"),
+      "@games": path.resolve(__dirname, "./src/apps/games"),
+      "@shared": path.resolve(__dirname, "./src/shared"),
+      "@services": path.resolve(__dirname, "./src/services"),
     },
     dedupe: ["react", "react-dom"],
   },
