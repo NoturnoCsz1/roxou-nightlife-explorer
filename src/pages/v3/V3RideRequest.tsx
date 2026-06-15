@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,14 @@ import {
   RIDE_EXPIRED_MESSAGE, toSaoPauloTimestamp,
 } from "@/lib/rideTimeRules";
 import { maskWhatsappBR } from "@/lib/v3Validation";
-import RoxouRideMap from "@/components/maps/RoxouRideMap";
+// Lazy: leaflet só carrega quando o mapa renderiza (Fase 7)
+const RoxouRideMap = lazy(() => import("@/components/maps/RoxouRideMap"));
+const MapFallback = ({ height = 220 }: { height?: number }) => (
+  <div
+    style={{ height }}
+    className="w-full rounded-xl bg-white/5 border border-white/10 animate-pulse"
+  />
+);
 
 function toLocalDatetime(iso: string): string {
   if (!iso) return "";
@@ -811,23 +818,27 @@ export default function V3RideRequest() {
           )}
 
           {(event?.latitude != null && event?.longitude != null) ? (
-            <RoxouRideMap
-              originCoords={originCoords}
-              destinationCoords={{ lat: event.latitude, lng: event.longitude }}
-              onOriginChange={handleOriginPinChange}
-              destinationLabel={event.title}
-              originLabel="Seu ponto de embarque"
-              height={220}
-            />
+            <Suspense fallback={<MapFallback />}>
+              <RoxouRideMap
+                originCoords={originCoords}
+                destinationCoords={{ lat: event.latitude, lng: event.longitude }}
+                onOriginChange={handleOriginPinChange}
+                destinationLabel={event.title}
+                originLabel="Seu ponto de embarque"
+                height={220}
+              />
+            </Suspense>
           ) : destCoords ? (
-            <RoxouRideMap
-              originCoords={originCoords}
-              destinationCoords={destCoords}
-              onOriginChange={handleOriginPinChange}
-              destinationLabel={event.title}
-              originLabel="Seu ponto de embarque"
-              height={220}
-            />
+            <Suspense fallback={<MapFallback />}>
+              <RoxouRideMap
+                originCoords={originCoords}
+                destinationCoords={destCoords}
+                onOriginChange={handleOriginPinChange}
+                destinationLabel={event.title}
+                originLabel="Seu ponto de embarque"
+                height={220}
+              />
+            </Suspense>
           ) : null}
 
           <a

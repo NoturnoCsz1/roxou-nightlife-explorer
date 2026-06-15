@@ -1,5 +1,7 @@
+import { lazy, Suspense } from "react";
 import { ExternalLink, X } from "lucide-react";
-import RoxouVenueMap from "@/components/maps/RoxouVenueMap";
+// Lazy: leaflet só carrega quando o modal abre (Fase 7)
+const RoxouVenueMap = lazy(() => import("@/components/maps/RoxouVenueMap"));
 import type { Establishment } from "./types";
 
 interface Props {
@@ -27,13 +29,22 @@ export function EstabelecimentosMapModal({ e, onClose }: Props) {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <RoxouVenueMap
-          lat={Number(e.latitude)}
-          lng={Number(e.longitude)}
-          name={e.name}
-          address={e.address}
-          height={320}
-        />
+        <Suspense
+          fallback={
+            <div
+              style={{ height: 320 }}
+              className="w-full rounded-xl bg-white/5 border border-white/10 animate-pulse"
+            />
+          }
+        >
+          <RoxouVenueMap
+            lat={Number(e.latitude)}
+            lng={Number(e.longitude)}
+            name={e.name}
+            address={e.address}
+            height={320}
+          />
+        </Suspense>
         <a
           href={`https://www.google.com/maps/dir/?api=1&destination=${e.latitude},${e.longitude}`}
           target="_blank" rel="noopener noreferrer"

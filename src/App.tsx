@@ -56,31 +56,32 @@ const Artes = lazy(() => import("./pages/admin/Artes"));
 const StoryAgendaDoDia = lazy(() => import("./pages/admin/StoryAgendaDoDia"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
-// V3 (padrão)
+// V3 (público) — somente Home/Layout/Auth ficam eager (LCP + entrada).
+// Demais rotas viram lazy para reduzir bundle inicial. (Fase 7)
 import V3Layout from "./components/v3/V3Layout";
 import V3Auth from "./pages/v3/V3Auth";
-import V3Parceiros from "./pages/v3/V3Parceiros";
-import V3Rankings from "./pages/v3/V3Rankings";
-import V3Community from "./pages/v3/V3Community";
 import V3Home from "./pages/v3/V3Home";
-import V3Discover from "./pages/v3/V3Discover";
-import V3Agenda from "./pages/v3/V3Agenda";
-import V3Profile from "./pages/v3/V3Profile";
-import V3ProfileEdit from "./pages/v3/V3ProfileEdit";
-import V3EventDetail from "./pages/v3/V3EventDetail";
-import V3LocalDetail from "./pages/v3/V3LocalDetail";
-import V3Transport from "./pages/v3/V3Transport";
-import V3RideRequest from "./pages/v3/V3RideRequest";
-import V3DriverBoard from "./pages/v3/V3DriverBoard";
-import V3Chat from "./pages/v3/V3Chat";
-import V3MyRides from "./pages/v3/V3MyRides";
-import V3Terms from "./pages/v3/V3Terms";
-import V3Privacy from "./pages/v3/V3Privacy";
-import V3TermsAcceptance from "./pages/v3/V3TermsAcceptance";
-import V3Economize from "./pages/v3/V3Economize";
-import V3AIChat from "./pages/v3/V3AIChat";
-import V3Sobre from "./pages/v3/V3Sobre";
-import V3Contato from "./pages/v3/V3Contato";
+const V3Parceiros = lazy(() => import("./pages/v3/V3Parceiros"));
+const V3Rankings = lazy(() => import("./pages/v3/V3Rankings"));
+const V3Community = lazy(() => import("./pages/v3/V3Community"));
+const V3Discover = lazy(() => import("./pages/v3/V3Discover"));
+const V3Agenda = lazy(() => import("./pages/v3/V3Agenda"));
+const V3Profile = lazy(() => import("./pages/v3/V3Profile"));
+const V3ProfileEdit = lazy(() => import("./pages/v3/V3ProfileEdit"));
+const V3EventDetail = lazy(() => import("./pages/v3/V3EventDetail"));
+const V3LocalDetail = lazy(() => import("./pages/v3/V3LocalDetail"));
+const V3Transport = lazy(() => import("./pages/v3/V3Transport"));
+const V3RideRequest = lazy(() => import("./pages/v3/V3RideRequest"));
+const V3DriverBoard = lazy(() => import("./pages/v3/V3DriverBoard"));
+const V3Chat = lazy(() => import("./pages/v3/V3Chat"));
+const V3MyRides = lazy(() => import("./pages/v3/V3MyRides"));
+const V3Terms = lazy(() => import("./pages/v3/V3Terms"));
+const V3Privacy = lazy(() => import("./pages/v3/V3Privacy"));
+const V3TermsAcceptance = lazy(() => import("./pages/v3/V3TermsAcceptance"));
+const V3Economize = lazy(() => import("./pages/v3/V3Economize"));
+const V3AIChat = lazy(() => import("./pages/v3/V3AIChat"));
+const V3Sobre = lazy(() => import("./pages/v3/V3Sobre"));
+const V3Contato = lazy(() => import("./pages/v3/V3Contato"));
 const PertoDeMim = lazy(() => import("./pages/PertoDeMim"));
 const Jogos = lazy(() => import("./pages/Jogos"));
 const JogoDetail = lazy(() => import("./pages/JogoDetail"));
@@ -168,7 +169,7 @@ const App = () => (
           <Route path="/cadastro-motorista" element={L(<CadastroMotorista />)} />
           {/* /pedir-carona só funciona vinculado a evento (eventId/eventSlug); sem evento → /agenda */}
           <Route path="/pedir-carona" element={<PedirCaronaGate />} />
-          <Route path="/parceiros" element={<V3Parceiros />} />
+          <Route path="/parceiros" element={L(<V3Parceiros />)} />
           <Route path="/resultados" element={L(<Resultados />)} />
           <Route path="/tabela/:slug" element={L(<TabelaCampeonato />)} />
 
@@ -178,27 +179,27 @@ const App = () => (
 
           <Route path="/" element={<V3Layout />}>
             <Route index element={<V3Home />} />
-            <Route path="descobrir" element={<V3Discover />} />
-            <Route path="agenda" element={<V3Agenda />} />
-            <Route path="perfil" element={<V3Profile />} />
-            <Route path="perfil/editar" element={<V3ProfileEdit />} />
-            <Route path="evento/:slug" element={<V3EventDetail />} />
-            <Route path="local/:slug" element={<V3LocalDetail />} />
-            <Route path="transporte" element={<V3Transport />} />
+            <Route path="descobrir" element={L(<V3Discover />)} />
+            <Route path="agenda" element={L(<V3Agenda />)} />
+            <Route path="perfil" element={L(<V3Profile />)} />
+            <Route path="perfil/editar" element={L(<V3ProfileEdit />)} />
+            <Route path="evento/:slug" element={L(<V3EventDetail />)} />
+            <Route path="local/:slug" element={L(<V3LocalDetail />)} />
+            <Route path="transporte" element={L(<V3Transport />)} />
             {/* pedir-carona desativado do fluxo público (redirecionado em rota raiz) */}
-            <Route path="motorista" element={<V3DriverBoard />} />
-            <Route path="chat/:requestId" element={<V3Chat />} />
-            <Route path="meus-pedidos" element={<V3MyRides />} />
-            <Route path="terms" element={<V3Terms />} />
-            <Route path="privacy" element={<V3Privacy />} />
-            <Route path="terms-acceptance" element={<V3TermsAcceptance />} />
-            <Route path="economize" element={<V3Economize />} />
-            <Route path="ia" element={<V3AIChat />} />
-            <Route path="sobre" element={<V3Sobre />} />
-            <Route path="contato" element={<V3Contato />} />
+            <Route path="motorista" element={L(<V3DriverBoard />)} />
+            <Route path="chat/:requestId" element={L(<V3Chat />)} />
+            <Route path="meus-pedidos" element={L(<V3MyRides />)} />
+            <Route path="terms" element={L(<V3Terms />)} />
+            <Route path="privacy" element={L(<V3Privacy />)} />
+            <Route path="terms-acceptance" element={L(<V3TermsAcceptance />)} />
+            <Route path="economize" element={L(<V3Economize />)} />
+            <Route path="ia" element={L(<V3AIChat />)} />
+            <Route path="sobre" element={L(<V3Sobre />)} />
+            <Route path="contato" element={L(<V3Contato />)} />
             <Route path="perto-de-mim" element={L(<PertoDeMim />)} />
-            <Route path="rankings" element={<V3Rankings />} />
-            <Route path="comunidade" element={<V3Community />} />
+            <Route path="rankings" element={L(<V3Rankings />)} />
+            <Route path="comunidade" element={L(<V3Community />)} />
             <Route path="jogos" element={L(<Jogos />)} />
             <Route path="copa-do-mundo-2026" element={L(<CopaDoMundo2026 />)} />
             <Route path="jogo/:slug" element={L(<JogoDetail />)} />
