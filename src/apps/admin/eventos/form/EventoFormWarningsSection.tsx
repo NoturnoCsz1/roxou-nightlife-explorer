@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import { AlertTriangle } from "lucide-react";
 import type { UseEventoFormReturn } from "./useEventoForm";
 
