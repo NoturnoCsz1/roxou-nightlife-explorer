@@ -1,0 +1,8 @@
+export { default as PartnerLoginPage } from "./PartnerLoginPage";
+export { default as PartnerDashboardPage } from "./PartnerDashboardPage";
+export { default as PartnerProfilePage } from "./PartnerProfilePage";
+export { default as PartnerEventsPage } from "./PartnerEventsPage";
+export { default as PartnerReservationsPage } from "./PartnerReservationsPage";
+export { default as PartnerVipListPage } from "./PartnerVipListPage";
+export { default as PartnerAnalyticsPage } from "./PartnerAnalyticsPage";
+export { default as PartnerSettingsPage } from "./PartnerSettingsPage";
