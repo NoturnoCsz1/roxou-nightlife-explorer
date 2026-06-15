@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- bridge tipado fraco até src/types/db.ts (Fase 3) */
 /**
  * adminFetch — headers autenticados para chamadas fetch a Edge Functions
  * que usam `requireAdmin`.
