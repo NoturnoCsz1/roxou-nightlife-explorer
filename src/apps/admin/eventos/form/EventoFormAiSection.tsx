@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import { Loader2, Sparkles } from "lucide-react";
-import { INPUT_CLASS } from "./types";
+import { INPUT_CLASS } from "./constants";
 import type { UseEventoFormReturn } from "./useEventoForm";
 
 interface Props {

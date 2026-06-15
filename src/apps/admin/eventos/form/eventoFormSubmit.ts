@@ -9,7 +9,7 @@ import {
   persistValidationLog,
   REASON_LABELS,
 } from "@/lib/eventIngestionGuard";
-import { buildRoxouCaption } from "./helpers";
+import { buildRoxouCaption } from "./utils";
 import type { EventoFormActionDeps } from "./eventoFormActions";
 
 /**

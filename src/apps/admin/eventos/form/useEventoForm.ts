@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { isoToSpLocal } from "@/lib/dateUtils";
 import { emptyTransmission, type TransmissionFields } from "@/components/admin/TransmissionSection";
-import { slugify } from "./helpers";
+import { slugify } from "./utils";
 import { createEventoFormActions } from "./eventoFormActions";
 import type { DuplicateCandidate, EventoFormState, Partner, SectionsState } from "./types";
 
