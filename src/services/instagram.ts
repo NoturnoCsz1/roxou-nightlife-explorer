@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- bridge tipado fraco até src/types/db.ts (Fase 3) */
 /**
  * services/instagram.ts — leitura de tabelas Instagram.
  * ADITIVO.
