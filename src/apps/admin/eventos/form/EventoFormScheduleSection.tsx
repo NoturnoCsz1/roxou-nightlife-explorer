@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import EventoFormSectionHeader from "./EventoFormSectionHeader";
 import EventoFormAiSection from "./EventoFormAiSection";
 import EventoFormSeoSection from "./EventoFormSeoSection";

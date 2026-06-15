@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import InstagramImportModal from "@/components/admin/InstagramImportModal";
 import TransmissionSection, { type TransmissionFields } from "@/components/admin/TransmissionSection";
 import { Save } from "lucide-react";

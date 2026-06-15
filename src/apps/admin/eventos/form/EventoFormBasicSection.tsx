@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import DateTimePickerSP from "@/components/admin/DateTimePickerSP";
 import {
   ADMIN_MAIN_CATEGORIES,
