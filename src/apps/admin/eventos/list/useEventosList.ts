@@ -484,7 +484,7 @@ export function useEventosList() {
       if (extraFilter === "aura") return e.aura_pick;
       if (extraFilter === "destaques") return e.featured;
       if (extraFilter === "sem-imagem") return !e.image_url;
-      if (extraFilter === "incompletos") return getChecklist(e).complete === false ? true : false;
+      if (extraFilter === "incompletos") return getQualityScore(e) < 100;
       if (extraFilter === "em-alta")
         return (
           e.aura_badge === "em_alta" || e.aura_badge === "viralizando" || e.aura_badge === "bombando"
