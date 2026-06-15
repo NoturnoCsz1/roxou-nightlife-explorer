@@ -77,6 +77,14 @@ preview: {
         ],
       },
     }),
+    // Análise opcional do bundle: rodar com `ANALYZE=1 vite build` (Fase 7).
+    process.env.ANALYZE && visualizer({
+      filename: "dist/stats.html",
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+      open: false,
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {
