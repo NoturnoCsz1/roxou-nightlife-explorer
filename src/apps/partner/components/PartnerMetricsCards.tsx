@@ -23,11 +23,11 @@ function Kpi({
   placeholder?: boolean;
 }) {
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-          <Icon className="h-3.5 w-3.5" />
-          <span>{label}</span>
+        <div className="flex items-center gap-2 text-muted-foreground text-xs min-w-0">
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{label}</span>
         </div>
         <div className="mt-2 text-2xl font-semibold">
           {placeholder ? "—" : value.toLocaleString("pt-BR")}
