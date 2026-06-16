@@ -227,9 +227,28 @@ const AdminSystem = () => {
           )}
         </Card>
 
+        <Card title="Runtime · Eventos em Lote" icon={Workflow}>
+          <p><span className="text-foreground/80">Fila de flyers:</span> {runtime.queueSize}</p>
+          <p><span className="text-foreground/80">Workers ativos:</span> {runtime.activeWorkers}</p>
+          <p><span className="text-foreground/80">Fila de descrições:</span> {runtime.descriptionQueueSize}</p>
+          <p><span className="text-foreground/80">Prontos:</span> {runtime.readyCount} · erros: {runtime.errorCount} · cancelados: {runtime.cancelledCount}</p>
+          <p>
+            <span className="text-foreground/80">Heap JS:</span>{" "}
+            {runtime.heapUsed != null && runtime.heapTotal != null
+              ? `${bytesToMb(runtime.heapUsed)} / ${bytesToMb(runtime.heapTotal)}`
+              : "—"}
+          </p>
+          {runtime.cancelRequested && (
+            <p className="text-amber-300">Cancelamento solicitado.</p>
+          )}
+          <p className="text-[10px] opacity-70">
+            Snapshot atualizado a cada 1s a partir do EventoBulkForm aberto nesta aba.
+          </p>
+        </Card>
+
         <Card title="Última verificação" icon={Activity}>
           <p>{new Date(now).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
-          <p className="text-[10px]">Auto-refresh a cada 5s.</p>
+          <p className="text-[10px]">Auto-refresh: host/PM2 5s · runtime 1s.</p>
         </Card>
       </div>
     </div>
