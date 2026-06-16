@@ -54,7 +54,9 @@ const NoticiaForm = lazy(() => import("./apps/admin/pages/NoticiaForm"));
 const Premiacoes = lazy(() => import("./apps/admin/pages/Premiacoes"));
 const Artes = lazy(() => import("./apps/admin/pages/Artes"));
 const StoryAgendaDoDia = lazy(() => import("./apps/admin/pages/StoryAgendaDoDia"));
+const PartnerAccessRequests = lazy(() => import("./apps/admin/pages/PartnerAccessRequests"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
+
 
 // Partner Pro Preview (Fase 9J) — beta interno, gateado pelo AdminLayout
 const PartnerPreviewLayout = lazy(
