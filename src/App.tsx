@@ -84,6 +84,9 @@ const PartnerAnalyticsPage = lazy(
 const PartnerSettingsPage = lazy(
   () => import("./apps/partner/pages/PartnerSettingsPage"),
 );
+const PartnerBetaLandingPage = lazy(
+  () => import("./apps/partner/pages/PartnerBetaLandingPage"),
+);
 
 // V3 (público) — somente Home/Layout/Auth ficam eager (LCP + entrada).
 // Demais rotas viram lazy para reduzir bundle inicial. (Fase 7)
