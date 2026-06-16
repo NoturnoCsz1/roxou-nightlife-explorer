@@ -4265,8 +4265,10 @@ export type Database = {
       compute_partner_vip_list_state: {
         Args: {
           _closes_at: string
+          _ends_at?: string
           _event_id: string
           _max_entries: number
+          _starts_at?: string
           _status: string
           _used: number
         }
