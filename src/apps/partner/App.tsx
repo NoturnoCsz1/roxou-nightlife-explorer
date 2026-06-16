@@ -66,8 +66,15 @@ const PartnerApp = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Login fica fora do layout (sem provider/gate). */}
+          {/* Rotas sem layout/gate */}
           <Route path="/login" element={<PartnerLoginPage />} />
+          <Route path="/onboarding" element={L(<PartnerOnboardingPage />)} />
+          <Route path="/pending" element={L(<PartnerPendingApprovalPage />)} />
+          <Route
+            path="/solicitacao-enviada"
+            element={L(<PartnerRequestSuccessPage />)}
+          />
+
 
           <Route path="/" element={<PartnerStandaloneLayout />}>
             <Route index element={L(<PartnerBetaLandingPage />)} />
