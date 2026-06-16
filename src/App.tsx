@@ -127,6 +127,9 @@ const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 const SEOLanding = lazy(() => import("./pages/SEOLanding"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
+const PublicVipList = lazy(() => import("./pages/PublicVipList"));
+const PublicVipListSuccess = lazy(() => import("./pages/PublicVipListSuccess"));
+
 import PedirCaronaGate from "./components/PedirCaronaGate";
 
 // Legacy v2 (arquivado em /archive/legacy-v2/*) — lazy
@@ -209,6 +212,14 @@ const App = () => (
 
           {/* ========= CONTATO ========= */}
           <Route path="/contato" element={L(<Contato />)} />
+
+          {/* ========= LISTA VIP PÚBLICA (Fase 10E) ========= */}
+          <Route path="/vip/:publicSlug" element={L(<PublicVipList />)} />
+          <Route
+            path="/vip/:publicSlug/sucesso/:publicToken"
+            element={L(<PublicVipListSuccess />)}
+          />
+
 
           {/* ========= EXPO 2026 — DESATIVADA (redireciona para Home) ========= */}
           <Route path="/expo2026" element={<Navigate to="/" replace />} />

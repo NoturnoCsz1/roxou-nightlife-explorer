@@ -16,11 +16,14 @@ import {
   openVipList,
   closeVipList,
   archiveVipList,
+  setVipListPublicEnabled,
   computeVipListStats,
+  computePromoterStats,
   type PartnerVipEntry,
   type PartnerVipList,
   type VipEntryPayload,
 } from "../services/partnerVipLists";
+
 import {
   listPromoters,
   createPromoter,
@@ -35,11 +38,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { VipListStatusBadge } from "../components/VipListStatusBadge";
 import { VipListStats } from "../components/VipListStats";
 import { VipEntryForm } from "../components/VipEntryForm";
 import { VipEntryTable } from "../components/VipEntryTable";
 import { VipCheckInPanel } from "../components/VipCheckInPanel";
+
 
 interface Props {
   listId: string;
@@ -47,9 +52,11 @@ interface Props {
 
 const PartnerVipListDetailPage = ({ listId }: Props) => {
   const { role } = usePartnerAuth();
+  const { toast } = useToast();
   const canEdit = canManageEvents(role);
   const canLifecycle = canEditProfile(role);
   const canCheckIn = canManageReservations(role) || canEdit;
+
 
   const [list, setList] = useState<PartnerVipList | null>(null);
   const [entries, setEntries] = useState<PartnerVipEntry[]>([]);
@@ -118,6 +125,38 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
       setBusy(false);
     }
   };
+
+  const togglePublic = async () => {
+    if (!list) return;
+    setBusy(true);
+    try {
+      const updated = await setVipListPublicEnabled(list.id, !list.public_enabled);
+      setList(updated);
+      toast({
+        title: updated.public_enabled
+          ? "Link público ativado"
+          : "Link público desativado",
+      });
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Falha ao alterar.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copiado!" });
+    } catch {
+      toast({ title: "Não foi possível copiar.", variant: "destructive" });
+    }
+  };
+
 
   const filteredEntries = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -224,6 +263,104 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
       </header>
 
       <VipListStats stats={stats} />
+
+      {/* ===== Link público (Fase 10E) ===== */}
+      <Card className="p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="min-w-0">
+            <h2 className="font-semibold">Link público</h2>
+            <p className="text-xs text-muted-foreground break-words">
+              Compartilhe para que convidados se cadastrem sozinhos.
+            </p>
+          </div>
+          {canLifecycle ? (
+            <Button
+              size="sm"
+              variant={list.public_enabled ? "secondary" : "default"}
+              onClick={() => void togglePublic()}
+              disabled={busy}
+            >
+              {list.public_enabled ? "Desativar" : "Ativar link público"}
+            </Button>
+          ) : null}
+        </div>
+        {list.public_enabled ? (
+          <>
+            {(() => {
+              const base =
+                typeof window !== "undefined"
+                  ? `${window.location.protocol}//${window.location.host.replace(/^parceiro\./, "")}`
+                  : "https://roxou.com.br";
+              const publicUrl = `${base}/vip/${list.public_slug}`;
+              return (
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input value={publicUrl} readOnly className="text-xs" />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => void copyLink(publicUrl)}
+                      >
+                        Copiar
+                      </Button>
+                      <Button size="sm" asChild>
+                        <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                          Abrir
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {promoters.length > 0 ? (
+                    <div className="space-y-2 pt-2 border-t border-border/40">
+                      <p className="text-xs font-medium">Links por promoter</p>
+                      <ul className="space-y-2">
+                        {promoters.map((p) => {
+                          const url = `${publicUrl}?promoter=${p.slug}`;
+                          const s = computePromoterStats(entries, p.id);
+                          return (
+                            <li
+                              key={p.id}
+                              className="flex flex-col gap-1 rounded border border-border/40 p-2 min-w-0"
+                            >
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <span className="text-sm font-medium truncate">
+                                  {p.name}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {s.signups} inscritos · {s.people} pessoas ·{" "}
+                                  {s.checkedIn} check-ins · {s.noShow} no-show
+                                </span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row gap-1">
+                                <Input value={url} readOnly className="text-[10px]" />
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => void copyLink(url)}
+                                >
+                                  Copiar
+                                </Button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })()}
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Ative para gerar o link público <code>/vip/{list.public_slug}</code>.
+          </p>
+        )}
+      </Card>
+
+
 
       <div className="flex gap-2 border-b overflow-x-auto">
         <button

@@ -1,0 +1,1 @@
+ALTER TABLE public.partner_promoters ALTER COLUMN slug SET DEFAULT '';

@@ -2041,6 +2041,7 @@ export type Database = {
           name: string
           partner_id: string
           phone: string | null
+          slug: string
           updated_at: string
         }
         Insert: {
@@ -2051,6 +2052,7 @@ export type Database = {
           name: string
           partner_id: string
           phone?: string | null
+          slug?: string
           updated_at?: string
         }
         Update: {
@@ -2061,6 +2063,7 @@ export type Database = {
           name?: string
           partner_id?: string
           phone?: string | null
+          slug?: string
           updated_at?: string
         }
         Relationships: [
@@ -2385,6 +2388,10 @@ export type Database = {
           phone: string | null
           promoter_id: string | null
           promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -2402,6 +2409,10 @@ export type Database = {
           phone?: string | null
           promoter_id?: string | null
           promoter_name_snapshot?: string | null
+          public_submitted_at?: string | null
+          public_token?: string
+          qr_code_payload?: string | null
+          source?: string
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -2419,6 +2430,10 @@ export type Database = {
           phone?: string | null
           promoter_id?: string | null
           promoter_name_snapshot?: string | null
+          public_submitted_at?: string | null
+          public_token?: string
+          qr_code_payload?: string | null
+          source?: string
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -2470,7 +2485,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
@@ -2483,7 +2506,15 @@ export type Database = {
           event_id?: string | null
           id?: string
           max_entries?: number | null
+          max_entries_per_person?: number
           partner_id: string
+          public_cover_url?: string | null
+          public_description?: string | null
+          public_enabled?: boolean
+          public_rules?: string | null
+          public_slug: string
+          public_title?: string | null
+          requires_approval?: boolean
           starts_at?: string | null
           status?: string
           title: string
@@ -2496,7 +2527,15 @@ export type Database = {
           event_id?: string | null
           id?: string
           max_entries?: number | null
+          max_entries_per_person?: number
           partner_id?: string
+          public_cover_url?: string | null
+          public_description?: string | null
+          public_enabled?: boolean
+          public_rules?: string | null
+          public_slug?: string
+          public_title?: string | null
+          requires_approval?: boolean
           starts_at?: string | null
           status?: string
           title?: string
@@ -3744,7 +3783,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
@@ -3771,6 +3818,10 @@ export type Database = {
           phone: string | null
           promoter_id: string | null
           promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -3944,7 +3995,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
@@ -3972,6 +4031,10 @@ export type Database = {
           phone: string | null
           promoter_id: string | null
           promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -3998,6 +4061,10 @@ export type Database = {
           phone: string | null
           promoter_id: string | null
           promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -4020,7 +4087,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
@@ -4144,7 +4219,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
@@ -4223,6 +4306,37 @@ export type Database = {
         }
       }
       expire_stale_ride_requests: { Args: never; Returns: number }
+      get_public_vip_list: { Args: { p_public_slug: string }; Returns: Json }
+      get_vip_entry_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_list_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4262,6 +4376,10 @@ export type Database = {
           phone: string | null
           promoter_id: string | null
           promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -4283,7 +4401,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
@@ -4366,6 +4492,47 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_partner_vip_list_public_enabled: {
+        Args: { _enabled: boolean; _list_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          max_entries_per_person: number
+          partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_public_vip_entry: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_people_count: number
+          p_phone: string
+          p_promoter_slug?: string
+          p_public_slug: string
+        }
+        Returns: Json
       }
       update_partner_event: {
         Args: { _event_id: string; _payload: Json }
@@ -4528,6 +4695,10 @@ export type Database = {
           phone: string | null
           promoter_id: string | null
           promoter_name_snapshot: string | null
+          public_submitted_at: string | null
+          public_token: string
+          qr_code_payload: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -4549,7 +4720,15 @@ export type Database = {
           event_id: string | null
           id: string
           max_entries: number | null
+          max_entries_per_person: number
           partner_id: string
+          public_cover_url: string | null
+          public_description: string | null
+          public_enabled: boolean
+          public_rules: string | null
+          public_slug: string
+          public_title: string | null
+          requires_approval: boolean
           starts_at: string | null
           status: string
           title: string
