@@ -1,28 +1,28 @@
 /**
- * PartnerLoginPage — Fase 10A.
+ * PartnerLoginPage — Fase 10A (hotfix botões).
  *
  * Tela inicial de `parceiro.roxou.com.br`.
- * - Login Google via Lovable Auth (compartilhado com a Roxou pública).
- * - CTA "Solicitar acesso ao Partner Pro" que roteia de forma inteligente
- *   conforme o estado do usuário (deslogado / sem acesso / pending / ativo).
+ * - Login Google via supabase.auth.signInWithOAuth (direto, sem broker).
+ * - CTA "Solicitar acesso" que roteia conforme o estado do usuário.
+ *
+ * Causa raiz do bug anterior:
+ *   `lovable.auth.signInWithOAuth("google", ...)` exigia o broker
+ *   `/~oauth/initiate` no subdomínio `parceiro.roxou.com.br`, que não
+ *   está configurado no Nginx — a chamada falhava silenciosamente e os
+ *   botões pareciam não fazer nada. Trocamos para o cliente Supabase
+ *   direto, que faz `window.location` para o endpoint OAuth oficial.
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { listMyAccessRequests } from "../services/partnerAccessRequests";
 
-/** Caminho absoluto sempre dentro do subdomínio Partner Pro. */
-const partnerOrigin = () => {
-  if (typeof window === "undefined") return "";
-  return window.location.origin;
-};
+const partnerOrigin = () =>
+  typeof window === "undefined" ? "" : window.location.origin;
 
 const buildPartnerUrl = (path: string) => `${partnerOrigin()}${path}`;
 
-/** Lê ?next= e devolve um path interno seguro (começa com "/"). */
 const readNextParam = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
@@ -35,9 +35,7 @@ const readNextParam = (): string | null => {
   return null;
 };
 
-/** Decide para onde mandar um usuário logado dentro do Partner Pro. */
 async function resolveDestination(userId: string): Promise<string> {
-  // 1) Acesso ativo => dashboard
   const { data: beta } = await supabase
     .from("partner_beta_access")
     .select("partner_id")
@@ -54,7 +52,6 @@ async function resolveDestination(userId: string): Promise<string> {
     .limit(1);
   if (pu && pu.length > 0) return "/dashboard";
 
-  // 2) Pending => /pending
   try {
     const reqs = await listMyAccessRequests();
     if (reqs.some((r) => r.status === "pending")) return "/pending";
@@ -62,8 +59,25 @@ async function resolveDestination(userId: string): Promise<string> {
     /* noop */
   }
 
-  // 3) Sem nada => onboarding
   return "/onboarding";
+}
+
+async function startGoogleOAuth(redirectPath: string) {
+  const redirectTo = buildPartnerUrl(redirectPath);
+  // eslint-disable-next-line no-console
+  console.log("[PARTNER LOGIN] signInWithOAuth → redirectTo:", redirectTo);
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo },
+  });
+  if (error) throw error;
+  // eslint-disable-next-line no-console
+  console.log("[PARTNER LOGIN] OAuth response:", data);
+  // O cliente Supabase normalmente faz window.location.href = data.url.
+  // Garantimos isso como fallback:
+  if (data?.url && typeof window !== "undefined") {
+    window.location.href = data.url;
+  }
 }
 
 const PartnerLoginPage = () => {
@@ -85,44 +99,38 @@ const PartnerLoginPage = () => {
     };
   }, [navigate]);
 
-  const startGoogle = async (nextPath: string) => {
-    const redirectTo = buildPartnerUrl(nextPath);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: redirectTo,
-    });
-    if (result.error) throw result.error;
-    if (result.redirected) return true;
-    return false;
-  };
-
   const handleGoogle = async () => {
+    // eslint-disable-next-line no-console
+    console.log("[PARTNER LOGIN] Google button clicked");
     setGoogleLoading(true);
     try {
       const next = readNextParam() ?? "/dashboard";
-      const redirected = await startGoogle(next);
-      if (!redirected) navigate(next, { replace: true });
+      await startGoogleOAuth(next);
     } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[PARTNER LOGIN] Google OAuth error:", err);
       toast.error(
         err instanceof Error ? err.message : "Erro ao entrar com Google",
       );
-    } finally {
       setGoogleLoading(false);
     }
   };
 
   const handleRequestAccess = async () => {
+    // eslint-disable-next-line no-console
+    console.log("[PARTNER LOGIN] Access request clicked");
     setRequestLoading(true);
     try {
       const { data } = await supabase.auth.getUser();
       if (!data?.user) {
-        // Não logado: inicia Google e retorna direto no /onboarding.
-        const redirected = await startGoogle("/onboarding");
-        if (!redirected) navigate("/onboarding");
+        await startGoogleOAuth("/onboarding");
         return;
       }
       const dest = await resolveDestination(data.user.id);
       navigate(dest);
     } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[PARTNER LOGIN] Access request error:", err);
       toast.error(
         err instanceof Error ? err.message : "Não foi possível continuar",
       );
@@ -130,6 +138,8 @@ const PartnerLoginPage = () => {
       setRequestLoading(false);
     }
   };
+
+  const busy = googleLoading || requestLoading;
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
@@ -146,24 +156,24 @@ const PartnerLoginPage = () => {
           </p>
         </header>
 
-        <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-3">
-          <Button
-            variant="outline"
-            className="w-full"
+        <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-3 relative z-10">
+          <button
+            type="button"
             onClick={handleGoogle}
-            disabled={googleLoading || requestLoading}
+            disabled={busy}
+            className="w-full h-11 rounded-md border border-border bg-background hover:bg-muted text-foreground font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {googleLoading ? "Entrando..." : "Entrar com Google"}
-          </Button>
+          </button>
 
-          <Button
-            variant="default"
-            className="w-full"
+          <button
+            type="button"
             onClick={handleRequestAccess}
-            disabled={googleLoading || requestLoading}
+            disabled={busy}
+            className="w-full h-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {requestLoading ? "Abrindo..." : "Solicitar acesso ao Partner Pro"}
-          </Button>
+          </button>
 
           <p className="text-[11px] text-muted-foreground text-center pt-1">
             Disponível apenas para estabelecimentos já cadastrados na Roxou.
