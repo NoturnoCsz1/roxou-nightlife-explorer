@@ -13,6 +13,12 @@ import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { sha256File } from "@/lib/imageHash";
 import {
+  compressImage,
+  readExtractionCache,
+  writeExtractionCache,
+  bulkLog,
+} from "@/lib/bulkEventsImage";
+import {
   findPossibleDuplicateEvent,
   generateEventDedupeKey,
   generateFlyerFingerprint,
@@ -193,6 +199,22 @@ const EventoBulkForm = () => {
     });
   }, [cityFilter]);
 
+  // FIX bulk_events_performance — avisa antes de sair com lote em andamento
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const inflight = items.some(
+        (it) => it.status === "queued" || it.status === "uploading" || it.status === "extracting",
+      );
+      if (!inflight && !bulkAiRunning) return;
+      e.preventDefault();
+      e.returnValue = "Lote em processamento. Sair agora pode perder o progresso.";
+      return e.returnValue;
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [items, bulkAiRunning]);
+
+
   /**
    * Validação inteligente (aditiva): score 0–100 por item, comparando
    * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
@@ -340,58 +362,96 @@ const EventoBulkForm = () => {
 
   async function uploadAndProcess(file: File, localId: string) {
     patchItem(localId, { status: "uploading", errorMsg: undefined });
+    const t0 = performance.now();
+    bulkLog("extraction_start", { id: localId, file: file.name });
     try {
-      const imageHash = await sha256File(file);
-      // 1. upload to storage
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `events/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
+      // 0. Compressão antes do upload (resize 1600px, JPEG q=0.8).
+      const { file: workFile, bytesBefore, bytesAfter, compressed } =
+        await compressImage(file);
+      if (compressed) {
+        bulkLog("resized", {
+          id: localId,
+          file: file.name,
+          size_before: bytesBefore,
+          size_after: bytesAfter,
+        });
+      }
+      // Atualiza referência para retry usar o arquivo já comprimido.
+      fileMapRef.current.set(localId, workFile);
+
+      // 1. Hash da imagem comprimida (image_hash final).
+      const imageHash = await sha256File(workFile);
+
+      // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
+      const cached = readExtractionCache<any>(file);
+      let publicUrl: string | null = cached?.image_url ?? null;
+
+      if (!publicUrl) {
+        // 2. Upload (somente se cache não tiver image_url válida).
+        const ext = (workFile.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `events/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("uploads")
+          .upload(path, workFile, { cacheControl: "3600", upsert: false });
+        if (upErr) throw upErr;
+        publicUrl = supabase.storage.from("uploads").getPublicUrl(path).data.publicUrl;
+      } else {
+        bulkLog("cache_hit_url", { id: localId, file: file.name });
+      }
 
       patchItem(localId, { status: "extracting" });
       patchForm(localId, { image_url: publicUrl });
 
-      // 2. AI extract — wait fully and validate before downstream calls
+      // 3. AI extract — com fallback ao cache.
       const bdNow = batchDefaultsRef.current;
       const bdPartner = bdNow.enabled && bdNow.partner_id ? partners.find((p) => p.id === bdNow.partner_id) : null;
-      const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
-        body: {
-          image_url: publicUrl,
-          current_year: new Date().getFullYear(),
-          verified_partners: partners
-            .filter((p: any) => p.verified_partner)
-            .map((p: any) => ({
-              name: p.name,
-              address: p.address,
-              instagram: p.instagram,
-              type: p.type,
-              sub_category: p.sub_category,
-            })),
-          admin_feedback: adminFeedback,
-          batch_defaults: bdNow.enabled ? {
-            date: bdNow.date || null,
-            time: bdNow.time || null,
-            partner_id: bdNow.partner_id || null,
-            partner_name: bdPartner?.name || null,
-            category: bdNow.category || null,
-            sub_category: bdNow.sub_category || null,
-            mode: bdNow.mode,
-          } : null,
-        },
-      });
-      if (extractResp.error) throw extractResp.error;
-      const data = extractResp.data;
+
+      let data: any = cached?.data ?? null;
+      if (!data) {
+        const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
+          body: {
+            image_url: publicUrl,
+            current_year: new Date().getFullYear(),
+            verified_partners: partners
+              .filter((p: any) => p.verified_partner)
+              .map((p: any) => ({
+                name: p.name,
+                address: p.address,
+                instagram: p.instagram,
+                type: p.type,
+                sub_category: p.sub_category,
+              })),
+            admin_feedback: adminFeedback,
+            batch_defaults: bdNow.enabled ? {
+              date: bdNow.date || null,
+              time: bdNow.time || null,
+              partner_id: bdNow.partner_id || null,
+              partner_name: bdPartner?.name || null,
+              category: bdNow.category || null,
+              sub_category: bdNow.sub_category || null,
+              mode: bdNow.mode,
+            } : null,
+          },
+        });
+        if (extractResp.error) throw extractResp.error;
+        data = extractResp.data;
+        if (data && typeof data === "object" && !(data.error && !data.title)) {
+          writeExtractionCache(file, {
+            data,
+            image_url: publicUrl,
+            image_hash: imageHash,
+          });
+        }
+      } else {
+        bulkLog("cache_hit_data", { id: localId, file: file.name });
+      }
+
       if (!data || typeof data !== "object") {
         patchItem(localId, { status: "ready" });
+        bulkLog("extraction_done", { id: localId, duration_ms: Math.round(performance.now() - t0), cached: !!cached });
         return;
       }
       if (data.error && !data.title) {
-        // graceful: keep image, ask user to fill manually
         patchItem(localId, { status: "ready" });
         return;
       }
@@ -535,8 +595,10 @@ const EventoBulkForm = () => {
           console.warn("[bulk] auto description failed", descErr);
         }
       }
+      bulkLog("extraction_done", { id: localId, duration_ms: Math.round(performance.now() - t0) });
     } catch (err: any) {
       console.error("[bulk] process error", err);
+      bulkLog("extraction_error", { id: localId, file: file.name, message: err?.message });
       patchItem(localId, { status: "error", errorMsg: err?.message || "Falha ao processar" });
     }
   }
@@ -544,7 +606,7 @@ const EventoBulkForm = () => {
   async function handleFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
-    console.log(`[bulk] selected ${arr.length} flyer(s)`);
+    bulkLog("selected_files", { count: arr.length });
 
     // 1) Cria placeholders IMEDIATAMENTE com status "queued" — UI responde no ato.
     const placeholders: BulkItem[] = arr.map((file) => {
@@ -969,6 +1031,8 @@ const EventoBulkForm = () => {
     }
 
     setSaving(true);
+    const tSave = performance.now();
+    bulkLog("save_start", { count: toInsert.length, status });
     const nowIso = new Date().toISOString();
 
     // === Guard de ingestão por item — IMPORTANTE ===
@@ -1062,6 +1126,7 @@ const EventoBulkForm = () => {
         const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
         toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
       }
+      bulkLog("save_done", { count: payloads.length, duration_ms: Math.round(performance.now() - tSave) });
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
