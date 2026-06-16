@@ -10,3 +10,7 @@ export { default as PartnerEventFormPage } from "./PartnerEventFormPage";
 export { default as PartnerEventDetailPage } from "./PartnerEventDetailPage";
 export { default as PartnerReservationDetailPage } from "./PartnerReservationDetailPage";
 export { default as PartnerVipListDetailPage } from "./PartnerVipListDetailPage";
+export { default as PartnerOnboardingPage } from "./PartnerOnboardingPage";
+export { default as PartnerPendingApprovalPage } from "./PartnerPendingApprovalPage";
+export { default as PartnerRequestSuccessPage } from "./PartnerRequestSuccessPage";
+
