@@ -19,3 +19,12 @@ export { PartnerEventQuickActions } from "./PartnerEventQuickActions";
 export { PartnerEventCard } from "./PartnerEventCard";
 export { PartnerEventsTable } from "./PartnerEventsTable";
 export { PartnerEventForm } from "./PartnerEventForm";
+
+// Fase 9H — Partner Reservations
+export { ReservationStatusBadge } from "./ReservationStatusBadge";
+export { ReservationEmptyState } from "./ReservationEmptyState";
+export { ReservationFilters } from "./ReservationFilters";
+export { ReservationStats } from "./ReservationStats";
+export { ReservationCard } from "./ReservationCard";
+export { ReservationTable } from "./ReservationTable";
+export { ReservationSettingsForm } from "./ReservationSettingsForm";
