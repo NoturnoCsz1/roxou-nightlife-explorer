@@ -15,19 +15,19 @@ const ACTIONS = [
 
 export function PartnerQuickActions() {
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardContent className="p-4">
         <h3 className="text-sm font-medium mb-3">Ações rápidas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {ACTIONS.map((a) => (
             <button
               key={a.label}
               type="button"
               disabled
-              className="flex flex-col items-center justify-center gap-1 rounded-lg border border-border p-3 text-xs text-muted-foreground opacity-70 cursor-not-allowed"
+              className="flex w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-border p-3 text-xs text-muted-foreground opacity-70 cursor-not-allowed break-words"
             >
-              <a.icon className="h-4 w-4" />
-              <span>{a.label}</span>
+              <a.icon className="h-4 w-4 shrink-0" />
+              <span className="text-center break-words">{a.label}</span>
             </button>
           ))}
         </div>
