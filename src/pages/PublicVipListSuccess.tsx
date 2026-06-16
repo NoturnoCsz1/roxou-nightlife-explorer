@@ -23,7 +23,10 @@ import type {
   PublicVipListInfo,
   PublicVipSubmitResult,
 } from "@/services/publicVipList";
-import { getPublicVipListByPartner } from "@/services/publicVipList";
+import {
+  getPublicVipList,
+  getPublicVipListByPartner,
+} from "@/services/publicVipList";
 
 interface LocationState {
   result?: PublicVipSubmitResult;
@@ -39,9 +42,10 @@ const slugify = (s: string) =>
     .replace(/(^-+|-+$)/g, "");
 
 const PublicVipListSuccessPage = () => {
-  const { partnerSlug, publicToken } = useParams<{
-    partnerSlug: string;
-    publicToken: string;
+  const { partnerSlug, listSlug, publicToken } = useParams<{
+    partnerSlug?: string;
+    listSlug?: string;
+    publicToken?: string;
   }>();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
@@ -54,12 +58,15 @@ const PublicVipListSuccessPage = () => {
   const result = state.result;
 
   useEffect(() => {
-    if (!list && partnerSlug) {
-      getPublicVipListByPartner(partnerSlug)
-        .then(setList)
-        .catch(() => undefined);
-    }
-  }, [list, partnerSlug]);
+    if (list) return;
+    const loader = listSlug
+      ? getPublicVipList(listSlug)
+      : partnerSlug
+        ? getPublicVipListByPartner(partnerSlug)
+        : null;
+    if (!loader) return;
+    loader.then((l) => l && setList(l)).catch(() => undefined);
+  }, [list, partnerSlug, listSlug]);
 
   useEffect(() => {
     if (!publicToken) return;
