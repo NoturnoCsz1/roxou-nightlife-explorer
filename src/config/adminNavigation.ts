@@ -15,6 +15,8 @@ import {
   Search,
   Trophy,
   Briefcase,
+  Inbox,
+
   type LucideIcon,
 } from "lucide-react";
 
