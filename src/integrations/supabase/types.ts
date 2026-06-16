@@ -2032,6 +2032,54 @@ export type Database = {
           },
         ]
       }
+      partner_promoters: {
+        Row: {
+          created_at: string
+          id: string
+          instagram: string | null
+          is_active: boolean
+          name: string
+          partner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instagram?: string | null
+          is_active?: boolean
+          name: string
+          partner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instagram?: string | null
+          is_active?: boolean
+          name?: string
+          partner_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_promoters_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_promoters_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_radar_memory: {
         Row: {
           common_genres: string[]
@@ -2335,6 +2383,8 @@ export type Database = {
           partner_id: string
           people_count: number
           phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -2350,6 +2400,8 @@ export type Database = {
           partner_id: string
           people_count?: number
           phone?: string | null
+          promoter_id?: string | null
+          promoter_name_snapshot?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -2365,6 +2417,8 @@ export type Database = {
           partner_id?: string
           people_count?: number
           phone?: string | null
+          promoter_id?: string | null
+          promoter_name_snapshot?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -2390,6 +2444,13 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_vip_list_entries_promoter_id_fkey"
+            columns: ["promoter_id"]
+            isOneToOne: false
+            referencedRelation: "partner_promoters"
             referencedColumns: ["id"]
           },
           {
@@ -3708,6 +3769,8 @@ export type Database = {
           partner_id: string
           people_count: number
           phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -3907,6 +3970,8 @@ export type Database = {
           partner_id: string
           people_count: number
           phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -3931,6 +3996,8 @@ export type Database = {
           partner_id: string
           people_count: number
           phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
           status: string
           updated_at: string
           user_id: string | null
@@ -4180,6 +4247,32 @@ export type Database = {
       is_partner_reservation_manager: {
         Args: { _partner: string; _user: string }
         Returns: boolean
+      }
+      no_show_partner_vip_entry: {
+        Args: { _entry_id: string }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_list_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       open_partner_vip_list: {
         Args: { _list_id: string }
@@ -4433,6 +4526,8 @@ export type Database = {
           partner_id: string
           people_count: number
           phone: string | null
+          promoter_id: string | null
+          promoter_name_snapshot: string | null
           status: string
           updated_at: string
           user_id: string | null
