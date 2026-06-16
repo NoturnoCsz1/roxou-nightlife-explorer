@@ -1,9 +1,10 @@
 /**
- * Public VIP List service — Fase 10E
+ * Public VIP List service — Fase 10F
  *
- * Wrappers para RPCs públicas (sem login):
- *   - get_public_vip_list
- *   - submit_public_vip_entry
+ * RPCs públicas (sem login):
+ *   - get_public_vip_list(public_slug)
+ *   - get_public_vip_list_by_partner(partner_slug)
+ *   - submit_public_vip_entry(...) — 1 cadastro = 1 pessoa, com LGPD
  */
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,11 +21,15 @@ export interface PublicVipListInfo {
   max_entries: number | null;
   used_entries: number;
   max_entries_per_person: number;
+  allow_multiple_people_per_entry: boolean;
   status: string;
   requires_approval: boolean;
+  partner_id: string;
   partner_name: string | null;
   partner_city: string | null;
   partner_address: string | null;
+  partner_slug: string | null;
+  partner_logo_url: string | null;
   is_open: boolean;
 }
 
@@ -34,8 +39,10 @@ export interface PublicVipSubmitResult {
   status: string;
   qr_code_payload: string;
   list_title: string;
-  people_count: number;
   name: string;
+  phone: string | null;
+  promoter_name: string | null;
+  lead_id?: string;
 }
 
 export async function getPublicVipList(slug: string): Promise<PublicVipListInfo | null> {
@@ -47,21 +54,40 @@ export async function getPublicVipList(slug: string): Promise<PublicVipListInfo 
   return (data as unknown as PublicVipListInfo) ?? null;
 }
 
-export async function submitPublicVipEntry(input: {
+export async function getPublicVipListByPartner(
+  partnerSlug: string,
+): Promise<PublicVipListInfo | null> {
+  if (!partnerSlug) return null;
+  const { data, error } = await supabase.rpc("get_public_vip_list_by_partner", {
+    p_partner_slug: partnerSlug,
+  });
+  if (error) throw error;
+  return (data as unknown as PublicVipListInfo) ?? null;
+}
+
+export interface SubmitPublicVipInput {
   publicSlug: string;
   name: string;
   phone: string;
   email?: string | null;
-  peopleCount?: number;
   promoterSlug?: string | null;
-}): Promise<PublicVipSubmitResult> {
+  marketingConsent?: boolean;
+  whatsappConsent?: boolean;
+  emailConsent?: boolean;
+}
+
+export async function submitPublicVipEntry(
+  input: SubmitPublicVipInput,
+): Promise<PublicVipSubmitResult> {
   const { data, error } = await supabase.rpc("submit_public_vip_entry", {
     p_public_slug: input.publicSlug,
     p_name: input.name,
     p_phone: input.phone,
     p_email: input.email ?? null,
-    p_people_count: input.peopleCount ?? 1,
     p_promoter_slug: input.promoterSlug ?? null,
+    p_marketing_consent: input.marketingConsent ?? false,
+    p_whatsapp_consent: input.whatsappConsent ?? false,
+    p_email_consent: input.emailConsent ?? false,
   });
   if (error) throw error;
   if (!data) throw new Error("Não foi possível concluir a inscrição.");
