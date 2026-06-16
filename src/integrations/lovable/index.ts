@@ -14,7 +14,7 @@ export const lovable = {
     signInWithOAuth: async (provider: "google" | "apple" | "microsoft" | "lovable", opts?: SignInOptions) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const _provider = provider as any;
-      const result = await lovableAuth.signInWithOAuth(provider, {
+      const result = await lovableAuth.signInWithOAuth(_provider, {
         redirect_uri: opts?.redirect_uri,
         extraParams: {
           ...opts?.extraParams,
