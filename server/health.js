@@ -10,7 +10,7 @@
 
 import http from "node:http";
 import os from "node:os";
-import { existsSync, accessSync, constants, readFileSync, statSync } from "node:fs";
+import { existsSync, accessSync, constants, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { URL as NodeUrl } from "node:url";
 
