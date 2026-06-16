@@ -213,12 +213,37 @@ const App = () => (
           {/* ========= CONTATO ========= */}
           <Route path="/contato" element={L(<Contato />)} />
 
-          {/* ========= LISTA VIP PÚBLICA (Fase 10E) ========= */}
-          <Route path="/vip/:publicSlug" element={L(<PublicVipList />)} />
+          {/* ========= ROTAS PÚBLICAS DO PARCEIRO (Fase 10F) ========= */}
+          {/* URL amigável: /:partnerSlug/vip + sub-rotas reservadas */}
+          <Route path="/:partnerSlug/vip" element={L(<PublicVipList />)} />
           <Route
-            path="/vip/:publicSlug/sucesso/:publicToken"
+            path="/:partnerSlug/vip/sucesso/:publicToken"
             element={L(<PublicVipListSuccess />)}
           />
+          <Route
+            path="/:partnerSlug/eventos"
+            element={L(<PartnerScopedComingSoon section="eventos" />)}
+          />
+          <Route
+            path="/:partnerSlug/eventos/:eventSlug"
+            element={L(<PartnerScopedComingSoon section="eventos" />)}
+          />
+          <Route
+            path="/:partnerSlug/mesas"
+            element={L(<PartnerScopedComingSoon section="mesas" />)}
+          />
+          <Route
+            path="/:partnerSlug/reservas"
+            element={L(<PartnerScopedComingSoon section="reservas" />)}
+          />
+
+          {/* Redirect das URLs antigas /vip/:publicSlug → home (URL trocada na Fase 10F) */}
+          <Route path="/vip/:publicSlug" element={<Navigate to="/" replace />} />
+          <Route
+            path="/vip/:publicSlug/sucesso/:publicToken"
+            element={<Navigate to="/" replace />}
+          />
+
 
 
           {/* ========= EXPO 2026 — DESATIVADA (redireciona para Home) ========= */}
