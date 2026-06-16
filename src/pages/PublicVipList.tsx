@@ -82,7 +82,10 @@ const PublicVipListPage = () => {
         whatsappConsent: marketingConsent,
         emailConsent: marketingConsent && !!email,
       });
-      navigate(`/${partnerSlug}/vip/sucesso/${result.public_token}`, {
+      const successBase = listSlug
+        ? `/vip/${listSlug}/sucesso/${result.public_token}`
+        : `/${partnerSlug}/vip/sucesso/${result.public_token}`;
+      navigate(successBase, {
         state: { result, list },
         replace: true,
       });
