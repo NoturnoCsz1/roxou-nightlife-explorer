@@ -20,9 +20,8 @@ export interface PartnerSummary {
   name: string;
   slug: string | null;
   logo_url: string | null;
-  cover_url: string | null;
   city: string | null;
-  partner_type: string | null;
+  type: string | null;
 }
 
 export interface PartnerAccess {
@@ -67,7 +66,7 @@ export async function listMyPartners(): Promise<PartnerAccess[]> {
     .from("partner_users")
     .select(
       `id, role, is_active, partner_id,
-       partners:partner_id ( id, name, slug, logo_url, cover_url, city, partner_type )`,
+       partners:partner_id ( id, name, slug, logo_url, city, type )`,
     )
     .eq("user_id", user.id)
     .eq("is_active", true);
