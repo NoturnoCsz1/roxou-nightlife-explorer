@@ -9,12 +9,16 @@
  */
 
 import http from "node:http";
-import { existsSync, accessSync, constants } from "node:fs";
+import os from "node:os";
+import { existsSync, accessSync, constants, readFileSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { URL as NodeUrl } from "node:url";
 
 const PORT = process.env.HEALTH_PORT || 3001;
 const STORAGE_ROOT = process.env.STORAGE_ROOT || "/var/www/roxou/storage";
+const LOG_ROOT = process.env.LOG_ROOT || "/var/www/roxou/logs";
 const TZ = process.env.TZ || null;
+const ADMIN_TOKEN = process.env.ROXOU_ADMIN_TOKEN || null;
 
 function boolEnv(name) {
   const v = process.env[name];
