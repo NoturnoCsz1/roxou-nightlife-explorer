@@ -68,10 +68,17 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+  html, body, #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
+
 
   /* Discrete global scrollbar (neon purple, ultra-thin) */
   ::-webkit-scrollbar {
