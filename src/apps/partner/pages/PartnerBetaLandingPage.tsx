@@ -17,42 +17,43 @@ import {
 
 const features = [
   {
-    to: "/admin/partner-preview/eventos",
+    to: "/eventos",
     icon: CalendarDays,
     title: "Eventos",
     desc: "Crie, edite e duplique eventos do seu estabelecimento.",
   },
   {
-    to: "/admin/partner-preview/reservas",
+    to: "/reservas",
     icon: Users,
     title: "Reservas",
     desc: "Gerencie reservas, confirme presenças e configure capacidade.",
   },
   {
-    to: "/admin/partner-preview/lista-vip",
+    to: "/lista-vip",
     icon: Crown,
     title: "Lista VIP",
     desc: "Cadastre convidados especiais e faça check-in rápido.",
   },
   {
-    to: "/admin/partner-preview/analytics",
+    to: "/analytics",
     icon: BarChart3,
     title: "Analytics",
     desc: "Acompanhe visualizações e desempenho dos seus eventos.",
   },
   {
-    to: "/admin/partner-preview/perfil",
+    to: "/perfil",
     icon: Building2,
     title: "Perfil",
     desc: "Atualize descrição, contato e redes sociais do estabelecimento.",
   },
   {
-    to: "/admin/partner-preview/configuracoes",
+    to: "/configuracoes",
     icon: Settings,
     title: "Configurações",
     desc: "Preferências e integrações do seu Partner Pro.",
   },
 ];
+
 
 const PartnerBetaLandingPage = () => {
   return (
