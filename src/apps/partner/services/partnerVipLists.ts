@@ -50,6 +50,8 @@ export interface PartnerVipEntry {
   people_count: number;
   status: VipEntryStatus;
   checked_in_at: string | null;
+  promoter_id: string | null;
+  promoter_name_snapshot: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -70,6 +72,8 @@ export interface VipEntryPayload {
   email?: string | null;
   people_count?: number;
   status?: VipEntryStatus;
+  promoter_id?: string | null;
+  promoter_name_snapshot?: string | null;
 }
 
 const LISTS = "partner_vip_lists" as const;
@@ -210,6 +214,17 @@ export async function cancelVipEntry(
   entryId: string,
 ): Promise<PartnerVipEntry> {
   const { data, error } = await supabase.rpc("cancel_partner_vip_entry", {
+    _entry_id: entryId,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerVipEntry;
+}
+
+export async function noShowVipEntry(
+  entryId: string,
+): Promise<PartnerVipEntry> {
+  const { data, error } = await supabase.rpc("no_show_partner_vip_entry", {
     _entry_id: entryId,
   });
   if (error) throw error;

@@ -71,7 +71,12 @@ export async function updatePromoter(
   promoterId: string,
   payload: PromoterPayload,
 ): Promise<PartnerPromoter> {
-  const patch: Record<string, unknown> = {};
+  const patch: {
+    name?: string;
+    phone?: string | null;
+    instagram?: string | null;
+    is_active?: boolean;
+  } = {};
   if (payload.name !== undefined) patch.name = payload.name?.trim();
   if (payload.phone !== undefined) patch.phone = payload.phone?.trim() || null;
   if (payload.instagram !== undefined)

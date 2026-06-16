@@ -5,6 +5,7 @@
  * Página órfã: ainda não registrada em App.tsx.
  */
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   listVipLists,
   createVipList,
@@ -20,6 +21,7 @@ import { VipListForm } from "../components/VipListForm";
 
 const PartnerVipListPage = () => {
   const { selectedPartner, role } = usePartnerAuth();
+  const navigate = useNavigate();
   const partnerId = selectedPartner?.id ?? null;
   const canCreate = canManageEvents(role);
 
@@ -89,7 +91,10 @@ const PartnerVipListPage = () => {
       {loading ? (
         <p className="text-muted-foreground">Carregando...</p>
       ) : lists.length ? (
-        <VipListTable lists={lists} />
+        <VipListTable
+          lists={lists}
+          onOpen={(l) => navigate(`/lista-vip/${l.id}`)}
+        />
       ) : (
         <VipListEmptyState />
       )}
