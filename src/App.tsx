@@ -172,6 +172,24 @@ const App = () => (
             <Route path="premiacoes" element={L(<Premiacoes />)} />
             <Route path="artes" element={L(<Artes />)} />
             <Route path="story-agenda" element={L(<StoryAgendaDoDia />)} />
+
+            {/* ─── Partner Pro Preview (Fase 9J — beta interno admin) ─── */}
+            <Route path="partner-preview" element={L(<PartnerPreviewLayout />)}>
+              <Route index element={L(<PartnerDashboardPage />)} />
+              <Route path="perfil" element={L(<PartnerProfilePage />)} />
+              <Route path="eventos" element={L(<PartnerEventsPage />)} />
+              <Route path="reservas" element={L(<PartnerReservationsPage />)} />
+              <Route path="lista-vip" element={L(<PartnerVipListPage />)} />
+              <Route
+                path="lista-vip/:listId"
+                element={L(<PartnerVipListDetailRoute />)}
+              />
+              <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
+              <Route
+                path="configuracoes"
+                element={L(<PartnerSettingsPage />)}
+              />
+            </Route>
           </Route>
 
           {/* ========= AUTH ========= */}
