@@ -18,13 +18,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import {
+  getPublicVipList,
   getPublicVipListByPartner,
   submitPublicVipEntry,
   type PublicVipListInfo,
 } from "@/services/publicVipList";
 
 const PublicVipListPage = () => {
-  const { partnerSlug } = useParams<{ partnerSlug: string }>();
+  const { partnerSlug, listSlug } = useParams<{
+    partnerSlug?: string;
+    listSlug?: string;
+  }>();
   const [params] = useSearchParams();
   const promoterSlug = params.get("promoter")?.trim() || null;
   const navigate = useNavigate();
@@ -40,17 +44,21 @@ const PublicVipListPage = () => {
   const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
-    if (!partnerSlug) return;
+    const loader = listSlug
+      ? getPublicVipList(listSlug)
+      : partnerSlug
+        ? getPublicVipListByPartner(partnerSlug)
+        : Promise.resolve(null);
     let alive = true;
     setLoading(true);
-    getPublicVipListByPartner(partnerSlug)
+    loader
       .then((data) => alive && setList(data))
       .catch(() => alive && setList(null))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [partnerSlug]);
+  }, [partnerSlug, listSlug]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
