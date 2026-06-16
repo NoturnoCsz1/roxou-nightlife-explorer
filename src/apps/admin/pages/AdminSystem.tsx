@@ -224,7 +224,7 @@ const AdminSystem = () => {
 
         <Card title="Última verificação" icon={Activity}>
           <p>{new Date(now).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
-          <p className="text-[10px]">Auto-refresh a cada 30s.</p>
+          <p className="text-[10px]">Auto-refresh a cada 5s.</p>
         </Card>
       </div>
     </div>
