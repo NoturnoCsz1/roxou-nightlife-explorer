@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Plus, Send, Sparkles, Loader2, Upload, X, ChevronDown, ChevronUp,
-  CheckCircle2, AlertCircle, Image as ImageIcon, Save,
+  CheckCircle2, AlertCircle, Image as ImageIcon, Save, StopCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,11 +32,25 @@ import {
   type DuplicateConfidenceExisting,
 } from "@/lib/eventDuplicateDetector";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
+import { updateBulkRuntimeStats, resetBulkRuntimeStats } from "@/lib/bulkRuntimeStats";
+import { saveBulkDraft, loadBulkDraft, clearBulkDraft } from "@/lib/bulkEventsDraft";
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
-type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error";
+type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error" | "cancelled";
+
+// FASE 10G.1.3 — limites de proteção
+const MAX_BATCH_FLYERS = 50;
+const MAX_CONCURRENT_FLYERS = 3;
+const ocrLog = (event: string, info: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(`[OCR] ${event}`, info);
+};
+const stressLog = (event: string, info: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(`[BULK_STRESS] ${event}`, info);
+};
 
 interface BulkItem {
   localId: string;
@@ -259,6 +273,54 @@ const EventoBulkForm = () => {
     setDescErrorCount(descWorker.errorCount());
     toast.info(`Reprocessando ${n} descrição(ões)...`);
   }, [descWorker]);
+
+  // FASE 10G.1.3 — Cancelamento seguro do lote
+  const cancelRef = useRef<boolean>(false);
+  const [cancelRequested, setCancelRequested] = useState(false);
+  const handleCancelBatch = useCallback(() => {
+    if (cancelRef.current) return;
+    cancelRef.current = true;
+    setCancelRequested(true);
+    updateBulkRuntimeStats({ cancelRequested: true });
+    stressLog("cancel_requested", { ts: Date.now() });
+    toast.warning("Cancelamento solicitado — itens em andamento finalizam, fila pausa.");
+  }, []);
+
+  // FASE 10G.1.3 — Recuperação de rascunho
+  const [draftRecoveryOffer, setDraftRecoveryOffer] = useState<{ ts: number; count: number } | null>(null);
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    if (draftLoadedRef.current) return;
+    draftLoadedRef.current = true;
+    void loadBulkDraft<{ form: EventFormData; status: ItemStatus; fileName: string; errorMsg?: string }>()
+      .then((d) => {
+        if (d && d.items.length > 0) {
+          setDraftRecoveryOffer({ ts: d.ts, count: d.items.length });
+        }
+      });
+  }, []);
+  const handleRecoverDraft = useCallback(async () => {
+    const d = await loadBulkDraft<{ form: EventFormData; status: ItemStatus; fileName: string; errorMsg?: string }>();
+    if (!d) { setDraftRecoveryOffer(null); return; }
+    const restored: BulkItem[] = d.items.map((p) => ({
+      localId: crypto.randomUUID(),
+      fileName: p.fileName,
+      thumbDataUrl: "",
+      // Itens "uploading"/"extracting" voltam como erro — arquivo original não pode ser restaurado.
+      status: p.status === "uploading" || p.status === "extracting" || p.status === "queued" ? "error" : p.status,
+      errorMsg: p.errorMsg || (p.status !== "ready" ? "Rascunho restaurado — re-subir flyer para reprocessar" : undefined),
+      expanded: false,
+      form: p.form,
+    }));
+    setItems(restored);
+    setDraftRecoveryOffer(null);
+    toast.success(`Rascunho restaurado (${restored.length} item(ns)).`);
+  }, []);
+  const handleDiscardDraft = useCallback(async () => {
+    await clearBulkDraft();
+    setDraftRecoveryOffer(null);
+  }, []);
+
 
 
 
@@ -499,6 +561,8 @@ const EventoBulkForm = () => {
 
       let data: any = cached?.data ?? null;
       if (!data) {
+        const ocrT0 = performance.now();
+        ocrLog("start", { id: localId, file: file.name, size_before: bytesBefore, size_after: bytesAfter });
         const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
           body: {
             image_url: publicUrl,
@@ -524,7 +588,12 @@ const EventoBulkForm = () => {
             } : null,
           },
         });
-        if (extractResp.error) throw extractResp.error;
+        const ocrMs = Math.round(performance.now() - ocrT0);
+        if (extractResp.error) {
+          ocrLog("error", { id: localId, file: file.name, duration_ms: ocrMs, message: String(extractResp.error?.message || extractResp.error) });
+          throw extractResp.error;
+        }
+        ocrLog("done", { id: localId, file: file.name, duration_ms: ocrMs, status: "ok", size_before: bytesBefore, size_after: bytesAfter });
         data = extractResp.data;
         if (data && typeof data === "object" && !(data.error && !data.title)) {
           writeExtractionCache(file, {
@@ -535,6 +604,7 @@ const EventoBulkForm = () => {
         }
       } else {
         bulkLog("cache_hit_data", { id: localId, file: file.name });
+        ocrLog("cache_hit", { id: localId, file: file.name });
       }
 
       if (!data || typeof data !== "object") {
@@ -684,9 +754,26 @@ const EventoBulkForm = () => {
   }
 
   async function handleFiles(files: FileList | File[]) {
-    const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    let arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
+
+    // FASE 10G.1.3 — limite de proteção (50 flyers/lote)
+    if (arr.length > MAX_BATCH_FLYERS) {
+      toast.warning(
+        `Lotes acima de ${MAX_BATCH_FLYERS} imagens devem ser divididos para garantir estabilidade. Processando os primeiros ${MAX_BATCH_FLYERS}.`,
+        { duration: 6000 },
+      );
+      arr = arr.slice(0, MAX_BATCH_FLYERS);
+    }
+
+    // Reseta flag de cancelamento ao iniciar novo lote
+    cancelRef.current = false;
+    setCancelRequested(false);
+    updateBulkRuntimeStats({ cancelRequested: false });
+
+    const batchT0 = performance.now();
     bulkLog("selected_files", { count: arr.length });
+    stressLog("batch_start", { batch_size: arr.length });
 
     // 1) Cria placeholders IMEDIATAMENTE com status "queued" — UI responde no ato.
     const placeholders: BulkItem[] = arr.map((file) => {
@@ -711,6 +798,7 @@ const EventoBulkForm = () => {
     //    para não travar a thread principal.
     (async () => {
       for (let i = 0; i < arr.length; i++) {
+        if (cancelRef.current) break;
         const thumb = await makeThumb(arr[i]);
         patchItem(placeholders[i].localId, { thumbDataUrl: thumb });
         // yield para o navegador respirar (pintura, scroll, inputs)
@@ -718,14 +806,18 @@ const EventoBulkForm = () => {
       }
     })();
 
-    // 3) Pool de concorrência: processa até 3 em paralelo (FASE 10G.2).
+    // 3) Pool de concorrência: processa até MAX_CONCURRENT_FLYERS em paralelo.
     //    Erros individuais NÃO derrubam o lote — ficam isolados no item.
-    const CONCURRENCY = 3;
     let cursor = 0;
-    const workers = Array.from({ length: Math.min(CONCURRENCY, arr.length) }, async () => {
+    const workers = Array.from({ length: Math.min(MAX_CONCURRENT_FLYERS, arr.length) }, async () => {
       while (true) {
         const my = cursor++;
         if (my >= arr.length) return;
+        if (cancelRef.current) {
+          // Marca todos os pendentes (incluindo este) como cancelados.
+          patchItem(placeholders[my].localId, { status: "cancelled", errorMsg: "Cancelado pelo usuário" });
+          continue;
+        }
         const file = arr[my];
         const localId = placeholders[my].localId;
         const t0 = performance.now();
@@ -739,8 +831,20 @@ const EventoBulkForm = () => {
       }
     });
     await Promise.all(workers);
-    console.log(`[bulk] all ${arr.length} processed`);
+    const durationMs = Math.round(performance.now() - batchT0);
+    const processed = arr.length;
+    stressLog("batch_end", {
+      batch_size: processed,
+      duration_ms: durationMs,
+      avg_duration_ms: processed ? Math.round(durationMs / processed) : 0,
+      cancelled: cancelRef.current,
+    });
+    console.log(`[bulk] all ${processed} processed in ${durationMs}ms`);
+    if (cancelRef.current) {
+      toast.info("Lote cancelado. Itens concluídos foram preservados.");
+    }
   }
+
 
   // Retry isolado de um único item com erro
   async function retryItem(localId: string) {
@@ -1235,6 +1339,7 @@ const EventoBulkForm = () => {
         toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
       }
       bulkLog("save_done", { count: payloads.length, duration_ms: Math.round(performance.now() - tSave) });
+      void clearBulkDraft();
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
@@ -1248,9 +1353,41 @@ const EventoBulkForm = () => {
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
   const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
+  const cancelledCount = items.filter((it) => it.status === "cancelled").length;
   const totalCount = items.length;
-  const doneForProgress = readyCount + errorCount;
+  const doneForProgress = readyCount + errorCount + cancelledCount;
   const progressPct = totalCount ? Math.round((doneForProgress / totalCount) * 100) : 0;
+  const isProcessing = processingCount > 0 || queuedCount > 0;
+
+  // FASE 10G.1.3 — telemetria de runtime para o AdminSystem
+  useEffect(() => {
+    updateBulkRuntimeStats({
+      queueSize: processingCount + queuedCount,
+      readyCount,
+      errorCount,
+      cancelledCount,
+      descriptionQueueSize: descWorker.pendingCount(),
+      activeWorkers: processingCount,
+      cancelRequested: cancelRef.current,
+    });
+  }, [processingCount, queuedCount, readyCount, errorCount, cancelledCount, descWorker]);
+  useEffect(() => () => { resetBulkRuntimeStats(); }, []);
+
+  // FASE 10G.1.3 — Auto-save em IndexedDB (debounced 1.2s)
+  useEffect(() => {
+    if (items.length === 0) return;
+    const handle = setTimeout(() => {
+      const slim = items.map((it) => ({
+        form: it.form,
+        status: it.status,
+        fileName: it.fileName,
+        errorMsg: it.errorMsg,
+      }));
+      void saveBulkDraft(slim);
+      bulkLog("autosave", { count: slim.length });
+    }, 1200);
+    return () => clearTimeout(handle);
+  }, [items]);
 
   return (
     <div className="md:ml-44 max-w-3xl pb-12">
@@ -1261,34 +1398,75 @@ const EventoBulkForm = () => {
         <ArrowLeft className="h-3.5 w-3.5" /> Voltar
       </button>
 
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      {/* FASE 10G.1.3 — banner de recuperação de rascunho */}
+      {draftRecoveryOffer && (
+        <div className="mb-3 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[11px] text-foreground/90">
+            Encontramos um processamento anterior ({draftRecoveryOffer.count} item{draftRecoveryOffer.count === 1 ? "" : "s"} ·{" "}
+            {new Date(draftRecoveryOffer.ts).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}). Deseja continuar?
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleRecoverDraft}
+              className="rounded-lg bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+            >
+              Continuar
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="rounded-lg border border-border/50 bg-secondary/40 px-3 py-1 text-[11px] hover:bg-secondary/60"
+            >
+              Descartar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+        <div className="min-w-0">
           <h1 className="text-lg font-bold text-foreground">Criar Eventos em Lote</h1>
           <p className="text-[11px] text-muted-foreground">
             Suba os banners e a IA preenche título, data, local e categoria.
           </p>
         </div>
         {items.length > 0 && (
-          <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-            {readyCount} pronto(s) · {processingCount} processando · {queuedCount} na fila · {errorCount} erro
+          <span className="text-[10px] sm:text-[11px] text-muted-foreground whitespace-normal sm:whitespace-nowrap text-right">
+            {readyCount} pronto{readyCount === 1 ? "" : "s"} · {processingCount} proc · {queuedCount} fila · {errorCount} erro{cancelledCount > 0 ? ` · ${cancelledCount} cancel.` : ""}
           </span>
         )}
       </div>
 
-      {/* Barra de progresso geral do lote */}
-      {totalCount > 0 && (processingCount > 0 || queuedCount > 0) && (
-        <div className="mb-3" aria-label="Progresso do lote">
+      {/* Barra de progresso geral do lote — sticky no mobile durante processamento */}
+      {totalCount > 0 && (isProcessing || cancelRequested) && (
+        <div
+          className="sticky top-0 z-30 -mx-3 sm:mx-0 mb-3 px-3 sm:px-0 py-2 bg-background/95 backdrop-blur-md border-b border-border/30 sm:border-0 sm:bg-transparent sm:backdrop-blur-none sm:static sm:py-0"
+          aria-label="Progresso do lote"
+        >
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
             <div
-              className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
+              className={`h-full transition-all duration-300 ${cancelRequested ? "bg-amber-500" : "bg-gradient-to-r from-primary to-accent"}`}
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            {doneForProgress}/{totalCount} processados ({progressPct}%)
-          </p>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="text-[10px] text-muted-foreground truncate">
+              {doneForProgress}/{totalCount} processados ({progressPct}%){cancelRequested ? " · cancelando…" : ""}
+            </p>
+            {isProcessing && !cancelRequested && (
+              <button
+                type="button"
+                onClick={handleCancelBatch}
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-200 hover:bg-amber-500/20"
+              >
+                <StopCircle className="h-3 w-3" /> Cancelar
+              </button>
+            )}
+          </div>
         </div>
       )}
+
 
       {/* === 🧭 Padrões do Lote (opcional) === */}
       <BatchDefaultsSection
@@ -1387,6 +1565,11 @@ const EventoBulkForm = () => {
                       >
                         retry
                       </button>
+                    </div>
+                  )}
+                  {it.status === "cancelled" && (
+                    <div className="flex items-center gap-1 text-[9px] text-amber-300">
+                      <X className="h-2.5 w-2.5" /> cancelado
                     </div>
                   )}
                 </div>

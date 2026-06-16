@@ -8,9 +8,10 @@
  * estáticos em public/), os demais retornam "indisponível".
  */
 import { useEffect, useState } from "react";
-import { Activity, Cpu, HardDrive, MemoryStick, RefreshCw, Server, Trash2 } from "lucide-react";
+import { Activity, Cpu, HardDrive, MemoryStick, RefreshCw, Server, Trash2, Workflow } from "lucide-react";
 import { getBulkCacheStats } from "@/lib/bulkEventsCache";
 import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
+import { getBulkRuntimeStats, type BulkRuntimeSnapshot } from "@/lib/bulkRuntimeStats";
 import { toast } from "sonner";
 
 type HealthPayload = {
@@ -74,6 +75,7 @@ const AdminSystem = () => {
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [idbCount, setIdbCount] = useState<number>(0);
+  const [runtime, setRuntime] = useState<BulkRuntimeSnapshot>(() => getBulkRuntimeStats());
 
   async function refresh() {
     setLoading(true);
@@ -89,6 +91,7 @@ const AdminSystem = () => {
     setPm2(pm?.processes && pm.processes.length > 0 ? pm.processes : null);
     setHost(h && (h.load_avg || h.memory || h.disk) ? h : null);
     setIdbCount(c);
+    setRuntime(getBulkRuntimeStats());
     setNow(Date.now());
     setLoading(false);
   }
@@ -97,7 +100,9 @@ const AdminSystem = () => {
     refresh();
     // FASE 10G.1.1 — auto-refresh a cada 5s para virar monitor real
     const t = setInterval(refresh, 5_000);
-    return () => clearInterval(t);
+    // FASE 10G.1.3 — heap/queue snapshot ainda mais frequente (1s)
+    const rt = setInterval(() => setRuntime(getBulkRuntimeStats()), 1_000);
+    return () => { clearInterval(t); clearInterval(rt); };
   }, []);
 
   async function handleClearCache() {
@@ -222,9 +227,28 @@ const AdminSystem = () => {
           )}
         </Card>
 
+        <Card title="Runtime · Eventos em Lote" icon={Workflow}>
+          <p><span className="text-foreground/80">Fila de flyers:</span> {runtime.queueSize}</p>
+          <p><span className="text-foreground/80">Workers ativos:</span> {runtime.activeWorkers}</p>
+          <p><span className="text-foreground/80">Fila de descrições:</span> {runtime.descriptionQueueSize}</p>
+          <p><span className="text-foreground/80">Prontos:</span> {runtime.readyCount} · erros: {runtime.errorCount} · cancelados: {runtime.cancelledCount}</p>
+          <p>
+            <span className="text-foreground/80">Heap JS:</span>{" "}
+            {runtime.heapUsed != null && runtime.heapTotal != null
+              ? `${bytesToMb(runtime.heapUsed)} / ${bytesToMb(runtime.heapTotal)}`
+              : "—"}
+          </p>
+          {runtime.cancelRequested && (
+            <p className="text-amber-300">Cancelamento solicitado.</p>
+          )}
+          <p className="text-[10px] opacity-70">
+            Snapshot atualizado a cada 1s a partir do EventoBulkForm aberto nesta aba.
+          </p>
+        </Card>
+
         <Card title="Última verificação" icon={Activity}>
           <p>{new Date(now).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
-          <p className="text-[10px]">Auto-refresh a cada 5s.</p>
+          <p className="text-[10px]">Auto-refresh: host/PM2 5s · runtime 1s.</p>
         </Card>
       </div>
     </div>
