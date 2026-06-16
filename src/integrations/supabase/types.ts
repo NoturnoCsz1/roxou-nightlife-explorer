@@ -2292,6 +2292,9 @@ export type Database = {
       }
       partner_reservations: {
         Row: {
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           email: string | null
           event_id: string | null
@@ -2307,6 +2310,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          auto_close_enabled?: boolean
+          close_reason?: string | null
+          closes_at?: string | null
           created_at?: string
           email?: string | null
           event_id?: string | null
@@ -2322,6 +2328,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          auto_close_enabled?: boolean
+          close_reason?: string | null
+          closes_at?: string | null
           created_at?: string
           email?: string | null
           event_id?: string | null
@@ -2570,6 +2579,9 @@ export type Database = {
       partner_vip_lists: {
         Row: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -2592,6 +2604,9 @@ export type Database = {
         }
         Insert: {
           allow_multiple_people_per_entry?: boolean
+          auto_close_enabled?: boolean
+          close_reason?: string | null
+          closes_at?: string | null
           created_at?: string
           description?: string | null
           ends_at?: string | null
@@ -2614,6 +2629,9 @@ export type Database = {
         }
         Update: {
           allow_multiple_people_per_entry?: boolean
+          auto_close_enabled?: boolean
+          close_reason?: string | null
+          closes_at?: string | null
           created_at?: string
           description?: string | null
           ends_at?: string | null
@@ -3871,6 +3889,9 @@ export type Database = {
         Args: { _list_id: string; _owner_only: boolean; _status: string }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4104,6 +4125,9 @@ export type Database = {
         Args: { _list_id: string }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4201,10 +4225,14 @@ export type Database = {
         }
       }
       cleanup_event_live_presence: { Args: never; Returns: number }
+      close_due_partner_vip_lists: { Args: never; Returns: number }
       close_partner_vip_list: {
         Args: { _list_id: string }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4233,6 +4261,16 @@ export type Database = {
         }
       }
       community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
+      compute_partner_vip_list_state: {
+        Args: {
+          _closes_at: string
+          _event_id: string
+          _max_entries: number
+          _status: string
+          _used: number
+        }
+        Returns: string
+      }
       compute_user_risk_score: { Args: { _user_id: string }; Returns: number }
       count_event_live_presence: {
         Args: { _event_id: string }
@@ -4313,6 +4351,9 @@ export type Database = {
       create_partner_reservation: {
         Args: { _partner_id: string; _payload: Json }
         Returns: {
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           email: string | null
           event_id: string | null
@@ -4338,6 +4379,9 @@ export type Database = {
         Args: { _partner_id: string; _payload: Json }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4533,6 +4577,9 @@ export type Database = {
         Args: { _list_id: string }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4610,6 +4657,9 @@ export type Database = {
       set_partner_reservation_status: {
         Args: { _reservation_id: string; _status: string }
         Returns: {
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           email: string | null
           event_id: string | null
@@ -4635,6 +4685,9 @@ export type Database = {
         Args: { _enabled: boolean; _list_id: string }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4743,6 +4796,9 @@ export type Database = {
       update_partner_reservation: {
         Args: { _payload: Json; _reservation_id: string }
         Returns: {
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           email: string | null
           event_id: string | null
@@ -4860,6 +4916,9 @@ export type Database = {
         Args: { _list_id: string; _payload: Json }
         Returns: {
           allow_multiple_people_per_entry: boolean
+          auto_close_enabled: boolean
+          close_reason: string | null
+          closes_at: string | null
           created_at: string
           description: string | null
           ends_at: string | null
