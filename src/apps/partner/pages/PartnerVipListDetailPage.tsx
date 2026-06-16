@@ -38,11 +38,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import { VipListStatusBadge } from "../components/VipListStatusBadge";
 import { VipListStats } from "../components/VipListStats";
 import { VipEntryForm } from "../components/VipEntryForm";
 import { VipEntryTable } from "../components/VipEntryTable";
 import { VipCheckInPanel } from "../components/VipCheckInPanel";
+
 
 interface Props {
   listId: string;
