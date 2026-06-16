@@ -346,58 +346,96 @@ const EventoBulkForm = () => {
 
   async function uploadAndProcess(file: File, localId: string) {
     patchItem(localId, { status: "uploading", errorMsg: undefined });
+    const t0 = performance.now();
+    bulkLog("extraction_start", { id: localId, file: file.name });
     try {
-      const imageHash = await sha256File(file);
-      // 1. upload to storage
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `events/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("uploads").upload(path, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("uploads").getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
+      // 0. Compressão antes do upload (resize 1600px, JPEG q=0.8).
+      const { file: workFile, bytesBefore, bytesAfter, compressed } =
+        await compressImage(file);
+      if (compressed) {
+        bulkLog("resized", {
+          id: localId,
+          file: file.name,
+          size_before: bytesBefore,
+          size_after: bytesAfter,
+        });
+      }
+      // Atualiza referência para retry usar o arquivo já comprimido.
+      fileMapRef.current.set(localId, workFile);
+
+      // 1. Hash da imagem comprimida (image_hash final).
+      const imageHash = await sha256File(workFile);
+
+      // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
+      const cached = readExtractionCache<any>(file);
+      let publicUrl: string | null = cached?.image_url ?? null;
+
+      if (!publicUrl) {
+        // 2. Upload (somente se cache não tiver image_url válida).
+        const ext = (workFile.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `events/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("uploads")
+          .upload(path, workFile, { cacheControl: "3600", upsert: false });
+        if (upErr) throw upErr;
+        publicUrl = supabase.storage.from("uploads").getPublicUrl(path).data.publicUrl;
+      } else {
+        bulkLog("cache_hit_url", { id: localId, file: file.name });
+      }
 
       patchItem(localId, { status: "extracting" });
       patchForm(localId, { image_url: publicUrl });
 
-      // 2. AI extract — wait fully and validate before downstream calls
+      // 3. AI extract — com fallback ao cache.
       const bdNow = batchDefaultsRef.current;
       const bdPartner = bdNow.enabled && bdNow.partner_id ? partners.find((p) => p.id === bdNow.partner_id) : null;
-      const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
-        body: {
-          image_url: publicUrl,
-          current_year: new Date().getFullYear(),
-          verified_partners: partners
-            .filter((p: any) => p.verified_partner)
-            .map((p: any) => ({
-              name: p.name,
-              address: p.address,
-              instagram: p.instagram,
-              type: p.type,
-              sub_category: p.sub_category,
-            })),
-          admin_feedback: adminFeedback,
-          batch_defaults: bdNow.enabled ? {
-            date: bdNow.date || null,
-            time: bdNow.time || null,
-            partner_id: bdNow.partner_id || null,
-            partner_name: bdPartner?.name || null,
-            category: bdNow.category || null,
-            sub_category: bdNow.sub_category || null,
-            mode: bdNow.mode,
-          } : null,
-        },
-      });
-      if (extractResp.error) throw extractResp.error;
-      const data = extractResp.data;
+
+      let data: any = cached?.data ?? null;
+      if (!data) {
+        const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
+          body: {
+            image_url: publicUrl,
+            current_year: new Date().getFullYear(),
+            verified_partners: partners
+              .filter((p: any) => p.verified_partner)
+              .map((p: any) => ({
+                name: p.name,
+                address: p.address,
+                instagram: p.instagram,
+                type: p.type,
+                sub_category: p.sub_category,
+              })),
+            admin_feedback: adminFeedback,
+            batch_defaults: bdNow.enabled ? {
+              date: bdNow.date || null,
+              time: bdNow.time || null,
+              partner_id: bdNow.partner_id || null,
+              partner_name: bdPartner?.name || null,
+              category: bdNow.category || null,
+              sub_category: bdNow.sub_category || null,
+              mode: bdNow.mode,
+            } : null,
+          },
+        });
+        if (extractResp.error) throw extractResp.error;
+        data = extractResp.data;
+        if (data && typeof data === "object" && !(data.error && !data.title)) {
+          writeExtractionCache(file, {
+            data,
+            image_url: publicUrl,
+            image_hash: imageHash,
+          });
+        }
+      } else {
+        bulkLog("cache_hit_data", { id: localId, file: file.name });
+      }
+
       if (!data || typeof data !== "object") {
         patchItem(localId, { status: "ready" });
+        bulkLog("extraction_done", { id: localId, duration_ms: Math.round(performance.now() - t0), cached: !!cached });
         return;
       }
       if (data.error && !data.title) {
-        // graceful: keep image, ask user to fill manually
         patchItem(localId, { status: "ready" });
         return;
       }
