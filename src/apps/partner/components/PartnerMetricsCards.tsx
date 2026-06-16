@@ -23,11 +23,11 @@ function Kpi({
   placeholder?: boolean;
 }) {
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-          <Icon className="h-3.5 w-3.5" />
-          <span>{label}</span>
+        <div className="flex items-center gap-2 text-muted-foreground text-xs min-w-0">
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{label}</span>
         </div>
         <div className="mt-2 text-2xl font-semibold">
           {placeholder ? "—" : value.toLocaleString("pt-BR")}
@@ -46,7 +46,7 @@ export function PartnerMetricsCards({ totals, label }: Props) {
       {label ? (
         <h3 className="text-sm font-medium text-muted-foreground mb-2">{label}</h3>
       ) : null}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi icon={Eye} label="Visualizações" value={totals.views} />
         <Kpi icon={Heart} label="Favoritos" value={totals.favorites} />
         <Kpi icon={MousePointerClick} label="Cliques" value={totals.clicks} />

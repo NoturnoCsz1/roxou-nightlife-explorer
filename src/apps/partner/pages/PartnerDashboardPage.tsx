@@ -100,7 +100,7 @@ const PartnerDashboardPage = () => {
   };
 
   return (
-    <main className="min-h-screen p-4 md:p-6 space-y-4 max-w-6xl mx-auto">
+    <main className="w-full max-w-7xl mx-auto px-4 py-4 md:py-6 space-y-4 overflow-x-hidden min-h-screen">
       <header className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold">Dashboard do Parceiro</h1>
         {loadingData ? (
@@ -108,13 +108,13 @@ const PartnerDashboardPage = () => {
         ) : null}
       </header>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-4">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           <PartnerProfileCard partner={details} />
           <PartnerMetricsCards totals={totals} label="Últimos 7 dias" />
           <PartnerRecentEvents events={events} />
         </div>
-        <aside className="space-y-4">
+        <aside className="space-y-4 min-w-0">
           <PartnerSubscriptionCard subscription={subscription} />
           <PartnerAwardBadge award={award} />
           <div className="grid grid-cols-3 gap-2 text-center">
