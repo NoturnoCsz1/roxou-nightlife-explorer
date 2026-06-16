@@ -201,6 +201,66 @@ const EventoBulkForm = () => {
     toast.success("Cache de flyers limpo.");
   }, []);
 
+  // FASE 10G.1.2 — worker dedicado para `generate-description`
+  const [descStatuses, setDescStatuses] = useState<Map<string, DescriptionStatus>>(new Map());
+  const [descErrorCount, setDescErrorCount] = useState(0);
+  const descWorker = useMemo(() => getDescriptionWorker(), []);
+
+  const setDescStatus = useCallback((id: string, status: DescriptionStatus) => {
+    setDescStatuses((prev) => {
+      const next = new Map(prev);
+      next.set(id, status);
+      return next;
+    });
+  }, []);
+
+  const enqueueDescription = useCallback((
+    localId: string,
+    payload: Parameters<typeof descWorker.enqueue>[0]["payload"],
+  ) => {
+    descWorker.enqueue({
+      id: localId,
+      payload,
+      onUpdate: (u) => {
+        if (u.status === "done") {
+          const r: DescriptionResult = u.result;
+          const warnings = r.ai_warnings ?? [];
+          const conf = r.ai_confidence_score ?? null;
+          const lowConfidence = typeof conf === "number" && conf < 70;
+          patchForm(localId, {
+            description: r.description_html || undefined,
+            short_summary: r.short_summary || undefined,
+            meta_title: r.meta_title || undefined,
+            meta_description: r.meta_description || undefined,
+            instagram_caption: r.instagram_caption || undefined,
+            ai_confidence_score: conf,
+            ai_warnings: warnings,
+            needs_review: lowConfidence || warnings.length > 0,
+          } as Partial<EventFormData>);
+          setDescStatus(localId, "done");
+        } else if (u.status === "error") {
+          setDescStatus(localId, "error");
+          setDescErrorCount(descWorker.errorCount());
+        } else {
+          setDescStatus(localId, u.status);
+        }
+        if (u.status !== "error") setDescErrorCount(descWorker.errorCount());
+      },
+    });
+    setDescStatus(localId, "queued");
+  }, [descWorker, setDescStatus]);
+
+  const handleRequeueDescriptionErrors = useCallback(() => {
+    const n = descWorker.requeueErrors();
+    if (n === 0) {
+      toast.info("Nenhuma descrição com erro para reprocessar.");
+      return;
+    }
+    setDescErrorCount(descWorker.errorCount());
+    toast.info(`Reprocessando ${n} descrição(ões)...`);
+  }, [descWorker]);
+
+
 
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
