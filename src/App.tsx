@@ -56,6 +56,8 @@ const Artes = lazy(() => import("./apps/admin/pages/Artes"));
 const StoryAgendaDoDia = lazy(() => import("./apps/admin/pages/StoryAgendaDoDia"));
 const PartnerAccessRequests = lazy(() => import("./apps/admin/pages/PartnerAccessRequests"));
 const PartnerPilot = lazy(() => import("./apps/admin/pages/PartnerPilot"));
+const AdminSystem = lazy(() => import("./apps/admin/pages/AdminSystem"));
+const AdminLogs = lazy(() => import("./apps/admin/pages/AdminLogs"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
 
@@ -185,6 +187,8 @@ const App = () => (
             <Route path="story-agenda" element={L(<StoryAgendaDoDia />)} />
             <Route path="partner-requests" element={L(<PartnerAccessRequests />)} />
             <Route path="partner-pilot" element={L(<PartnerPilot />)} />
+            <Route path="system" element={L(<AdminSystem />)} />
+            <Route path="logs" element={L(<AdminLogs />)} />
           </Route>
 
 

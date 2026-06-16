@@ -17,6 +17,8 @@ import {
   Briefcase,
   Inbox,
   Rocket,
+  Activity,
+  FileText,
 
   type LucideIcon,
 } from "lucide-react";
@@ -59,5 +61,7 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/partner-preview", icon: Briefcase, label: "Partner Pro Preview" },
   { to: "/admin/partner-requests", icon: Inbox, label: "Solicitações Partner" },
   { to: "/admin/partner-pilot", icon: Rocket, label: "Piloto Partner Pro" },
+  { to: "/admin/system", icon: Activity, label: "Sistema" },
+  { to: "/admin/logs", icon: FileText, label: "Logs" },
 ];
 
