@@ -33,7 +33,8 @@ const AdminLogs = () => {
     try {
       const r = await fetch(`/api/logs?cat=${cat}&limit=200`, { cache: "no-store" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = (await r.json()) as { lines: LogLine[] };
+      const data = (await r.json()) as { ok?: boolean; lines?: LogLine[]; error?: string };
+      if (data?.error || data?.ok === false) throw new Error(data.error || "unavailable");
       setLines(data.lines ?? []);
     } catch (e) {
       // FASE 10G.1.1 — adaptador mock para preview/dev sem /api/logs.
