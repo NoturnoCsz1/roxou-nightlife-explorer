@@ -172,6 +172,31 @@ const EventoBulkForm = () => {
     });
   }, []);
 
+  // FASE 10G.1.1 — preferências/observabilidade do cache
+  const [skipDescriptions, setSkipDescriptions] = useState<boolean>(() => {
+    if (typeof localStorage === "undefined") return false;
+    return localStorage.getItem("bulk_skip_descriptions") === "1";
+  });
+  const [cacheCount, setCacheCount] = useState<number>(0);
+  useEffect(() => {
+    void bulkCacheCountIdb().then(setCacheCount);
+  }, []);
+  useEffect(() => {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("bulk_skip_descriptions", skipDescriptions ? "1" : "0");
+    }
+  }, [skipDescriptions]);
+  const skipDescriptionsRef = useRef(skipDescriptions);
+  useEffect(() => { skipDescriptionsRef.current = skipDescriptions; }, [skipDescriptions]);
+
+  const handleClearFlyerCache = useCallback(async () => {
+    await clearBulkCacheIdb();
+    try { sessionStorage.clear(); } catch { /* ignore */ }
+    setCacheCount(0);
+    toast.success("Cache de flyers limpo.");
+  }, []);
+
+
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
     if (cityFilter) q = q.eq("city", cityFilter);
