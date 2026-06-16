@@ -87,7 +87,8 @@ export default function V3Home() {
   }, [featured, rawTodayEvents, isLoading, loadingEventsRaw, loadingTimedOut, eventsError, todayError]);
 
   return (
-    <div>
+    <div className="w-full max-w-full overflow-x-hidden">
+
       {/* SEO da home — JSON-LD WebSite + Organization + EntertainmentBusiness */}
       <SEO
         title="Roxou | Eventos, Bares, Restaurantes e Jogos ao Vivo em Presidente Prudente"
