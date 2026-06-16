@@ -14,6 +14,7 @@
  *   - get_vip_entry_by_token (Fase 10E)
  */
 import { supabase } from "@/integrations/supabase/client";
+import { getEndOfDaySPFromDate } from "@/lib/dateUtils";
 
 export type VipListStatus = "draft" | "open" | "closed" | "archived";
 export type VipEntryStatus =
