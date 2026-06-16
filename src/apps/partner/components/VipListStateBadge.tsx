@@ -9,9 +9,10 @@ import type { VipListOperationalState } from "../services/partnerVipLists";
 
 const MAP: Record<VipListOperationalState, { label: string; cls: string }> = {
   open: { label: "Aberto", cls: "bg-emerald-500/20 text-emerald-300" },
-  sold_out: { label: "Lotado", cls: "bg-fuchsia-500/20 text-fuchsia-300" },
+  sold_out: { label: "Lotado", cls: "bg-orange-500/20 text-orange-300" },
   closed: { label: "Fechado", cls: "bg-amber-500/20 text-amber-300" },
   ended: { label: "Encerrado", cls: "bg-zinc-500/20 text-zinc-300" },
+  archived: { label: "Arquivado", cls: "bg-fuchsia-500/20 text-fuchsia-300" },
 };
 
 export function VipListStateBadge({

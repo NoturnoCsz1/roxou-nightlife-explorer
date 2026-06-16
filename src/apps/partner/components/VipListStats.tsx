@@ -11,8 +11,8 @@ export function VipListStats({ stats }: Props) {
     ["Aprovados", stats.approved],
     ["Check-ins", stats.checkedIn],
     ["No-show", stats.noShow],
-    ["Pessoas", stats.peopleTotal],
-    ["Capacidade", `${stats.capacityUsed}%`],
+    ["Convidados", stats.peopleTotal],
+    ["Capacidade de convidados", `${stats.capacityUsed}%`],
   ];
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

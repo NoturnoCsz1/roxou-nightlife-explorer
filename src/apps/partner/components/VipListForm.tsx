@@ -70,7 +70,7 @@ export function VipListForm({ initial, onSubmit, submitting }: Props) {
         </div>
       </div>
       <div>
-        <Label>Capacidade máxima</Label>
+        <Label>Capacidade de convidados</Label>
         <Input
           type="number"
           min={1}

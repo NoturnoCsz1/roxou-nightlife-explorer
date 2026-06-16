@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import {
   deriveVipListState,
   type PartnerVipList,
+  type VipListOperationalState,
 } from "../services/partnerVipLists";
 
 interface Props {
   lists: PartnerVipList[];
   onOpen?: (list: PartnerVipList) => void;
   dim?: boolean;
+  /** Layout compacto para listas fechadas/encerradas/arquivadas. */
+  compact?: boolean;
 }
 
 const fmtDate = (v: string | null) =>
@@ -21,9 +24,47 @@ const fmtCloses = (v: string | null) => {
   return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 };
 
-export function VipListTable({ lists, onOpen, dim }: Props) {
+const cta = (op: VipListOperationalState) =>
+  op === "open" || op === "sold_out" ? "Abrir" : "Histórico";
+
+export function VipListTable({ lists, onOpen, dim, compact }: Props) {
   const renderState = (l: PartnerVipList) =>
     deriveVipListState(l, 0, l.starts_at);
+
+  // ===== Compact card list (mobile + desktop) =====
+  if (compact) {
+    return (
+      <div className={`w-full min-w-0 space-y-2 ${dim ? "opacity-70" : ""}`}>
+        {lists.map((l) => {
+          const op = renderState(l);
+          return (
+            <div
+              key={l.id}
+              className="min-w-0 flex items-center gap-3 rounded-md border bg-card/50 px-3 py-2"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="truncate text-sm font-medium">{l.title}</p>
+                  <VipListStateBadge state={op} />
+                </div>
+                <p className="truncate text-[11px] text-muted-foreground">
+                  {fmtDate(l.starts_at)}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="shrink-0"
+                onClick={() => onOpen?.(l)}
+              >
+                {cta(op)}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <div className={`w-full min-w-0 ${dim ? "opacity-70" : ""}`}>
@@ -47,7 +88,7 @@ export function VipListTable({ lists, onOpen, dim }: Props) {
               </div>
               <div className="text-xs text-muted-foreground space-y-0.5">
                 <p>Início: {fmtDate(l.starts_at)}</p>
-                <p>Capacidade: {l.max_entries ?? "—"}</p>
+                <p>Capacidade de convidados: {l.max_entries ?? "—"}</p>
                 {l.closes_at ? (
                   <p>Fechamento: {fmtCloses(l.closes_at)}</p>
                 ) : null}
@@ -56,9 +97,9 @@ export function VipListTable({ lists, onOpen, dim }: Props) {
                 size="sm"
                 className="w-full"
                 onClick={() => onOpen?.(l)}
-                variant={op === "ended" ? "secondary" : "default"}
+                variant={op === "open" || op === "sold_out" ? "default" : "secondary"}
               >
-                {op === "ended" ? "Ver histórico" : "Abrir"}
+                {cta(op)}
               </Button>
             </div>
           );
@@ -74,7 +115,7 @@ export function VipListTable({ lists, onOpen, dim }: Props) {
               <th className="px-3 py-2 text-left">Estado</th>
               <th className="px-3 py-2 text-left">Início</th>
               <th className="px-3 py-2 text-left">Fechamento</th>
-              <th className="px-3 py-2 text-left">Capacidade</th>
+              <th className="px-3 py-2 text-left">Capacidade de convidados</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -99,10 +140,10 @@ export function VipListTable({ lists, onOpen, dim }: Props) {
                   <td className="px-3 py-2 text-right">
                     <Button
                       size="sm"
-                      variant={op === "ended" ? "secondary" : "default"}
+                      variant={op === "open" || op === "sold_out" ? "default" : "secondary"}
                       onClick={() => onOpen?.(l)}
                     >
-                      {op === "ended" ? "Histórico" : "Abrir"}
+                      {cta(op)}
                     </Button>
                   </td>
                 </tr>

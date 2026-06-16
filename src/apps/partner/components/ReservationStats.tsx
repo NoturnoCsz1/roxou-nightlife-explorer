@@ -7,7 +7,7 @@ export function ReservationStats({ stats }: { stats: ReservationStatsResult }) {
     { label: "Últimos 7 dias", value: String(stats.week) },
     { label: "Confirmação", value: `${stats.confirmedRate}%` },
     { label: "No-show", value: `${stats.noShowRate}%` },
-    { label: "Capacidade hoje", value: `${stats.capacityUsed}%` },
+    { label: "Capacidade de convidados hoje", value: `${stats.capacityUsed}%` },
   ];
 
   return (

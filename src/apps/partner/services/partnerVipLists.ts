@@ -50,7 +50,12 @@ export interface PartnerVipList {
 }
 
 /** Estado operacional derivado: visualização para portaria/parceiro. */
-export type VipListOperationalState = "open" | "sold_out" | "closed" | "ended";
+export type VipListOperationalState =
+  | "open"
+  | "sold_out"
+  | "closed"
+  | "ended"
+  | "archived";
 
 /**
  * Calcula o estado operacional client-side, refletindo `compute_partner_vip_list_state`
@@ -59,13 +64,15 @@ export type VipListOperationalState = "open" | "sold_out" | "closed" | "ended";
 export function deriveVipListState(
   list: Pick<
     PartnerVipList,
-    "status" | "closes_at" | "max_entries"
-  >,
+    "status" | "closes_at" | "max_entries" | "starts_at"
+  > & { starts_at?: string | null },
   usedEntries: number,
   eventDate: string | null,
 ): VipListOperationalState {
-  if (list.status === "archived") return "closed";
-  if (eventDate && new Date(eventDate).getTime() < Date.now()) return "ended";
+  if (list.status === "archived") return "archived";
+  const refDate =
+    eventDate ?? (list.starts_at ? list.starts_at : null);
+  if (refDate && new Date(refDate).getTime() < Date.now()) return "ended";
   if (list.status === "closed") return "closed";
   if (list.closes_at && new Date(list.closes_at).getTime() < Date.now())
     return "closed";

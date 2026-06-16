@@ -4225,6 +4225,7 @@ export type Database = {
         }
       }
       cleanup_event_live_presence: { Args: never; Returns: number }
+      close_due_partner_reservations: { Args: never; Returns: number }
       close_due_partner_vip_lists: { Args: never; Returns: number }
       close_partner_vip_list: {
         Args: { _list_id: string }

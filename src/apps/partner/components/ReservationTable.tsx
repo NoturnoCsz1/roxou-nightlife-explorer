@@ -36,7 +36,7 @@ export function ReservationTable({
           <TableRow>
             <TableHead>Cliente</TableHead>
             <TableHead>Quando</TableHead>
-            <TableHead>Pessoas</TableHead>
+            <TableHead>Convidados</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>

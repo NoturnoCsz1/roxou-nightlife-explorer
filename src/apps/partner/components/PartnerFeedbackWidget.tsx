@@ -21,6 +21,10 @@ export function PartnerFeedbackWidget() {
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
 
+  // FIX 10F: ocultar em telas críticas (modo portaria / check-in público).
+  const HIDDEN_PATHS = ["/checkin", "/portaria"];
+  if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null;
+
   const send = async () => {
     if (!msg.trim()) return;
     setSending(true);
@@ -45,7 +49,8 @@ export function PartnerFeedbackWidget() {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 md:bottom-6">
+    <div className="fixed bottom-24 right-4 z-40 md:bottom-6">
+
 
       {open ? (
         <Card className="w-72 p-3 shadow-xl">

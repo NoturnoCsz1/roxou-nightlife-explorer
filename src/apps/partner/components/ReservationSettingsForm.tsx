@@ -73,7 +73,7 @@ export function ReservationSettingsForm({
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
-            <Label className="text-xs">Máx. pessoas / reserva</Label>
+            <Label className="text-xs">Máx. convidados / reserva</Label>
             <Input
               type="number"
               min={1}

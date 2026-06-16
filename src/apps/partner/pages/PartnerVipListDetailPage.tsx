@@ -23,6 +23,7 @@ import {
   type PartnerVipList,
   type VipEntryPayload,
 } from "../services/partnerVipLists";
+import { closeDuePartnerVipLists } from "../services/partnerMaintenance";
 
 import {
   listPromoters,
@@ -69,6 +70,7 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
   const reload = useCallback(async () => {
     setBusy(true);
     try {
+      await closeDuePartnerVipLists();
       const l = await getVipList(listId);
       const [e, p] = await Promise.all([
         listVipEntries(listId),
@@ -329,7 +331,7 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
                                   {p.name}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
-                                  {s.signups} inscritos · {s.people} pessoas ·{" "}
+                                  {s.signups} inscritos · {s.people} convidados ·{" "}
                                   {s.checkedIn} check-ins · {s.noShow} no-show
                                 </span>
                               </div>

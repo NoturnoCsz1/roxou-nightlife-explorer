@@ -39,3 +39,8 @@ export { VipListStats } from "./VipListStats";
 export { VipEntryForm } from "./VipEntryForm";
 export { VipEntryTable } from "./VipEntryTable";
 export { VipCheckInPanel } from "./VipCheckInPanel";
+
+// FIX 10F — Estado operacional unificado
+export { PartnerOperationalStateBadge } from "./PartnerOperationalStateBadge";
+export type { PartnerOperationalState } from "./PartnerOperationalStateBadge";
+export { VipListStateBadge } from "./VipListStateBadge";
