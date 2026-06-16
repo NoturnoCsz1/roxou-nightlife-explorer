@@ -32,12 +32,21 @@ const PartnerLoginPage = () => {
   const handleGoogle = async () => {
     setGoogleLoading(true);
     try {
+      // Em produção, força o subdomínio do Partner Pro.
+      // Em dev/preview, usa a origem atual + /dashboard.
+      const isPartnerSubdomain =
+        typeof window !== "undefined" &&
+        window.location.hostname === "parceiro.roxou.com.br";
+      const redirectTo = isPartnerSubdomain
+        ? "https://parceiro.roxou.com.br/dashboard"
+        : `${window.location.origin}/dashboard`;
+
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectTo,
       });
       if (result.error) throw result.error;
       if (result.redirected) return;
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Erro ao entrar com Google",
