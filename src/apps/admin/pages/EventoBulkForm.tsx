@@ -20,6 +20,11 @@ import {
 } from "@/lib/bulkEventsImage";
 import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
 import {
+  getDescriptionWorker,
+  type DescriptionStatus,
+  type DescriptionResult,
+} from "@/lib/bulkDescriptionWorker";
+import {
   findPossibleDuplicateEvent,
   generateEventDedupeKey,
   generateFlyerFingerprint,
