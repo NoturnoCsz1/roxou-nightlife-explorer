@@ -10,3 +10,12 @@ export { default as PartnerImageUploader } from "./PartnerImageUploader";
 export { default as PartnerSocialLinksEditor } from "./PartnerSocialLinksEditor";
 export { default as PartnerOpeningHoursEditor } from "./PartnerOpeningHoursEditor";
 export { default as PartnerProfilePreview } from "./PartnerProfilePreview";
+
+// Fase 9G — Partner Events
+export { PartnerEventStatusBadge } from "./PartnerEventStatusBadge";
+export { PartnerEventEmptyState } from "./PartnerEventEmptyState";
+export { PartnerEventFilters } from "./PartnerEventFilters";
+export { PartnerEventQuickActions } from "./PartnerEventQuickActions";
+export { PartnerEventCard } from "./PartnerEventCard";
+export { PartnerEventsTable } from "./PartnerEventsTable";
+export { PartnerEventForm } from "./PartnerEventForm";
