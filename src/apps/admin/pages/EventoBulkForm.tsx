@@ -592,7 +592,7 @@ const EventoBulkForm = () => {
 
       // Auto-generate rich description (Persona V2) — only after metadata is confirmed valid
       const f = readyForm as EventFormData | null;
-      if (f && f.title && f.title.length > 3) {
+      if (f && f.title && f.title.length > 3 && !skipDescriptionsRef.current) {
         try {
           const previousDescs = items
             .map((x) => x.form.description)
