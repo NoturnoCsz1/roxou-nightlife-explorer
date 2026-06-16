@@ -1,5 +1,5 @@
 /**
- * PartnerContext — Fase 9C
+ * PartnerProvider — Fase 9C
  *
  * Provider interno do Roxou Partner Pro. Mantém:
  * - usuário autenticado
@@ -13,7 +13,6 @@
  */
 
 import {
-  createContext,
   useCallback,
   useEffect,
   useMemo,
@@ -27,9 +26,7 @@ import {
   listMyPartners,
   type PartnerAccess,
   type PartnerSubscription,
-  type PartnerSummary,
 } from "../services/partnerAuth";
-import type { PartnerRole } from "../types";
 import {
   SELECTED_PARTNER_STORAGE_KEY,
   canEditProfile as canEditProfileFn,
@@ -37,25 +34,10 @@ import {
   canManageReservations as canManageReservationsFn,
   canViewAnalytics as canViewAnalyticsFn,
 } from "../hooks/usePartnerAuth";
+import { PartnerContext, type PartnerContextValue } from "./partnerContextValue";
 
-export interface PartnerContextValue {
-  user: User | null;
-  partners: PartnerAccess[];
-  selectedPartner: PartnerSummary | null;
-  selectedPartnerId: string | null;
-  role: PartnerRole | null;
-  subscription: PartnerSubscription | null;
-  isLoading: boolean;
-  error: Error | null;
-  canEditProfile: boolean;
-  canManageEvents: boolean;
-  canManageReservations: boolean;
-  canViewAnalytics: boolean;
-  setSelectedPartnerId: (id: string | null) => void;
-  refresh: () => Promise<void>;
-}
-
-export const PartnerContext = createContext<PartnerContextValue | null>(null);
+export { PartnerContext } from "./partnerContextValue";
+export type { PartnerContextValue } from "./partnerContextValue";
 
 function readStoredPartnerId(): string | null {
   if (typeof window === "undefined") return null;
@@ -118,19 +100,15 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
       const stillValid =
         stored && list.some((p) => p.partner.id === stored) ? stored : null;
       const nextSelected = stillValid ?? list[0]?.partner.id ?? null;
-      if (nextSelected !== selectedPartnerId) {
-        setSelectedPartnerIdState(nextSelected);
-        writeStoredPartnerId(nextSelected);
-      }
+      setSelectedPartnerIdState(nextSelected);
+      writeStoredPartnerId(nextSelected);
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listener de auth + carga inicial
   useEffect(() => {
     let mounted = true;
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
@@ -143,7 +121,6 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
     };
   }, [loadAccess]);
 
-  // Buscar assinatura ao trocar partner selecionado
   useEffect(() => {
     let cancelled = false;
     if (!selectedPartnerId) {

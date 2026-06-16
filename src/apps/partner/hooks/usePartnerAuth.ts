@@ -9,7 +9,7 @@
  */
 
 import { useContext } from "react";
-import { PartnerContext } from "../contexts/PartnerContext";
+import { PartnerContext } from "../contexts/partnerContextValue";
 import type { PartnerRole } from "../types";
 
 export const SELECTED_PARTNER_STORAGE_KEY = "roxou.partner.selectedPartnerId";
