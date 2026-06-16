@@ -66,8 +66,9 @@ const PartnerApp = () => (
             <Route path="dashboard" element={L(<PartnerDashboardPage />)} />
             <Route path="perfil" element={L(<PartnerProfilePage />)} />
             <Route path="eventos" element={L(<PartnerEventsPage />)} />
-            <Route path="eventos/novo" element={L(<PartnerEventFormPage />)} />
-            <Route path="eventos/:eventId" element={L(<PartnerEventDetailPage />)} />
+            <Route path="eventos/novo" element={L(<PartnerEventNewRoute />)} />
+            <Route path="eventos/:eventId" element={L(<PartnerEventDetailRoute />)} />
+            <Route path="eventos/:eventId/editar" element={L(<PartnerEventEditRoute />)} />
             <Route path="reservas" element={L(<PartnerReservationsPage />)} />
             <Route
               path="reservas/:reservationId"
