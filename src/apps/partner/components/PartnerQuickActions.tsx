@@ -1,16 +1,17 @@
 /**
- * PartnerQuickActions — Fase 9D
- * Atalhos visuais (sem rotas ativas ainda).
+ * PartnerQuickActions — Fase 10F
+ * Atalhos com navegação real via react-router.
  */
 import { CalendarPlus, ClipboardList, Crown, Settings, BarChart3 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 
 const ACTIONS = [
-  { icon: CalendarPlus, label: "Novo evento" },
-  { icon: ClipboardList, label: "Reservas" },
-  { icon: Crown, label: "Lista VIP" },
-  { icon: BarChart3, label: "Analytics" },
-  { icon: Settings, label: "Configurações" },
+  { icon: CalendarPlus, label: "Novo evento", to: "/eventos/novo" },
+  { icon: ClipboardList, label: "Reservas", to: "/reservas" },
+  { icon: Crown, label: "Lista VIP", to: "/lista-vip" },
+  { icon: BarChart3, label: "Analytics", to: "/analytics" },
+  { icon: Settings, label: "Configurações", to: "/configuracoes" },
 ];
 
 export function PartnerQuickActions() {
@@ -20,20 +21,16 @@ export function PartnerQuickActions() {
         <h3 className="text-sm font-medium mb-3">Ações rápidas</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {ACTIONS.map((a) => (
-            <button
+            <Link
               key={a.label}
-              type="button"
-              disabled
-              className="flex w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-border p-3 text-xs text-muted-foreground opacity-70 cursor-not-allowed break-words"
+              to={a.to}
+              className="flex w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-border p-3 text-xs text-foreground hover:bg-secondary/40 hover:border-primary/40 transition break-words"
             >
               <a.icon className="h-4 w-4 shrink-0" />
               <span className="text-center break-words">{a.label}</span>
-            </button>
+            </Link>
           ))}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2">
-          Atalhos ativados em fases futuras.
-        </p>
       </CardContent>
     </Card>
   );
