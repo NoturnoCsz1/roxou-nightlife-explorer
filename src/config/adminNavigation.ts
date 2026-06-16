@@ -58,5 +58,6 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/editores", icon: ShieldCheck, label: "Editores" },
   { to: "/admin/partner-preview", icon: Briefcase, label: "Partner Pro Preview" },
   { to: "/admin/partner-requests", icon: Inbox, label: "Solicitações Partner" },
+  { to: "/admin/partner-pilot", icon: Rocket, label: "Piloto Partner Pro" },
 ];
 
