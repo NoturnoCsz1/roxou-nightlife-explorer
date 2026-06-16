@@ -2126,6 +2126,147 @@ export type Database = {
           },
         ]
       }
+      partner_vip_list_entries: {
+        Row: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        Insert: {
+          checked_in_at?: string | null
+          created_at?: string
+          email?: string | null
+          event_id?: string | null
+          id?: string
+          name: string
+          partner_id: string
+          people_count?: number
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vip_list_id: string
+        }
+        Update: {
+          checked_in_at?: string | null
+          created_at?: string
+          email?: string | null
+          event_id?: string | null
+          id?: string
+          name?: string
+          partner_id?: string
+          people_count?: number
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vip_list_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_vip_list_entries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_vip_list_entries_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_vip_list_entries_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_vip_list_entries_vip_list_id_fkey"
+            columns: ["vip_list_id"]
+            isOneToOne: false
+            referencedRelation: "partner_vip_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_vip_lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          event_id?: string | null
+          id?: string
+          max_entries?: number | null
+          partner_id: string
+          starts_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          event_id?: string | null
+          id?: string
+          max_entries?: number | null
+          partner_id?: string
+          starts_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_vip_lists_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_vip_lists_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_vip_lists_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           active: boolean
@@ -3335,6 +3476,52 @@ export type Database = {
     }
     Functions: {
       _partner_event_slug: { Args: { _title: string }; Returns: string }
+      _set_partner_vip_list_status: {
+        Args: { _list_id: string; _owner_only: boolean; _status: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      add_partner_vip_entry: {
+        Args: { _list_id: string; _payload: Json }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_list_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       archive_old_radar_scans: { Args: never; Returns: number }
       archive_partner_event: {
         Args: { _event_id: string }
@@ -3401,7 +3588,99 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      archive_partner_vip_list: {
+        Args: { _list_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_partner_vip_entry: {
+        Args: { _entry_id: string }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_list_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      check_in_partner_vip_entry: {
+        Args: { _entry_id: string }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_list_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cleanup_event_live_presence: { Args: never; Returns: number }
+      close_partner_vip_list: {
+        Args: { _list_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
       compute_user_risk_score: { Args: { _user_id: string }; Returns: number }
       count_event_live_presence: {
@@ -3504,6 +3783,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_partner_vip_list: {
+        Args: { _partner_id: string; _payload: Json }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       duplicate_partner_event: {
         Args: { _event_id: string }
         Returns: {
@@ -3594,6 +3895,28 @@ export type Database = {
       is_partner_reservation_manager: {
         Args: { _partner: string; _user: string }
         Returns: boolean
+      }
+      open_partner_vip_list: {
+        Args: { _list_id: string }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
       set_partner_reservation_status: {
@@ -3763,6 +4086,52 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "partners"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_partner_vip_entry: {
+        Args: { _entry_id: string; _payload: Json }
+        Returns: {
+          checked_in_at: string | null
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          partner_id: string
+          people_count: number
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vip_list_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_list_entries"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_partner_vip_list: {
+        Args: { _list_id: string; _payload: Json }
+        Returns: {
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          event_id: string | null
+          id: string
+          max_entries: number | null
+          partner_id: string
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_vip_lists"
           isOneToOne: true
           isSetofReturn: false
         }

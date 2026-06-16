@@ -28,3 +28,14 @@ export { ReservationStats } from "./ReservationStats";
 export { ReservationCard } from "./ReservationCard";
 export { ReservationTable } from "./ReservationTable";
 export { ReservationSettingsForm } from "./ReservationSettingsForm";
+
+// Fase 9I — Partner VIP Lists
+export { VipListStatusBadge } from "./VipListStatusBadge";
+export { VipListEmptyState } from "./VipListEmptyState";
+export { VipListCard } from "./VipListCard";
+export { VipListTable } from "./VipListTable";
+export { VipListForm } from "./VipListForm";
+export { VipListStats } from "./VipListStats";
+export { VipEntryForm } from "./VipEntryForm";
+export { VipEntryTable } from "./VipEntryTable";
+export { VipCheckInPanel } from "./VipCheckInPanel";
