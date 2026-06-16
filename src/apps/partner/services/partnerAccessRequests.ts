@@ -36,12 +36,12 @@ export interface PartnerSearchResult {
   slug: string | null;
   city: string | null;
   type: string | null;
-  category: string | null;
   instagram: string | null;
   logo_url: string | null;
   cover_url: string | null;
   address: string | null;
 }
+
 
 /** Busca estabelecimentos existentes (somente leitura). */
 export async function searchPartnersForOnboarding(
