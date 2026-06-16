@@ -1,136 +1,272 @@
 /**
- * PublicVipListSuccess — Fase 10E
+ * PublicVipListSuccess — Fase 10F
  *
- * Página de confirmação pós inscrição: mostra QR code, nome, lista,
- * estabelecimento e botões de compartilhar/copiar comprovante.
+ * Comprovante profissional pós inscrição. Cartão com logo, dados do
+ * convidado, promoter, código VIP, QR e disclaimers obrigatórios.
+ * Suporta download PNG do QR e do cartão, share WhatsApp e copiar código.
  *
- * Rota: /vip/:publicSlug/sucesso/:publicToken
+ * Rota: /:partnerSlug/vip/sucesso/:publicToken
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams, Link } from "react-router-dom";
+import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
-import { generateQrSvg } from "@/lib/qrcode";
+import {
+  generateQrSvg,
+  generateQrPngDataUrl,
+  downloadDataUrl,
+} from "@/lib/qrcode";
 import type {
   PublicVipListInfo,
   PublicVipSubmitResult,
 } from "@/services/publicVipList";
-import { getPublicVipList } from "@/services/publicVipList";
+import { getPublicVipListByPartner } from "@/services/publicVipList";
 
 interface LocationState {
   result?: PublicVipSubmitResult;
   list?: PublicVipListInfo;
 }
 
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-+|-+$)/g, "");
+
 const PublicVipListSuccessPage = () => {
-  const { publicSlug, publicToken } = useParams<{
-    publicSlug: string;
+  const { partnerSlug, publicToken } = useParams<{
+    partnerSlug: string;
     publicToken: string;
   }>();
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
   const { toast } = useToast();
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
   const [qrSvg, setQrSvg] = useState<string>("");
   const [list, setList] = useState<PublicVipListInfo | null>(state.list ?? null);
 
   const result = state.result;
 
   useEffect(() => {
-    if (!list && publicSlug) {
-      getPublicVipList(publicSlug).then(setList).catch(() => undefined);
+    if (!list && partnerSlug) {
+      getPublicVipListByPartner(partnerSlug)
+        .then(setList)
+        .catch(() => undefined);
     }
-  }, [list, publicSlug]);
+  }, [list, partnerSlug]);
 
   useEffect(() => {
     if (!publicToken) return;
     const payload =
       result?.qr_code_payload ??
       `${window.location.origin}/checkin/${publicToken}`;
-    generateQrSvg(payload).then(setQrSvg).catch(() => setQrSvg(""));
+    generateQrSvg(payload)
+      .then(setQrSvg)
+      .catch(() => setQrSvg(""));
   }, [publicToken, result?.qr_code_payload]);
 
   const partnerName = list?.partner_name ?? "";
-  const listTitle = result?.list_title ?? list?.public_title ?? list?.title ?? "Lista VIP";
+  const listTitle =
+    result?.list_title ?? list?.public_title ?? list?.title ?? "Lista VIP";
+  const guestName = result?.name ?? "";
+  const guestPhone = result?.phone ?? "";
+  const promoterName = result?.promoter_name ?? "";
+  const code = publicToken ? publicToken.slice(0, 8).toUpperCase() : "";
+  const date = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 
-  const comprovante = [
-    `Lista VIP: ${listTitle}`,
-    partnerName ? `Local: ${partnerName}` : null,
-    result?.name ? `Nome: ${result.name}` : null,
-    result?.people_count ? `Pessoas: ${result.people_count}` : null,
-    publicToken ? `Código: ${publicToken}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const filenameBase = slugify(`${guestName || "convidado"}`);
 
-  const copy = async () => {
+  const copyCode = async () => {
     try {
-      await navigator.clipboard.writeText(comprovante);
-      toast({ title: "Comprovante copiado!" });
+      await navigator.clipboard.writeText(code);
+      toast({ title: "Código VIP copiado!" });
     } catch {
       toast({ title: "Não foi possível copiar.", variant: "destructive" });
     }
   };
 
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(comprovante)}`;
+  const downloadQr = async () => {
+    if (!publicToken) return;
+    const payload =
+      result?.qr_code_payload ??
+      `${window.location.origin}/checkin/${publicToken}`;
+    try {
+      const url = await generateQrPngDataUrl(payload, 720);
+      downloadDataUrl(`qr-vip-${filenameBase}.png`, url);
+    } catch {
+      toast({
+        title: "Não foi possível gerar o QR.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadCard = async () => {
+    if (!cardRef.current) return;
+    try {
+      const url = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: "#0b0814",
+      });
+      downloadDataUrl(`comprovante-vip-${filenameBase}.png`, url);
+    } catch {
+      toast({
+        title: "Não foi possível gerar o comprovante.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const shareWhatsapp = () => {
+    const lines = [
+      `Lista VIP — ${listTitle}`,
+      partnerName ? `Local: ${partnerName}` : null,
+      guestName ? `Nome: ${guestName}` : null,
+      promoterName ? `Promoter: ${promoterName}` : null,
+      code ? `Código: ${code}` : null,
+      `Data: ${date}`,
+      "",
+      "Comprovante de inscrição em Lista VIP.",
+      "Não é convite, ingresso ou reserva. Entrada sujeita às regras do estabelecimento.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const url = `https://wa.me/?text=${encodeURIComponent(lines)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <main className="min-h-screen w-full bg-background overflow-x-hidden">
-      <SEO title="Você está na Lista VIP | Roxou" description="Comprovante de inscrição em Lista VIP." />
-      <div className="w-full max-w-md mx-auto px-4 py-8 space-y-5">
+      <SEO
+        title="Você está na Lista VIP | Roxou"
+        description="Comprovante de inscrição em Lista VIP."
+      />
+      <div className="w-full max-w-md mx-auto px-4 py-6 space-y-4">
         <header className="text-center space-y-1">
-          <p className="text-xs uppercase tracking-wide text-primary">Lista VIP</p>
+          <p className="text-xs uppercase tracking-wide text-primary">
+            Lista VIP
+          </p>
           <h1 className="text-2xl font-bold">Você está na lista!</h1>
-          {partnerName ? (
-            <p className="text-sm text-muted-foreground break-words">{partnerName}</p>
-          ) : null}
         </header>
 
-        <Card className="p-4 space-y-3 text-center">
-          <p className="text-base font-semibold break-words">{listTitle}</p>
-          {result?.name ? (
-            <p className="text-sm break-words">
-              <span className="text-muted-foreground">Nome:</span> {result.name}
-            </p>
-          ) : null}
-          {result?.people_count ? (
-            <p className="text-sm">
-              <span className="text-muted-foreground">Pessoas:</span> {result.people_count}
-            </p>
-          ) : null}
-          {result?.status === "pending" ? (
-            <p className="text-xs text-amber-500">
-              Aguardando aprovação do estabelecimento.
-            </p>
-          ) : null}
+        {/* ====== Cartão Profissional ====== */}
+        <div
+          ref={cardRef}
+          className="rounded-2xl p-5 space-y-4"
+          style={{
+            background:
+              "linear-gradient(160deg, #15102b 0%, #0b0814 60%, #1a0b2a 100%)",
+            border: "1px solid rgba(168,85,247,0.25)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            {list?.partner_logo_url ? (
+              <img
+                src={list.partner_logo_url}
+                alt={partnerName}
+                crossOrigin="anonymous"
+                className="w-12 h-12 rounded-full object-cover bg-white/5 shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-white/10 shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-primary">
+                Comprovante VIP
+              </p>
+              <p className="text-sm font-bold text-white break-words">
+                {partnerName || "Estabelecimento"}
+              </p>
+            </div>
+          </div>
 
-          {qrSvg ? (
-            <div
-              className="mx-auto bg-white p-3 rounded-lg w-full max-w-[260px] aspect-square flex items-center justify-center"
-              dangerouslySetInnerHTML={{ __html: qrSvg }}
-            />
-          ) : (
-            <div className="mx-auto bg-muted w-full max-w-[260px] aspect-square rounded-lg" />
-          )}
+          <div className="text-center text-white">
+            <p className="text-xs text-white/60">Convidado</p>
+            <p className="text-lg font-bold break-words">{guestName}</p>
+            {guestPhone ? (
+              <p className="text-xs text-white/60 mt-0.5">{guestPhone}</p>
+            ) : null}
+          </div>
 
-          {publicToken ? (
-            <p className="text-[10px] text-muted-foreground break-all">
-              {publicToken}
-            </p>
-          ) : null}
-        </Card>
+          <div className="bg-white p-3 rounded-xl mx-auto w-full max-w-[240px] aspect-square flex items-center justify-center">
+            {qrSvg ? (
+              <div
+                className="w-full h-full"
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+            ) : (
+              <div className="w-full h-full bg-muted" />
+            )}
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={copy}>
-            Copiar comprovante
+          <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
+            <div>
+              <p className="text-white/50">Promoter</p>
+              <p className="font-medium break-words">
+                {promoterName || "—"}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/50">Código</p>
+              <p className="font-mono font-bold tracking-widest">{code}</p>
+            </div>
+            <div>
+              <p className="text-white/50">Lista</p>
+              <p className="font-medium break-words">{listTitle}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/50">Data</p>
+              <p className="font-medium">{date}</p>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-white/70 text-center border-t border-white/10 pt-3">
+            Este QR Code é individual e válido para apenas 1 pessoa.
+          </p>
+
+          <p className="text-[9px] text-white/50 text-center leading-relaxed">
+            Este documento é apenas um comprovante de inscrição em Lista VIP.
+            Não constitui convite, ingresso, reserva de mesa ou garantia de
+            entrada. A entrada está sujeita às regras do estabelecimento e à
+            validação pela portaria.
+          </p>
+
+          <p className="text-[9px] text-white/40 text-center">
+            Powered by Roxou Partner Pro
+          </p>
+        </div>
+
+        {/* ====== Ações ====== */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" onClick={downloadQr}>
+            Baixar QR PNG
           </Button>
-          <Button asChild>
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              Abrir no WhatsApp
-            </a>
+          <Button variant="secondary" onClick={downloadCard}>
+            Salvar comprovante
+          </Button>
+          <Button onClick={shareWhatsapp}>WhatsApp</Button>
+          <Button variant="outline" onClick={copyCode}>
+            Copiar código
           </Button>
         </div>
+
+        {result?.status === "pending" ? (
+          <Card className="p-3 text-xs text-amber-500 text-center">
+            Aguardando aprovação do estabelecimento.
+          </Card>
+        ) : null}
 
         <p className="text-xs text-center text-muted-foreground">
           Mostre este QR Code na portaria para confirmar sua entrada.

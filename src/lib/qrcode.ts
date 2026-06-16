@@ -1,8 +1,8 @@
 /**
- * QR Code helper — Fase 10E
+ * QR Code helpers — Fase 10E/10F
  *
- * Gera SVG de QR code a partir de string. Usado nas páginas públicas de
- * confirmação da Lista VIP e no comprovante para o porteiro.
+ * - generateQrSvg(payload) → string SVG
+ * - generateQrPngDataUrl(payload, size) → data URL PNG para download
  */
 import QRCode from "qrcode";
 
@@ -13,4 +13,25 @@ export async function generateQrSvg(payload: string): Promise<string> {
     width: 240,
     color: { dark: "#000000", light: "#ffffff" },
   });
+}
+
+export async function generateQrPngDataUrl(
+  payload: string,
+  size = 720,
+): Promise<string> {
+  return QRCode.toDataURL(payload, {
+    type: "image/png",
+    margin: 2,
+    width: size,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
+}
+
+export function downloadDataUrl(filename: string, dataUrl: string) {
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }

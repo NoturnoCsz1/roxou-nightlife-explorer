@@ -1,9 +1,12 @@
 /**
- * PublicVipList — Fase 10E
+ * PublicVipList — Fase 10F
  *
- * Página pública /vip/:publicSlug para inscrição em Lista VIP.
+ * Página pública /:partnerSlug/vip para inscrição em Lista VIP.
  * Aceita ?promoter=slug para rastrear quem trouxe o convidado.
- * Sem login. Submete via RPC SECURITY DEFINER `submit_public_vip_entry`.
+ * Sem login. RPC SECURITY DEFINER `submit_public_vip_entry`.
+ *
+ * Regra: 1 cadastro = 1 pessoa = 1 QR = 1 check-in.
+ * LGPD: consentimento opcional para comunicação futura.
  */
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
@@ -15,13 +18,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import {
-  getPublicVipList,
+  getPublicVipListByPartner,
   submitPublicVipEntry,
   type PublicVipListInfo,
 } from "@/services/publicVipList";
 
 const PublicVipListPage = () => {
-  const { publicSlug } = useParams<{ publicSlug: string }>();
+  const { partnerSlug } = useParams<{ partnerSlug: string }>();
   const [params] = useSearchParams();
   const promoterSlug = params.get("promoter")?.trim() || null;
   const navigate = useNavigate();
@@ -33,56 +36,45 @@ const PublicVipListPage = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [people, setPeople] = useState(1);
   const [accept, setAccept] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("[PUBLIC VIP ROUTE]", window.location.pathname, {
-      publicSlug,
-      promoterSlug,
-    });
-  }, [publicSlug, promoterSlug]);
-
-  useEffect(() => {
-    if (!publicSlug) return;
+    if (!partnerSlug) return;
     let alive = true;
     setLoading(true);
-    getPublicVipList(publicSlug)
-      .then((data) => {
-        if (!alive) return;
-        setList(data);
-      })
-      .catch(() => {
-        if (!alive) return;
-        setList(null);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
+    getPublicVipListByPartner(partnerSlug)
+      .then((data) => alive && setList(data))
+      .catch(() => alive && setList(null))
+      .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [publicSlug]);
+  }, [partnerSlug]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!publicSlug || !list) return;
+    if (!list) return;
     if (!accept) {
-      toast({ title: "Aceite os termos para continuar.", variant: "destructive" });
+      toast({
+        title: "Aceite os termos para continuar.",
+        variant: "destructive",
+      });
       return;
     }
     setSubmitting(true);
     try {
       const result = await submitPublicVipEntry({
-        publicSlug,
+        publicSlug: list.public_slug,
         name,
         phone,
         email: email || null,
-        peopleCount: people,
         promoterSlug,
+        marketingConsent,
+        whatsappConsent: marketingConsent,
+        emailConsent: marketingConsent && !!email,
       });
-      navigate(`/vip/${publicSlug}/sucesso/${result.public_token}`, {
+      navigate(`/${partnerSlug}/vip/sucesso/${result.public_token}`, {
         state: { result, list },
         replace: true,
       });
@@ -111,7 +103,7 @@ const PublicVipListPage = () => {
         <Card className="w-full max-w-md p-6 text-center">
           <h1 className="text-xl font-bold">Lista indisponível</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            O link pode ter sido desativado ou está incorreto.
+            Esse estabelecimento não tem Lista VIP ativa no momento.
           </p>
         </Card>
       </main>
@@ -121,14 +113,19 @@ const PublicVipListPage = () => {
   const displayTitle = list.public_title || list.title;
   const isOpen = list.is_open;
   const capacityLeft =
-    list.max_entries != null ? Math.max(0, list.max_entries - list.used_entries) : null;
+    list.max_entries != null
+      ? Math.max(0, list.max_entries - list.used_entries)
+      : null;
   const soldOut = capacityLeft != null && capacityLeft <= 0;
 
   return (
     <main className="min-h-screen w-full bg-background overflow-x-hidden">
       <SEO
-        title={`${displayTitle} — Lista VIP | Roxou`}
-        description={list.public_description ?? `Entre na Lista VIP de ${list.partner_name ?? ""}`}
+        title={`${displayTitle} — Lista VIP | ${list.partner_name ?? "Roxou"}`}
+        description={
+          list.public_description ??
+          `Entre na Lista VIP de ${list.partner_name ?? ""}`
+        }
       />
       <div className="w-full max-w-xl mx-auto px-4 py-6 space-y-5">
         {list.public_cover_url ? (
@@ -142,24 +139,36 @@ const PublicVipListPage = () => {
           </div>
         ) : null}
 
-        <header className="space-y-1">
-          <p className="text-xs uppercase tracking-wide text-primary">Lista VIP</p>
-          <h1 className="text-2xl font-bold break-words">{displayTitle}</h1>
-          {list.partner_name ? (
-            <p className="text-sm text-muted-foreground break-words">
-              {list.partner_name}
-              {list.partner_city ? ` · ${list.partner_city}` : ""}
-            </p>
+        <header className="flex items-center gap-3">
+          {list.partner_logo_url ? (
+            <img
+              src={list.partner_logo_url}
+              alt={list.partner_name ?? ""}
+              className="w-12 h-12 rounded-full object-cover bg-muted shrink-0"
+            />
           ) : null}
-          {list.starts_at ? (
-            <p className="text-sm text-muted-foreground">
-              {new Date(list.starts_at).toLocaleString("pt-BR", {
-                dateStyle: "short",
-                timeStyle: "short",
-              })}
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-primary">
+              Lista VIP
             </p>
-          ) : null}
+            <h1 className="text-xl font-bold break-words">{displayTitle}</h1>
+            {list.partner_name ? (
+              <p className="text-xs text-muted-foreground break-words">
+                {list.partner_name}
+                {list.partner_city ? ` · ${list.partner_city}` : ""}
+              </p>
+            ) : null}
+          </div>
         </header>
+
+        {list.starts_at ? (
+          <p className="text-sm text-muted-foreground">
+            {new Date(list.starts_at).toLocaleString("pt-BR", {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          </p>
+        ) : null}
 
         {list.public_description ? (
           <p className="text-sm text-foreground/90 whitespace-pre-line break-words">
@@ -175,9 +184,7 @@ const PublicVipListPage = () => {
 
         {capacityLeft != null ? (
           <p className="text-xs text-muted-foreground">
-            {soldOut
-              ? "Capacidade esgotada"
-              : `${capacityLeft} vagas restantes`}
+            {soldOut ? "Capacidade esgotada" : `${capacityLeft} vagas restantes`}
           </p>
         ) : null}
 
@@ -226,22 +233,10 @@ const PublicVipListPage = () => {
                 autoComplete="email"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="vip-people">Pessoas</Label>
-              <Input
-                id="vip-people"
-                type="number"
-                min={1}
-                max={Math.max(1, list.max_entries_per_person || 1)}
-                value={people}
-                onChange={(e) => setPeople(Number(e.target.value) || 1)}
-              />
-              {list.max_entries_per_person > 1 ? (
-                <p className="text-xs text-muted-foreground">
-                  Até {list.max_entries_per_person} pessoas por inscrição.
-                </p>
-              ) : null}
-            </div>
+
+            <p className="text-[11px] text-muted-foreground">
+              1 cadastro = 1 pessoa = 1 QR Code = 1 entrada.
+            </p>
 
             <label className="flex items-start gap-2 text-xs text-muted-foreground">
               <Checkbox
@@ -250,8 +245,20 @@ const PublicVipListPage = () => {
                 className="mt-0.5"
               />
               <span className="break-words">
-                Concordo com o uso dos meus dados para confirmar minha entrada conforme a
-                LGPD.
+                Concordo com o uso dos meus dados para confirmar minha entrada
+                conforme a LGPD.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={marketingConsent}
+                onCheckedChange={(v) => setMarketingConsent(v === true)}
+                className="mt-0.5"
+              />
+              <span className="break-words">
+                Autorizo receber informações, promoções e novidades deste
+                estabelecimento e da Roxou.
               </span>
             </label>
 
