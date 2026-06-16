@@ -14,6 +14,7 @@ import {
   Palette,
   Search,
   Trophy,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
