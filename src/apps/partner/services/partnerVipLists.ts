@@ -232,6 +232,10 @@ export async function noShowVipEntry(
   return data as unknown as PartnerVipEntry;
 }
 
+// Alias mantido para compatibilidade com o nome pedido na FASE 10D.
+export const markNoShowVipEntry = noShowVipEntry;
+
+
 // ---------- Stats ----------
 
 export interface VipListStatsResult {
