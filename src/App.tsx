@@ -243,11 +243,11 @@ const App = () => (
             element={L(<PartnerScopedComingSoon section="reservas" />)}
           />
 
-          {/* Redirect das URLs antigas /vip/:publicSlug → home (URL trocada na Fase 10F) */}
-          <Route path="/vip/:publicSlug" element={<Navigate to="/" replace />} />
+          {/* Rota pública por slug da Lista VIP (Fase 10G fix): /vip/:listSlug */}
+          <Route path="/vip/:listSlug" element={L(<PublicVipList />)} />
           <Route
-            path="/vip/:publicSlug/sucesso/:publicToken"
-            element={<Navigate to="/" replace />}
+            path="/vip/:listSlug/sucesso/:publicToken"
+            element={L(<PublicVipListSuccess />)}
           />
 
 
