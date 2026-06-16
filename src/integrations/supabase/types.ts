@@ -1783,6 +1783,144 @@ export type Database = {
           },
         ]
       }
+      partner_beta_access: {
+        Row: {
+          access_enabled: boolean
+          beta_role: string
+          created_at: string
+          id: string
+          invited_by: string | null
+          notes: string | null
+          partner_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_enabled?: boolean
+          beta_role?: string
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          partner_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_enabled?: boolean
+          beta_role?: string
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          partner_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_beta_access_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_beta_access_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_beta_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          page: string | null
+          partner_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          page?: string | null
+          partner_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          page?: string | null
+          partner_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_beta_feedback_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_beta_feedback_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_beta_metrics: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json
+          page: string | null
+          partner_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          page?: string | null
+          partner_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          page?: string | null
+          partner_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_beta_metrics_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_beta_metrics_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_metrics_daily: {
         Row: {
           clicks: number
@@ -3610,6 +3748,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_access_partner_beta: { Args: { _user: string }; Returns: boolean }
       cancel_partner_vip_entry: {
         Args: { _entry_id: string }
         Returns: {
