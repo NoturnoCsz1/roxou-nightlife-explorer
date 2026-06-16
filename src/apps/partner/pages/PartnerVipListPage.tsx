@@ -91,13 +91,54 @@ const PartnerVipListPage = () => {
       {loading ? (
         <p className="text-muted-foreground">Carregando...</p>
       ) : lists.length ? (
-        <VipListTable
-          lists={lists}
-          onOpen={(l) => navigate(`/lista-vip/${l.id}`)}
-        />
+        (() => {
+          const now = Date.now();
+          const active = lists.filter(
+            (l) =>
+              l.status !== "archived" &&
+              !(l.starts_at && new Date(l.starts_at).getTime() < now),
+          );
+          const ended = lists.filter(
+            (l) =>
+              l.status === "archived" ||
+              (l.starts_at && new Date(l.starts_at).getTime() < now),
+          );
+          return (
+            <div className="space-y-6">
+              <section className="space-y-2">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  Listas ativas
+                </h2>
+                {active.length ? (
+                  <VipListTable
+                    lists={active}
+                    onOpen={(l) => navigate(`/lista-vip/${l.id}`)}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma lista ativa no momento.
+                  </p>
+                )}
+              </section>
+              {ended.length ? (
+                <section className="space-y-2">
+                  <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Eventos encerrados
+                  </h2>
+                  <VipListTable
+                    lists={ended}
+                    onOpen={(l) => navigate(`/lista-vip/${l.id}`)}
+                    dim
+                  />
+                </section>
+              ) : null}
+            </div>
+          );
+        })()
       ) : (
         <VipListEmptyState />
       )}
+
     </main>
   );
 };

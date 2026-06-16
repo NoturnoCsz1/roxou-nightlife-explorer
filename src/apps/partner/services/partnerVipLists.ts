@@ -41,9 +41,39 @@ export interface PartnerVipList {
   public_rules: string | null;
   max_entries_per_person: number;
   requires_approval: boolean;
+  closes_at: string | null;
+  auto_close_enabled: boolean;
+  close_reason: string | null;
+  allow_multiple_people_per_entry: boolean;
   created_at: string;
   updated_at: string;
 }
+
+/** Estado operacional derivado: visualização para portaria/parceiro. */
+export type VipListOperationalState = "open" | "sold_out" | "closed" | "ended";
+
+/**
+ * Calcula o estado operacional client-side, refletindo `compute_partner_vip_list_state`
+ * do banco. Não dispara fetch — recebe a data do evento já resolvida.
+ */
+export function deriveVipListState(
+  list: Pick<
+    PartnerVipList,
+    "status" | "closes_at" | "max_entries"
+  >,
+  usedEntries: number,
+  eventDate: string | null,
+): VipListOperationalState {
+  if (list.status === "archived") return "closed";
+  if (eventDate && new Date(eventDate).getTime() < Date.now()) return "ended";
+  if (list.status === "closed") return "closed";
+  if (list.closes_at && new Date(list.closes_at).getTime() < Date.now())
+    return "closed";
+  if (list.max_entries != null && usedEntries >= list.max_entries)
+    return "sold_out";
+  return "open";
+}
+
 
 export interface PartnerVipEntry {
   id: string;
