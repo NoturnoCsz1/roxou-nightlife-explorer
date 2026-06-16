@@ -18,7 +18,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
 
+const PartnerOnboardingPage = lazy(() => import("./pages/PartnerOnboardingPage"));
+const PartnerPendingApprovalPage = lazy(
+  () => import("./pages/PartnerPendingApprovalPage"),
+);
+const PartnerRequestSuccessPage = lazy(
+  () => import("./pages/PartnerRequestSuccessPage"),
+);
 const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage"));
+
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
