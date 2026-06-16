@@ -179,6 +179,7 @@ const App = () => (
             <Route path="artes" element={L(<Artes />)} />
             <Route path="story-agenda" element={L(<StoryAgendaDoDia />)} />
             <Route path="partner-requests" element={L(<PartnerAccessRequests />)} />
+            <Route path="partner-pilot" element={L(<PartnerPilot />)} />
           </Route>
 
 
