@@ -1,22 +1,25 @@
 /**
- * PartnerLoginPage — Fase 10A (hotfix botões).
+ * PartnerLoginPage — Fase 10C (login e-mail/senha).
  *
- * Tela inicial de `parceiro.roxou.com.br`.
- * - Login Google via supabase.auth.signInWithOAuth (direto, sem broker).
- * - CTA "Solicitar acesso" que roteia conforme o estado do usuário.
+ * Login principal no `parceiro.roxou.com.br` agora é e-mail + senha via
+ * `supabase.auth.signInWithPassword`, enquanto o Google OAuth segue
+ * pendente de configuração do secret no provider Supabase.
  *
- * Causa raiz do bug anterior:
- *   `lovable.auth.signInWithOAuth("google", ...)` exigia o broker
- *   `/~oauth/initiate` no subdomínio `parceiro.roxou.com.br`, que não
- *   está configurado no Nginx — a chamada falhava silenciosamente e os
- *   botões pareciam não fazer nada. Trocamos para o cliente Supabase
- *   direto, que faz `window.location` para o endpoint OAuth oficial.
+ * - Email/senha: principal.
+ * - "Esqueci minha senha": dispara resetPasswordForEmail com redirect
+ *   para `${origin}/login`.
+ * - "Solicitar acesso": roteia o usuário (logado ou não) para o fluxo
+ *   de onboarding.
+ * - Google: mantido como secundário, marcado "em breve" enquanto o
+ *   OAuth secret não está configurado.
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { listMyAccessRequests } from "../services/partnerAccessRequests";
+
+const GOOGLE_ENABLED = false;
 
 const partnerOrigin = () =>
   typeof window === "undefined" ? "" : window.location.origin;
@@ -62,27 +65,12 @@ async function resolveDestination(userId: string): Promise<string> {
   return "/onboarding";
 }
 
-async function startGoogleOAuth(redirectPath: string) {
-  const redirectTo = buildPartnerUrl(redirectPath);
-  // eslint-disable-next-line no-console
-  console.log("[PARTNER LOGIN] signInWithOAuth → redirectTo:", redirectTo);
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo },
-  });
-  if (error) throw error;
-  // eslint-disable-next-line no-console
-  console.log("[PARTNER LOGIN] OAuth response:", data);
-  // O cliente Supabase normalmente faz window.location.href = data.url.
-  // Garantimos isso como fallback:
-  if (data?.url && typeof window !== "undefined") {
-    window.location.href = data.url;
-  }
-}
-
 const PartnerLoginPage = () => {
   const navigate = useNavigate();
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
 
   useEffect(() => {
@@ -99,47 +87,94 @@ const PartnerLoginPage = () => {
     };
   }, [navigate]);
 
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error("Informe e-mail e senha.");
+      return;
+    }
+    setEmailLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error || !data?.user) {
+        toast.error("E-mail ou senha inválidos.");
+        setEmailLoading(false);
+        return;
+      }
+      const next = readNextParam();
+      const dest = next ?? (await resolveDestination(data.user.id));
+      navigate(dest, { replace: true });
+    } catch (err) {
+      console.error("[PARTNER LOGIN] email/password error:", err);
+      toast.error("E-mail ou senha inválidos.");
+      setEmailLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Informe seu e-mail acima para receber o link.");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo: buildPartnerUrl("/login") },
+      );
+      if (error) throw error;
+      toast.success("Enviamos um link para redefinir sua senha.");
+    } catch (err) {
+      console.error("[PARTNER LOGIN] reset password error:", err);
+      toast.error("Não foi possível enviar o e-mail de redefinição.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleGoogle = async () => {
-    // eslint-disable-next-line no-console
-    console.log("[PARTNER LOGIN] Google button clicked");
-    setGoogleLoading(true);
+    if (!GOOGLE_ENABLED) {
+      toast.info("Login com Google em breve. Use e-mail e senha por enquanto.");
+      return;
+    }
     try {
       const next = readNextParam() ?? "/dashboard";
-      await startGoogleOAuth(next);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: buildPartnerUrl(next) },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("[PARTNER LOGIN] Google OAuth error:", err);
       toast.error(
         err instanceof Error ? err.message : "Erro ao entrar com Google",
       );
-      setGoogleLoading(false);
     }
   };
 
   const handleRequestAccess = async () => {
-    // eslint-disable-next-line no-console
-    console.log("[PARTNER LOGIN] Access request clicked");
     setRequestLoading(true);
     try {
       const { data } = await supabase.auth.getUser();
       if (!data?.user) {
-        await startGoogleOAuth("/onboarding");
+        navigate("/onboarding");
         return;
       }
       const dest = await resolveDestination(data.user.id);
       navigate(dest);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("[PARTNER LOGIN] Access request error:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Não foi possível continuar",
-      );
+      toast.error("Não foi possível continuar.");
     } finally {
       setRequestLoading(false);
     }
   };
 
-  const busy = googleLoading || requestLoading;
+  const busy = emailLoading || resetLoading || requestLoading;
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
@@ -156,29 +191,87 @@ const PartnerLoginPage = () => {
           </p>
         </header>
 
-        <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-3 relative z-10">
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={busy}
-            className="w-full h-11 rounded-md border border-border bg-background hover:bg-muted text-foreground font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {googleLoading ? "Entrando..." : "Entrar com Google"}
-          </button>
+        <form
+          onSubmit={handleEmailLogin}
+          className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-3 relative z-10"
+        >
+          <div className="space-y-1">
+            <label htmlFor="partner-email" className="text-xs font-medium text-muted-foreground">
+              E-mail
+            </label>
+            <input
+              id="partner-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={busy}
+              className="w-full h-11 px-3 rounded-md border border-border bg-background text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="voce@estabelecimento.com"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="partner-password" className="text-xs font-medium text-muted-foreground">
+              Senha
+            </label>
+            <input
+              id="partner-password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={busy}
+              className="w-full h-11 px-3 rounded-md border border-border bg-background text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="••••••••"
+              required
+            />
+          </div>
 
           <button
-            type="button"
-            onClick={handleRequestAccess}
+            type="submit"
             disabled={busy}
             className="w-full h-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {requestLoading ? "Abrindo..." : "Solicitar acesso ao Partner Pro"}
+            {emailLoading ? "Entrando..." : "Entrar com e-mail"}
           </button>
+
+          <div className="flex items-center justify-between text-[11px]">
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={busy}
+              className="text-muted-foreground underline hover:text-foreground disabled:opacity-60"
+            >
+              {resetLoading ? "Enviando..." : "Esqueci minha senha"}
+            </button>
+            <button
+              type="button"
+              onClick={handleRequestAccess}
+              disabled={busy}
+              className="text-primary underline hover:opacity-80 disabled:opacity-60"
+            >
+              {requestLoading ? "Abrindo..." : "Solicitar acesso"}
+            </button>
+          </div>
+
+          <div className="pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={busy || !GOOGLE_ENABLED}
+              className="w-full h-10 rounded-md border border-border bg-background text-muted-foreground text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              title={GOOGLE_ENABLED ? "" : "Em breve"}
+            >
+              {GOOGLE_ENABLED ? "Entrar com Google" : "Entrar com Google (em breve)"}
+            </button>
+          </div>
 
           <p className="text-[11px] text-muted-foreground text-center pt-1">
             Disponível apenas para estabelecimentos já cadastrados na Roxou.
           </p>
-        </div>
+        </form>
 
         <p className="text-[11px] text-center text-muted-foreground">
           Para visitantes:{" "}
