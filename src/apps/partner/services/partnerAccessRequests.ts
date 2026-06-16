@@ -52,8 +52,9 @@ export async function searchPartnersForOnboarding(
   let req = supabase
     .from("partners")
     .select(
-      "id, name, slug, city, type, instagram, logo_url, cover_url, address",
+      "id, name, slug, city, type, instagram, logo_url, address",
     )
+
     .order("name", { ascending: true })
     .limit(limit);
 
