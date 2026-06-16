@@ -21,7 +21,7 @@ interface Props {
 }
 
 const Body = ({ publicToken }: Props) => {
-  const { user, loading: authLoading } = usePartnerAuth();
+  const { user, isLoading: authLoading } = usePartnerAuth();
   const [entry, setEntry] = useState<PartnerVipEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
