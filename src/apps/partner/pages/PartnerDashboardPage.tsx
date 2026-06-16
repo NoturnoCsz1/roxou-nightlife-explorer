@@ -114,7 +114,7 @@ const PartnerDashboardPage = () => {
           <PartnerMetricsCards totals={totals} label="Últimos 7 dias" />
           <PartnerRecentEvents events={events} />
         </div>
-        <aside className="space-y-4">
+        <aside className="space-y-4 min-w-0">
           <PartnerSubscriptionCard subscription={subscription} />
           <PartnerAwardBadge award={award} />
           <div className="grid grid-cols-3 gap-2 text-center">
