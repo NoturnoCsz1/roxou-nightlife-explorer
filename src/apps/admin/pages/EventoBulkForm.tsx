@@ -1459,6 +1459,16 @@ const EventoBulkForm = () => {
                   <AlertCircle className="h-3 w-3" /> Reprocessar falhas ({errorCount})
                 </button>
               )}
+              {descErrorCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRequeueDescriptionErrors}
+                  className="flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 transition"
+                  title="Reenfileira descrições que falharam (não afeta o flyer)"
+                >
+                  <Sparkles className="h-3 w-3" /> Reprocessar descrições com erro ({descErrorCount})
+                </button>
+              )}
               <label
                 className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5 text-[11px] text-muted-foreground cursor-pointer hover:bg-secondary/60 transition"
                 title="Não chama generate-description durante a leitura do flyer"
