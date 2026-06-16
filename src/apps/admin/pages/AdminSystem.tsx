@@ -75,6 +75,7 @@ const AdminSystem = () => {
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [idbCount, setIdbCount] = useState<number>(0);
+  const [runtime, setRuntime] = useState<BulkRuntimeSnapshot>(() => getBulkRuntimeStats());
 
   async function refresh() {
     setLoading(true);
@@ -90,6 +91,7 @@ const AdminSystem = () => {
     setPm2(pm?.processes && pm.processes.length > 0 ? pm.processes : null);
     setHost(h && (h.load_avg || h.memory || h.disk) ? h : null);
     setIdbCount(c);
+    setRuntime(getBulkRuntimeStats());
     setNow(Date.now());
     setLoading(false);
   }
@@ -98,7 +100,9 @@ const AdminSystem = () => {
     refresh();
     // FASE 10G.1.1 — auto-refresh a cada 5s para virar monitor real
     const t = setInterval(refresh, 5_000);
-    return () => clearInterval(t);
+    // FASE 10G.1.3 — heap/queue snapshot ainda mais frequente (1s)
+    const rt = setInterval(() => setRuntime(getBulkRuntimeStats()), 1_000);
+    return () => { clearInterval(t); clearInterval(rt); };
   }, []);
 
   async function handleClearCache() {
