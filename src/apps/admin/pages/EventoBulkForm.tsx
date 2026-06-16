@@ -595,36 +595,25 @@ const EventoBulkForm = () => {
       );
 
 
-      // Auto-generate rich description (Persona V2) — only after metadata is confirmed valid
+      // FASE 10G.1.2 — Geração de descrição agora roda no worker dedicado.
+      // Não bloqueia o pipeline de extração. Erro aqui não invalida o item.
       const f = readyForm as EventFormData | null;
       if (f && f.title && f.title.length > 3 && !skipDescriptionsRef.current) {
-        try {
-          const previousDescs = items
-            .map((x) => x.form.description)
-            .filter((d): d is string => !!d && d.length > 30)
-            .slice(-5);
-          const descResp = await supabase.functions.invoke("generate-description", {
-            body: {
-              title: f.title,
-              venue_name: f.venue_name || "",
-              address: f.address || "",
-              date_time: f.date_time || "",
-              category: f.category || "festa",
-              sub_category: (f as any)._sub || "",
-              partner_id: f.partner_id || undefined,
-              seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
-              previous_descriptions: previousDescs,
-            },
-          });
-          if (!descResp.error && descResp.data) {
-            const rich = descResp.data?.descricao_rica || descResp.data?.description;
-            if (rich && typeof rich === "string") {
-              patchForm(localId, { description: rich });
-            }
-          }
-        } catch (descErr) {
-          console.warn("[bulk] auto description failed", descErr);
-        }
+        const previousDescs = items
+          .map((x) => x.form.description)
+          .filter((d): d is string => !!d && d.length > 30)
+          .slice(-5);
+        enqueueDescription(localId, {
+          title: f.title,
+          venue_name: f.venue_name || "",
+          address: f.address || "",
+          date_time: f.date_time || "",
+          category: f.category || "festa",
+          sub_category: (f as any)._sub || "",
+          partner_id: f.partner_id || undefined,
+          seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
+          previous_descriptions: previousDescs,
+        });
       }
       bulkLog("extraction_done", { id: localId, duration_ms: Math.round(performance.now() - t0) });
     } catch (err: any) {
