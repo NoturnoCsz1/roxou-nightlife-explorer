@@ -1405,8 +1405,29 @@ const EventoBulkForm = () => {
                   <AlertCircle className="h-3 w-3" /> Reprocessar falhas ({errorCount})
                 </button>
               )}
+              <label
+                className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5 text-[11px] text-muted-foreground cursor-pointer hover:bg-secondary/60 transition"
+                title="Não chama generate-description durante a leitura do flyer"
+              >
+                <input
+                  type="checkbox"
+                  className="h-3 w-3 accent-primary"
+                  checked={skipDescriptions}
+                  onChange={(e) => setSkipDescriptions(e.target.checked)}
+                />
+                Pular descrições
+              </label>
+              <button
+                type="button"
+                onClick={handleClearFlyerCache}
+                className="flex items-center gap-1 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5 text-[11px] text-muted-foreground hover:bg-secondary/60 transition"
+                title="Remove o cache IndexedDB + sessionStorage de flyers"
+              >
+                <X className="h-3 w-3" /> Limpar cache de flyers{cacheCount > 0 ? ` (${cacheCount})` : ""}
+              </button>
             </div>
           </div>
+
 
           {/* ✨ Contadores Fase 2B */}
           {(bulkAiRunning || bulkAiCounts.generated + bulkAiCounts.review + bulkAiCounts.duplicatesSkipped + bulkAiCounts.errors > 0) && (
