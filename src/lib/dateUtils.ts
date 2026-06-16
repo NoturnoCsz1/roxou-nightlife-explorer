@@ -70,6 +70,27 @@ export const getEndOfTodaySP = () => {
   return ymdToISO(t.y, t.m, t.d, "00:00:00");
 };
 
+/** ISO do fim do dia (exclusivo: 00:00 do dia seguinte) em SP, para a data informada. */
+export const getEndOfDaySPFromDate = (value: string | Date): string => {
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return "";
+  const { y, m, d: day } = getSpParts(d);
+  const t = addDaysSP(y, m, day, 1);
+  return ymdToISO(t.y, t.m, t.d, "00:00:00");
+};
+
+/** Formata um ISO/Date como data+hora em SP (pt-BR). */
+export const formatDateTimeSP = (value: string | Date | null | undefined): string => {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: TZ,
+  });
+};
+
 /** Intervalo [start, end) de amanhã em SP. */
 export const getTomorrowRangeSP = () => {
   const { y, m, d } = getSpParts(new Date());
