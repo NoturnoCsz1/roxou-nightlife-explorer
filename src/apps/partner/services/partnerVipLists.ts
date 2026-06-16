@@ -60,24 +60,46 @@ export type VipListOperationalState =
 /**
  * Calcula o estado operacional client-side, refletindo `compute_partner_vip_list_state`
  * do banco. Não dispara fetch — recebe a data do evento já resolvida.
+ *
+ * Regras (timezone America/Sao_Paulo):
+ *  - Lista nova NUNCA nasce como encerrada.
+ *  - Só vira "ended" se o horário final for menor que o agora em SP.
+ *  - Horário final = `ends_at` se houver; senão, fim do dia (SP) do evento/starts_at.
+ *  - Se não há nenhuma referência temporal, a lista NÃO é encerrada por tempo.
  */
 export function deriveVipListState(
   list: Pick<
     PartnerVipList,
-    "status" | "closes_at" | "max_entries" | "starts_at"
-  > & { starts_at?: string | null },
+    "status" | "closes_at" | "max_entries" | "starts_at" | "ends_at"
+  > & { starts_at?: string | null; ends_at?: string | null },
   usedEntries: number,
   eventDate: string | null,
 ): VipListOperationalState {
   if (list.status === "archived") return "archived";
-  const refDate =
-    eventDate ?? (list.starts_at ? list.starts_at : null);
-  if (refDate && new Date(refDate).getTime() < Date.now()) return "ended";
+  const now = Date.now();
+
+  // 1) Fechamento manual / por closes_at
   if (list.status === "closed") return "closed";
-  if (list.closes_at && new Date(list.closes_at).getTime() < Date.now())
+  if (list.closes_at && new Date(list.closes_at).getTime() < now)
     return "closed";
+
+  // 2) Encerramento por tempo (apenas se houver referência temporal válida)
+  const dayRef = eventDate ?? list.starts_at ?? null;
+  let deadline: number | null = null;
+  if (list.ends_at) {
+    const t = new Date(list.ends_at).getTime();
+    if (!Number.isNaN(t)) deadline = t;
+  } else if (dayRef) {
+    const eod = getEndOfDaySPFromDate(dayRef);
+    const t = eod ? new Date(eod).getTime() : NaN;
+    if (!Number.isNaN(t)) deadline = t;
+  }
+  if (deadline !== null && deadline < now) return "ended";
+
+  // 3) Lotação
   if (list.max_entries != null && usedEntries >= list.max_entries)
     return "sold_out";
+
   return "open";
 }
 
