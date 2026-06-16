@@ -1,1 +1,1 @@
-{"status":"ok","service":"roxou-web","note":"Static fallback. The VPS nginx aliases /health to a JSON written by deploy.sh; in dev/build this static file responds."}
+{"status":"ok","service":"roxou-web","version":"0.0.0","build":"2026-06-16T19:39:39.931Z","pwa_enabled":true}
