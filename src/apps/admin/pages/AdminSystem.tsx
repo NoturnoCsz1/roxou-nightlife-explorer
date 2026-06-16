@@ -8,9 +8,10 @@
  * estáticos em public/), os demais retornam "indisponível".
  */
 import { useEffect, useState } from "react";
-import { Activity, Cpu, HardDrive, MemoryStick, RefreshCw, Server, Trash2 } from "lucide-react";
+import { Activity, Cpu, HardDrive, MemoryStick, RefreshCw, Server, Trash2, Workflow } from "lucide-react";
 import { getBulkCacheStats } from "@/lib/bulkEventsCache";
 import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
+import { getBulkRuntimeStats, type BulkRuntimeSnapshot } from "@/lib/bulkRuntimeStats";
 import { toast } from "sonner";
 
 type HealthPayload = {
