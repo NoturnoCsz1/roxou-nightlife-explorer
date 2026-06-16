@@ -37,6 +37,14 @@ const PublicVipListPage = () => {
   const [accept, setAccept] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[PUBLIC VIP ROUTE]", window.location.pathname, {
+      publicSlug,
+      promoterSlug,
+    });
+  }, [publicSlug, promoterSlug]);
+
+  useEffect(() => {
     if (!publicSlug) return;
     let alive = true;
     setLoading(true);
