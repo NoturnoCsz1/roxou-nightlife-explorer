@@ -36,7 +36,14 @@ const AdminLogs = () => {
       const data = (await r.json()) as { lines: LogLine[] };
       setLines(data.lines ?? []);
     } catch (e) {
-      setLines(null);
+      // FASE 10G.1.1 — adaptador mock para preview/dev sem /api/logs.
+      const now = new Date();
+      const mock: LogLine[] = Array.from({ length: 6 }, (_, i) => ({
+        ts: new Date(now.getTime() - i * 60_000).toISOString(),
+        level: i === 0 ? "info" : i === 5 ? "warn" : "info",
+        msg: `[${cat}] mock entry #${i + 1} — /api/logs ainda não disponível neste ambiente`,
+      }));
+      setLines(mock);
       setErr(e instanceof Error ? e.message : "Erro");
     } finally {
       setLoading(false);

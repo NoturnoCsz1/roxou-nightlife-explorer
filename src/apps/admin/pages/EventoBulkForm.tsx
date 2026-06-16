@@ -18,6 +18,7 @@ import {
   writeExtractionCache,
   bulkLog,
 } from "@/lib/bulkEventsImage";
+import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
 import {
   findPossibleDuplicateEvent,
   generateEventDedupeKey,
@@ -170,6 +171,31 @@ const EventoBulkForm = () => {
       return next;
     });
   }, []);
+
+  // FASE 10G.1.1 — preferências/observabilidade do cache
+  const [skipDescriptions, setSkipDescriptions] = useState<boolean>(() => {
+    if (typeof localStorage === "undefined") return false;
+    return localStorage.getItem("bulk_skip_descriptions") === "1";
+  });
+  const [cacheCount, setCacheCount] = useState<number>(0);
+  useEffect(() => {
+    void bulkCacheCountIdb().then(setCacheCount);
+  }, []);
+  useEffect(() => {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem("bulk_skip_descriptions", skipDescriptions ? "1" : "0");
+    }
+  }, [skipDescriptions]);
+  const skipDescriptionsRef = useRef(skipDescriptions);
+  useEffect(() => { skipDescriptionsRef.current = skipDescriptions; }, [skipDescriptions]);
+
+  const handleClearFlyerCache = useCallback(async () => {
+    await clearBulkCacheIdb();
+    try { sessionStorage.clear(); } catch { /* ignore */ }
+    setCacheCount(0);
+    toast.success("Cache de flyers limpo.");
+  }, []);
+
 
   useEffect(() => {
     let q = supabase.from("partners").select("*").eq("active", true).order("name");
@@ -566,7 +592,7 @@ const EventoBulkForm = () => {
 
       // Auto-generate rich description (Persona V2) — only after metadata is confirmed valid
       const f = readyForm as EventFormData | null;
-      if (f && f.title && f.title.length > 3) {
+      if (f && f.title && f.title.length > 3 && !skipDescriptionsRef.current) {
         try {
           const previousDescs = items
             .map((x) => x.form.description)
@@ -1379,8 +1405,29 @@ const EventoBulkForm = () => {
                   <AlertCircle className="h-3 w-3" /> Reprocessar falhas ({errorCount})
                 </button>
               )}
+              <label
+                className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5 text-[11px] text-muted-foreground cursor-pointer hover:bg-secondary/60 transition"
+                title="Não chama generate-description durante a leitura do flyer"
+              >
+                <input
+                  type="checkbox"
+                  className="h-3 w-3 accent-primary"
+                  checked={skipDescriptions}
+                  onChange={(e) => setSkipDescriptions(e.target.checked)}
+                />
+                Pular descrições
+              </label>
+              <button
+                type="button"
+                onClick={handleClearFlyerCache}
+                className="flex items-center gap-1 rounded-lg border border-border/50 bg-secondary/40 px-2.5 py-1.5 text-[11px] text-muted-foreground hover:bg-secondary/60 transition"
+                title="Remove o cache IndexedDB + sessionStorage de flyers"
+              >
+                <X className="h-3 w-3" /> Limpar cache de flyers{cacheCount > 0 ? ` (${cacheCount})` : ""}
+              </button>
             </div>
           </div>
+
 
           {/* ✨ Contadores Fase 2B */}
           {(bulkAiRunning || bulkAiCounts.generated + bulkAiCounts.review + bulkAiCounts.duplicatesSkipped + bulkAiCounts.errors > 0) && (

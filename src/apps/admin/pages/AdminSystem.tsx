@@ -8,8 +8,10 @@
  * estáticos em public/), os demais retornam "indisponível".
  */
 import { useEffect, useState } from "react";
-import { Activity, Cpu, HardDrive, MemoryStick, RefreshCw, Server } from "lucide-react";
+import { Activity, Cpu, HardDrive, MemoryStick, RefreshCw, Server, Trash2 } from "lucide-react";
 import { getBulkCacheStats } from "@/lib/bulkEventsCache";
+import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
+import { toast } from "sonner";
 
 type HealthPayload = {
   status?: string;
@@ -71,28 +73,39 @@ const AdminSystem = () => {
   const [host, setHost] = useState<HostMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [idbCount, setIdbCount] = useState<number>(0);
 
   async function refresh() {
     setLoading(true);
-    const [w, p, pm, h] = await Promise.all([
+    const [w, p, pm, h, c] = await Promise.all([
       fetchJson<HealthPayload>("/health"),
       fetchJson<HealthPayload>("/partner/health"),
       fetchJson<{ processes: PmProcess[] }>("/api/system/pm2"),
       fetchJson<HostMetrics>("/api/system/host"),
+      bulkCacheCountIdb(),
     ]);
     setWeb(w);
     setPartner(p);
     setPm2(pm?.processes ?? null);
     setHost(h);
+    setIdbCount(c);
     setNow(Date.now());
     setLoading(false);
   }
 
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 30_000);
+    // FASE 10G.1.1 — auto-refresh a cada 5s para virar monitor real
+    const t = setInterval(refresh, 5_000);
     return () => clearInterval(t);
   }, []);
+
+  async function handleClearCache() {
+    await clearBulkCacheIdb();
+    try { sessionStorage.clear(); } catch { /* ignore */ }
+    setIdbCount(0);
+    toast.success("Cache de flyers limpo.");
+  }
 
   const cache = getBulkCacheStats();
   const buildTime = typeof __ROXOU_BUILD_TIME__ !== "undefined" ? __ROXOU_BUILD_TIME__ : "—";
@@ -107,15 +120,26 @@ const AdminSystem = () => {
             Saúde da VPS, processos PM2 e métricas do bundle atual.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={loading}
-          className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/40 px-3 py-1.5 text-xs hover:bg-secondary/60 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleClearCache}
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/40 px-3 py-1.5 text-xs hover:bg-secondary/60"
+            title="Limpa IndexedDB e sessionStorage usados pelo EventoBulkForm"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Cache flyers{idbCount > 0 ? ` (${idbCount})` : ""}
+          </button>
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-secondary/40 px-3 py-1.5 text-xs hover:bg-secondary/60 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -124,7 +148,9 @@ const AdminSystem = () => {
           <p><span className="text-foreground/80">PWA habilitado:</span> {String(pwaEnabled)}</p>
           <p><span className="text-foreground/80">User agent:</span> <span className="break-all">{navigator.userAgent}</span></p>
           <p><span className="text-foreground/80">Cache de flyers (sessão):</span> {cache.hits} hits · {cache.misses} miss · {cache.writes} writes</p>
+          <p><span className="text-foreground/80">Cache persistente (IndexedDB):</span> {idbCount} entradas</p>
         </Card>
+
 
         <Card title="/health (roxou-web)" icon={Server}>
           {web ? (
@@ -198,7 +224,7 @@ const AdminSystem = () => {
 
         <Card title="Última verificação" icon={Activity}>
           <p>{new Date(now).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
-          <p className="text-[10px]">Auto-refresh a cada 30s.</p>
+          <p className="text-[10px]">Auto-refresh a cada 5s.</p>
         </Card>
       </div>
     </div>
