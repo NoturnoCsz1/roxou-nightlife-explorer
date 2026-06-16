@@ -109,7 +109,7 @@ const PartnerDashboardPage = () => {
       </header>
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-        <div className="md:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           <PartnerProfileCard partner={details} />
           <PartnerMetricsCards totals={totals} label="Últimos 7 dias" />
           <PartnerRecentEvents events={events} />
