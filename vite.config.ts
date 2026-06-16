@@ -99,4 +99,16 @@ preview: {
     },
     dedupe: ["react", "react-dom"],
   },
+  // Multi-entry (Fase 9M):
+  //   dist/index.html         → roxou.com.br (app público + admin)
+  //   dist/partner/index.html → parceiro.roxou.com.br (Partner Pro)
+  // Ambos compartilham /assets/ (chunks com hash) na raiz do dist.
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        partner: path.resolve(__dirname, "partner/index.html"),
+      },
+    },
+  },
 }));
