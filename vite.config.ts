@@ -5,6 +5,20 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
 
+// FASE 10G.1 — PWA opcional.
+// Em ambientes que apresentam conflito do source-phase import
+// (`vite/modulepreload-polyfill`) com o multi-entry (index.html +
+// partner/index.html), basta exportar `VITE_DISABLE_PWA=true` (ou
+// `DISABLE_PWA=true`) antes do `bun run build` para gerar um bundle
+// sem o plugin PWA. Útil exclusivamente para destravar a VPS sem
+// quebrar o build padrão da Lovable.
+const disablePwa =
+  process.env.VITE_DISABLE_PWA === "true" ||
+  process.env.DISABLE_PWA === "true";
+
+// Carimbo de build (lido em /admin/system).
+const BUILD_TIME = new Date().toISOString();
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -14,70 +28,61 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-preview: {
-  host: "0.0.0.0",
-  port: 3010,
-  allowedHosts: [
-    "vps.roxou.com.br",
-    "localhost",
-    "173.212.220.180"
-  ],
-},
+  preview: {
+    host: "0.0.0.0",
+    port: 3010,
+    allowedHosts: [
+      "vps.roxou.com.br",
+      "localhost",
+      "173.212.220.180",
+    ],
+  },
+  define: {
+    __ROXOU_BUILD_TIME__: JSON.stringify(BUILD_TIME),
+    __ROXOU_PWA_ENABLED__: JSON.stringify(!disablePwa),
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "og-image.png"],
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp,woff2}"],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/~oauth/],
-        skipWaiting: true,
-        clientsClaim: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/bapdgykghciiyvlqdrqx\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api",
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+    !disablePwa &&
+      VitePWA({
+        registerType: "autoUpdate",
+        includeAssets: ["favicon.png", "og-image.png"],
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp,woff2}"],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          navigateFallbackDenylist: [/^\/~oauth/, /^\/health/, /^\/partner\/health/],
+          skipWaiting: true,
+          clientsClaim: true,
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/bapdgykghciiyvlqdrqx\.supabase\.co\/.*/i,
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "supabase-api",
+                expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+              },
             },
-          },
-        ],
-      },
-      manifest: {
-        name: "ROXOU — Eventos em Presidente Prudente",
-        short_name: "ROXOU",
-        description: "Descubra festas, baladas, shows e bares acontecendo em Presidente Prudente.",
-        theme_color: "#7c3aed",
-        background_color: "#0d0a14",
-        display: "standalone",
-        orientation: "portrait",
-        scope: "/",
-        start_url: "/",
-        categories: ["entertainment", "lifestyle"],
-        icons: [
-          {
-            src: "/pwa-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "/pwa-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
-    }),
-    // Análise opcional do bundle: rodar com `ANALYZE=1 vite build` (Fase 7).
+          ],
+        },
+        manifest: {
+          name: "ROXOU — Eventos em Presidente Prudente",
+          short_name: "ROXOU",
+          description: "Descubra festas, baladas, shows e bares acontecendo em Presidente Prudente.",
+          theme_color: "#7c3aed",
+          background_color: "#0d0a14",
+          display: "standalone",
+          orientation: "portrait",
+          scope: "/",
+          start_url: "/",
+          categories: ["entertainment", "lifestyle"],
+          icons: [
+            { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+            { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+            { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          ],
+        },
+      }),
     Boolean(process.env.ANALYZE) && visualizer({
       filename: "dist/stats.html",
       template: "treemap",
@@ -99,10 +104,9 @@ preview: {
     },
     dedupe: ["react", "react-dom"],
   },
-  // Multi-entry (Fase 9M):
+  // Multi-entry:
   //   dist/index.html         → roxou.com.br (app público + admin)
   //   dist/partner/index.html → parceiro.roxou.com.br (Partner Pro)
-  // Ambos compartilham /assets/ (chunks com hash) na raiz do dist.
   build: {
     rollupOptions: {
       input: {
