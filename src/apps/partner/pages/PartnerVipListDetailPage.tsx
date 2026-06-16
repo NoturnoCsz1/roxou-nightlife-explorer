@@ -16,11 +16,14 @@ import {
   openVipList,
   closeVipList,
   archiveVipList,
+  setVipListPublicEnabled,
   computeVipListStats,
+  computePromoterStats,
   type PartnerVipEntry,
   type PartnerVipList,
   type VipEntryPayload,
 } from "../services/partnerVipLists";
+
 import {
   listPromoters,
   createPromoter,
