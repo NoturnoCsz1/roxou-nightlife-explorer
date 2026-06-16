@@ -94,8 +94,8 @@ const PartnerPreviewLayout = () => {
 
   return (
     <PartnerProvider>
-      <div className="mx-auto max-w-5xl space-y-4 p-3">
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+      <div className="w-full max-w-7xl mx-auto px-4 overflow-x-hidden space-y-4 py-3">
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 break-words">
           <strong className="font-semibold">BETA FECHADO</strong> · Sujeito a
           alterações
           {isAdmin ? (
@@ -105,7 +105,7 @@ const PartnerPreviewLayout = () => {
           ) : null}
         </div>
 
-        <nav className="flex flex-wrap gap-1 overflow-x-auto rounded-lg border border-border/40 bg-card/40 p-1">
+        <nav className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1">
           {TABS.map((t) => (
             <NavLink
               key={t.to}
@@ -113,7 +113,7 @@ const PartnerPreviewLayout = () => {
               end={t.end}
               className={({ isActive }) =>
                 cn(
-                  "rounded-md px-3 py-1.5 text-xs font-medium transition",
+                  "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition",
                   isActive
                     ? "bg-primary/20 text-primary"
                     : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
@@ -125,7 +125,9 @@ const PartnerPreviewLayout = () => {
           ))}
         </nav>
 
-        <Outlet />
+        <div className="min-w-0">
+          <Outlet />
+        </div>
         <PartnerFeedbackWidget />
       </div>
     </PartnerProvider>
