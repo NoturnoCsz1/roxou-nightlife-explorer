@@ -103,7 +103,7 @@ export async function updatePartnerProfile(
   // owners/admins de parceiro passam exclusivamente por esta função.
   const { data, error } = await supabase.rpc("update_partner_safe_profile", {
     _partner_id: partnerId,
-    _payload: clean as unknown as Record<string, unknown>,
+    _payload: clean as unknown as never,
   });
 
   if (error) throw error;
