@@ -1,18 +1,17 @@
 /**
- * Partner VIP Lists Service — Fase 9I
+ * Partner VIP Lists Service — Fase 9I / 9L / 10E
  *
  * Tabelas:
  *   - partner_vip_lists
  *   - partner_vip_list_entries
  *
- * Todas as mutations passam por RPCs SECURITY DEFINER:
+ * Mutations principais via RPCs SECURITY DEFINER:
  *   - create_partner_vip_list / update_partner_vip_list
  *   - open_partner_vip_list / close_partner_vip_list / archive_partner_vip_list
  *   - add_partner_vip_entry / update_partner_vip_entry
- *   - check_in_partner_vip_entry / cancel_partner_vip_entry
- *
- * SELECT: cobertos pelas policies "Partner staff read own vip ..."
- * (qualquer membro ativo do parceiro pode ler).
+ *   - check_in_partner_vip_entry / cancel_partner_vip_entry / no_show_partner_vip_entry
+ *   - set_partner_vip_list_public_enabled (Fase 10E)
+ *   - get_vip_entry_by_token (Fase 10E)
  */
 import { supabase } from "@/integrations/supabase/client";
 
@@ -34,6 +33,14 @@ export interface PartnerVipList {
   ends_at: string | null;
   max_entries: number | null;
   status: VipListStatus;
+  public_slug: string;
+  public_enabled: boolean;
+  public_title: string | null;
+  public_description: string | null;
+  public_cover_url: string | null;
+  public_rules: string | null;
+  max_entries_per_person: number;
+  requires_approval: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +59,10 @@ export interface PartnerVipEntry {
   checked_in_at: string | null;
   promoter_id: string | null;
   promoter_name_snapshot: string | null;
+  public_token: string;
+  source: string;
+  public_submitted_at: string | null;
+  qr_code_payload: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,9 +92,7 @@ const ENTRIES = "partner_vip_list_entries" as const;
 
 // ---------- Lists ----------
 
-export async function listVipLists(
-  partnerId: string,
-): Promise<PartnerVipList[]> {
+export async function listVipLists(partnerId: string): Promise<PartnerVipList[]> {
   if (!partnerId) return [];
   const { data, error } = await supabase
     .from(LISTS)
@@ -95,9 +104,7 @@ export async function listVipLists(
   return (data ?? []) as unknown as PartnerVipList[];
 }
 
-export async function getVipList(
-  listId: string,
-): Promise<PartnerVipList | null> {
+export async function getVipList(listId: string): Promise<PartnerVipList | null> {
   if (!listId) return null;
   const { data, error } = await supabase
     .from(LISTS)
@@ -149,18 +156,26 @@ async function callListAction(
   return data as unknown as PartnerVipList;
 }
 
-export const openVipList = (id: string) =>
-  callListAction("open_partner_vip_list", id);
-export const closeVipList = (id: string) =>
-  callListAction("close_partner_vip_list", id);
-export const archiveVipList = (id: string) =>
-  callListAction("archive_partner_vip_list", id);
+export const openVipList = (id: string) => callListAction("open_partner_vip_list", id);
+export const closeVipList = (id: string) => callListAction("close_partner_vip_list", id);
+export const archiveVipList = (id: string) => callListAction("archive_partner_vip_list", id);
+
+export async function setVipListPublicEnabled(
+  listId: string,
+  enabled: boolean,
+): Promise<PartnerVipList> {
+  const { data, error } = await supabase.rpc("set_partner_vip_list_public_enabled", {
+    _list_id: listId,
+    _enabled: enabled,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerVipList;
+}
 
 // ---------- Entries ----------
 
-export async function listVipEntries(
-  listId: string,
-): Promise<PartnerVipEntry[]> {
+export async function listVipEntries(listId: string): Promise<PartnerVipEntry[]> {
   if (!listId) return [];
   const { data, error } = await supabase
     .from(ENTRIES)
@@ -199,9 +214,7 @@ export async function updateVipEntry(
   return data as unknown as PartnerVipEntry;
 }
 
-export async function checkInVipEntry(
-  entryId: string,
-): Promise<PartnerVipEntry> {
+export async function checkInVipEntry(entryId: string): Promise<PartnerVipEntry> {
   const { data, error } = await supabase.rpc("check_in_partner_vip_entry", {
     _entry_id: entryId,
   });
@@ -210,9 +223,7 @@ export async function checkInVipEntry(
   return data as unknown as PartnerVipEntry;
 }
 
-export async function cancelVipEntry(
-  entryId: string,
-): Promise<PartnerVipEntry> {
+export async function cancelVipEntry(entryId: string): Promise<PartnerVipEntry> {
   const { data, error } = await supabase.rpc("cancel_partner_vip_entry", {
     _entry_id: entryId,
   });
@@ -221,9 +232,7 @@ export async function cancelVipEntry(
   return data as unknown as PartnerVipEntry;
 }
 
-export async function noShowVipEntry(
-  entryId: string,
-): Promise<PartnerVipEntry> {
+export async function noShowVipEntry(entryId: string): Promise<PartnerVipEntry> {
   const { data, error } = await supabase.rpc("no_show_partner_vip_entry", {
     _entry_id: entryId,
   });
@@ -232,9 +241,17 @@ export async function noShowVipEntry(
   return data as unknown as PartnerVipEntry;
 }
 
-// Alias mantido para compatibilidade com o nome pedido na FASE 10D.
 export const markNoShowVipEntry = noShowVipEntry;
 
+export async function getVipEntryByToken(
+  publicToken: string,
+): Promise<PartnerVipEntry | null> {
+  const { data, error } = await supabase.rpc("get_vip_entry_by_token", {
+    p_token: publicToken,
+  });
+  if (error) throw error;
+  return (data as unknown as PartnerVipEntry) ?? null;
+}
 
 // ---------- Stats ----------
 
@@ -272,4 +289,32 @@ export function computeVipListStats(
       : 0;
 
   return { total, approved, checkedIn, noShow, capacityUsed, peopleTotal };
+}
+
+// ---------- Promoter stats helper (Fase 10E) ----------
+
+export interface PromoterStatsResult {
+  signups: number;
+  people: number;
+  checkedIn: number;
+  noShow: number;
+}
+
+export function computePromoterStats(
+  entries: PartnerVipEntry[],
+  promoterId: string,
+): PromoterStatsResult {
+  let signups = 0;
+  let people = 0;
+  let checkedIn = 0;
+  let noShow = 0;
+  for (const e of entries) {
+    if (e.promoter_id !== promoterId) continue;
+    if (e.status === "cancelled") continue;
+    signups += 1;
+    people += e.people_count;
+    if (e.status === "checked_in") checkedIn += 1;
+    if (e.status === "no_show") noShow += 1;
+  }
+  return { signups, people, checkedIn, noShow };
 }
