@@ -177,7 +177,9 @@ const App = () => (
             <Route path="premiacoes" element={L(<Premiacoes />)} />
             <Route path="artes" element={L(<Artes />)} />
             <Route path="story-agenda" element={L(<StoryAgendaDoDia />)} />
+            <Route path="partner-requests" element={L(<PartnerAccessRequests />)} />
           </Route>
+
 
           {/* ─── Partner Pro Preview (Fase 9J/9K — beta fechado) ─────────
              Rota separada de AdminLayout para que parceiros beta também
