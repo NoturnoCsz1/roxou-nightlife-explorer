@@ -2,19 +2,18 @@
  * PartnerLoginPage — Fase 10A (hotfix botões).
  *
  * Tela inicial de `parceiro.roxou.com.br`.
- * - Login Google via supabase.auth.signInWithOAuth (direto, sem broker).
+ * - Login Google via OAuth gerenciado Lovable Cloud.
  * - CTA "Solicitar acesso" que roteia conforme o estado do usuário.
  *
  * Causa raiz do bug anterior:
- *   `lovable.auth.signInWithOAuth("google", ...)` exigia o broker
- *   `/~oauth/initiate` no subdomínio `parceiro.roxou.com.br`, que não
- *   está configurado no Nginx — a chamada falhava silenciosamente e os
- *   botões pareciam não fazer nada. Trocamos para o cliente Supabase
- *   direto, que faz `window.location` para o endpoint OAuth oficial.
+ *   O endpoint nativo `/auth/v1/authorize?provider=google` retorna 400
+ *   quando o provider Google do Auth não tem secret nativo salvo. No
+ *   Lovable Cloud, o fluxo correto usa o broker OAuth gerenciado.
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { listMyAccessRequests } from "../services/partnerAccessRequests";
 
@@ -65,18 +64,14 @@ async function resolveDestination(userId: string): Promise<string> {
 async function startGoogleOAuth(redirectPath: string) {
   const redirectTo = buildPartnerUrl(redirectPath);
   // eslint-disable-next-line no-console
-  console.log("[PARTNER LOGIN] signInWithOAuth → redirectTo:", redirectTo);
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo },
+  console.log("[PARTNER LOGIN] managed Google OAuth → redirect_uri:", redirectTo);
+  const result = await lovable.auth.signInWithOAuth("google", {
+    redirect_uri: redirectTo,
   });
-  if (error) throw error;
-  // eslint-disable-next-line no-console
-  console.log("[PARTNER LOGIN] OAuth response:", data);
-  // O cliente Supabase normalmente faz window.location.href = data.url.
-  // Garantimos isso como fallback:
-  if (data?.url && typeof window !== "undefined") {
-    window.location.href = data.url;
+  if (result.error) throw result.error;
+  if (result.redirected) return;
+  if (typeof window !== "undefined") {
+    window.location.href = redirectTo;
   }
 }
 
