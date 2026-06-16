@@ -746,9 +746,26 @@ const EventoBulkForm = () => {
   }
 
   async function handleFiles(files: FileList | File[]) {
-    const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    let arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
+
+    // FASE 10G.1.3 — limite de proteção (50 flyers/lote)
+    if (arr.length > MAX_BATCH_FLYERS) {
+      toast.warning(
+        `Lotes acima de ${MAX_BATCH_FLYERS} imagens devem ser divididos para garantir estabilidade. Processando os primeiros ${MAX_BATCH_FLYERS}.`,
+        { duration: 6000 },
+      );
+      arr = arr.slice(0, MAX_BATCH_FLYERS);
+    }
+
+    // Reseta flag de cancelamento ao iniciar novo lote
+    cancelRef.current = false;
+    setCancelRequested(false);
+    updateBulkRuntimeStats({ cancelRequested: false });
+
+    const batchT0 = performance.now();
     bulkLog("selected_files", { count: arr.length });
+    stressLog("batch_start", { batch_size: arr.length });
 
     // 1) Cria placeholders IMEDIATAMENTE com status "queued" — UI responde no ato.
     const placeholders: BulkItem[] = arr.map((file) => {
@@ -773,6 +790,7 @@ const EventoBulkForm = () => {
     //    para não travar a thread principal.
     (async () => {
       for (let i = 0; i < arr.length; i++) {
+        if (cancelRef.current) break;
         const thumb = await makeThumb(arr[i]);
         patchItem(placeholders[i].localId, { thumbDataUrl: thumb });
         // yield para o navegador respirar (pintura, scroll, inputs)
@@ -780,14 +798,18 @@ const EventoBulkForm = () => {
       }
     })();
 
-    // 3) Pool de concorrência: processa até 3 em paralelo (FASE 10G.2).
+    // 3) Pool de concorrência: processa até MAX_CONCURRENT_FLYERS em paralelo.
     //    Erros individuais NÃO derrubam o lote — ficam isolados no item.
-    const CONCURRENCY = 3;
     let cursor = 0;
-    const workers = Array.from({ length: Math.min(CONCURRENCY, arr.length) }, async () => {
+    const workers = Array.from({ length: Math.min(MAX_CONCURRENT_FLYERS, arr.length) }, async () => {
       while (true) {
         const my = cursor++;
         if (my >= arr.length) return;
+        if (cancelRef.current) {
+          // Marca todos os pendentes (incluindo este) como cancelados.
+          patchItem(placeholders[my].localId, { status: "cancelled", errorMsg: "Cancelado pelo usuário" });
+          continue;
+        }
         const file = arr[my];
         const localId = placeholders[my].localId;
         const t0 = performance.now();
@@ -801,8 +823,20 @@ const EventoBulkForm = () => {
       }
     });
     await Promise.all(workers);
-    console.log(`[bulk] all ${arr.length} processed`);
+    const durationMs = Math.round(performance.now() - batchT0);
+    const processed = arr.length;
+    stressLog("batch_end", {
+      batch_size: processed,
+      duration_ms: durationMs,
+      avg_duration_ms: processed ? Math.round(durationMs / processed) : 0,
+      cancelled: cancelRef.current,
+    });
+    console.log(`[bulk] all ${processed} processed in ${durationMs}ms`);
+    if (cancelRef.current) {
+      toast.info("Lote cancelado. Itens concluídos foram preservados.");
+    }
   }
+
 
   // Retry isolado de um único item com erro
   async function retryItem(localId: string) {
