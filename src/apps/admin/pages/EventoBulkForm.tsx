@@ -1031,6 +1031,8 @@ const EventoBulkForm = () => {
     }
 
     setSaving(true);
+    const tSave = performance.now();
+    bulkLog("save_start", { count: toInsert.length, status });
     const nowIso = new Date().toISOString();
 
     // === Guard de ingestão por item — IMPORTANTE ===
@@ -1124,6 +1126,7 @@ const EventoBulkForm = () => {
         const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
         toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
       }
+      bulkLog("save_done", { count: payloads.length, duration_ms: Math.round(performance.now() - tSave) });
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
