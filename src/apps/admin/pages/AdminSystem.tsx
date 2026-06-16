@@ -80,14 +80,14 @@ const AdminSystem = () => {
     const [w, p, pm, h, c] = await Promise.all([
       fetchJson<HealthPayload>("/health"),
       fetchJson<HealthPayload>("/partner/health"),
-      fetchJson<{ processes: PmProcess[] }>("/api/system/pm2"),
-      fetchJson<HostMetrics>("/api/system/host"),
+      fetchJson<{ ok?: boolean; processes?: PmProcess[] }>("/api/system/pm2"),
+      fetchJson<HostMetrics & { ok?: boolean }>("/api/system/host"),
       bulkCacheCountIdb(),
     ]);
     setWeb(w);
     setPartner(p);
-    setPm2(pm?.processes ?? null);
-    setHost(h);
+    setPm2(pm?.processes && pm.processes.length > 0 ? pm.processes : null);
+    setHost(h && (h.load_avg || h.memory || h.disk) ? h : null);
     setIdbCount(c);
     setNow(Date.now());
     setLoading(false);

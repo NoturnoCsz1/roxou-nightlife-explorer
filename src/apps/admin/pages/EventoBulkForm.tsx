@@ -20,6 +20,11 @@ import {
 } from "@/lib/bulkEventsImage";
 import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
 import {
+  getDescriptionWorker,
+  type DescriptionStatus,
+  type DescriptionResult,
+} from "@/lib/bulkDescriptionWorker";
+import {
   findPossibleDuplicateEvent,
   generateEventDedupeKey,
   generateFlyerFingerprint,
@@ -195,6 +200,66 @@ const EventoBulkForm = () => {
     setCacheCount(0);
     toast.success("Cache de flyers limpo.");
   }, []);
+
+  // FASE 10G.1.2 — worker dedicado para `generate-description`
+  const [descStatuses, setDescStatuses] = useState<Map<string, DescriptionStatus>>(new Map());
+  const [descErrorCount, setDescErrorCount] = useState(0);
+  const descWorker = useMemo(() => getDescriptionWorker(), []);
+
+  const setDescStatus = useCallback((id: string, status: DescriptionStatus) => {
+    setDescStatuses((prev) => {
+      const next = new Map(prev);
+      next.set(id, status);
+      return next;
+    });
+  }, []);
+
+  const enqueueDescription = useCallback((
+    localId: string,
+    payload: Parameters<typeof descWorker.enqueue>[0]["payload"],
+  ) => {
+    descWorker.enqueue({
+      id: localId,
+      payload,
+      onUpdate: (u) => {
+        if (u.status === "done") {
+          const r: DescriptionResult = u.result;
+          const warnings = r.ai_warnings ?? [];
+          const conf = r.ai_confidence_score ?? null;
+          const lowConfidence = typeof conf === "number" && conf < 70;
+          patchForm(localId, {
+            description: r.description_html || undefined,
+            short_summary: r.short_summary || undefined,
+            meta_title: r.meta_title || undefined,
+            meta_description: r.meta_description || undefined,
+            instagram_caption: r.instagram_caption || undefined,
+            ai_confidence_score: conf,
+            ai_warnings: warnings,
+            needs_review: lowConfidence || warnings.length > 0,
+          } as Partial<EventFormData>);
+          setDescStatus(localId, "done");
+        } else if (u.status === "error") {
+          setDescStatus(localId, "error");
+          setDescErrorCount(descWorker.errorCount());
+        } else {
+          setDescStatus(localId, u.status);
+        }
+        if (u.status !== "error") setDescErrorCount(descWorker.errorCount());
+      },
+    });
+    setDescStatus(localId, "queued");
+  }, [descWorker, setDescStatus]);
+
+  const handleRequeueDescriptionErrors = useCallback(() => {
+    const n = descWorker.requeueErrors();
+    if (n === 0) {
+      toast.info("Nenhuma descrição com erro para reprocessar.");
+      return;
+    }
+    setDescErrorCount(descWorker.errorCount());
+    toast.info(`Reprocessando ${n} descrição(ões)...`);
+  }, [descWorker]);
+
 
 
   useEffect(() => {
@@ -590,36 +655,25 @@ const EventoBulkForm = () => {
       );
 
 
-      // Auto-generate rich description (Persona V2) — only after metadata is confirmed valid
+      // FASE 10G.1.2 — Geração de descrição agora roda no worker dedicado.
+      // Não bloqueia o pipeline de extração. Erro aqui não invalida o item.
       const f = readyForm as EventFormData | null;
       if (f && f.title && f.title.length > 3 && !skipDescriptionsRef.current) {
-        try {
-          const previousDescs = items
-            .map((x) => x.form.description)
-            .filter((d): d is string => !!d && d.length > 30)
-            .slice(-5);
-          const descResp = await supabase.functions.invoke("generate-description", {
-            body: {
-              title: f.title,
-              venue_name: f.venue_name || "",
-              address: f.address || "",
-              date_time: f.date_time || "",
-              category: f.category || "festa",
-              sub_category: (f as any)._sub || "",
-              partner_id: f.partner_id || undefined,
-              seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
-              previous_descriptions: previousDescs,
-            },
-          });
-          if (!descResp.error && descResp.data) {
-            const rich = descResp.data?.descricao_rica || descResp.data?.description;
-            if (rich && typeof rich === "string") {
-              patchForm(localId, { description: rich });
-            }
-          }
-        } catch (descErr) {
-          console.warn("[bulk] auto description failed", descErr);
-        }
+        const previousDescs = items
+          .map((x) => x.form.description)
+          .filter((d): d is string => !!d && d.length > 30)
+          .slice(-5);
+        enqueueDescription(localId, {
+          title: f.title,
+          venue_name: f.venue_name || "",
+          address: f.address || "",
+          date_time: f.date_time || "",
+          category: f.category || "festa",
+          sub_category: (f as any)._sub || "",
+          partner_id: f.partner_id || undefined,
+          seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
+          previous_descriptions: previousDescs,
+        });
       }
       bulkLog("extraction_done", { id: localId, duration_ms: Math.round(performance.now() - t0) });
     } catch (err: any) {
@@ -1403,6 +1457,16 @@ const EventoBulkForm = () => {
                   title="Reprocessa apenas itens com status = erro"
                 >
                   <AlertCircle className="h-3 w-3" /> Reprocessar falhas ({errorCount})
+                </button>
+              )}
+              {descErrorCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleRequeueDescriptionErrors}
+                  className="flex items-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-200 hover:bg-amber-500/20 transition"
+                  title="Reenfileira descrições que falharam (não afeta o flyer)"
+                >
+                  <Sparkles className="h-3 w-3" /> Reprocessar descrições com erro ({descErrorCount})
                 </button>
               )}
               <label
