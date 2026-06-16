@@ -1567,6 +1567,11 @@ const EventoBulkForm = () => {
                       </button>
                     </div>
                   )}
+                  {it.status === "cancelled" && (
+                    <div className="flex items-center gap-1 text-[9px] text-amber-300">
+                      <X className="h-2.5 w-2.5" /> cancelado
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
