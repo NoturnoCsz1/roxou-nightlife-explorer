@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { spLocalToISO, isoToSpLocal } from "@/lib/dateUtils";
 import type { VipListPayload } from "../services/partnerVipLists";
 
 interface Props {
@@ -14,8 +15,9 @@ interface Props {
 export function VipListForm({ initial, onSubmit, submitting }: Props) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [startsAt, setStartsAt] = useState(initial?.starts_at ?? "");
-  const [endsAt, setEndsAt] = useState(initial?.ends_at ?? "");
+  // Inputs do tipo datetime-local trabalham com hora local; convertemos de/para SP.
+  const [startsAt, setStartsAt] = useState(isoToSpLocal(initial?.starts_at ?? ""));
+  const [endsAt, setEndsAt] = useState(isoToSpLocal(initial?.ends_at ?? ""));
   const [maxEntries, setMaxEntries] = useState<string>(
     initial?.max_entries != null ? String(initial.max_entries) : "",
   );
@@ -28,8 +30,8 @@ export function VipListForm({ initial, onSubmit, submitting }: Props) {
         void onSubmit({
           title: title.trim(),
           description: description || null,
-          starts_at: startsAt || null,
-          ends_at: endsAt || null,
+          starts_at: startsAt ? spLocalToISO(startsAt) : null,
+          ends_at: endsAt ? spLocalToISO(endsAt) : null,
           max_entries: maxEntries ? Number(maxEntries) : null,
         });
       }}

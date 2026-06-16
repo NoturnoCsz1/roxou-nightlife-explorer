@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { VipListStatusBadge } from "./VipListStatusBadge";
+import { formatDateTimeSP } from "@/lib/dateUtils";
 import type { PartnerVipList } from "../services/partnerVipLists";
 
 interface Props {
@@ -26,7 +27,7 @@ export function VipListCard({ list, onOpen }: Props) {
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
         {list.starts_at ? (
-          <span>Início: {new Date(list.starts_at).toLocaleString("pt-BR")}</span>
+          <span>Início: {formatDateTimeSP(list.starts_at)}</span>
         ) : null}
         {list.max_entries ? <span>Capacidade de convidados: {list.max_entries}</span> : null}
       </div>

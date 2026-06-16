@@ -1,6 +1,7 @@
 import { VipListStatusBadge } from "./VipListStatusBadge";
 import { VipListStateBadge } from "./VipListStateBadge";
 import { Button } from "@/components/ui/button";
+import { formatDateTimeSP } from "@/lib/dateUtils";
 import {
   deriveVipListState,
   type PartnerVipList,
@@ -15,21 +16,16 @@ interface Props {
   compact?: boolean;
 }
 
-const fmtDate = (v: string | null) =>
-  v ? new Date(v).toLocaleString("pt-BR") : "—";
+const fmtDate = (v: string | null) => (v ? formatDateTimeSP(v) : "—");
 
-const fmtCloses = (v: string | null) => {
-  if (!v) return null;
-  const d = new Date(v);
-  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-};
+const fmtCloses = (v: string | null) => (v ? formatDateTimeSP(v) : null);
 
 const cta = (op: VipListOperationalState) =>
   op === "open" || op === "sold_out" ? "Abrir" : "Histórico";
 
 export function VipListTable({ lists, onOpen, dim, compact }: Props) {
   const renderState = (l: PartnerVipList) =>
-    deriveVipListState(l, 0, l.starts_at);
+    deriveVipListState(l, 0, null);
 
   // ===== Compact card list (mobile + desktop) =====
   if (compact) {
