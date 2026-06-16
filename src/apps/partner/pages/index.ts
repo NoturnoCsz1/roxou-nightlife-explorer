@@ -6,3 +6,5 @@ export { default as PartnerReservationsPage } from "./PartnerReservationsPage";
 export { default as PartnerVipListPage } from "./PartnerVipListPage";
 export { default as PartnerAnalyticsPage } from "./PartnerAnalyticsPage";
 export { default as PartnerSettingsPage } from "./PartnerSettingsPage";
+export { default as PartnerEventFormPage } from "./PartnerEventFormPage";
+export { default as PartnerEventDetailPage } from "./PartnerEventDetailPage";
