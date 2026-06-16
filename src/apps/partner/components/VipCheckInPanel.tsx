@@ -41,14 +41,16 @@ export function VipCheckInPanel({ entries, onCheckIn, doormanMode }: Props) {
         {filtered.map((e) => (
           <div
             key={e.id}
-            className={`min-w-0 flex items-center justify-between gap-3 rounded-md border p-3 ${doormanMode ? "p-4" : ""}`}
+            className={`min-w-0 w-full overflow-hidden flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between ${doormanMode ? "sm:p-4" : ""}`}
           >
-            <div className="min-w-0 flex-1 break-words">
-              <p className={`font-semibold ${doormanMode ? "text-lg" : ""}`}>
+            <div className="min-w-0 w-full break-words whitespace-normal">
+              <p
+                className={`font-semibold break-words whitespace-normal ${doormanMode ? "text-lg" : ""}`}
+              >
                 {e.name}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {e.phone ?? e.email ?? "—"} · {e.people_count}p
+              <p className="text-xs text-muted-foreground break-words whitespace-normal">
+                {e.phone ?? e.email ?? "—"}
                 {e.promoter_name_snapshot
                   ? ` · Promoter: ${e.promoter_name_snapshot}`
                   : ""}
@@ -58,7 +60,7 @@ export function VipCheckInPanel({ entries, onCheckIn, doormanMode }: Props) {
               size={doormanMode ? "lg" : "sm"}
               disabled={e.status === "checked_in"}
               onClick={() => void onCheckIn(e)}
-              className={doormanMode ? "min-w-[140px] text-base" : ""}
+              className={`w-full shrink-0 sm:w-auto ${doormanMode ? "min-w-[140px] text-base" : ""}`}
             >
               {e.status === "checked_in" ? "Presente" : "Confirmar entrada"}
             </Button>
