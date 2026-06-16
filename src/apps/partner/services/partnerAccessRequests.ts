@@ -38,9 +38,9 @@ export interface PartnerSearchResult {
   type: string | null;
   instagram: string | null;
   logo_url: string | null;
-  cover_url: string | null;
   address: string | null;
 }
+
 
 
 /** Busca estabelecimentos existentes (somente leitura). */
