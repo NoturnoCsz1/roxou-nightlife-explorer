@@ -3720,6 +3720,69 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_find_user_by_email: {
+        Args: { _email: string }
+        Returns: {
+          created_at: string
+          email: string
+          last_sign_in_at: string
+          user_id: string
+        }[]
+      }
+      admin_link_partner_pilot: {
+        Args: {
+          _notes?: string
+          _partner_id: string
+          _role?: string
+          _user_id: string
+        }
+        Returns: Json
+      }
+      admin_list_partner_team: {
+        Args: { _partner_id: string }
+        Returns: {
+          beta_enabled: boolean
+          created_at: string
+          email: string
+          is_active: boolean
+          last_sign_in_at: string
+          partner_user_id: string
+          role: string
+          user_id: string
+        }[]
+      }
+      admin_partner_pilot_status: {
+        Args: { _partner_id: string }
+        Returns: Json
+      }
+      admin_revoke_partner_pilot: {
+        Args: { _partner_id: string; _user_id: string }
+        Returns: Json
+      }
+      admin_upsert_partner_subscription: {
+        Args: {
+          _expires_at?: string
+          _partner_id: string
+          _plan: string
+          _status: string
+        }
+        Returns: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          partner_id: string
+          plan: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_subscriptions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       approve_partner_access_request: {
         Args: { _request_id: string }
         Returns: {
