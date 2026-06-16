@@ -52,7 +52,7 @@ export async function searchPartnersForOnboarding(
   let req = supabase
     .from("partners")
     .select(
-      "id, name, slug, city, type, category, instagram, logo_url, cover_url, address",
+      "id, name, slug, city, type, instagram, logo_url, cover_url, address",
     )
     .order("name", { ascending: true })
     .limit(limit);
@@ -64,11 +64,11 @@ export async function searchPartnersForOnboarding(
         `name.ilike.${like}`,
         `instagram.ilike.${like}`,
         `city.ilike.${like}`,
-        `category.ilike.${like}`,
         `type.ilike.${like}`,
       ].join(","),
     );
   }
+
 
   const { data, error } = await req;
   if (error) throw error;
