@@ -579,8 +579,10 @@ const EventoBulkForm = () => {
           console.warn("[bulk] auto description failed", descErr);
         }
       }
+      bulkLog("extraction_done", { id: localId, duration_ms: Math.round(performance.now() - t0) });
     } catch (err: any) {
       console.error("[bulk] process error", err);
+      bulkLog("extraction_error", { id: localId, file: file.name, message: err?.message });
       patchItem(localId, { status: "error", errorMsg: err?.message || "Falha ao processar" });
     }
   }
@@ -588,7 +590,7 @@ const EventoBulkForm = () => {
   async function handleFiles(files: FileList | File[]) {
     const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
     if (!arr.length) return;
-    console.log(`[bulk] selected ${arr.length} flyer(s)`);
+    bulkLog("selected_files", { count: arr.length });
 
     // 1) Cria placeholders IMEDIATAMENTE com status "queued" — UI responde no ato.
     const placeholders: BulkItem[] = arr.map((file) => {
