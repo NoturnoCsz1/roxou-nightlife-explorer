@@ -73,20 +73,9 @@ const PartnerStandaloneLayout = () => {
   }
 
   if (!hasAccess) {
-    return (
-      <main className="mx-auto max-w-lg p-8 text-center">
-        <span className="inline-block rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
-          Beta Fechado
-        </span>
-        <h1 className="mt-3 text-2xl font-bold">Partner Pro</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          O acesso a este ambiente está restrito ao beta fechado de parceiros
-          convidados. Se você é um estabelecimento parceiro Roxou, fale com a
-          equipe para receber acesso.
-        </p>
-      </main>
-    );
+    return <Navigate to="/onboarding" replace />;
   }
+
 
   return (
     <PartnerProvider>

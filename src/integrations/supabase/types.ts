@@ -1726,6 +1726,66 @@ export type Database = {
           },
         ]
       }
+      partner_access_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          partner_id: string
+          requested_email: string | null
+          requested_name: string | null
+          requested_phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          partner_id: string
+          requested_email?: string | null
+          requested_name?: string | null
+          requested_phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          partner_id?: string
+          requested_email?: string | null
+          requested_name?: string | null
+          requested_phone?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_access_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_access_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_awards: {
         Row: {
           active: boolean
@@ -3660,6 +3720,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_partner_access_request: {
+        Args: { _request_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string | null
+          partner_id: string
+          requested_email: string | null
+          requested_name: string | null
+          requested_phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_access_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       archive_old_radar_scans: { Args: never; Returns: number }
       archive_partner_event: {
         Args: { _event_id: string }
@@ -4058,6 +4141,52 @@ export type Database = {
         }
       }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
+      reject_partner_access_request: {
+        Args: { _request_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string | null
+          partner_id: string
+          requested_email: string | null
+          requested_name: string | null
+          requested_phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_access_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      request_partner_access: {
+        Args: { _partner_id: string; _payload: Json }
+        Returns: {
+          created_at: string
+          id: string
+          message: string | null
+          partner_id: string
+          requested_email: string | null
+          requested_name: string | null
+          requested_phone: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_access_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_partner_reservation_status: {
         Args: { _reservation_id: string; _status: string }
         Returns: {

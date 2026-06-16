@@ -18,7 +18,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
 
+const PartnerOnboardingPage = lazy(() => import("./pages/PartnerOnboardingPage"));
+const PartnerPendingApprovalPage = lazy(
+  () => import("./pages/PartnerPendingApprovalPage"),
+);
+const PartnerRequestSuccessPage = lazy(
+  () => import("./pages/PartnerRequestSuccessPage"),
+);
 const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage"));
+
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
@@ -58,8 +66,15 @@ const PartnerApp = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Login fica fora do layout (sem provider/gate). */}
+          {/* Rotas sem layout/gate */}
           <Route path="/login" element={<PartnerLoginPage />} />
+          <Route path="/onboarding" element={L(<PartnerOnboardingPage />)} />
+          <Route path="/pending" element={L(<PartnerPendingApprovalPage />)} />
+          <Route
+            path="/solicitacao-enviada"
+            element={L(<PartnerRequestSuccessPage />)}
+          />
+
 
           <Route path="/" element={<PartnerStandaloneLayout />}>
             <Route index element={L(<PartnerBetaLandingPage />)} />
