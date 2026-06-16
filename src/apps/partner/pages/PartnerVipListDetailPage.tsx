@@ -126,6 +126,38 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
     }
   };
 
+  const togglePublic = async () => {
+    if (!list) return;
+    setBusy(true);
+    try {
+      const updated = await setVipListPublicEnabled(list.id, !list.public_enabled);
+      setList(updated);
+      toast({
+        title: updated.public_enabled
+          ? "Link público ativado"
+          : "Link público desativado",
+      });
+    } catch (err) {
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Falha ao alterar.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copiado!" });
+    } catch {
+      toast({ title: "Não foi possível copiar.", variant: "destructive" });
+    }
+  };
+
+
   const filteredEntries = useMemo(() => {
     const s = search.trim().toLowerCase();
     if (!s) return entries;
