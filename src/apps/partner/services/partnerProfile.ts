@@ -98,14 +98,13 @@ export async function updatePartnerProfile(
     throw new Error("Nada para atualizar.");
   }
 
-  const { data, error } = await supabase
-    .from("partners")
-    .update(clean)
-    .eq("id", partnerId)
-    .select(
-      "id, name, slug, city, type, address, formatted_address, short_description, full_description, instagram, instagram_username, whatsapp, logo_url, verified_partner, updated_at",
-    )
-    .maybeSingle();
+  // Fase 9F: usa SECURITY DEFINER RPC com whitelist server-side.
+  // O RLS de UPDATE em `partners` continua restrito ao Admin global;
+  // owners/admins de parceiro passam exclusivamente por esta função.
+  const { data, error } = await supabase.rpc("update_partner_safe_profile", {
+    _partner_id: partnerId,
+    _payload: clean as unknown as never,
+  });
 
   if (error) throw error;
   if (!data) {
@@ -113,7 +112,7 @@ export async function updatePartnerProfile(
       "Sem permissão para atualizar este estabelecimento ou registro não encontrado.",
     );
   }
-  return data as PartnerProfileRow;
+  return data as unknown as PartnerProfileRow;
 }
 
 /**
