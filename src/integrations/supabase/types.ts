@@ -1981,6 +1981,84 @@ export type Database = {
           },
         ]
       }
+      partner_leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          email_consent: boolean
+          first_seen_at: string
+          full_name: string | null
+          id: string
+          last_seen_at: string
+          marketing_consent: boolean
+          normalized_phone: string | null
+          partner_id: string
+          phone: string | null
+          source: string
+          source_reference_id: string | null
+          source_reference_type: string | null
+          total_checkins: number
+          total_events: number
+          updated_at: string
+          whatsapp_consent: boolean
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          email_consent?: boolean
+          first_seen_at?: string
+          full_name?: string | null
+          id?: string
+          last_seen_at?: string
+          marketing_consent?: boolean
+          normalized_phone?: string | null
+          partner_id: string
+          phone?: string | null
+          source?: string
+          source_reference_id?: string | null
+          source_reference_type?: string | null
+          total_checkins?: number
+          total_events?: number
+          updated_at?: string
+          whatsapp_consent?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          email_consent?: boolean
+          first_seen_at?: string
+          full_name?: string | null
+          id?: string
+          last_seen_at?: string
+          marketing_consent?: boolean
+          normalized_phone?: string | null
+          partner_id?: string
+          phone?: string | null
+          source?: string
+          source_reference_id?: string | null
+          source_reference_type?: string | null
+          total_checkins?: number
+          total_events?: number
+          updated_at?: string
+          whatsapp_consent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_leads_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_leads_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_metrics_daily: {
         Row: {
           clicks: number
@@ -2380,9 +2458,12 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -2396,14 +2477,18 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         Insert: {
           checked_in_at?: string | null
           created_at?: string
           email?: string | null
+          email_consent?: boolean
           event_id?: string | null
           id?: string
+          marketing_consent?: boolean
           name: string
+          normalized_phone?: string | null
           partner_id: string
           people_count?: number
           phone?: string | null
@@ -2417,14 +2502,18 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vip_list_id: string
+          whatsapp_consent?: boolean
         }
         Update: {
           checked_in_at?: string | null
           created_at?: string
           email?: string | null
+          email_consent?: boolean
           event_id?: string | null
           id?: string
+          marketing_consent?: boolean
           name?: string
+          normalized_phone?: string | null
           partner_id?: string
           people_count?: number
           phone?: string | null
@@ -2438,6 +2527,7 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           vip_list_id?: string
+          whatsapp_consent?: boolean
         }
         Relationships: [
           {
@@ -2479,6 +2569,7 @@ export type Database = {
       }
       partner_vip_lists: {
         Row: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -2500,6 +2591,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_multiple_people_per_entry?: boolean
           created_at?: string
           description?: string | null
           ends_at?: string | null
@@ -2521,6 +2613,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_multiple_people_per_entry?: boolean
           created_at?: string
           description?: string | null
           ends_at?: string | null
@@ -3777,6 +3870,7 @@ export type Database = {
       _set_partner_vip_list_status: {
         Args: { _list_id: string; _owner_only: boolean; _status: string }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -3804,15 +3898,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      _upsert_partner_lead: {
+        Args: {
+          _email: string
+          _email_consent: boolean
+          _marketing_consent: boolean
+          _name: string
+          _normalized_phone: string
+          _partner_id: string
+          _phone: string
+          _ref_id: string
+          _ref_type: string
+          _source: string
+          _whatsapp_consent: boolean
+        }
+        Returns: string
+      }
       add_partner_vip_entry: {
         Args: { _list_id: string; _payload: Json }
         Returns: {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -3826,6 +3939,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         SetofOptions: {
           from: "*"
@@ -3989,6 +4103,7 @@ export type Database = {
       archive_partner_vip_list: {
         Args: { _list_id: string }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4023,9 +4138,12 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -4039,6 +4157,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         SetofOptions: {
           from: "*"
@@ -4053,9 +4172,12 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -4069,6 +4191,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         SetofOptions: {
           from: "*"
@@ -4081,6 +4204,7 @@ export type Database = {
       close_partner_vip_list: {
         Args: { _list_id: string }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4213,6 +4337,7 @@ export type Database = {
       create_partner_vip_list: {
         Args: { _partner_id: string; _payload: Json }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4307,15 +4432,22 @@ export type Database = {
       }
       expire_stale_ride_requests: { Args: never; Returns: number }
       get_public_vip_list: { Args: { p_public_slug: string }; Returns: Json }
+      get_public_vip_list_by_partner: {
+        Args: { p_partner_slug: string }
+        Returns: Json
+      }
       get_vip_entry_by_token: {
         Args: { p_token: string }
         Returns: {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -4329,6 +4461,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         SetofOptions: {
           from: "*"
@@ -4368,9 +4501,12 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -4384,6 +4520,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         SetofOptions: {
           from: "*"
@@ -4395,6 +4532,7 @@ export type Database = {
       open_partner_vip_list: {
         Args: { _list_id: string }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4496,6 +4634,7 @@ export type Database = {
       set_partner_vip_list_public_enabled: {
         Args: { _enabled: boolean; _list_id: string }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
@@ -4526,11 +4665,13 @@ export type Database = {
       submit_public_vip_entry: {
         Args: {
           p_email: string
+          p_email_consent?: boolean
+          p_marketing_consent?: boolean
           p_name: string
-          p_people_count: number
           p_phone: string
           p_promoter_slug?: string
           p_public_slug: string
+          p_whatsapp_consent?: boolean
         }
         Returns: Json
       }
@@ -4687,9 +4828,12 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           email: string | null
+          email_consent: boolean
           event_id: string | null
           id: string
+          marketing_consent: boolean
           name: string
+          normalized_phone: string | null
           partner_id: string
           people_count: number
           phone: string | null
@@ -4703,6 +4847,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           vip_list_id: string
+          whatsapp_consent: boolean
         }
         SetofOptions: {
           from: "*"
@@ -4714,6 +4859,7 @@ export type Database = {
       update_partner_vip_list: {
         Args: { _list_id: string; _payload: Json }
         Returns: {
+          allow_multiple_people_per_entry: boolean
           created_at: string
           description: string | null
           ends_at: string | null
