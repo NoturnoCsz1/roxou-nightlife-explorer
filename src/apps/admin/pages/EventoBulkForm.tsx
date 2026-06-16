@@ -13,6 +13,12 @@ import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { sha256File } from "@/lib/imageHash";
 import {
+  compressImage,
+  readExtractionCache,
+  writeExtractionCache,
+  bulkLog,
+} from "@/lib/bulkEventsImage";
+import {
   findPossibleDuplicateEvent,
   generateEventDedupeKey,
   generateFlyerFingerprint,
