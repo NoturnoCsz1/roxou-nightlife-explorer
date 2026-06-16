@@ -29,7 +29,7 @@ import { VipListForm } from "../components/VipListForm";
 type Bucket = "active" | "closed" | "ended" | "archived";
 
 const bucketOf = (l: PartnerVipList): Bucket => {
-  const op: VipListOperationalState = deriveVipListState(l, 0, l.starts_at);
+  const op: VipListOperationalState = deriveVipListState(l, 0, null);
   if (op === "archived") return "archived";
   if (op === "ended") return "ended";
   if (op === "closed") return "closed";
