@@ -16,6 +16,7 @@ import {
   Trophy,
   Briefcase,
   Inbox,
+  Rocket,
 
   type LucideIcon,
 } from "lucide-react";
