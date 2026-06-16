@@ -1339,6 +1339,7 @@ const EventoBulkForm = () => {
         toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
       }
       bulkLog("save_done", { count: payloads.length, duration_ms: Math.round(performance.now() - tSave) });
+      void clearBulkDraft();
       navigate("/admin/eventos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
