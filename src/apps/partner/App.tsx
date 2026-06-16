@@ -22,8 +22,15 @@ const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
-const PartnerEventFormPage = lazy(() => import("./pages/PartnerEventFormPage"));
-const PartnerEventDetailPage = lazy(() => import("./pages/PartnerEventDetailPage"));
+const PartnerEventNewRoute = lazy(() =>
+  import("./routes/PartnerEventRoutes").then((m) => ({ default: m.PartnerEventNewRoute })),
+);
+const PartnerEventDetailRoute = lazy(() =>
+  import("./routes/PartnerEventRoutes").then((m) => ({ default: m.PartnerEventDetailRoute })),
+);
+const PartnerEventEditRoute = lazy(() =>
+  import("./routes/PartnerEventRoutes").then((m) => ({ default: m.PartnerEventEditRoute })),
+);
 const PartnerReservationsPage = lazy(() => import("./pages/PartnerReservationsPage"));
 const PartnerReservationDetailPage = lazy(
   () => import("./pages/PartnerReservationDetailPage"),
