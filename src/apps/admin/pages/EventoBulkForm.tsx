@@ -638,9 +638,9 @@ const EventoBulkForm = () => {
       }
     })();
 
-    // 3) Pool de concorrência: processa no máximo 2 em paralelo.
+    // 3) Pool de concorrência: processa até 3 em paralelo (FASE 10G.2).
     //    Erros individuais NÃO derrubam o lote — ficam isolados no item.
-    const CONCURRENCY = 2;
+    const CONCURRENCY = 3;
     let cursor = 0;
     const workers = Array.from({ length: Math.min(CONCURRENCY, arr.length) }, async () => {
       while (true) {
@@ -671,6 +671,34 @@ const EventoBulkForm = () => {
     }
     patchItem(localId, { status: "queued", errorMsg: undefined });
     await uploadAndProcess(file, localId);
+  }
+
+  // FASE 10G.2 — Reprocessar todas as falhas do lote em paralelo (pool 3).
+  async function retryAllFailures() {
+    const failures = items.filter((it) => it.status === "error");
+    if (!failures.length) {
+      toast.info("Sem falhas para reprocessar.");
+      return;
+    }
+    toast.info(`Reprocessando ${failures.length} flyer(s) com erro...`);
+    failures.forEach((it) => patchItem(it.localId, { status: "queued", errorMsg: undefined }));
+    const CONCURRENCY = 3;
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(CONCURRENCY, failures.length) }, async () => {
+      while (true) {
+        const my = cursor++;
+        if (my >= failures.length) return;
+        const it = failures[my];
+        const file = fileMapRef.current.get(it.localId);
+        if (!file) {
+          patchItem(it.localId, { status: "error", errorMsg: "Arquivo indisponível" });
+          continue;
+        }
+        try { await uploadAndProcess(file, it.localId); } catch { /* isolated */ }
+      }
+    });
+    await Promise.all(workers);
+    toast.success("Reprocessamento concluído.");
   }
 
   function onDrop(e: React.DragEvent) {
