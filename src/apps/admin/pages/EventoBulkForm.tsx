@@ -274,6 +274,54 @@ const EventoBulkForm = () => {
     toast.info(`Reprocessando ${n} descrição(ões)...`);
   }, [descWorker]);
 
+  // FASE 10G.1.3 — Cancelamento seguro do lote
+  const cancelRef = useRef<boolean>(false);
+  const [cancelRequested, setCancelRequested] = useState(false);
+  const handleCancelBatch = useCallback(() => {
+    if (cancelRef.current) return;
+    cancelRef.current = true;
+    setCancelRequested(true);
+    updateBulkRuntimeStats({ cancelRequested: true });
+    stressLog("cancel_requested", { ts: Date.now() });
+    toast.warning("Cancelamento solicitado — itens em andamento finalizam, fila pausa.");
+  }, []);
+
+  // FASE 10G.1.3 — Recuperação de rascunho
+  const [draftRecoveryOffer, setDraftRecoveryOffer] = useState<{ ts: number; count: number } | null>(null);
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    if (draftLoadedRef.current) return;
+    draftLoadedRef.current = true;
+    void loadBulkDraft<{ form: EventFormData; status: ItemStatus; fileName: string; errorMsg?: string }>()
+      .then((d) => {
+        if (d && d.items.length > 0) {
+          setDraftRecoveryOffer({ ts: d.ts, count: d.items.length });
+        }
+      });
+  }, []);
+  const handleRecoverDraft = useCallback(async () => {
+    const d = await loadBulkDraft<{ form: EventFormData; status: ItemStatus; fileName: string; errorMsg?: string }>();
+    if (!d) { setDraftRecoveryOffer(null); return; }
+    const restored: BulkItem[] = d.items.map((p) => ({
+      localId: crypto.randomUUID(),
+      fileName: p.fileName,
+      thumbDataUrl: "",
+      // Itens "uploading"/"extracting" voltam como erro — arquivo original não pode ser restaurado.
+      status: p.status === "uploading" || p.status === "extracting" || p.status === "queued" ? "error" : p.status,
+      errorMsg: p.errorMsg || (p.status !== "ready" ? "Rascunho restaurado — re-subir flyer para reprocessar" : undefined),
+      expanded: false,
+      form: p.form,
+    }));
+    setItems(restored);
+    setDraftRecoveryOffer(null);
+    toast.success(`Rascunho restaurado (${restored.length} item(ns)).`);
+  }, []);
+  const handleDiscardDraft = useCallback(async () => {
+    await clearBulkDraft();
+    setDraftRecoveryOffer(null);
+  }, []);
+
+
 
 
   useEffect(() => {
