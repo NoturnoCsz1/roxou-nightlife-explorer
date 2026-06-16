@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Plus, Send, Sparkles, Loader2, Upload, X, ChevronDown, ChevronUp,
-  CheckCircle2, AlertCircle, Image as ImageIcon, Save,
+  CheckCircle2, AlertCircle, Image as ImageIcon, Save, StopCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,11 +32,25 @@ import {
   type DuplicateConfidenceExisting,
 } from "@/lib/eventDuplicateDetector";
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
+import { updateBulkRuntimeStats, resetBulkRuntimeStats } from "@/lib/bulkRuntimeStats";
+import { saveBulkDraft, loadBulkDraft, clearBulkDraft } from "@/lib/bulkEventsDraft";
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
 
 type Partner = Tables<"partners">;
-type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error";
+type ItemStatus = "queued" | "uploading" | "extracting" | "ready" | "error" | "cancelled";
+
+// FASE 10G.1.3 — limites de proteção
+const MAX_BATCH_FLYERS = 50;
+const MAX_CONCURRENT_FLYERS = 3;
+const ocrLog = (event: string, info: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(`[OCR] ${event}`, info);
+};
+const stressLog = (event: string, info: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(`[BULK_STRESS] ${event}`, info);
+};
 
 interface BulkItem {
   localId: string;
