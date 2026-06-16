@@ -102,7 +102,7 @@ export function VipEntryTable({
             <tr>
               <th className="px-3 py-2 text-left">Nome</th>
               <th className="px-3 py-2 text-left">Contato</th>
-              <th className="px-3 py-2 text-left">Pessoas</th>
+              <th className="px-3 py-2 text-left">Convidados</th>
               <th className="px-3 py-2 text-left">Promoter</th>
               <th className="px-3 py-2 text-left">Status</th>
               <th className="px-3 py-2"></th>

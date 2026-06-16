@@ -80,7 +80,7 @@ export function VipEntryForm({
           />
         </div>
         <div className="min-w-0">
-          <Label>Pessoas</Label>
+          <Label>Convidados</Label>
           <Input
             type="number"
             min={1}

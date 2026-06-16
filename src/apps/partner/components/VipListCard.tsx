@@ -28,7 +28,7 @@ export function VipListCard({ list, onOpen }: Props) {
         {list.starts_at ? (
           <span>Início: {new Date(list.starts_at).toLocaleString("pt-BR")}</span>
         ) : null}
-        {list.max_entries ? <span>Capacidade: {list.max_entries}</span> : null}
+        {list.max_entries ? <span>Capacidade de convidados: {list.max_entries}</span> : null}
       </div>
     </Card>
   );

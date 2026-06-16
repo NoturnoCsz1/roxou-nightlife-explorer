@@ -88,7 +88,7 @@ const PartnerReservationDetailPage = () => {
             {new Date(row.reservation_date).toLocaleString("pt-BR")}
           </p>
           <p>
-            <span className="text-muted-foreground">Pessoas: </span>
+            <span className="text-muted-foreground">Convidados: </span>
             {row.people_count}
           </p>
           {row.phone && (
