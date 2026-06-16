@@ -98,7 +98,9 @@ const PartnerApp = () => (
             />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="configuracoes" element={L(<PartnerSettingsPage />)} />
+            <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
           </Route>
+
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
