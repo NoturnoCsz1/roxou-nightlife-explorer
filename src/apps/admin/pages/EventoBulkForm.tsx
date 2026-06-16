@@ -561,6 +561,8 @@ const EventoBulkForm = () => {
 
       let data: any = cached?.data ?? null;
       if (!data) {
+        const ocrT0 = performance.now();
+        ocrLog("start", { id: localId, file: file.name, size_before: bytesBefore, size_after: bytesAfter });
         const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
           body: {
             image_url: publicUrl,
@@ -586,7 +588,12 @@ const EventoBulkForm = () => {
             } : null,
           },
         });
-        if (extractResp.error) throw extractResp.error;
+        const ocrMs = Math.round(performance.now() - ocrT0);
+        if (extractResp.error) {
+          ocrLog("error", { id: localId, file: file.name, duration_ms: ocrMs, message: String(extractResp.error?.message || extractResp.error) });
+          throw extractResp.error;
+        }
+        ocrLog("done", { id: localId, file: file.name, duration_ms: ocrMs, status: "ok", size_before: bytesBefore, size_after: bytesAfter });
         data = extractResp.data;
         if (data && typeof data === "object" && !(data.error && !data.title)) {
           writeExtractionCache(file, {
@@ -597,6 +604,7 @@ const EventoBulkForm = () => {
         }
       } else {
         bulkLog("cache_hit_data", { id: localId, file: file.name });
+        ocrLog("cache_hit", { id: localId, file: file.name });
       }
 
       if (!data || typeof data !== "object") {
