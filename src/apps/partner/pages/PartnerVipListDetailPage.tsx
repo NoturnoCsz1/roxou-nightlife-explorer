@@ -52,9 +52,11 @@ interface Props {
 
 const PartnerVipListDetailPage = ({ listId }: Props) => {
   const { role } = usePartnerAuth();
+  const { toast } = useToast();
   const canEdit = canManageEvents(role);
   const canLifecycle = canEditProfile(role);
   const canCheckIn = canManageReservations(role) || canEdit;
+
 
   const [list, setList] = useState<PartnerVipList | null>(null);
   const [entries, setEntries] = useState<PartnerVipEntry[]>([]);
