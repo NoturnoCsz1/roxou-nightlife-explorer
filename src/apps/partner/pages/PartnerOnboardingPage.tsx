@@ -42,7 +42,7 @@ const PartnerOnboardingPage = () => {
       const { data } = await supabase.auth.getUser();
       if (cancelled) return;
       if (!data?.user) {
-        navigate("/login", { replace: true });
+        navigate("/login?next=/onboarding", { replace: true });
         return;
       }
       setForm((f) => ({
