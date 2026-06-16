@@ -1369,6 +1369,16 @@ const EventoBulkForm = () => {
               >
                 <Plus className="h-3 w-3" /> Adicionar manual
               </button>
+              {errorCount > 0 && (
+                <button
+                  type="button"
+                  onClick={retryAllFailures}
+                  className="flex items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-[11px] font-semibold text-destructive hover:bg-destructive/20 transition"
+                  title="Reprocessa apenas itens com status = erro"
+                >
+                  <AlertCircle className="h-3 w-3" /> Reprocessar falhas ({errorCount})
+                </button>
+              )}
             </div>
           </div>
 
