@@ -5,3 +5,8 @@ export { default as PartnerProfileCard } from "./PartnerProfileCard";
 export { default as PartnerRecentEvents } from "./PartnerRecentEvents";
 export { default as PartnerAwardBadge } from "./PartnerAwardBadge";
 export { default as PartnerEmptyState } from "./PartnerEmptyState";
+export { default as PartnerProfileEditor } from "./PartnerProfileEditor";
+export { default as PartnerImageUploader } from "./PartnerImageUploader";
+export { default as PartnerSocialLinksEditor } from "./PartnerSocialLinksEditor";
+export { default as PartnerOpeningHoursEditor } from "./PartnerOpeningHoursEditor";
+export { default as PartnerProfilePreview } from "./PartnerProfilePreview";

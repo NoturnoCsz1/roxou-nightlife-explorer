@@ -1,38 +1,40 @@
 /**
- * PartnerProfilePage — Fase 9D (read-only).
- * Mostra dados de `partners`. Edição virá em fases futuras.
+ * PartnerProfilePage — Fase 9E
+ * Read + Edit do perfil do parceiro, sempre via tabela `partners`.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
-import { PartnerEmptyState, PartnerProfileCard } from "../components";
+import { PartnerEmptyState, PartnerProfileEditor } from "../components";
 import {
-  getPartnerDetails,
-  type PartnerDetails,
-} from "../services/partnerDashboard";
+  getPartnerProfile,
+  type PartnerProfileRow,
+} from "../services/partnerProfile";
 
 const PartnerProfilePage = () => {
-  const { selectedPartnerId, canEditProfile, isLoading } = usePartnerAuth();
-  const [details, setDetails] = useState<PartnerDetails | null>(null);
+  const { selectedPartnerId, role, canEditProfile, isLoading } =
+    usePartnerAuth();
+  const [profile, setProfile] = useState<PartnerProfileRow | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const canSuggest = role === "editor";
+
+  const load = useCallback(async (id: string) => {
+    setLoading(true);
+    try {
+      const row = await getPartnerProfile(id);
+      setProfile(row);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!selectedPartnerId) {
-      setDetails(null);
+      setProfile(null);
       return;
     }
-    let cancelled = false;
-    setLoading(true);
-    getPartnerDetails(selectedPartnerId)
-      .then((d) => {
-        if (!cancelled) setDetails(d);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedPartnerId]);
+    load(selectedPartnerId);
+  }, [selectedPartnerId, load]);
 
   if (isLoading) {
     return (
@@ -54,26 +56,32 @@ const PartnerProfilePage = () => {
   return (
     <main className="min-h-screen p-4 md:p-6 space-y-4 max-w-3xl mx-auto">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-bold">Perfil do Estabelecimento</h1>
+        <h1 className="text-xl md:text-2xl font-bold">
+          Perfil do Estabelecimento
+        </h1>
         <span className="text-xs text-muted-foreground">
-          {canEditProfile ? "Edição: em breve" : "Somente leitura"}
+          {canEditProfile
+            ? "Edição habilitada"
+            : canSuggest
+              ? "Sugestões (em breve)"
+              : "Somente leitura"}
         </span>
       </header>
 
-      <PartnerProfileCard partner={details} />
-
-      {details?.full_description ? (
-        <section className="rounded-lg border border-border p-4">
-          <h2 className="text-sm font-semibold mb-2">Sobre</h2>
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
-            {details.full_description}
-          </p>
-        </section>
-      ) : null}
-
-      <section className="rounded-lg border border-border p-4 text-xs text-muted-foreground">
-        {loading ? "Atualizando…" : "Dados lidos diretamente da tabela `partners`."}
-      </section>
+      {loading && !profile ? (
+        <p className="text-sm text-muted-foreground">Carregando perfil…</p>
+      ) : profile ? (
+        <PartnerProfileEditor
+          profile={profile}
+          canSave={canEditProfile}
+          canSuggest={canSuggest}
+          onSaved={(row) => setProfile(row)}
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Estabelecimento não encontrado.
+        </p>
+      )}
     </main>
   );
 };
