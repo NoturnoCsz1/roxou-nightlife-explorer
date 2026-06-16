@@ -1780,6 +1780,57 @@ export type Database = {
           },
         ]
       }
+      partner_metrics_daily: {
+        Row: {
+          clicks: number
+          created_at: string
+          date: string
+          favorites: number
+          id: string
+          partner_id: string
+          reservations: number
+          views: number
+          vip_signups: number
+        }
+        Insert: {
+          clicks?: number
+          created_at?: string
+          date: string
+          favorites?: number
+          id?: string
+          partner_id: string
+          reservations?: number
+          views?: number
+          vip_signups?: number
+        }
+        Update: {
+          clicks?: number
+          created_at?: string
+          date?: string
+          favorites?: number
+          id?: string
+          partner_id?: string
+          reservations?: number
+          views?: number
+          vip_signups?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_metrics_daily_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_metrics_daily_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_radar_memory: {
         Row: {
           common_genres: string[]
@@ -1857,6 +1908,99 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      partner_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          partner_id: string
+          plan: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          partner_id: string
+          plan?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          partner_id?: string
+          plan?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_subscriptions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_subscriptions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_users: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          partner_id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          partner_id: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          partner_id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_users_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_users_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partners: {
         Row: {
@@ -3091,6 +3235,14 @@ export type Database = {
       }
       increment_match_view: { Args: { _slug: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_partner_member: {
+        Args: { _partner: string; _user: string }
+        Returns: boolean
+      }
+      is_partner_owner_or_admin: {
+        Args: { _partner: string; _user: string }
+        Returns: boolean
+      }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
       upsert_partner_radar_memory: {
         Args: {
