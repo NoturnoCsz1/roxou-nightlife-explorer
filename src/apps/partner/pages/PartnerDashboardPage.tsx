@@ -100,7 +100,7 @@ const PartnerDashboardPage = () => {
   };
 
   return (
-    <main className="min-h-screen p-4 md:p-6 space-y-4 max-w-6xl mx-auto">
+    <main className="w-full max-w-7xl mx-auto px-4 py-4 md:py-6 space-y-4 overflow-x-hidden min-h-screen">
       <header className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-bold">Dashboard do Parceiro</h1>
         {loadingData ? (
