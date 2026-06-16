@@ -12,12 +12,14 @@ export interface PartnerPromoter {
   id: string;
   partner_id: string;
   name: string;
+  slug: string;
   phone: string | null;
   instagram: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
+
 
 export interface PromoterPayload {
   name?: string;
