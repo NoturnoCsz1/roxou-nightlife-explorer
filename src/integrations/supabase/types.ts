@@ -1061,6 +1061,7 @@ export type Database = {
           sports_transmission_source: string | null
           status: string
           sub_category: string | null
+          submitted_by_partner: boolean
           ticket_url: string | null
           time_is_unknown: boolean
           title: string
@@ -1116,6 +1117,7 @@ export type Database = {
           sports_transmission_source?: string | null
           status?: string
           sub_category?: string | null
+          submitted_by_partner?: boolean
           ticket_url?: string | null
           time_is_unknown?: boolean
           title: string
@@ -1171,6 +1173,7 @@ export type Database = {
           sports_transmission_source?: string | null
           status?: string
           sub_category?: string | null
+          submitted_by_partner?: boolean
           ticket_url?: string | null
           time_is_unknown?: boolean
           title?: string
@@ -3210,7 +3213,73 @@ export type Database = {
       }
     }
     Functions: {
+      _partner_event_slug: { Args: { _title: string }; Returns: string }
       archive_old_radar_scans: { Args: never; Returns: number }
+      archive_partner_event: {
+        Args: { _event_id: string }
+        Returns: {
+          address: string | null
+          ai_confidence: string
+          ai_confidence_score: number | null
+          ai_warnings: Json | null
+          aura_badge: string | null
+          aura_pick: boolean
+          aura_score: number | null
+          aura_score_reason: Json | null
+          aura_score_updated_at: string | null
+          category: string
+          city: string
+          created_at: string
+          date_time: string
+          dedupe_key: string | null
+          description: string | null
+          duplicate_checked_at: string | null
+          duplicate_group_id: string | null
+          featured: boolean
+          flyer_fingerprint: string | null
+          hype_score: number | null
+          id: string
+          image_hash: string | null
+          image_url: string | null
+          instagram: string | null
+          instagram_caption: string | null
+          is_sports_transmission: boolean
+          latitude: number | null
+          longitude: number | null
+          maps_place_id: string | null
+          meta_description: string | null
+          meta_title: string | null
+          needs_review: boolean
+          opportunity_tags: string[]
+          original_detected_title: string | null
+          partner_id: string | null
+          short_summary: string | null
+          slug: string
+          sports_match_id: string | null
+          sports_transmission_confidence: number | null
+          sports_transmission_source: string | null
+          status: string
+          sub_category: string | null
+          submitted_by_partner: boolean
+          ticket_url: string | null
+          time_is_unknown: boolean
+          title: string
+          transmission_channel: string | null
+          transmission_notes: string | null
+          transmission_url: string | null
+          transport_reservation_enabled: boolean
+          trending_score: number | null
+          venue_name: string | null
+          verification_source: string | null
+          video_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cleanup_event_live_presence: { Args: never; Returns: number }
       community_user_can_speak: { Args: { _user_id: string }; Returns: boolean }
       compute_user_risk_score: { Args: { _user_id: string }; Returns: number }
@@ -3225,6 +3294,136 @@ export type Database = {
           total: number
         }[]
       }
+      create_partner_event: {
+        Args: { _partner_id: string; _payload: Json }
+        Returns: {
+          address: string | null
+          ai_confidence: string
+          ai_confidence_score: number | null
+          ai_warnings: Json | null
+          aura_badge: string | null
+          aura_pick: boolean
+          aura_score: number | null
+          aura_score_reason: Json | null
+          aura_score_updated_at: string | null
+          category: string
+          city: string
+          created_at: string
+          date_time: string
+          dedupe_key: string | null
+          description: string | null
+          duplicate_checked_at: string | null
+          duplicate_group_id: string | null
+          featured: boolean
+          flyer_fingerprint: string | null
+          hype_score: number | null
+          id: string
+          image_hash: string | null
+          image_url: string | null
+          instagram: string | null
+          instagram_caption: string | null
+          is_sports_transmission: boolean
+          latitude: number | null
+          longitude: number | null
+          maps_place_id: string | null
+          meta_description: string | null
+          meta_title: string | null
+          needs_review: boolean
+          opportunity_tags: string[]
+          original_detected_title: string | null
+          partner_id: string | null
+          short_summary: string | null
+          slug: string
+          sports_match_id: string | null
+          sports_transmission_confidence: number | null
+          sports_transmission_source: string | null
+          status: string
+          sub_category: string | null
+          submitted_by_partner: boolean
+          ticket_url: string | null
+          time_is_unknown: boolean
+          title: string
+          transmission_channel: string | null
+          transmission_notes: string | null
+          transmission_url: string | null
+          transport_reservation_enabled: boolean
+          trending_score: number | null
+          venue_name: string | null
+          verification_source: string | null
+          video_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      duplicate_partner_event: {
+        Args: { _event_id: string }
+        Returns: {
+          address: string | null
+          ai_confidence: string
+          ai_confidence_score: number | null
+          ai_warnings: Json | null
+          aura_badge: string | null
+          aura_pick: boolean
+          aura_score: number | null
+          aura_score_reason: Json | null
+          aura_score_updated_at: string | null
+          category: string
+          city: string
+          created_at: string
+          date_time: string
+          dedupe_key: string | null
+          description: string | null
+          duplicate_checked_at: string | null
+          duplicate_group_id: string | null
+          featured: boolean
+          flyer_fingerprint: string | null
+          hype_score: number | null
+          id: string
+          image_hash: string | null
+          image_url: string | null
+          instagram: string | null
+          instagram_caption: string | null
+          is_sports_transmission: boolean
+          latitude: number | null
+          longitude: number | null
+          maps_place_id: string | null
+          meta_description: string | null
+          meta_title: string | null
+          needs_review: boolean
+          opportunity_tags: string[]
+          original_detected_title: string | null
+          partner_id: string | null
+          short_summary: string | null
+          slug: string
+          sports_match_id: string | null
+          sports_transmission_confidence: number | null
+          sports_transmission_source: string | null
+          status: string
+          sub_category: string | null
+          submitted_by_partner: boolean
+          ticket_url: string | null
+          time_is_unknown: boolean
+          title: string
+          transmission_channel: string | null
+          transmission_notes: string | null
+          transmission_url: string | null
+          transport_reservation_enabled: boolean
+          trending_score: number | null
+          venue_name: string | null
+          verification_source: string | null
+          video_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       expire_stale_ride_requests: { Args: never; Returns: number }
       has_role: {
         Args: {
@@ -3235,6 +3434,10 @@ export type Database = {
       }
       increment_match_view: { Args: { _slug: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_partner_editor_or_above: {
+        Args: { _partner: string; _user: string }
+        Returns: boolean
+      }
       is_partner_member: {
         Args: { _partner: string; _user: string }
         Returns: boolean
@@ -3244,6 +3447,71 @@ export type Database = {
         Returns: boolean
       }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
+      update_partner_event: {
+        Args: { _event_id: string; _payload: Json }
+        Returns: {
+          address: string | null
+          ai_confidence: string
+          ai_confidence_score: number | null
+          ai_warnings: Json | null
+          aura_badge: string | null
+          aura_pick: boolean
+          aura_score: number | null
+          aura_score_reason: Json | null
+          aura_score_updated_at: string | null
+          category: string
+          city: string
+          created_at: string
+          date_time: string
+          dedupe_key: string | null
+          description: string | null
+          duplicate_checked_at: string | null
+          duplicate_group_id: string | null
+          featured: boolean
+          flyer_fingerprint: string | null
+          hype_score: number | null
+          id: string
+          image_hash: string | null
+          image_url: string | null
+          instagram: string | null
+          instagram_caption: string | null
+          is_sports_transmission: boolean
+          latitude: number | null
+          longitude: number | null
+          maps_place_id: string | null
+          meta_description: string | null
+          meta_title: string | null
+          needs_review: boolean
+          opportunity_tags: string[]
+          original_detected_title: string | null
+          partner_id: string | null
+          short_summary: string | null
+          slug: string
+          sports_match_id: string | null
+          sports_transmission_confidence: number | null
+          sports_transmission_source: string | null
+          status: string
+          sub_category: string | null
+          submitted_by_partner: boolean
+          ticket_url: string | null
+          time_is_unknown: boolean
+          title: string
+          transmission_channel: string | null
+          transmission_notes: string | null
+          transmission_url: string | null
+          transport_reservation_enabled: boolean
+          trending_score: number | null
+          venue_name: string | null
+          verification_source: string | null
+          video_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_partner_safe_profile: {
         Args: { _partner_id: string; _payload: Json }
         Returns: {
