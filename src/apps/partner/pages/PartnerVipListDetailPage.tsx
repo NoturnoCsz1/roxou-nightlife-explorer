@@ -1,17 +1,18 @@
 /**
- * PartnerVipListDetailPage — Fase 9I
+ * PartnerVipListDetailPage — Fase 9I + 9L (promoters & portaria)
  *
- * Detalhe de uma lista VIP: stats, ações (abrir/fechar/arquivar),
- * formulário de adicionar convidado, tabela de entradas e painel de check-in.
- * Página órfã: ainda não registrada em App.tsx.
+ * Detalhe de uma lista VIP com stats, ações de lifecycle, formulário de
+ * convidados com promoter, busca, ações de check-in/no-show/cancelar e
+ * modo portaria (mobile-first) para uso na entrada do estabelecimento.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getVipList,
   listVipEntries,
   addVipEntry,
   checkInVipEntry,
   cancelVipEntry,
+  noShowVipEntry,
   openVipList,
   closeVipList,
   archiveVipList,
@@ -21,6 +22,11 @@ import {
   type VipEntryPayload,
 } from "../services/partnerVipLists";
 import {
+  listPromoters,
+  createPromoter,
+  type PartnerPromoter,
+} from "../services/partnerPromoters";
+import {
   usePartnerAuth,
   canManageEvents,
   canManageReservations,
@@ -28,6 +34,7 @@ import {
 } from "../hooks/usePartnerAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { VipListStatusBadge } from "../components/VipListStatusBadge";
 import { VipListStats } from "../components/VipListStats";
 import { VipEntryForm } from "../components/VipEntryForm";
@@ -46,18 +53,23 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
 
   const [list, setList] = useState<PartnerVipList | null>(null);
   const [entries, setEntries] = useState<PartnerVipEntry[]>([]);
+  const [promoters, setPromoters] = useState<PartnerPromoter[]>([]);
   const [busy, setBusy] = useState(false);
   const [tab, setTab] = useState<"entries" | "checkin">("entries");
+  const [doorman, setDoorman] = useState(false);
+  const [search, setSearch] = useState("");
 
   const reload = useCallback(async () => {
     setBusy(true);
     try {
-      const [l, e] = await Promise.all([
-        getVipList(listId),
+      const l = await getVipList(listId);
+      const [e, p] = await Promise.all([
         listVipEntries(listId),
+        l ? listPromoters(l.partner_id) : Promise.resolve([] as PartnerPromoter[]),
       ]);
       setList(l);
       setEntries(e);
+      setPromoters(p);
     } finally {
       setBusy(false);
     }
@@ -72,6 +84,13 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
     await reload();
   };
 
+  const handleCreatePromoter = async (name: string) => {
+    if (!list) return null;
+    const p = await createPromoter(list.partner_id, { name });
+    setPromoters((prev) => [...prev, p].sort((a, b) => a.name.localeCompare(b.name)));
+    return p;
+  };
+
   const handleCheckIn = async (e: PartnerVipEntry) => {
     await checkInVipEntry(e.id);
     await reload();
@@ -79,6 +98,11 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
 
   const handleCancel = async (e: PartnerVipEntry) => {
     await cancelVipEntry(e.id);
+    await reload();
+  };
+
+  const handleNoShow = async (e: PartnerVipEntry) => {
+    await noShowVipEntry(e.id);
     await reload();
   };
 
@@ -95,9 +119,21 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
     }
   };
 
+  const filteredEntries = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return entries;
+    return entries.filter(
+      (e) =>
+        e.name.toLowerCase().includes(s) ||
+        (e.phone ?? "").toLowerCase().includes(s) ||
+        (e.email ?? "").toLowerCase().includes(s) ||
+        (e.promoter_name_snapshot ?? "").toLowerCase().includes(s),
+    );
+  }, [entries, search]);
+
   if (!list) {
     return (
-      <main className="min-h-screen p-8">
+      <main className="w-full max-w-7xl mx-auto px-4 py-6 min-h-screen overflow-x-hidden">
         <p className="text-muted-foreground">
           {busy ? "Carregando..." : "Lista não encontrada."}
         </p>
@@ -107,67 +143,97 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
 
   const stats = computeVipListStats(entries, list.max_entries);
 
+  // Modo portaria: layout grande, foco em check-in rápido.
+  if (doorman) {
+    return (
+      <main className="w-full max-w-3xl mx-auto px-4 py-4 min-h-screen overflow-x-hidden space-y-4">
+        <header className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs uppercase text-muted-foreground">
+              Modo portaria
+            </p>
+            <h1 className="text-xl font-bold truncate">{list.title}</h1>
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => setDoorman(false)}>
+            Sair
+          </Button>
+        </header>
+        <VipListStats stats={stats} />
+        <Card className="p-3">
+          <VipCheckInPanel
+            entries={entries}
+            onCheckIn={handleCheckIn}
+            doormanMode
+          />
+        </Card>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen space-y-6 p-6">
+    <main className="w-full max-w-7xl mx-auto px-4 py-4 md:py-6 min-h-screen overflow-x-hidden space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{list.title}</h1>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold break-words">{list.title}</h1>
             <VipListStatusBadge status={list.status} />
           </div>
           {list.description ? (
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground break-words">
               {list.description}
             </p>
           ) : null}
         </div>
-        {canLifecycle ? (
-          <div className="flex flex-wrap gap-2">
-            {list.status !== "open" ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => void lifecycle("open")}
-                disabled={busy}
-              >
-                Abrir
-              </Button>
-            ) : null}
-            {list.status !== "closed" ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => void lifecycle("close")}
-                disabled={busy}
-              >
-                Fechar
-              </Button>
-            ) : null}
-            {list.status !== "archived" ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => void lifecycle("archive")}
-                disabled={busy}
-              >
-                Arquivar
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {canCheckIn ? (
+            <Button size="sm" onClick={() => setDoorman(true)}>
+              Modo portaria
+            </Button>
+          ) : null}
+          {canLifecycle && list.status !== "open" ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => void lifecycle("open")}
+              disabled={busy}
+            >
+              Abrir
+            </Button>
+          ) : null}
+          {canLifecycle && list.status !== "closed" ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => void lifecycle("close")}
+              disabled={busy}
+            >
+              Fechar
+            </Button>
+          ) : null}
+          {canLifecycle && list.status !== "archived" ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void lifecycle("archive")}
+              disabled={busy}
+            >
+              Arquivar
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       <VipListStats stats={stats} />
 
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b overflow-x-auto">
         <button
-          className={`px-3 py-2 text-sm ${tab === "entries" ? "border-b-2 border-primary font-semibold" : "text-muted-foreground"}`}
+          className={`px-3 py-2 text-sm whitespace-nowrap ${tab === "entries" ? "border-b-2 border-primary font-semibold" : "text-muted-foreground"}`}
           onClick={() => setTab("entries")}
         >
           Convidados
         </button>
         <button
-          className={`px-3 py-2 text-sm ${tab === "checkin" ? "border-b-2 border-primary font-semibold" : "text-muted-foreground"}`}
+          className={`px-3 py-2 text-sm whitespace-nowrap ${tab === "checkin" ? "border-b-2 border-primary font-semibold" : "text-muted-foreground"}`}
           onClick={() => setTab("checkin")}
         >
           Check-in rápido
@@ -178,13 +244,23 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
         <div className="space-y-4">
           {canEdit ? (
             <Card className="p-4">
-              <VipEntryForm onSubmit={handleAdd} />
+              <VipEntryForm
+                onSubmit={handleAdd}
+                promoters={promoters}
+                onCreatePromoter={handleCreatePromoter}
+              />
             </Card>
           ) : null}
+          <Input
+            placeholder="Buscar nome, telefone ou promoter..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <VipEntryTable
-            entries={entries}
+            entries={filteredEntries}
             onCheckIn={handleCheckIn}
             onCancel={handleCancel}
+            onNoShow={handleNoShow}
             canCheckIn={canCheckIn}
           />
         </div>
