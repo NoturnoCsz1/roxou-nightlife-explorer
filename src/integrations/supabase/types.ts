@@ -2052,7 +2052,7 @@ export type Database = {
           name: string
           partner_id: string
           phone?: string | null
-          slug: string
+          slug?: string
           updated_at?: string
         }
         Update: {
