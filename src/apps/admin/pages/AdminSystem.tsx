@@ -73,28 +73,39 @@ const AdminSystem = () => {
   const [host, setHost] = useState<HostMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [idbCount, setIdbCount] = useState<number>(0);
 
   async function refresh() {
     setLoading(true);
-    const [w, p, pm, h] = await Promise.all([
+    const [w, p, pm, h, c] = await Promise.all([
       fetchJson<HealthPayload>("/health"),
       fetchJson<HealthPayload>("/partner/health"),
       fetchJson<{ processes: PmProcess[] }>("/api/system/pm2"),
       fetchJson<HostMetrics>("/api/system/host"),
+      bulkCacheCountIdb(),
     ]);
     setWeb(w);
     setPartner(p);
     setPm2(pm?.processes ?? null);
     setHost(h);
+    setIdbCount(c);
     setNow(Date.now());
     setLoading(false);
   }
 
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 30_000);
+    // FASE 10G.1.1 — auto-refresh a cada 5s para virar monitor real
+    const t = setInterval(refresh, 5_000);
     return () => clearInterval(t);
   }, []);
+
+  async function handleClearCache() {
+    await clearBulkCacheIdb();
+    try { sessionStorage.clear(); } catch { /* ignore */ }
+    setIdbCount(0);
+    toast.success("Cache de flyers limpo.");
+  }
 
   const cache = getBulkCacheStats();
   const buildTime = typeof __ROXOU_BUILD_TIME__ !== "undefined" ? __ROXOU_BUILD_TIME__ : "—";
