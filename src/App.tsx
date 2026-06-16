@@ -56,6 +56,35 @@ const Artes = lazy(() => import("./apps/admin/pages/Artes"));
 const StoryAgendaDoDia = lazy(() => import("./apps/admin/pages/StoryAgendaDoDia"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
+// Partner Pro Preview (Fase 9J) — beta interno, gateado pelo AdminLayout
+const PartnerPreviewLayout = lazy(
+  () => import("./apps/partner/layouts/PartnerPreviewLayout"),
+);
+const PartnerDashboardPage = lazy(
+  () => import("./apps/partner/pages/PartnerDashboardPage"),
+);
+const PartnerProfilePage = lazy(
+  () => import("./apps/partner/pages/PartnerProfilePage"),
+);
+const PartnerEventsPage = lazy(
+  () => import("./apps/partner/pages/PartnerEventsPage"),
+);
+const PartnerReservationsPage = lazy(
+  () => import("./apps/partner/pages/PartnerReservationsPage"),
+);
+const PartnerVipListPage = lazy(
+  () => import("./apps/partner/pages/PartnerVipListPage"),
+);
+const PartnerVipListDetailRoute = lazy(
+  () => import("./apps/partner/routes/PartnerVipListDetailRoute"),
+);
+const PartnerAnalyticsPage = lazy(
+  () => import("./apps/partner/pages/PartnerAnalyticsPage"),
+);
+const PartnerSettingsPage = lazy(
+  () => import("./apps/partner/pages/PartnerSettingsPage"),
+);
+
 // V3 (público) — somente Home/Layout/Auth ficam eager (LCP + entrada).
 // Demais rotas viram lazy para reduzir bundle inicial. (Fase 7)
 import V3Layout from "./components/v3/V3Layout";
@@ -143,6 +172,24 @@ const App = () => (
             <Route path="premiacoes" element={L(<Premiacoes />)} />
             <Route path="artes" element={L(<Artes />)} />
             <Route path="story-agenda" element={L(<StoryAgendaDoDia />)} />
+
+            {/* ─── Partner Pro Preview (Fase 9J — beta interno admin) ─── */}
+            <Route path="partner-preview" element={L(<PartnerPreviewLayout />)}>
+              <Route index element={L(<PartnerDashboardPage />)} />
+              <Route path="perfil" element={L(<PartnerProfilePage />)} />
+              <Route path="eventos" element={L(<PartnerEventsPage />)} />
+              <Route path="reservas" element={L(<PartnerReservationsPage />)} />
+              <Route path="lista-vip" element={L(<PartnerVipListPage />)} />
+              <Route
+                path="lista-vip/:listId"
+                element={L(<PartnerVipListDetailRoute />)}
+              />
+              <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
+              <Route
+                path="configuracoes"
+                element={L(<PartnerSettingsPage />)}
+              />
+            </Route>
           </Route>
 
           {/* ========= AUTH ========= */}

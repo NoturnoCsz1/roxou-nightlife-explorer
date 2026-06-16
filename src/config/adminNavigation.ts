@@ -14,6 +14,7 @@ import {
   Palette,
   Search,
   Trophy,
+  Briefcase,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,4 +53,5 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/estabelecimentos", icon: Building2, label: "Estabelecimentos" },
   { to: "/admin/parceiros", icon: Users, label: "Parceiros (legado)" },
   { to: "/admin/editores", icon: ShieldCheck, label: "Editores" },
+  { to: "/admin/partner-preview", icon: Briefcase, label: "Partner Pro Preview" },
 ];
