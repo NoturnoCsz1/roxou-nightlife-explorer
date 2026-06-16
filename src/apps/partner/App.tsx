@@ -49,6 +49,8 @@ const PartnerVipListDetailRoute = lazy(
 );
 const PartnerAnalyticsPage = lazy(() => import("./pages/PartnerAnalyticsPage"));
 const PartnerSettingsPage = lazy(() => import("./pages/PartnerSettingsPage"));
+const PartnerVipCheckinPage = lazy(() => import("./pages/PartnerVipCheckinPage"));
+
 
 const Fallback = () => (
   <div className="min-h-[40vh] flex items-center justify-center">
