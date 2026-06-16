@@ -18,6 +18,7 @@ import {
   writeExtractionCache,
   bulkLog,
 } from "@/lib/bulkEventsImage";
+import { clearBulkCacheIdb, bulkCacheCountIdb } from "@/lib/bulkEventsIndexedDbCache";
 import {
   findPossibleDuplicateEvent,
   generateEventDedupeKey,
