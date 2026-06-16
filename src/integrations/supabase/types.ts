@@ -1912,6 +1912,127 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_reservation_settings: {
+        Row: {
+          advance_booking_hours: number
+          auto_confirm: boolean
+          created_at: string
+          id: string
+          max_people_per_reservation: number
+          max_reservations_per_day: number
+          partner_id: string
+          reservations_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          advance_booking_hours?: number
+          auto_confirm?: boolean
+          created_at?: string
+          id?: string
+          max_people_per_reservation?: number
+          max_reservations_per_day?: number
+          partner_id: string
+          reservations_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          advance_booking_hours?: number
+          auto_confirm?: boolean
+          created_at?: string
+          id?: string
+          max_people_per_reservation?: number
+          max_reservations_per_day?: number
+          partner_id?: string
+          reservations_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_reservation_settings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_reservation_settings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_reservations: {
+        Row: {
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          people_count: number
+          phone: string | null
+          reservation_date: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          event_id?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          partner_id: string
+          people_count?: number
+          phone?: string | null
+          reservation_date: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          event_id?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          partner_id?: string
+          people_count?: number
+          phone?: string | null
+          reservation_date?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_reservations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_reservations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_reservations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_subscriptions: {
         Row: {
           created_at: string
@@ -3359,6 +3480,30 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_partner_reservation: {
+        Args: { _partner_id: string; _payload: Json }
+        Returns: {
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          people_count: number
+          phone: string | null
+          reservation_date: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       duplicate_partner_event: {
         Args: { _event_id: string }
         Returns: {
@@ -3446,7 +3591,35 @@ export type Database = {
         Args: { _partner: string; _user: string }
         Returns: boolean
       }
+      is_partner_reservation_manager: {
+        Args: { _partner: string; _user: string }
+        Returns: boolean
+      }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
+      set_partner_reservation_status: {
+        Args: { _reservation_id: string; _status: string }
+        Returns: {
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          people_count: number
+          phone: string | null
+          reservation_date: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_partner_event: {
         Args: { _event_id: string; _payload: Json }
         Returns: {
@@ -3508,6 +3681,30 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_partner_reservation: {
+        Args: { _payload: Json; _reservation_id: string }
+        Returns: {
+          created_at: string
+          email: string | null
+          event_id: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          people_count: number
+          phone: string | null
+          reservation_date: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservations"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -3581,6 +3778,26 @@ export type Database = {
           _weekday?: string
         }
         Returns: undefined
+      }
+      upsert_partner_reservation_settings: {
+        Args: { _partner_id: string; _payload: Json }
+        Returns: {
+          advance_booking_hours: number
+          auto_confirm: boolean
+          created_at: string
+          id: string
+          max_people_per_reservation: number
+          max_reservations_per_day: number
+          partner_id: string
+          reservations_enabled: boolean
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservation_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
