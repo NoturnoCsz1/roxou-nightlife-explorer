@@ -199,6 +199,22 @@ const EventoBulkForm = () => {
     });
   }, [cityFilter]);
 
+  // FIX bulk_events_performance — avisa antes de sair com lote em andamento
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const inflight = items.some(
+        (it) => it.status === "queued" || it.status === "uploading" || it.status === "extracting",
+      );
+      if (!inflight && !bulkAiRunning) return;
+      e.preventDefault();
+      e.returnValue = "Lote em processamento. Sair agora pode perder o progresso.";
+      return e.returnValue;
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [items, bulkAiRunning]);
+
+
   /**
    * Validação inteligente (aditiva): score 0–100 por item, comparando
    * candidato vs base de eventos. Não bloqueia publicação — apenas marca.
