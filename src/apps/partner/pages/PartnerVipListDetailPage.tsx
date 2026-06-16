@@ -95,9 +95,23 @@ const PartnerVipListDetailPage = ({ listId }: Props) => {
 
   const handleCreatePromoter = async (name: string) => {
     if (!list) return null;
-    const p = await createPromoter(list.partner_id, { name });
-    setPromoters((prev) => [...prev, p].sort((a, b) => a.name.localeCompare(b.name)));
-    return p;
+    try {
+      const p = await createPromoter(list.partner_id, { name });
+      setPromoters((prev) =>
+        [...prev.filter((x) => x.id !== p.id), p].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+      );
+      toast({ title: `Promoter "${p.name}" adicionado.` });
+      return p;
+    } catch (err) {
+      toast({
+        title: "Não foi possível adicionar o promoter.",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+      return null;
+    }
   };
 
   const handleCheckIn = async (e: PartnerVipEntry) => {
