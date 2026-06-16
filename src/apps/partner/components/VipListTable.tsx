@@ -25,7 +25,7 @@ const cta = (op: VipListOperationalState) =>
 
 export function VipListTable({ lists, onOpen, dim, compact }: Props) {
   const renderState = (l: PartnerVipList) =>
-    deriveVipListState(l, 0, l.starts_at);
+    deriveVipListState(l, 0, null);
 
   // ===== Compact card list (mobile + desktop) =====
   if (compact) {
