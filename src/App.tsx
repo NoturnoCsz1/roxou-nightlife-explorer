@@ -213,6 +213,14 @@ const App = () => (
           {/* ========= CONTATO ========= */}
           <Route path="/contato" element={L(<Contato />)} />
 
+          {/* ========= LISTA VIP PÚBLICA (Fase 10E) ========= */}
+          <Route path="/vip/:publicSlug" element={L(<PublicVipList />)} />
+          <Route
+            path="/vip/:publicSlug/sucesso/:publicToken"
+            element={L(<PublicVipListSuccess />)}
+          />
+
+
           {/* ========= EXPO 2026 — DESATIVADA (redireciona para Home) ========= */}
           <Route path="/expo2026" element={<Navigate to="/" replace />} />
           <Route path="/expo2026/*" element={<Navigate to="/" replace />} />
