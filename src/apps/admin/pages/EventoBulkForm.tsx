@@ -1352,9 +1352,41 @@ const EventoBulkForm = () => {
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
   const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
+  const cancelledCount = items.filter((it) => it.status === "cancelled").length;
   const totalCount = items.length;
-  const doneForProgress = readyCount + errorCount;
+  const doneForProgress = readyCount + errorCount + cancelledCount;
   const progressPct = totalCount ? Math.round((doneForProgress / totalCount) * 100) : 0;
+  const isProcessing = processingCount > 0 || queuedCount > 0;
+
+  // FASE 10G.1.3 — telemetria de runtime para o AdminSystem
+  useEffect(() => {
+    updateBulkRuntimeStats({
+      queueSize: processingCount + queuedCount,
+      readyCount,
+      errorCount,
+      cancelledCount,
+      descriptionQueueSize: descWorker.pendingCount(),
+      activeWorkers: processingCount,
+      cancelRequested: cancelRef.current,
+    });
+  }, [processingCount, queuedCount, readyCount, errorCount, cancelledCount, descWorker]);
+  useEffect(() => () => { resetBulkRuntimeStats(); }, []);
+
+  // FASE 10G.1.3 — Auto-save em IndexedDB (debounced 1.2s)
+  useEffect(() => {
+    if (items.length === 0) return;
+    const handle = setTimeout(() => {
+      const slim = items.map((it) => ({
+        form: it.form,
+        status: it.status,
+        fileName: it.fileName,
+        errorMsg: it.errorMsg,
+      }));
+      void saveBulkDraft(slim);
+      bulkLog("autosave", { count: slim.length });
+    }, 1200);
+    return () => clearTimeout(handle);
+  }, [items]);
 
   return (
     <div className="md:ml-44 max-w-3xl pb-12">
@@ -1365,34 +1397,75 @@ const EventoBulkForm = () => {
         <ArrowLeft className="h-3.5 w-3.5" /> Voltar
       </button>
 
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      {/* FASE 10G.1.3 — banner de recuperação de rascunho */}
+      {draftRecoveryOffer && (
+        <div className="mb-3 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[11px] text-foreground/90">
+            Encontramos um processamento anterior ({draftRecoveryOffer.count} item{draftRecoveryOffer.count === 1 ? "" : "s"} ·{" "}
+            {new Date(draftRecoveryOffer.ts).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}). Deseja continuar?
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleRecoverDraft}
+              className="rounded-lg bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+            >
+              Continuar
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="rounded-lg border border-border/50 bg-secondary/40 px-3 py-1 text-[11px] hover:bg-secondary/60"
+            >
+              Descartar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+        <div className="min-w-0">
           <h1 className="text-lg font-bold text-foreground">Criar Eventos em Lote</h1>
           <p className="text-[11px] text-muted-foreground">
             Suba os banners e a IA preenche título, data, local e categoria.
           </p>
         </div>
         {items.length > 0 && (
-          <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-            {readyCount} pronto(s) · {processingCount} processando · {queuedCount} na fila · {errorCount} erro
+          <span className="text-[10px] sm:text-[11px] text-muted-foreground whitespace-normal sm:whitespace-nowrap text-right">
+            {readyCount} pronto{readyCount === 1 ? "" : "s"} · {processingCount} proc · {queuedCount} fila · {errorCount} erro{cancelledCount > 0 ? ` · ${cancelledCount} cancel.` : ""}
           </span>
         )}
       </div>
 
-      {/* Barra de progresso geral do lote */}
-      {totalCount > 0 && (processingCount > 0 || queuedCount > 0) && (
-        <div className="mb-3" aria-label="Progresso do lote">
+      {/* Barra de progresso geral do lote — sticky no mobile durante processamento */}
+      {totalCount > 0 && (isProcessing || cancelRequested) && (
+        <div
+          className="sticky top-0 z-30 -mx-3 sm:mx-0 mb-3 px-3 sm:px-0 py-2 bg-background/95 backdrop-blur-md border-b border-border/30 sm:border-0 sm:bg-transparent sm:backdrop-blur-none sm:static sm:py-0"
+          aria-label="Progresso do lote"
+        >
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/60">
             <div
-              className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
+              className={`h-full transition-all duration-300 ${cancelRequested ? "bg-amber-500" : "bg-gradient-to-r from-primary to-accent"}`}
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            {doneForProgress}/{totalCount} processados ({progressPct}%)
-          </p>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="text-[10px] text-muted-foreground truncate">
+              {doneForProgress}/{totalCount} processados ({progressPct}%){cancelRequested ? " · cancelando…" : ""}
+            </p>
+            {isProcessing && !cancelRequested && (
+              <button
+                type="button"
+                onClick={handleCancelBatch}
+                className="flex shrink-0 items-center gap-1 rounded-lg border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-200 hover:bg-amber-500/20"
+              >
+                <StopCircle className="h-3 w-3" /> Cancelar
+              </button>
+            )}
+          </div>
         </div>
       )}
+
 
       {/* === 🧭 Padrões do Lote (opcional) === */}
       <BatchDefaultsSection
