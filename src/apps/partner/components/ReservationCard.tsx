@@ -81,18 +81,20 @@ export function ReservationCard({
           </div>
           <ReservationStatusBadge status={reservation.status} />
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Users className="h-3 w-3" /> {reservation.people_count}
-          </span>
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           {reservation.phone && (
-            <span className="inline-flex items-center gap-1">
-              <Phone className="h-3 w-3" /> {reservation.phone}
+            <span className="inline-flex items-center gap-1 break-all">
+              <Phone className="h-3 w-3 shrink-0" /> {formatPhoneBR(reservation.phone)}
             </span>
           )}
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-3 w-3 shrink-0" />
+            {reservation.people_count}{" "}
+            {reservation.people_count === 1 ? "pessoa" : "pessoas"}
+          </span>
           {reservation.email && (
-            <span className="inline-flex items-center gap-1">
-              <Mail className="h-3 w-3" /> {reservation.email}
+            <span className="inline-flex items-center gap-1 break-all">
+              <Mail className="h-3 w-3 shrink-0" /> {reservation.email}
             </span>
           )}
           {isPendingPayment && reservation.expires_at && (
