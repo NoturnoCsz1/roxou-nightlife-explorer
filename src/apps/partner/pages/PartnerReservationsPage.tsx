@@ -106,11 +106,53 @@ const PartnerReservationsPage = () => {
     window.localStorage.setItem(ACCORDION_KEY, openSection || "");
   }, [openSection]);
 
-  // Bottom-nav: navegar para /reservas#fila abre o accordion da lista de espera
-  const { hash } = useLocation();
+  // Bottom-nav: navegar para /reservas#fila abre o accordion + scroll + highlight.
+  // `key` muda a cada navegação repetida, então clicar Fila novamente também rola.
+  const { hash, key: locationKey } = useLocation();
   useEffect(() => {
-    if (hash === "#fila") setOpenSection("waitlist");
-  }, [hash]);
+    if (hash !== "#fila") return;
+    setOpenSection("waitlist");
+    // aguarda accordion abrir antes de rolar / piscar
+    const t = window.setTimeout(() => {
+      const el = document.getElementById("fila");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.classList.add("partner-flash");
+        window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
+      }
+    }, 240);
+    return () => window.clearTimeout(t);
+  }, [hash, locationKey]);
+
+  // Timeline → rola até o card da reserva em "Reservas recentes"
+  const handleTimelineSelect = useCallback((r: PartnerReservationRow) => {
+    setTab(bucketOf(r));
+    window.setTimeout(() => {
+      const el = document.getElementById(`res-${r.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("partner-flash");
+        window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
+      }
+    }, 80);
+  }, []);
+
+  // Notificações → abre seção e foca elemento alvo
+  const handleOpenNotifSection = useCallback(
+    (section: "list" | "waitlist" | "report") => {
+      setOpenSection(section);
+      window.setTimeout(() => {
+        const targetId = section === "waitlist" ? "fila" : section;
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          el.classList.add("partner-flash");
+          window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
+        }
+      }, 240);
+    },
+    [],
+  );
 
   const partnerId = selectedPartner?.id ?? null;
 
