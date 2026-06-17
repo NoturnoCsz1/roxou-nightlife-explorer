@@ -8,7 +8,7 @@
  * para garantir o fechamento automático real.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   listVipLists,
   createVipList,
@@ -39,6 +39,7 @@ const bucketOf = (l: PartnerVipList): Bucket => {
 const PartnerVipListPage = () => {
   const { selectedPartner, role } = usePartnerAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const partnerId = selectedPartner?.id ?? null;
   const canCreate = canManageEvents(role);
 
@@ -96,7 +97,12 @@ const PartnerVipListPage = () => {
     );
   }
 
-  const open = (l: PartnerVipList) => navigate(`/lista-vip/${l.id}`);
+  const open = (l: PartnerVipList) => {
+    const base = pathname.includes("/admin/partner-preview/lista-vip")
+      ? "/admin/partner-preview/lista-vip"
+      : "/lista-vip";
+    navigate(`${base}/${l.id}`);
+  };
 
   const renderTab = (key: Bucket) => {
     const rows = buckets[key];
