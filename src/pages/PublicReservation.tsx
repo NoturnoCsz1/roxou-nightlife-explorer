@@ -707,6 +707,18 @@ const PublicReservationPage = () => {
                     <span className="text-muted-foreground">Duração prevista</span>
                     <span className="font-medium">{formatDuration(effectiveDuration)}</span>
                   </div>
+                  {slotIso ? (() => {
+                    const s = slots.find((x) => x.slot_start === slotIso);
+                    if (!s) return null;
+                    return (
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-muted-foreground">Disponibilidade</span>
+                        <span className="font-medium">
+                          {s.available_count} de {s.quantity_total} disponíveis
+                        </span>
+                      </div>
+                    );
+                  })() : null}
                   <div className="flex items-center justify-between gap-2 text-sm pt-1 border-t border-primary/20">
                     <span className="text-muted-foreground">Valor</span>
                     <span className="font-bold text-primary">
@@ -720,7 +732,7 @@ const PublicReservationPage = () => {
                   ) : null}
                   <p className="text-[11px] text-muted-foreground pt-1">
                     Sua mesa ficará reservada por até {formatDuration(effectiveDuration)}.
-                    Caso precise de mais tempo, consulte o estabelecimento.
+                    Após esse período, a mesa poderá ser liberada para novas reservas.
                   </p>
                 </div>
               ) : (
