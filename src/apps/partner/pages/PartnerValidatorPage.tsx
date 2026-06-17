@@ -334,6 +334,14 @@ const PartnerValidatorPage = () => {
             <Input
               value={manual}
               onChange={(e) => setManual(e.target.value)}
+              onPaste={(e) => {
+                const pasted = e.clipboardData.getData("text").trim();
+                if (pasted) {
+                  setManual(pasted);
+                  // Aguarda state propagar
+                  setTimeout(() => void handleValidate(pasted), 0);
+                }
+              }}
               placeholder="Cole o código ou link do QR..."
               className="min-w-0 flex-1"
             />
