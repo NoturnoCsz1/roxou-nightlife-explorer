@@ -705,6 +705,45 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          email_consent: boolean
+          full_name: string | null
+          id: string
+          marketing_consent: boolean
+          phone: string | null
+          updated_at: string
+          whatsapp_consent: boolean
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          email_consent?: boolean
+          full_name?: string | null
+          id: string
+          marketing_consent?: boolean
+          phone?: string | null
+          updated_at?: string
+          whatsapp_consent?: boolean
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          email_consent?: boolean
+          full_name?: string | null
+          id?: string
+          marketing_consent?: boolean
+          phone?: string | null
+          updated_at?: string
+          whatsapp_consent?: boolean
+        }
+        Relationships: []
+      }
       driver_applications: {
         Row: {
           accepted_connection_only: boolean
@@ -2462,6 +2501,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          customer_id: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -2492,6 +2532,7 @@ export type Database = {
           closes_at?: string | null
           code?: string | null
           created_at?: string
+          customer_id?: string | null
           deposit_amount?: number
           email?: string | null
           event_id?: string | null
@@ -2522,6 +2563,7 @@ export type Database = {
           closes_at?: string | null
           code?: string | null
           created_at?: string
+          customer_id?: string | null
           deposit_amount?: number
           email?: string | null
           event_id?: string | null
@@ -2545,6 +2587,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "partner_reservations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partner_reservations_event_id_fkey"
             columns: ["event_id"]
@@ -2672,6 +2721,7 @@ export type Database = {
         Row: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -2697,6 +2747,7 @@ export type Database = {
         Insert: {
           checked_in_at?: string | null
           created_at?: string
+          customer_id?: string | null
           email?: string | null
           email_consent?: boolean
           event_id?: string | null
@@ -2722,6 +2773,7 @@ export type Database = {
         Update: {
           checked_in_at?: string | null
           created_at?: string
+          customer_id?: string | null
           email?: string | null
           email_consent?: boolean
           event_id?: string | null
@@ -2745,6 +2797,13 @@ export type Database = {
           whatsapp_consent?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "partner_vip_list_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partner_vip_list_entries_event_id_fkey"
             columns: ["event_id"]
@@ -4147,6 +4206,7 @@ export type Database = {
         Returns: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4368,6 +4428,7 @@ export type Database = {
         Returns: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4429,6 +4490,7 @@ export type Database = {
         Returns: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4519,6 +4581,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          customer_id: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -4634,6 +4697,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          customer_id: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -4803,6 +4867,7 @@ export type Database = {
         Returns: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4857,11 +4922,16 @@ export type Database = {
         Args: { _partner: string; _user: string }
         Returns: boolean
       }
+      link_record_to_customer: {
+        Args: { _kind: string; _public_token: string }
+        Returns: Json
+      }
       no_show_partner_vip_entry: {
         Args: { _entry_id: string }
         Returns: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4983,6 +5053,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          customer_id: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -5158,6 +5229,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          customer_id: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -5250,6 +5322,7 @@ export type Database = {
         Returns: {
           checked_in_at: string | null
           created_at: string
+          customer_id: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -5364,6 +5437,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          customer_id: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
