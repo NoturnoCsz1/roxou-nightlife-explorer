@@ -60,6 +60,17 @@ const PublicReservationPage = () => {
   const [when, setWhen] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [waitlistType, setWaitlistType] = useState<PublicReservationType | null>(
+    null,
+  );
+  const [waitlistName, setWaitlistName] = useState("");
+  const [waitlistPhone, setWaitlistPhone] = useState("");
+  const [waitlistGuests, setWaitlistGuests] = useState(2);
+  const [waitlistNotes, setWaitlistNotes] = useState("");
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistSent, setWaitlistSent] = useState(false);
+
+
   useEffect(() => {
     if (!partnerSlug) return;
     let alive = true;
