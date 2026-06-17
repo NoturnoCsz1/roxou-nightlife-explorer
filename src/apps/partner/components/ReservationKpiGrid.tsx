@@ -55,13 +55,14 @@ export function ReservationKpiGrid({ stats, rows, waitlist }: Props) {
     .reduce((acc, r) => acc + (Number(r.total_price) || 0), 0);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 min-w-0">
       <KpiCard
         label="Hoje"
         value={todayRows.length}
         hint="Reservas do dia"
         icon={CalendarCheck}
         tone="neutral"
+        className="min-h-[92px]"
       />
       <KpiCard
         label="Confirmadas"
@@ -69,6 +70,7 @@ export function ReservationKpiGrid({ stats, rows, waitlist }: Props) {
         hint="Mesas garantidas"
         icon={CheckCircle2}
         tone="confirmed"
+        className="min-h-[92px]"
       />
       <KpiCard
         label="Receita"
@@ -76,6 +78,7 @@ export function ReservationKpiGrid({ stats, rows, waitlist }: Props) {
         hint="Prevista hoje"
         icon={DollarSign}
         tone="revenue"
+        className="min-h-[92px]"
       />
       <KpiCard
         label="Lista de espera"
@@ -83,28 +86,35 @@ export function ReservationKpiGrid({ stats, rows, waitlist }: Props) {
         hint="Aguardando vaga"
         icon={Hourglass}
         tone="waitlist"
+        className="min-h-[92px]"
       />
-      <KpiCard
-        label="Check-ins"
-        value={checkIns}
-        hint="Clientes na casa"
-        icon={UserCheck}
-        tone="success"
-      />
-      <KpiCard
-        label="No-show"
-        value={noShow}
-        hint={`${stats.noShowRate}% no período`}
-        icon={XCircle}
-        tone="danger"
-      />
-      <KpiCard
-        label="Mesas liberadas"
-        value={released}
-        hint="Disponíveis novamente"
-        icon={TableProperties}
-        tone="neutral"
-      />
+      {/* Cards extras apenas em telas maiores (sm+) */}
+      <div className="hidden sm:contents">
+        <KpiCard
+          label="Check-ins"
+          value={checkIns}
+          hint="Clientes na casa"
+          icon={UserCheck}
+          tone="success"
+          className="min-h-[92px]"
+        />
+        <KpiCard
+          label="No-show"
+          value={noShow}
+          hint={`${stats.noShowRate}% no período`}
+          icon={XCircle}
+          tone="danger"
+          className="min-h-[92px]"
+        />
+        <KpiCard
+          label="Mesas liberadas"
+          value={released}
+          hint="Disponíveis novamente"
+          icon={TableProperties}
+          tone="neutral"
+          className="min-h-[92px]"
+        />
+      </div>
     </div>
   );
 }
