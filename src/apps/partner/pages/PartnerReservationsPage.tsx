@@ -38,6 +38,9 @@ import {
   ReservationTimeline,
   UpcomingReservationCard,
   ReservationPendingCard,
+  LiveOperationsPanel,
+  ExecutiveDashboard,
+  WeeklyHeatmap,
 } from "../components";
 import {
   cancelReservation,
@@ -376,6 +379,14 @@ const PartnerReservationsPage = () => {
           waitlist={waitlist}
           stats={stats}
         />
+        <LiveOperationsPanel
+          rows={rows}
+          waitlist={waitlist}
+          onSelectBucket={(b) => {
+            if (b === "waitlist") setOpenSection("waitlist");
+            else setTab(b === "released" ? "ended" : "active");
+          }}
+        />
         <UpcomingReservationCard reservations={rows} types={types} />
         <ReservationPendingCard reservations={rows} waitlist={waitlist} />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
@@ -390,6 +401,14 @@ const PartnerReservationsPage = () => {
           waitlist={waitlist}
           types={types}
           stats={stats}
+        />
+        <LiveOperationsPanel
+          rows={rows}
+          waitlist={waitlist}
+          onSelectBucket={(b) => {
+            if (b === "waitlist") setOpenSection("waitlist");
+            else setTab(b === "released" ? "ended" : "active");
+          }}
         />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
         <ReservationTimeline reservations={rows} types={types} />
@@ -500,6 +519,29 @@ const PartnerReservationsPage = () => {
         onValueChange={(v) => setOpenSection(v)}
         className="space-y-3"
       >
+        <AccordionItem
+          value="executive"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Visão executiva (hoje · semana · mês)
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <ExecutiveDashboard rows={rows} waitlist={waitlist} stats={stats} />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem
+          value="heatmap"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Heatmap semanal
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <WeeklyHeatmap rows={rows} />
+          </AccordionContent>
+        </AccordionItem>
         <AccordionItem
           value="types"
           className="rounded-2xl border border-border/60 bg-card/40 px-3"
