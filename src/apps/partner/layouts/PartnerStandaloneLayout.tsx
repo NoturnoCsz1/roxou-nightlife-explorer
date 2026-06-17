@@ -96,12 +96,16 @@ const PartnerStandaloneLayout = () => {
           ) : null}
         </div>
 
-        <nav className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1">
+        <nav
+          className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1"
+          style={{ scrollSnapType: "x proximity" }}
+        >
           {TABS.map((t) => (
             <NavLink
               key={t.to}
               to={t.to}
               end={t.end}
+              style={{ scrollSnapAlign: "start" }}
               className={({ isActive }) =>
                 cn(
                   "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition",
