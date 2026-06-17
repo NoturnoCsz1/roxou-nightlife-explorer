@@ -133,7 +133,7 @@ const SETTINGS_TABLE = "partner_reservation_settings" as const;
 const TYPES_TABLE = "partner_reservation_types" as const;
 
 const SELECT_COLS =
-  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code";
+  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code, deposit_amount, remaining_amount, payment_method, payment_status";
 
 export interface ListReservationsOptions {
   status?: PartnerReservationStatus | "all";
