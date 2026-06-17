@@ -31,9 +31,12 @@ import {
   WaitlistManager,
   GuestNameDialog,
   PublicLinkQrDialog,
+  DailyOperationsReport,
+  OccupancyInsightsPanel,
 } from "../components";
 import {
   cancelReservation,
+  cancelWaitlistEntry,
   completeReservation,
   computeReservationStats,
   confirmReservation,
@@ -41,14 +44,17 @@ import {
   createReservation,
   getReservationSettings,
   listReservationTypes,
+  listReservationWaitlist,
   listReservations,
   noShowReservation,
+  notifyWaitlistEntry,
   releasePartnerReservationTable,
   updateReservationSettings,
   waivePartnerReservationDeposit,
   type PartnerReservationRow,
   type PartnerReservationSettings,
   type PartnerReservationType,
+  type ReservationWaitlistEntry,
 } from "../services/partnerReservations";
 import {
   closeDuePartnerReservations,
