@@ -22,6 +22,7 @@ import {
   type PublicReservationInfo,
   type PublicReservationResult,
 } from "@/services/publicReservations";
+import SaveToAccountButton from "@/components/customer/SaveToAccountButton";
 
 type ReservationStatus =
   | "pending"
@@ -620,6 +621,12 @@ const PublicReservationSuccessPage = () => {
             Enviar pelo WhatsApp
           </Button>
         </div>
+
+        {publicToken ? (
+          <SaveToAccountButton kind="reservation" token={publicToken} />
+        ) : null}
+
+
 
         <div className="text-center">
           <Link to="/" className="text-xs text-muted-foreground underline">
