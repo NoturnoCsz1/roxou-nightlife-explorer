@@ -15,7 +15,6 @@ import {
   Sparkles,
   CheckCircle2,
   Users,
-  Calendar,
   Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
