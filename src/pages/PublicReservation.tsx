@@ -12,11 +12,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import {
   getPublicPartnerReservationsContext,
   submitPublicReservation,
+  submitReservationWaitlist,
   type PublicPartnerForReservations,
   type PublicReservationType,
 } from "@/services/publicReservations";
