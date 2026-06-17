@@ -196,9 +196,19 @@ const PublicReservationSuccessPage = () => {
     generateQrSvg(payload).then(setQrSvg).catch(() => setQrSvg(""));
   }, [qrAllowed, info?.qr_payload, state.result?.qr_payload, publicToken]);
 
-  const partnerName = info?.partner_name ?? "Estabelecimento";
-  const code = info?.code ?? publicToken?.slice(0, 8).toUpperCase() ?? "";
-  const dateLabel = info ? formatDateTimeSP(info.reservation_date) : "—";
+  const partnerName =
+    info?.partner_name?.trim() ||
+    state.result?.partner_name?.trim() ||
+    "Estabelecimento";
+  const customerName = info?.name?.trim() || "Cliente não informado";
+  const typeLabel = info?.type_kind
+    ? `${KIND_LABEL[info.type_kind]}${info.type_name ? ` · ${info.type_name}` : ""}`
+    : info?.type_name || "Reserva";
+  const peopleCount = info?.people_count ?? info?.type_seats ?? 1;
+  const peopleFixed =
+    info?.type_seats != null && info.type_seats === info.people_count;
+  const code = info?.code ?? state.result?.code ?? publicToken?.slice(0, 8).toUpperCase() ?? "";
+  const dateLabel = info ? formatDateTimeSP(info.reservation_date) : "Carregando…";
   const expiresLabel = info?.expires_at ? formatDateTimeSP(info.expires_at) : "";
 
   const meta =
