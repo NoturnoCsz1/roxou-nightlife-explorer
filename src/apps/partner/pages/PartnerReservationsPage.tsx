@@ -106,11 +106,53 @@ const PartnerReservationsPage = () => {
     window.localStorage.setItem(ACCORDION_KEY, openSection || "");
   }, [openSection]);
 
-  // Bottom-nav: navegar para /reservas#fila abre o accordion da lista de espera
-  const { hash } = useLocation();
+  // Bottom-nav: navegar para /reservas#fila abre o accordion + scroll + highlight.
+  // `key` muda a cada navegação repetida, então clicar Fila novamente também rola.
+  const { hash, key: locationKey } = useLocation();
   useEffect(() => {
-    if (hash === "#fila") setOpenSection("waitlist");
-  }, [hash]);
+    if (hash !== "#fila") return;
+    setOpenSection("waitlist");
+    // aguarda accordion abrir antes de rolar / piscar
+    const t = window.setTimeout(() => {
+      const el = document.getElementById("fila");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.classList.add("partner-flash");
+        window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
+      }
+    }, 240);
+    return () => window.clearTimeout(t);
+  }, [hash, locationKey]);
+
+  // Timeline → rola até o card da reserva em "Reservas recentes"
+  const handleTimelineSelect = useCallback((r: PartnerReservationRow) => {
+    setTab(bucketOf(r));
+    window.setTimeout(() => {
+      const el = document.getElementById(`res-${r.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("partner-flash");
+        window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
+      }
+    }, 80);
+  }, []);
+
+  // Notificações → abre seção e foca elemento alvo
+  const handleOpenNotifSection = useCallback(
+    (section: "list" | "waitlist" | "report") => {
+      setOpenSection(section);
+      window.setTimeout(() => {
+        const targetId = section === "waitlist" ? "fila" : section;
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          el.classList.add("partner-flash");
+          window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
+        }
+      }, 240);
+    },
+    [],
+  );
 
   const partnerId = selectedPartner?.id ?? null;
 
@@ -273,21 +315,22 @@ const PartnerReservationsPage = () => {
         </div>
         <div className="grid gap-3 md:hidden">
           {list.map((r) => (
-            <ReservationCard
-              key={r.id}
-              reservation={r}
-              onConfirm={handleConfirm}
-              onConfirmPayment={handleConfirmPayment}
-              onWaiveDeposit={handleWaiveDeposit}
-              onCancel={handleCancel}
-              onComplete={handleComplete}
-              onNoShow={handleNoShow}
-              onRelease={handleRelease}
-              canCancel={canCancel}
-              canConfirm={canConfirm}
-              canComplete={canComplete}
-              canRelease={canRelease}
-            />
+            <div key={r.id} id={`res-${r.id}`} className="scroll-mt-24 rounded-2xl">
+              <ReservationCard
+                reservation={r}
+                onConfirm={handleConfirm}
+                onConfirmPayment={handleConfirmPayment}
+                onWaiveDeposit={handleWaiveDeposit}
+                onCancel={handleCancel}
+                onComplete={handleComplete}
+                onNoShow={handleNoShow}
+                onRelease={handleRelease}
+                canCancel={canCancel}
+                canConfirm={canConfirm}
+                canComplete={canComplete}
+                canRelease={canRelease}
+              />
+            </div>
           ))}
         </div>
       </>
@@ -351,8 +394,8 @@ const PartnerReservationsPage = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           {canCreate && (
-            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]">
-              Nova reserva
+            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]" title="Cadastre uma reserva feita por WhatsApp, telefone ou presencial">
+              Criar reserva manual
             </Button>
           )}
           <Button asChild variant="outline" className="min-h-[44px]">
@@ -392,12 +435,12 @@ const PartnerReservationsPage = () => {
         <PartnerNotificationsCenter
           rows={rows}
           waitlist={waitlist}
-          onOpenSection={(s) => setOpenSection(s)}
+          onOpenSection={handleOpenNotifSection}
         />
         <UpcomingReservationCard reservations={rows} types={types} />
         <ReservationPendingCard reservations={rows} waitlist={waitlist} />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
-        <ReservationTimeline reservations={rows} types={types} />
+        <ReservationTimeline reservations={rows} types={types} onSelect={handleTimelineSelect} />
       </div>
 
       {/* DESKTOP — dashboard completo */}
@@ -420,19 +463,25 @@ const PartnerReservationsPage = () => {
         <PartnerNotificationsCenter
           rows={rows}
           waitlist={waitlist}
-          onOpenSection={(s) => setOpenSection(s)}
+          onOpenSection={handleOpenNotifSection}
         />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
-        <ReservationTimeline reservations={rows} types={types} />
+        <ReservationTimeline reservations={rows} types={types} onSelect={handleTimelineSelect} />
       </div>
 
       {settings?.reservations_enabled && selectedPartner?.slug && (
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Link público de reservas</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Envie este link para clientes fazerem reservas online.
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs break-all">
+            <div
+              className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs truncate font-mono"
+              title={publicUrl}
+            >
               {publicUrl}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -442,7 +491,7 @@ const PartnerReservationsPage = () => {
                 className="min-h-[44px] w-full"
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Abrir
+                Abrir link
               </Button>
               <Button
                 variant="outline"
@@ -450,7 +499,7 @@ const PartnerReservationsPage = () => {
                 className="min-h-[44px] w-full"
               >
                 <Copy className="mr-2 h-4 w-4" />
-                Copiar
+                Copiar link
               </Button>
               <Button
                 variant="outline"
@@ -458,21 +507,21 @@ const PartnerReservationsPage = () => {
                 className="min-h-[44px] w-full"
               >
                 <QrCode className="mr-2 h-4 w-4" />
-                QR do Link
+                Ver QR
               </Button>
               <Button
                 onClick={() => void handleShareLink()}
                 className="min-h-[44px] w-full"
               >
                 <Share2 className="mr-2 h-4 w-4" />
-                Compartilhar
+                Compartilhar reserva
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="rounded-2xl border-border/60 bg-card/40">
+      <Card id="list" className="rounded-2xl border-border/60 bg-card/40">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold">Reservas recentes</CardTitle>
         </CardHeader>
@@ -570,8 +619,9 @@ const PartnerReservationsPage = () => {
         </AccordionItem>
 
         <AccordionItem
+          id="fila"
           value="waitlist"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3 scroll-mt-24"
         >
           <AccordionTrigger className="text-sm font-semibold">
             Lista de espera
@@ -586,8 +636,9 @@ const PartnerReservationsPage = () => {
         </AccordionItem>
 
         <AccordionItem
+          id="report"
           value="report"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3 scroll-mt-24"
         >
           <AccordionTrigger className="text-sm font-semibold">
             Relatório do dia

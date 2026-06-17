@@ -78,7 +78,7 @@ export function ReservationTimeline({ reservations, types, onSelect }: Props) {
     <GlassCard padding="md" className="min-w-0">
       <SectionHeader
         title="Timeline do dia"
-        description="Visão cronológica das reservas confirmadas e pendentes"
+        description="Toque em uma reserva para ver os detalhes e ações rápidas."
       />
       {grouped.length === 0 ? (
         <p className="text-sm text-foreground/55 py-6">

@@ -264,41 +264,47 @@ export function PartnerNotificationsCenter({
           {items.map((it) => {
             const style = SEVERITY_STYLE[it.severity];
             const Icon = it.icon;
+            const targetSection: "list" | "waitlist" | "report" =
+              it.id.startsWith("wait-")
+                ? "waitlist"
+                : it.id.startsWith("noshow")
+                  ? "report"
+                  : "list";
+            const focus = () => onOpenSection?.(targetSection);
             return (
               <li key={it.id}>
                 <GlassCard className="partner-hover-lift p-3 sm:p-4">
                   <div className="flex items-start gap-3">
-                    <div
-                      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.04] ring-2 ${style.ring}`}
+                    <button
+                      type="button"
+                      onClick={focus}
+                      aria-label={`Abrir ${it.title}`}
+                      className="flex flex-1 items-start gap-3 min-w-0 text-left rounded-lg -m-1 p-1"
                     >
-                      <Icon className="h-4 w-4" />
-                      <span
-                        className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ${style.dot}`}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-tight truncate">
-                        {it.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                        {it.description}
-                      </p>
-                    </div>
+                      <div
+                        className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/[0.04] ring-2 ${style.ring}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span
+                          className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ${style.dot}`}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-tight truncate">
+                          {it.title}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                          {it.description}
+                        </p>
+                      </div>
+                    </button>
                     <div className="flex shrink-0 items-center gap-1">
                       {onOpenSection && (
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="partner-tap h-8 w-8"
-                          onClick={() =>
-                            onOpenSection(
-                              it.id.startsWith("wait-")
-                                ? "waitlist"
-                                : it.id.startsWith("noshow")
-                                  ? "report"
-                                  : "list",
-                            )
-                          }
+                          className="partner-tap h-9 w-9"
+                          onClick={focus}
                           aria-label="Ver detalhes"
                         >
                           <ChevronRight className="h-4 w-4" />
@@ -307,7 +313,7 @@ export function PartnerNotificationsCenter({
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="partner-tap h-8 w-8 text-muted-foreground"
+                        className="partner-tap h-9 w-9 text-muted-foreground"
                         onClick={() =>
                           setDismissed((prev) => {
                             const next = new Set(prev);
@@ -315,7 +321,8 @@ export function PartnerNotificationsCenter({
                             return next;
                           })
                         }
-                        aria-label="Dispensar"
+                        aria-label="Dispensar alerta (não cancela o cliente)"
+                        title="Dispensar alerta — não cancela o cliente"
                       >
                         <X className="h-4 w-4" />
                       </Button>

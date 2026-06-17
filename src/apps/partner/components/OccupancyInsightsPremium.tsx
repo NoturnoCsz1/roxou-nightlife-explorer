@@ -67,19 +67,22 @@ interface Props {
 export function OccupancyInsightsPremium({ partnerId, canEdit }: Props) {
   const [rows, setRows] = useState<OccupancyInsight[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errored, setErrored] = useState(false);
   const [applying, setApplying] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!partnerId) return;
     setLoading(true);
+    setErrored(false);
     try {
       const data = await getReservationOccupancyInsights(partnerId, 30);
       setRows(data);
     } catch (err) {
-      toast({
-        title: "Erro ao carregar IA de ocupação",
-        description: (err as Error).message,
-      });
+      // Fallback amigável — não mostra erro técnico ao parceiro.
+      // Logamos para diagnóstico mas a UI segue limpa.
+      console.warn("[OccupancyInsights] RPC error:", (err as Error).message);
+      setErrored(true);
+      setRows([]);
     } finally {
       setLoading(false);
     }
@@ -188,7 +191,9 @@ export function OccupancyInsightsPremium({ partnerId, canEdit }: Props) {
       ) : rows.length === 0 ? (
         <GlassCard className="p-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Sem dados suficientes ainda.
+            {errored
+              ? "Ainda não há dados suficientes para calcular sugestões."
+              : "Sem dados suficientes ainda."}
           </p>
         </GlassCard>
       ) : (
