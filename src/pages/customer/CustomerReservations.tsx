@@ -223,7 +223,10 @@ const CustomerReservations = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="pt-2 text-center text-xs">
+        <div className="flex flex-col items-center gap-1 pt-2 text-center text-xs">
+          <Link to="/cliente" className="underline text-muted-foreground">
+            ← Voltar para a Conta Roxou
+          </Link>
           <Link to="/cliente/minha-conta" className="underline text-muted-foreground">
             Minha conta e preferências
           </Link>
