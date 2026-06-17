@@ -198,12 +198,14 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
                   {KIND_LABEL[kind]} ({grouped[kind].length})
                 </p>
                 <div className="grid gap-2">
-                  {grouped[kind].map((entry) => {
+                  {grouped[kind].map((entry, idx) => {
                     const type = typeMap.get(entry.reservation_type_id);
                     const meta = STATUS_LABEL[entry.status] ?? {
                       label: entry.status,
                       cls: "",
                     };
+                    const fixed = type && type.requires_guest_count === false;
+                    const peopleCount = fixed ? type!.seats : entry.guests_count;
                     return (
                       <div
                         key={entry.id}
@@ -212,17 +214,25 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium text-foreground">
+                              <span className="mr-1 inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                                #{idx + 1}
+                              </span>
                               {entry.name}
                             </p>
+                            <p className="text-muted-foreground break-all">
+                              {formatPhoneBR(entry.phone)}
+                            </p>
                             <p className="text-muted-foreground">
-                              {entry.phone} · {entry.guests_count} pess.
+                              👥 {peopleCount} {peopleCount === 1 ? "pessoa" : "pessoas"}
+                              {fixed ? " incluídas" : ""}
                               {type ? ` · ${type.name}` : ""}
                             </p>
                           </div>
                           <Badge className={meta.cls}>{meta.label}</Badge>
                         </div>
                         <div className="mt-1 text-[11px] text-muted-foreground">
-                          Criado em {formatDateTimeSP(entry.created_at)}
+                          {formatTimeAgo(entry.created_at)} ·{" "}
+                          {formatDateTimeSP(entry.created_at)}
                           {entry.notified_at
                             ? ` · Notificado ${formatDateTimeSP(entry.notified_at)}`
                             : ""}
@@ -232,7 +242,7 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
                         </div>
                         {entry.notes ? (
                           <p className="mt-1 text-[11px] italic text-muted-foreground">
-                            “{entry.notes}”
+                            📝 “{entry.notes}”
                           </p>
                         ) : null}
                         <div className="mt-2 flex flex-wrap gap-1">
