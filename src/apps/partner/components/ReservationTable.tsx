@@ -14,8 +14,10 @@ export function ReservationTable({
   reservations,
   onView,
   onConfirm,
+  onConfirmPayment,
   onCancel,
   onComplete,
+  onNoShow,
   canCancel,
   canConfirm,
   canComplete,
@@ -23,8 +25,10 @@ export function ReservationTable({
   reservations: PartnerReservationRow[];
   onView?: (r: PartnerReservationRow) => void;
   onConfirm?: (r: PartnerReservationRow) => void;
+  onConfirmPayment?: (r: PartnerReservationRow) => void;
   onCancel?: (r: PartnerReservationRow) => void;
   onComplete?: (r: PartnerReservationRow) => void;
+  onNoShow?: (r: PartnerReservationRow) => void;
   canCancel?: boolean;
   canConfirm?: boolean;
   canComplete?: boolean;
@@ -36,7 +40,7 @@ export function ReservationTable({
           <TableRow>
             <TableHead>Cliente</TableHead>
             <TableHead>Quando</TableHead>
-            <TableHead>Convidados</TableHead>
+            <TableHead>Pessoas</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -70,6 +74,11 @@ export function ReservationTable({
                       Ver
                     </Button>
                   )}
+                  {canConfirm && r.status === "pending_payment" && onConfirmPayment && (
+                    <Button size="sm" onClick={() => onConfirmPayment(r)}>
+                      Confirmar pagamento
+                    </Button>
+                  )}
                   {canConfirm && r.status === "pending" && onConfirm && (
                     <Button size="sm" onClick={() => onConfirm(r)}>
                       Confirmar
@@ -80,11 +89,20 @@ export function ReservationTable({
                       Concluir
                     </Button>
                   )}
-                  {canCancel && r.status !== "cancelled" && onCancel && (
-                    <Button size="sm" variant="ghost" onClick={() => onCancel(r)}>
-                      Cancelar
+                  {canComplete && r.status === "confirmed" && onNoShow && (
+                    <Button size="sm" variant="ghost" onClick={() => onNoShow(r)}>
+                      No-show
                     </Button>
                   )}
+                  {canCancel &&
+                    r.status !== "cancelled" &&
+                    r.status !== "completed" &&
+                    r.status !== "expired" &&
+                    onCancel && (
+                      <Button size="sm" variant="ghost" onClick={() => onCancel(r)}>
+                        Cancelar
+                      </Button>
+                    )}
                 </TableCell>
               </TableRow>
             );
