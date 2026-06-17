@@ -87,6 +87,14 @@ const PublicReservationPage = () => {
         }
         setPartner(ctx.partner);
         setTypes(ctx.types);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[PUBLIC RESERVATIONS]",
+            partnerSlug,
+            ctx.partner?.reservations_enabled,
+          );
+        }
         if (preselectTypeId) {
           const match = ctx.types.find((t) => t.id === preselectTypeId);
           if (match) setSelectedType(match.id);
