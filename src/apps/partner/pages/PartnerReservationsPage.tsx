@@ -41,6 +41,8 @@ import {
   LiveOperationsPanel,
   ExecutiveDashboard,
   WeeklyHeatmap,
+  OccupancyInsightsPremium,
+  PartnerNotificationsCenter,
 } from "../components";
 import {
   cancelReservation,
@@ -387,6 +389,11 @@ const PartnerReservationsPage = () => {
             else setTab(b === "released" ? "ended" : "active");
           }}
         />
+        <PartnerNotificationsCenter
+          rows={rows}
+          waitlist={waitlist}
+          onOpenSection={(s) => setOpenSection(s)}
+        />
         <UpcomingReservationCard reservations={rows} types={types} />
         <ReservationPendingCard reservations={rows} waitlist={waitlist} />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
@@ -409,6 +416,11 @@ const PartnerReservationsPage = () => {
             if (b === "waitlist") setOpenSection("waitlist");
             else setTab(b === "released" ? "ended" : "active");
           }}
+        />
+        <PartnerNotificationsCenter
+          rows={rows}
+          waitlist={waitlist}
+          onOpenSection={(s) => setOpenSection(s)}
         />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
         <ReservationTimeline reservations={rows} types={types} />
@@ -626,7 +638,7 @@ const PartnerReservationsPage = () => {
             IA de Ocupação
           </AccordionTrigger>
           <AccordionContent className="pt-2">
-            <OccupancyInsightsPanel
+            <OccupancyInsightsPremium
               partnerId={partnerId}
               canEdit={canEditSettings}
             />
