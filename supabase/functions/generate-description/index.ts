@@ -427,14 +427,37 @@ serve(async (req) => {
         .map((x) => normText(x)),
     );
 
+    // Fallback noturno Prudente: só quando NÃO há horário real e o evento não é claramente diurno.
+    const baseTimeUnknown = !dateInfo.hasRealTime;
+    const eligibleForFallback = baseTimeUnknown && shouldApplyPrudenteNightFallback({
+      city: String(partnerCity || ""),
+      category: String(category || ""),
+      sub_category: String(sub_category || ""),
+      event_title: cleanTitle,
+      venue_type: String(partnerType || ""),
+    });
+    const assumedTime = eligibleForFallback;
+    const finalTimeLabel = baseTimeUnknown ? (assumedTime ? "20h00" : null) : dateInfo.timeLabel;
+    const finalTimeIsUnknown = baseTimeUnknown && !assumedTime;
+
+    if (assumedTime) {
+      console.log("[DESCRIPTION_FALLBACK_TIME]", {
+        source: "default_prudente_nightlife",
+        time: "20:00",
+        reason: "no_datetime_detected",
+      });
+    }
+
     const aiInput: AIInput = {
       event_title: cleanTitle,
       artists: Array.from(knownArtists),
       date_long: dateInfo.dateLong,
       date_short: dateInfo.dateShort,
       weekday: dateInfo.weekdayShort,
-      time_label: dateInfo.timeLabel,
-      time_is_unknown: !dateInfo.hasRealTime,
+      time_label: finalTimeLabel,
+      time_is_unknown: finalTimeIsUnknown,
+      assumed_time: assumedTime,
+      assumed_time_source: assumedTime ? "default_prudente_nightlife_20h" : null,
       is_today: dateInfo.isToday,
       venue_name: String(venue_name || "").trim(),
       venue_description: String(partnerSummary || "").trim(),
@@ -452,6 +475,19 @@ serve(async (req) => {
       official_source_url: String(official_source_url || "").trim(),
       confidence_score: Number.isFinite(Number(confidence_score)) ? Number(confidence_score) : 80,
     };
+
+    console.log("[DESCRIPTION_CONTEXT]", {
+      event_title: aiInput.event_title,
+      date_time_in: date_time,
+      date_time_normalized: normalizeToSPIso(String(date_time)),
+      time_label: aiInput.time_label,
+      time_is_unknown: aiInput.time_is_unknown,
+      assumed_time: aiInput.assumed_time,
+      venue: aiInput.venue_name,
+      partner_id: partner_id || null,
+      city: aiInput.city,
+    });
+
 
     // 1. IA
     let ai: any;
