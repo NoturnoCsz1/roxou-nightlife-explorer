@@ -211,6 +211,8 @@ type AIInput = {
   weekday: string;
   time_label: string | null;
   time_is_unknown: boolean;
+  assumed_time: boolean;
+  assumed_time_source: string | null;
   is_today: boolean;
   venue_name: string;
   venue_description: string;
@@ -228,6 +230,20 @@ type AIInput = {
   official_source_url: string;
   confidence_score: number;
 };
+
+// Categorias/temas que NÃO devem receber fallback 20h (claramente diurnos/horário conhecido).
+const DAYTIME_HINTS_RE = /\b(almoço|almoco|feijoada|caf[eé]|brunch|matin[eê]|infantil|kids|crian[çc]a|happy\s*hour|esportivo|transmiss[ãa]o|jogo|partida|copa|brasileir[ãa]o|libertadores|p[ií]quenique|piquenique|piscina|day\s*use)\b/i;
+
+function shouldApplyPrudenteNightFallback(ctx: {
+  city: string; category: string; sub_category: string; event_title: string; venue_type: string;
+}): boolean {
+  const cityOk = normText(ctx.city).includes("prudente") || ctx.city === "";
+  if (!cityOk) return false;
+  const blob = `${ctx.event_title} ${ctx.category} ${ctx.sub_category} ${ctx.venue_type}`;
+  if (DAYTIME_HINTS_RE.test(blob)) return false;
+  return true;
+}
+
 
 function buildSystemPrompt(): string {
   return `Você é redator da ROXOU — agenda independente da noite do interior de SP (Presidente Prudente). Estilo: humano, direto, regional, jovem, leve. PROIBIDO parecer release de assessoria ou texto genérico de IA.
