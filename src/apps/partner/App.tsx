@@ -51,6 +51,10 @@ const PartnerAnalyticsPage = lazy(() => import("./pages/PartnerAnalyticsPage"));
 const PartnerSettingsPage = lazy(() => import("./pages/PartnerSettingsPage"));
 const PartnerVipCheckinPage = lazy(() => import("./pages/PartnerVipCheckinPage"));
 const PartnerValidatorPage = lazy(() => import("./pages/PartnerValidatorPage"));
+const PublicReservation = lazy(() => import("@/pages/PublicReservation"));
+const PublicReservationSuccess = lazy(() => import("@/pages/PublicReservationSuccess"));
+const PublicVipList = lazy(() => import("@/pages/PublicVipList"));
+const PublicVipListSuccess = lazy(() => import("@/pages/PublicVipListSuccess"));
 
 
 const Fallback = () => (
