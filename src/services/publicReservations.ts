@@ -100,6 +100,8 @@ export interface PublicReservationType {
   name: string;
   seats: number;
   quantity: number;
+  reserved: number;
+  available: number;
   price: number;
   minimum_consumption: number | null;
   extra_people_limit: number | null;
