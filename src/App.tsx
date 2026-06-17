@@ -140,6 +140,7 @@ const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutR
 // Cliente Roxou (Fase Cadastro Cliente — MVP)
 const CustomerLogin = lazy(() => import("./pages/customer/CustomerLogin"));
 const CustomerCallback = lazy(() => import("./pages/customer/CustomerCallback"));
+const CustomerDashboard = lazy(() => import("./pages/customer/CustomerDashboard"));
 const CustomerReservations = lazy(() => import("./pages/customer/CustomerReservations"));
 const CustomerAccount = lazy(() => import("./pages/customer/CustomerAccount"));
 const CustomerInvites = lazy(() => import("./pages/customer/CustomerInvites"));
