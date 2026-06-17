@@ -132,13 +132,18 @@ const PartnerReservationsPage = () => {
     return () => clearInterval(iv);
   }, [partnerId, load]);
 
-  const stats = useMemo(
+  const totalCapacity = useMemo(
     () =>
-      computeReservationStats(
-        rows,
-        settings?.max_reservations_per_day ?? 50,
+      types.reduce(
+        (acc, t) => acc + Math.max(1, t.seats) * Math.max(1, t.quantity),
+        0,
       ),
-    [rows, settings?.max_reservations_per_day],
+    [types],
+  );
+
+  const stats = useMemo(
+    () => computeReservationStats(rows, totalCapacity),
+    [rows, totalCapacity],
   );
 
   const buckets = useMemo(() => {
@@ -175,27 +180,19 @@ const PartnerReservationsPage = () => {
   const handleWaiveDeposit = (r: PartnerReservationRow) =>
     wrap(() => waivePartnerReservationDeposit(r.id), "Sinal dispensado")();
 
-  const handleQuickAdd = async () => {
+  const handleQuickAdd = async (values: {
+    name: string;
+    reservation_date: string;
+    people_count: number;
+  }) => {
     if (!partnerId) return;
-    const name = window.prompt("Nome do convidado?");
-    if (!name?.trim()) return;
-    const when = window.prompt(
-      "Data/hora (AAAA-MM-DD HH:MM)?",
-      new Date().toISOString().slice(0, 16).replace("T", " "),
-    );
-    if (!when) return;
-    const iso = new Date(when.replace(" ", "T")).toISOString();
-    const people = Number(window.prompt("Quantos convidados?", "2") || "2");
     try {
-      await createReservation(partnerId, {
-        name: name.trim(),
-        reservation_date: iso,
-        people_count: Math.max(1, people),
-      });
+      await createReservation(partnerId, values);
       toast({ title: "Reserva criada" });
       void load();
     } catch (err) {
       toast({ title: "Erro ao criar", description: (err as Error).message });
+      throw err;
     }
   };
 
