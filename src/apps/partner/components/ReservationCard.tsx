@@ -164,48 +164,48 @@ export function ReservationCard({
             </Button>
           )}
           {reservation.phone && (
+        <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-3">
+          {onView && (
+            <Button size="sm" variant="outline" onClick={() => onView(reservation)} className="min-h-[44px] w-full">
+              Ver
+            </Button>
+          )}
+          {reservation.phone && (
             <Button
               size="sm"
               variant="outline"
+              className="min-h-[44px] w-full"
               onClick={() => {
                 const phone = (reservation.phone ?? "").replace(/[^0-9]/g, "");
                 if (!phone) return;
-                window.open(
-                  `https://wa.me/55${phone}`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
+                window.open(`https://wa.me/55${phone}`, "_blank", "noopener,noreferrer");
               }}
             >
               <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
             </Button>
           )}
           {canConfirm && isPendingPayment && onConfirmPayment && (
-            <Button size="sm" onClick={() => onConfirmPayment(reservation)}>
+            <Button size="sm" onClick={() => onConfirmPayment(reservation)} className="min-h-[44px] w-full">
               Confirmar pagamento
             </Button>
           )}
           {canConfirm && isPendingPayment && onWaiveDeposit && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onWaiveDeposit(reservation)}
-            >
+            <Button size="sm" variant="secondary" onClick={() => onWaiveDeposit(reservation)} className="min-h-[44px] w-full">
               Dispensar sinal
             </Button>
           )}
           {canConfirm && reservation.status === "pending" && onConfirm && (
-            <Button size="sm" onClick={() => onConfirm(reservation)}>
+            <Button size="sm" onClick={() => onConfirm(reservation)} className="min-h-[44px] w-full">
               Confirmar
             </Button>
           )}
           {canComplete && reservation.status === "confirmed" && onComplete && (
-            <Button size="sm" variant="secondary" onClick={() => onComplete(reservation)}>
+            <Button size="sm" variant="secondary" onClick={() => onComplete(reservation)} className="min-h-[44px] w-full">
               Concluir
             </Button>
           )}
           {canComplete && reservation.status === "confirmed" && onNoShow && (
-            <Button size="sm" variant="ghost" onClick={() => onNoShow(reservation)}>
+            <Button size="sm" variant="ghost" onClick={() => onNoShow(reservation)} className="min-h-[44px] w-full">
               No-show
             </Button>
           )}
@@ -218,6 +218,7 @@ export function ReservationCard({
                 variant="outline"
                 onClick={() => onRelease(reservation)}
                 title="Libera a mesa imediatamente para outras reservas"
+                className="min-h-[44px] w-full"
               >
                 Liberar mesa
               </Button>
@@ -227,7 +228,7 @@ export function ReservationCard({
             reservation.status !== "completed" &&
             reservation.status !== "expired" &&
             onCancel && (
-              <Button size="sm" variant="ghost" onClick={() => onCancel(reservation)}>
+              <Button size="sm" variant="ghost" onClick={() => onCancel(reservation)} className="min-h-[44px] w-full">
                 Cancelar
               </Button>
             )}
