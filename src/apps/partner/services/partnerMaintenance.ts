@@ -28,3 +28,14 @@ export async function closeDuePartnerReservations(): Promise<void> {
     }
   }
 }
+
+export async function expireDuePartnerReservations(): Promise<void> {
+  try {
+    await supabase.rpc("expire_due_partner_reservations");
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn("[expireDuePartnerReservations] falhou", err);
+    }
+  }
+}
