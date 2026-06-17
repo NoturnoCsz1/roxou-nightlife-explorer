@@ -391,7 +391,7 @@ const PartnerReservationsPage = () => {
                 className="min-h-[44px] w-full"
               >
                 <QrCode className="mr-2 h-4 w-4" />
-                QR
+                QR do Link
               </Button>
               <Button
                 onClick={() => void handleShareLink()}
