@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Phone, Mail, Calendar, Clock } from "lucide-react";
+import { Users, Phone, Mail, Calendar, Clock, MessageCircle } from "lucide-react";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
 import type { PartnerReservationRow } from "../services/partnerReservations";
 
@@ -147,6 +147,23 @@ export function ReservationCard({
           {onView && (
             <Button size="sm" variant="outline" onClick={() => onView(reservation)}>
               Ver
+            </Button>
+          )}
+          {reservation.phone && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const phone = (reservation.phone ?? "").replace(/[^0-9]/g, "");
+                if (!phone) return;
+                window.open(
+                  `https://wa.me/55${phone}`,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
+            >
+              <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
             </Button>
           )}
           {canConfirm && isPendingPayment && onConfirmPayment && (

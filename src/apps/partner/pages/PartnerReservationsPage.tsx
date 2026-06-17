@@ -18,7 +18,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ExternalLink, Share2 } from "lucide-react";
+import { Copy, ExternalLink, QrCode, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import {
@@ -29,6 +29,8 @@ import {
   ReservationTable,
   ReservationTypesManager,
   WaitlistManager,
+  GuestNameDialog,
+  PublicLinkQrDialog,
 } from "../components";
 import {
   cancelReservation,
@@ -38,12 +40,14 @@ import {
   confirmReservationPayment,
   createReservation,
   getReservationSettings,
+  listReservationTypes,
   listReservations,
   noShowReservation,
   updateReservationSettings,
   waivePartnerReservationDeposit,
   type PartnerReservationRow,
   type PartnerReservationSettings,
+  type PartnerReservationType,
 } from "../services/partnerReservations";
 import {
   closeDuePartnerReservations,
@@ -67,11 +71,14 @@ const bucketOf = (r: PartnerReservationRow): Bucket => {
 const PartnerReservationsPage = () => {
   const { selectedPartner, role, isLoading: authLoading } = usePartnerAuth();
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
+  const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [settings, setSettings] = useState<PartnerReservationSettings | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<Bucket>("active");
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string>(() => {
     if (typeof window === "undefined") return "list";
     return window.localStorage.getItem(ACCORDION_KEY) ?? "list";
@@ -98,12 +105,14 @@ const PartnerReservationsPage = () => {
         closeDuePartnerReservations(),
         expireDuePartnerReservations(),
       ]);
-      const [list, sett] = await Promise.all([
+      const [list, sett, tps] = await Promise.all([
         listReservations(partnerId, { status: "all" }),
         getReservationSettings(partnerId),
+        listReservationTypes(partnerId, { onlyActive: true }),
       ]);
       setRows(list);
       setSettings(sett);
+      setTypes(tps);
     } catch (err) {
       const e = err as Error;
       toast({ title: "Erro ao carregar reservas", description: e.message });
@@ -123,13 +132,18 @@ const PartnerReservationsPage = () => {
     return () => clearInterval(iv);
   }, [partnerId, load]);
 
-  const stats = useMemo(
+  const totalCapacity = useMemo(
     () =>
-      computeReservationStats(
-        rows,
-        settings?.max_reservations_per_day ?? 50,
+      types.reduce(
+        (acc, t) => acc + Math.max(1, t.seats) * Math.max(1, t.quantity),
+        0,
       ),
-    [rows, settings?.max_reservations_per_day],
+    [types],
+  );
+
+  const stats = useMemo(
+    () => computeReservationStats(rows, totalCapacity),
+    [rows, totalCapacity],
   );
 
   const buckets = useMemo(() => {
@@ -166,27 +180,19 @@ const PartnerReservationsPage = () => {
   const handleWaiveDeposit = (r: PartnerReservationRow) =>
     wrap(() => waivePartnerReservationDeposit(r.id), "Sinal dispensado")();
 
-  const handleQuickAdd = async () => {
+  const handleQuickAdd = async (values: {
+    name: string;
+    reservation_date: string;
+    people_count: number;
+  }) => {
     if (!partnerId) return;
-    const name = window.prompt("Nome do convidado?");
-    if (!name?.trim()) return;
-    const when = window.prompt(
-      "Data/hora (AAAA-MM-DD HH:MM)?",
-      new Date().toISOString().slice(0, 16).replace("T", " "),
-    );
-    if (!when) return;
-    const iso = new Date(when.replace(" ", "T")).toISOString();
-    const people = Number(window.prompt("Quantos convidados?", "2") || "2");
     try {
-      await createReservation(partnerId, {
-        name: name.trim(),
-        reservation_date: iso,
-        people_count: Math.max(1, people),
-      });
+      await createReservation(partnerId, values);
       toast({ title: "Reserva criada" });
       void load();
     } catch (err) {
       toast({ title: "Erro ao criar", description: (err as Error).message });
+      throw err;
     }
   };
 
@@ -311,7 +317,7 @@ const PartnerReservationsPage = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           {canCreate && (
-            <Button onClick={handleQuickAdd} className="min-h-[44px]">
+            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]">
               Nova reserva
             </Button>
           )}
@@ -320,6 +326,18 @@ const PartnerReservationsPage = () => {
           </Button>
         </div>
       </header>
+
+      <GuestNameDialog
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+        onConfirm={handleQuickAdd}
+      />
+      <PublicLinkQrDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        url={publicUrl}
+        filename={`reservas-${selectedPartner?.slug ?? "qr"}.png`}
+      />
 
       <ReservationStats stats={stats} />
 
@@ -332,7 +350,7 @@ const PartnerReservationsPage = () => {
             <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs break-all">
               {publicUrl}
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button
                 variant="outline"
                 onClick={handleOpenLink}
@@ -348,6 +366,14 @@ const PartnerReservationsPage = () => {
               >
                 <Copy className="mr-2 h-4 w-4" />
                 Copiar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setQrOpen(true)}
+                className="min-h-[44px] w-full"
+              >
+                <QrCode className="mr-2 h-4 w-4" />
+                QR
               </Button>
               <Button
                 onClick={() => void handleShareLink()}

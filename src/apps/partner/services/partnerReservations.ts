@@ -451,47 +451,74 @@ export interface ReservationStatsResult {
   confirmedRate: number;
   noShowRate: number;
   capacityUsed: number;
+  totalCapacity: number;
+  reservedSeats: number;
+  pendingSeats: number;
 }
 
+/**
+ * Métricas reais:
+ * - today: reservas com created_at >= início do dia (timezone local SP)
+ * - week: reservas com created_at >= now - 7d
+ * - confirmedRate: (confirmed + completed) / total
+ * - noShowRate: no_show / total
+ * - capacityUsed: assentos reservados (pendentes ou ativos) / soma(quantity) dos tipos
+ *
+ * `totalCapacity` deve ser a soma de `quantity * seats` dos tipos ativos.
+ * Se 0/undefined cai num fallback de 50 lugares para evitar divisão por zero.
+ */
 export function computeReservationStats(
   rows: PartnerReservationRow[],
-  capacityPerDay = 50,
+  totalCapacity = 50,
 ): ReservationStatsResult {
-  const now = new Date();
-  const startToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  ).getTime();
-  const endToday = startToday + 24 * 60 * 60 * 1000;
-  const startWeek = startToday - 6 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const startToday = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  })();
+  const startWeek = now - 7 * 24 * 60 * 60 * 1000;
 
   let today = 0;
   let week = 0;
   let confirmed = 0;
   let noShow = 0;
-  let capacityToday = 0;
   let total = 0;
+  let reservedSeats = 0;
+  let pendingSeats = 0;
 
   for (const r of rows) {
-    const t = new Date(r.reservation_date).getTime();
-    if (t >= startToday && t < endToday) {
-      today += 1;
-      capacityToday += r.people_count;
+    const createdMs = new Date(r.created_at).getTime();
+    if (createdMs >= startToday) today += 1;
+    if (createdMs >= startWeek) week += 1;
+    if (r.status === "confirmed" || r.status === "completed") {
+      confirmed += 1;
+      reservedSeats += r.people_count;
     }
-    if (t >= startWeek && t < endToday) week += 1;
-    if (r.status === "confirmed" || r.status === "completed") confirmed += 1;
+    if (r.status === "pending_payment" || r.status === "pending") {
+      pendingSeats += r.people_count;
+    }
     if (r.status === "no_show") noShow += 1;
-    total += 1;
+    if (
+      r.status !== "cancelled" &&
+      r.status !== "expired"
+    ) {
+      total += 1;
+    }
   }
 
+  const cap = totalCapacity > 0 ? totalCapacity : 50;
   return {
     today,
     week,
     confirmedRate: total ? Math.round((confirmed / total) * 100) : 0,
     noShowRate: total ? Math.round((noShow / total) * 100) : 0,
-    capacityUsed: capacityPerDay
-      ? Math.min(100, Math.round((capacityToday / capacityPerDay) * 100))
-      : 0,
+    capacityUsed: Math.min(
+      100,
+      Math.round(((reservedSeats + pendingSeats) / cap) * 100),
+    ),
+    totalCapacity: cap,
+    reservedSeats,
+    pendingSeats,
   };
 }
