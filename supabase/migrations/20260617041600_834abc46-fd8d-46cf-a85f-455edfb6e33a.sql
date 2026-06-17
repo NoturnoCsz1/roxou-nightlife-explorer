@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public read reservation by token" ON public.partner_reservations;
