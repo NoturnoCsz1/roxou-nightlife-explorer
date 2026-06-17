@@ -11,7 +11,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Copy, Download } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import {
   downloadDataUrl,
   generateQrPngDataUrl,
