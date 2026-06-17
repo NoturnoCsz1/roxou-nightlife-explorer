@@ -325,6 +325,26 @@ export async function deleteReservationType(typeId: string): Promise<void> {
   if (error) throw error;
 }
 
+// ---- Capacidade por tipo ----
+
+export interface ReservationTypeAvailability {
+  type_id: string;
+  quantity: number;
+  reserved: number;
+  available: number;
+}
+
+export async function getReservationTypesAvailability(
+  partnerId: string,
+): Promise<ReservationTypeAvailability[]> {
+  const { data, error } = await supabase.rpc(
+    "get_reservation_types_availability",
+    { p_partner_id: partnerId },
+  );
+  if (error) throw error;
+  return (data as unknown as ReservationTypeAvailability[]) ?? [];
+}
+
 // ---- Métricas ----
 
 export interface ReservationStatsResult {
