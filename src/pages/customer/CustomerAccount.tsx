@@ -100,6 +100,32 @@ const CustomerAccount = () => {
     navigate("/", { replace: true });
   };
 
+  const handleDelete = async () => {
+    if (deleteConfirm.trim().toUpperCase() !== "EXCLUIR") {
+      toast({
+        title: "Digite EXCLUIR para confirmar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteMyCustomerAccount();
+      // TODO: Edge Function futura para auth.admin.deleteUser() e apagar o usuário do Auth.
+      toast({ title: "Conta excluída. Até a próxima!" });
+      await signOut();
+      navigate("/", { replace: true });
+    } catch (err) {
+      toast({
+        title: "Não foi possível excluir sua conta agora.",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <main className="min-h-screen w-full overflow-x-hidden bg-background">
       <SEO
