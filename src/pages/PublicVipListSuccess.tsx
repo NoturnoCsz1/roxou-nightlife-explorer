@@ -14,11 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
-import {
-  generateQrSvg,
-  generateQrPngDataUrl,
-  downloadDataUrl,
-} from "@/lib/qrcode";
+import { generateQrSvg, downloadDataUrl } from "@/lib/qrcode";
 import type {
   PublicVipListInfo,
   PublicVipSubmitResult,
