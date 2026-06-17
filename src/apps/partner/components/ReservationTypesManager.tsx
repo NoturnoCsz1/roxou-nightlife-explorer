@@ -342,74 +342,75 @@ export function ReservationTypesManager({
       );
     }
     return (
-      <div className="grid gap-2">
-        {list.map((r) => (
-          <div
-            key={r.id}
-            className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card/50 px-3 py-2"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate text-sm font-medium">{r.name}</p>
-                {!r.active && (
-                  <Badge variant="outline" className="text-[10px]">
-                    inativo
-                  </Badge>
-                )}
-                {(() => {
-                  const a = availability[r.id];
-                  if (!a) return null;
-                  if (a.available <= 0)
-                    return (
+      <div className="grid gap-2 w-full min-w-0">
+        {list.map((r) => {
+          const a = availability[r.id];
+          return (
+            <div
+              key={r.id}
+              className="w-full min-w-0 max-w-full rounded-md border border-border/60 bg-card/50 px-3 py-3 overflow-hidden"
+            >
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="min-w-0 break-words text-sm font-medium">
+                      {r.name}
+                    </p>
+                    {!r.active && (
+                      <Badge variant="outline" className="text-[10px]">
+                        inativo
+                      </Badge>
+                    )}
+                    {a && a.available <= 0 && (
                       <Badge variant="destructive" className="text-[10px]">
                         Esgotado
                       </Badge>
-                    );
-                  return (
-                    <Badge variant="secondary" className="text-[10px]">
-                      {a.available} disp.
-                    </Badge>
-                  );
-                })()}
-              </div>
-              <p className="truncate text-xs text-muted-foreground">
-                {r.seats} {kind === "box" ? "pess." : "lug."} · R${" "}
-                {Number(r.price).toFixed(2)}
-                {r.minimum_consumption
-                  ? ` · mín. R$ ${Number(r.minimum_consumption).toFixed(2)}`
-                  : ""}
-              </p>
-              {(() => {
-                const a = availability[r.id];
-                if (!a) return null;
-                return (
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    Total {a.quantity} · Reservadas {a.reserved} · Disponíveis{" "}
-                    {a.available}
+                    )}
+                    {a && a.available > 0 && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        {a.available} disp.
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-1 break-words text-xs text-muted-foreground">
+                    {r.seats} {kind === "box" ? "pess." : "lug."} · R${" "}
+                    {Number(r.price).toFixed(2)}
+                    {r.minimum_consumption
+                      ? ` · mín. R$ ${Number(r.minimum_consumption).toFixed(2)}`
+                      : ""}
                   </p>
-                );
-              })()}
-            </div>
-            {canEdit && (
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setDraft(fromRow(r))}
-                >
-                  Editar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDelete(r)}
-                >
-                  <Trash2 className="h-3 w-3 text-rose-500" />
-                </Button>
+                  {a && (
+                    <p className="mt-0.5 break-words text-[11px] text-muted-foreground">
+                      Total {a.quantity} · Reservadas {a.reserved} · Disponíveis{" "}
+                      {a.available}
+                    </p>
+                  )}
+                </div>
+                {canEdit && (
+                  <div className="flex w-full shrink-0 gap-2 sm:w-auto">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDraft(fromRow(r))}
+                      className="min-h-[40px] flex-1 sm:flex-none"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(r)}
+                      className="min-h-[40px] shrink-0"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4 text-rose-500" />
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
     );
   };
