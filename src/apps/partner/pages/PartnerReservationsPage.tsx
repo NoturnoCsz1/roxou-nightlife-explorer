@@ -520,6 +520,29 @@ const PartnerReservationsPage = () => {
         className="space-y-3"
       >
         <AccordionItem
+          value="executive"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Visão executiva (hoje · semana · mês)
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <ExecutiveDashboard rows={rows} waitlist={waitlist} stats={stats} />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem
+          value="heatmap"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Heatmap semanal
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <WeeklyHeatmap rows={rows} />
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem
           value="types"
           className="rounded-2xl border border-border/60 bg-card/40 px-3"
         >
