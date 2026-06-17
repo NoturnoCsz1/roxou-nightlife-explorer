@@ -543,14 +543,15 @@ serve(async (req) => {
       used_flyer: Boolean(aiInput.flyer_text),
     };
 
-    console.log("[generate-description] v5", {
+    console.log("[DESCRIPTION_RESULT]", {
       model: "openai/gpt-5-mini",
       hasTime: ctx.hasTime,
-      hasPrice: ctx.hasPrice,
-      hasOfficial: ctx.hasOfficialSource,
+      assumedTime: aiInput.assumed_time,
+      timeLabel: aiInput.time_label,
       warningsCount: warnings.length,
       safetyCount: safety_notes.length,
       confidence: aiInput.confidence_score,
+      title_out: clean.title,
     });
 
     return new Response(JSON.stringify(responsePayload), {
