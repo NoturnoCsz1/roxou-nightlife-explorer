@@ -131,6 +131,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 const PublicVipList = lazy(() => import("./pages/PublicVipList"));
 const PublicVipListSuccess = lazy(() => import("./pages/PublicVipListSuccess"));
+const PublicReservation = lazy(() => import("./pages/PublicReservation"));
+const PublicReservationSuccess = lazy(() => import("./pages/PublicReservationSuccess"));
 const PartnerScopedComingSoon = lazy(() => import("./pages/PartnerScopedComingSoon"));
 const DevRoutes = lazy(() => import("./pages/DevRoutes"));
 const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutRedirect"));
