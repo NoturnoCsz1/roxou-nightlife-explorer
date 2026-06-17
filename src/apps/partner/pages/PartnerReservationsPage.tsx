@@ -248,9 +248,11 @@ const PartnerReservationsPage = () => {
             onCancel={handleCancel}
             onComplete={handleComplete}
             onNoShow={handleNoShow}
+            onRelease={handleRelease}
             canCancel={canCancel}
             canConfirm={canConfirm}
             canComplete={canComplete}
+            canRelease={canRelease}
           />
         </div>
         <div className="grid gap-3 md:hidden">
