@@ -71,11 +71,14 @@ const bucketOf = (r: PartnerReservationRow): Bucket => {
 const PartnerReservationsPage = () => {
   const { selectedPartner, role, isLoading: authLoading } = usePartnerAuth();
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
+  const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [settings, setSettings] = useState<PartnerReservationSettings | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<Bucket>("active");
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string>(() => {
     if (typeof window === "undefined") return "list";
     return window.localStorage.getItem(ACCORDION_KEY) ?? "list";
