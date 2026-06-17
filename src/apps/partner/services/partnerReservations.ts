@@ -39,7 +39,13 @@ export interface PartnerReservationRow {
   checked_in_by: string | null;
   public_token: string;
   code: string | null;
+  deposit_amount: number | null;
+  remaining_amount: number | null;
+  payment_method: string | null;
+  payment_status: "pending" | "paid" | "waived" | "refunded";
 }
+
+export type DepositType = "fixed" | "percent" | "full";
 
 export interface PartnerReservationSettings {
   id: string;
@@ -52,6 +58,12 @@ export interface PartnerReservationSettings {
   reservations_start_at: string | null;
   reservations_end_at: string | null;
   confirmation_timeout_minutes: number;
+  deposit_enabled: boolean;
+  deposit_type: DepositType;
+  deposit_value: number;
+  payment_instructions: string | null;
+  pix_key: string | null;
+  pix_receiver_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +88,12 @@ export interface PartnerReservationSettingsPayload {
   reservations_start_at?: string | null;
   reservations_end_at?: string | null;
   confirmation_timeout_minutes?: number;
+  deposit_enabled?: boolean;
+  deposit_type?: DepositType;
+  deposit_value?: number;
+  payment_instructions?: string | null;
+  pix_key?: string | null;
+  pix_receiver_name?: string | null;
 }
 
 export interface PartnerReservationType {
