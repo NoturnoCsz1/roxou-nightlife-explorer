@@ -51,3 +51,6 @@ export { VipCheckInPanel } from "./VipCheckInPanel";
 export { PartnerOperationalStateBadge } from "./PartnerOperationalStateBadge";
 export type { PartnerOperationalState } from "./PartnerOperationalStateBadge";
 export { VipListStateBadge } from "./VipListStateBadge";
+
+// Fase 1 — Design System Roxou (primitives premium)
+export * from "./ui";

@@ -1,0 +1,189 @@
+/**
+ * Roxou Partner Pro — Design System tokens
+ *
+ * Tokens dedicados ao painel parceiro. Não substitui o design-system global
+ * (index.css): reaproveita as cores semânticas (--primary, --background,
+ * --foreground, --border, etc.) e adiciona um layer "premium SaaS".
+ *
+ * Uso:
+ *   <div className="partner-glass partner-radius">...</div>
+ *   <button className="partner-gradient">Aplicar</button>
+ *
+ * Fase 1 da Sprint UI/UX Premium. Não altera regras de negócio.
+ */
+
+:root {
+  /* Raio padrão dos cards premium */
+  --partner-radius: 24px;
+  --partner-radius-sm: 16px;
+  --partner-radius-xs: 12px;
+
+  /* Spacing scale (px) */
+  --partner-space-1: 4px;
+  --partner-space-2: 8px;
+  --partner-space-3: 12px;
+  --partner-space-4: 16px;
+  --partner-space-5: 20px;
+  --partner-space-6: 24px;
+
+  /* Glassmorphism */
+  --partner-glass-bg: rgba(17, 17, 17, 0.65);
+  --partner-glass-bg-strong: rgba(17, 17, 17, 0.85);
+  --partner-glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --partner-glass-border-strong: 1px solid rgba(255, 255, 255, 0.14);
+  --partner-glass-blur: blur(20px);
+  --partner-glass-shadow: 0 8px 40px rgba(168, 85, 247, 0.18);
+  --partner-glass-shadow-hover: 0 12px 48px rgba(168, 85, 247, 0.28);
+
+  /* Gradiente Roxou */
+  --partner-gradient: linear-gradient(135deg, hsl(var(--primary)) 0%, #a855f7 50%, #ec4899 100%);
+  --partner-gradient-soft: linear-gradient(135deg, hsl(var(--primary) / 0.18) 0%, rgba(168, 85, 247, 0.18) 50%, rgba(236, 72, 153, 0.18) 100%);
+
+  /* Status colors */
+  --partner-status-confirmed: 142 76% 45%;
+  --partner-status-pending: 38 92% 55%;
+  --partner-status-waitlist: 280 80% 65%;
+  --partner-status-cancelled: 0 75% 60%;
+  --partner-status-revenue: 270 90% 70%;
+
+  /* Bottom nav (safe area aware) */
+  --partner-bottom-nav-h: 68px;
+}
+
+/* ============================================================
+ * Glass card
+ * ============================================================ */
+.partner-glass {
+  background: var(--partner-glass-bg);
+  -webkit-backdrop-filter: var(--partner-glass-blur);
+  backdrop-filter: var(--partner-glass-blur);
+  border: var(--partner-glass-border);
+  box-shadow: var(--partner-glass-shadow);
+  border-radius: var(--partner-radius);
+}
+
+.partner-glass-strong {
+  background: var(--partner-glass-bg-strong);
+  -webkit-backdrop-filter: var(--partner-glass-blur);
+  backdrop-filter: var(--partner-glass-blur);
+  border: var(--partner-glass-border-strong);
+  box-shadow: var(--partner-glass-shadow);
+  border-radius: var(--partner-radius);
+}
+
+.partner-glass-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.partner-glass-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--partner-glass-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* ============================================================
+ * Gradient surfaces
+ * ============================================================ */
+.partner-gradient-bg {
+  background: var(--partner-gradient);
+}
+
+.partner-gradient-bg-soft {
+  background: var(--partner-gradient-soft);
+}
+
+.partner-gradient-border {
+  position: relative;
+  background:
+    linear-gradient(var(--partner-glass-bg), var(--partner-glass-bg)) padding-box,
+    var(--partner-gradient) border-box;
+  border: 1px solid transparent;
+  border-radius: var(--partner-radius);
+}
+
+.partner-gradient-text {
+  background: var(--partner-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================
+ * Radius helpers
+ * ============================================================ */
+.partner-radius { border-radius: var(--partner-radius); }
+.partner-radius-sm { border-radius: var(--partner-radius-sm); }
+.partner-radius-xs { border-radius: var(--partner-radius-xs); }
+
+/* ============================================================
+ * Touch targets (mobile-first)
+ * ============================================================ */
+.partner-touch {
+  min-height: 44px;
+}
+
+/* ============================================================
+ * Safe-area (bottom nav)
+ * ============================================================ */
+.partner-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.partner-bottom-nav-spacer {
+  height: calc(var(--partner-bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* ============================================================
+ * Skeleton shimmer
+ * ============================================================ */
+@keyframes partner-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.partner-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 800px 100%;
+  animation: partner-shimmer 1.6s linear infinite;
+  border-radius: var(--partner-radius-xs);
+}
+
+/* ============================================================
+ * Number display (KPIs)
+ * ============================================================ */
+.partner-kpi-value {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .partner-kpi-value {
+    font-size: 2rem;
+  }
+}
+
+/* ============================================================
+ * Status dot
+ * ============================================================ */
+.partner-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 3px currentColor;
+  opacity: 0.85;
+}
+
+/* ============================================================
+ * No horizontal scroll on partner shell
+ * ============================================================ */
+.partner-shell {
+  overflow-x: hidden;
+}

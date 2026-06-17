@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import "./styles/partner-ui.css";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
 
