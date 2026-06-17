@@ -500,6 +500,67 @@ const PartnerReservationsPage = () => {
           </AccordionContent>
         </AccordionItem>
 
+        <AccordionItem
+          value="report"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Relatório do dia
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <DailyOperationsReport
+              reservations={rows}
+              waitlist={waitlist}
+              types={types}
+              canConfirm={canConfirm}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              canRelease={canRelease}
+              onConfirmPayment={handleConfirmPayment}
+              onComplete={handleComplete}
+              onNoShow={handleNoShow}
+              onCancel={handleCancel}
+              onRelease={handleRelease}
+              onNotifyWaitlist={async (e) => {
+                try {
+                  await notifyWaitlistEntry(e.id);
+                  toast({ title: "Cliente notificado" });
+                  void load();
+                } catch (err) {
+                  toast({ title: "Erro", description: (err as Error).message });
+                }
+              }}
+              onCancelWaitlist={async (e) => {
+                if (!window.confirm(`Remover ${e.name} da lista de espera?`))
+                  return;
+                try {
+                  await cancelWaitlistEntry(e.id);
+                  toast({ title: "Entrada cancelada" });
+                  void load();
+                } catch (err) {
+                  toast({ title: "Erro", description: (err as Error).message });
+                }
+              }}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem
+          value="ia"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            IA de Ocupação
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <OccupancyInsightsPanel
+              partnerId={partnerId}
+              canEdit={canEditSettings}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+
         {canEditSettings && (
           <AccordionItem
             value="settings"
