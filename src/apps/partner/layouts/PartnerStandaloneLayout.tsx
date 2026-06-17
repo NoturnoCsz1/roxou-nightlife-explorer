@@ -125,7 +125,6 @@ const PartnerStandaloneLayout = () => {
         <div className="min-w-0">
           <Outlet />
         </div>
-        <PartnerFeedbackWidget />
       </div>
       <PartnerBottomNav />
     </PartnerProvider>
