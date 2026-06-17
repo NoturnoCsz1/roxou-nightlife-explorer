@@ -137,7 +137,40 @@ const PartnerValidatorPage = () => {
   const startCamera = useCallback(async () => {
     if (!videoRef.current || scannerRef.current) return;
     setCameraError(null);
+
+    // HTTPS obrigatório (exceto localhost)
+    if (
+      typeof window !== "undefined" &&
+      window.location.protocol !== "https:" &&
+      window.location.hostname !== "localhost" &&
+      window.location.hostname !== "127.0.0.1"
+    ) {
+      setCameraError(
+        "A câmera exige HTTPS. Abra esta página em https:// ou use a validação manual.",
+      );
+      return;
+    }
+
+    // API getUserMedia disponível?
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getUserMedia
+    ) {
+      setCameraError(
+        "Este navegador não suporta câmera. Use a validação manual.",
+      );
+      return;
+    }
+
     try {
+      const hasCam = await QrScanner.hasCamera();
+      if (!hasCam) {
+        setCameraError(
+          "Nenhuma câmera detectada neste dispositivo. Use a validação manual.",
+        );
+        return;
+      }
+
       const scanner = new QrScanner(
         videoRef.current,
         (res) => {
@@ -155,35 +188,64 @@ const PartnerValidatorPage = () => {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           maxScansPerSecond: 5,
+          returnDetailedScanResult: true,
         },
       );
       scannerRef.current = scanner;
       await scanner.start();
       setCameraOn(true);
     } catch (err) {
-      scannerRef.current?.destroy();
+      if (import.meta.env.DEV) console.error("[VALIDATOR] camera error:", err);
+      try {
+        scannerRef.current?.destroy();
+      } catch {
+        /* noop */
+      }
       scannerRef.current = null;
       setCameraOn(false);
-      setCameraError(
-        err instanceof Error
-          ? err.message.includes("Permission") || err.message.includes("denied")
-            ? "Permissão da câmera negada. Use validação manual."
-            : "Câmera indisponível. Use validação manual."
-          : "Câmera indisponível.",
-      );
+
+      const name = (err as { name?: string })?.name ?? "";
+      const msg = err instanceof Error ? err.message : String(err);
+      const inIframe =
+        typeof window !== "undefined" && window.self !== window.top;
+
+      let friendly = "Câmera indisponível. Use a validação manual.";
+      if (name === "NotAllowedError" || /permission|denied/i.test(msg)) {
+        friendly =
+          "Permissão da câmera negada. Habilite nas configurações do navegador ou use a validação manual.";
+      } else if (name === "NotFoundError" || /no camera/i.test(msg)) {
+        friendly =
+          "Nenhuma câmera encontrada. Use a validação manual.";
+      } else if (name === "NotReadableError") {
+        friendly =
+          "Câmera em uso por outro app. Feche-o e tente novamente.";
+      } else if (inIframe) {
+        friendly =
+          "A câmera pode estar bloqueada dentro do Preview da Lovable. Abra /partner/validator em uma aba normal do celular ou use a validação manual.";
+      }
+      setCameraError(friendly);
     }
   }, [handleValidate]);
 
   const stopCamera = useCallback(() => {
-    scannerRef.current?.stop();
-    scannerRef.current?.destroy();
+    try {
+      scannerRef.current?.stop();
+      scannerRef.current?.destroy();
+    } catch {
+      /* noop */
+    }
     scannerRef.current = null;
     setCameraOn(false);
   }, []);
 
   useEffect(() => {
     return () => {
-      scannerRef.current?.destroy();
+      try {
+        scannerRef.current?.stop();
+        scannerRef.current?.destroy();
+      } catch {
+        /* noop */
+      }
       scannerRef.current = null;
     };
   }, []);
