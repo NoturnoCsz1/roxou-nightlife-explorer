@@ -23,10 +23,16 @@ import {
   type PartnerEventCounts,
   type PartnerEventRow,
 } from "../services/partnerDashboard";
-import {
-  getPartnerMetrics,
-  type PartnerMetricsRange,
-} from "../services/partnerMetrics";
+import { getPartnerAnalytics } from "../services/partnerAnalytics";
+import type { PartnerMetricsTotals } from "../services/partnerMetrics";
+
+const EMPTY_TOTALS: PartnerMetricsTotals = {
+  views: 0,
+  clicks: 0,
+  favorites: 0,
+  reservations: 0,
+  vipSignups: 0,
+};
 
 const PartnerDashboardPage = () => {
   const { selectedPartnerId, subscription, isLoading } = usePartnerAuth();
@@ -38,7 +44,9 @@ const PartnerDashboardPage = () => {
     active: 0,
     total: 0,
   });
-  const [metrics, setMetrics] = useState<PartnerMetricsRange | null>(null);
+  const [totals, setTotals] = useState<PartnerMetricsTotals>(EMPTY_TOTALS);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(false);
 
   useEffect(() => {
@@ -46,29 +54,52 @@ const PartnerDashboardPage = () => {
       setDetails(null);
       setAward(null);
       setEvents([]);
-      setMetrics(null);
+      setTotals(EMPTY_TOTALS);
       return;
     }
     let cancelled = false;
     setLoadingData(true);
+    setMetricsLoading(true);
+    setMetricsError(null);
+
     Promise.all([
       getPartnerDetails(selectedPartnerId),
       getPartnerCurrentAward(selectedPartnerId),
       getPartnerRecentEvents(selectedPartnerId, 5),
       getPartnerEventCounts(selectedPartnerId),
-      getPartnerMetrics(selectedPartnerId),
     ])
-      .then(([d, a, e, c, m]) => {
+      .then(([d, a, e, c]) => {
         if (cancelled) return;
         setDetails(d);
         setAward(a);
         setEvents(e);
         setCounts(c);
-        setMetrics(m);
       })
       .finally(() => {
         if (!cancelled) setLoadingData(false);
       });
+
+    getPartnerAnalytics(selectedPartnerId, "7d")
+      .then((res) => {
+        if (cancelled) return;
+        setTotals({
+          views: res.kpis.views,
+          clicks: res.kpis.clicks,
+          favorites: res.kpis.favorites,
+          reservations: res.kpis.reservations,
+          vipSignups: res.kpis.vipSignups,
+        });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("[PARTNER_DASHBOARD_METRICS]", err);
+        setMetricsError("Não foi possível carregar métricas");
+        setTotals(EMPTY_TOTALS);
+      })
+      .finally(() => {
+        if (!cancelled) setMetricsLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };
@@ -90,14 +121,6 @@ const PartnerDashboardPage = () => {
       </main>
     );
   }
-
-  const totals = metrics?.last7 ?? {
-    views: 0,
-    clicks: 0,
-    favorites: 0,
-    reservations: 0,
-    vipSignups: 0,
-  };
 
   return (
     <main className="w-full max-w-7xl mx-auto px-4 py-4 md:py-6 space-y-4 overflow-x-hidden min-h-screen">
