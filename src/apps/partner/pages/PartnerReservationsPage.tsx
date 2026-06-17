@@ -393,8 +393,8 @@ const PartnerReservationsPage = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           {canCreate && (
-            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]">
-              Nova reserva
+            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]" title="Cadastre uma reserva feita por WhatsApp, telefone ou presencial">
+              Criar reserva manual
             </Button>
           )}
           <Button asChild variant="outline" className="min-h-[44px]">
