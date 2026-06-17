@@ -157,13 +157,6 @@ export function ReservationCard({
             </div>
           </div>
         ) : null}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {onView && (
-            <Button size="sm" variant="outline" onClick={() => onView(reservation)}>
-              Ver
-            </Button>
-          )}
-          {reservation.phone && (
         <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-3">
           {onView && (
             <Button size="sm" variant="outline" onClick={() => onView(reservation)} className="min-h-[44px] w-full">
