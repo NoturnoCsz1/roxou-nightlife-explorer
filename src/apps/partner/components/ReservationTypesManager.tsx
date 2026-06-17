@@ -10,8 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Save, X } from "lucide-react";
+import { Trash2, Plus, Save, X, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { NumberField } from "./NumberField";
 import {
   listReservationTypes,
   upsertReservationType,
@@ -26,6 +27,12 @@ const KIND_LABELS: Record<PartnerReservationTypeKind, string> = {
   table: "Mesas",
   bistro: "Bistrôs",
   box: "Camarotes",
+};
+
+const KIND_LABELS_MOBILE: Record<PartnerReservationTypeKind, string> = {
+  table: "📋 Mesas",
+  bistro: "🍸 Bistrôs",
+  box: "👑 Camarotes",
 };
 
 interface DraftRow {
@@ -190,54 +197,47 @@ export function ReservationTypesManager({
               <Label className="text-xs">
                 {draft.kind === "box" ? "Pessoas incluídas" : "Lugares / capacidade"}
               </Label>
-              <Input
-                type="number"
+              <NumberField
                 min={1}
                 value={draft.seats}
-                onChange={(e) =>
-                  setDraft({ ...draft, seats: Number(e.target.value) || 1 })
+                onChange={(v) =>
+                  setDraft({ ...draft, seats: Math.max(1, v || 1) })
                 }
+                fallback={1}
               />
             </div>
             <div>
               <Label className="text-xs">Quantidade disponível</Label>
-              <Input
-                type="number"
+              <NumberField
                 min={1}
                 value={draft.quantity}
-                onChange={(e) =>
-                  setDraft({ ...draft, quantity: Number(e.target.value) || 1 })
+                onChange={(v) =>
+                  setDraft({ ...draft, quantity: Math.max(1, v || 1) })
                 }
+                fallback={1}
               />
             </div>
             <div>
               <Label className="text-xs">Valor (R$)</Label>
-              <Input
-                type="number"
+              <NumberField
                 min={0}
-                step="0.01"
                 value={draft.price}
-                onChange={(e) =>
-                  setDraft({ ...draft, price: Number(e.target.value) || 0 })
-                }
+                onChange={(v) => setDraft({ ...draft, price: v })}
+                allowDecimal
+                fallback={0}
               />
             </div>
             {draft.kind === "table" ? (
               <div>
                 <Label className="text-xs">Consumo mínimo (R$, opcional)</Label>
-                <Input
-                  type="number"
+                <NumberField
                   min={0}
-                  step="0.01"
-                  value={draft.minimum_consumption ?? ""}
-                  onChange={(e) =>
-                    setDraft({
-                      ...draft,
-                      minimum_consumption: e.target.value
-                        ? Number(e.target.value)
-                        : null,
-                    })
+                  value={draft.minimum_consumption}
+                  onChange={(v) =>
+                    setDraft({ ...draft, minimum_consumption: v })
                   }
+                  nullable
+                  allowDecimal
                 />
               </div>
             ) : null}
@@ -245,33 +245,25 @@ export function ReservationTypesManager({
               <>
                 <div>
                   <Label className="text-xs">Limite de pessoas extras</Label>
-                  <Input
-                    type="number"
+                  <NumberField
                     min={0}
                     value={draft.extra_people_limit ?? 0}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        extra_people_limit: Number(e.target.value) || 0,
-                      })
+                    onChange={(v) =>
+                      setDraft({ ...draft, extra_people_limit: v })
                     }
+                    fallback={0}
                   />
                 </div>
                 <div>
                   <Label className="text-xs">Valor por pessoa extra (R$)</Label>
-                  <Input
-                    type="number"
+                  <NumberField
                     min={0}
-                    step="0.01"
-                    value={draft.extra_people_price ?? ""}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        extra_people_price: e.target.value
-                          ? Number(e.target.value)
-                          : null,
-                      })
+                    value={draft.extra_people_price}
+                    onChange={(v) =>
+                      setDraft({ ...draft, extra_people_price: v })
                     }
+                    nullable
+                    allowDecimal
                   />
                 </div>
               </>
@@ -287,7 +279,25 @@ export function ReservationTypesManager({
               rows={2}
             />
           </div>
-          <div className="flex items-center justify-between">
+
+          {/* Datas por tipo — backend ainda não suporta, UI preparada. */}
+          <div className="rounded-md border border-dashed border-border/60 p-3 text-xs">
+            <div className="mb-1 flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              <span className="font-medium">Janela específica deste tipo</span>
+              <Badge variant="outline" className="ml-auto text-[10px]">
+                Em breve
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Em breve você poderá definir data/hora de início, término e
+              fechamento automático individuais para cada{" "}
+              {KIND_LABELS[draft.kind].slice(0, -1).toLowerCase()}. Hoje vale a
+              janela global definida em Configurações.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Switch
                 checked={draft.active}
@@ -295,20 +305,24 @@ export function ReservationTypesManager({
               />
               <Label className="text-xs">Ativo</Label>
             </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDraft(null)}
-                disabled={saving}
-              >
-                <X className="mr-1 h-3 w-3" /> Cancelar
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                <Save className="mr-1 h-3 w-3" />
-                {saving ? "Salvando…" : "Salvar"}
-              </Button>
-            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button
+              variant="outline"
+              onClick={() => setDraft(null)}
+              disabled={saving}
+              className="min-h-[44px] w-full"
+            >
+              <X className="mr-1 h-4 w-4" /> Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="min-h-[44px] w-full"
+            >
+              <Save className="mr-1 h-4 w-4" />
+              {saving ? "Salvando…" : "Salvar"}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -401,30 +415,66 @@ export function ReservationTypesManager({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+    <Card className="rounded-2xl">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-base">Tipos de reserva</CardTitle>
         {canEdit && !draft && (
-          <Button size="sm" onClick={() => setDraft(blankDraft(tab))}>
-            <Plus className="mr-1 h-3 w-3" />
-            Novo {KIND_LABELS[tab].slice(0, -1).toLowerCase()}
+          <Button
+            size="sm"
+            onClick={() => setDraft(blankDraft(tab))}
+            className="min-h-[40px] shrink-0"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline">
+              Novo {KIND_LABELS[tab].slice(0, -1).toLowerCase()}
+            </span>
+            <span className="sm:hidden">Novo</span>
           </Button>
         )}
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 min-w-0">
         {renderEditor()}
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as PartnerReservationTypeKind)}
         >
-          <TabsList>
-            <TabsTrigger value="table">Mesas ({byKind.table.length})</TabsTrigger>
-            <TabsTrigger value="bistro">Bistrôs ({byKind.bistro.length})</TabsTrigger>
-            <TabsTrigger value="box">Camarotes ({byKind.box.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="table" className="mt-3">{renderList("table")}</TabsContent>
-          <TabsContent value="bistro" className="mt-3">{renderList("bistro")}</TabsContent>
-          <TabsContent value="box" className="mt-3">{renderList("box")}</TabsContent>
+          <div className="-mx-1 overflow-x-auto">
+            <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
+              <TabsTrigger value="table" className="shrink-0 whitespace-nowrap">
+                <span className="sm:hidden">
+                  {KIND_LABELS_MOBILE.table} ({byKind.table.length})
+                </span>
+                <span className="hidden sm:inline">
+                  Mesas ({byKind.table.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="bistro" className="shrink-0 whitespace-nowrap">
+                <span className="sm:hidden">
+                  {KIND_LABELS_MOBILE.bistro} ({byKind.bistro.length})
+                </span>
+                <span className="hidden sm:inline">
+                  Bistrôs ({byKind.bistro.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="box" className="shrink-0 whitespace-nowrap">
+                <span className="sm:hidden">
+                  {KIND_LABELS_MOBILE.box} ({byKind.box.length})
+                </span>
+                <span className="hidden sm:inline">
+                  Camarotes ({byKind.box.length})
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="table" className="mt-3">
+            {renderList("table")}
+          </TabsContent>
+          <TabsContent value="bistro" className="mt-3">
+            {renderList("bistro")}
+          </TabsContent>
+          <TabsContent value="box" className="mt-3">
+            {renderList("box")}
+          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
