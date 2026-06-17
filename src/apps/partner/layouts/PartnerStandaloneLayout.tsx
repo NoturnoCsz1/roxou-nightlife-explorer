@@ -99,7 +99,7 @@ const PartnerStandaloneLayout = () => {
         </div>
 
         <nav
-          className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1"
+          className="hidden md:flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1"
           style={{ scrollSnapType: "x proximity" }}
         >
           {TABS.map((t) => (
@@ -127,6 +127,7 @@ const PartnerStandaloneLayout = () => {
         </div>
         <PartnerFeedbackWidget />
       </div>
+      <PartnerBottomNav />
     </PartnerProvider>
   );
 };
