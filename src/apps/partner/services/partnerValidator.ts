@@ -72,9 +72,15 @@ export function parseQrPayload(raw: string): ParsedQrPayload {
     const id = params.get("id");
 
     // /checkin/<token>
-    const pathMatch = url.pathname.match(/\/checkin\/([^/?#]+)/i);
-    if (pathMatch?.[1] && !typeParam) {
-      return { type: "vip", token: pathMatch[1], id: null, raw: value };
+    const checkinMatch = url.pathname.match(/\/checkin\/([^/?#]+)/i);
+    if (checkinMatch?.[1] && !typeParam) {
+      return { type: "vip", token: checkinMatch[1], id: null, raw: value };
+    }
+
+    // /vip/<slug>/sucesso/<token> ou /<partner>/vip/sucesso/<token>
+    const sucessoMatch = url.pathname.match(/\/sucesso\/([^/?#]+)/i);
+    if (sucessoMatch?.[1] && !typeParam) {
+      return { type: "vip", token: sucessoMatch[1], id: null, raw: value };
     }
 
     if (typeParam === "vip" || typeParam === "reservation" || typeParam === "invite") {
