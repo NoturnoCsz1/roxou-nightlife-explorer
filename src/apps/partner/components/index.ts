@@ -41,6 +41,7 @@ export { ReservationTimeline } from "./ReservationTimeline";
 export { ReservationHeroMobile } from "./ReservationHeroMobile";
 export { UpcomingReservationCard } from "./UpcomingReservationCard";
 export { ReservationPendingCard } from "./ReservationPendingCard";
+export { PartnerBottomNav } from "./PartnerBottomNav";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";
