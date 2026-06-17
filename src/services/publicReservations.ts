@@ -187,6 +187,11 @@ export async function getPublicPartnerReservationsContext(
       logo_url: partner.logo_url,
       city: partner.city,
       address: partner.address,
+      type: (partner as { type?: string | null }).type ?? null,
+      instagram: (partner as { instagram?: string | null }).instagram ?? null,
+      whatsapp: (partner as { whatsapp?: string | null }).whatsapp ?? null,
+      short_description:
+        (partner as { short_description?: string | null }).short_description ?? null,
       reservations_enabled: sett?.reservations_enabled ?? false,
       auto_confirm: sett?.auto_confirm ?? false,
       confirmation_timeout_minutes: sett?.confirmation_timeout_minutes ?? 30,
