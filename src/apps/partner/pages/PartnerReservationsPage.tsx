@@ -38,6 +38,9 @@ import {
   ReservationTimeline,
   UpcomingReservationCard,
   ReservationPendingCard,
+  LiveOperationsPanel,
+  ExecutiveDashboard,
+  WeeklyHeatmap,
 } from "../components";
 import {
   cancelReservation,
