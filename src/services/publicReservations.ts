@@ -38,6 +38,11 @@ export interface PublicReservationInfo {
   reservation_date: string;
   notes: string | null;
   total_price: number | null;
+  deposit_amount: number | null;
+  remaining_amount: number | null;
+  payment_status: "pending" | "paid" | "waived" | "refunded" | null;
+  payment_method: string | null;
+  checked_in_at: string | null;
   qr_payload: string;
   partner_id: string;
   partner_name: string;
@@ -45,9 +50,14 @@ export interface PublicReservationInfo {
   partner_logo_url: string | null;
   partner_city: string | null;
   partner_address: string | null;
+  partner_phone: string | null;
   type_kind: "table" | "bistro" | "box" | null;
   type_name: string | null;
   type_seats: number | null;
+  deposit_enabled: boolean;
+  pix_key: string | null;
+  pix_receiver_name: string | null;
+  payment_instructions: string | null;
 }
 
 export async function submitPublicReservation(
@@ -190,4 +200,37 @@ export async function getPublicPartnerReservationsContext(
       } as PublicReservationType;
     }),
   };
+}
+
+// =========================================================
+// Lista de espera (público)
+// =========================================================
+
+export interface PublicWaitlistSubmitInput {
+  partner_slug: string;
+  type_id: string;
+  name: string;
+  phone: string;
+  guests: number;
+  notes?: string | null;
+}
+
+export interface PublicWaitlistResult {
+  id: string;
+  status: string;
+}
+
+export async function submitReservationWaitlist(
+  input: PublicWaitlistSubmitInput,
+): Promise<PublicWaitlistResult> {
+  const { data, error } = await supabase.rpc("submit_reservation_waitlist", {
+    p_partner_slug: input.partner_slug,
+    p_type_id: input.type_id,
+    p_name: input.name,
+    p_phone: input.phone,
+    p_guests: input.guests,
+    p_notes: input.notes ?? null,
+  });
+  if (error) throw error;
+  return data as unknown as PublicWaitlistResult;
 }

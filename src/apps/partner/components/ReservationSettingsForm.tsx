@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import type {
+  DepositType,
   PartnerReservationSettings,
   PartnerReservationSettingsPayload,
 } from "../services/partnerReservations";
@@ -44,6 +46,20 @@ export function ReservationSettingsForm({
   const [startAt, setStartAt] = useState(toLocalInput(initial?.reservations_start_at ?? null));
   const [endAt, setEndAt] = useState(toLocalInput(initial?.reservations_end_at ?? null));
   const [timeout_, setTimeout_] = useState(initial?.confirmation_timeout_minutes ?? 30);
+  const [depositEnabled, setDepositEnabled] = useState(
+    initial?.deposit_enabled ?? false,
+  );
+  const [depositType, setDepositType] = useState<DepositType>(
+    initial?.deposit_type ?? "fixed",
+  );
+  const [depositValue, setDepositValue] = useState(initial?.deposit_value ?? 0);
+  const [pixKey, setPixKey] = useState(initial?.pix_key ?? "");
+  const [pixReceiver, setPixReceiver] = useState(
+    initial?.pix_receiver_name ?? "",
+  );
+  const [payInstructions, setPayInstructions] = useState(
+    initial?.payment_instructions ?? "",
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -56,6 +72,12 @@ export function ReservationSettingsForm({
     setStartAt(toLocalInput(initial.reservations_start_at));
     setEndAt(toLocalInput(initial.reservations_end_at));
     setTimeout_(initial.confirmation_timeout_minutes ?? 30);
+    setDepositEnabled(initial.deposit_enabled ?? false);
+    setDepositType((initial.deposit_type ?? "fixed") as DepositType);
+    setDepositValue(initial.deposit_value ?? 0);
+    setPixKey(initial.pix_key ?? "");
+    setPixReceiver(initial.pix_receiver_name ?? "");
+    setPayInstructions(initial.payment_instructions ?? "");
   }, [initial]);
 
   const submit = async () => {
@@ -70,6 +92,12 @@ export function ReservationSettingsForm({
         reservations_start_at: fromLocalInput(startAt),
         reservations_end_at: fromLocalInput(endAt),
         confirmation_timeout_minutes: timeout_,
+        deposit_enabled: depositEnabled,
+        deposit_type: depositType,
+        deposit_value: depositValue,
+        payment_instructions: payInstructions || null,
+        pix_key: pixKey || null,
+        pix_receiver_name: pixReceiver || null,
       });
     } finally {
       setSaving(false);
@@ -165,6 +193,89 @@ export function ReservationSettingsForm({
             />
           </div>
         </div>
+
+        {/* Sinal / Pagamento */}
+        <div className="space-y-3 rounded-md border border-border/60 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Exigir sinal para reservar</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Base pronta para PIX automático (manual nesta versão).
+              </p>
+            </div>
+            <Switch
+              checked={depositEnabled}
+              onCheckedChange={setDepositEnabled}
+              disabled={disabled}
+            />
+          </div>
+          {depositEnabled && (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Tipo de sinal</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={depositType}
+                    onChange={(e) =>
+                      setDepositType(e.target.value as DepositType)
+                    }
+                    disabled={disabled}
+                  >
+                    <option value="fixed">Valor fixo (R$)</option>
+                    <option value="percent">Percentual (%)</option>
+                    <option value="full">Valor total</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">
+                    {depositType === "percent" ? "Percentual (%)" : "Valor (R$)"}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={depositValue}
+                    onChange={(e) =>
+                      setDepositValue(Number(e.target.value) || 0)
+                    }
+                    disabled={disabled || depositType === "full"}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Chave PIX</Label>
+                  <Input
+                    value={pixKey}
+                    onChange={(e) => setPixKey(e.target.value)}
+                    placeholder="CNPJ, e-mail, telefone ou chave aleatória"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Nome do recebedor</Label>
+                  <Input
+                    value={pixReceiver}
+                    onChange={(e) => setPixReceiver(e.target.value)}
+                    disabled={disabled}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Instruções de pagamento</Label>
+                <Textarea
+                  value={payInstructions}
+                  onChange={(e) => setPayInstructions(e.target.value)}
+                  rows={2}
+                  placeholder="Ex: Envie o comprovante pelo WhatsApp após o pagamento."
+                  disabled={disabled}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="flex justify-end">
           <Button onClick={submit} disabled={disabled || saving}>
             {saving ? "Salvando…" : "Salvar configurações"}

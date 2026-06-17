@@ -39,7 +39,13 @@ export interface PartnerReservationRow {
   checked_in_by: string | null;
   public_token: string;
   code: string | null;
+  deposit_amount: number | null;
+  remaining_amount: number | null;
+  payment_method: string | null;
+  payment_status: "pending" | "paid" | "waived" | "refunded";
 }
+
+export type DepositType = "fixed" | "percent" | "full";
 
 export interface PartnerReservationSettings {
   id: string;
@@ -52,6 +58,12 @@ export interface PartnerReservationSettings {
   reservations_start_at: string | null;
   reservations_end_at: string | null;
   confirmation_timeout_minutes: number;
+  deposit_enabled: boolean;
+  deposit_type: DepositType;
+  deposit_value: number;
+  payment_instructions: string | null;
+  pix_key: string | null;
+  pix_receiver_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +88,12 @@ export interface PartnerReservationSettingsPayload {
   reservations_start_at?: string | null;
   reservations_end_at?: string | null;
   confirmation_timeout_minutes?: number;
+  deposit_enabled?: boolean;
+  deposit_type?: DepositType;
+  deposit_value?: number;
+  payment_instructions?: string | null;
+  pix_key?: string | null;
+  pix_receiver_name?: string | null;
 }
 
 export interface PartnerReservationType {
@@ -115,7 +133,7 @@ const SETTINGS_TABLE = "partner_reservation_settings" as const;
 const TYPES_TABLE = "partner_reservation_types" as const;
 
 const SELECT_COLS =
-  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code";
+  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code, deposit_amount, remaining_amount, payment_method, payment_status";
 
 export interface ListReservationsOptions {
   status?: PartnerReservationStatus | "all";
@@ -345,7 +363,87 @@ export async function getReservationTypesAvailability(
   return (data as unknown as ReservationTypeAvailability[]) ?? [];
 }
 
-// ---- Métricas ----
+// ---- Sinal / pagamento ----
+
+export async function waivePartnerReservationDeposit(
+  reservationId: string,
+): Promise<PartnerReservationRow> {
+  const { data, error } = await supabase.rpc(
+    "waive_partner_reservation_deposit",
+    { _reservation_id: reservationId },
+  );
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerReservationRow;
+}
+
+// ---- Lista de espera ----
+
+export type WaitlistStatus =
+  | "waiting"
+  | "notified"
+  | "accepted"
+  | "expired"
+  | "cancelled";
+
+export interface ReservationWaitlistEntry {
+  id: string;
+  partner_id: string;
+  reservation_type_id: string;
+  name: string;
+  phone: string;
+  guests_count: number;
+  notes: string | null;
+  status: WaitlistStatus;
+  notified_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listReservationWaitlist(
+  partnerId: string,
+): Promise<ReservationWaitlistEntry[]> {
+  const { data, error } = await supabase.rpc(
+    "get_partner_reservation_waitlist",
+    { _partner_id: partnerId },
+  );
+  if (error) throw error;
+  return (data as unknown as ReservationWaitlistEntry[]) ?? [];
+}
+
+export interface NotifyWaitlistResult {
+  id: string;
+  status: WaitlistStatus;
+  expires_at: string | null;
+  partner_name: string;
+  partner_slug: string;
+  type_name: string;
+  type_kind: "table" | "bistro" | "box";
+  reservation_url: string;
+}
+
+export async function notifyWaitlistEntry(
+  entryId: string,
+): Promise<NotifyWaitlistResult> {
+  const { data, error } = await supabase.rpc("notify_waitlist_entry", {
+    _entry_id: entryId,
+  });
+  if (error) throw error;
+  return data as unknown as NotifyWaitlistResult;
+}
+
+export async function cancelWaitlistEntry(
+  entryId: string,
+): Promise<ReservationWaitlistEntry> {
+  const { data, error } = await supabase.rpc("cancel_waitlist_entry", {
+    _entry_id: entryId,
+  });
+  if (error) throw error;
+  return data as unknown as ReservationWaitlistEntry;
+}
+
+
 
 export interface ReservationStatsResult {
   today: number;

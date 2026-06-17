@@ -392,6 +392,73 @@ const PublicReservationSuccessPage = () => {
           ) : null}
         </Card>
 
+        {/* Sinal/PIX — quando habilitado e pendente */}
+        {info?.deposit_enabled &&
+        status === "pending_payment" &&
+        (info.deposit_amount ?? 0) > 0 ? (
+          <Card className="p-4 space-y-3 border-amber-500/40 bg-amber-500/5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-500">
+                Pagamento do sinal
+              </p>
+              <p className="mt-1 text-sm">
+                Para garantir sua reserva, envie o sinal de{" "}
+                <strong>R$ {Number(info.deposit_amount).toFixed(2)}</strong>
+                {expiresLabel ? (
+                  <>
+                    {" "}
+                    até <strong>{expiresLabel}</strong>
+                  </>
+                ) : null}
+                .
+              </p>
+              {(info.remaining_amount ?? 0) > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Restante no local: R${" "}
+                  {Number(info.remaining_amount).toFixed(2)}
+                </p>
+              ) : null}
+            </div>
+            {info.pix_key ? (
+              <div className="rounded-md border border-border/60 bg-background/40 p-3 text-xs space-y-1">
+                <p className="text-muted-foreground">Chave PIX</p>
+                <p className="font-mono break-all text-sm">{info.pix_key}</p>
+                {info.pix_receiver_name ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Recebedor: {info.pix_receiver_name}
+                  </p>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(info.pix_key ?? "");
+                      toast({ title: "Chave PIX copiada" });
+                    } catch {
+                      toast({ title: "Não foi possível copiar" });
+                    }
+                  }}
+                >
+                  Copiar chave PIX
+                </Button>
+              </div>
+            ) : null}
+            {info.payment_instructions ? (
+              <p className="text-xs whitespace-pre-line text-muted-foreground">
+                {info.payment_instructions}
+              </p>
+            ) : null}
+            <p className="text-[11px] text-muted-foreground">
+              A confirmação é manual. Após o envio do comprovante, aguarde o
+              estabelecimento confirmar sua reserva.
+            </p>
+          </Card>
+        ) : null}
+
+
+
         {/* Comprovante (área capturada no PNG) */}
         <div
           ref={cardRef}

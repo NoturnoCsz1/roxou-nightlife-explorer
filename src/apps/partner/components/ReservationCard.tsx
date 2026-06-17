@@ -33,6 +33,7 @@ export function ReservationCard({
   onView,
   onConfirm,
   onConfirmPayment,
+  onWaiveDeposit,
   onCancel,
   onComplete,
   onNoShow,
@@ -44,6 +45,7 @@ export function ReservationCard({
   onView?: (r: PartnerReservationRow) => void;
   onConfirm?: (r: PartnerReservationRow) => void;
   onConfirmPayment?: (r: PartnerReservationRow) => void;
+  onWaiveDeposit?: (r: PartnerReservationRow) => void;
   onCancel?: (r: PartnerReservationRow) => void;
   onComplete?: (r: PartnerReservationRow) => void;
   onNoShow?: (r: PartnerReservationRow) => void;
@@ -53,6 +55,10 @@ export function ReservationCard({
 }) {
   const date = new Date(reservation.reservation_date);
   const isPendingPayment = reservation.status === "pending_payment";
+  const hasDeposit =
+    (reservation.deposit_amount ?? 0) > 0 ||
+    reservation.payment_status === "paid" ||
+    reservation.payment_status === "waived";
   return (
     <Card className="bg-card/60">
       <CardContent className="space-y-3 p-4">
@@ -89,6 +95,54 @@ export function ReservationCard({
             <Countdown expiresAt={reservation.expires_at} />
           )}
         </div>
+        {hasDeposit ? (
+          <div className="grid grid-cols-3 gap-1 rounded-md border border-border/40 bg-background/40 p-2 text-[11px]">
+            <div>
+              <p className="text-muted-foreground">Total</p>
+              <p className="font-semibold">
+                R$ {Number(reservation.total_price ?? 0).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Sinal</p>
+              <p className="font-semibold">
+                R$ {Number(reservation.deposit_amount ?? 0).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Restante</p>
+              <p className="font-semibold">
+                R${" "}
+                {Number(
+                  reservation.remaining_amount ??
+                    Math.max(
+                      (reservation.total_price ?? 0) -
+                        (reservation.deposit_amount ?? 0),
+                      0,
+                    ),
+                ).toFixed(2)}
+              </p>
+            </div>
+            <div className="col-span-3">
+              <p className="text-muted-foreground">
+                Pagamento:{" "}
+                <span
+                  className={
+                    reservation.payment_status === "paid"
+                      ? "font-semibold text-emerald-500"
+                      : reservation.payment_status === "waived"
+                        ? "font-semibold text-blue-500"
+                        : reservation.payment_status === "refunded"
+                          ? "font-semibold text-rose-500"
+                          : "font-semibold text-amber-500"
+                  }
+                >
+                  {reservation.payment_status}
+                </span>
+              </p>
+            </div>
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2 pt-1">
           {onView && (
             <Button size="sm" variant="outline" onClick={() => onView(reservation)}>
@@ -98,6 +152,15 @@ export function ReservationCard({
           {canConfirm && isPendingPayment && onConfirmPayment && (
             <Button size="sm" onClick={() => onConfirmPayment(reservation)}>
               Confirmar pagamento
+            </Button>
+          )}
+          {canConfirm && isPendingPayment && onWaiveDeposit && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onWaiveDeposit(reservation)}
+            >
+              Dispensar sinal
             </Button>
           )}
           {canConfirm && reservation.status === "pending" && onConfirm && (

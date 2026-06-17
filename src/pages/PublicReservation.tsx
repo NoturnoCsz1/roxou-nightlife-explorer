@@ -12,11 +12,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import {
   getPublicPartnerReservationsContext,
   submitPublicReservation,
+  submitReservationWaitlist,
   type PublicPartnerForReservations,
   type PublicReservationType,
 } from "@/services/publicReservations";
@@ -50,6 +59,17 @@ const PublicReservationPage = () => {
   const [guests, setGuests] = useState(2);
   const [when, setWhen] = useState("");
   const [notes, setNotes] = useState("");
+
+  const [waitlistType, setWaitlistType] = useState<PublicReservationType | null>(
+    null,
+  );
+  const [waitlistName, setWaitlistName] = useState("");
+  const [waitlistPhone, setWaitlistPhone] = useState("");
+  const [waitlistGuests, setWaitlistGuests] = useState(2);
+  const [waitlistNotes, setWaitlistNotes] = useState("");
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistSent, setWaitlistSent] = useState(false);
+
 
   useEffect(() => {
     if (!partnerSlug) return;
@@ -193,52 +213,75 @@ const PublicReservationPage = () => {
                       const active = selectedType === t.id;
                       const soldOut = t.available <= 0;
                       return (
-                        <button
+                        <div
                           key={t.id}
-                          type="button"
-                          disabled={soldOut}
-                          onClick={() => {
-                            if (soldOut) return;
-                            setSelectedType(t.id);
-                            if (kind === "box") setGuests(t.seats);
-                          }}
-                          className={`text-left rounded-lg border px-3 py-3 transition ${
+                          className={`rounded-lg border px-3 py-3 transition ${
                             soldOut
-                              ? "border-border/40 bg-muted/30 opacity-60 cursor-not-allowed"
+                              ? "border-border/40 bg-muted/30"
                               : active
                               ? "border-primary bg-primary/10"
                               : "border-border/60 bg-card/40"
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold">
-                                {t.name}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {t.seats} {kind === "box" ? "pess." : "lug."}
-                                {t.minimum_consumption
-                                  ? ` · consumo mín. R$ ${Number(t.minimum_consumption).toFixed(2)}`
-                                  : ""}
-                                {!soldOut && t.available > 0
-                                  ? ` · ${t.available} de ${t.quantity} disponível${t.available === 1 ? "" : "s"}`
-                                  : ""}
-                              </p>
+                          <button
+                            type="button"
+                            disabled={soldOut}
+                            onClick={() => {
+                              if (soldOut) return;
+                              setSelectedType(t.id);
+                              if (kind === "box") setGuests(t.seats);
+                            }}
+                            className={`block w-full text-left ${
+                              soldOut ? "cursor-not-allowed opacity-70" : ""
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold">
+                                  {t.name}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {t.seats} {kind === "box" ? "pess." : "lug."}
+                                  {t.minimum_consumption
+                                    ? ` · consumo mín. R$ ${Number(t.minimum_consumption).toFixed(2)}`
+                                    : ""}
+                                  {!soldOut && t.available > 0
+                                    ? ` · ${t.available} de ${t.quantity} disponível${t.available === 1 ? "" : "s"}`
+                                    : ""}
+                                </p>
+                              </div>
+                              {soldOut ? (
+                                <Badge variant="destructive">Esgotado</Badge>
+                              ) : (
+                                <Badge variant="outline">
+                                  R$ {Number(t.price).toFixed(2)}
+                                </Badge>
+                              )}
                             </div>
-                            {soldOut ? (
-                              <Badge variant="destructive">Esgotado</Badge>
-                            ) : (
-                              <Badge variant="outline">
-                                R$ {Number(t.price).toFixed(2)}
-                              </Badge>
-                            )}
-                          </div>
-                          {t.description ? (
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {t.description}
-                            </p>
-                          ) : null}
-                        </button>
+                            {t.description ? (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {t.description}
+                              </p>
+                            ) : null}
+                          </button>
+                          {soldOut && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="mt-2 w-full"
+                              onClick={() => {
+                                setWaitlistType(t);
+                                setWaitlistGuests(
+                                  kind === "box" ? t.seats : 2,
+                                );
+                                setWaitlistSent(false);
+                              }}
+                            >
+                              Entrar na lista de espera
+                            </Button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
@@ -350,6 +393,115 @@ const PublicReservationPage = () => {
           pagamento, conforme regras do local.
         </p>
       </div>
+
+      <Dialog
+        open={!!waitlistType}
+        onOpenChange={(o) => {
+          if (!o) {
+            setWaitlistType(null);
+            setWaitlistSent(false);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {waitlistSent
+                ? "Você entrou na lista de espera"
+                : `Lista de espera — ${waitlistType?.name ?? ""}`}
+            </DialogTitle>
+            <DialogDescription>
+              {waitlistSent
+                ? "Caso uma vaga seja liberada, o estabelecimento poderá entrar em contato pelo telefone informado."
+                : "Deixe seus dados. Se uma vaga abrir, o estabelecimento entra em contato."}
+            </DialogDescription>
+          </DialogHeader>
+          {!waitlistSent ? (
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Nome</Label>
+                <Input
+                  value={waitlistName}
+                  onChange={(e) => setWaitlistName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Telefone</Label>
+                  <Input
+                    value={waitlistPhone}
+                    onChange={(e) => setWaitlistPhone(e.target.value)}
+                    placeholder="(18) 99999-9999"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Pessoas</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={waitlistGuests}
+                    onChange={(e) =>
+                      setWaitlistGuests(Number(e.target.value) || 1)
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Observação (opcional)</Label>
+                <Textarea
+                  rows={2}
+                  value={waitlistNotes}
+                  onChange={(e) => setWaitlistNotes(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="ghost"
+                  onClick={() => setWaitlistType(null)}
+                  disabled={waitlistSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  disabled={waitlistSubmitting}
+                  onClick={async () => {
+                    if (!partnerSlug || !waitlistType) return;
+                    if (!waitlistName.trim())
+                      return toast({ title: "Informe seu nome" });
+                    if (waitlistPhone.replace(/[^0-9]/g, "").length < 10)
+                      return toast({ title: "Telefone inválido" });
+                    setWaitlistSubmitting(true);
+                    try {
+                      await submitReservationWaitlist({
+                        partner_slug: partnerSlug,
+                        type_id: waitlistType.id,
+                        name: waitlistName,
+                        phone: waitlistPhone,
+                        guests: waitlistGuests,
+                        notes: waitlistNotes || null,
+                      });
+                      setWaitlistSent(true);
+                    } catch (err) {
+                      toast({
+                        title: "Erro",
+                        description: (err as Error).message,
+                      });
+                    } finally {
+                      setWaitlistSubmitting(false);
+                    }
+                  }}
+                >
+                  {waitlistSubmitting ? "Enviando…" : "Entrar na lista"}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button onClick={() => setWaitlistType(null)}>Fechar</Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 };

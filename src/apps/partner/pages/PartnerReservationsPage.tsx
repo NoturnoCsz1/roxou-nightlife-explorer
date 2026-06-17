@@ -20,6 +20,7 @@ import {
   ReservationSettingsForm,
   ReservationTable,
   ReservationTypesManager,
+  WaitlistManager,
 } from "../components";
 import {
   cancelReservation,
@@ -32,6 +33,7 @@ import {
   listReservations,
   noShowReservation,
   updateReservationSettings,
+  waivePartnerReservationDeposit,
   type PartnerReservationRow,
   type PartnerReservationSettings,
 } from "../services/partnerReservations";
@@ -143,6 +145,8 @@ const PartnerReservationsPage = () => {
     wrap(() => completeReservation(r.id), "Reserva concluída")();
   const handleNoShow = (r: PartnerReservationRow) =>
     wrap(() => noShowReservation(r.id), "Marcado como no-show")();
+  const handleWaiveDeposit = (r: PartnerReservationRow) =>
+    wrap(() => waivePartnerReservationDeposit(r.id), "Sinal dispensado")();
 
   const handleQuickAdd = async () => {
     if (!partnerId) return;
@@ -218,6 +222,7 @@ const PartnerReservationsPage = () => {
               reservation={r}
               onConfirm={handleConfirm}
               onConfirmPayment={handleConfirmPayment}
+              onWaiveDeposit={handleWaiveDeposit}
               onCancel={handleCancel}
               onComplete={handleComplete}
               onNoShow={handleNoShow}
@@ -278,6 +283,13 @@ const PartnerReservationsPage = () => {
       )}
 
       <ReservationTypesManager partnerId={partnerId} canEdit={canEditSettings} />
+
+      <WaitlistManager
+        partnerId={partnerId}
+        partnerName={selectedPartner?.name ?? ""}
+        partnerSlug={selectedPartner?.slug ?? null}
+      />
+
 
       {canEditSettings && (
         <ReservationSettingsForm
