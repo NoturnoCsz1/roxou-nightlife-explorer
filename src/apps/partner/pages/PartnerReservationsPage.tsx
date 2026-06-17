@@ -315,21 +315,22 @@ const PartnerReservationsPage = () => {
         </div>
         <div className="grid gap-3 md:hidden">
           {list.map((r) => (
-            <ReservationCard
-              key={r.id}
-              reservation={r}
-              onConfirm={handleConfirm}
-              onConfirmPayment={handleConfirmPayment}
-              onWaiveDeposit={handleWaiveDeposit}
-              onCancel={handleCancel}
-              onComplete={handleComplete}
-              onNoShow={handleNoShow}
-              onRelease={handleRelease}
-              canCancel={canCancel}
-              canConfirm={canConfirm}
-              canComplete={canComplete}
-              canRelease={canRelease}
-            />
+            <div key={r.id} id={`res-${r.id}`} className="scroll-mt-24 rounded-2xl">
+              <ReservationCard
+                reservation={r}
+                onConfirm={handleConfirm}
+                onConfirmPayment={handleConfirmPayment}
+                onWaiveDeposit={handleWaiveDeposit}
+                onCancel={handleCancel}
+                onComplete={handleComplete}
+                onNoShow={handleNoShow}
+                onRelease={handleRelease}
+                canCancel={canCancel}
+                canConfirm={canConfirm}
+                canComplete={canComplete}
+                canRelease={canRelease}
+              />
+            </div>
           ))}
         </div>
       </>
