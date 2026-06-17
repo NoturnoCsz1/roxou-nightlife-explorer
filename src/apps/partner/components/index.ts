@@ -29,6 +29,7 @@ export { ReservationCard } from "./ReservationCard";
 export { ReservationTable } from "./ReservationTable";
 export { ReservationSettingsForm } from "./ReservationSettingsForm";
 export { ReservationTypesManager } from "./ReservationTypesManager";
+export { WaitlistManager } from "./WaitlistManager";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";
