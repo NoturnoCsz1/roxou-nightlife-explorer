@@ -607,6 +607,7 @@ const PublicReservationPage = () => {
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                       {slots.map((s) => {
                         const taken = s.available_count <= 0;
+                        const low = !taken && s.available_count <= 2;
                         const active = slotIso === s.slot_start;
                         return (
                           <button
@@ -618,14 +619,23 @@ const PublicReservationPage = () => {
                               taken
                                 ? "border-border/30 bg-muted/20 text-muted-foreground line-through cursor-not-allowed"
                                 : active
-                                  ? "border-primary bg-primary/15 text-primary shadow-[0_0_14px_-6px_hsl(var(--primary)/0.8)]"
-                                  : "border-border/60 bg-card/40 hover:border-primary/60"
+                                  ? "border-primary bg-primary/20 text-primary shadow-[0_0_18px_-4px_hsl(var(--primary)/0.9)] ring-1 ring-primary/60"
+                                  : low
+                                    ? "border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-300 hover:border-amber-500"
+                                    : "border-border/60 bg-card/40 hover:border-primary/60"
                             }`}
                           >
                             <div className="font-bold">{slotLabel(s.slot_start)}</div>
-                            <div className="text-[10px] opacity-80">
-                              {taken ? "Esgotado" : `${s.available_count} disp.`}
+                            <div className="text-[10px] opacity-80 leading-tight">
+                              {taken
+                                ? "Esgotado"
+                                : `${s.available_count} de ${s.quantity_total} disponíveis`}
                             </div>
+                            {low ? (
+                              <div className="text-[9px] font-semibold uppercase tracking-wide mt-0.5">
+                                Poucas vagas
+                              </div>
+                            ) : null}
                           </button>
                         );
                       })}
@@ -697,6 +707,18 @@ const PublicReservationPage = () => {
                     <span className="text-muted-foreground">Duração prevista</span>
                     <span className="font-medium">{formatDuration(effectiveDuration)}</span>
                   </div>
+                  {slotIso ? (() => {
+                    const s = slots.find((x) => x.slot_start === slotIso);
+                    if (!s) return null;
+                    return (
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-muted-foreground">Disponibilidade</span>
+                        <span className="font-medium">
+                          {s.available_count} de {s.quantity_total} disponíveis
+                        </span>
+                      </div>
+                    );
+                  })() : null}
                   <div className="flex items-center justify-between gap-2 text-sm pt-1 border-t border-primary/20">
                     <span className="text-muted-foreground">Valor</span>
                     <span className="font-bold text-primary">
@@ -710,7 +732,7 @@ const PublicReservationPage = () => {
                   ) : null}
                   <p className="text-[11px] text-muted-foreground pt-1">
                     Sua mesa ficará reservada por até {formatDuration(effectiveDuration)}.
-                    Caso precise de mais tempo, consulte o estabelecimento.
+                    Após esse período, a mesa poderá ser liberada para novas reservas.
                   </p>
                 </div>
               ) : (
