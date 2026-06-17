@@ -330,8 +330,16 @@ const PublicReservationPage = () => {
                 </p>
               )}
 
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? "Enviando…" : "Solicitar reserva"}
+              <Button
+                type="submit"
+                disabled={submitting || (selected ? selected.available <= 0 : false)}
+                className="w-full"
+              >
+                {submitting
+                  ? "Enviando…"
+                  : selected && selected.available <= 0
+                  ? "Esgotado"
+                  : "Solicitar reserva"}
               </Button>
             </form>
           </CardContent>
