@@ -67,8 +67,9 @@ export function ReservationHeroCard({
     (r) => r.status === "pending" || r.status === "pending_payment",
   ).length;
   const waitlistToday = waitlist.filter(
-    (w) => !w.desired_date || w.desired_date.slice(0, 10) === todayKey,
+    (w) => w.status === "waiting" || w.status === "notified",
   ).length;
+  void todayKey;
 
   const expectedRevenue = todayRows
     .filter((r) => r.status !== "cancelled" && r.status !== "expired" && r.status !== "no_show")
