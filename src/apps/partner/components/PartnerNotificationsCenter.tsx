@@ -113,7 +113,7 @@ export function PartnerNotificationsCenter({
           id: `pending-${r.id}`,
           severity: mins < 10 ? "critical" : "warning",
           icon: AlertCircle,
-          title: `Pagamento pendente · ${r.guest_name ?? "Reserva"}`,
+          title: `Pagamento pendente · ${r.name ?? "Reserva"}`,
           description:
             mins <= 0
               ? "Reserva já no horário sem pagamento confirmado."
@@ -132,7 +132,7 @@ export function PartnerNotificationsCenter({
             id: `arrival-${r.id}`,
             severity: "info",
             icon: Clock,
-            title: `Chegada em ${mins}min · ${r.guest_name ?? "Reserva"}`,
+            title: `Chegada em ${mins}min · ${r.name ?? "Reserva"}`,
             description: `${r.people_count ?? "?"} pessoas. Prepare a mesa.`,
           });
         }
@@ -174,22 +174,22 @@ export function PartnerNotificationsCenter({
       });
     }
 
-    // 5. Mesas ocupadas após conclusão (sem release)
+    // 5. Mesas ocupadas após conclusão sem liberação (passou do horário)
     rows
       .filter((r) => r.status === "completed")
       .forEach((r) => {
-        const released = (r as { released_at?: string | null }).released_at;
-        const completedAt = (r as { completed_at?: string | null })
-          .completed_at;
-        if (released || !completedAt) return;
-        const mins = minutesAgo(completedAt);
-        if (mins >= 10) {
+        if (r.released_at) return;
+        const end =
+          new Date(r.reservation_date).getTime() +
+          (r.duration_minutes ?? 90) * 60000;
+        const minsOver = Math.round((Date.now() - end) / 60000);
+        if (minsOver >= 10) {
           out.push({
             id: `release-${r.id}`,
             severity: "warning",
             icon: AlertCircle,
-            title: `Liberar mesa · ${r.guest_name ?? "Reserva"}`,
-            description: `Concluída há ${mins}min sem liberação.`,
+            title: `Liberar mesa · ${r.name ?? "Reserva"}`,
+            description: `Concluída há ${minsOver}min sem liberação.`,
           });
         }
       });
@@ -223,7 +223,7 @@ export function PartnerNotificationsCenter({
   return (
     <div className="space-y-3">
       <SectionHeader
-        eyebrow="Operação"
+        icon={Bell}
         title="Central de notificações"
         description={
           items.length === 0
