@@ -284,6 +284,13 @@ const PartnerReservationsPage = () => {
 
       <ReservationTypesManager partnerId={partnerId} canEdit={canEditSettings} />
 
+      <WaitlistManager
+        partnerId={partnerId}
+        partnerName={selectedPartner?.name ?? ""}
+        partnerSlug={selectedPartner?.slug ?? null}
+      />
+
+
       {canEditSettings && (
         <ReservationSettingsForm
           initial={settings}
