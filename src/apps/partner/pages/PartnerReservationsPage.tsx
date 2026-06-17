@@ -254,18 +254,63 @@ const PartnerReservationsPage = () => {
     );
   };
 
+  const publicUrl =
+    selectedPartner?.slug && typeof window !== "undefined"
+      ? `${window.location.origin}/${selectedPartner.slug}/reservas`
+      : selectedPartner?.slug
+        ? `/${selectedPartner.slug}/reservas`
+        : "";
+
+  const handleCopyLink = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast({ title: "Link copiado" });
+    } catch {
+      toast({ title: "Não foi possível copiar" });
+    }
+  };
+
+  const handleShareLink = async () => {
+    if (!publicUrl) return;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await (navigator as Navigator).share({
+          title: `Reservas — ${selectedPartner?.name ?? ""}`,
+          url: publicUrl,
+        });
+        return;
+      } catch {
+        /* usuário cancelou */
+      }
+    }
+    void handleCopyLink();
+  };
+
+  const handleOpenLink = () => {
+    if (!publicUrl) return;
+    window.open(publicUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <main className="min-h-screen w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6 pb-24 overflow-x-hidden">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+    <main
+      className="min-h-screen w-full max-w-7xl mx-auto space-y-5 p-4 sm:p-6 overflow-x-hidden"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+    >
+      <header className="flex flex-wrap items-end justify-between gap-3 min-w-0">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Reservas</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground truncate">
             {selectedPartner?.name}
           </p>
         </div>
-        <div className="flex gap-2">
-          {canCreate && <Button onClick={handleQuickAdd}>Nova reserva</Button>}
-          <Button asChild variant="outline">
+        <div className="flex flex-wrap gap-2">
+          {canCreate && (
+            <Button onClick={handleQuickAdd} className="min-h-[44px]">
+              Nova reserva
+            </Button>
+          )}
+          <Button asChild variant="outline" className="min-h-[44px]">
             <Link to="/painel">Voltar</Link>
           </Button>
         </div>
@@ -273,70 +318,170 @@ const PartnerReservationsPage = () => {
 
       <ReservationStats stats={stats} />
 
-      {loading && rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Carregando reservas…</p>
-      ) : rows.length === 0 ? (
-        <ReservationEmptyState />
-      ) : (
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
-          <TabsList className="w-full overflow-x-auto justify-start">
-            <TabsTrigger value="active">
-              Ativas {buckets.active.length ? `(${buckets.active.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="pending">
-              Pendentes {buckets.pending.length ? `(${buckets.pending.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="ended">
-              Encerradas {buckets.ended.length ? `(${buckets.ended.length})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="archived">
-              Arquivadas {buckets.archived.length ? `(${buckets.archived.length})` : ""}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="active" className="mt-4">{renderBucket("active")}</TabsContent>
-          <TabsContent value="pending" className="mt-4">{renderBucket("pending")}</TabsContent>
-          <TabsContent value="ended" className="mt-4">{renderBucket("ended")}</TabsContent>
-          <TabsContent value="archived" className="mt-4">{renderBucket("archived")}</TabsContent>
-        </Tabs>
-      )}
-
-      <ReservationTypesManager partnerId={partnerId} canEdit={canEditSettings} />
-
-      <WaitlistManager
-        partnerId={partnerId}
-        partnerName={selectedPartner?.name ?? ""}
-        partnerSlug={selectedPartner?.slug ?? null}
-      />
-
-
-      {canEditSettings && (
-        <ReservationSettingsForm
-          initial={settings}
-          onSave={async (payload) => {
-            try {
-              const updated = await updateReservationSettings(partnerId, payload);
-              setSettings(updated);
-              toast({ title: "Configurações salvas" });
-            } catch (err) {
-              toast({ title: "Erro", description: (err as Error).message });
-            }
-          }}
-        />
-      )}
-
       {settings?.reservations_enabled && selectedPartner?.slug && (
-        <p className="text-center text-xs text-muted-foreground">
-          Link público para clientes:{" "}
-          <a
-            href={`/${selectedPartner.slug}/reservas`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline"
-          >
-            /{selectedPartner.slug}/reservas
-          </a>
-        </p>
+        <Card className="rounded-2xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Link público de reservas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs break-all">
+              {publicUrl}
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Button
+                variant="outline"
+                onClick={handleOpenLink}
+                className="min-h-[44px] w-full"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Abrir
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => void handleCopyLink()}
+                className="min-h-[44px] w-full"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar
+              </Button>
+              <Button
+                onClick={() => void handleShareLink()}
+                className="min-h-[44px] w-full"
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Compartilhar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      <Accordion
+        type="single"
+        collapsible
+        value={openSection}
+        onValueChange={(v) => setOpenSection(v)}
+        className="space-y-3"
+      >
+        <AccordionItem
+          value="list"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Reservas recentes
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            {loading && rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Carregando reservas…
+              </p>
+            ) : rows.length === 0 ? (
+              <ReservationEmptyState />
+            ) : (
+              <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
+                <div className="-mx-1 overflow-x-auto">
+                  <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
+                    <TabsTrigger value="active" className="shrink-0 whitespace-nowrap">
+                      Ativas{" "}
+                      {buckets.active.length ? `(${buckets.active.length})` : ""}
+                    </TabsTrigger>
+                    <TabsTrigger value="pending" className="shrink-0 whitespace-nowrap">
+                      Pendentes{" "}
+                      {buckets.pending.length
+                        ? `(${buckets.pending.length})`
+                        : ""}
+                    </TabsTrigger>
+                    <TabsTrigger value="ended" className="shrink-0 whitespace-nowrap">
+                      Encerradas{" "}
+                      {buckets.ended.length ? `(${buckets.ended.length})` : ""}
+                    </TabsTrigger>
+                    <TabsTrigger value="archived" className="shrink-0 whitespace-nowrap">
+                      Arquivadas{" "}
+                      {buckets.archived.length
+                        ? `(${buckets.archived.length})`
+                        : ""}
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="active" className="mt-4">
+                  {renderBucket("active")}
+                </TabsContent>
+                <TabsContent value="pending" className="mt-4">
+                  {renderBucket("pending")}
+                </TabsContent>
+                <TabsContent value="ended" className="mt-4">
+                  {renderBucket("ended")}
+                </TabsContent>
+                <TabsContent value="archived" className="mt-4">
+                  {renderBucket("archived")}
+                </TabsContent>
+              </Tabs>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem
+          value="types"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Tipos de reserva
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <ReservationTypesManager
+              partnerId={partnerId}
+              canEdit={canEditSettings}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem
+          value="waitlist"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Lista de espera
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <WaitlistManager
+              partnerId={partnerId}
+              partnerName={selectedPartner?.name ?? ""}
+              partnerSlug={selectedPartner?.slug ?? null}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        {canEditSettings && (
+          <AccordionItem
+            value="settings"
+            className="rounded-2xl border border-border/60 bg-card/40 px-3"
+          >
+            <AccordionTrigger className="text-sm font-semibold">
+              Configurações e pagamento
+            </AccordionTrigger>
+            <AccordionContent className="pt-2">
+              <ReservationSettingsForm
+                initial={settings}
+                onSave={async (payload) => {
+                  try {
+                    const updated = await updateReservationSettings(
+                      partnerId,
+                      payload,
+                    );
+                    setSettings(updated);
+                    toast({ title: "Configurações salvas" });
+                  } catch (err) {
+                    toast({
+                      title: "Erro",
+                      description: (err as Error).message,
+                    });
+                  }
+                }}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        )}
+      </Accordion>
     </main>
   );
 };
