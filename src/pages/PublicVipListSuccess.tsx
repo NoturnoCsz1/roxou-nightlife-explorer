@@ -14,11 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
-import {
-  generateQrSvg,
-  generateQrPngDataUrl,
-  downloadDataUrl,
-} from "@/lib/qrcode";
+import { generateQrSvg, downloadDataUrl } from "@/lib/qrcode";
 import type {
   PublicVipListInfo,
   PublicVipSubmitResult,
@@ -93,50 +89,31 @@ const PublicVipListSuccessPage = () => {
 
   const filenameBase = slugify(`${guestName || "convidado"}`);
 
-  const copyCode = async () => {
+  const generateCardPng = async (): Promise<string | null> => {
+    if (!cardRef.current) return null;
     try {
-      await navigator.clipboard.writeText(code);
-      toast({ title: "Código VIP copiado!" });
-    } catch {
-      toast({ title: "Não foi possível copiar.", variant: "destructive" });
-    }
-  };
-
-  const downloadQr = async () => {
-    if (!publicToken) return;
-    const payload =
-      result?.qr_code_payload ??
-      `${window.location.origin}/checkin/${publicToken}`;
-    try {
-      const url = await generateQrPngDataUrl(payload, 720);
-      downloadDataUrl(`qr-vip-${filenameBase}.png`, url);
-    } catch {
-      toast({
-        title: "Não foi possível gerar o QR.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const downloadCard = async () => {
-    if (!cardRef.current) return;
-    try {
-      const url = await toPng(cardRef.current, {
+      return await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#0b0814",
       });
-      downloadDataUrl(`comprovante-vip-${filenameBase}.png`, url);
     } catch {
       toast({
         title: "Não foi possível gerar o comprovante.",
         variant: "destructive",
       });
+      return null;
     }
   };
 
-  const shareWhatsapp = () => {
-    const lines = [
+  const downloadCard = async () => {
+    const url = await generateCardPng();
+    if (!url) return;
+    downloadDataUrl(`comprovante-vip-${filenameBase}.png`, url);
+  };
+
+  const buildShareText = () =>
+    [
       `Lista VIP — ${listTitle}`,
       partnerName ? `Local: ${partnerName}` : null,
       guestName ? `Nome: ${guestName}` : null,
@@ -149,7 +126,31 @@ const PublicVipListSuccessPage = () => {
     ]
       .filter(Boolean)
       .join("\n");
-    const url = `https://wa.me/?text=${encodeURIComponent(lines)}`;
+
+  const shareCard = async () => {
+    const dataUrl = await generateCardPng();
+    if (!dataUrl) return;
+    const text = buildShareText();
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], `comprovante-vip-${filenameBase}.png`, {
+        type: "image/png",
+      });
+      const nav = navigator as Navigator & {
+        canShare?: (data?: ShareData) => boolean;
+      };
+      if (nav.canShare?.({ files: [file] }) && nav.share) {
+        await nav.share({
+          files: [file],
+          title: "Comprovante VIP",
+          text,
+        });
+        return;
+      }
+    } catch {
+      // fallback below
+    }
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -256,18 +257,12 @@ const PublicVipListSuccessPage = () => {
         </div>
 
         {/* ====== Ações ====== */}
-        <div className="grid grid-cols-2 gap-2 w-full">
-          <Button variant="secondary" onClick={downloadQr} className="w-full min-w-0 truncate">
-            Baixar QR PNG
-          </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
           <Button variant="secondary" onClick={downloadCard} className="w-full min-w-0 truncate">
-            Salvar comprovante
+            Salvar comprovante (PNG)
           </Button>
-          <Button onClick={shareWhatsapp} className="w-full min-w-0 truncate">
-            WhatsApp
-          </Button>
-          <Button variant="outline" onClick={copyCode} className="w-full min-w-0 truncate">
-            Copiar código
+          <Button onClick={shareCard} className="w-full min-w-0 truncate">
+            Compartilhar comprovante
           </Button>
         </div>
 
