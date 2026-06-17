@@ -153,7 +153,11 @@ const PublicReservationPage = () => {
           const match = ctx.types.find((t) => t.id === preselectTypeId);
           if (match) setSelectedType(match.id);
         }
-        setDate(todayLocalDate(Math.ceil((ctx.partner.advance_booking_hours || 0) / 24)));
+        if (preselectDate) {
+          setDate(preselectDate);
+        } else {
+          setDate(todayLocalDate(Math.ceil((ctx.partner.advance_booking_hours || 0) / 24)));
+        }
       } catch (err) {
         toast({ title: "Erro", description: (err as Error).message });
       } finally {
