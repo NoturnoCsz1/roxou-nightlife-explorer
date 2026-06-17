@@ -379,6 +379,14 @@ const PartnerReservationsPage = () => {
           waitlist={waitlist}
           stats={stats}
         />
+        <LiveOperationsPanel
+          rows={rows}
+          waitlist={waitlist}
+          onSelectBucket={(b) => {
+            if (b === "waitlist") setOpenSection("waitlist");
+            else setTab(b === "released" ? "ended" : "active");
+          }}
+        />
         <UpcomingReservationCard reservations={rows} types={types} />
         <ReservationPendingCard reservations={rows} waitlist={waitlist} />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
@@ -393,6 +401,14 @@ const PartnerReservationsPage = () => {
           waitlist={waitlist}
           types={types}
           stats={stats}
+        />
+        <LiveOperationsPanel
+          rows={rows}
+          waitlist={waitlist}
+          onSelectBucket={(b) => {
+            if (b === "waitlist") setOpenSection("waitlist");
+            else setTab(b === "released" ? "ended" : "active");
+          }}
         />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
         <ReservationTimeline reservations={rows} types={types} />
