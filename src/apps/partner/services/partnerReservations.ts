@@ -363,7 +363,87 @@ export async function getReservationTypesAvailability(
   return (data as unknown as ReservationTypeAvailability[]) ?? [];
 }
 
-// ---- Métricas ----
+// ---- Sinal / pagamento ----
+
+export async function waivePartnerReservationDeposit(
+  reservationId: string,
+): Promise<PartnerReservationRow> {
+  const { data, error } = await supabase.rpc(
+    "waive_partner_reservation_deposit",
+    { _reservation_id: reservationId },
+  );
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerReservationRow;
+}
+
+// ---- Lista de espera ----
+
+export type WaitlistStatus =
+  | "waiting"
+  | "notified"
+  | "accepted"
+  | "expired"
+  | "cancelled";
+
+export interface ReservationWaitlistEntry {
+  id: string;
+  partner_id: string;
+  reservation_type_id: string;
+  name: string;
+  phone: string;
+  guests_count: number;
+  notes: string | null;
+  status: WaitlistStatus;
+  notified_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listReservationWaitlist(
+  partnerId: string,
+): Promise<ReservationWaitlistEntry[]> {
+  const { data, error } = await supabase.rpc(
+    "get_partner_reservation_waitlist",
+    { _partner_id: partnerId },
+  );
+  if (error) throw error;
+  return (data as unknown as ReservationWaitlistEntry[]) ?? [];
+}
+
+export interface NotifyWaitlistResult {
+  id: string;
+  status: WaitlistStatus;
+  expires_at: string | null;
+  partner_name: string;
+  partner_slug: string;
+  type_name: string;
+  type_kind: "table" | "bistro" | "box";
+  reservation_url: string;
+}
+
+export async function notifyWaitlistEntry(
+  entryId: string,
+): Promise<NotifyWaitlistResult> {
+  const { data, error } = await supabase.rpc("notify_waitlist_entry", {
+    _entry_id: entryId,
+  });
+  if (error) throw error;
+  return data as unknown as NotifyWaitlistResult;
+}
+
+export async function cancelWaitlistEntry(
+  entryId: string,
+): Promise<ReservationWaitlistEntry> {
+  const { data, error } = await supabase.rpc("cancel_waitlist_entry", {
+    _entry_id: entryId,
+  });
+  if (error) throw error;
+  return data as unknown as ReservationWaitlistEntry;
+}
+
+
 
 export interface ReservationStatsResult {
   today: number;
