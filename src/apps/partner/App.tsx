@@ -51,6 +51,10 @@ const PartnerAnalyticsPage = lazy(() => import("./pages/PartnerAnalyticsPage"));
 const PartnerSettingsPage = lazy(() => import("./pages/PartnerSettingsPage"));
 const PartnerVipCheckinPage = lazy(() => import("./pages/PartnerVipCheckinPage"));
 const PartnerValidatorPage = lazy(() => import("./pages/PartnerValidatorPage"));
+const PublicReservation = lazy(() => import("@/pages/PublicReservation"));
+const PublicReservationSuccess = lazy(() => import("@/pages/PublicReservationSuccess"));
+const PublicVipList = lazy(() => import("@/pages/PublicVipList"));
+const PublicVipListSuccess = lazy(() => import("@/pages/PublicVipListSuccess"));
 
 
 const Fallback = () => (
@@ -103,6 +107,14 @@ const PartnerApp = () => (
             <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
           </Route>
 
+
+          {/* Rotas públicas (sub-domínio parceiro também responde) */}
+          <Route path="/:partnerSlug/reservas" element={L(<PublicReservation />)} />
+          <Route path="/reserva/sucesso/:publicToken" element={L(<PublicReservationSuccess />)} />
+          <Route path="/:partnerSlug/vip" element={L(<PublicVipList />)} />
+          <Route path="/:partnerSlug/vip/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
+          <Route path="/vip/:listSlug" element={L(<PublicVipList />)} />
+          <Route path="/vip/:listSlug/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
