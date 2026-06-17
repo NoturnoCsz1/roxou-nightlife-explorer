@@ -97,7 +97,12 @@ const PartnerVipListPage = () => {
     );
   }
 
-  const open = (l: PartnerVipList) => navigate(`/lista-vip/${l.id}`);
+  const open = (l: PartnerVipList) => {
+    const base = pathname.includes("/admin/partner-preview/lista-vip")
+      ? "/admin/partner-preview/lista-vip"
+      : "/lista-vip";
+    navigate(`${base}/${l.id}`);
+  };
 
   const renderTab = (key: Bucket) => {
     const rows = buckets[key];
