@@ -134,7 +134,12 @@ const PartnerDashboardPage = () => {
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4 min-w-0">
           <PartnerProfileCard partner={details} />
-          <PartnerMetricsCards totals={totals} label="Últimos 7 dias" />
+          <PartnerMetricsCards
+            totals={totals}
+            label="Últimos 7 dias"
+            loading={metricsLoading}
+            error={metricsError}
+          />
           <PartnerRecentEvents events={events} />
         </div>
         <aside className="space-y-4 min-w-0">
