@@ -16,6 +16,7 @@ import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { PartnerProvider } from "../contexts/PartnerContext";
 import { usePartnerBetaAccess } from "../hooks/usePartnerBetaAccess";
 import { PartnerFeedbackWidget } from "../components/PartnerFeedbackWidget";
+import { PartnerBottomNav } from "../components/PartnerBottomNav";
 import { trackBetaEvent } from "../services/partnerBeta";
 import { cn } from "@/lib/utils";
 
@@ -81,10 +82,11 @@ const PartnerStandaloneLayout = () => {
   return (
     <PartnerProvider>
       <div
-        className="w-full max-w-7xl mx-auto px-4 overflow-x-hidden space-y-4 py-3"
+        className="partner-shell w-full max-w-7xl mx-auto px-4 space-y-4 py-3 pb-24 md:pb-3"
         style={{
           paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
-          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+          paddingBottom:
+            "calc(0.75rem + env(safe-area-inset-bottom) + var(--partner-bottom-nav-h, 68px))",
         }}
       >
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 break-words">
