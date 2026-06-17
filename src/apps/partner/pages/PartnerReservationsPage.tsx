@@ -145,6 +145,8 @@ const PartnerReservationsPage = () => {
     wrap(() => completeReservation(r.id), "Reserva concluída")();
   const handleNoShow = (r: PartnerReservationRow) =>
     wrap(() => noShowReservation(r.id), "Marcado como no-show")();
+  const handleWaiveDeposit = (r: PartnerReservationRow) =>
+    wrap(() => waivePartnerReservationDeposit(r.id), "Sinal dispensado")();
 
   const handleQuickAdd = async () => {
     if (!partnerId) return;
