@@ -46,6 +46,20 @@ export function ReservationSettingsForm({
   const [startAt, setStartAt] = useState(toLocalInput(initial?.reservations_start_at ?? null));
   const [endAt, setEndAt] = useState(toLocalInput(initial?.reservations_end_at ?? null));
   const [timeout_, setTimeout_] = useState(initial?.confirmation_timeout_minutes ?? 30);
+  const [depositEnabled, setDepositEnabled] = useState(
+    initial?.deposit_enabled ?? false,
+  );
+  const [depositType, setDepositType] = useState<DepositType>(
+    initial?.deposit_type ?? "fixed",
+  );
+  const [depositValue, setDepositValue] = useState(initial?.deposit_value ?? 0);
+  const [pixKey, setPixKey] = useState(initial?.pix_key ?? "");
+  const [pixReceiver, setPixReceiver] = useState(
+    initial?.pix_receiver_name ?? "",
+  );
+  const [payInstructions, setPayInstructions] = useState(
+    initial?.payment_instructions ?? "",
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -58,6 +72,12 @@ export function ReservationSettingsForm({
     setStartAt(toLocalInput(initial.reservations_start_at));
     setEndAt(toLocalInput(initial.reservations_end_at));
     setTimeout_(initial.confirmation_timeout_minutes ?? 30);
+    setDepositEnabled(initial.deposit_enabled ?? false);
+    setDepositType((initial.deposit_type ?? "fixed") as DepositType);
+    setDepositValue(initial.deposit_value ?? 0);
+    setPixKey(initial.pix_key ?? "");
+    setPixReceiver(initial.pix_receiver_name ?? "");
+    setPayInstructions(initial.payment_instructions ?? "");
   }, [initial]);
 
   const submit = async () => {
@@ -72,6 +92,12 @@ export function ReservationSettingsForm({
         reservations_start_at: fromLocalInput(startAt),
         reservations_end_at: fromLocalInput(endAt),
         confirmation_timeout_minutes: timeout_,
+        deposit_enabled: depositEnabled,
+        deposit_type: depositType,
+        deposit_value: depositValue,
+        payment_instructions: payInstructions || null,
+        pix_key: pixKey || null,
+        pix_receiver_name: pixReceiver || null,
       });
     } finally {
       setSaving(false);
