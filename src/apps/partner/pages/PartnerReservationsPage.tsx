@@ -20,6 +20,7 @@ import {
   ReservationSettingsForm,
   ReservationTable,
   ReservationTypesManager,
+  WaitlistManager,
 } from "../components";
 import {
   cancelReservation,
@@ -32,6 +33,7 @@ import {
   listReservations,
   noShowReservation,
   updateReservationSettings,
+  waivePartnerReservationDeposit,
   type PartnerReservationRow,
   type PartnerReservationSettings,
 } from "../services/partnerReservations";
