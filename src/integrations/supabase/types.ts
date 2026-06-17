@@ -2245,10 +2245,16 @@ export type Database = {
           auto_confirm: boolean
           confirmation_timeout_minutes: number
           created_at: string
+          deposit_enabled: boolean
+          deposit_type: string
+          deposit_value: number
           id: string
           max_people_per_reservation: number
           max_reservations_per_day: number
           partner_id: string
+          payment_instructions: string | null
+          pix_key: string | null
+          pix_receiver_name: string | null
           reservations_enabled: boolean
           reservations_end_at: string | null
           reservations_start_at: string | null
@@ -2259,10 +2265,16 @@ export type Database = {
           auto_confirm?: boolean
           confirmation_timeout_minutes?: number
           created_at?: string
+          deposit_enabled?: boolean
+          deposit_type?: string
+          deposit_value?: number
           id?: string
           max_people_per_reservation?: number
           max_reservations_per_day?: number
           partner_id: string
+          payment_instructions?: string | null
+          pix_key?: string | null
+          pix_receiver_name?: string | null
           reservations_enabled?: boolean
           reservations_end_at?: string | null
           reservations_start_at?: string | null
@@ -2273,10 +2285,16 @@ export type Database = {
           auto_confirm?: boolean
           confirmation_timeout_minutes?: number
           created_at?: string
+          deposit_enabled?: boolean
+          deposit_type?: string
+          deposit_value?: number
           id?: string
           max_people_per_reservation?: number
           max_reservations_per_day?: number
           partner_id?: string
+          payment_instructions?: string | null
+          pix_key?: string | null
+          pix_receiver_name?: string | null
           reservations_enabled?: boolean
           reservations_end_at?: string | null
           reservations_start_at?: string | null
@@ -2368,6 +2386,73 @@ export type Database = {
           },
         ]
       }
+      partner_reservation_waitlist: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          guests_count: number
+          id: string
+          name: string
+          notes: string | null
+          notified_at: string | null
+          partner_id: string
+          phone: string
+          reservation_type_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          guests_count?: number
+          id?: string
+          name: string
+          notes?: string | null
+          notified_at?: string | null
+          partner_id: string
+          phone: string
+          reservation_type_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          guests_count?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          notified_at?: string | null
+          partner_id?: string
+          phone?: string
+          reservation_type_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_reservation_waitlist_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_reservation_waitlist_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_reservation_waitlist_reservation_type_id_fkey"
+            columns: ["reservation_type_id"]
+            isOneToOne: false
+            referencedRelation: "partner_reservation_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_reservations: {
         Row: {
           auto_close_enabled: boolean
@@ -2377,6 +2462,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          deposit_amount: number
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -2385,9 +2471,12 @@ export type Database = {
           notes: string | null
           partner_id: string
           payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
           people_count: number
           phone: string | null
           public_token: string
+          remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
           status: string
@@ -2403,6 +2492,7 @@ export type Database = {
           closes_at?: string | null
           code?: string | null
           created_at?: string
+          deposit_amount?: number
           email?: string | null
           event_id?: string | null
           expires_at?: string | null
@@ -2411,9 +2501,12 @@ export type Database = {
           notes?: string | null
           partner_id: string
           payment_confirmed_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
           people_count?: number
           phone?: string | null
           public_token?: string
+          remaining_amount?: number | null
           reservation_date: string
           reservation_type_id?: string | null
           status?: string
@@ -2429,6 +2522,7 @@ export type Database = {
           closes_at?: string | null
           code?: string | null
           created_at?: string
+          deposit_amount?: number
           email?: string | null
           event_id?: string | null
           expires_at?: string | null
@@ -2437,9 +2531,12 @@ export type Database = {
           notes?: string | null
           partner_id?: string
           payment_confirmed_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
           people_count?: number
           phone?: string | null
           public_token?: string
+          remaining_amount?: number | null
           reservation_date?: string
           reservation_type_id?: string | null
           status?: string
@@ -4300,6 +4397,29 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_waitlist_entry: {
+        Args: { _entry_id: string }
+        Returns: {
+          created_at: string
+          expires_at: string | null
+          guests_count: number
+          id: string
+          name: string
+          notes: string | null
+          notified_at: string | null
+          partner_id: string
+          phone: string
+          reservation_type_id: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservation_waitlist"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       check_in_partner_reservation: {
         Args: { _reservation_id: string }
         Returns: Json
@@ -4399,6 +4519,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          deposit_amount: number
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -4407,9 +4528,12 @@ export type Database = {
           notes: string | null
           partner_id: string
           payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
           people_count: number
           phone: string | null
           public_token: string
+          remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
           status: string
@@ -4510,6 +4634,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          deposit_amount: number
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -4518,9 +4643,12 @@ export type Database = {
           notes: string | null
           partner_id: string
           payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
           people_count: number
           phone: string | null
           public_token: string
+          remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
           status: string
@@ -4635,7 +4763,31 @@ export type Database = {
         }
       }
       expire_due_partner_reservations: { Args: never; Returns: number }
+      expire_due_waitlist_entries: { Args: never; Returns: number }
       expire_stale_ride_requests: { Args: never; Returns: number }
+      get_partner_reservation_waitlist: {
+        Args: { _partner_id: string }
+        Returns: {
+          created_at: string
+          expires_at: string | null
+          guests_count: number
+          id: string
+          name: string
+          notes: string | null
+          notified_at: string | null
+          partner_id: string
+          phone: string
+          reservation_type_id: string
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservation_waitlist"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_public_reservation: { Args: { p_token: string }; Returns: Json }
       get_public_vip_list: { Args: { p_public_slug: string }; Returns: Json }
       get_public_vip_list_by_partner: {
@@ -4739,6 +4891,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      notify_waitlist_entry: { Args: { _entry_id: string }; Returns: Json }
       open_partner_vip_list: {
         Args: { _list_id: string }
         Returns: {
@@ -4830,6 +4983,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          deposit_amount: number
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -4838,9 +4992,12 @@ export type Database = {
           notes: string | null
           partner_id: string
           payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
           people_count: number
           phone: string | null
           public_token: string
+          remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
           status: string
@@ -4912,6 +5069,17 @@ export type Database = {
           p_promoter_slug?: string
           p_public_slug: string
           p_whatsapp_consent?: boolean
+        }
+        Returns: Json
+      }
+      submit_reservation_waitlist: {
+        Args: {
+          p_guests: number
+          p_name: string
+          p_notes: string
+          p_partner_slug: string
+          p_phone: string
+          p_type_id: string
         }
         Returns: Json
       }
@@ -4990,6 +5158,7 @@ export type Database = {
           closes_at: string | null
           code: string | null
           created_at: string
+          deposit_amount: number
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -4998,9 +5167,12 @@ export type Database = {
           notes: string | null
           partner_id: string
           payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
           people_count: number
           phone: string | null
           public_token: string
+          remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
           status: string
@@ -5160,10 +5332,16 @@ export type Database = {
           auto_confirm: boolean
           confirmation_timeout_minutes: number
           created_at: string
+          deposit_enabled: boolean
+          deposit_type: string
+          deposit_value: number
           id: string
           max_people_per_reservation: number
           max_reservations_per_day: number
           partner_id: string
+          payment_instructions: string | null
+          pix_key: string | null
+          pix_receiver_name: string | null
           reservations_enabled: boolean
           reservations_end_at: string | null
           reservations_start_at: string | null
@@ -5172,6 +5350,45 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "partner_reservation_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      waive_partner_reservation_deposit: {
+        Args: { _reservation_id: string }
+        Returns: {
+          auto_close_enabled: boolean
+          checked_in_at: string | null
+          checked_in_by: string | null
+          close_reason: string | null
+          closes_at: string | null
+          code: string | null
+          created_at: string
+          deposit_amount: number
+          email: string | null
+          event_id: string | null
+          expires_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
+          people_count: number
+          phone: string | null
+          public_token: string
+          remaining_amount: number | null
+          reservation_date: string
+          reservation_type_id: string | null
+          status: string
+          total_price: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservations"
           isOneToOne: true
           isSetofReturn: false
         }
