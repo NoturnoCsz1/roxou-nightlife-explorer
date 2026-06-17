@@ -254,12 +254,17 @@ const PartnerReservationsPage = () => {
     );
   };
 
-  const publicUrl =
-    selectedPartner?.slug && typeof window !== "undefined"
-      ? `${window.location.origin}/${selectedPartner.slug}/reservas`
-      : selectedPartner?.slug
-        ? `/${selectedPartner.slug}/reservas`
-        : "";
+  const publicUrl = (() => {
+    const slug = selectedPartner?.slug;
+    if (!slug) return "";
+    if (typeof window === "undefined") return `/${slug}/reservas`;
+    const host = window.location.hostname;
+    // Prefer the canonical public domain (roxou.com.br) over the partner subdomain
+    if (host === "parceiro.roxou.com.br") {
+      return `https://roxou.com.br/${slug}/reservas`;
+    }
+    return `${window.location.origin}/${slug}/reservas`;
+  })();
 
   const handleCopyLink = async () => {
     if (!publicUrl) return;
