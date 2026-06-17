@@ -412,6 +412,11 @@ const PartnerReservationsPage = () => {
             else setTab(b === "released" ? "ended" : "active");
           }}
         />
+        <PartnerNotificationsCenter
+          rows={rows}
+          waitlist={waitlist}
+          onOpenSection={(s) => setOpenSection(s)}
+        />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
         <ReservationTimeline reservations={rows} types={types} />
       </div>
