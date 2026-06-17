@@ -43,11 +43,19 @@ const CustomerCallback = () => {
         setMessage("Salvando comprovante na sua conta…");
         try {
           const res = await linkRecordToCustomer(kind, token);
-          toast({
-            title: res.linked
-              ? "Comprovante salvo na sua conta."
-              : "Comprovante já estava salvo.",
-          });
+          const messages: Record<string, { title: string; variant?: "destructive" }> = {
+            linked: { title: "Comprovante salvo na sua conta." },
+            already_linked_to_you: { title: "Este comprovante já está salvo na sua conta." },
+            already_linked: { title: "Este comprovante já foi salvo em outra conta.", variant: "destructive" },
+            contact_mismatch: {
+              title:
+                "Por segurança, este comprovante só pode ser salvo usando o mesmo e-mail ou telefone informado na reserva.",
+              variant: "destructive",
+            },
+            not_found: { title: "Comprovante não encontrado.", variant: "destructive" },
+          };
+          const m = messages[res.reason] ?? { title: "Não foi possível salvar este comprovante agora.", variant: "destructive" as const };
+          toast(m);
         } catch (err) {
           toast({
             title: "Conta autenticada, mas não foi possível salvar.",
