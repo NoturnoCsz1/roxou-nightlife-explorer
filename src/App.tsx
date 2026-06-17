@@ -276,7 +276,7 @@ const App = () => (
           />
           <Route
             path="/cliente/lista-vip"
-            element={L(<CustomerReservations />)}
+            element={<Navigate to="/cliente/minhas-reservas?tab=vip" replace />}
           />
           <Route path="/cliente/minha-conta" element={L(<CustomerAccount />)} />
           <Route
