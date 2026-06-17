@@ -72,9 +72,15 @@ export function parseQrPayload(raw: string): ParsedQrPayload {
     const id = params.get("id");
 
     // /checkin/<token>
-    const pathMatch = url.pathname.match(/\/checkin\/([^/?#]+)/i);
-    if (pathMatch?.[1] && !typeParam) {
-      return { type: "vip", token: pathMatch[1], id: null, raw: value };
+    const checkinMatch = url.pathname.match(/\/checkin\/([^/?#]+)/i);
+    if (checkinMatch?.[1] && !typeParam) {
+      return { type: "vip", token: checkinMatch[1], id: null, raw: value };
+    }
+
+    // /vip/<slug>/sucesso/<token> ou /<partner>/vip/sucesso/<token>
+    const sucessoMatch = url.pathname.match(/\/sucesso\/([^/?#]+)/i);
+    if (sucessoMatch?.[1] && !typeParam) {
+      return { type: "vip", token: sucessoMatch[1], id: null, raw: value };
     }
 
     if (typeParam === "vip" || typeParam === "reservation" || typeParam === "invite") {
@@ -300,32 +306,44 @@ async function validateReservation(
   };
 }
 
+const DEV = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
+
 export async function validateQrCode(
   raw: string,
   partnerId: string | null,
 ): Promise<ValidationResult & { parsed: ParsedQrPayload }> {
+  if (DEV) console.log("[VALIDATOR] raw scan:", raw);
   const parsed = parseQrPayload(raw);
-  if (parsed.type === "vip") {
-    const r = await validateVip(parsed);
-    return { ...r, parsed };
-  }
-  if (parsed.type === "reservation") {
-    const r = await validateReservation(parsed, partnerId);
-    return { ...r, parsed };
-  }
-  if (parsed.type === "invite") {
-    return {
-      parsed,
-      outcome: "unsupported",
-      type: "invite",
-      message:
-        "Convites ainda não estão disponíveis. Em breve.",
+  if (DEV) console.log("[VALIDATOR] parsed payload:", parsed);
+
+  let r: ValidationResult;
+  try {
+    if (parsed.type === "vip") {
+      r = await validateVip(parsed);
+    } else if (parsed.type === "reservation") {
+      r = await validateReservation(parsed, partnerId);
+    } else if (parsed.type === "invite") {
+      r = {
+        outcome: "unsupported",
+        type: "invite",
+        message: "Convites ainda não estão disponíveis. Em breve.",
+      };
+    } else {
+      r = {
+        outcome: "not_found",
+        type: "unknown",
+        message: "QR Code não reconhecido.",
+      };
+    }
+  } catch (err) {
+    if (DEV) console.error("[VALIDATOR] rpc error:", err);
+    r = {
+      outcome: "error",
+      type: parsed.type,
+      message: err instanceof Error ? err.message : "Erro inesperado.",
     };
   }
-  return {
-    parsed,
-    outcome: "not_found",
-    type: "unknown",
-    message: "QR Code não reconhecido.",
-  };
+
+  if (DEV) console.log("[VALIDATOR] validation result:", r);
+  return { ...r, parsed };
 }
