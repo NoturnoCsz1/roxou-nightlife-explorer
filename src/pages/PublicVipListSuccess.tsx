@@ -257,18 +257,12 @@ const PublicVipListSuccessPage = () => {
         </div>
 
         {/* ====== Ações ====== */}
-        <div className="grid grid-cols-2 gap-2 w-full">
-          <Button variant="secondary" onClick={downloadQr} className="w-full min-w-0 truncate">
-            Baixar QR PNG
-          </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
           <Button variant="secondary" onClick={downloadCard} className="w-full min-w-0 truncate">
-            Salvar comprovante
+            Salvar comprovante (PNG)
           </Button>
-          <Button onClick={shareWhatsapp} className="w-full min-w-0 truncate">
-            WhatsApp
-          </Button>
-          <Button variant="outline" onClick={copyCode} className="w-full min-w-0 truncate">
-            Copiar código
+          <Button onClick={shareCard} className="w-full min-w-0 truncate">
+            Compartilhar comprovante
           </Button>
         </div>
 
