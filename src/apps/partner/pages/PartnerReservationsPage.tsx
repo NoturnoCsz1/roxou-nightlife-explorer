@@ -11,6 +11,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Copy, ExternalLink, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import {
@@ -41,6 +49,8 @@ import {
   closeDuePartnerReservations,
   expireDuePartnerReservations,
 } from "../services/partnerMaintenance";
+
+const ACCORDION_KEY = "partner_reservas_accordion_v1";
 
 type Bucket = "active" | "pending" | "ended" | "archived";
 
