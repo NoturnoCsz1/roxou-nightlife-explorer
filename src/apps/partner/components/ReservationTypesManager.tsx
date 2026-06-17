@@ -415,30 +415,66 @@ export function ReservationTypesManager({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+    <Card className="rounded-2xl">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-base">Tipos de reserva</CardTitle>
         {canEdit && !draft && (
-          <Button size="sm" onClick={() => setDraft(blankDraft(tab))}>
-            <Plus className="mr-1 h-3 w-3" />
-            Novo {KIND_LABELS[tab].slice(0, -1).toLowerCase()}
+          <Button
+            size="sm"
+            onClick={() => setDraft(blankDraft(tab))}
+            className="min-h-[40px] shrink-0"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline">
+              Novo {KIND_LABELS[tab].slice(0, -1).toLowerCase()}
+            </span>
+            <span className="sm:hidden">Novo</span>
           </Button>
         )}
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 min-w-0">
         {renderEditor()}
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as PartnerReservationTypeKind)}
         >
-          <TabsList>
-            <TabsTrigger value="table">Mesas ({byKind.table.length})</TabsTrigger>
-            <TabsTrigger value="bistro">Bistrôs ({byKind.bistro.length})</TabsTrigger>
-            <TabsTrigger value="box">Camarotes ({byKind.box.length})</TabsTrigger>
-          </TabsList>
-          <TabsContent value="table" className="mt-3">{renderList("table")}</TabsContent>
-          <TabsContent value="bistro" className="mt-3">{renderList("bistro")}</TabsContent>
-          <TabsContent value="box" className="mt-3">{renderList("box")}</TabsContent>
+          <div className="-mx-1 overflow-x-auto">
+            <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
+              <TabsTrigger value="table" className="shrink-0 whitespace-nowrap">
+                <span className="sm:hidden">
+                  {KIND_LABELS_MOBILE.table} ({byKind.table.length})
+                </span>
+                <span className="hidden sm:inline">
+                  Mesas ({byKind.table.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="bistro" className="shrink-0 whitespace-nowrap">
+                <span className="sm:hidden">
+                  {KIND_LABELS_MOBILE.bistro} ({byKind.bistro.length})
+                </span>
+                <span className="hidden sm:inline">
+                  Bistrôs ({byKind.bistro.length})
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="box" className="shrink-0 whitespace-nowrap">
+                <span className="sm:hidden">
+                  {KIND_LABELS_MOBILE.box} ({byKind.box.length})
+                </span>
+                <span className="hidden sm:inline">
+                  Camarotes ({byKind.box.length})
+                </span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="table" className="mt-3">
+            {renderList("table")}
+          </TabsContent>
+          <TabsContent value="bistro" className="mt-3">
+            {renderList("bistro")}
+          </TabsContent>
+          <TabsContent value="box" className="mt-3">
+            {renderList("box")}
+          </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
