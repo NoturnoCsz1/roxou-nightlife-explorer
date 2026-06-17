@@ -1,9 +1,11 @@
 /**
- * PartnerReservationsPage — FIX 10F
+ * PartnerReservationsPage — Reservas Pro
  *
- * Reservas do parceiro com abas operacionais (Ativas / Fechadas /
- * Encerradas / Arquivadas) e fechamento automático real chamando
- * `close_due_partner_reservations` antes do fetch principal.
+ * Reservas do parceiro com:
+ * - Buckets operacionais (Ativas / Pendentes / Encerradas / Arquivadas)
+ * - Tipos de reserva (mesas/bistrôs/camarotes)
+ * - Auto-expiração de pendentes via `expire_due_partner_reservations`
+ * - Confirmação de pagamento manual
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -17,26 +19,33 @@ import {
   ReservationEmptyState,
   ReservationSettingsForm,
   ReservationTable,
+  ReservationTypesManager,
 } from "../components";
 import {
   cancelReservation,
   completeReservation,
   computeReservationStats,
   confirmReservation,
+  confirmReservationPayment,
   createReservation,
   getReservationSettings,
   listReservations,
+  noShowReservation,
   updateReservationSettings,
   type PartnerReservationRow,
   type PartnerReservationSettings,
 } from "../services/partnerReservations";
-import { closeDuePartnerReservations } from "../services/partnerMaintenance";
+import {
+  closeDuePartnerReservations,
+  expireDuePartnerReservations,
+} from "../services/partnerMaintenance";
 
-type Bucket = "active" | "closed" | "ended" | "archived";
+type Bucket = "active" | "pending" | "ended" | "archived";
 
 const bucketOf = (r: PartnerReservationRow): Bucket => {
-  if (r.status === "no_show") return "archived";
-  if (r.status === "cancelled") return "closed";
+  if (r.status === "pending_payment" || r.status === "pending") return "pending";
+  if (r.status === "no_show" || r.status === "expired") return "archived";
+  if (r.status === "cancelled") return "archived";
   if (r.status === "completed") return "ended";
   const past = new Date(r.reservation_date).getTime() < Date.now();
   if (past) return "ended";
@@ -65,7 +74,10 @@ const PartnerReservationsPage = () => {
     if (!partnerId) return;
     setLoading(true);
     try {
-      await closeDuePartnerReservations();
+      await Promise.all([
+        closeDuePartnerReservations(),
+        expireDuePartnerReservations(),
+      ]);
       const [list, sett] = await Promise.all([
         listReservations(partnerId, { status: "all" }),
         getReservationSettings(partnerId),
@@ -84,6 +96,13 @@ const PartnerReservationsPage = () => {
     void load();
   }, [load]);
 
+  // Refresh a cada 30s para atualizar contadores e expirados
+  useEffect(() => {
+    if (!partnerId) return;
+    const iv = setInterval(() => void load(), 30000);
+    return () => clearInterval(iv);
+  }, [partnerId, load]);
+
   const stats = useMemo(
     () =>
       computeReservationStats(
@@ -96,7 +115,7 @@ const PartnerReservationsPage = () => {
   const buckets = useMemo(() => {
     const acc: Record<Bucket, PartnerReservationRow[]> = {
       active: [],
-      closed: [],
+      pending: [],
       ended: [],
       archived: [],
     };
@@ -104,35 +123,26 @@ const PartnerReservationsPage = () => {
     return acc;
   }, [rows]);
 
-  const handleConfirm = async (r: PartnerReservationRow) => {
+  const wrap = (fn: () => Promise<unknown>, okMsg: string) => async () => {
     try {
-      await confirmReservation(r.id);
-      toast({ title: "Reserva confirmada" });
+      await fn();
+      toast({ title: okMsg });
       void load();
     } catch (err) {
       toast({ title: "Erro", description: (err as Error).message });
     }
   };
 
-  const handleCancel = async (r: PartnerReservationRow) => {
-    try {
-      await cancelReservation(r.id);
-      toast({ title: "Reserva cancelada" });
-      void load();
-    } catch (err) {
-      toast({ title: "Erro", description: (err as Error).message });
-    }
-  };
-
-  const handleComplete = async (r: PartnerReservationRow) => {
-    try {
-      await completeReservation(r.id);
-      toast({ title: "Reserva concluída" });
-      void load();
-    } catch (err) {
-      toast({ title: "Erro", description: (err as Error).message });
-    }
-  };
+  const handleConfirm = (r: PartnerReservationRow) =>
+    wrap(() => confirmReservation(r.id), "Reserva confirmada")();
+  const handleConfirmPayment = (r: PartnerReservationRow) =>
+    wrap(() => confirmReservationPayment(r.id), "Pagamento confirmado")();
+  const handleCancel = (r: PartnerReservationRow) =>
+    wrap(() => cancelReservation(r.id), "Reserva cancelada")();
+  const handleComplete = (r: PartnerReservationRow) =>
+    wrap(() => completeReservation(r.id), "Reserva concluída")();
+  const handleNoShow = (r: PartnerReservationRow) =>
+    wrap(() => noShowReservation(r.id), "Marcado como no-show")();
 
   const handleQuickAdd = async () => {
     if (!partnerId) return;
@@ -186,38 +196,16 @@ const PartnerReservationsPage = () => {
         </p>
       );
     }
-    const compact = key !== "active";
-    if (compact) {
-      return (
-        <div className="space-y-2 opacity-80">
-          {list.map((r) => (
-            <div
-              key={r.id}
-              className="min-w-0 flex items-center gap-3 rounded-md border bg-card/40 px-3 py-2"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{r.name}</p>
-                <p className="truncate text-[11px] text-muted-foreground">
-                  {new Date(r.reservation_date).toLocaleString("pt-BR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })}{" "}
-                  · {r.people_count} convidado(s) · {r.status}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
     return (
       <>
         <div className="hidden md:block">
           <ReservationTable
             reservations={list}
             onConfirm={handleConfirm}
+            onConfirmPayment={handleConfirmPayment}
             onCancel={handleCancel}
             onComplete={handleComplete}
+            onNoShow={handleNoShow}
             canCancel={canCancel}
             canConfirm={canConfirm}
             canComplete={canComplete}
@@ -229,8 +217,10 @@ const PartnerReservationsPage = () => {
               key={r.id}
               reservation={r}
               onConfirm={handleConfirm}
+              onConfirmPayment={handleConfirmPayment}
               onCancel={handleCancel}
               onComplete={handleComplete}
+              onNoShow={handleNoShow}
               canCancel={canCancel}
               canConfirm={canConfirm}
               canComplete={canComplete}
@@ -242,7 +232,7 @@ const PartnerReservationsPage = () => {
   };
 
   return (
-    <main className="min-h-screen w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6 overflow-x-hidden">
+    <main className="min-h-screen w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6 pb-24 overflow-x-hidden">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Reservas</h1>
@@ -270,8 +260,8 @@ const PartnerReservationsPage = () => {
             <TabsTrigger value="active">
               Ativas {buckets.active.length ? `(${buckets.active.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="closed">
-              Fechadas {buckets.closed.length ? `(${buckets.closed.length})` : ""}
+            <TabsTrigger value="pending">
+              Pendentes {buckets.pending.length ? `(${buckets.pending.length})` : ""}
             </TabsTrigger>
             <TabsTrigger value="ended">
               Encerradas {buckets.ended.length ? `(${buckets.ended.length})` : ""}
@@ -281,11 +271,13 @@ const PartnerReservationsPage = () => {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="active" className="mt-4">{renderBucket("active")}</TabsContent>
-          <TabsContent value="closed" className="mt-4">{renderBucket("closed")}</TabsContent>
+          <TabsContent value="pending" className="mt-4">{renderBucket("pending")}</TabsContent>
           <TabsContent value="ended" className="mt-4">{renderBucket("ended")}</TabsContent>
           <TabsContent value="archived" className="mt-4">{renderBucket("archived")}</TabsContent>
         </Tabs>
       )}
+
+      <ReservationTypesManager partnerId={partnerId} canEdit={canEditSettings} />
 
       {canEditSettings && (
         <ReservationSettingsForm
@@ -300,6 +292,20 @@ const PartnerReservationsPage = () => {
             }
           }}
         />
+      )}
+
+      {settings?.reservations_enabled && selectedPartner?.slug && (
+        <p className="text-center text-xs text-muted-foreground">
+          Link público para clientes:{" "}
+          <a
+            href={`/${selectedPartner.slug}/reservas`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline"
+          >
+            /{selectedPartner.slug}/reservas
+          </a>
+        </p>
       )}
     </main>
   );
