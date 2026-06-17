@@ -213,52 +213,75 @@ const PublicReservationPage = () => {
                       const active = selectedType === t.id;
                       const soldOut = t.available <= 0;
                       return (
-                        <button
+                        <div
                           key={t.id}
-                          type="button"
-                          disabled={soldOut}
-                          onClick={() => {
-                            if (soldOut) return;
-                            setSelectedType(t.id);
-                            if (kind === "box") setGuests(t.seats);
-                          }}
-                          className={`text-left rounded-lg border px-3 py-3 transition ${
+                          className={`rounded-lg border px-3 py-3 transition ${
                             soldOut
-                              ? "border-border/40 bg-muted/30 opacity-60 cursor-not-allowed"
+                              ? "border-border/40 bg-muted/30"
                               : active
                               ? "border-primary bg-primary/10"
                               : "border-border/60 bg-card/40"
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold">
-                                {t.name}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                {t.seats} {kind === "box" ? "pess." : "lug."}
-                                {t.minimum_consumption
-                                  ? ` · consumo mín. R$ ${Number(t.minimum_consumption).toFixed(2)}`
-                                  : ""}
-                                {!soldOut && t.available > 0
-                                  ? ` · ${t.available} de ${t.quantity} disponível${t.available === 1 ? "" : "s"}`
-                                  : ""}
-                              </p>
+                          <button
+                            type="button"
+                            disabled={soldOut}
+                            onClick={() => {
+                              if (soldOut) return;
+                              setSelectedType(t.id);
+                              if (kind === "box") setGuests(t.seats);
+                            }}
+                            className={`block w-full text-left ${
+                              soldOut ? "cursor-not-allowed opacity-70" : ""
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold">
+                                  {t.name}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                  {t.seats} {kind === "box" ? "pess." : "lug."}
+                                  {t.minimum_consumption
+                                    ? ` · consumo mín. R$ ${Number(t.minimum_consumption).toFixed(2)}`
+                                    : ""}
+                                  {!soldOut && t.available > 0
+                                    ? ` · ${t.available} de ${t.quantity} disponível${t.available === 1 ? "" : "s"}`
+                                    : ""}
+                                </p>
+                              </div>
+                              {soldOut ? (
+                                <Badge variant="destructive">Esgotado</Badge>
+                              ) : (
+                                <Badge variant="outline">
+                                  R$ {Number(t.price).toFixed(2)}
+                                </Badge>
+                              )}
                             </div>
-                            {soldOut ? (
-                              <Badge variant="destructive">Esgotado</Badge>
-                            ) : (
-                              <Badge variant="outline">
-                                R$ {Number(t.price).toFixed(2)}
-                              </Badge>
-                            )}
-                          </div>
-                          {t.description ? (
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {t.description}
-                            </p>
-                          ) : null}
-                        </button>
+                            {t.description ? (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {t.description}
+                              </p>
+                            ) : null}
+                          </button>
+                          {soldOut && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="mt-2 w-full"
+                              onClick={() => {
+                                setWaitlistType(t);
+                                setWaitlistGuests(
+                                  kind === "box" ? t.seats : 2,
+                                );
+                                setWaitlistSent(false);
+                              }}
+                            >
+                              Entrar na lista de espera
+                            </Button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
