@@ -76,6 +76,62 @@ const typeLabel: Record<ValidatorItemType, string> = {
   unknown: "Desconhecido",
 };
 
+// ============ Feedback sonoro + vibração ============
+let audioCtx: AudioContext | null = null;
+function getAudioCtx(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const Ctor =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!Ctor) return null;
+    if (!audioCtx) audioCtx = new Ctor();
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+function beep(kind: "success" | "warn" | "error") {
+  try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    if (ctx.state === "suspended") void ctx.resume();
+    const playTone = (freq: number, start: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + start);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + start + 0.01);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur + 0.02);
+    };
+    if (kind === "success") {
+      playTone(880, 0, 0.12);
+      playTone(1320, 0.1, 0.14);
+    } else if (kind === "warn") {
+      playTone(520, 0, 0.18);
+    } else {
+      playTone(200, 0, 0.18);
+      playTone(160, 0.18, 0.22);
+    }
+  } catch {
+    /* noop */
+  }
+}
+function vibrate(pattern: number | number[]) {
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(pattern);
+    }
+  } catch {
+    /* noop */
+  }
+}
+
 const PartnerValidatorPage = () => {
   const { selectedPartner } = usePartnerAuth();
   const partnerId = selectedPartner?.id ?? null;
@@ -84,6 +140,7 @@ const PartnerValidatorPage = () => {
   const scannerRef = useRef<QrScanner | null>(null);
   const lastScanRef = useRef<string>("");
   const lastScanAtRef = useRef<number>(0);
+  const processingRef = useRef<boolean>(false);
 
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -92,53 +149,110 @@ const PartnerValidatorPage = () => {
   const [result, setResult] = useState<LastResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  const pushHistory = useCallback(
-    (r: LastResult) => {
-      setHistory((prev) =>
-        [
-          {
-            id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            at: Date.now(),
-            outcome: r.outcome,
-            type: r.type,
-            ref: r.ref ?? "—",
-            message: r.message,
-          },
-          ...prev,
-        ].slice(0, 20),
+  const pushHistory = useCallback((r: LastResult) => {
+    setHistory((prev) => {
+      const ref = r.ref ?? "—";
+      const now = Date.now();
+      const idx = prev.findIndex(
+        (h) => h.ref === ref && h.type === r.type && now - h.at < 10_000,
       );
-    },
-    [],
-  );
+      const item: HistoryItem = {
+        id: `${now}-${Math.random().toString(36).slice(2, 7)}`,
+        at: now,
+        outcome: r.outcome,
+        type: r.type,
+        ref,
+        message: r.message,
+      };
+      if (idx >= 0) {
+        const next = prev.slice();
+        next[idx] = { ...item, id: prev[idx].id };
+        return next.slice(0, 20);
+      }
+      return [item, ...prev].slice(0, 20);
+    });
+  }, []);
+
+  const playFeedback = useCallback((outcome: ValidationOutcome) => {
+    if (outcome === "valid") {
+      beep("success");
+      vibrate(120);
+    } else if (outcome === "already_used") {
+      beep("warn");
+      vibrate([80, 80, 80]);
+    } else if (outcome === "unsupported") {
+      /* silencioso */
+    } else {
+      beep("error");
+      vibrate([80, 80, 80]);
+    }
+  }, []);
 
   const handleValidate = useCallback(
     async (raw: string) => {
-      if (!raw.trim() || busy) return;
+      if (!raw.trim()) return;
+      if (processingRef.current) return;
+      processingRef.current = true;
       setBusy(true);
       try {
         const r = await validateQrCode(raw, partnerId);
+        // Auto check-in se válido
+        if (r.outcome === "valid" && typeof r.confirm === "function") {
+          try {
+            const confirmed = await r.confirm();
+            const final: LastResult = { ...confirmed, parsed: r.parsed };
+            setResult(final);
+            pushHistory(final);
+            playFeedback(final.outcome);
+            return;
+          } catch (err) {
+            const errRes: LastResult = {
+              parsed: r.parsed,
+              outcome: "error",
+              type: r.type,
+              message:
+                err instanceof Error ? err.message : "Falha no check-in.",
+            };
+            setResult(errRes);
+            pushHistory(errRes);
+            playFeedback("error");
+            return;
+          }
+        }
         setResult(r);
         pushHistory(r);
+        playFeedback(r.outcome);
       } catch (err) {
-        setResult({
+        const errRes: LastResult = {
           parsed: { type: "unknown", token: null, id: null, raw },
           outcome: "error",
           type: "unknown",
           message: err instanceof Error ? err.message : "Erro inesperado.",
-        });
+        };
+        setResult(errRes);
+        pushHistory(errRes);
+        playFeedback("error");
       } finally {
         setBusy(false);
+        setTimeout(() => {
+          processingRef.current = false;
+        }, 1500);
       }
     },
-    [busy, partnerId, pushHistory],
+    [partnerId, pushHistory, playFeedback],
   );
 
   // Start camera
   const startCamera = useCallback(async () => {
     if (!videoRef.current || scannerRef.current) return;
     setCameraError(null);
+    try {
+      const ctx = getAudioCtx();
+      if (ctx?.state === "suspended") void ctx.resume();
+    } catch {
+      /* noop */
+    }
 
-    // HTTPS obrigatório (exceto localhost)
     if (
       typeof window !== "undefined" &&
       window.location.protocol !== "https:" &&
@@ -151,7 +265,6 @@ const PartnerValidatorPage = () => {
       return;
     }
 
-    // API getUserMedia disponível?
     if (
       typeof navigator === "undefined" ||
       !navigator.mediaDevices?.getUserMedia
@@ -176,8 +289,8 @@ const PartnerValidatorPage = () => {
         (res) => {
           const data = res.data.trim();
           const now = Date.now();
-          // Debounce mesmo QR
-          if (data === lastScanRef.current && now - lastScanAtRef.current < 2500)
+          if (processingRef.current) return;
+          if (data === lastScanRef.current && now - lastScanAtRef.current < 3000)
             return;
           lastScanRef.current = data;
           lastScanAtRef.current = now;
@@ -214,11 +327,9 @@ const PartnerValidatorPage = () => {
         friendly =
           "Permissão da câmera negada. Habilite nas configurações do navegador ou use a validação manual.";
       } else if (name === "NotFoundError" || /no camera/i.test(msg)) {
-        friendly =
-          "Nenhuma câmera encontrada. Use a validação manual.";
+        friendly = "Nenhuma câmera encontrada. Use a validação manual.";
       } else if (name === "NotReadableError") {
-        friendly =
-          "Câmera em uso por outro app. Feche-o e tente novamente.";
+        friendly = "Câmera em uso por outro app. Feche-o e tente novamente.";
       } else if (inIframe) {
         friendly =
           "A câmera pode estar bloqueada dentro do Preview da Lovable. Abra /partner/validator em uma aba normal do celular ou use a validação manual.";
@@ -250,17 +361,12 @@ const PartnerValidatorPage = () => {
     };
   }, []);
 
-  const confirmCheckIn = async () => {
-    if (!result?.confirm) return;
-    setBusy(true);
-    try {
-      const r = await result.confirm();
-      setResult({ ...r, parsed: result.parsed });
-      pushHistory(r as LastResult);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const scanNext = useCallback(() => {
+    lastScanRef.current = "";
+    lastScanAtRef.current = 0;
+    setResult(null);
+    setManual("");
+  }, []);
 
   const style = result ? outcomeStyle[result.outcome] : null;
 
@@ -363,7 +469,15 @@ const PartnerValidatorPage = () => {
             className={`border-2 ${style.ring} p-4 space-y-3 break-words`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Badge className={style.bg}>{style.label}</Badge>
+              <Badge className={`${style.bg} text-sm font-bold uppercase tracking-wide`}>
+                {result.outcome === "valid"
+                  ? result.type === "reservation"
+                    ? "Reserva validada"
+                    : "Check-in realizado"
+                  : result.outcome === "already_used"
+                    ? "Já utilizado"
+                    : style.label}
+              </Badge>
               <Badge variant="outline" className="text-[10px]">
                 {typeLabel[result.type]}
               </Badge>
@@ -373,6 +487,11 @@ const PartnerValidatorPage = () => {
             ) : null}
             <p className="text-sm text-muted-foreground break-words">
               {result.message}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {new Date().toLocaleTimeString("pt-BR", {
+                timeZone: "America/Sao_Paulo",
+              })}
             </p>
 
             {result.vipEntry?.promoter_name_snapshot ? (
@@ -389,15 +508,14 @@ const PartnerValidatorPage = () => {
               </p>
             ) : null}
 
-            {result.outcome === "valid" && result.confirm ? (
-              <Button
-                onClick={() => void confirmCheckIn()}
-                disabled={busy}
-                className="w-full h-12 text-base"
-              >
-                {busy ? "Confirmando..." : "Confirmar check-in"}
-              </Button>
-            ) : null}
+            <Button
+              onClick={scanNext}
+              disabled={busy}
+              variant="secondary"
+              className="w-full h-11"
+            >
+              Escanear próximo
+            </Button>
           </Card>
         ) : null}
 
