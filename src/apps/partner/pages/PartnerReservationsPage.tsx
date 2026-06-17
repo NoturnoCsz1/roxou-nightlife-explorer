@@ -222,6 +222,7 @@ const PartnerReservationsPage = () => {
               reservation={r}
               onConfirm={handleConfirm}
               onConfirmPayment={handleConfirmPayment}
+              onWaiveDeposit={handleWaiveDeposit}
               onCancel={handleCancel}
               onComplete={handleComplete}
               onNoShow={handleNoShow}
