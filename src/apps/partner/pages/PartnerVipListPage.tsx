@@ -8,7 +8,7 @@
  * para garantir o fechamento automático real.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   listVipLists,
   createVipList,
