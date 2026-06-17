@@ -127,9 +127,14 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
 
   const handleCopy = async (entry: ReservationWaitlistEntry) => {
     const type = typeMap.get(entry.reservation_type_id);
+    const today = (() => {
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    })();
     const link =
       typeof window !== "undefined" && partnerSlug
-        ? `${window.location.origin}/${partnerSlug}/reservas?type=${entry.reservation_type_id}`
+        ? `${window.location.origin}/${partnerSlug}/reservas?type=${entry.reservation_type_id}&date=${today}&waitlist=${entry.id}`
         : "";
     const msg =
       `Olá, ${entry.name}! Uma vaga foi liberada para ${type?.name ?? "sua reserva"} em ${partnerName}.\n\n` +
@@ -141,6 +146,7 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
       toast({ title: "Não foi possível copiar" });
     }
   };
+
 
   const handleCancel = async (entry: ReservationWaitlistEntry) => {
     if (!window.confirm(`Remover ${entry.name} da lista de espera?`)) return;
