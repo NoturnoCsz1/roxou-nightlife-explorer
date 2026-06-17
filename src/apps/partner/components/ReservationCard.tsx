@@ -13,6 +13,14 @@ const formatRemaining = (ms: number) => {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
+const formatPhoneBR = (raw: string | null | undefined): string => {
+  if (!raw) return "";
+  const d = raw.replace(/\D/g, "").replace(/^55/, "");
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return raw;
+};
+
 function Countdown({ expiresAt }: { expiresAt: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -81,18 +89,20 @@ export function ReservationCard({
           </div>
           <ReservationStatusBadge status={reservation.status} />
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <Users className="h-3 w-3" /> {reservation.people_count}
-          </span>
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
           {reservation.phone && (
-            <span className="inline-flex items-center gap-1">
-              <Phone className="h-3 w-3" /> {reservation.phone}
+            <span className="inline-flex items-center gap-1 break-all">
+              <Phone className="h-3 w-3 shrink-0" /> {formatPhoneBR(reservation.phone)}
             </span>
           )}
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-3 w-3 shrink-0" />
+            {reservation.people_count}{" "}
+            {reservation.people_count === 1 ? "pessoa" : "pessoas"}
+          </span>
           {reservation.email && (
-            <span className="inline-flex items-center gap-1">
-              <Mail className="h-3 w-3" /> {reservation.email}
+            <span className="inline-flex items-center gap-1 break-all">
+              <Mail className="h-3 w-3 shrink-0" /> {reservation.email}
             </span>
           )}
           {isPendingPayment && reservation.expires_at && (
@@ -147,9 +157,9 @@ export function ReservationCard({
             </div>
           </div>
         ) : null}
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-3">
           {onView && (
-            <Button size="sm" variant="outline" onClick={() => onView(reservation)}>
+            <Button size="sm" variant="outline" onClick={() => onView(reservation)} className="min-h-[44px] w-full">
               Ver
             </Button>
           )}
@@ -157,45 +167,38 @@ export function ReservationCard({
             <Button
               size="sm"
               variant="outline"
+              className="min-h-[44px] w-full"
               onClick={() => {
                 const phone = (reservation.phone ?? "").replace(/[^0-9]/g, "");
                 if (!phone) return;
-                window.open(
-                  `https://wa.me/55${phone}`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
+                window.open(`https://wa.me/55${phone}`, "_blank", "noopener,noreferrer");
               }}
             >
               <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp
             </Button>
           )}
           {canConfirm && isPendingPayment && onConfirmPayment && (
-            <Button size="sm" onClick={() => onConfirmPayment(reservation)}>
+            <Button size="sm" onClick={() => onConfirmPayment(reservation)} className="min-h-[44px] w-full">
               Confirmar pagamento
             </Button>
           )}
           {canConfirm && isPendingPayment && onWaiveDeposit && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onWaiveDeposit(reservation)}
-            >
+            <Button size="sm" variant="secondary" onClick={() => onWaiveDeposit(reservation)} className="min-h-[44px] w-full">
               Dispensar sinal
             </Button>
           )}
           {canConfirm && reservation.status === "pending" && onConfirm && (
-            <Button size="sm" onClick={() => onConfirm(reservation)}>
+            <Button size="sm" onClick={() => onConfirm(reservation)} className="min-h-[44px] w-full">
               Confirmar
             </Button>
           )}
           {canComplete && reservation.status === "confirmed" && onComplete && (
-            <Button size="sm" variant="secondary" onClick={() => onComplete(reservation)}>
+            <Button size="sm" variant="secondary" onClick={() => onComplete(reservation)} className="min-h-[44px] w-full">
               Concluir
             </Button>
           )}
           {canComplete && reservation.status === "confirmed" && onNoShow && (
-            <Button size="sm" variant="ghost" onClick={() => onNoShow(reservation)}>
+            <Button size="sm" variant="ghost" onClick={() => onNoShow(reservation)} className="min-h-[44px] w-full">
               No-show
             </Button>
           )}
@@ -208,6 +211,7 @@ export function ReservationCard({
                 variant="outline"
                 onClick={() => onRelease(reservation)}
                 title="Libera a mesa imediatamente para outras reservas"
+                className="min-h-[44px] w-full"
               >
                 Liberar mesa
               </Button>
@@ -217,7 +221,7 @@ export function ReservationCard({
             reservation.status !== "completed" &&
             reservation.status !== "expired" &&
             onCancel && (
-              <Button size="sm" variant="ghost" onClick={() => onCancel(reservation)}>
+              <Button size="sm" variant="ghost" onClick={() => onCancel(reservation)} className="min-h-[44px] w-full">
                 Cancelar
               </Button>
             )}

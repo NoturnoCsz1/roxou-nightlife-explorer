@@ -196,9 +196,19 @@ const PublicReservationSuccessPage = () => {
     generateQrSvg(payload).then(setQrSvg).catch(() => setQrSvg(""));
   }, [qrAllowed, info?.qr_payload, state.result?.qr_payload, publicToken]);
 
-  const partnerName = info?.partner_name ?? "Estabelecimento";
-  const code = info?.code ?? publicToken?.slice(0, 8).toUpperCase() ?? "";
-  const dateLabel = info ? formatDateTimeSP(info.reservation_date) : "—";
+  const partnerName =
+    info?.partner_name?.trim() ||
+    state.result?.partner_name?.trim() ||
+    "Estabelecimento";
+  const customerName = info?.name?.trim() || "Cliente não informado";
+  const typeLabel = info?.type_kind
+    ? `${KIND_LABEL[info.type_kind]}${info.type_name ? ` · ${info.type_name}` : ""}`
+    : info?.type_name || "Reserva";
+  const peopleCount = info?.people_count ?? info?.type_seats ?? 1;
+  const peopleFixed =
+    info?.type_seats != null && info.type_seats === info.people_count;
+  const code = info?.code ?? state.result?.code ?? publicToken?.slice(0, 8).toUpperCase() ?? "";
+  const dateLabel = info ? formatDateTimeSP(info.reservation_date) : "Carregando…";
   const expiresLabel = info?.expires_at ? formatDateTimeSP(info.expires_at) : "";
 
   const meta =
@@ -471,27 +481,29 @@ const PublicReservationSuccessPage = () => {
             boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {info?.partner_logo_url ? (
               <img
                 src={info.partner_logo_url}
                 alt={partnerName}
                 crossOrigin="anonymous"
-                className="w-12 h-12 rounded-full object-cover bg-white/5 shrink-0"
+                className="w-12 h-12 rounded-full object-contain bg-white/10 shrink-0 p-1"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-white/10 shrink-0" />
+              <div className="w-12 h-12 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-white font-bold">
+                {partnerName.charAt(0)}
+              </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[10px] uppercase tracking-wider text-primary">
                 Comprovante de Reserva
               </p>
-              <p className="text-sm font-bold text-white break-words">
+              <p className="text-sm font-bold text-white break-words line-clamp-2">
                 {partnerName}
               </p>
             </div>
             <span
-              className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
+              className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 ${meta.badgeClass}`}
             >
               {meta.label}
             </span>
@@ -499,9 +511,9 @@ const PublicReservationSuccessPage = () => {
 
           <div className="text-center text-white">
             <p className="text-xs text-white/60">Cliente</p>
-            <p className="text-lg font-bold break-words">{info?.name ?? "—"}</p>
+            <p className="text-lg font-bold break-words line-clamp-2">{customerName}</p>
             {info?.phone ? (
-              <p className="text-xs text-white/60 mt-0.5">{info.phone}</p>
+              <p className="text-xs text-white/60 mt-0.5 break-all">{info.phone}</p>
             ) : null}
           </div>
 
@@ -542,19 +554,20 @@ const PublicReservationSuccessPage = () => {
           <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
             <div>
               <p className="text-white/50">Tipo</p>
-              <p className="font-medium break-words">
-                {info?.type_kind
-                  ? `${KIND_LABEL[info.type_kind]}${info.type_name ? ` · ${info.type_name}` : ""}`
-                  : "Reserva geral"}
-              </p>
+              <p className="font-medium break-words line-clamp-2">{typeLabel}</p>
             </div>
             <div className="text-right">
               <p className="text-white/50">Código</p>
-              <p className="font-mono font-bold tracking-widest">{code}</p>
+              <p className="font-mono font-bold tracking-widest break-all">{code}</p>
             </div>
             <div>
               <p className="text-white/50">Pessoas</p>
-              <p className="font-medium">{info?.people_count ?? 1}</p>
+              <p className="font-medium">
+                {peopleCount}
+                {peopleFixed ? (
+                  <span className="ml-1 text-[9px] text-white/60">(incluídas)</span>
+                ) : null}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-white/50">Data / horário</p>

@@ -581,3 +581,43 @@ export async function releasePartnerReservationTable(
   if (!data) throw new Error("Sem permissão.");
   return data as unknown as PartnerReservationRow;
 }
+
+// ---- IA de Ocupação ----
+
+export interface OccupancyInsight {
+  reservation_type_id: string;
+  type_name: string;
+  type_kind: PartnerReservationTypeKind;
+  sample_size: number;
+  avg_usage_minutes: number;
+  median_usage_minutes: number;
+  p75_usage_minutes: number;
+  current_duration_minutes: number;
+  suggested_duration_minutes: number;
+  confidence: "low" | "medium" | "high";
+}
+
+export async function getReservationOccupancyInsights(
+  partnerId: string,
+  days = 30,
+): Promise<OccupancyInsight[]> {
+  const { data, error } = await supabase.rpc(
+    "get_reservation_occupancy_insights" as never,
+    { p_partner_id: partnerId, p_days: days } as never,
+  );
+  if (error) throw error;
+  return (data as unknown as OccupancyInsight[]) ?? [];
+}
+
+export async function updateReservationTypeDuration(
+  typeId: string,
+  partnerId: string,
+  durationMinutes: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from(TYPES_TABLE)
+    .update({ duration_minutes: durationMinutes })
+    .eq("id", typeId)
+    .eq("partner_id", partnerId);
+  if (error) throw error;
+}

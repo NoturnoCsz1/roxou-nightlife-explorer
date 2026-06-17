@@ -31,9 +31,12 @@ import {
   WaitlistManager,
   GuestNameDialog,
   PublicLinkQrDialog,
+  DailyOperationsReport,
+  OccupancyInsightsPanel,
 } from "../components";
 import {
   cancelReservation,
+  cancelWaitlistEntry,
   completeReservation,
   computeReservationStats,
   confirmReservation,
@@ -41,14 +44,17 @@ import {
   createReservation,
   getReservationSettings,
   listReservationTypes,
+  listReservationWaitlist,
   listReservations,
   noShowReservation,
+  notifyWaitlistEntry,
   releasePartnerReservationTable,
   updateReservationSettings,
   waivePartnerReservationDeposit,
   type PartnerReservationRow,
   type PartnerReservationSettings,
   type PartnerReservationType,
+  type ReservationWaitlistEntry,
 } from "../services/partnerReservations";
 import {
   closeDuePartnerReservations,
@@ -76,6 +82,7 @@ const PartnerReservationsPage = () => {
   const [settings, setSettings] = useState<PartnerReservationSettings | null>(
     null,
   );
+  const [waitlist, setWaitlist] = useState<ReservationWaitlistEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<Bucket>("active");
   const [quickOpen, setQuickOpen] = useState(false);
@@ -108,14 +115,16 @@ const PartnerReservationsPage = () => {
         closeDuePartnerReservations(),
         expireDuePartnerReservations(),
       ]);
-      const [list, sett, tps] = await Promise.all([
+      const [list, sett, tps, wl] = await Promise.all([
         listReservations(partnerId, { status: "all" }),
         getReservationSettings(partnerId),
         listReservationTypes(partnerId, { onlyActive: true }),
+        listReservationWaitlist(partnerId).catch(() => []),
       ]);
       setRows(list);
       setSettings(sett);
       setTypes(tps);
+      setWaitlist(wl);
     } catch (err) {
       const e = err as Error;
       toast({ title: "Erro ao carregar reservas", description: e.message });
@@ -239,9 +248,11 @@ const PartnerReservationsPage = () => {
             onCancel={handleCancel}
             onComplete={handleComplete}
             onNoShow={handleNoShow}
+            onRelease={handleRelease}
             canCancel={canCancel}
             canConfirm={canConfirm}
             canComplete={canComplete}
+            canRelease={canRelease}
           />
         </div>
         <div className="grid gap-3 md:hidden">
@@ -380,7 +391,7 @@ const PartnerReservationsPage = () => {
                 className="min-h-[44px] w-full"
               >
                 <QrCode className="mr-2 h-4 w-4" />
-                QR
+                QR do Link
               </Button>
               <Button
                 onClick={() => void handleShareLink()}
@@ -488,6 +499,67 @@ const PartnerReservationsPage = () => {
             />
           </AccordionContent>
         </AccordionItem>
+
+        <AccordionItem
+          value="report"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            Relatório do dia
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <DailyOperationsReport
+              reservations={rows}
+              waitlist={waitlist}
+              types={types}
+              canConfirm={canConfirm}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              canRelease={canRelease}
+              onConfirmPayment={handleConfirmPayment}
+              onComplete={handleComplete}
+              onNoShow={handleNoShow}
+              onCancel={handleCancel}
+              onRelease={handleRelease}
+              onNotifyWaitlist={async (e) => {
+                try {
+                  await notifyWaitlistEntry(e.id);
+                  toast({ title: "Cliente notificado" });
+                  void load();
+                } catch (err) {
+                  toast({ title: "Erro", description: (err as Error).message });
+                }
+              }}
+              onCancelWaitlist={async (e) => {
+                if (!window.confirm(`Remover ${e.name} da lista de espera?`))
+                  return;
+                try {
+                  await cancelWaitlistEntry(e.id);
+                  toast({ title: "Entrada cancelada" });
+                  void load();
+                } catch (err) {
+                  toast({ title: "Erro", description: (err as Error).message });
+                }
+              }}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem
+          value="ia"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+        >
+          <AccordionTrigger className="text-sm font-semibold">
+            IA de Ocupação
+          </AccordionTrigger>
+          <AccordionContent className="pt-2">
+            <OccupancyInsightsPanel
+              partnerId={partnerId}
+              canEdit={canEditSettings}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
 
         {canEditSettings && (
           <AccordionItem

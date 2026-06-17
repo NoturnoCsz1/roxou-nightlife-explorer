@@ -2,28 +2,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ReservationStatsResult } from "../services/partnerReservations";
 
 export function ReservationStats({ stats }: { stats: ReservationStatsResult }) {
-  const available = Math.max(
-    stats.totalCapacity - stats.reservedSeats - stats.pendingSeats,
-    0,
-  );
+  const occupied = stats.reservedSeats + stats.pendingSeats;
+  const free = Math.max(stats.totalCapacity - occupied, 0);
   const items: { label: string; value: string; hint?: string }[] = [
     { label: "Hoje", value: String(stats.today), hint: "Reservas criadas hoje" },
+    { label: "Últimos 7 dias", value: String(stats.week), hint: "Reservas criadas" },
     {
-      label: "Últimos 7 dias",
-      value: String(stats.week),
-      hint: "Reservas criadas",
+      label: "Mesas ocupadas",
+      value: String(occupied),
+      hint: `${stats.reservedSeats} confirmadas · ${stats.pendingSeats} pendentes`,
     },
+    { label: "Mesas livres", value: String(free), hint: `Total ${stats.totalCapacity}` },
+    { label: "Capacidade", value: `${stats.capacityUsed}%` },
     { label: "Confirmação", value: `${stats.confirmedRate}%` },
     { label: "No-show", value: `${stats.noShowRate}%` },
-    {
-      label: "Capacidade",
-      value: `${stats.capacityUsed}%`,
-      hint: `${stats.reservedSeats} reservadas · ${stats.pendingSeats} pendentes · ${available} disponíveis`,
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
       {items.map((m) => (
         <Card key={m.label} className="bg-card/60 min-w-0">
           <CardHeader className="pb-1">

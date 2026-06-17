@@ -146,9 +146,9 @@ const CustomerReservations = () => {
                       <p className="truncate font-semibold">
                         {r.partner?.name ?? "Estabelecimento"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground break-words">
                         {formatDateTimeSP(r.reservation_date)} ·{" "}
-                        {r.people_count} pess.
+                        {r.people_count} {r.people_count === 1 ? "pessoa" : "pessoas"}
                       </p>
                     </div>
                     <span

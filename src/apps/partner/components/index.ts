@@ -33,6 +33,8 @@ export { WaitlistManager } from "./WaitlistManager";
 export { GuestNameDialog } from "./GuestNameDialog";
 export type { QuickReservationValues } from "./GuestNameDialog";
 export { PublicLinkQrDialog } from "./PublicLinkQrDialog";
+export { DailyOperationsReport } from "./DailyOperationsReport";
+export { OccupancyInsightsPanel } from "./OccupancyInsightsPanel";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";

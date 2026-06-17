@@ -97,6 +97,9 @@ const PublicReservationPage = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const preselectTypeId = searchParams.get("type");
+  const preselectDate = searchParams.get("date");
+  const preselectSlot = searchParams.get("slot");
+  const waitlistToken = searchParams.get("waitlist");
 
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState<PublicPartnerForReservations | null>(null);
@@ -150,7 +153,11 @@ const PublicReservationPage = () => {
           const match = ctx.types.find((t) => t.id === preselectTypeId);
           if (match) setSelectedType(match.id);
         }
-        setDate(todayLocalDate(Math.ceil((ctx.partner.advance_booking_hours || 0) / 24)));
+        if (preselectDate) {
+          setDate(preselectDate);
+        } else {
+          setDate(todayLocalDate(Math.ceil((ctx.partner.advance_booking_hours || 0) / 24)));
+        }
       } catch (err) {
         toast({ title: "Erro", description: (err as Error).message });
       } finally {
@@ -219,6 +226,19 @@ const PublicReservationPage = () => {
         );
         if (!alive) return;
         setSlots(data);
+        // Try to honour preselected slot (HH:mm) from waitlist link
+        if (preselectSlot && !slotIso) {
+          const match = data.find((s) => {
+            const d = new Date(s.slot_start);
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mm = String(d.getMinutes()).padStart(2, "0");
+            return `${hh}:${mm}` === preselectSlot && s.available_count > 0;
+          });
+          if (match) {
+            setSlotIso(match.slot_start);
+            return;
+          }
+        }
         // Reset slot if previous slot disappeared / unavailable
         const stillOk = data.find(
           (s) => s.slot_start === slotIso && s.available_count > 0,
@@ -416,6 +436,12 @@ const PublicReservationPage = () => {
       </section>
 
       <div className="mx-auto w-full max-w-xl space-y-6 px-4 pb-10">
+        {waitlistToken ? (
+          <div className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+            ✅ Você está vindo da lista de espera. Reservamos seu tipo e horário sugerido — basta confirmar abaixo.
+          </div>
+        ) : null}
+
         {/* ============ TIPOS ============ */}
         {types.length > 0 && (
           <section className="space-y-4">

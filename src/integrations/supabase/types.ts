@@ -4913,6 +4913,21 @@ export type Database = {
         Args: { p_partner_slug: string }
         Returns: Json
       }
+      get_reservation_occupancy_insights: {
+        Args: { p_days?: number; p_partner_id: string }
+        Returns: {
+          avg_usage_minutes: number
+          confidence: string
+          current_duration_minutes: number
+          median_usage_minutes: number
+          p75_usage_minutes: number
+          reservation_type_id: string
+          sample_size: number
+          suggested_duration_minutes: number
+          type_kind: string
+          type_name: string
+        }[]
+      }
       get_reservation_slot_availability: {
         Args: {
           p_date: string
