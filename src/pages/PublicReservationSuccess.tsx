@@ -509,9 +509,9 @@ const PublicReservationSuccessPage = () => {
 
           <div className="text-center text-white">
             <p className="text-xs text-white/60">Cliente</p>
-            <p className="text-lg font-bold break-words">{info?.name ?? "—"}</p>
+            <p className="text-lg font-bold break-words line-clamp-2">{customerName}</p>
             {info?.phone ? (
-              <p className="text-xs text-white/60 mt-0.5">{info.phone}</p>
+              <p className="text-xs text-white/60 mt-0.5 break-all">{info.phone}</p>
             ) : null}
           </div>
 
