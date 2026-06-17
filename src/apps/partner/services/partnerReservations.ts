@@ -542,3 +542,42 @@ export function computeReservationStats(
     pendingSeats,
   };
 }
+
+// ---- Slot availability + manual release ----
+
+export interface ReservationSlot {
+  slot_start: string;
+  slot_end: string;
+  quantity_total: number;
+  reserved_count: number;
+  available_count: number;
+}
+
+export async function getReservationSlotAvailability(
+  partnerId: string,
+  typeId: string,
+  date: string,
+): Promise<ReservationSlot[]> {
+  const { data, error } = await supabase.rpc(
+    "get_reservation_slot_availability" as never,
+    {
+      p_partner_id: partnerId,
+      p_reservation_type_id: typeId,
+      p_date: date,
+    } as never,
+  );
+  if (error) throw error;
+  return (data as unknown as ReservationSlot[]) ?? [];
+}
+
+export async function releasePartnerReservationTable(
+  reservationId: string,
+): Promise<PartnerReservationRow> {
+  const { data, error } = await supabase.rpc(
+    "release_partner_reservation_table" as never,
+    { _reservation_id: reservationId } as never,
+  );
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerReservationRow;
+}
