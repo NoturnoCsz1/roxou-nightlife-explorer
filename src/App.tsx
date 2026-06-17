@@ -132,6 +132,8 @@ const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 const PublicVipList = lazy(() => import("./pages/PublicVipList"));
 const PublicVipListSuccess = lazy(() => import("./pages/PublicVipListSuccess"));
 const PartnerScopedComingSoon = lazy(() => import("./pages/PartnerScopedComingSoon"));
+const DevRoutes = lazy(() => import("./pages/DevRoutes"));
+const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutRedirect"));
 
 
 import PedirCaronaGate from "./components/PedirCaronaGate";
@@ -249,6 +251,14 @@ const App = () => (
             path="/vip/:listSlug/sucesso/:publicToken"
             element={L(<PublicVipListSuccess />)}
           />
+
+
+          {/* ========= Atalhos /partner/* (Navigator interno) ========= */}
+          <Route path="/partner" element={L(<PartnerShortcutRedirect />)} />
+          <Route path="/partner/*" element={L(<PartnerShortcutRedirect />)} />
+
+          {/* ========= Dev Navigator (interno, noindex) ========= */}
+          <Route path="/dev/rotas" element={L(<DevRoutes />)} />
 
 
 
