@@ -389,6 +389,11 @@ const PartnerReservationsPage = () => {
             else setTab(b === "released" ? "ended" : "active");
           }}
         />
+        <PartnerNotificationsCenter
+          rows={rows}
+          waitlist={waitlist}
+          onOpenSection={(s) => setOpenSection(s)}
+        />
         <UpcomingReservationCard reservations={rows} types={types} />
         <ReservationPendingCard reservations={rows} waitlist={waitlist} />
         <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
@@ -633,7 +638,7 @@ const PartnerReservationsPage = () => {
             IA de Ocupação
           </AccordionTrigger>
           <AccordionContent className="pt-2">
-            <OccupancyInsightsPanel
+            <OccupancyInsightsPremium
               partnerId={partnerId}
               canEdit={canEditSettings}
             />
