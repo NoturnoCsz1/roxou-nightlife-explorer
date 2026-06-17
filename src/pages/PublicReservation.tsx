@@ -97,6 +97,9 @@ const PublicReservationPage = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const preselectTypeId = searchParams.get("type");
+  const preselectDate = searchParams.get("date");
+  const preselectSlot = searchParams.get("slot");
+  const waitlistToken = searchParams.get("waitlist");
 
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState<PublicPartnerForReservations | null>(null);
