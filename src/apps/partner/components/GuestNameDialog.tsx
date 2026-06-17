@@ -67,9 +67,10 @@ export function GuestNameDialog({ open, onOpenChange, onConfirm }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md">
         <DialogHeader>
-          <DialogTitle>Nova reserva</DialogTitle>
+          <DialogTitle>Criar reserva manual</DialogTitle>
           <DialogDescription>
-            Cadastro rápido manual. O cliente pode confirmar online depois.
+            Cadastre aqui uma reserva feita fora do link público — como
+            WhatsApp, telefone ou presencial.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
