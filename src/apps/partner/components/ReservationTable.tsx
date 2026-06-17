@@ -10,6 +10,14 @@ import { Button } from "@/components/ui/button";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
 import type { PartnerReservationRow } from "../services/partnerReservations";
 
+const formatPhoneBR = (raw: string | null | undefined): string => {
+  if (!raw) return "";
+  const d = raw.replace(/\D/g, "").replace(/^55/, "");
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return raw;
+};
+
 export function ReservationTable({
   reservations,
   onView,
@@ -18,9 +26,11 @@ export function ReservationTable({
   onCancel,
   onComplete,
   onNoShow,
+  onRelease,
   canCancel,
   canConfirm,
   canComplete,
+  canRelease,
 }: {
   reservations: PartnerReservationRow[];
   onView?: (r: PartnerReservationRow) => void;
@@ -29,9 +39,11 @@ export function ReservationTable({
   onCancel?: (r: PartnerReservationRow) => void;
   onComplete?: (r: PartnerReservationRow) => void;
   onNoShow?: (r: PartnerReservationRow) => void;
+  onRelease?: (r: PartnerReservationRow) => void;
   canCancel?: boolean;
   canConfirm?: boolean;
   canComplete?: boolean;
+  canRelease?: boolean;
 }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border/60">
@@ -53,7 +65,7 @@ export function ReservationTable({
                 <TableCell>
                   <div className="font-medium">{r.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {r.phone || r.email || "—"}
+                    {r.phone ? formatPhoneBR(r.phone) : r.email || "—"}
                   </div>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm">
@@ -64,7 +76,9 @@ export function ReservationTable({
                     minute: "2-digit",
                   })}
                 </TableCell>
-                <TableCell>{r.people_count}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  {r.people_count} {r.people_count === 1 ? "pessoa" : "pessoas"}
+                </TableCell>
                 <TableCell>
                   <ReservationStatusBadge status={r.status} />
                 </TableCell>
@@ -92,6 +106,11 @@ export function ReservationTable({
                   {canComplete && r.status === "confirmed" && onNoShow && (
                     <Button size="sm" variant="ghost" onClick={() => onNoShow(r)}>
                       No-show
+                    </Button>
+                  )}
+                  {canRelease && r.status === "confirmed" && !r.released_at && onRelease && (
+                    <Button size="sm" variant="outline" onClick={() => onRelease(r)}>
+                      Liberar mesa
                     </Button>
                   )}
                   {canCancel &&
