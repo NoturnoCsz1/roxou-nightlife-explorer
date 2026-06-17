@@ -39,6 +39,7 @@ const bucketOf = (l: PartnerVipList): Bucket => {
 const PartnerVipListPage = () => {
   const { selectedPartner, role } = usePartnerAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const partnerId = selectedPartner?.id ?? null;
   const canCreate = canManageEvents(role);
 
