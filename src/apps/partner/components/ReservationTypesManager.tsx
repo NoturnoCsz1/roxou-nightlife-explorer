@@ -335,21 +335,46 @@ export function ReservationTypesManager({
             className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card/50 px-3 py-2"
           >
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="truncate text-sm font-medium">{r.name}</p>
                 {!r.active && (
                   <Badge variant="outline" className="text-[10px]">
                     inativo
                   </Badge>
                 )}
+                {(() => {
+                  const a = availability[r.id];
+                  if (!a) return null;
+                  if (a.available <= 0)
+                    return (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Esgotado
+                      </Badge>
+                    );
+                  return (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {a.available} disp.
+                    </Badge>
+                  );
+                })()}
               </div>
               <p className="truncate text-xs text-muted-foreground">
-                {r.seats} {kind === "box" ? "pess." : "lug."} · {r.quantity} un. ·
-                R$ {Number(r.price).toFixed(2)}
+                {r.seats} {kind === "box" ? "pess." : "lug."} · R${" "}
+                {Number(r.price).toFixed(2)}
                 {r.minimum_consumption
                   ? ` · mín. R$ ${Number(r.minimum_consumption).toFixed(2)}`
                   : ""}
               </p>
+              {(() => {
+                const a = availability[r.id];
+                if (!a) return null;
+                return (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Total {a.quantity} · Reservadas {a.reserved} · Disponíveis{" "}
+                    {a.available}
+                  </p>
+                );
+              })()}
             </div>
             {canEdit && (
               <div className="flex gap-1">
