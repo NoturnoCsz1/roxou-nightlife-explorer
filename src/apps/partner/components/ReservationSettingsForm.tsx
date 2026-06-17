@@ -193,6 +193,89 @@ export function ReservationSettingsForm({
             />
           </div>
         </div>
+
+        {/* Sinal / Pagamento */}
+        <div className="space-y-3 rounded-md border border-border/60 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Exigir sinal para reservar</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Base pronta para PIX automático (manual nesta versão).
+              </p>
+            </div>
+            <Switch
+              checked={depositEnabled}
+              onCheckedChange={setDepositEnabled}
+              disabled={disabled}
+            />
+          </div>
+          {depositEnabled && (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Tipo de sinal</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={depositType}
+                    onChange={(e) =>
+                      setDepositType(e.target.value as DepositType)
+                    }
+                    disabled={disabled}
+                  >
+                    <option value="fixed">Valor fixo (R$)</option>
+                    <option value="percent">Percentual (%)</option>
+                    <option value="full">Valor total</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">
+                    {depositType === "percent" ? "Percentual (%)" : "Valor (R$)"}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={depositValue}
+                    onChange={(e) =>
+                      setDepositValue(Number(e.target.value) || 0)
+                    }
+                    disabled={disabled || depositType === "full"}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Chave PIX</Label>
+                  <Input
+                    value={pixKey}
+                    onChange={(e) => setPixKey(e.target.value)}
+                    placeholder="CNPJ, e-mail, telefone ou chave aleatória"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Nome do recebedor</Label>
+                  <Input
+                    value={pixReceiver}
+                    onChange={(e) => setPixReceiver(e.target.value)}
+                    disabled={disabled}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Instruções de pagamento</Label>
+                <Textarea
+                  value={payInstructions}
+                  onChange={(e) => setPayInstructions(e.target.value)}
+                  rows={2}
+                  placeholder="Ex: Envie o comprovante pelo WhatsApp após o pagamento."
+                  disabled={disabled}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
         <div className="flex justify-end">
           <Button onClick={submit} disabled={disabled || saving}>
             {saving ? "Salvando…" : "Salvar configurações"}
