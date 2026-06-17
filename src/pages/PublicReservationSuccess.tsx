@@ -506,11 +506,14 @@ const PublicReservationSuccessPage = () => {
                 <p className="font-medium text-amber-300">{expiresLabel}</p>
               </div>
             ) : null}
-            {info?.checked_in_at ? (
+            {(info as unknown as { checked_in_at?: string | null } | null)
+              ?.checked_in_at ? (
               <div className="col-span-2">
                 <p className="text-white/50">Check-in</p>
                 <p className="font-medium text-emerald-300">
-                  {formatDateTimeSP(info.checked_in_at)}
+                  {formatDateTimeSP(
+                    (info as unknown as { checked_in_at: string }).checked_in_at,
+                  )}
                 </p>
               </div>
             ) : null}
