@@ -269,7 +269,9 @@ Devolva APENAS JSON válido neste formato (sem markdown, sem comentários):
 
 ⛔ Frases banidas: "imperdível", "noite inesquecível", "experiência única", "não perca", "prepare-se", "vibe contagiante", "celebrando", "embalar a noite", "a melhor noite da sua vida".
 ⛔ Não copie literalmente o flyer. Reescreva com voz Roxou.
-⛔ Se time_is_unknown=true, escreva "horário a confirmar" ou OMITA o horário. NUNCA chute "17h", "20h" ou "22h".
+⛔ Se time_is_unknown=true E assumed_time=false, escreva "horário a confirmar" ou OMITA o horário. NUNCA chute "17h", "20h" ou "22h".
+⛔ NUNCA use 17h como horário padrão. Só pode aparecer se vier explicitamente em time_label.
+✅ Se assumed_time=true (fallback noturno de Prudente), use frases como "Horário previsto: 20h00." ou "Programação prevista para iniciar às 20h00." deixando claro que é estimativa, não confirmação oficial.
 ⛔ Não use h1/h2/scripts/links HTML no description_html.`;
 }
 
@@ -278,8 +280,10 @@ function buildUserPrompt(data: AIInput): string {
     event_title: data.event_title,
     artists: data.artists,
     date: { weekday: data.weekday, long: data.date_long, short: data.date_short, is_today: data.is_today },
-    time: data.time_is_unknown ? null : data.time_label,
+    time: data.time_is_unknown && !data.assumed_time ? null : data.time_label,
     time_is_unknown: data.time_is_unknown,
+    assumed_time: data.assumed_time,
+    assumed_time_source: data.assumed_time_source,
     venue: {
       name: data.venue_name || null,
       type: data.venue_type || null,
