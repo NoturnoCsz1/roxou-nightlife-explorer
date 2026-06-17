@@ -233,6 +233,60 @@ const CustomerAccount = () => {
                 Sair
               </Button>
             </div>
+
+            <Card className="space-y-3 border-destructive/40 bg-destructive/5 p-4">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-destructive">
+                  Excluir minha conta
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Ao excluir sua conta, seus dados pessoais deixam de ficar vinculados à área do cliente.
+                  Os registros operacionais dos parceiros podem ser preservados de forma desvinculada
+                  para fins de controle e auditoria.
+                </p>
+              </div>
+              <AlertDialog onOpenChange={(open) => !open && setDeleteConfirm("")}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full min-h-[44px]"
+                    disabled={deleting}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir minha conta
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. Para confirmar, digite{" "}
+                      <strong>EXCLUIR</strong> abaixo.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <Input
+                    value={deleteConfirm}
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
+                    placeholder="Digite EXCLUIR"
+                    className="min-h-[44px]"
+                  />
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void handleDelete();
+                      }}
+                      disabled={deleting || deleteConfirm.trim().toUpperCase() !== "EXCLUIR"}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Excluir definitivamente
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
           </>
         )}
       </div>
