@@ -5,7 +5,7 @@
  * Após submissão, redireciona para o comprovante com contador.
  */
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,8 @@ const PublicReservationPage = () => {
   const { partnerSlug } = useParams<{ partnerSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const preselectTypeId = searchParams.get("type");
 
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState<PublicPartnerForReservations | null>(null);
@@ -85,6 +87,10 @@ const PublicReservationPage = () => {
         }
         setPartner(ctx.partner);
         setTypes(ctx.types);
+        if (preselectTypeId) {
+          const match = ctx.types.find((t) => t.id === preselectTypeId);
+          if (match) setSelectedType(match.id);
+        }
         setWhen(minLocalInput(ctx.partner.advance_booking_hours + 1));
       } catch (err) {
         toast({ title: "Erro", description: (err as Error).message });
