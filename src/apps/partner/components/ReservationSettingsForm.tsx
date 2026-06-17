@@ -106,18 +106,22 @@ export function ReservationSettingsForm({
   };
 
   return (
-    <Card>
+    <Card className="rounded-2xl">
       <CardHeader>
         <CardTitle className="text-base">Configurações de reservas</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label>Aceitar reservas</Label>
-          <Switch checked={enabled} onCheckedChange={setEnabled} disabled={disabled} />
+      <CardContent className="space-y-5">
+        <div className="flex flex-col gap-2 rounded-md border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <Label className="text-sm">Aceitar reservas</Label>
+          <Switch
+            checked={enabled}
+            onCheckedChange={setEnabled}
+            disabled={disabled}
+          />
         </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <Label>Confirmar automaticamente</Label>
+        <div className="flex flex-col gap-2 rounded-md border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <Label className="text-sm">Confirmar automaticamente</Label>
             <p className="text-[11px] text-muted-foreground">
               Se desligado, o cliente recebe prazo para confirmar/pagar.
             </p>
@@ -137,6 +141,7 @@ export function ReservationSettingsForm({
               value={startAt}
               onChange={(e) => setStartAt(e.target.value)}
               disabled={disabled}
+              className="w-full"
             />
           </div>
           <div>
@@ -146,50 +151,51 @@ export function ReservationSettingsForm({
               value={endAt}
               onChange={(e) => setEndAt(e.target.value)}
               disabled={disabled}
+              className="w-full"
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Label className="text-xs">Máx. convidados / reserva</Label>
-            <Input
-              type="number"
+            <NumberField
               min={1}
               max={50}
               value={maxPeople}
-              onChange={(e) => setMaxPeople(Number(e.target.value) || 1)}
+              onChange={(v) => setMaxPeople(Math.max(1, v || 1))}
+              fallback={1}
               disabled={disabled}
             />
           </div>
           <div>
             <Label className="text-xs">Máx. reservas / dia</Label>
-            <Input
-              type="number"
+            <NumberField
               min={1}
               value={maxPerDay}
-              onChange={(e) => setMaxPerDay(Number(e.target.value) || 1)}
+              onChange={(v) => setMaxPerDay(Math.max(1, v || 1))}
+              fallback={1}
               disabled={disabled}
             />
           </div>
           <div>
             <Label className="text-xs">Antecedência mínima (h)</Label>
-            <Input
-              type="number"
+            <NumberField
               min={0}
               value={advance}
-              onChange={(e) => setAdvance(Number(e.target.value) || 0)}
+              onChange={(v) => setAdvance(Math.max(0, v))}
+              fallback={0}
               disabled={disabled}
             />
           </div>
           <div>
             <Label className="text-xs">Tempo p/ confirmar (min)</Label>
-            <Input
-              type="number"
+            <NumberField
               min={5}
               max={1440}
               value={timeout_}
-              onChange={(e) => setTimeout_(Number(e.target.value) || 30)}
+              onChange={(v) => setTimeout_(Math.max(5, v || 30))}
+              fallback={30}
               disabled={disabled}
             />
           </div>
@@ -197,9 +203,9 @@ export function ReservationSettingsForm({
 
         {/* Sinal / Pagamento */}
         <div className="space-y-3 rounded-md border border-border/60 p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Exigir sinal para reservar</Label>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <Label className="text-sm">Exigir sinal para reservar</Label>
               <p className="text-[11px] text-muted-foreground">
                 Base pronta para PIX automático (manual nesta versão).
               </p>
@@ -232,14 +238,12 @@ export function ReservationSettingsForm({
                   <Label className="text-xs">
                     {depositType === "percent" ? "Percentual (%)" : "Valor (R$)"}
                   </Label>
-                  <Input
-                    type="number"
+                  <NumberField
                     min={0}
-                    step="0.01"
                     value={depositValue}
-                    onChange={(e) =>
-                      setDepositValue(Number(e.target.value) || 0)
-                    }
+                    onChange={(v) => setDepositValue(v)}
+                    allowDecimal
+                    fallback={0}
                     disabled={disabled || depositType === "full"}
                   />
                 </div>
@@ -277,8 +281,13 @@ export function ReservationSettingsForm({
           )}
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={submit} disabled={disabled || saving}>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="hidden sm:block" />
+          <Button
+            onClick={submit}
+            disabled={disabled || saving}
+            className="min-h-[48px] w-full"
+          >
             {saving ? "Salvando…" : "Salvar configurações"}
           </Button>
         </div>
