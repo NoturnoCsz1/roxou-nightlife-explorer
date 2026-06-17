@@ -192,7 +192,7 @@ const PublicReservationPage = () => {
         <SEO title={`Reservas — ${partner.name}`} description="" />
         <h1 className="text-xl font-bold">{partner.name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Este estabelecimento não está aceitando reservas online no momento.
+          As reservas estão temporariamente indisponíveis.
         </p>
       </main>
     );
