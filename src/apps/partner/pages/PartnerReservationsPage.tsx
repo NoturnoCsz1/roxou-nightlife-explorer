@@ -105,12 +105,14 @@ const PartnerReservationsPage = () => {
         closeDuePartnerReservations(),
         expireDuePartnerReservations(),
       ]);
-      const [list, sett] = await Promise.all([
+      const [list, sett, tps] = await Promise.all([
         listReservations(partnerId, { status: "all" }),
         getReservationSettings(partnerId),
+        listReservationTypes(partnerId, { onlyActive: true }),
       ]);
       setRows(list);
       setSettings(sett);
+      setTypes(tps);
     } catch (err) {
       const e = err as Error;
       toast({ title: "Erro ao carregar reservas", description: e.message });
