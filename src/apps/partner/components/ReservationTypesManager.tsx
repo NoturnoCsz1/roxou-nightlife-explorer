@@ -16,8 +16,10 @@ import {
   listReservationTypes,
   upsertReservationType,
   deleteReservationType,
+  getReservationTypesAvailability,
   type PartnerReservationType,
   type PartnerReservationTypeKind,
+  type ReservationTypeAvailability,
 } from "../services/partnerReservations";
 
 const KIND_LABELS: Record<PartnerReservationTypeKind, string> = {
@@ -75,6 +77,9 @@ export function ReservationTypesManager({
   canEdit: boolean;
 }) {
   const [rows, setRows] = useState<PartnerReservationType[]>([]);
+  const [availability, setAvailability] = useState<
+    Record<string, ReservationTypeAvailability>
+  >({});
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<PartnerReservationTypeKind>("table");
   const [draft, setDraft] = useState<DraftRow | null>(null);
@@ -84,7 +89,14 @@ export function ReservationTypesManager({
     if (!partnerId) return;
     setLoading(true);
     try {
-      setRows(await listReservationTypes(partnerId));
+      const [rowsRes, availRes] = await Promise.all([
+        listReservationTypes(partnerId),
+        getReservationTypesAvailability(partnerId),
+      ]);
+      setRows(rowsRes);
+      const map: Record<string, ReservationTypeAvailability> = {};
+      for (const a of availRes) map[a.type_id] = a;
+      setAvailability(map);
     } catch (err) {
       toast({ title: "Erro ao carregar tipos", description: (err as Error).message });
     } finally {
@@ -323,21 +335,46 @@ export function ReservationTypesManager({
             className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card/50 px-3 py-2"
           >
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="truncate text-sm font-medium">{r.name}</p>
                 {!r.active && (
                   <Badge variant="outline" className="text-[10px]">
                     inativo
                   </Badge>
                 )}
+                {(() => {
+                  const a = availability[r.id];
+                  if (!a) return null;
+                  if (a.available <= 0)
+                    return (
+                      <Badge variant="destructive" className="text-[10px]">
+                        Esgotado
+                      </Badge>
+                    );
+                  return (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {a.available} disp.
+                    </Badge>
+                  );
+                })()}
               </div>
               <p className="truncate text-xs text-muted-foreground">
-                {r.seats} {kind === "box" ? "pess." : "lug."} · {r.quantity} un. ·
-                R$ {Number(r.price).toFixed(2)}
+                {r.seats} {kind === "box" ? "pess." : "lug."} · R${" "}
+                {Number(r.price).toFixed(2)}
                 {r.minimum_consumption
                   ? ` · mín. R$ ${Number(r.minimum_consumption).toFixed(2)}`
                   : ""}
               </p>
+              {(() => {
+                const a = availability[r.id];
+                if (!a) return null;
+                return (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Total {a.quantity} · Reservadas {a.reserved} · Disponíveis{" "}
+                    {a.available}
+                  </p>
+                );
+              })()}
             </div>
             {canEdit && (
               <div className="flex gap-1">

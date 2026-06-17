@@ -4642,6 +4642,10 @@ export type Database = {
         Args: { p_partner_slug: string }
         Returns: Json
       }
+      get_reservation_types_availability: {
+        Args: { p_partner_id: string }
+        Returns: Json
+      }
       get_vip_entry_by_token: {
         Args: { p_token: string }
         Returns: {

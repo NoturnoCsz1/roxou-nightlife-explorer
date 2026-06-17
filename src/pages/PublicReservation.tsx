@@ -108,6 +108,8 @@ const PublicReservationPage = () => {
       return toast({
         title: `Máximo de ${partner.max_people_per_reservation} pessoas por reserva`,
       });
+    if (selected && selected.available <= 0)
+      return toast({ title: `Esgotado: ${selected.name}` });
 
     setSubmitting(true);
     try {
@@ -189,16 +191,21 @@ const PublicReservationPage = () => {
                   <div className="grid gap-2">
                     {grouped[kind].map((t) => {
                       const active = selectedType === t.id;
+                      const soldOut = t.available <= 0;
                       return (
                         <button
                           key={t.id}
                           type="button"
+                          disabled={soldOut}
                           onClick={() => {
+                            if (soldOut) return;
                             setSelectedType(t.id);
                             if (kind === "box") setGuests(t.seats);
                           }}
                           className={`text-left rounded-lg border px-3 py-3 transition ${
-                            active
+                            soldOut
+                              ? "border-border/40 bg-muted/30 opacity-60 cursor-not-allowed"
+                              : active
                               ? "border-primary bg-primary/10"
                               : "border-border/60 bg-card/40"
                           }`}
@@ -213,11 +220,18 @@ const PublicReservationPage = () => {
                                 {t.minimum_consumption
                                   ? ` · consumo mín. R$ ${Number(t.minimum_consumption).toFixed(2)}`
                                   : ""}
+                                {!soldOut && t.available > 0
+                                  ? ` · ${t.available} de ${t.quantity} disponível${t.available === 1 ? "" : "s"}`
+                                  : ""}
                               </p>
                             </div>
-                            <Badge variant="outline">
-                              R$ {Number(t.price).toFixed(2)}
-                            </Badge>
+                            {soldOut ? (
+                              <Badge variant="destructive">Esgotado</Badge>
+                            ) : (
+                              <Badge variant="outline">
+                                R$ {Number(t.price).toFixed(2)}
+                              </Badge>
+                            )}
                           </div>
                           {t.description ? (
                             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -316,8 +330,16 @@ const PublicReservationPage = () => {
                 </p>
               )}
 
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? "Enviando…" : "Solicitar reserva"}
+              <Button
+                type="submit"
+                disabled={submitting || (selected ? selected.available <= 0 : false)}
+                className="w-full"
+              >
+                {submitting
+                  ? "Enviando…"
+                  : selected && selected.available <= 0
+                  ? "Esgotado"
+                  : "Solicitar reserva"}
               </Button>
             </form>
           </CardContent>

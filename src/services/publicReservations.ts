@@ -100,6 +100,8 @@ export interface PublicReservationType {
   name: string;
   seats: number;
   quantity: number;
+  reserved: number;
+  available: number;
   price: number;
   minimum_consumption: number | null;
   extra_people_limit: number | null;
@@ -141,6 +143,28 @@ export async function getPublicPartnerReservationsContext(
     .order("price", { ascending: true });
   if (e3) throw e3;
 
+  const { data: avail, error: e4 } = await supabase.rpc(
+    "get_reservation_types_availability",
+    { p_partner_id: partner.id },
+  );
+  if (e4) throw e4;
+  const availMap = new Map<
+    string,
+    { quantity: number; reserved: number; available: number }
+  >();
+  for (const a of (avail as unknown as Array<{
+    type_id: string;
+    quantity: number;
+    reserved: number;
+    available: number;
+  }>) ?? []) {
+    availMap.set(a.type_id, {
+      quantity: a.quantity,
+      reserved: a.reserved,
+      available: a.available,
+    });
+  }
+
   return {
     partner: {
       id: partner.id,
@@ -157,6 +181,13 @@ export async function getPublicPartnerReservationsContext(
       reservations_start_at: sett?.reservations_start_at ?? null,
       reservations_end_at: sett?.reservations_end_at ?? null,
     },
-    types: (types ?? []) as unknown as PublicReservationType[],
+    types: (types ?? []).map((t) => {
+      const a = availMap.get((t as { id: string }).id);
+      return {
+        ...(t as object),
+        reserved: a?.reserved ?? 0,
+        available: a?.available ?? (t as { quantity: number }).quantity,
+      } as PublicReservationType;
+    }),
   };
 }
