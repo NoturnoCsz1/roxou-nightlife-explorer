@@ -82,6 +82,7 @@ const PartnerReservationsPage = () => {
   const [settings, setSettings] = useState<PartnerReservationSettings | null>(
     null,
   );
+  const [waitlist, setWaitlist] = useState<ReservationWaitlistEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<Bucket>("active");
   const [quickOpen, setQuickOpen] = useState(false);
