@@ -29,6 +29,12 @@ const KIND_LABELS: Record<PartnerReservationTypeKind, string> = {
   box: "Camarotes",
 };
 
+const KIND_LABELS_MOBILE: Record<PartnerReservationTypeKind, string> = {
+  table: "📋 Mesas",
+  bistro: "🍸 Bistrôs",
+  box: "👑 Camarotes",
+};
+
 interface DraftRow {
   id?: string;
   kind: PartnerReservationTypeKind;
