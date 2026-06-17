@@ -244,7 +244,11 @@ const App = () => (
           />
           <Route
             path="/:partnerSlug/reservas"
-            element={L(<PartnerScopedComingSoon section="reservas" />)}
+            element={L(<PublicReservation />)}
+          />
+          <Route
+            path="/reserva/sucesso/:publicToken"
+            element={L(<PublicReservationSuccess />)}
           />
 
           {/* Rota pública por slug da Lista VIP (Fase 10G fix): /vip/:listSlug */}
