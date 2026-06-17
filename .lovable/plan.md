@@ -1,117 +1,107 @@
-# Sprint Final Reservas Pro
+# Sprint UI/UX Premium — Roxou Partner Pro
 
-Escopo grande — proponho dividir em **4 fases sequenciais**, cada uma validada por type-check/build antes da próxima. Sem tocar em Lista VIP, Conta Roxou, Validador QR, Comprovantes públicos (só hidratar payload), Eventos, Analytics, RLS não relacionadas.
+Reposicionar o Partner Pro de "ferramenta admin" para SaaS premium mobile-first (OpenTable / Uber Driver). **Zero alterações em backend, RLS, RPC, migrations, lógica de reservas, Lista VIP, Conta Roxou, comprovantes, QR, analytics ou VPS.** Apenas UI/UX, consumindo dados já existentes.
 
-## Fase 1 — Hotfixes críticos (P1, itens 1–8)
+---
 
-**Comprovante (**`PublicReservationSuccess.tsx` **+ serviço público):**
+## Fase 1 — Design System Roxou (base)
 
-- Hidratar payload retornando `partner_name`, `partner_logo_url`, `customer_name`, `reservation_type_name`, `reservation_date`, `people_count`, `qr_payload`, `status` via join no `submit_public_reservation` / fetch de leitura.
-- Fallbacks: "Estabelecimento" / "Cliente não informado" / "Reserva".
-- Layout: `truncate`, `line-clamp-2`, `break-words`, logo com `object-contain`.
+Sem isso, o resto fica inconsistente.
 
-**Campo "Pessoas" redundante (item 2 + 4):**
+- `src/apps/partner/styles/partner-ui.css` (novo, importado no `App.tsx` do Partner): tokens dedicados ao painel — `--partner-radius: 24px`, spacing scale 4/8/12/16/20/24, glass tokens (`--partner-glass-bg`, `--partner-glass-border`, `--partner-glass-shadow`), gradiente Roxou (`--partner-gradient: linear-gradient(135deg, hsl(var(--primary)) 0%, #a855f7 50%, #ec4899 100%)`).
+- `src/apps/partner/components/ui/` (novo): `GlassCard.tsx`, `KpiCard.tsx`, `StatusDot.tsx`, `SectionHeader.tsx`, `SkeletonBlock.tsx`. Cada componente usa tokens, animações `animate-fade-in` / `hover-scale`, alturas 90–110px nos KPIs.
+- Aproveita o que já existe em `index.css` (cores, fontes Space Grotesk / Inter). Nada de cor hardcoded — tudo via tokens.
 
-- Quando `reservation_type.requires_guest_count = false` (Mesa/Bistrô/Camarote), esconder input em:
-  - `PublicReservation.tsx` (já feito) ✓
-  - Modal manual no Partner (`PartnerReservationsPage.tsx` create dialog)
-  - `WaitlistManager.tsx` (modal de adicionar à fila)
-  - `ReservationCard.tsx` (exibir "👥 N pessoas incluídas")
-  - `CustomerReservations.tsx` (badge)
-  - `PublicReservationSuccess.tsx` (badge)
+## Fase 2 — Dashboard Reservas (itens 1, 2, 3, 5)
 
-**Bug "14 pess." (item 3):**
+Refatorar `PartnerReservationsPage.tsx` consumindo os mesmos dados que ele já carrega via `partnerReservations` service e o `DailyOperationsReport` existente.
 
-- Investigar `ReservationCard.tsx` / `ReservationTable.tsx`: provável concatenação `phone + people_count` sem separador. Trocar por layout estruturado com ícones em linhas separadas, máscara `(18) 99765-3456`.
+- **Hero Card** (novo, `ReservationHeroCard.tsx`): glass + gradiente Roxou, mostra data atual (SP via `dateUtils`), confirmadas / pendentes / lista de espera / receita prevista, próxima reserva, próximo slot livre, ocupação % e mesas livres. Calculado em memo a partir das reservas já carregadas + `get_reservation_slot_availability` (já consumido pelo `OccupancyInsightsPanel`/público — sem nova RPC).
+- **KPI Grid** (`ReservationKpiGrid.tsx` substitui o bloco superior do atual `ReservationStats`): 7 cards (Hoje, Confirmadas, Receita, Lista espera, Check-ins, No-show, Mesas liberadas). Grid `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`, altura `min-h-[96px]`, ícones lucide, gradiente sutil por categoria. Mantém `ReservationStats.tsx` por compatibilidade mas o page passa a renderizar o novo grid.
+- **Timeline Operacional** (`ReservationTimeline.tsx`): linha vertical com slot `HH:mm`, dot de status, nome, tipo, pessoas. Clique abre o `ReservationCard`/detalhe que já existe.
+- **Reservas do dia (lista premium)**: reescrita visual de `ReservationCard.tsx` em modo "compact premium" (novo prop `variant="premium"`), botões `min-h-[44px]`, grid `grid-cols-2 md:grid-cols-5` para WhatsApp / Comprovante / Liberar / Concluir / Cancelar. Sem alterar handlers nem service.
 
-**Botões (item 5):**
+## Fase 3 — Waitlist, IA, Heatmap (itens 4, 6, 7)
 
-- `ReservationCard.tsx`: grid `grid-cols-2 md:grid-cols-4 gap-2`, `min-h-[44px]`, `w-full`, sem `whitespace-nowrap` que estoure.
+- `WaitlistManager.tsx` → cards glass premium: `#N` grande, nome, tipo + lugares, pessoas, "há X min" (já calculado), badge prioridade (derivada do tempo de espera, puro front). Botões Notificar / WhatsApp / Cancelar com `min-h-[44px]`, layout em coluna no mobile.
+- `WeeklyHeatmap.tsx` (novo): consome as reservas dos últimos 7 dias já trazidas, agrupa por dia da semana (helper SP de `dateUtils`), renderiza barras horizontais com gradiente. Sem nova query — usa a janela já carregada; se faltar histórico, fallback "Coletando dados".
+- `OccupancyInsightsPanel.tsx` repaginado: cards com ícone por tipo, barra de confiança (low/medium/high → 33/66/100%), gradiente Roxou no botão "Aplicar sugestão". Lógica de aplicar mantida (chama o mesmo update).
 
-**Link público (item 6):**
+## Fase 4 — Navegação Mobile + Polish (itens 8, 10)
 
-- `PublicLinkQrDialog.tsx`: usar `break-all` para URL, botão copiar/compartilhar separado, QR sempre visível.
+- `PartnerBottomNav.tsx` (novo) renderizado em `PartnerLayout` apenas em `< md`. 5 itens (Dashboard, Reservas, Fila, Relatório, Config). `fixed bottom-0`, `pb-[env(safe-area-inset-bottom)]`, `backdrop-blur-xl`, item ativo com pílula gradiente. Header desktop permanece igual.
+- Padding inferior `pb-24 md:pb-0` nas páginas para não cobrir conteúdo.
+- Auditoria responsiva 360 / 390 / 412 / 768 / 1024: `overflow-x-hidden` no shell, `truncate` / `min-w-0` nos cards, `flex-wrap` nos toolbars. Sem mexer em outras áreas (eventos, VIP, validator, comprovante, conta cliente).
 
-**Header mobile Partner (item 7):**
+---
 
-- Localizar header tabs do partner layout. Aplicar `overflow-x-auto snap-x scrollbar-hide` + `sticky top-0`.
+## Arquivos previstos
 
-**Lista de espera → vaga (item 8):**
+Novos:
 
-- `WaitlistManager.tsx`: botão "Abrir vaga" gera URL `/:slug/reservas?type=<id>&date=<yyyy-mm-dd>&slot=HH:mm&waitlist=<token>`.
-- `PublicReservation.tsx`: ler query params, pré-selecionar tipo/data/slot, mostrar banner "Você está vindo da lista de espera". Não criar rotas novas.
+- `src/apps/partner/styles/partner-ui.css`
+- `src/apps/partner/components/ui/{GlassCard,KpiCard,StatusDot,SectionHeader,SkeletonBlock}.tsx`
+- `src/apps/partner/components/ReservationHeroCard.tsx`
+- `src/apps/partner/components/ReservationKpiGrid.tsx`
+- `src/apps/partner/components/ReservationTimeline.tsx`
+- `src/apps/partner/components/WeeklyHeatmap.tsx`
+- `src/apps/partner/components/PartnerBottomNav.tsx`
 
-## Fase 2 — UX & Dashboard (P2, itens 9–12)
+Editados (apenas visual / composição):
 
-- `ReservationStats.tsx`: reorganizar cards (Ocupadas/Livres/Capacidade %).
-- `PartnerMetricsCards.tsx`: adicionar reservas hoje, 7d, ticket médio, receita prevista/confirmada, sinais pendentes, check-ins, mesas liberadas (campos derivados de `partner_reservations`).
-- `WaitlistManager.tsx`: posição #N, "há X min", obs `📝`.
-- `PublicLinkQrDialog.tsx`: título "QR do Link" / "Compartilhar QR".
+- `src/apps/partner/App.tsx` (import do CSS)
+- `src/apps/partner/layouts/*` (bottom nav + safe area)
+- `src/apps/partner/pages/PartnerReservationsPage.tsx`
+- `src/apps/partner/components/ReservationCard.tsx` (variant premium)
+- `src/apps/partner/components/WaitlistManager.tsx`
+- `src/apps/partner/components/OccupancyInsightsPanel.tsx`
+- `src/apps/partner/components/ReservationStats.tsx` (mantido, usado em outros pontos)
+- `src/apps/partner/components/index.ts`
 
-## Fase 3 — Relatório Diário (P3, itens 13–14)
+Não tocados: tudo de Lista VIP, Conta Roxou, Validador QR, Comprovantes, Analytics, Eventos, migrations, RPCs, RLS, `supabase/`, Nginx.
 
-- Novo componente `DailyOperationsReport.tsx` dentro de `PartnerReservationsPage` (nova aba "Relatório do dia") ou nova rota `/partner/reservas/relatorio`. **Sem páginas públicas.**
-- Filtro de data (default hoje SP).
-- Resumo: total, confirmadas, pendentes, canceladas, expiradas, no-show, lista espera, check-ins, mesas liberadas (queries a `partner_reservations` + `partner_reservation_waitlist`).
-- Agrupamento por slot (HH:mm) com ações Confirmar pagamento / WhatsApp / Liberar mesa / No-show / Cancelar / Ver comprovante.
-- Seção lista de espera com Notificar / Copiar WhatsApp / Cancelar.
+## Validação
 
-## Fase 4 — IA de Ocupação (P4, itens 15–16)
+- `bun run typecheck` + build automático após cada fase.
+- Preview manual mobile 360 e desktop 1024 das telas: `/partner/reservas`, `/partner/dashboard`.
+- Smoke test: criar reserva pública, ver aparecer no hero/timeline; mover para lista de espera; aplicar sugestão de duração.
 
-**Migration:** RPC `get_reservation_occupancy_insights(p_partner_id uuid, p_days int default 30)`:
+## Pergunta antes de executar
 
-- WHERE status IN ('completed','confirmed') AND released_at IS NOT NULL AND status NOT IN ('cancelled','no_show','expired')
-- `real_minutes = COALESCE(EXTRACT(EPOCH FROM (released_at - checked_in_at))/60, EXTRACT(EPOCH FROM (released_at - reservation_date))/60)`
-- Group by reservation_type_id, retornando avg/median/p75, current_duration, suggested_duration (arredondado a 30min, clamp 60–240, sem teto p/ camarote — heurística pelo nome ILIKE '%camarote%').
-- Confiança: sample <5 = low, 5–20 = medium, >20 = high.
-
-**UI:** seção "IA de Ocupação" em PartnerSettings (ou ReservationSettings):
-
-- Cards por tipo: Média / Atual / Sugestão / Confiança / botão "Aplicar sugestão" (UPDATE `partner_reservation_types.duration_minutes`).
-- Nota: "Isso afetará apenas novas reservas. Reservas antigas mantêm o snapshot."
-
-## Decisão necessária
-
-Confirma a divisão em 4 fases? Posso começar pela Fase 1 (hotfixes críticos) imediatamente após sua aprovação. Cada fase termina com type-check + build antes da próxima.
-
-**Pergunta operacional:** o Relatório Diário deve ser **uma nova aba** dentro de `PartnerReservationsPage` ou uma **nova rota** `/partner/reservas/relatorio`? (recomendo aba para reduzir navegação)
-
-IMPORTANTE
-
-Confirmado. Pode seguir com a divisão em 4 fases.
-
-Comece pela Fase 1 — Hotfixes críticos.
-
-Regras:
-
-- Cada fase deve terminar com type-check + build.
-
-- Não iniciar a próxima fase se houver erro crítico.
-
-- Não tocar em Lista VIP, Conta Roxou, Validador QR, Eventos, Analytics existentes, Nginx/VPS ou RLS não relacionadas.
-
-- Manter uma única página pública de reservas: /:partnerSlug/reservas.
-
-- Não criar páginas públicas extras.
+Quer que eu execute as 4 fases em sequência (type-check + build entre cada), ou prefere aprovar fase a fase? Posso também começar direto pela Fase 1 + 2 (maior impacto visual) e parar para você revisar antes da 3 e 4.
 
 &nbsp;
 
-Decisão sobre Relatório Diário:
-
-Implementar como nova aba dentro de PartnerReservationsPage, não como nova rota.
+Importante, siga essa ordem:
 
 &nbsp;
 
-Ordem aprovada:
+Fase 1
 
-1. Fase 1 — Hotfixes críticos
+↓
 
-2. Fase 2 — UX & Dashboard
+Type-check
 
-3. Fase 3 — Relatório Diário em aba dentro de PartnerReservationsPage
+↓
 
-4. Fase 4 — IA de Ocupação
+Build
 
-&nbsp;
+↓
 
-Pode começar pela Fase 1.
+Deploy VPS
+
+↓
+
+Revisão visual
+
+↓
+
+Fase 3
+
+↓
+
+Fase 4
+
+↓
+
+Build final
