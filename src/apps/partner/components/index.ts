@@ -47,6 +47,8 @@ export { WeeklyHeatmap } from "./WeeklyHeatmap";
 export { LiveOperationsPanel } from "./LiveOperationsPanel";
 export { OccupancyInsightsPremium } from "./OccupancyInsightsPremium";
 export { PartnerNotificationsCenter } from "./PartnerNotificationsCenter";
+export { ExecutiveAnalyticsHero } from "./ExecutiveAnalyticsHero";
+export { GrowthSummaryCard } from "./GrowthSummaryCard";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";
