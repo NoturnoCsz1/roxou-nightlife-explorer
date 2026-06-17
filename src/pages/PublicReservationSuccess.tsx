@@ -552,19 +552,20 @@ const PublicReservationSuccessPage = () => {
           <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
             <div>
               <p className="text-white/50">Tipo</p>
-              <p className="font-medium break-words">
-                {info?.type_kind
-                  ? `${KIND_LABEL[info.type_kind]}${info.type_name ? ` · ${info.type_name}` : ""}`
-                  : "Reserva geral"}
-              </p>
+              <p className="font-medium break-words line-clamp-2">{typeLabel}</p>
             </div>
             <div className="text-right">
               <p className="text-white/50">Código</p>
-              <p className="font-mono font-bold tracking-widest">{code}</p>
+              <p className="font-mono font-bold tracking-widest break-all">{code}</p>
             </div>
             <div>
               <p className="text-white/50">Pessoas</p>
-              <p className="font-medium">{info?.people_count ?? 1}</p>
+              <p className="font-medium">
+                {peopleCount}
+                {peopleFixed ? (
+                  <span className="ml-1 text-[9px] text-white/60">(incluídas)</span>
+                ) : null}
+              </p>
             </div>
             <div className="text-right">
               <p className="text-white/50">Data / horário</p>
