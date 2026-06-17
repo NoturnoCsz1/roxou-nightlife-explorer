@@ -87,6 +87,14 @@ const PublicReservationPage = () => {
         }
         setPartner(ctx.partner);
         setTypes(ctx.types);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.log(
+            "[PUBLIC RESERVATIONS]",
+            partnerSlug,
+            ctx.partner?.reservations_enabled,
+          );
+        }
         if (preselectTypeId) {
           const match = ctx.types.find((t) => t.id === preselectTypeId);
           if (match) setSelectedType(match.id);
@@ -184,7 +192,7 @@ const PublicReservationPage = () => {
         <SEO title={`Reservas — ${partner.name}`} description="" />
         <h1 className="text-xl font-bold">{partner.name}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Este estabelecimento não está aceitando reservas online no momento.
+          As reservas estão temporariamente indisponíveis.
         </p>
       </main>
     );
