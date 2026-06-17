@@ -30,6 +30,9 @@ export { ReservationTable } from "./ReservationTable";
 export { ReservationSettingsForm } from "./ReservationSettingsForm";
 export { ReservationTypesManager } from "./ReservationTypesManager";
 export { WaitlistManager } from "./WaitlistManager";
+export { GuestNameDialog } from "./GuestNameDialog";
+export type { QuickReservationValues } from "./GuestNameDialog";
+export { PublicLinkQrDialog } from "./PublicLinkQrDialog";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";
