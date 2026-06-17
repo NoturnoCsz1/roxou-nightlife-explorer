@@ -481,27 +481,29 @@ const PublicReservationSuccessPage = () => {
             boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {info?.partner_logo_url ? (
               <img
                 src={info.partner_logo_url}
                 alt={partnerName}
                 crossOrigin="anonymous"
-                className="w-12 h-12 rounded-full object-cover bg-white/5 shrink-0"
+                className="w-12 h-12 rounded-full object-contain bg-white/10 shrink-0 p-1"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-white/10 shrink-0" />
+              <div className="w-12 h-12 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-white font-bold">
+                {partnerName.charAt(0)}
+              </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[10px] uppercase tracking-wider text-primary">
                 Comprovante de Reserva
               </p>
-              <p className="text-sm font-bold text-white break-words">
+              <p className="text-sm font-bold text-white break-words line-clamp-2">
                 {partnerName}
               </p>
             </div>
             <span
-              className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
+              className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0 ${meta.badgeClass}`}
             >
               {meta.label}
             </span>
