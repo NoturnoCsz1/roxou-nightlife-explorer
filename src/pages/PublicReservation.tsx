@@ -436,6 +436,12 @@ const PublicReservationPage = () => {
       </section>
 
       <div className="mx-auto w-full max-w-xl space-y-6 px-4 pb-10">
+        {waitlistToken ? (
+          <div className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+            ✅ Você está vindo da lista de espera. Reservamos seu tipo e horário sugerido — basta confirmar abaixo.
+          </div>
+        ) : null}
+
         {/* ============ TIPOS ============ */}
         {types.length > 0 && (
           <section className="space-y-4">
