@@ -1,11 +1,23 @@
 /**
  * Página pública de reservas — /:partnerSlug/reservas
  *
+ * Landing mobile-first com identidade do parceiro.
  * Cliente seleciona tipo (mesa/bistrô/camarote), data e dados pessoais.
  * Após submissão, redireciona para o comprovante com contador.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  Instagram,
+  MapPin,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  CheckCircle2,
+  Users,
+  Calendar,
+  Phone,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,10 +48,33 @@ const KIND_LABEL: Record<PublicReservationType["kind"], string> = {
   box: "Camarote",
 };
 
+const KIND_LABEL_PLURAL: Record<PublicReservationType["kind"], string> = {
+  table: "Mesas",
+  bistro: "Bistrôs",
+  box: "Camarotes",
+};
+
 const minLocalInput = (hoursAhead: number): string => {
   const d = new Date(Date.now() + hoursAhead * 3600 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const formatBRL = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const sanitizeWhatsapp = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  return digits.startsWith("55") ? digits : `55${digits}`;
+};
+
+const sanitizeInstagram = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const handle = raw.replace(/^@/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/$/, "");
+  if (!handle) return null;
+  return handle;
 };
 
 const PublicReservationPage = () => {
@@ -71,7 +106,6 @@ const PublicReservationPage = () => {
   const [waitlistNotes, setWaitlistNotes] = useState("");
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [waitlistSent, setWaitlistSent] = useState(false);
-
 
   useEffect(() => {
     if (!partnerSlug) return;
@@ -109,7 +143,7 @@ const PublicReservationPage = () => {
     return () => {
       alive = false;
     };
-  }, [partnerSlug, toast]);
+  }, [partnerSlug, toast, preselectTypeId]);
 
   const grouped = useMemo(() => {
     const acc: Record<PublicReservationType["kind"], PublicReservationType[]> = {
@@ -129,6 +163,15 @@ const PublicReservationPage = () => {
   const minWhen = useMemo(
     () => minLocalInput(partner?.advance_booking_hours ?? 2),
     [partner?.advance_booking_hours],
+  );
+
+  const whatsappDigits = useMemo(
+    () => sanitizeWhatsapp(partner?.whatsapp),
+    [partner?.whatsapp],
+  );
+  const instagramHandle = useMemo(
+    () => sanitizeInstagram(partner?.instagram),
+    [partner?.instagram],
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -204,39 +247,142 @@ const PublicReservationPage = () => {
         title={`Reservar em ${partner.name} | Roxou`}
         description={`Reserve mesa, bistrô ou camarote em ${partner.name}.`}
       />
-      <div className="mx-auto w-full max-w-xl space-y-4 px-4 py-6">
-        <header className="space-y-1">
-          <p className="text-xs uppercase tracking-wide text-primary">Reservas</p>
-          <h1 className="text-2xl font-bold">{partner.name}</h1>
-          {partner.city ? (
-            <p className="text-sm text-muted-foreground">{partner.city}</p>
-          ) : null}
-        </header>
 
+      {/* ============ HERO ============ */}
+      <section className="relative w-full overflow-hidden">
+        {/* Background: blurred logo if exists + gradient overlay */}
+        <div className="absolute inset-0 -z-10">
+          {partner.logo_url ? (
+            <img
+              src={partner.logo_url}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover opacity-30 blur-2xl scale-125"
+            />
+          ) : null}
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-background/80 to-background" />
+        </div>
+
+        <div className="mx-auto w-full max-w-xl px-4 pt-8 pb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Badge className="bg-primary/90 text-primary-foreground border-0 gap-1">
+              <ShieldCheck className="h-3 w-3" />
+              Reservas oficiais
+            </Badge>
+            <Badge variant="outline" className="border-primary/40 text-[10px] gap-1">
+              <Sparkles className="h-3 w-3" />
+              Powered by Roxou
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-4 min-w-0">
+            {partner.logo_url ? (
+              <img
+                src={partner.logo_url}
+                alt={partner.name}
+                className="h-20 w-20 shrink-0 rounded-2xl object-cover border-2 border-primary/40 shadow-[0_0_24px_-6px_hsl(var(--primary)/0.6)]"
+              />
+            ) : (
+              <div className="h-20 w-20 shrink-0 rounded-2xl bg-gradient-to-br from-primary to-primary/60 border-2 border-primary/40 flex items-center justify-center text-2xl font-bold text-primary-foreground">
+                {partner.name.charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold leading-tight break-words">
+                {partner.name}
+              </h1>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                {partner.city ? <span>{partner.city}</span> : null}
+                {partner.type ? (
+                  <>
+                    <span className="opacity-50">•</span>
+                    <span className="capitalize">{partner.type}</span>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          {partner.short_description ? (
+            <p className="mt-3 text-sm text-foreground/80 leading-relaxed break-words">
+              {partner.short_description}
+            </p>
+          ) : null}
+
+          {partner.address ? (
+            <p className="mt-3 flex items-start gap-1.5 text-xs text-muted-foreground break-words">
+              <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span className="min-w-0">{partner.address}</span>
+            </p>
+          ) : null}
+
+          {(instagramHandle || whatsappDigits) ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {instagramHandle ? (
+                <a
+                  href={`https://instagram.com/${instagramHandle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1.5 text-xs hover:border-primary/60 transition"
+                >
+                  <Instagram className="h-3.5 w-3.5" />
+                  @{instagramHandle}
+                </a>
+              ) : null}
+              {whatsappDigits ? (
+                <a
+                  href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent("Olá, tenho uma dúvida sobre reservas.")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-green-600 text-white px-3 py-1.5 text-xs hover:bg-green-700 transition"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Falar com o estabelecimento
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <div className="mx-auto w-full max-w-xl space-y-6 px-4 pb-10">
+        {/* ============ TIPOS ============ */}
         {types.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold">Escolha o tipo</h2>
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-lg font-bold">Escolha sua reserva</h2>
+              <p className="text-xs text-muted-foreground">
+                Selecione mesa, bistrô ou camarote.
+              </p>
+            </div>
+
             {(["table", "bistro", "box"] as const).map((kind) =>
               grouped[kind].length === 0 ? null : (
                 <div key={kind} className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    {KIND_LABEL[kind]}s
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+                    {KIND_LABEL_PLURAL[kind]}
                   </p>
                   <div className="grid gap-2">
                     {grouped[kind].map((t) => {
                       const active = selectedType === t.id;
                       const soldOut = t.available <= 0;
+                      const lowStock = !soldOut && t.available <= 2;
                       return (
                         <div
                           key={t.id}
-                          className={`rounded-lg border px-3 py-3 transition ${
+                          className={`relative rounded-xl border-2 px-3 py-3 transition min-w-0 ${
                             soldOut
-                              ? "border-border/40 bg-muted/30"
+                              ? "border-border/30 bg-muted/20 opacity-70"
                               : active
-                              ? "border-primary bg-primary/10"
-                              : "border-border/60 bg-card/40"
+                              ? "border-primary bg-primary/10 shadow-[0_0_20px_-8px_hsl(var(--primary)/0.8)]"
+                              : "border-border/60 bg-card/40 hover:border-primary/40"
                           }`}
                         >
+                          {active && !soldOut ? (
+                            <div className="absolute -top-2 -right-2 rounded-full bg-primary p-1 shadow-md">
+                              <CheckCircle2 className="h-4 w-4 text-primary-foreground" />
+                            </div>
+                          ) : null}
                           <button
                             type="button"
                             disabled={soldOut}
@@ -246,34 +392,53 @@ const PublicReservationPage = () => {
                               if (kind === "box") setGuests(t.seats);
                             }}
                             className={`block w-full text-left ${
-                              soldOut ? "cursor-not-allowed opacity-70" : ""
+                              soldOut ? "cursor-not-allowed" : ""
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold">
+                            <div className="flex items-start justify-between gap-2 min-w-0">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold break-words">
                                   {t.name}
                                 </p>
-                                <p className="truncate text-xs text-muted-foreground">
-                                  {t.seats} {kind === "box" ? "pess." : "lug."}
+                                <p className="mt-0.5 text-[11px] text-muted-foreground break-words">
+                                  <Users className="inline h-3 w-3 mr-0.5" />
+                                  {t.seats} {kind === "box" ? "pessoas" : "lugares"}
                                   {t.minimum_consumption
-                                    ? ` · consumo mín. R$ ${Number(t.minimum_consumption).toFixed(2)}`
-                                    : ""}
-                                  {!soldOut && t.available > 0
-                                    ? ` · ${t.available} de ${t.quantity} disponível${t.available === 1 ? "" : "s"}`
+                                    ? ` • consumo mín. ${formatBRL(Number(t.minimum_consumption))}`
                                     : ""}
                                 </p>
                               </div>
-                              {soldOut ? (
-                                <Badge variant="destructive">Esgotado</Badge>
-                              ) : (
-                                <Badge variant="outline">
-                                  R$ {Number(t.price).toFixed(2)}
-                                </Badge>
-                              )}
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                {soldOut ? (
+                                  <Badge variant="destructive" className="text-[10px]">
+                                    Esgotado
+                                  </Badge>
+                                ) : (
+                                  <>
+                                    <span className="whitespace-nowrap text-sm font-bold text-primary">
+                                      {formatBRL(Number(t.price))}
+                                    </span>
+                                    {lowStock ? (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[9px] border-amber-500/50 text-amber-600"
+                                      >
+                                        Poucas
+                                      </Badge>
+                                    ) : (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[9px] border-emerald-500/50 text-emerald-600"
+                                      >
+                                        {t.available} disp.
+                                      </Badge>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </div>
                             {t.description ? (
-                              <p className="mt-1 text-[11px] text-muted-foreground">
+                              <p className="mt-2 text-[11px] text-muted-foreground break-words">
                                 {t.description}
                               </p>
                             ) : null}
@@ -305,8 +470,9 @@ const PublicReservationPage = () => {
           </section>
         )}
 
-        <Card>
-          <CardHeader>
+        {/* ============ FORM ============ */}
+        <Card className="border-primary/20">
+          <CardHeader className="pb-3">
             <CardTitle className="text-base">Seus dados</CardTitle>
           </CardHeader>
           <CardContent>
@@ -316,16 +482,21 @@ const PublicReservationPage = () => {
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  placeholder="Como aparece no documento"
+                  className="h-11"
                   required
                 />
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <Label className="text-xs">Telefone / WhatsApp</Label>
+                  <Label className="text-xs">WhatsApp</Label>
                   <Input
+                    type="tel"
+                    inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="(18) 99999-9999"
+                    className="h-11"
                     required
                   />
                 </div>
@@ -335,6 +506,8 @@ const PublicReservationPage = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    placeholder="voce@email.com"
+                    className="h-11"
                   />
                 </div>
               </div>
@@ -343,10 +516,12 @@ const PublicReservationPage = () => {
                   <Label className="text-xs">Pessoas</Label>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={1}
                     max={partner.max_people_per_reservation}
                     value={guests}
                     onChange={(e) => setGuests(Number(e.target.value) || 1)}
+                    className="h-11"
                   />
                 </div>
                 <div>
@@ -356,6 +531,7 @@ const PublicReservationPage = () => {
                     min={minWhen}
                     value={when}
                     onChange={(e) => setWhen(e.target.value)}
+                    className="h-11"
                     required
                   />
                 </div>
@@ -366,45 +542,121 @@ const PublicReservationPage = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
+                  placeholder="Aniversário, preferências, etc."
                 />
               </div>
 
+              {/* Resumo */}
               {selected ? (
-                <div className="rounded-md border border-border/60 bg-card/40 px-3 py-2 text-xs">
-                  <p className="font-medium">
-                    {KIND_LABEL[selected.kind]} — {selected.name}
+                <div className="rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-3 space-y-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                    Resumo da reserva
                   </p>
-                  <p className="text-muted-foreground">
-                    Valor: R$ {Number(selected.price).toFixed(2)}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-muted-foreground">Tipo</span>
+                    <span className="font-medium text-right break-words min-w-0">
+                      {KIND_LABEL[selected.kind]} — {selected.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-muted-foreground">Pessoas</span>
+                    <span className="font-medium">{guests}</span>
+                  </div>
+                  {when ? (
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="text-muted-foreground">Quando</span>
+                      <span className="font-medium text-right">
+                        {new Date(when).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="flex items-center justify-between gap-2 text-sm pt-1 border-t border-primary/20">
+                    <span className="text-muted-foreground">Valor</span>
+                    <span className="font-bold text-primary">
+                      {formatBRL(Number(selected.price))}
+                    </span>
+                  </div>
+                  {selected.minimum_consumption ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Consumo mínimo: {formatBRL(Number(selected.minimum_consumption))}
+                    </p>
+                  ) : null}
                 </div>
-              ) : null}
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/60 px-3 py-3 text-xs text-muted-foreground text-center">
+                  Selecione uma reserva acima para ver o resumo.
+                </div>
+              )}
 
               {!partner.auto_confirm && (
-                <p className="text-[11px] text-amber-600">
-                  Sua reserva ficará disponível por{" "}
-                  {partner.confirmation_timeout_minutes} minutos para confirmação/pagamento.
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                  ⏱️ Sua reserva ficará disponível por{" "}
+                  <strong>{partner.confirmation_timeout_minutes} minutos</strong>{" "}
+                  para confirmação/pagamento com o estabelecimento.
                 </p>
               )}
 
               <Button
                 type="submit"
                 disabled={submitting || (selected ? selected.available <= 0 : false)}
-                className="w-full"
+                className="w-full h-12 text-base font-semibold"
               >
                 {submitting
                   ? "Enviando…"
                   : selected && selected.available <= 0
                   ? "Esgotado"
-                  : "Solicitar reserva"}
+                  : "Continuar reserva"}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <p className="text-[10px] text-center text-muted-foreground">
-          A reserva só estará garantida após confirmação do estabelecimento ou
-          pagamento, conforme regras do local.
+        {/* ============ COMO FUNCIONA ============ */}
+        <Card className="bg-card/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Como funciona</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-2 text-xs text-muted-foreground">
+              {[
+                "Escolha sua mesa, bistrô ou camarote.",
+                "Preencha seus dados de contato.",
+                "Receba o comprovante com QR Code.",
+                "Confirme o pagamento/sinal com o estabelecimento.",
+                "Apresente o QR Code na entrada.",
+              ].map((step, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 break-words leading-relaxed">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+
+        {/* ============ CTA WHATSAPP ============ */}
+        {whatsappDigits ? (
+          <a
+            href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent("Olá, tenho uma dúvida sobre reservas.")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white px-4 py-3 text-sm font-medium hover:bg-green-700 transition"
+          >
+            <Phone className="h-4 w-4" />
+            Falar com {partner.name} no WhatsApp
+          </a>
+        ) : null}
+
+        <p className="text-[10px] text-center text-muted-foreground leading-relaxed px-4">
+          A reserva está sujeita à confirmação do estabelecimento e às regras
+          do local.
+          <br />
+          <span className="opacity-70">Powered by Roxou Partner Pro</span>
         </p>
       </div>
 
