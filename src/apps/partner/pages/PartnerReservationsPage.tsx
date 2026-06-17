@@ -317,7 +317,7 @@ const PartnerReservationsPage = () => {
         </div>
         <div className="flex flex-wrap gap-2">
           {canCreate && (
-            <Button onClick={handleQuickAdd} className="min-h-[44px]">
+            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]">
               Nova reserva
             </Button>
           )}
@@ -326,6 +326,18 @@ const PartnerReservationsPage = () => {
           </Button>
         </div>
       </header>
+
+      <GuestNameDialog
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+        onConfirm={handleQuickAdd}
+      />
+      <PublicLinkQrDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        url={publicUrl}
+        filename={`reservas-${selectedPartner?.slug ?? "qr"}.png`}
+      />
 
       <ReservationStats stats={stats} />
 
@@ -338,7 +350,7 @@ const PartnerReservationsPage = () => {
             <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs break-all">
               {publicUrl}
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button
                 variant="outline"
                 onClick={handleOpenLink}
@@ -354,6 +366,14 @@ const PartnerReservationsPage = () => {
               >
                 <Copy className="mr-2 h-4 w-4" />
                 Copiar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setQrOpen(true)}
+                className="min-h-[44px] w-full"
+              >
+                <QrCode className="mr-2 h-4 w-4" />
+                QR
               </Button>
               <Button
                 onClick={() => void handleShareLink()}
