@@ -469,7 +469,15 @@ const PartnerValidatorPage = () => {
             className={`border-2 ${style.ring} p-4 space-y-3 break-words`}
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Badge className={style.bg}>{style.label}</Badge>
+              <Badge className={`${style.bg} text-sm font-bold uppercase tracking-wide`}>
+                {result.outcome === "valid"
+                  ? result.type === "reservation"
+                    ? "Reserva validada"
+                    : "Check-in realizado"
+                  : result.outcome === "already_used"
+                    ? "Já utilizado"
+                    : style.label}
+              </Badge>
               <Badge variant="outline" className="text-[10px]">
                 {typeLabel[result.type]}
               </Badge>
@@ -479,6 +487,11 @@ const PartnerValidatorPage = () => {
             ) : null}
             <p className="text-sm text-muted-foreground break-words">
               {result.message}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {new Date().toLocaleTimeString("pt-BR", {
+                timeZone: "America/Sao_Paulo",
+              })}
             </p>
 
             {result.vipEntry?.promoter_name_snapshot ? (
@@ -495,15 +508,14 @@ const PartnerValidatorPage = () => {
               </p>
             ) : null}
 
-            {result.outcome === "valid" && result.confirm ? (
-              <Button
-                onClick={() => void confirmCheckIn()}
-                disabled={busy}
-                className="w-full h-12 text-base"
-              >
-                {busy ? "Confirmando..." : "Confirmar check-in"}
-              </Button>
-            ) : null}
+            <Button
+              onClick={scanNext}
+              disabled={busy}
+              variant="secondary"
+              className="w-full h-11"
+            >
+              Escanear próximo
+            </Button>
           </Card>
         ) : null}
 
