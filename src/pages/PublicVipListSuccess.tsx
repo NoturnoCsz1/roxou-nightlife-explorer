@@ -207,10 +207,10 @@ const PublicVipListSuccessPage = () => {
             ) : null}
           </div>
 
-          <div className="bg-white p-3 rounded-xl mx-auto w-full max-w-[240px] aspect-square flex items-center justify-center">
+          <div className="bg-white p-3 rounded-xl mx-auto w-full max-w-[260px] sm:max-w-[360px] aspect-square flex items-center justify-center overflow-hidden">
             {qrSvg ? (
               <div
-                className="w-full h-full"
+                className="w-full h-full [&_svg]:w-full [&_svg]:h-full [&_svg]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
             ) : (
@@ -256,15 +256,17 @@ const PublicVipListSuccessPage = () => {
         </div>
 
         {/* ====== Ações ====== */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="secondary" onClick={downloadQr}>
+        <div className="grid grid-cols-2 gap-2 w-full">
+          <Button variant="secondary" onClick={downloadQr} className="w-full min-w-0 truncate">
             Baixar QR PNG
           </Button>
-          <Button variant="secondary" onClick={downloadCard}>
+          <Button variant="secondary" onClick={downloadCard} className="w-full min-w-0 truncate">
             Salvar comprovante
           </Button>
-          <Button onClick={shareWhatsapp}>WhatsApp</Button>
-          <Button variant="outline" onClick={copyCode}>
+          <Button onClick={shareWhatsapp} className="w-full min-w-0 truncate">
+            WhatsApp
+          </Button>
+          <Button variant="outline" onClick={copyCode} className="w-full min-w-0 truncate">
             Copiar código
           </Button>
         </div>
