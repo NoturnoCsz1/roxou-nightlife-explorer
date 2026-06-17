@@ -41,8 +41,24 @@ function safeJson(text: string): any {
   return null;
 }
 
+// Normaliza ISO sem offset (datetime-local "YYYY-MM-DDTHH:MM[:SS]") para -03:00 (America/Sao_Paulo).
+// 🛑 CAUSA RAIZ do bug "17h00": sem offset, o Deno parseava como UTC e ao formatar em SP subtraía 3h
+// (ex.: 20:00 local → "20:00Z" → 17:00 SP). Agora forçamos o offset correto.
+function normalizeToSPIso(input: string): string {
+  const s = String(input || "").trim();
+  if (!s) return s;
+  // Já tem offset/Z?
+  if (/Z$|[+\-]\d{2}:?\d{2}$/.test(s)) return s;
+  // datetime-local sem segundos: YYYY-MM-DDTHH:MM
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) return `${s}:00-03:00`;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) return `${s}-03:00`;
+  // Só data: assume meia-noite SP
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00-03:00`;
+  return s;
+}
+
 function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
-  const dt = new Date(iso);
+  const dt = new Date(normalizeToSPIso(iso));
   const dateLong = dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
   const dateShort = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
   const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
@@ -55,6 +71,7 @@ function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
   const isToday = todaySP === eventDaySP;
   return { dateLong, dateShort, timeLabel, weekdayFull, weekdayShort, hasRealTime, isToday };
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HTML sanitizer (server-side, sem libs externas — DOMPurify continua no front)
@@ -194,6 +211,8 @@ type AIInput = {
   weekday: string;
   time_label: string | null;
   time_is_unknown: boolean;
+  assumed_time: boolean;
+  assumed_time_source: string | null;
   is_today: boolean;
   venue_name: string;
   venue_description: string;
@@ -211,6 +230,20 @@ type AIInput = {
   official_source_url: string;
   confidence_score: number;
 };
+
+// Categorias/temas que NÃO devem receber fallback 20h (claramente diurnos/horário conhecido).
+const DAYTIME_HINTS_RE = /\b(almoço|almoco|feijoada|caf[eé]|brunch|matin[eê]|infantil|kids|crian[çc]a|happy\s*hour|esportivo|transmiss[ãa]o|jogo|partida|copa|brasileir[ãa]o|libertadores|p[ií]quenique|piquenique|piscina|day\s*use)\b/i;
+
+function shouldApplyPrudenteNightFallback(ctx: {
+  city: string; category: string; sub_category: string; event_title: string; venue_type: string;
+}): boolean {
+  const cityOk = normText(ctx.city).includes("prudente") || ctx.city === "";
+  if (!cityOk) return false;
+  const blob = `${ctx.event_title} ${ctx.category} ${ctx.sub_category} ${ctx.venue_type}`;
+  if (DAYTIME_HINTS_RE.test(blob)) return false;
+  return true;
+}
+
 
 function buildSystemPrompt(): string {
   return `Você é redator da ROXOU — agenda independente da noite do interior de SP (Presidente Prudente). Estilo: humano, direto, regional, jovem, leve. PROIBIDO parecer release de assessoria ou texto genérico de IA.
@@ -236,7 +269,9 @@ Devolva APENAS JSON válido neste formato (sem markdown, sem comentários):
 
 ⛔ Frases banidas: "imperdível", "noite inesquecível", "experiência única", "não perca", "prepare-se", "vibe contagiante", "celebrando", "embalar a noite", "a melhor noite da sua vida".
 ⛔ Não copie literalmente o flyer. Reescreva com voz Roxou.
-⛔ Se time_is_unknown=true, escreva "horário a confirmar" ou OMITA o horário. NUNCA chute "17h", "20h" ou "22h".
+⛔ Se time_is_unknown=true E assumed_time=false, escreva "horário a confirmar" ou OMITA o horário. NUNCA chute "17h", "20h" ou "22h".
+⛔ NUNCA use 17h como horário padrão. Só pode aparecer se vier explicitamente em time_label.
+✅ Se assumed_time=true (fallback noturno de Prudente), use frases como "Horário previsto: 20h00." ou "Programação prevista para iniciar às 20h00." deixando claro que é estimativa, não confirmação oficial.
 ⛔ Não use h1/h2/scripts/links HTML no description_html.`;
 }
 
@@ -245,8 +280,10 @@ function buildUserPrompt(data: AIInput): string {
     event_title: data.event_title,
     artists: data.artists,
     date: { weekday: data.weekday, long: data.date_long, short: data.date_short, is_today: data.is_today },
-    time: data.time_is_unknown ? null : data.time_label,
+    time: data.time_is_unknown && !data.assumed_time ? null : data.time_label,
     time_is_unknown: data.time_is_unknown,
+    assumed_time: data.assumed_time,
+    assumed_time_source: data.assumed_time_source,
     venue: {
       name: data.venue_name || null,
       type: data.venue_type || null,
@@ -390,14 +427,37 @@ serve(async (req) => {
         .map((x) => normText(x)),
     );
 
+    // Fallback noturno Prudente: só quando NÃO há horário real e o evento não é claramente diurno.
+    const baseTimeUnknown = !dateInfo.hasRealTime;
+    const eligibleForFallback = baseTimeUnknown && shouldApplyPrudenteNightFallback({
+      city: String(partnerCity || ""),
+      category: String(category || ""),
+      sub_category: String(sub_category || ""),
+      event_title: cleanTitle,
+      venue_type: String(partnerType || ""),
+    });
+    const assumedTime = eligibleForFallback;
+    const finalTimeLabel = baseTimeUnknown ? (assumedTime ? "20h00" : null) : dateInfo.timeLabel;
+    const finalTimeIsUnknown = baseTimeUnknown && !assumedTime;
+
+    if (assumedTime) {
+      console.log("[DESCRIPTION_FALLBACK_TIME]", {
+        source: "default_prudente_nightlife",
+        time: "20:00",
+        reason: "no_datetime_detected",
+      });
+    }
+
     const aiInput: AIInput = {
       event_title: cleanTitle,
       artists: Array.from(knownArtists),
       date_long: dateInfo.dateLong,
       date_short: dateInfo.dateShort,
       weekday: dateInfo.weekdayShort,
-      time_label: dateInfo.timeLabel,
-      time_is_unknown: !dateInfo.hasRealTime,
+      time_label: finalTimeLabel,
+      time_is_unknown: finalTimeIsUnknown,
+      assumed_time: assumedTime,
+      assumed_time_source: assumedTime ? "default_prudente_nightlife_20h" : null,
       is_today: dateInfo.isToday,
       venue_name: String(venue_name || "").trim(),
       venue_description: String(partnerSummary || "").trim(),
@@ -415,6 +475,19 @@ serve(async (req) => {
       official_source_url: String(official_source_url || "").trim(),
       confidence_score: Number.isFinite(Number(confidence_score)) ? Number(confidence_score) : 80,
     };
+
+    console.log("[DESCRIPTION_CONTEXT]", {
+      event_title: aiInput.event_title,
+      date_time_in: date_time,
+      date_time_normalized: normalizeToSPIso(String(date_time)),
+      time_label: aiInput.time_label,
+      time_is_unknown: aiInput.time_is_unknown,
+      assumed_time: aiInput.assumed_time,
+      venue: aiInput.venue_name,
+      partner_id: partner_id || null,
+      city: aiInput.city,
+    });
+
 
     // 1. IA
     let ai: any;
@@ -470,14 +543,15 @@ serve(async (req) => {
       used_flyer: Boolean(aiInput.flyer_text),
     };
 
-    console.log("[generate-description] v5", {
+    console.log("[DESCRIPTION_RESULT]", {
       model: "openai/gpt-5-mini",
       hasTime: ctx.hasTime,
-      hasPrice: ctx.hasPrice,
-      hasOfficial: ctx.hasOfficialSource,
+      assumedTime: aiInput.assumed_time,
+      timeLabel: aiInput.time_label,
       warningsCount: warnings.length,
       safetyCount: safety_notes.length,
       confidence: aiInput.confidence_score,
+      title_out: clean.title,
     });
 
     return new Response(JSON.stringify(responsePayload), {
