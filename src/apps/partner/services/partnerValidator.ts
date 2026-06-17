@@ -273,7 +273,7 @@ async function validateReservation(
   return {
     outcome: "valid",
     type: "reservation",
-    message: `${ref} · ${row.party_size ?? 1} pessoa(s)`,
+    message: `${ref} · ${row.people_count ?? 1} pessoa(s)`,
     reservation: row,
     ref,
     confirm: async () => {
