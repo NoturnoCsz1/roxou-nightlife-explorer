@@ -416,9 +416,9 @@ export function ReservationTypesManager({
   };
 
   return (
-    <Card className="rounded-2xl">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-base">Tipos de reserva</CardTitle>
+    <Card className="rounded-2xl w-full max-w-full min-w-0 overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 min-w-0">
+        <CardTitle className="text-base truncate">Tipos de reserva</CardTitle>
         {canEdit && !draft && (
           <Button
             size="sm"
@@ -433,13 +433,14 @@ export function ReservationTypesManager({
           </Button>
         )}
       </CardHeader>
-      <CardContent className="space-y-3 min-w-0">
+      <CardContent className="space-y-3 w-full max-w-full min-w-0 overflow-hidden">
         {renderEditor()}
         <Tabs
           value={tab}
           onValueChange={(v) => setTab(v as PartnerReservationTypeKind)}
+          className="w-full max-w-full min-w-0"
         >
-          <div className="-mx-1 overflow-x-auto">
+          <div className="-mx-1 w-full max-w-full min-w-0 overflow-x-auto">
             <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
               <TabsTrigger value="table" className="shrink-0 whitespace-nowrap">
                 <span className="sm:hidden">
