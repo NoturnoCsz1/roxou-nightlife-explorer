@@ -17,7 +17,7 @@ import { useEffect } from "react";
 import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { PartnerProvider } from "../contexts/PartnerContext";
 import { usePartnerBetaAccess } from "../hooks/usePartnerBetaAccess";
-import { PartnerFeedbackWidget } from "../components/PartnerFeedbackWidget";
+
 import { trackBetaEvent } from "../services/partnerBeta";
 import { cn } from "@/lib/utils";
 
@@ -128,7 +128,6 @@ const PartnerPreviewLayout = () => {
         <div className="min-w-0">
           <Outlet />
         </div>
-        <PartnerFeedbackWidget />
       </div>
     </PartnerProvider>
   );

@@ -1,27 +1,34 @@
 /**
- * PartnerAnalyticsPage — FIX real metrics
- * Lê dados reais (VIP, leads, promoters, reservations, events) e exibe KPIs.
+ * PartnerAnalyticsPage — Sprint final premium mobile-first.
+ *
+ * Hero executivo + Operação Hoje + Crescimento + Top 3 promoters,
+ * com accordions para detalhamento (Lista VIP, Leads, Ranking completo, Eventos).
+ * Não altera backend, RPCs, services nem cálculos: apenas reorganiza dados.
  */
 import { useEffect, useMemo, useState } from "react";
 import {
-  Eye,
-  MousePointerClick,
-  Heart,
-  CalendarCheck,
   Crown,
-  Users,
+  CalendarCheck,
   UserCheck,
-  UserX,
+  Sparkles,
   Megaphone,
   ClipboardList,
+  Users,
   ShieldCheck,
-  Sparkles,
+  Trophy,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
-import { PartnerEmptyState } from "../components";
+import { PartnerEmptyState, ExecutiveAnalyticsHero, GrowthSummaryCard } from "../components";
+import { GlassCard } from "../components/ui/GlassCard";
 import {
   getPartnerAnalytics,
   type AnalyticsPeriod,
@@ -34,34 +41,72 @@ const PERIODS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "all", label: "Tudo" },
 ];
 
-function Kpi({
+function OpsTile({
   icon: Icon,
   label,
   value,
   hint,
 }: {
-  icon: typeof Eye;
+  icon: typeof Crown;
   label: string;
   value: string | number;
   hint?: string;
 }) {
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-muted-foreground text-xs min-w-0">
-          <Icon className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{label}</span>
-        </div>
-        <div className="mt-2 text-2xl font-semibold tabular-nums">
+    <div className="partner-glass-hover hover-lift animate-fade-in rounded-lg border border-white/5 bg-background/40 p-3 min-h-[96px] flex flex-col justify-between">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate uppercase tracking-wide">{label}</span>
+      </div>
+      <div>
+        <div className="text-xl font-bold tabular-nums">
           {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
         </div>
         {hint ? (
-          <div className="text-[10px] text-muted-foreground mt-1 truncate">
-            {hint}
-          </div>
+          <div className="text-[10px] text-muted-foreground truncate">{hint}</div>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
+  );
+}
+
+function MedalBadge({ pos }: { pos: 0 | 1 | 2 }) {
+  const map = ["🥇", "🥈", "🥉"] as const;
+  return <span className="text-base leading-none">{map[pos]}</span>;
+}
+
+function PromoterRow({
+  rank,
+  name,
+  signups,
+  checkins,
+  conversion,
+}: {
+  rank: number;
+  name: string;
+  signups: number;
+  checkins: number;
+  conversion: number;
+}) {
+  return (
+    <div className="rounded-lg border border-white/5 bg-background/30 p-3 flex items-center gap-3">
+      {rank < 3 ? (
+        <MedalBadge pos={rank as 0 | 1 | 2} />
+      ) : (
+        <span className="text-xs text-muted-foreground w-5 text-center tabular-nums">
+          {rank + 1}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium truncate">{name}</div>
+        <div className="text-[11px] text-muted-foreground tabular-nums">
+          {signups} inscritos · {checkins} check-ins
+        </div>
+      </div>
+      <div className="text-xs font-semibold tabular-nums text-primary shrink-0">
+        {conversion}%
+      </div>
+    </div>
   );
 }
 
@@ -100,6 +145,14 @@ const PartnerAnalyticsPage = () => {
 
   const showSkeleton = loading && !data;
   const empty = useMemo(() => data && !data.hasAnyData, [data]);
+  const periodLabel = useMemo(
+    () => PERIODS.find((p) => p.value === period)?.label ?? "",
+    [period],
+  );
+  const topPromoters = useMemo(
+    () => (data ? data.promoters.slice(0, 3) : []),
+    [data],
+  );
 
   if (isLoading) {
     return (
@@ -130,7 +183,7 @@ const PartnerAnalyticsPage = () => {
   }
 
   return (
-    <main className="min-h-screen p-4 md:p-6 space-y-6 max-w-5xl mx-auto overflow-x-hidden">
+    <main className="min-h-screen p-4 md:p-6 space-y-4 max-w-5xl mx-auto overflow-x-hidden pb-24">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-bold">Analytics</h1>
@@ -169,10 +222,10 @@ const PartnerAnalyticsPage = () => {
       ) : null}
 
       {showSkeleton ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
+        <div className="space-y-3">
+          <Skeleton className="h-44 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
       ) : null}
 
@@ -188,174 +241,197 @@ const PartnerAnalyticsPage = () => {
             </Card>
           ) : null}
 
-          <section aria-label="KPIs principais">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              Visão geral
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              <Kpi icon={Eye} label="Visualizações" value={data.kpis.views} />
-              <Kpi icon={MousePointerClick} label="Cliques" value={data.kpis.clicks} />
-              <Kpi icon={Heart} label="Favoritos" value={data.kpis.favorites} />
-              <Kpi icon={Crown} label="Inscrições VIP" value={data.kpis.vipSignups} />
-              <Kpi
-                icon={UserCheck}
-                label="Check-ins"
-                value={data.kpis.checkins}
-                hint={`${data.kpis.attendanceRate}% de presença`}
-              />
-              <Kpi icon={UserX} label="No-show" value={data.kpis.noShows} />
-              <Kpi icon={Users} label="Leads" value={data.kpis.leads} />
-              <Kpi
-                icon={CalendarCheck}
-                label="Reservas"
-                value={data.kpis.reservations}
-              />
-            </div>
-          </section>
+          {/* 1. Hero executivo */}
+          <ExecutiveAnalyticsHero data={data} periodLabel={periodLabel} />
 
-          <section aria-label="Lista VIP">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              Lista VIP
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <Kpi icon={ClipboardList} label="Listas ativas" value={data.vip.active} />
-              <Kpi icon={ClipboardList} label="Fechadas" value={data.vip.closed} />
-              <Kpi icon={ClipboardList} label="Encerradas" value={data.vip.ended} />
-              <Kpi icon={Crown} label="Inscritos" value={data.vip.signups} />
-              <Kpi icon={UserCheck} label="Check-ins" value={data.vip.checkins} />
-              <Kpi
+          {/* 2. Operação Hoje */}
+          <GlassCard padding="md">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">Operação</h3>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {periodLabel}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <OpsTile icon={Crown} label="Inscrições VIP" value={data.kpis.vipSignups} />
+              <OpsTile icon={CalendarCheck} label="Reservas" value={data.kpis.reservations} />
+              <OpsTile icon={UserCheck} label="Check-ins" value={data.kpis.checkins} />
+              <OpsTile
                 icon={Sparkles}
                 label="Taxa presença"
-                value={`${data.vip.attendanceRate}%`}
+                value={`${data.kpis.attendanceRate}%`}
+                hint={`${data.kpis.noShows} no-show`}
               />
             </div>
-          </section>
+          </GlassCard>
 
-          <section aria-label="Leads e CRM">
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              Leads / CRM
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <Kpi icon={Users} label="Total leads" value={data.leads.total} />
-              <Kpi
-                icon={ShieldCheck}
-                label="WhatsApp ok"
-                value={data.leads.whatsapp}
-              />
-              <Kpi icon={ShieldCheck} label="E-mail ok" value={data.leads.email} />
-              <Kpi
-                icon={ShieldCheck}
-                label="Sem consentimento"
-                value={data.leads.noConsent}
-              />
-              <Kpi
-                icon={Sparkles}
-                label="Novos no período"
-                value={data.leads.newInPeriod}
-              />
-            </div>
-          </section>
+          {/* 3. Crescimento */}
+          <GrowthSummaryCard data={data} />
 
-          <section aria-label="Ranking de promoters">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-semibold text-muted-foreground">
-                Ranking de promoters
-              </h2>
-              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
-                <Megaphone className="h-3.5 w-3.5" />
+          {/* 4. Top promoters */}
+          <GlassCard padding="md">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">Top promoters</h3>
+              </div>
+              <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
+                <Megaphone className="h-3 w-3" />
                 {data.kpis.promotersActive} ativos
               </span>
             </div>
-            {data.promoters.length === 0 ? (
-              <Card>
-                <CardContent className="p-4 text-xs text-muted-foreground">
-                  Nenhum promoter com inscrições no período.
-                </CardContent>
-              </Card>
+            {topPromoters.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Nenhum promoter com inscrições no período.
+              </p>
             ) : (
-              <>
-                {/* Desktop: tabela */}
-                <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
-                  <table className="w-full text-sm">
-                    <thead className="text-muted-foreground bg-muted/30">
-                      <tr>
-                        <th className="text-left py-2 px-3">Promoter</th>
-                        <th className="text-right py-2 px-3">Inscritos</th>
-                        <th className="text-right py-2 px-3">Check-ins</th>
-                        <th className="text-right py-2 px-3">No-show</th>
-                        <th className="text-right py-2 px-3">Conversão</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.promoters.map((p, idx) => (
-                        <tr
-                          key={p.promoterId ?? `none-${idx}`}
-                          className="border-t border-border"
-                        >
-                          <td className="py-2 px-3">{p.name}</td>
-                          <td className="text-right py-2 px-3 tabular-nums">
-                            {p.signups}
-                          </td>
-                          <td className="text-right py-2 px-3 tabular-nums">
-                            {p.checkins}
-                          </td>
-                          <td className="text-right py-2 px-3 tabular-nums">
-                            {p.noShows}
-                          </td>
-                          <td className="text-right py-2 px-3 tabular-nums">
-                            {p.conversion}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile: cards */}
-                <div className="md:hidden space-y-2">
-                  {data.promoters.map((p, idx) => (
-                    <Card key={p.promoterId ?? `none-${idx}`}>
-                      <CardContent className="p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium truncate">{p.name}</span>
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {p.conversion}% conv.
-                          </span>
-                        </div>
-                        <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-                          <div>
-                            <div className="text-foreground tabular-nums">
-                              {p.signups}
-                            </div>
-                            <div>Inscritos</div>
-                          </div>
-                          <div>
-                            <div className="text-foreground tabular-nums">
-                              {p.checkins}
-                            </div>
-                            <div>Check-ins</div>
-                          </div>
-                          <div>
-                            <div className="text-foreground tabular-nums">
-                              {p.noShows}
-                            </div>
-                            <div>No-show</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </>
+              <div className="space-y-2">
+                {topPromoters.map((p, idx) => (
+                  <PromoterRow
+                    key={p.promoterId ?? `none-${idx}`}
+                    rank={idx}
+                    name={p.name}
+                    signups={p.signups}
+                    checkins={p.checkins}
+                    conversion={p.conversion}
+                  />
+                ))}
+              </div>
             )}
-          </section>
+          </GlassCard>
 
-          <p className="text-[11px] text-muted-foreground">
-            Eventos vinculados a listas/reservas no período:{" "}
-            <span className="tabular-nums text-foreground">
-              {data.kpis.eventsLinked}
-            </span>
-          </p>
+          {/* 5. Accordions de detalhamento */}
+          <Accordion type="multiple" className="space-y-2">
+            <AccordionItem
+              value="vip"
+              className="partner-glass rounded-lg border border-white/5 px-3"
+            >
+              <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                <span className="flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4 text-primary" />
+                  Lista VIP — detalhamento
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-2">
+                  <OpsTile icon={ClipboardList} label="Listas ativas" value={data.vip.active} />
+                  <OpsTile icon={ClipboardList} label="Fechadas" value={data.vip.closed} />
+                  <OpsTile icon={ClipboardList} label="Encerradas" value={data.vip.ended} />
+                  <OpsTile icon={Crown} label="Inscritos" value={data.vip.signups} />
+                  <OpsTile icon={UserCheck} label="Check-ins" value={data.vip.checkins} />
+                  <OpsTile
+                    icon={Sparkles}
+                    label="Presença"
+                    value={`${data.vip.attendanceRate}%`}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem
+              value="leads"
+              className="partner-glass rounded-lg border border-white/5 px-3"
+            >
+              <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                <span className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Leads / CRM
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pb-2">
+                  <OpsTile icon={Users} label="Total leads" value={data.leads.total} />
+                  <OpsTile icon={ShieldCheck} label="WhatsApp ok" value={data.leads.whatsapp} />
+                  <OpsTile icon={ShieldCheck} label="E-mail ok" value={data.leads.email} />
+                  <OpsTile icon={ShieldCheck} label="Sem consent." value={data.leads.noConsent} />
+                  <OpsTile icon={Sparkles} label="Novos" value={data.leads.newInPeriod} />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem
+              value="ranking"
+              className="partner-glass rounded-lg border border-white/5 px-3"
+            >
+              <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                <span className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-primary" />
+                  Ranking completo de promoters
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                {data.promoters.length === 0 ? (
+                  <p className="text-xs text-muted-foreground pb-2">
+                    Nenhum promoter no período.
+                  </p>
+                ) : (
+                  <>
+                    {/* Mobile */}
+                    <div className="md:hidden space-y-2 pb-2">
+                      {data.promoters.map((p, idx) => (
+                        <PromoterRow
+                          key={p.promoterId ?? `none-${idx}`}
+                          rank={idx}
+                          name={p.name}
+                          signups={p.signups}
+                          checkins={p.checkins}
+                          conversion={p.conversion}
+                        />
+                      ))}
+                    </div>
+                    {/* Desktop */}
+                    <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
+                      <table className="w-full text-sm">
+                        <thead className="text-muted-foreground bg-muted/30">
+                          <tr>
+                            <th className="text-left py-2 px-3">Promoter</th>
+                            <th className="text-right py-2 px-3">Inscritos</th>
+                            <th className="text-right py-2 px-3">Check-ins</th>
+                            <th className="text-right py-2 px-3">No-show</th>
+                            <th className="text-right py-2 px-3">Conversão</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.promoters.map((p, idx) => (
+                            <tr
+                              key={p.promoterId ?? `none-${idx}`}
+                              className="border-t border-border"
+                            >
+                              <td className="py-2 px-3">{p.name}</td>
+                              <td className="text-right py-2 px-3 tabular-nums">{p.signups}</td>
+                              <td className="text-right py-2 px-3 tabular-nums">{p.checkins}</td>
+                              <td className="text-right py-2 px-3 tabular-nums">{p.noShows}</td>
+                              <td className="text-right py-2 px-3 tabular-nums">{p.conversion}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem
+              value="eventos"
+              className="partner-glass rounded-lg border border-white/5 px-3"
+            >
+              <AccordionTrigger className="text-sm font-medium hover:no-underline">
+                <span className="flex items-center gap-2">
+                  <CalendarCheck className="h-4 w-4 text-primary" />
+                  Eventos vinculados
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <p className="text-sm text-muted-foreground pb-2">
+                  Eventos com listas ou reservas no período:{" "}
+                  <span className="tabular-nums text-foreground font-semibold">
+                    {data.kpis.eventsLinked}
+                  </span>
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </>
       ) : null}
     </main>
