@@ -35,6 +35,9 @@ export type { QuickReservationValues } from "./GuestNameDialog";
 export { PublicLinkQrDialog } from "./PublicLinkQrDialog";
 export { DailyOperationsReport } from "./DailyOperationsReport";
 export { OccupancyInsightsPanel } from "./OccupancyInsightsPanel";
+export { ReservationHeroCard } from "./ReservationHeroCard";
+export { ReservationKpiGrid } from "./ReservationKpiGrid";
+export { ReservationTimeline } from "./ReservationTimeline";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";
