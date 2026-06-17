@@ -226,6 +226,19 @@ const PublicReservationPage = () => {
         );
         if (!alive) return;
         setSlots(data);
+        // Try to honour preselected slot (HH:mm) from waitlist link
+        if (preselectSlot && !slotIso) {
+          const match = data.find((s) => {
+            const d = new Date(s.slot_start);
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mm = String(d.getMinutes()).padStart(2, "0");
+            return `${hh}:${mm}` === preselectSlot && s.available_count > 0;
+          });
+          if (match) {
+            setSlotIso(match.slot_start);
+            return;
+          }
+        }
         // Reset slot if previous slot disappeared / unavailable
         const stillOk = data.find(
           (s) => s.slot_start === slotIso && s.available_count > 0,
