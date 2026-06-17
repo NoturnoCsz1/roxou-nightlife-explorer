@@ -108,6 +108,8 @@ const PublicReservationPage = () => {
       return toast({
         title: `Máximo de ${partner.max_people_per_reservation} pessoas por reserva`,
       });
+    if (selected && selected.available <= 0)
+      return toast({ title: `Esgotado: ${selected.name}` });
 
     setSubmitting(true);
     try {
