@@ -17,7 +17,6 @@ import {
 } from "./partnerVipLists";
 import {
   getReservation,
-  completeReservation,
   type PartnerReservationRow,
 } from "./partnerReservations";
 
