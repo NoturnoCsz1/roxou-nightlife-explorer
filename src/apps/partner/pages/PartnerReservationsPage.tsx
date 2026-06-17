@@ -8,7 +8,7 @@
  * - Confirmação de pagamento manual
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -100,6 +100,12 @@ const PartnerReservationsPage = () => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(ACCORDION_KEY, openSection || "");
   }, [openSection]);
+
+  // Bottom-nav: navegar para /reservas#fila abre o accordion da lista de espera
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === "#fila") setOpenSection("waitlist");
+  }, [hash]);
 
   const partnerId = selectedPartner?.id ?? null;
 
