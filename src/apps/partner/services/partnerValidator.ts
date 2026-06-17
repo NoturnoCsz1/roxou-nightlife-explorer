@@ -257,6 +257,24 @@ async function validateReservation(
       ref,
     };
   }
+  if (row.status === "expired") {
+    return {
+      outcome: "expired",
+      type: "reservation",
+      message: "Reserva expirada (prazo de confirmação venceu).",
+      reservation: row,
+      ref,
+    };
+  }
+  if (row.status === "pending_payment" || row.status === "pending") {
+    return {
+      outcome: "error",
+      type: "reservation",
+      message: "Reserva aguardando pagamento/confirmação.",
+      reservation: row,
+      ref,
+    };
+  }
   if (row.status === "no_show") {
     return {
       outcome: "expired",
@@ -275,6 +293,7 @@ async function validateReservation(
       ref,
     };
   }
+  // status === "confirmed"
   return {
     outcome: "valid",
     type: "reservation",
@@ -283,13 +302,28 @@ async function validateReservation(
     ref,
     confirm: async () => {
       try {
-        const updated = await completeReservation(row!.id);
+        const { data, error } = await (
+          await import("@/integrations/supabase/client")
+        ).supabase.rpc("check_in_partner_reservation", {
+          _reservation_id: row!.id,
+        });
+        if (error) throw error;
+        const result = data as { outcome?: string; message?: string; reservation?: PartnerReservationRow } | null;
+        if (result?.outcome === "valid") {
+          return {
+            outcome: "valid",
+            type: "reservation",
+            message: result.message ?? "Check-in da reserva confirmado!",
+            reservation: (result.reservation as PartnerReservationRow) ?? row,
+            ref: result.reservation?.name ?? ref,
+          };
+        }
         return {
-          outcome: "valid",
+          outcome: result?.outcome === "already_used" ? "already_used" : "error",
           type: "reservation",
-          message: "Check-in da reserva confirmado!",
-          reservation: updated,
-          ref: updated.name ?? updated.id.slice(0, 8),
+          message: result?.message ?? "Falha ao confirmar reserva.",
+          reservation: (result?.reservation as PartnerReservationRow) ?? row,
+          ref,
         };
       } catch (err) {
         return {
