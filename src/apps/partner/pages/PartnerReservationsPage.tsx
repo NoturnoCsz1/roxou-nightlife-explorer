@@ -72,6 +72,14 @@ const PartnerReservationsPage = () => {
   );
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<Bucket>("active");
+  const [openSection, setOpenSection] = useState<string>(() => {
+    if (typeof window === "undefined") return "list";
+    return window.localStorage.getItem(ACCORDION_KEY) ?? "list";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(ACCORDION_KEY, openSection || "");
+  }, [openSection]);
 
   const partnerId = selectedPartner?.id ?? null;
 
