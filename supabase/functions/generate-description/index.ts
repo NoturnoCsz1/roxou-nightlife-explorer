@@ -41,8 +41,24 @@ function safeJson(text: string): any {
   return null;
 }
 
+// Normaliza ISO sem offset (datetime-local "YYYY-MM-DDTHH:MM[:SS]") para -03:00 (America/Sao_Paulo).
+// 🛑 CAUSA RAIZ do bug "17h00": sem offset, o Deno parseava como UTC e ao formatar em SP subtraía 3h
+// (ex.: 20:00 local → "20:00Z" → 17:00 SP). Agora forçamos o offset correto.
+function normalizeToSPIso(input: string): string {
+  const s = String(input || "").trim();
+  if (!s) return s;
+  // Já tem offset/Z?
+  if (/Z$|[+\-]\d{2}:?\d{2}$/.test(s)) return s;
+  // datetime-local sem segundos: YYYY-MM-DDTHH:MM
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) return `${s}:00-03:00`;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) return `${s}-03:00`;
+  // Só data: assume meia-noite SP
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return `${s}T00:00:00-03:00`;
+  return s;
+}
+
 function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
-  const dt = new Date(iso);
+  const dt = new Date(normalizeToSPIso(iso));
   const dateLong = dt.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
   const dateShort = dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
   const time = dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
@@ -55,6 +71,7 @@ function formatOfficialDate(iso: string, timeIsUnknown: boolean) {
   const isToday = todaySP === eventDaySP;
   return { dateLong, dateShort, timeLabel, weekdayFull, weekdayShort, hasRealTime, isToday };
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HTML sanitizer (server-side, sem libs externas — DOMPurify continua no front)
