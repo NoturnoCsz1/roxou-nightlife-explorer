@@ -37,9 +37,11 @@ export function ReservationCard({
   onCancel,
   onComplete,
   onNoShow,
+  onRelease,
   canCancel,
   canConfirm,
   canComplete,
+  canRelease,
 }: {
   reservation: PartnerReservationRow;
   onView?: (r: PartnerReservationRow) => void;
@@ -49,9 +51,11 @@ export function ReservationCard({
   onCancel?: (r: PartnerReservationRow) => void;
   onComplete?: (r: PartnerReservationRow) => void;
   onNoShow?: (r: PartnerReservationRow) => void;
+  onRelease?: (r: PartnerReservationRow) => void;
   canCancel?: boolean;
   canConfirm?: boolean;
   canComplete?: boolean;
+  canRelease?: boolean;
 }) {
   const date = new Date(reservation.reservation_date);
   const isPendingPayment = reservation.status === "pending_payment";
@@ -195,6 +199,19 @@ export function ReservationCard({
               No-show
             </Button>
           )}
+          {canRelease &&
+            reservation.status === "confirmed" &&
+            !reservation.released_at &&
+            onRelease && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onRelease(reservation)}
+                title="Libera a mesa imediatamente para outras reservas"
+              >
+                Liberar mesa
+              </Button>
+            )}
           {canCancel &&
             reservation.status !== "cancelled" &&
             reservation.status !== "completed" &&

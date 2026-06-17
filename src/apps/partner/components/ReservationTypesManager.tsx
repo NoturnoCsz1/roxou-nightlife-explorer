@@ -47,6 +47,8 @@ interface DraftRow {
   extra_people_price: number | null;
   description: string;
   active: boolean;
+  duration_minutes: number | null;
+  requires_guest_count: boolean;
 }
 
 const blankDraft = (kind: PartnerReservationTypeKind): DraftRow => ({
@@ -60,6 +62,8 @@ const blankDraft = (kind: PartnerReservationTypeKind): DraftRow => ({
   extra_people_price: null,
   description: "",
   active: true,
+  duration_minutes: null,
+  requires_guest_count: false,
 });
 
 const fromRow = (r: PartnerReservationType): DraftRow => ({
@@ -74,6 +78,8 @@ const fromRow = (r: PartnerReservationType): DraftRow => ({
   extra_people_price: r.extra_people_price,
   description: r.description ?? "",
   active: r.active,
+  duration_minutes: r.duration_minutes,
+  requires_guest_count: r.requires_guest_count ?? false,
 });
 
 export function ReservationTypesManager({
@@ -146,6 +152,8 @@ export function ReservationTypesManager({
         extra_people_price: draft.extra_people_price,
         description: draft.description,
         active: draft.active,
+        duration_minutes: draft.duration_minutes,
+        requires_guest_count: draft.requires_guest_count,
       });
       toast({ title: "Tipo salvo" });
       setDraft(null);
@@ -280,20 +288,46 @@ export function ReservationTypesManager({
             />
           </div>
 
-          {/* Datas por tipo — backend ainda não suporta, UI preparada. */}
-          <div className="rounded-md border border-dashed border-border/60 p-3 text-xs">
-            <div className="mb-1 flex items-center gap-2 text-muted-foreground">
+          {/* Duração e exigência de pessoas */}
+          <div className="space-y-3 rounded-md border border-border/60 p-3 text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
-              <span className="font-medium">Janela específica deste tipo</span>
-              <Badge variant="outline" className="ml-auto text-[10px]">
-                Em breve
-              </Badge>
+              <span className="font-medium">Duração e capacidade</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs">Duração (min)</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={draft.duration_minutes ?? 0}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setDraft({ ...draft, duration_minutes: v > 0 ? v : null });
+                  }}
+                >
+                  <option value={0}>Usar padrão do estabelecimento</option>
+                  <option value={60}>60 min</option>
+                  <option value={90}>90 min</option>
+                  <option value={120}>120 min</option>
+                  <option value={180}>180 min</option>
+                  <option value={240}>240 min</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <label className="flex items-center gap-2">
+                  <Switch
+                    checked={draft.requires_guest_count}
+                    onCheckedChange={(v) =>
+                      setDraft({ ...draft, requires_guest_count: v })
+                    }
+                  />
+                  <span className="text-xs">Pedir quantidade de pessoas</span>
+                </label>
+              </div>
             </div>
             <p className="text-[11px] text-muted-foreground">
-              Em breve você poderá definir data/hora de início, término e
-              fechamento automático individuais para cada{" "}
-              {KIND_LABELS[draft.kind].slice(0, -1).toLowerCase()}. Hoje vale a
-              janela global definida em Configurações.
+              Mantenha desligado para mesas, bistrôs e camarotes (capacidade fixa
+              = lugares). Ative apenas em tipos sem capacidade pré-definida.
             </p>
           </div>
 

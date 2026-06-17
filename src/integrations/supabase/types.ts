@@ -2284,6 +2284,9 @@ export type Database = {
           auto_confirm: boolean
           confirmation_timeout_minutes: number
           created_at: string
+          daily_close_time: string
+          daily_open_time: string
+          default_reservation_duration_minutes: number
           deposit_enabled: boolean
           deposit_type: string
           deposit_value: number
@@ -2297,6 +2300,7 @@ export type Database = {
           reservations_enabled: boolean
           reservations_end_at: string | null
           reservations_start_at: string | null
+          slot_interval_minutes: number
           updated_at: string
         }
         Insert: {
@@ -2304,6 +2308,9 @@ export type Database = {
           auto_confirm?: boolean
           confirmation_timeout_minutes?: number
           created_at?: string
+          daily_close_time?: string
+          daily_open_time?: string
+          default_reservation_duration_minutes?: number
           deposit_enabled?: boolean
           deposit_type?: string
           deposit_value?: number
@@ -2317,6 +2324,7 @@ export type Database = {
           reservations_enabled?: boolean
           reservations_end_at?: string | null
           reservations_start_at?: string | null
+          slot_interval_minutes?: number
           updated_at?: string
         }
         Update: {
@@ -2324,6 +2332,9 @@ export type Database = {
           auto_confirm?: boolean
           confirmation_timeout_minutes?: number
           created_at?: string
+          daily_close_time?: string
+          daily_open_time?: string
+          default_reservation_duration_minutes?: number
           deposit_enabled?: boolean
           deposit_type?: string
           deposit_value?: number
@@ -2337,6 +2348,7 @@ export type Database = {
           reservations_enabled?: boolean
           reservations_end_at?: string | null
           reservations_start_at?: string | null
+          slot_interval_minutes?: number
           updated_at?: string
         }
         Relationships: [
@@ -2361,6 +2373,7 @@ export type Database = {
           active: boolean
           created_at: string
           description: string | null
+          duration_minutes: number | null
           extra_people_limit: number | null
           extra_people_price: number | null
           id: string
@@ -2370,6 +2383,7 @@ export type Database = {
           partner_id: string
           price: number
           quantity: number
+          requires_guest_count: boolean
           seats: number
           sort_order: number
           updated_at: string
@@ -2378,6 +2392,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           description?: string | null
+          duration_minutes?: number | null
           extra_people_limit?: number | null
           extra_people_price?: number | null
           id?: string
@@ -2387,6 +2402,7 @@ export type Database = {
           partner_id: string
           price?: number
           quantity?: number
+          requires_guest_count?: boolean
           seats?: number
           sort_order?: number
           updated_at?: string
@@ -2395,6 +2411,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           description?: string | null
+          duration_minutes?: number | null
           extra_people_limit?: number | null
           extra_people_price?: number | null
           id?: string
@@ -2404,6 +2421,7 @@ export type Database = {
           partner_id?: string
           price?: number
           quantity?: number
+          requires_guest_count?: boolean
           seats?: number
           sort_order?: number
           updated_at?: string
@@ -2505,6 +2523,7 @@ export type Database = {
           customer_linked_at: string | null
           customer_linked_by: string | null
           deposit_amount: number
+          duration_minutes: number | null
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -2518,6 +2537,7 @@ export type Database = {
           people_count: number
           phone: string | null
           public_token: string
+          released_at: string | null
           remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
@@ -2538,6 +2558,7 @@ export type Database = {
           customer_linked_at?: string | null
           customer_linked_by?: string | null
           deposit_amount?: number
+          duration_minutes?: number | null
           email?: string | null
           event_id?: string | null
           expires_at?: string | null
@@ -2551,6 +2572,7 @@ export type Database = {
           people_count?: number
           phone?: string | null
           public_token?: string
+          released_at?: string | null
           remaining_amount?: number | null
           reservation_date: string
           reservation_type_id?: string | null
@@ -2571,6 +2593,7 @@ export type Database = {
           customer_linked_at?: string | null
           customer_linked_by?: string | null
           deposit_amount?: number
+          duration_minutes?: number | null
           email?: string | null
           event_id?: string | null
           expires_at?: string | null
@@ -2584,6 +2607,7 @@ export type Database = {
           people_count?: number
           phone?: string | null
           public_token?: string
+          released_at?: string | null
           remaining_amount?: number | null
           reservation_date?: string
           reservation_type_id?: string | null
@@ -4161,6 +4185,10 @@ export type Database = {
       }
     }
     Functions: {
+      _effective_reservation_duration: {
+        Args: { _partner_id: string; _type_id: string }
+        Returns: number
+      }
       _partner_event_slug: { Args: { _title: string }; Returns: string }
       _reservation_short_code: { Args: never; Returns: string }
       _set_partner_vip_list_status: {
@@ -4603,6 +4631,7 @@ export type Database = {
           customer_linked_at: string | null
           customer_linked_by: string | null
           deposit_amount: number
+          duration_minutes: number | null
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -4616,6 +4645,7 @@ export type Database = {
           people_count: number
           phone: string | null
           public_token: string
+          released_at: string | null
           remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
@@ -4721,6 +4751,7 @@ export type Database = {
           customer_linked_at: string | null
           customer_linked_by: string | null
           deposit_amount: number
+          duration_minutes: number | null
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -4734,6 +4765,7 @@ export type Database = {
           people_count: number
           phone: string | null
           public_token: string
+          released_at: string | null
           remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
@@ -4880,6 +4912,20 @@ export type Database = {
       get_public_vip_list_by_partner: {
         Args: { p_partner_slug: string }
         Returns: Json
+      }
+      get_reservation_slot_availability: {
+        Args: {
+          p_date: string
+          p_partner_id: string
+          p_reservation_type_id: string
+        }
+        Returns: {
+          available_count: number
+          quantity_total: number
+          reserved_count: number
+          slot_end: string
+          slot_start: string
+        }[]
       }
       get_reservation_types_availability: {
         Args: { p_partner_id: string }
@@ -5048,6 +5094,50 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      release_partner_reservation_table: {
+        Args: { _reservation_id: string }
+        Returns: {
+          auto_close_enabled: boolean
+          checked_in_at: string | null
+          checked_in_by: string | null
+          close_reason: string | null
+          closes_at: string | null
+          code: string | null
+          created_at: string
+          customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
+          deposit_amount: number
+          duration_minutes: number | null
+          email: string | null
+          event_id: string | null
+          expires_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_id: string
+          payment_confirmed_at: string | null
+          payment_method: string | null
+          payment_status: string
+          people_count: number
+          phone: string | null
+          public_token: string
+          released_at: string | null
+          remaining_amount: number | null
+          reservation_date: string
+          reservation_type_id: string | null
+          status: string
+          total_price: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_reservations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       request_partner_access: {
         Args: { _partner_id: string; _payload: Json }
         Returns: {
@@ -5085,6 +5175,7 @@ export type Database = {
           customer_linked_at: string | null
           customer_linked_by: string | null
           deposit_amount: number
+          duration_minutes: number | null
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -5098,6 +5189,7 @@ export type Database = {
           people_count: number
           phone: string | null
           public_token: string
+          released_at: string | null
           remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
@@ -5263,6 +5355,7 @@ export type Database = {
           customer_linked_at: string | null
           customer_linked_by: string | null
           deposit_amount: number
+          duration_minutes: number | null
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -5276,6 +5369,7 @@ export type Database = {
           people_count: number
           phone: string | null
           public_token: string
+          released_at: string | null
           remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null
@@ -5439,6 +5533,9 @@ export type Database = {
           auto_confirm: boolean
           confirmation_timeout_minutes: number
           created_at: string
+          daily_close_time: string
+          daily_open_time: string
+          default_reservation_duration_minutes: number
           deposit_enabled: boolean
           deposit_type: string
           deposit_value: number
@@ -5452,6 +5549,7 @@ export type Database = {
           reservations_enabled: boolean
           reservations_end_at: string | null
           reservations_start_at: string | null
+          slot_interval_minutes: number
           updated_at: string
         }
         SetofOptions: {
@@ -5475,6 +5573,7 @@ export type Database = {
           customer_linked_at: string | null
           customer_linked_by: string | null
           deposit_amount: number
+          duration_minutes: number | null
           email: string | null
           event_id: string | null
           expires_at: string | null
@@ -5488,6 +5587,7 @@ export type Database = {
           people_count: number
           phone: string | null
           public_token: string
+          released_at: string | null
           remaining_amount: number | null
           reservation_date: string
           reservation_type_id: string | null

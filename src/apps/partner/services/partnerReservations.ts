@@ -43,6 +43,8 @@ export interface PartnerReservationRow {
   remaining_amount: number | null;
   payment_method: string | null;
   payment_status: "pending" | "paid" | "waived" | "refunded";
+  released_at: string | null;
+  duration_minutes: number | null;
 }
 
 export type DepositType = "fixed" | "percent" | "full";
@@ -64,6 +66,10 @@ export interface PartnerReservationSettings {
   payment_instructions: string | null;
   pix_key: string | null;
   pix_receiver_name: string | null;
+  slot_interval_minutes: number;
+  default_reservation_duration_minutes: number;
+  daily_open_time: string;
+  daily_close_time: string;
   created_at: string;
   updated_at: string;
 }
@@ -77,6 +83,7 @@ export interface PartnerReservationPayload {
   notes?: string | null;
   event_id?: string | null;
   status?: PartnerReservationStatus;
+  reservation_type_id?: string | null;
 }
 
 export interface PartnerReservationSettingsPayload {
@@ -94,6 +101,10 @@ export interface PartnerReservationSettingsPayload {
   payment_instructions?: string | null;
   pix_key?: string | null;
   pix_receiver_name?: string | null;
+  slot_interval_minutes?: number;
+  default_reservation_duration_minutes?: number;
+  daily_open_time?: string;
+  daily_close_time?: string;
 }
 
 export interface PartnerReservationType {
@@ -110,6 +121,8 @@ export interface PartnerReservationType {
   description: string | null;
   active: boolean;
   sort_order: number;
+  duration_minutes: number | null;
+  requires_guest_count: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -126,6 +139,8 @@ export interface PartnerReservationTypePayload {
   description?: string | null;
   active?: boolean;
   sort_order?: number;
+  duration_minutes?: number | null;
+  requires_guest_count?: boolean;
 }
 
 const TABLE = "partner_reservations" as const;
@@ -133,7 +148,7 @@ const SETTINGS_TABLE = "partner_reservation_settings" as const;
 const TYPES_TABLE = "partner_reservation_types" as const;
 
 const SELECT_COLS =
-  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code, deposit_amount, remaining_amount, payment_method, payment_status";
+  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code, deposit_amount, remaining_amount, payment_method, payment_status, released_at, duration_minutes";
 
 export interface ListReservationsOptions {
   status?: PartnerReservationStatus | "all";
@@ -312,6 +327,11 @@ export async function upsertReservationType(
     description: payload.description?.trim() || null,
     active: payload.active ?? true,
     sort_order: payload.sort_order ?? 0,
+    duration_minutes:
+      payload.duration_minutes != null && payload.duration_minutes > 0
+        ? payload.duration_minutes
+        : null,
+    requires_guest_count: payload.requires_guest_count ?? false,
   };
   if (payload.id) {
     const { data, error } = await supabase
@@ -521,4 +541,43 @@ export function computeReservationStats(
     reservedSeats,
     pendingSeats,
   };
+}
+
+// ---- Slot availability + manual release ----
+
+export interface ReservationSlot {
+  slot_start: string;
+  slot_end: string;
+  quantity_total: number;
+  reserved_count: number;
+  available_count: number;
+}
+
+export async function getReservationSlotAvailability(
+  partnerId: string,
+  typeId: string,
+  date: string,
+): Promise<ReservationSlot[]> {
+  const { data, error } = await supabase.rpc(
+    "get_reservation_slot_availability" as never,
+    {
+      p_partner_id: partnerId,
+      p_reservation_type_id: typeId,
+      p_date: date,
+    } as never,
+  );
+  if (error) throw error;
+  return (data as unknown as ReservationSlot[]) ?? [];
+}
+
+export async function releasePartnerReservationTable(
+  reservationId: string,
+): Promise<PartnerReservationRow> {
+  const { data, error } = await supabase.rpc(
+    "release_partner_reservation_table" as never,
+    { _reservation_id: reservationId } as never,
+  );
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerReservationRow;
 }

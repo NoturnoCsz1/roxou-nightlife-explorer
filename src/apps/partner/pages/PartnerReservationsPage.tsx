@@ -43,6 +43,7 @@ import {
   listReservationTypes,
   listReservations,
   noShowReservation,
+  releasePartnerReservationTable,
   updateReservationSettings,
   waivePartnerReservationDeposit,
   type PartnerReservationRow,
@@ -95,6 +96,8 @@ const PartnerReservationsPage = () => {
     role === "owner" || role === "admin" || role === "editor" || role === "attendant";
   const canComplete = role === "owner" || role === "admin" || role === "attendant";
   const canCancel = role === "owner" || role === "admin";
+  const canRelease =
+    role === "owner" || role === "admin" || role === "editor" || role === "attendant";
   const canEditSettings = role === "owner" || role === "admin";
 
   const load = useCallback(async () => {
@@ -179,6 +182,8 @@ const PartnerReservationsPage = () => {
     wrap(() => noShowReservation(r.id), "Marcado como no-show")();
   const handleWaiveDeposit = (r: PartnerReservationRow) =>
     wrap(() => waivePartnerReservationDeposit(r.id), "Sinal dispensado")();
+  const handleRelease = (r: PartnerReservationRow) =>
+    wrap(() => releasePartnerReservationTable(r.id), "Mesa liberada")();
 
   const handleQuickAdd = async (values: {
     name: string;
@@ -250,9 +255,11 @@ const PartnerReservationsPage = () => {
               onCancel={handleCancel}
               onComplete={handleComplete}
               onNoShow={handleNoShow}
+              onRelease={handleRelease}
               canCancel={canCancel}
               canConfirm={canConfirm}
               canComplete={canComplete}
+              canRelease={canRelease}
             />
           ))}
         </div>
