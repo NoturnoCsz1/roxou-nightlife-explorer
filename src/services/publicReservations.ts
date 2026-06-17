@@ -201,3 +201,36 @@ export async function getPublicPartnerReservationsContext(
     }),
   };
 }
+
+// =========================================================
+// Lista de espera (público)
+// =========================================================
+
+export interface PublicWaitlistSubmitInput {
+  partner_slug: string;
+  type_id: string;
+  name: string;
+  phone: string;
+  guests: number;
+  notes?: string | null;
+}
+
+export interface PublicWaitlistResult {
+  id: string;
+  status: string;
+}
+
+export async function submitReservationWaitlist(
+  input: PublicWaitlistSubmitInput,
+): Promise<PublicWaitlistResult> {
+  const { data, error } = await supabase.rpc("submit_reservation_waitlist", {
+    p_partner_slug: input.partner_slug,
+    p_type_id: input.type_id,
+    p_name: input.name,
+    p_phone: input.phone,
+    p_guests: input.guests,
+    p_notes: input.notes ?? null,
+  });
+  if (error) throw error;
+  return data as unknown as PublicWaitlistResult;
+}
