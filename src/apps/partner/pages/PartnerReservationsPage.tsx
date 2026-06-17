@@ -359,7 +359,17 @@ const PartnerReservationsPage = () => {
         filename={`reservas-${selectedPartner?.slug ?? "qr"}.png`}
       />
 
-      <ReservationStats stats={stats} />
+      <ReservationHeroCard
+        partnerName={selectedPartner?.name}
+        rows={rows}
+        waitlist={waitlist}
+        types={types}
+        stats={stats}
+      />
+
+      <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
+
+      <ReservationTimeline reservations={rows} types={types} />
 
       {settings?.reservations_enabled && selectedPartner?.slug && (
         <Card className="rounded-2xl">
@@ -407,6 +417,58 @@ const PartnerReservationsPage = () => {
         </Card>
       )}
 
+      <Card className="rounded-2xl border-border/60 bg-card/40">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold">Reservas recentes</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {loading && rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Carregando reservas…</p>
+          ) : rows.length === 0 ? (
+            <ReservationEmptyState />
+          ) : (
+            <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
+              <div className="-mx-1 overflow-x-auto">
+                <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
+                  <TabsTrigger value="active" className="shrink-0 whitespace-nowrap">
+                    Ativas{" "}
+                    {buckets.active.length ? `(${buckets.active.length})` : ""}
+                  </TabsTrigger>
+                  <TabsTrigger value="pending" className="shrink-0 whitespace-nowrap">
+                    Pendentes{" "}
+                    {buckets.pending.length
+                      ? `(${buckets.pending.length})`
+                      : ""}
+                  </TabsTrigger>
+                  <TabsTrigger value="ended" className="shrink-0 whitespace-nowrap">
+                    Encerradas{" "}
+                    {buckets.ended.length ? `(${buckets.ended.length})` : ""}
+                  </TabsTrigger>
+                  <TabsTrigger value="archived" className="shrink-0 whitespace-nowrap">
+                    Arquivadas{" "}
+                    {buckets.archived.length
+                      ? `(${buckets.archived.length})`
+                      : ""}
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="active" className="mt-4">
+                {renderBucket("active")}
+              </TabsContent>
+              <TabsContent value="pending" className="mt-4">
+                {renderBucket("pending")}
+              </TabsContent>
+              <TabsContent value="ended" className="mt-4">
+                {renderBucket("ended")}
+              </TabsContent>
+              <TabsContent value="archived" className="mt-4">
+                {renderBucket("archived")}
+              </TabsContent>
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
+
       <Accordion
         type="single"
         collapsible
@@ -414,65 +476,7 @@ const PartnerReservationsPage = () => {
         onValueChange={(v) => setOpenSection(v)}
         className="space-y-3"
       >
-        <AccordionItem
-          value="list"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            Reservas recentes
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            {loading && rows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Carregando reservas…
-              </p>
-            ) : rows.length === 0 ? (
-              <ReservationEmptyState />
-            ) : (
-              <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
-                <div className="-mx-1 overflow-x-auto">
-                  <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
-                    <TabsTrigger value="active" className="shrink-0 whitespace-nowrap">
-                      Ativas{" "}
-                      {buckets.active.length ? `(${buckets.active.length})` : ""}
-                    </TabsTrigger>
-                    <TabsTrigger value="pending" className="shrink-0 whitespace-nowrap">
-                      Pendentes{" "}
-                      {buckets.pending.length
-                        ? `(${buckets.pending.length})`
-                        : ""}
-                    </TabsTrigger>
-                    <TabsTrigger value="ended" className="shrink-0 whitespace-nowrap">
-                      Encerradas{" "}
-                      {buckets.ended.length ? `(${buckets.ended.length})` : ""}
-                    </TabsTrigger>
-                    <TabsTrigger value="archived" className="shrink-0 whitespace-nowrap">
-                      Arquivadas{" "}
-                      {buckets.archived.length
-                        ? `(${buckets.archived.length})`
-                        : ""}
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-                <TabsContent value="active" className="mt-4">
-                  {renderBucket("active")}
-                </TabsContent>
-                <TabsContent value="pending" className="mt-4">
-                  {renderBucket("pending")}
-                </TabsContent>
-                <TabsContent value="ended" className="mt-4">
-                  {renderBucket("ended")}
-                </TabsContent>
-                <TabsContent value="archived" className="mt-4">
-                  {renderBucket("archived")}
-                </TabsContent>
-              </Tabs>
-            )}
-          </AccordionContent>
-        </AccordionItem>
 
-        <AccordionItem
-          value="types"
           className="rounded-2xl border border-border/60 bg-card/40 px-3"
         >
           <AccordionTrigger className="text-sm font-semibold">
