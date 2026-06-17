@@ -95,6 +95,10 @@ export interface PublicPartnerForReservations {
   logo_url: string | null;
   city: string | null;
   address: string | null;
+  type: string | null;
+  instagram: string | null;
+  whatsapp: string | null;
+  short_description: string | null;
   reservations_enabled: boolean;
   auto_confirm: boolean;
   confirmation_timeout_minutes: number;
