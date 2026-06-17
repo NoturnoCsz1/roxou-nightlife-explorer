@@ -46,7 +46,7 @@ export function PublicLinkQrDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[calc(100vw-1.5rem)] max-w-sm">
         <DialogHeader>
-          <DialogTitle>QR do link público</DialogTitle>
+          <DialogTitle>QR do Link</DialogTitle>
           <DialogDescription className="break-all text-xs">
             {url}
           </DialogDescription>
@@ -62,18 +62,33 @@ export function PublicLinkQrDialog({
             />
           )}
         </div>
-        <DialogFooter className="gap-2 sm:gap-2">
+        <DialogFooter className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(url);
+                toast({ title: "Link copiado" });
+              } catch {
+                toast({ title: "Não foi possível copiar" });
+              }
+            }}
+            className="min-h-[44px] w-full"
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            Copiar link
+          </Button>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="min-h-[44px]"
+            className="min-h-[44px] w-full"
           >
             Fechar
           </Button>
           <Button
             disabled={!dataUrl}
             onClick={() => downloadDataUrl(filename, dataUrl)}
-            className="min-h-[44px]"
+            className="min-h-[44px] w-full"
           >
             <Download className="mr-2 h-4 w-4" />
             Baixar PNG
