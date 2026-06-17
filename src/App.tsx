@@ -131,6 +131,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 const PublicVipList = lazy(() => import("./pages/PublicVipList"));
 const PublicVipListSuccess = lazy(() => import("./pages/PublicVipListSuccess"));
+const PublicReservation = lazy(() => import("./pages/PublicReservation"));
+const PublicReservationSuccess = lazy(() => import("./pages/PublicReservationSuccess"));
 const PartnerScopedComingSoon = lazy(() => import("./pages/PartnerScopedComingSoon"));
 const DevRoutes = lazy(() => import("./pages/DevRoutes"));
 const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutRedirect"));
@@ -242,7 +244,11 @@ const App = () => (
           />
           <Route
             path="/:partnerSlug/reservas"
-            element={L(<PartnerScopedComingSoon section="reservas" />)}
+            element={L(<PublicReservation />)}
+          />
+          <Route
+            path="/reserva/sucesso/:publicToken"
+            element={L(<PublicReservationSuccess />)}
           />
 
           {/* Rota pública por slug da Lista VIP (Fase 10G fix): /vip/:listSlug */}

@@ -1,27 +1,21 @@
 /**
- * Partner Reservations Service — Fase 9H
+ * Partner Reservations Service
  *
- * Tabela: `partner_reservations` (reservas pertencem a um `partner_id`).
- * Configurações: `partner_reservation_settings` (1 linha por parceiro).
- *
- * Mutations passam por RPCs `SECURITY DEFINER`:
- *   - create_partner_reservation       (owner/admin)
- *   - update_partner_reservation       (owner/admin)
- *   - set_partner_reservation_status   (owner/admin: tudo | editor: confirm |
- *                                       attendant: confirm/complete/no_show)
- *   - upsert_partner_reservation_settings (owner/admin)
- *
- * SELECT: coberto pela policy "Partner staff read own reservations"
- * (qualquer membro ativo do parceiro pode ler reservas do próprio parceiro).
+ * Reservas Pro: tipos (mesa/bistrô/camarote), prazo de confirmação,
+ * comprovante público e validador QR.
  */
 import { supabase } from "@/integrations/supabase/client";
 
 export type PartnerReservationStatus =
   | "pending"
+  | "pending_payment"
   | "confirmed"
   | "cancelled"
   | "completed"
+  | "expired"
   | "no_show";
+
+export type PartnerReservationTypeKind = "table" | "bistro" | "box";
 
 export interface PartnerReservationRow {
   id: string;
@@ -37,6 +31,14 @@ export interface PartnerReservationRow {
   status: PartnerReservationStatus;
   created_at: string;
   updated_at: string;
+  reservation_type_id: string | null;
+  total_price: number | null;
+  expires_at: string | null;
+  payment_confirmed_at: string | null;
+  checked_in_at: string | null;
+  checked_in_by: string | null;
+  public_token: string;
+  code: string | null;
 }
 
 export interface PartnerReservationSettings {
@@ -47,6 +49,9 @@ export interface PartnerReservationSettings {
   max_reservations_per_day: number;
   advance_booking_hours: number;
   auto_confirm: boolean;
+  reservations_start_at: string | null;
+  reservations_end_at: string | null;
+  confirmation_timeout_minutes: number;
   created_at: string;
   updated_at: string;
 }
@@ -68,13 +73,49 @@ export interface PartnerReservationSettingsPayload {
   max_reservations_per_day?: number;
   advance_booking_hours?: number;
   auto_confirm?: boolean;
+  reservations_start_at?: string | null;
+  reservations_end_at?: string | null;
+  confirmation_timeout_minutes?: number;
+}
+
+export interface PartnerReservationType {
+  id: string;
+  partner_id: string;
+  kind: PartnerReservationTypeKind;
+  name: string;
+  seats: number;
+  quantity: number;
+  price: number;
+  minimum_consumption: number | null;
+  extra_people_limit: number | null;
+  extra_people_price: number | null;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PartnerReservationTypePayload {
+  kind: PartnerReservationTypeKind;
+  name: string;
+  seats?: number;
+  quantity?: number;
+  price?: number;
+  minimum_consumption?: number | null;
+  extra_people_limit?: number | null;
+  extra_people_price?: number | null;
+  description?: string | null;
+  active?: boolean;
+  sort_order?: number;
 }
 
 const TABLE = "partner_reservations" as const;
 const SETTINGS_TABLE = "partner_reservation_settings" as const;
+const TYPES_TABLE = "partner_reservation_types" as const;
 
 const SELECT_COLS =
-  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at";
+  "id, partner_id, event_id, user_id, name, phone, email, people_count, reservation_date, notes, status, created_at, updated_at, reservation_type_id, total_price, expires_at, payment_confirmed_at, checked_in_at, checked_in_by, public_token, code";
 
 export interface ListReservationsOptions {
   status?: PartnerReservationStatus | "all";
@@ -157,7 +198,7 @@ export async function updateReservation(
 
 async function setStatus(
   reservationId: string,
-  status: PartnerReservationStatus,
+  status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show",
 ): Promise<PartnerReservationRow> {
   const { data, error } = await supabase.rpc(
     "set_partner_reservation_status",
@@ -172,6 +213,18 @@ export const confirmReservation = (id: string) => setStatus(id, "confirmed");
 export const cancelReservation = (id: string) => setStatus(id, "cancelled");
 export const completeReservation = (id: string) => setStatus(id, "completed");
 export const noShowReservation = (id: string) => setStatus(id, "no_show");
+
+export async function confirmReservationPayment(
+  reservationId: string,
+): Promise<PartnerReservationRow> {
+  const { data, error } = await supabase.rpc(
+    "confirm_partner_reservation_payment",
+    { _reservation_id: reservationId },
+  );
+  if (error) throw error;
+  if (!data) throw new Error("Sem permissão.");
+  return data as unknown as PartnerReservationRow;
+}
 
 // ---- Settings ----
 
@@ -200,6 +253,76 @@ export async function updateReservationSettings(
   if (error) throw error;
   if (!data) throw new Error("Não foi possível salvar as configurações.");
   return data as unknown as PartnerReservationSettings;
+}
+
+// ---- Tipos de reserva (mesa/bistrô/camarote) ----
+
+export async function listReservationTypes(
+  partnerId: string,
+  opts: { onlyActive?: boolean } = {},
+): Promise<PartnerReservationType[]> {
+  if (!partnerId) return [];
+  let q = supabase
+    .from(TYPES_TABLE)
+    .select("*")
+    .eq("partner_id", partnerId)
+    .order("kind", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .order("price", { ascending: true });
+  if (opts.onlyActive) q = q.eq("active", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as PartnerReservationType[];
+}
+
+export async function upsertReservationType(
+  partnerId: string,
+  payload: PartnerReservationTypePayload & { id?: string },
+): Promise<PartnerReservationType> {
+  if (!partnerId) throw new Error("partnerId obrigatório.");
+  if (!payload.name?.trim()) throw new Error("Nome é obrigatório.");
+  const row = {
+    partner_id: partnerId,
+    kind: payload.kind,
+    name: payload.name.trim(),
+    seats: Math.max(1, payload.seats ?? 1),
+    quantity: Math.max(1, payload.quantity ?? 1),
+    price: Math.max(0, payload.price ?? 0),
+    minimum_consumption: payload.minimum_consumption ?? null,
+    extra_people_limit: payload.extra_people_limit ?? 0,
+    extra_people_price: payload.extra_people_price ?? null,
+    description: payload.description?.trim() || null,
+    active: payload.active ?? true,
+    sort_order: payload.sort_order ?? 0,
+  };
+  if (payload.id) {
+    const { data, error } = await supabase
+      .from(TYPES_TABLE)
+      .update(row)
+      .eq("id", payload.id)
+      .eq("partner_id", partnerId)
+      .select("*")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) throw new Error("Tipo não encontrado.");
+    return data as unknown as PartnerReservationType;
+  }
+  const { data, error } = await supabase
+    .from(TYPES_TABLE)
+    .insert(row)
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Falha ao criar tipo.");
+  return data as unknown as PartnerReservationType;
+}
+
+export async function deleteReservationType(typeId: string): Promise<void> {
+  const { error } = await supabase
+    .from(TYPES_TABLE)
+    .delete()
+    .eq("id", typeId);
+  if (error) throw error;
 }
 
 // ---- Métricas ----

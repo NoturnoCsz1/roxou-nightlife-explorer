@@ -1,97 +1,64 @@
+# Reservas Pro — Plano de Implementação
 
-# Upgrade de precisão do Radar IA
+Escopo grande. Vou entregar em **3 fases** dentro deste mesmo ciclo, mas quero confirmar 2 pontos antes de migrar banco.
 
-Objetivo: reduzir lixo (promoção, cardápio, posts antigos, avisos) e aumentar captura de flyers reais de evento, sem mudar layout, abas, timezone, dedupe existente ou política de "não publicar automaticamente".
+## Fase 1 — Banco (migration única)
 
-## 1. Novo classificador `src/lib/radarPostClassifier.ts`
+**Nova tabela `partner_reservation_types`**
+- `id, partner_id, kind ('table'|'bistro'|'box'), name, seats, quantity, price, minimum_consumption, extra_people_limit, extra_people_price, description, active, timestamps`
+- RLS: leitura pública quando `active=true` + reservations_enabled do parceiro; gestão via `is_partner_editor_or_above` / `is_admin`.
+- GRANTs: `anon SELECT`, `authenticated ALL`, `service_role ALL`.
 
-Função pura `classifyRadarPost({ caption, ocr, timestamp, partner })` retornando:
+**`partner_reservation_settings` (adicionar colunas)**
+- `reservations_start_at timestamptz`
+- `reservations_end_at timestamptz`
+- `confirmation_timeout_minutes int default 30`
+- `max_guests_per_reservation int`
+- `max_reservations_per_day int`
+- `minimum_notice_hours int default 2`
+- (mantém `reservations_enabled`, `auto_confirm` existentes — confirmar nomes via read_query antes da migration)
 
-```
-{
-  type: 'event_flyer' | 'music_event' | 'party_event' | 'bar_event'
-      | 'food_promo' | 'menu' | 'announcement' | 'old_post'
-      | 'generic_post' | 'invalid',
-  score: 0-100,
-  decision: 'create' | 'review' | 'ignore',
-  extracted: { title, date, time, venue, artists, genre, shortDescription },
-  reasons: string[],        // motivos legíveis
-  confidence: 'high'|'medium'|'low'
-}
-```
+**`partner_reservations` (adicionar colunas)**
+- `reservation_type_id uuid references partner_reservation_types`
+- `guests_count int` (fallback = `people_count`)
+- `total_price numeric`
+- `expires_at timestamptz`
+- `payment_confirmed_at timestamptz`
+- `checked_in_at timestamptz`, `checked_in_by uuid`
+- `public_token uuid default gen_random_uuid() unique`
+- `code text` (curto, tipo `RX-XXXXX`)
+- Status: ampliar para incluir `pending_payment`, `expired`. Mantém `pending/confirmed/cancelled/completed/no_show` para retro-compat. Reservas antigas `pending` continuam válidas; novas usam `pending_payment` quando `auto_confirm=false`.
 
-Regras:
-- Sinais fortes de evento (+pontos): data/dia semana, horário (`22h`, `00h`), local/casa/bar/club, artista/DJ/banda, palavras `hoje, sábado, sexta, domingo, ao vivo, show, pagode, sertanejo, funk, dj, open, entrada, reserva, agenda, line-up, ingresso`.
-- Sinais negativos (−pontos): `cardápio, prato, delivery, peça já, combo, desconto, frete, sorteio, em breve, aviso, comunicado, funcionamento, horário especial`.
-- Sem data E sem horário → score < 60 → `ignore` com badge `SEM DATA`.
-- Post > 5 dias E sem data futura clara no flyer → `old_post` → `ignore`.
-- ≥1 sinal `food_promo`/`menu` E zero sinais de evento → `food_promo`/`menu` → `ignore`.
-- ≥2 sinais `announcement` → `announcement` → `ignore`.
-- 80–100 → `create`/`review`, 60–79 → `review`, <60 → `ignore`.
-- Extração nunca inventa: se regex não casa, retorna `null`. Aceita `hoje, amanhã, sex/sáb/dom, 23/05, 23 de maio` ancorado em SP (reaproveita `instagramPostFilters.resolveEventDate/Time`).
+**Funções/RPC novas**
+- `expire_due_partner_reservations()` → seta `expired` onde `status='pending_payment' AND payment_confirmed_at IS NULL AND expires_at < now()`. Retorna count.
+- `submit_public_reservation(partner_slug, type_id, name, phone, guests, date, notes)` → cria reserva, calcula `expires_at`, retorna `{id, public_token, code, status, expires_at, qr_payload}`.
+- `confirm_partner_reservation_payment(_id)` → owner/admin marca `payment_confirmed_at=now()`, `status='confirmed'`.
+- `check_in_partner_reservation(_id)` → valida `status='confirmed'`, marca `completed` + `checked_in_at`. Rejeita `pending_payment`/`expired`.
+- `get_reservation_by_token(_token)` → leitura pública mínima para tela de comprovante.
 
-## 2. Edge function `automatic-event-hunter`
+**Cron**: Job pg_cron a cada 5min chamando `expire_due_partner_reservations()`. Também chamada no fetch da lista do partner como fallback.
 
-- Adicionar espelho Deno do classificador (`supabase/functions/_shared/radarPostClassifier.ts`) e chamar antes de criar `instagram_scans`.
-- Aplicar filtro de recência (últimos 5 dias) — já existe `getInstagramPostWindow`, garantir que está sendo respeitado e que posts antigos com data futura no flyer passam.
-- Para cada post: persistir `keywords`, `ai_confidence`, `extracted_json` (campos estruturados acima), `reason` (motivo principal), `status`:
-  - `decision=create` → `status='scanned'` (vai para aba Novos).
-  - `decision=review` → `status='needs_review'`.
-  - `decision=ignore` → `status='ignored'` + `hidden_from_radar=false` (continua visível em "Ignorados" 7 dias).
-- Antes de gerar rascunho, rodar `findPossibleDuplicateEvent` com janela 14 dias + comparação por `flyer_fingerprint`. Duplicado → `status='skipped_duplicate'`, set `duplicate_of_event_id` e `duplicate_score`.
-- Gravar em `event_validation_logs` (source=`radar-cron`) o motivo da decisão e campos extraídos. Tabela já existe.
+## Fase 2 — Partner Pro UI
 
-## 3. UI — `src/pages/admin/RadarIA.tsx`
+- `PartnerReservationSettingsForm`: novos campos de janela/timeout/limites.
+- Nova aba **"Tipos de reserva"** com CRUD em `partner_reservation_types` (3 sub-tabs: Mesas / Bistrôs / Camarotes).
+- `PartnerReservationsPage`: filtros por status, badges coloridos, contador regressivo em `pending_payment`, ações (Confirmar pagamento, Cancelar, No-show, Ver comprovante). Métricas do dia/7d.
+- Validador QR (`partnerValidator.ts`): parser reconhece `roxou://checkin?type=reservation&id=...` e `/checkin/reservation/<uuid>`. Chama `check_in_partner_reservation`.
 
-Sem mudar layout/abas. Apenas enriquecer os cards e a barra de ações:
+## Fase 3 — Público
 
-### Badges no card (chips já no padrão visual existente)
-`EVENTO FORTE` (verde, score≥80), `PRECISA REVISAR` (amarelo, 60–79), `PROMOÇÃO`, `CARDÁPIO`, `SEM DATA`, `POST ANTIGO`, `DUPLICADO`, `AVISO`. Mapear do `extracted_json.type` + score.
+- Página `/reservar/:partnerSlug` (lista tipos → form).
+- Página `/reserva/sucesso/:token` com logo, dados, QR (`roxou://checkin?type=reservation&id=<uuid>`), contador regressivo, disclaimer.
+- Ações: **Salvar comprovante (PNG)** + **Compartilhar comprovante** (mesma lógica do VIP, html2canvas do card completo). Sem download de QR isolado.
 
-### Bloco "leitura rápida" no card
-- Parceiro (já existe)
-- Data detectada (`extracted.date` formatada SP)
-- Tipo + score
-- Motivo principal (`reasons[0]`)
-- Botões: `Ver OCR` (abre Sheet existente), `Criar evento`, `Ignorar`, `Arquivar`, `Marcar como duplicado` (já existem; só garantir todos visíveis).
+## Não-alterado
+Lista VIP, comprovante VIP, Analytics, Bulk Eventos, Nginx, VPS, RLS de outras tabelas.
 
-### Barra de ações topo
-- `Disparar varredura`: mostrar progresso em toast (`sonner` com update) — parceiros analisados / posts / prováveis / revisão / ignorados / duplicados (vem do retorno da edge function).
-- `Avaliar duplicados`: feedback visual de progresso e contagem de duplicatas marcadas.
-- `Aplicar retenção`: já chama `archive_old_radar_scans()`; manter, só melhorar toast com contagem.
+---
 
-## 4. Log de decisão
+## ⚠️ Confirmações antes de migrar
 
-Toda criação/ignore/duplicação grava em `event_validation_logs`:
-- `validation_status`: `ok`|`review`|`blocked`
-- `block_reasons`: tipo + razões
-- `entertainment_score`: score do classificador
-- `detected_ocr`, `detected_date`, `flyer_hash`
-- `source`: `radar-cron`|`radar-manual`
+1. **Página pública de reserva**: criar a rota `/reservar/:partnerSlug` agora (V1 funcional simples), ou apenas o backend + UI do Partner nesta entrega, deixando a página pública pra próxima iteração?
+2. **Pagamento**: "Confirmar pagamento" será **manual pelo partner** (sem gateway) nesta versão? Stripe/Paddle fica pra depois?
 
-## 5. Dedupe reforçado
-
-`eventDuplicateDetector.findPossibleDuplicateEvent` já compara title/date/partner/fingerprint. Estender janela para 14 dias (parametrizada). Adicionar comparação leve por `artists` extraídos quando disponível.
-
-## 6. Não muda
-
-- Layout, abas, ordenação, cores globais.
-- `getStartOfTodaySP`, `-03:00`, helpers de dateUtils.
-- Política: nada vira `published` automaticamente.
-- Sem migration nova — `event_validation_logs`, `instagram_scans.keywords/extracted_json/reason/ai_confidence` já existem.
-
-## Arquivos tocados
-
-- **novo**: `src/lib/radarPostClassifier.ts`
-- **novo**: `supabase/functions/_shared/radarPostClassifier.ts` (espelho Deno)
-- **edit**: `supabase/functions/automatic-event-hunter/index.ts` (usa classificador + grava extracted_json/reason/status corretos + dedupe 14d + log)
-- **edit**: `src/pages/admin/RadarIA.tsx` (badges novos no card, leitura rápida, toasts de progresso nas 3 ações do topo)
-- **edit**: `src/lib/eventDuplicateDetector.ts` (janela 14d default + comparação por artists)
-- **edit leve**: `src/lib/instagramPostFilters.ts` (exportar helpers de extração já existentes para o novo classificador)
-
-## Fora de escopo
-
-- Nenhuma migration nova.
-- Nenhuma mudança em `extract-flyer-metadata` além de garantir que o `raw_ocr` continua persistido.
-- Nenhuma alteração nas páginas públicas, no Home, no Jogos, no Expo.
-- Nenhuma publicação automática.
+Responda e eu sigo com a migration e o código.

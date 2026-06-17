@@ -9,6 +9,20 @@ import type {
   PartnerReservationSettingsPayload,
 } from "../services/partnerReservations";
 
+const toLocalInput = (iso: string | null): string => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const fromLocalInput = (v: string): string | null => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
 export function ReservationSettingsForm({
   initial,
   onSave,
@@ -27,6 +41,9 @@ export function ReservationSettingsForm({
   );
   const [advance, setAdvance] = useState(initial?.advance_booking_hours ?? 2);
   const [autoConfirm, setAutoConfirm] = useState(initial?.auto_confirm ?? false);
+  const [startAt, setStartAt] = useState(toLocalInput(initial?.reservations_start_at ?? null));
+  const [endAt, setEndAt] = useState(toLocalInput(initial?.reservations_end_at ?? null));
+  const [timeout_, setTimeout_] = useState(initial?.confirmation_timeout_minutes ?? 30);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -36,6 +53,9 @@ export function ReservationSettingsForm({
     setMaxPerDay(initial.max_reservations_per_day);
     setAdvance(initial.advance_booking_hours);
     setAutoConfirm(initial.auto_confirm);
+    setStartAt(toLocalInput(initial.reservations_start_at));
+    setEndAt(toLocalInput(initial.reservations_end_at));
+    setTimeout_(initial.confirmation_timeout_minutes ?? 30);
   }, [initial]);
 
   const submit = async () => {
@@ -47,6 +67,9 @@ export function ReservationSettingsForm({
         max_reservations_per_day: maxPerDay,
         advance_booking_hours: advance,
         auto_confirm: autoConfirm,
+        reservations_start_at: fromLocalInput(startAt),
+        reservations_end_at: fromLocalInput(endAt),
+        confirmation_timeout_minutes: timeout_,
       });
     } finally {
       setSaving(false);
@@ -64,14 +87,41 @@ export function ReservationSettingsForm({
           <Switch checked={enabled} onCheckedChange={setEnabled} disabled={disabled} />
         </div>
         <div className="flex items-center justify-between">
-          <Label>Confirmar automaticamente</Label>
+          <div>
+            <Label>Confirmar automaticamente</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Se desligado, o cliente recebe prazo para confirmar/pagar.
+            </p>
+          </div>
           <Switch
             checked={autoConfirm}
             onCheckedChange={setAutoConfirm}
             disabled={disabled}
           />
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <Label className="text-xs">Início das reservas</Label>
+            <Input
+              type="datetime-local"
+              value={startAt}
+              onChange={(e) => setStartAt(e.target.value)}
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Término das reservas</Label>
+            <Input
+              type="datetime-local"
+              value={endAt}
+              onChange={(e) => setEndAt(e.target.value)}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div>
             <Label className="text-xs">Máx. convidados / reserva</Label>
             <Input
@@ -100,6 +150,17 @@ export function ReservationSettingsForm({
               min={0}
               value={advance}
               onChange={(e) => setAdvance(Number(e.target.value) || 0)}
+              disabled={disabled}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Tempo p/ confirmar (min)</Label>
+            <Input
+              type="number"
+              min={5}
+              max={1440}
+              value={timeout_}
+              onChange={(e) => setTimeout_(Number(e.target.value) || 30)}
               disabled={disabled}
             />
           </div>
