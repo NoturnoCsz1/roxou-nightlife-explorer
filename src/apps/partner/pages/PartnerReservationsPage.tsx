@@ -41,6 +41,8 @@ import {
   LiveOperationsPanel,
   ExecutiveDashboard,
   WeeklyHeatmap,
+  OccupancyInsightsPremium,
+  PartnerNotificationsCenter,
 } from "../components";
 import {
   cancelReservation,
