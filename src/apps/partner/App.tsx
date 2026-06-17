@@ -108,6 +108,14 @@ const PartnerApp = () => (
           </Route>
 
 
+          {/* Rotas públicas (sub-domínio parceiro também responde) */}
+          <Route path="/:partnerSlug/reservas" element={L(<PublicReservation />)} />
+          <Route path="/reserva/sucesso/:publicToken" element={L(<PublicReservationSuccess />)} />
+          <Route path="/:partnerSlug/vip" element={L(<PublicVipList />)} />
+          <Route path="/:partnerSlug/vip/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
+          <Route path="/vip/:listSlug" element={L(<PublicVipList />)} />
+          <Route path="/vip/:listSlug/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
