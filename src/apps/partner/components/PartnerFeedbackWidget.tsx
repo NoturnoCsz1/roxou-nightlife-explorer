@@ -22,8 +22,11 @@ export function PartnerFeedbackWidget() {
   const [sending, setSending] = useState(false);
 
   // FIX 10F: ocultar em telas críticas (modo portaria / check-in público).
+  // FIX: ocultar em telas críticas (check-in público + validador de portaria).
   const HIDDEN_PATHS = ["/checkin", "/portaria"];
+  const HIDDEN_SUFFIXES = ["/validator", "/validador"];
   if (HIDDEN_PATHS.some((p) => pathname.startsWith(p))) return null;
+  if (HIDDEN_SUFFIXES.some((s) => pathname.endsWith(s))) return null;
 
   const send = async () => {
     if (!msg.trim()) return;
