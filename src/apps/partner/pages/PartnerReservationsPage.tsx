@@ -33,8 +33,11 @@ import {
   DailyOperationsReport,
   OccupancyInsightsPanel,
   ReservationHeroCard,
+  ReservationHeroMobile,
   ReservationKpiGrid,
   ReservationTimeline,
+  UpcomingReservationCard,
+  ReservationPendingCard,
 } from "../components";
 import {
   cancelReservation,
@@ -359,17 +362,32 @@ const PartnerReservationsPage = () => {
         filename={`reservas-${selectedPartner?.slug ?? "qr"}.png`}
       />
 
-      <ReservationHeroCard
-        partnerName={selectedPartner?.name}
-        rows={rows}
-        waitlist={waitlist}
-        types={types}
-        stats={stats}
-      />
+      {/* MOBILE — central operacional simplificada */}
+      <div className="block md:hidden space-y-4 min-w-0">
+        <ReservationHeroMobile
+          partnerName={selectedPartner?.name}
+          rows={rows}
+          waitlist={waitlist}
+          stats={stats}
+        />
+        <UpcomingReservationCard reservations={rows} types={types} />
+        <ReservationPendingCard reservations={rows} waitlist={waitlist} />
+        <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
+        <ReservationTimeline reservations={rows} types={types} />
+      </div>
 
-      <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
-
-      <ReservationTimeline reservations={rows} types={types} />
+      {/* DESKTOP — dashboard completo */}
+      <div className="hidden md:block space-y-5">
+        <ReservationHeroCard
+          partnerName={selectedPartner?.name}
+          rows={rows}
+          waitlist={waitlist}
+          types={types}
+          stats={stats}
+        />
+        <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
+        <ReservationTimeline reservations={rows} types={types} />
+      </div>
 
       {settings?.reservations_enabled && selectedPartner?.slug && (
         <Card className="rounded-2xl">

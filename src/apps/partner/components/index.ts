@@ -38,6 +38,9 @@ export { OccupancyInsightsPanel } from "./OccupancyInsightsPanel";
 export { ReservationHeroCard } from "./ReservationHeroCard";
 export { ReservationKpiGrid } from "./ReservationKpiGrid";
 export { ReservationTimeline } from "./ReservationTimeline";
+export { ReservationHeroMobile } from "./ReservationHeroMobile";
+export { UpcomingReservationCard } from "./UpcomingReservationCard";
+export { ReservationPendingCard } from "./ReservationPendingCard";
 
 // Fase 9I — Partner VIP Lists
 export { VipListStatusBadge } from "./VipListStatusBadge";
