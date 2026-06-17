@@ -2502,6 +2502,8 @@ export type Database = {
           code: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -2533,6 +2535,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           customer_id?: string | null
+          customer_linked_at?: string | null
+          customer_linked_by?: string | null
           deposit_amount?: number
           email?: string | null
           event_id?: string | null
@@ -2564,6 +2568,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           customer_id?: string | null
+          customer_linked_at?: string | null
+          customer_linked_by?: string | null
           deposit_amount?: number
           email?: string | null
           event_id?: string | null
@@ -2722,6 +2728,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -2748,6 +2756,8 @@ export type Database = {
           checked_in_at?: string | null
           created_at?: string
           customer_id?: string | null
+          customer_linked_at?: string | null
+          customer_linked_by?: string | null
           email?: string | null
           email_consent?: boolean
           event_id?: string | null
@@ -2774,6 +2784,8 @@ export type Database = {
           checked_in_at?: string | null
           created_at?: string
           customer_id?: string | null
+          customer_linked_at?: string | null
+          customer_linked_by?: string | null
           email?: string | null
           email_consent?: boolean
           event_id?: string | null
@@ -4207,6 +4219,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4429,6 +4443,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4491,6 +4507,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4582,6 +4600,8 @@ export type Database = {
           code: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -4698,6 +4718,8 @@ export type Database = {
           code: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -4761,6 +4783,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_my_customer_account: { Args: never; Returns: Json }
       duplicate_partner_event: {
         Args: { _event_id: string }
         Returns: {
@@ -4868,6 +4891,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4932,6 +4957,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -4961,6 +4988,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      normalize_phone: { Args: { _input: string }; Returns: string }
       notify_waitlist_entry: { Args: { _entry_id: string }; Returns: Json }
       open_partner_vip_list: {
         Args: { _list_id: string }
@@ -5054,6 +5082,8 @@ export type Database = {
           code: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -5230,6 +5260,8 @@ export type Database = {
           code: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null
@@ -5323,6 +5355,8 @@ export type Database = {
           checked_in_at: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           email: string | null
           email_consent: boolean
           event_id: string | null
@@ -5438,6 +5472,8 @@ export type Database = {
           code: string | null
           created_at: string
           customer_id: string | null
+          customer_linked_at: string | null
+          customer_linked_by: string | null
           deposit_amount: number
           email: string | null
           event_id: string | null

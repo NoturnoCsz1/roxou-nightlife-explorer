@@ -41,21 +41,43 @@ export function SaveToAccountButton({ kind, token }: Props) {
     setBusy(true);
     try {
       const res = await linkRecordToCustomer(kind, token);
-      if (res.linked) {
+      const reason = res.reason;
+      if (reason === "linked") {
         toast({ title: "Comprovante salvo na sua conta." });
+        navigate(
+          kind === "reservation"
+            ? "/cliente/minhas-reservas"
+            : "/cliente/minhas-reservas?tab=vip",
+        );
+      } else if (reason === "already_linked_to_you") {
+        toast({ title: "Este comprovante já está salvo na sua conta." });
+        navigate(
+          kind === "reservation"
+            ? "/cliente/minhas-reservas"
+            : "/cliente/minhas-reservas?tab=vip",
+        );
+      } else if (reason === "already_linked") {
+        toast({
+          title: "Este comprovante já foi salvo em outra conta.",
+          variant: "destructive",
+        });
+      } else if (reason === "contact_mismatch") {
+        toast({
+          title:
+            "Por segurança, este comprovante só pode ser salvo usando o mesmo e-mail ou telefone informado na reserva.",
+          description:
+            "Dica: utilize o mesmo e-mail ou telefone informado na reserva ou lista VIP.",
+          variant: "destructive",
+        });
       } else {
         toast({
-          title: "Já estava salvo na sua conta.",
+          title: "Não foi possível salvar este comprovante agora.",
+          variant: "destructive",
         });
       }
-      navigate(
-        kind === "reservation"
-          ? "/cliente/minhas-reservas"
-          : "/cliente/minhas-reservas?tab=vip",
-      );
     } catch (err) {
       toast({
-        title: "Não foi possível salvar.",
+        title: "Não foi possível salvar este comprovante agora.",
         description: (err as Error).message,
         variant: "destructive",
       });

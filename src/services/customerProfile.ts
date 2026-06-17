@@ -90,16 +90,35 @@ export async function updateMyCustomerProfile(
   return data as unknown as CustomerProfile;
 }
 
+export type LinkReason =
+  | "linked"
+  | "already_linked_to_you"
+  | "already_linked"
+  | "contact_mismatch"
+  | "not_found";
+
+export interface LinkResult {
+  linked: boolean;
+  kind: LinkKind;
+  reason: LinkReason;
+}
+
 export async function linkRecordToCustomer(
   kind: LinkKind,
   publicToken: string,
-): Promise<{ linked: boolean; kind: LinkKind }> {
+): Promise<LinkResult> {
   const { data, error } = await supabase.rpc("link_record_to_customer", {
     _kind: kind,
     _public_token: publicToken,
   });
   if (error) throw error;
-  return data as unknown as { linked: boolean; kind: LinkKind };
+  return data as unknown as LinkResult;
+}
+
+export async function deleteMyCustomerAccount(): Promise<{ deleted: boolean }> {
+  const { data, error } = await supabase.rpc("delete_my_customer_account");
+  if (error) throw error;
+  return data as unknown as { deleted: boolean };
 }
 
 export async function listMyReservations(): Promise<CustomerReservationRow[]> {
