@@ -77,6 +77,9 @@ export function ReservationTypesManager({
   canEdit: boolean;
 }) {
   const [rows, setRows] = useState<PartnerReservationType[]>([]);
+  const [availability, setAvailability] = useState<
+    Record<string, ReservationTypeAvailability>
+  >({});
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<PartnerReservationTypeKind>("table");
   const [draft, setDraft] = useState<DraftRow | null>(null);
@@ -86,7 +89,14 @@ export function ReservationTypesManager({
     if (!partnerId) return;
     setLoading(true);
     try {
-      setRows(await listReservationTypes(partnerId));
+      const [rowsRes, availRes] = await Promise.all([
+        listReservationTypes(partnerId),
+        getReservationTypesAvailability(partnerId),
+      ]);
+      setRows(rowsRes);
+      const map: Record<string, ReservationTypeAvailability> = {};
+      for (const a of availRes) map[a.type_id] = a;
+      setAvailability(map);
     } catch (err) {
       toast({ title: "Erro ao carregar tipos", description: (err as Error).message });
     } finally {
