@@ -23,7 +23,6 @@ import { toast } from "@/hooks/use-toast";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import {
   ReservationCard,
-  ReservationStats,
   ReservationEmptyState,
   ReservationSettingsForm,
   ReservationTable,
@@ -33,6 +32,9 @@ import {
   PublicLinkQrDialog,
   DailyOperationsReport,
   OccupancyInsightsPanel,
+  ReservationHeroCard,
+  ReservationKpiGrid,
+  ReservationTimeline,
 } from "../components";
 import {
   cancelReservation,
