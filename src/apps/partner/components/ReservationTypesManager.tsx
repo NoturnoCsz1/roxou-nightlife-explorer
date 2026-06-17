@@ -16,8 +16,10 @@ import {
   listReservationTypes,
   upsertReservationType,
   deleteReservationType,
+  getReservationTypesAvailability,
   type PartnerReservationType,
   type PartnerReservationTypeKind,
+  type ReservationTypeAvailability,
 } from "../services/partnerReservations";
 
 const KIND_LABELS: Record<PartnerReservationTypeKind, string> = {
