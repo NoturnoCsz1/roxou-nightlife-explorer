@@ -1,17 +1,18 @@
 /**
- * PartnerQuickActions — Fase 10F
- * Atalhos com navegação real via react-router.
+ * PartnerQuickActions — FIX rotas reais
+ * Atalhos navegam para o Partner Preview interno via /partner/*
+ * (PartnerShortcutRedirect redireciona para /admin/partner-preview/*).
  */
 import { CalendarPlus, ClipboardList, Crown, Settings, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 
 const ACTIONS = [
-  { icon: CalendarPlus, label: "Novo evento", to: "/eventos/novo" },
-  { icon: ClipboardList, label: "Reservas", to: "/reservas" },
-  { icon: Crown, label: "Lista VIP", to: "/lista-vip" },
-  { icon: BarChart3, label: "Analytics", to: "/analytics" },
-  { icon: Settings, label: "Configurações", to: "/configuracoes" },
+  { icon: CalendarPlus, label: "Novo evento", to: "/partner/eventos" },
+  { icon: ClipboardList, label: "Reservas", to: "/partner/reservas" },
+  { icon: Crown, label: "Lista VIP", to: "/partner/lista-vip" },
+  { icon: BarChart3, label: "Analytics", to: "/partner/analytics" },
+  { icon: Settings, label: "Configurações", to: "/partner/configuracoes" },
 ];
 
 export function PartnerQuickActions() {
