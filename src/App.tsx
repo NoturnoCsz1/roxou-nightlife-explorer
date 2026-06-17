@@ -140,6 +140,7 @@ const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutR
 // Cliente Roxou (Fase Cadastro Cliente — MVP)
 const CustomerLogin = lazy(() => import("./pages/customer/CustomerLogin"));
 const CustomerCallback = lazy(() => import("./pages/customer/CustomerCallback"));
+const CustomerDashboard = lazy(() => import("./pages/customer/CustomerDashboard"));
 const CustomerReservations = lazy(() => import("./pages/customer/CustomerReservations"));
 const CustomerAccount = lazy(() => import("./pages/customer/CustomerAccount"));
 const CustomerInvites = lazy(() => import("./pages/customer/CustomerInvites"));
@@ -265,12 +266,17 @@ const App = () => (
             element={L(<PublicVipListSuccess />)}
           />
 
-          {/* ========= ÁREA DO CLIENTE (Roxou) ========= */}
+          {/* ========= ÁREA DO CLIENTE (Conta Roxou) ========= */}
+          <Route path="/cliente" element={L(<CustomerDashboard />)} />
           <Route path="/cliente/login" element={L(<CustomerLogin />)} />
           <Route path="/cliente/callback" element={L(<CustomerCallback />)} />
           <Route
             path="/cliente/minhas-reservas"
             element={L(<CustomerReservations />)}
+          />
+          <Route
+            path="/cliente/lista-vip"
+            element={<Navigate to="/cliente/minhas-reservas?tab=vip" replace />}
           />
           <Route path="/cliente/minha-conta" element={L(<CustomerAccount />)} />
           <Route
