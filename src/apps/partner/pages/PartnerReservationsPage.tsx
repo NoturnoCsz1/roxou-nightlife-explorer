@@ -636,8 +636,9 @@ const PartnerReservationsPage = () => {
         </AccordionItem>
 
         <AccordionItem
+          id="report"
           value="report"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
+          className="rounded-2xl border border-border/60 bg-card/40 px-3 scroll-mt-24"
         >
           <AccordionTrigger className="text-sm font-semibold">
             Relatório do dia
