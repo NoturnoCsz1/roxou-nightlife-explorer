@@ -1,9 +1,12 @@
 /**
  * Comprovante público de reserva — /reserva/sucesso/:publicToken
  *
- * Cartão completo com logo, dados, QR, status e contador regressivo
- * quando pending_payment. Suporta salvar comprovante (PNG) e
- * compartilhar comprovante. Nunca expõe o QR isolado.
+ * Card de status (pending_payment / confirmed / completed / expired /
+ * cancelled / no_show), contador regressivo em SP, QR Code condicional
+ * (somente quando confirmed/completed), e ações: Salvar PNG,
+ * Compartilhar comprovante e Enviar pelo WhatsApp.
+ *
+ * Nunca expõe o QR isoladamente.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
@@ -13,11 +16,21 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import { generateQrSvg } from "@/lib/qrcode";
+import { formatDateTimeSP } from "@/lib/dateUtils";
 import {
   getPublicReservation,
   type PublicReservationInfo,
   type PublicReservationResult,
 } from "@/services/publicReservations";
+
+type ReservationStatus =
+  | "pending"
+  | "pending_payment"
+  | "confirmed"
+  | "completed"
+  | "expired"
+  | "cancelled"
+  | "no_show";
 
 const KIND_LABEL: Record<"table" | "bistro" | "box", string> = {
   table: "Mesa",
@@ -25,24 +38,51 @@ const KIND_LABEL: Record<"table" | "bistro" | "box", string> = {
   box: "Camarote",
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendente",
-  pending_payment: "Aguardando confirmação/pagamento",
-  confirmed: "Confirmada",
-  cancelled: "Cancelada",
-  completed: "Concluída",
-  expired: "Expirada",
-  no_show: "No-show",
-};
+interface StatusMeta {
+  label: string;
+  badgeClass: string;
+  description?: string;
+}
 
-const STATUS_COLOR: Record<string, string> = {
-  pending_payment: "#f59e0b",
-  confirmed: "#10b981",
-  completed: "#3b82f6",
-  expired: "#71717a",
-  cancelled: "#f43f5e",
-  no_show: "#fb923c",
-  pending: "#f59e0b",
+const STATUS_META: Record<ReservationStatus, StatusMeta> = {
+  pending: {
+    label: "AGUARDANDO CONFIRMAÇÃO",
+    badgeClass: "bg-amber-500/15 text-amber-500 border border-amber-500/40",
+    description:
+      "Sua reserva foi criada e ficará disponível para confirmação.",
+  },
+  pending_payment: {
+    label: "AGUARDANDO CONFIRMAÇÃO",
+    badgeClass: "bg-amber-500/15 text-amber-500 border border-amber-500/40",
+  },
+  confirmed: {
+    label: "RESERVA CONFIRMADA",
+    badgeClass:
+      "bg-emerald-500/15 text-emerald-500 border border-emerald-500/40",
+    description:
+      "Sua reserva está confirmada. Apresente este comprovante na entrada.",
+  },
+  completed: {
+    label: "CHECK-IN REALIZADO",
+    badgeClass: "bg-indigo-500/15 text-indigo-400 border border-indigo-500/40",
+    description: "Check-in já realizado na entrada.",
+  },
+  expired: {
+    label: "RESERVA EXPIRADA",
+    badgeClass: "bg-zinc-500/15 text-zinc-300 border border-zinc-500/40",
+    description:
+      "O prazo para confirmação foi encerrado. Esta reserva não está mais disponível.",
+  },
+  cancelled: {
+    label: "RESERVA CANCELADA",
+    badgeClass: "bg-rose-500/15 text-rose-400 border border-rose-500/40",
+    description: "Esta reserva foi cancelada.",
+  },
+  no_show: {
+    label: "NÃO COMPARECEU",
+    badgeClass: "bg-orange-500/15 text-orange-400 border border-orange-500/40",
+    description: "Cliente não compareceu na data agendada.",
+  },
 };
 
 const slugify = (s: string) =>
@@ -72,6 +112,16 @@ const PublicReservationSuccessPage = () => {
   const [qrSvg, setQrSvg] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
+  const refetch = async () => {
+    if (!publicToken) return;
+    try {
+      const updated = await getPublicReservation(publicToken);
+      if (updated) setInfo(updated);
+    } catch {
+      /* noop */
+    }
+  };
+
   useEffect(() => {
     if (!publicToken) return;
     let alive = true;
@@ -85,52 +135,75 @@ const PublicReservationSuccessPage = () => {
     };
   }, [publicToken]);
 
-  // refetch every 15s while pending_payment
+  const status = (info?.status ?? state.result?.status ?? "pending_payment") as
+    | ReservationStatus
+    | string;
+
+  // refetch every 15s while pending_payment, com tick imediato após expirar
   useEffect(() => {
     if (!publicToken) return;
-    if (info?.status !== "pending_payment") return;
-    const iv = setInterval(async () => {
-      try {
-        const updated = await getPublicReservation(publicToken);
-        if (updated) setInfo(updated);
-      } catch {
-        /* noop */
-      }
+    if (status !== "pending_payment") return;
+    const iv = setInterval(() => {
+      void refetch();
     }, 15000);
     return () => clearInterval(iv);
-  }, [publicToken, info?.status]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publicToken, status]);
 
+  // contador regressivo
   useEffect(() => {
-    if (info?.status !== "pending_payment") return;
+    if (status !== "pending_payment") return;
     const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(tick);
-  }, [info?.status]);
-
-  useEffect(() => {
-    const payload =
-      info?.qr_payload ??
-      state.result?.qr_payload ??
-      (publicToken ? `roxou://checkin?type=reservation&token=${publicToken}` : "");
-    if (!payload) return;
-    generateQrSvg(payload).then(setQrSvg).catch(() => setQrSvg(""));
-  }, [info?.qr_payload, state.result?.qr_payload, publicToken]);
-
-  const partnerName = info?.partner_name ?? "Estabelecimento";
-  const code = info?.code ?? publicToken?.slice(0, 8).toUpperCase() ?? "";
-  const dateLabel = info
-    ? new Date(info.reservation_date).toLocaleString("pt-BR", {
-        dateStyle: "short",
-        timeStyle: "short",
-      })
-    : "—";
+  }, [status]);
 
   const expiresMs = useMemo(() => {
     if (!info?.expires_at) return 0;
     return new Date(info.expires_at).getTime() - now;
   }, [info?.expires_at, now]);
 
-  const status = info?.status ?? state.result?.status ?? "pending_payment";
-  const statusColor = STATUS_COLOR[status] ?? "#71717a";
+  // quando o contador zera, faz um refetch para mover para 'expired'
+  const triggeredExpireRefetch = useRef(false);
+  useEffect(() => {
+    if (status !== "pending_payment") {
+      triggeredExpireRefetch.current = false;
+      return;
+    }
+    if (
+      info?.expires_at &&
+      expiresMs <= 0 &&
+      !triggeredExpireRefetch.current
+    ) {
+      triggeredExpireRefetch.current = true;
+      void refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expiresMs, status, info?.expires_at]);
+
+  const qrAllowed = status === "confirmed" || status === "completed";
+
+  useEffect(() => {
+    if (!qrAllowed) {
+      setQrSvg("");
+      return;
+    }
+    const payload =
+      info?.qr_payload ??
+      state.result?.qr_payload ??
+      (publicToken ? `roxou://checkin?type=reservation&token=${publicToken}` : "");
+    if (!payload) return;
+    generateQrSvg(payload).then(setQrSvg).catch(() => setQrSvg(""));
+  }, [qrAllowed, info?.qr_payload, state.result?.qr_payload, publicToken]);
+
+  const partnerName = info?.partner_name ?? "Estabelecimento";
+  const code = info?.code ?? publicToken?.slice(0, 8).toUpperCase() ?? "";
+  const dateLabel = info ? formatDateTimeSP(info.reservation_date) : "—";
+  const expiresLabel = info?.expires_at ? formatDateTimeSP(info.expires_at) : "";
+
+  const meta =
+    STATUS_META[(status as ReservationStatus) in STATUS_META
+      ? (status as ReservationStatus)
+      : "pending_payment"];
 
   const filenameBase = slugify(info?.name ?? "reserva");
 
@@ -160,10 +233,12 @@ const PublicReservationSuccessPage = () => {
     a.click();
   };
 
-  const buildShareText = () =>
-    [
+  const buildShareText = () => {
+    const lines: (string | null | false)[] = [
       `Reserva — ${partnerName}`,
-      info?.type_name ? `${KIND_LABEL[info.type_kind ?? "table"]}: ${info.type_name}` : null,
+      info?.type_name
+        ? `${KIND_LABEL[info.type_kind ?? "table"]}: ${info.type_name}`
+        : null,
       info?.name ? `Nome: ${info.name}` : null,
       `Pessoas: ${info?.people_count ?? 1}`,
       `Data: ${dateLabel}`,
@@ -171,9 +246,62 @@ const PublicReservationSuccessPage = () => {
       "",
       "Comprovante de solicitação de reserva.",
       "A reserva só estará garantida após confirmação do estabelecimento ou pagamento.",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ];
+    return lines.filter(Boolean).join("\n");
+  };
+
+  const buildWhatsappMessage = () => {
+    const link = typeof window !== "undefined" ? window.location.href : "";
+    const valorLine = info?.total_price
+      ? `Valor: R$ ${Number(info.total_price).toFixed(2)}\n`
+      : "";
+    const tipoLine = info?.type_name
+      ? `Tipo: ${KIND_LABEL[info.type_kind ?? "table"]} — ${info.type_name}\n`
+      : "";
+
+    if (status === "confirmed" || status === "completed") {
+      return (
+        `Sua reserva está confirmada!\n\n` +
+        `Estabelecimento: ${partnerName}\n` +
+        tipoLine +
+        `Data: ${dateLabel}\n` +
+        `Pessoas: ${info?.people_count ?? 1}\n` +
+        valorLine +
+        `\nApresente o comprovante na entrada:\n${link}`
+      );
+    }
+
+    if (status === "pending_payment") {
+      return (
+        `Sua reserva foi criada com sucesso!\n\n` +
+        `Estabelecimento: ${partnerName}\n` +
+        tipoLine +
+        `Data: ${dateLabel}\n` +
+        `Pessoas: ${info?.people_count ?? 1}\n` +
+        valorLine +
+        (expiresLabel
+          ? `\nSua reserva precisa ser confirmada até ${expiresLabel}. Após esse prazo, ela poderá expirar automaticamente.\n`
+          : "") +
+        `\nComprovante:\n${link}`
+      );
+    }
+
+    return (
+      `Comprovante de reserva — ${partnerName}\n` +
+      tipoLine +
+      `Data: ${dateLabel}\n` +
+      `Status: ${meta.label}\n\n${link}`
+    );
+  };
+
+  const openWhatsapp = () => {
+    const text = buildWhatsappMessage();
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
 
   const shareCard = async () => {
     const dataUrl = await generateCardPng();
@@ -201,11 +329,12 @@ const PublicReservationSuccessPage = () => {
     );
   };
 
-  const showCountdown = status === "pending_payment" && expiresMs > 0;
-  const expired = status === "expired" || (status === "pending_payment" && expiresMs <= 0 && info?.expires_at);
+  const showCountdown =
+    status === "pending_payment" && !!info?.expires_at && expiresMs > 0;
+  const countdownUrgent = showCountdown && expiresMs <= 5 * 60 * 1000;
 
   return (
-    <main className="min-h-screen w-full bg-background overflow-x-hidden">
+    <main className="min-h-screen w-full bg-background overflow-x-hidden pb-24">
       <SEO
         title="Comprovante de Reserva | Roxou"
         description="Comprovante de solicitação de reserva."
@@ -216,27 +345,54 @@ const PublicReservationSuccessPage = () => {
           <h1 className="text-2xl font-bold">
             {status === "confirmed"
               ? "Reserva confirmada!"
+              : status === "expired"
+              ? "Reserva expirada"
               : "Solicitação recebida"}
           </h1>
         </header>
 
-        {showCountdown ? (
-          <Card className="border-amber-500/40 bg-amber-500/5 p-3 text-center">
-            <p className="text-xs text-amber-600">
-              Tempo restante para confirmação
-            </p>
-            <p className="font-mono text-3xl font-bold text-amber-500">
-              {formatRemaining(expiresMs)}
-            </p>
-          </Card>
-        ) : null}
+        {/* Card de status */}
+        <Card className="p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wider ${meta.badgeClass}`}
+            >
+              {meta.label}
+            </span>
+            {showCountdown ? (
+              <span
+                className={`font-mono text-lg font-bold ${
+                  countdownUrgent ? "text-orange-500" : "text-amber-500"
+                }`}
+              >
+                {formatRemaining(expiresMs)}
+              </span>
+            ) : null}
+          </div>
+          {meta.description ? (
+            <p className="text-xs text-muted-foreground">{meta.description}</p>
+          ) : null}
+          {status === "pending_payment" && expiresLabel ? (
+            <>
+              <p className="text-xs text-foreground">
+                Sua reserva precisa ser confirmada até{" "}
+                <strong>{expiresLabel}</strong>.
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Caso a confirmação não aconteça dentro do prazo, a reserva será
+                cancelada automaticamente e a disponibilidade retornará ao
+                sistema.
+              </p>
+              {countdownUrgent ? (
+                <p className="text-[11px] font-semibold text-orange-500">
+                  Atenção: sua reserva expira em breve.
+                </p>
+              ) : null}
+            </>
+          ) : null}
+        </Card>
 
-        {expired ? (
-          <Card className="border-rose-500/40 bg-rose-500/5 p-3 text-center text-sm text-rose-500">
-            Reserva expirada. Faça uma nova solicitação.
-          </Card>
-        ) : null}
-
+        {/* Comprovante (área capturada no PNG) */}
         <div
           ref={cardRef}
           className="rounded-2xl p-5 space-y-4"
@@ -267,10 +423,9 @@ const PublicReservationSuccessPage = () => {
               </p>
             </div>
             <span
-              className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold"
-              style={{ background: `${statusColor}22`, color: statusColor }}
+              className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badgeClass}`}
             >
-              {STATUS_LABEL[status] ?? status}
+              {meta.label}
             </span>
           </div>
 
@@ -282,16 +437,39 @@ const PublicReservationSuccessPage = () => {
             ) : null}
           </div>
 
-          <div className="bg-white p-3 rounded-xl mx-auto w-full max-w-[260px] sm:max-w-[360px] aspect-square flex items-center justify-center overflow-hidden">
-            {qrSvg ? (
-              <div
-                className="w-full h-full [&_svg]:w-full [&_svg]:h-full [&_svg]:max-w-full"
-                dangerouslySetInnerHTML={{ __html: qrSvg }}
-              />
-            ) : (
-              <div className="w-full h-full bg-muted" />
-            )}
-          </div>
+          {/* QR condicional */}
+          {qrAllowed ? (
+            <>
+              <div className="bg-white p-3 rounded-xl mx-auto w-full max-w-[260px] sm:max-w-[360px] aspect-square flex items-center justify-center overflow-hidden">
+                {qrSvg ? (
+                  <div
+                    className="w-full h-full [&_svg]:w-full [&_svg]:h-full [&_svg]:max-w-full"
+                    dangerouslySetInnerHTML={{ __html: qrSvg }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted" />
+                )}
+              </div>
+              <p className="text-[11px] text-center text-white/70">
+                Apresente este QR Code na entrada.
+              </p>
+            </>
+          ) : status === "pending_payment" ? (
+            <div className="mx-auto w-full max-w-[260px] sm:max-w-[360px] aspect-square flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 text-center px-4">
+              <p className="text-[11px] uppercase tracking-wider text-amber-400">
+                QR Code bloqueado
+              </p>
+              <p className="text-[11px] text-white/70">
+                O QR Code será liberado após a confirmação da reserva.
+              </p>
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-[260px] sm:max-w-[360px] aspect-square flex items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/5 text-center px-4">
+              <p className="text-[11px] text-white/60">
+                QR Code indisponível para esta reserva.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2 text-[11px] text-white/80">
             <div>
@@ -322,6 +500,23 @@ const PublicReservationSuccessPage = () => {
                 </p>
               </div>
             ) : null}
+            {status === "pending_payment" && expiresLabel ? (
+              <div className="col-span-2">
+                <p className="text-white/50">Confirmar até</p>
+                <p className="font-medium text-amber-300">{expiresLabel}</p>
+              </div>
+            ) : null}
+            {(info as unknown as { checked_in_at?: string | null } | null)
+              ?.checked_in_at ? (
+              <div className="col-span-2">
+                <p className="text-white/50">Check-in</p>
+                <p className="font-medium text-emerald-300">
+                  {formatDateTimeSP(
+                    (info as unknown as { checked_in_at: string }).checked_in_at,
+                  )}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <p className="text-[9px] text-white/50 text-center leading-relaxed border-t border-white/10 pt-3">
@@ -335,25 +530,29 @@ const PublicReservationSuccessPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+        {/* Ações */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
           <Button
             variant="secondary"
             onClick={downloadCard}
             className="w-full min-w-0 truncate"
           >
-            Salvar comprovante (PNG)
+            Salvar comprovante
           </Button>
           <Button
+            variant="outline"
             onClick={shareCard}
             className="w-full min-w-0 truncate"
           >
-            Compartilhar comprovante
+            Compartilhar
+          </Button>
+          <Button
+            onClick={openWhatsapp}
+            className="w-full min-w-0 truncate bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            Enviar pelo WhatsApp
           </Button>
         </div>
-
-        <p className="text-xs text-center text-muted-foreground">
-          Apresente este QR Code na portaria para validar sua reserva.
-        </p>
 
         <div className="text-center">
           <Link to="/" className="text-xs text-muted-foreground underline">
