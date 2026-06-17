@@ -18,7 +18,7 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ExternalLink, Share2 } from "lucide-react";
+import { Copy, ExternalLink, QrCode, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import {
@@ -29,6 +29,8 @@ import {
   ReservationTable,
   ReservationTypesManager,
   WaitlistManager,
+  GuestNameDialog,
+  PublicLinkQrDialog,
 } from "../components";
 import {
   cancelReservation,
@@ -38,12 +40,14 @@ import {
   confirmReservationPayment,
   createReservation,
   getReservationSettings,
+  listReservationTypes,
   listReservations,
   noShowReservation,
   updateReservationSettings,
   waivePartnerReservationDeposit,
   type PartnerReservationRow,
   type PartnerReservationSettings,
+  type PartnerReservationType,
 } from "../services/partnerReservations";
 import {
   closeDuePartnerReservations,
