@@ -95,6 +95,10 @@ export interface PublicPartnerForReservations {
   logo_url: string | null;
   city: string | null;
   address: string | null;
+  type: string | null;
+  instagram: string | null;
+  whatsapp: string | null;
+  short_description: string | null;
   reservations_enabled: boolean;
   auto_confirm: boolean;
   confirmation_timeout_minutes: number;
@@ -127,7 +131,7 @@ export async function getPublicPartnerReservationsContext(
 } | null> {
   const { data: partner, error: e1 } = await supabase
     .from("partners")
-    .select("id, name, slug, logo_url, city, address")
+    .select("id, name, slug, logo_url, city, address, type, instagram, whatsapp, short_description")
     .eq("slug", partnerSlug)
     .maybeSingle();
   if (e1) throw e1;
@@ -183,6 +187,11 @@ export async function getPublicPartnerReservationsContext(
       logo_url: partner.logo_url,
       city: partner.city,
       address: partner.address,
+      type: (partner as { type?: string | null }).type ?? null,
+      instagram: (partner as { instagram?: string | null }).instagram ?? null,
+      whatsapp: (partner as { whatsapp?: string | null }).whatsapp ?? null,
+      short_description:
+        (partner as { short_description?: string | null }).short_description ?? null,
       reservations_enabled: sett?.reservations_enabled ?? false,
       auto_confirm: sett?.auto_confirm ?? false,
       confirmation_timeout_minutes: sett?.confirmation_timeout_minutes ?? 30,
