@@ -47,6 +47,18 @@ export function ReservationSettingsForm({
   const [startAt, setStartAt] = useState(toLocalInput(initial?.reservations_start_at ?? null));
   const [endAt, setEndAt] = useState(toLocalInput(initial?.reservations_end_at ?? null));
   const [timeout_, setTimeout_] = useState(initial?.confirmation_timeout_minutes ?? 30);
+  const [slotInterval, setSlotInterval] = useState(
+    initial?.slot_interval_minutes ?? 30,
+  );
+  const [defaultDuration, setDefaultDuration] = useState(
+    initial?.default_reservation_duration_minutes ?? 90,
+  );
+  const [openTime, setOpenTime] = useState(
+    (initial?.daily_open_time ?? "18:00").slice(0, 5),
+  );
+  const [closeTime, setCloseTime] = useState(
+    (initial?.daily_close_time ?? "23:30").slice(0, 5),
+  );
   const [depositEnabled, setDepositEnabled] = useState(
     initial?.deposit_enabled ?? false,
   );
@@ -73,6 +85,10 @@ export function ReservationSettingsForm({
     setStartAt(toLocalInput(initial.reservations_start_at));
     setEndAt(toLocalInput(initial.reservations_end_at));
     setTimeout_(initial.confirmation_timeout_minutes ?? 30);
+    setSlotInterval(initial.slot_interval_minutes ?? 30);
+    setDefaultDuration(initial.default_reservation_duration_minutes ?? 90);
+    setOpenTime((initial.daily_open_time ?? "18:00").slice(0, 5));
+    setCloseTime((initial.daily_close_time ?? "23:30").slice(0, 5));
     setDepositEnabled(initial.deposit_enabled ?? false);
     setDepositType((initial.deposit_type ?? "fixed") as DepositType);
     setDepositValue(initial.deposit_value ?? 0);
@@ -99,6 +115,10 @@ export function ReservationSettingsForm({
         payment_instructions: payInstructions || null,
         pix_key: pixKey || null,
         pix_receiver_name: pixReceiver || null,
+        slot_interval_minutes: slotInterval,
+        default_reservation_duration_minutes: defaultDuration,
+        daily_open_time: openTime,
+        daily_close_time: closeTime,
       });
     } finally {
       setSaving(false);
@@ -198,6 +218,65 @@ export function ReservationSettingsForm({
               fallback={30}
               disabled={disabled}
             />
+          </div>
+        </div>
+
+        {/* Horários e duração */}
+        <div className="space-y-3 rounded-md border border-border/60 p-3">
+          <div>
+            <Label className="text-sm">Horários e duração</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Define a grade de horários disponíveis e quanto tempo cada reserva
+              bloqueia a mesa.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <Label className="text-xs">Abre às</Label>
+              <Input
+                type="time"
+                value={openTime}
+                onChange={(e) => setOpenTime(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Fecha às</Label>
+              <Input
+                type="time"
+                value={closeTime}
+                onChange={(e) => setCloseTime(e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Intervalo dos slots</Label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={slotInterval}
+                onChange={(e) => setSlotInterval(Number(e.target.value))}
+                disabled={disabled}
+              >
+                <option value={15}>15 min</option>
+                <option value={30}>30 min</option>
+                <option value={60}>60 min</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs">Duração padrão</Label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={defaultDuration}
+                onChange={(e) => setDefaultDuration(Number(e.target.value))}
+                disabled={disabled}
+              >
+                <option value={60}>60 min</option>
+                <option value={90}>90 min</option>
+                <option value={120}>120 min</option>
+                <option value={180}>180 min</option>
+                <option value={240}>240 min</option>
+              </select>
+            </div>
           </div>
         </div>
 

@@ -35,10 +35,12 @@ import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 import {
   getPublicPartnerReservationsContext,
+  getReservationSlotAvailability,
   submitPublicReservation,
   submitReservationWaitlist,
   type PublicPartnerForReservations,
   type PublicReservationType,
+  type ReservationSlot,
 } from "@/services/publicReservations";
 
 const KIND_LABEL: Record<PublicReservationType["kind"], string> = {
@@ -53,10 +55,23 @@ const KIND_LABEL_PLURAL: Record<PublicReservationType["kind"], string> = {
   box: "Camarotes",
 };
 
-const minLocalInput = (hoursAhead: number): string => {
+const todayLocalDate = (hoursAhead = 0): string => {
   const d = new Date(Date.now() + hoursAhead * 3600 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+const slotLabel = (iso: string): string =>
+  new Date(iso).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const formatDuration = (m: number): string => {
+  if (m < 60) return `${m}min`;
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  return r === 0 ? `${h}h` : `${h}h${String(r).padStart(2, "0")}`;
 };
 
 const formatBRL = (v: number) =>
@@ -93,7 +108,10 @@ const PublicReservationPage = () => {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [guests, setGuests] = useState(2);
-  const [when, setWhen] = useState("");
+  const [date, setDate] = useState("");
+  const [slotIso, setSlotIso] = useState<string>("");
+  const [slots, setSlots] = useState<ReservationSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [notes, setNotes] = useState("");
 
   const [waitlistType, setWaitlistType] = useState<PublicReservationType | null>(
@@ -132,7 +150,7 @@ const PublicReservationPage = () => {
           const match = ctx.types.find((t) => t.id === preselectTypeId);
           if (match) setSelectedType(match.id);
         }
-        setWhen(minLocalInput(ctx.partner.advance_booking_hours + 1));
+        setDate(todayLocalDate(Math.ceil((ctx.partner.advance_booking_hours || 0) / 24)));
       } catch (err) {
         toast({ title: "Erro", description: (err as Error).message });
       } finally {
@@ -159,8 +177,8 @@ const PublicReservationPage = () => {
     [types, selectedType],
   );
 
-  const minWhen = useMemo(
-    () => minLocalInput(partner?.advance_booking_hours ?? 2),
+  const minDate = useMemo(
+    () => todayLocalDate(Math.ceil((partner?.advance_booking_hours ?? 0) / 24)),
     [partner?.advance_booking_hours],
   );
 
@@ -173,14 +191,66 @@ const PublicReservationPage = () => {
     [partner?.instagram],
   );
 
+  // Effective people count: capacity-fixed types ignore the guests input.
+  const effectiveGuests = useMemo(() => {
+    if (selected && selected.requires_guest_count === false) return selected.seats;
+    return guests;
+  }, [selected, guests]);
+
+  const effectiveDuration = useMemo(() => {
+    return selected?.duration_minutes ?? 90;
+  }, [selected]);
+
+  // Load slot grid whenever (type, date) changes
+  useEffect(() => {
+    if (!partner?.id || !selected || !date) {
+      setSlots([]);
+      setSlotIso("");
+      return;
+    }
+    let alive = true;
+    setLoadingSlots(true);
+    (async () => {
+      try {
+        const data = await getReservationSlotAvailability(
+          partner.id,
+          selected.id,
+          date,
+        );
+        if (!alive) return;
+        setSlots(data);
+        // Reset slot if previous slot disappeared / unavailable
+        const stillOk = data.find(
+          (s) => s.slot_start === slotIso && s.available_count > 0,
+        );
+        if (!stillOk) setSlotIso("");
+      } catch (err) {
+        if (alive) {
+          toast({ title: "Erro ao carregar horários", description: (err as Error).message });
+          setSlots([]);
+        }
+      } finally {
+        if (alive) setLoadingSlots(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partner?.id, selected?.id, date]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partnerSlug || !partner) return;
     if (!name.trim()) return toast({ title: "Informe seu nome" });
     if (phone.replace(/[^0-9]/g, "").length < 10)
       return toast({ title: "Telefone inválido" });
-    if (!when) return toast({ title: "Escolha data e horário" });
-    if (guests < 1 || guests > partner.max_people_per_reservation)
+    if (!date) return toast({ title: "Escolha a data" });
+    if (!slotIso) return toast({ title: "Escolha um horário disponível" });
+    const slot = slots.find((s) => s.slot_start === slotIso);
+    if (slot && slot.available_count <= 0)
+      return toast({ title: "Horário esgotado para este tipo de reserva" });
+    if (effectiveGuests < 1 || effectiveGuests > partner.max_people_per_reservation)
       return toast({
         title: `Máximo de ${partner.max_people_per_reservation} pessoas por reserva`,
       });
@@ -195,8 +265,8 @@ const PublicReservationPage = () => {
         name,
         phone,
         email: email || null,
-        guests,
-        reservation_date: new Date(when).toISOString(),
+        guests: effectiveGuests,
+        reservation_date: slotIso,
         notes: notes || null,
       });
       navigate(`/reserva/sucesso/${result.public_token}`, {
@@ -208,6 +278,7 @@ const PublicReservationPage = () => {
       setSubmitting(false);
     }
   };
+
 
   if (loading) {
     return (
@@ -401,7 +472,7 @@ const PublicReservationPage = () => {
                                 </p>
                                 <p className="mt-0.5 text-[11px] text-muted-foreground break-words">
                                   <Users className="inline h-3 w-3 mr-0.5" />
-                                  {t.seats} {kind === "box" ? "pessoas" : "lugares"}
+                                  {t.seats} {t.requires_guest_count === false ? "pessoas incluídas" : kind === "box" ? "pessoas" : "lugares"}
                                   {t.minimum_consumption
                                     ? ` • consumo mín. ${formatBRL(Number(t.minimum_consumption))}`
                                     : ""}
@@ -510,7 +581,60 @@ const PublicReservationPage = () => {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs">Data</Label>
+                <Input
+                  type="date"
+                  min={minDate}
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="h-11"
+                  required
+                />
+              </div>
+
+              {/* Slot grid */}
+              {selected ? (
+                <div className="space-y-2">
+                  <Label className="text-xs">Horário disponível</Label>
+                  {loadingSlots ? (
+                    <p className="text-xs text-muted-foreground">Carregando horários…</p>
+                  ) : slots.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Selecione uma data para ver os horários.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                      {slots.map((s) => {
+                        const taken = s.available_count <= 0;
+                        const active = slotIso === s.slot_start;
+                        return (
+                          <button
+                            key={s.slot_start}
+                            type="button"
+                            disabled={taken}
+                            onClick={() => setSlotIso(s.slot_start)}
+                            className={`rounded-lg border-2 px-2 py-2 text-xs font-medium transition ${
+                              taken
+                                ? "border-border/30 bg-muted/20 text-muted-foreground line-through cursor-not-allowed"
+                                : active
+                                  ? "border-primary bg-primary/15 text-primary shadow-[0_0_14px_-6px_hsl(var(--primary)/0.8)]"
+                                  : "border-border/60 bg-card/40 hover:border-primary/60"
+                            }`}
+                          >
+                            <div className="font-bold">{slotLabel(s.slot_start)}</div>
+                            <div className="text-[10px] opacity-80">
+                              {taken ? "Esgotado" : `${s.available_count} disp.`}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {selected && selected.requires_guest_count ? (
                 <div>
                   <Label className="text-xs">Pessoas</Label>
                   <Input
@@ -523,18 +647,8 @@ const PublicReservationPage = () => {
                     className="h-11"
                   />
                 </div>
-                <div>
-                  <Label className="text-xs">Data e horário</Label>
-                  <Input
-                    type="datetime-local"
-                    min={minWhen}
-                    value={when}
-                    onChange={(e) => setWhen(e.target.value)}
-                    className="h-11"
-                    required
-                  />
-                </div>
-              </div>
+              ) : null}
+
               <div>
                 <Label className="text-xs">Observações (opcional)</Label>
                 <Textarea
@@ -559,19 +673,30 @@ const PublicReservationPage = () => {
                   </div>
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <span className="text-muted-foreground">Pessoas</span>
-                    <span className="font-medium">{guests}</span>
+                    <span className="font-medium">
+                      {effectiveGuests}
+                      {selected.requires_guest_count === false ? (
+                        <span className="ml-1 text-[10px] text-muted-foreground">
+                          (incluídas)
+                        </span>
+                      ) : null}
+                    </span>
                   </div>
-                  {when ? (
+                  {slotIso ? (
                     <div className="flex items-center justify-between gap-2 text-sm">
                       <span className="text-muted-foreground">Quando</span>
                       <span className="font-medium text-right">
-                        {new Date(when).toLocaleString("pt-BR", {
+                        {new Date(slotIso).toLocaleString("pt-BR", {
                           dateStyle: "short",
                           timeStyle: "short",
                         })}
                       </span>
                     </div>
                   ) : null}
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-muted-foreground">Duração prevista</span>
+                    <span className="font-medium">{formatDuration(effectiveDuration)}</span>
+                  </div>
                   <div className="flex items-center justify-between gap-2 text-sm pt-1 border-t border-primary/20">
                     <span className="text-muted-foreground">Valor</span>
                     <span className="font-bold text-primary">
@@ -583,6 +708,10 @@ const PublicReservationPage = () => {
                       Consumo mínimo: {formatBRL(Number(selected.minimum_consumption))}
                     </p>
                   ) : null}
+                  <p className="text-[11px] text-muted-foreground pt-1">
+                    Sua mesa ficará reservada por até {formatDuration(effectiveDuration)}.
+                    Caso precise de mais tempo, consulte o estabelecimento.
+                  </p>
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-border/60 px-3 py-3 text-xs text-muted-foreground text-center">

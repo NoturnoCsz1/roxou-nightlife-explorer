@@ -121,6 +121,33 @@ export interface PublicReservationType {
   extra_people_limit: number | null;
   extra_people_price: number | null;
   description: string | null;
+  duration_minutes: number | null;
+  requires_guest_count: boolean;
+}
+
+export interface ReservationSlot {
+  slot_start: string;
+  slot_end: string;
+  quantity_total: number;
+  reserved_count: number;
+  available_count: number;
+}
+
+export async function getReservationSlotAvailability(
+  partnerId: string,
+  typeId: string,
+  date: string, // YYYY-MM-DD
+): Promise<ReservationSlot[]> {
+  const { data, error } = await supabase.rpc(
+    "get_reservation_slot_availability" as never,
+    {
+      p_partner_id: partnerId,
+      p_reservation_type_id: typeId,
+      p_date: date,
+    } as never,
+  );
+  if (error) throw error;
+  return (data as unknown as ReservationSlot[]) ?? [];
 }
 
 export async function getPublicPartnerReservationsContext(
@@ -149,7 +176,7 @@ export async function getPublicPartnerReservationsContext(
   const { data: types, error: e3 } = await supabase
     .from("partner_reservation_types")
     .select(
-      "id, kind, name, seats, quantity, price, minimum_consumption, extra_people_limit, extra_people_price, description",
+      "id, kind, name, seats, quantity, price, minimum_consumption, extra_people_limit, extra_people_price, description, duration_minutes, requires_guest_count",
     )
     .eq("partner_id", partner.id)
     .eq("active", true)
