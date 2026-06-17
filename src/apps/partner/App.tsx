@@ -50,6 +50,7 @@ const PartnerVipListDetailRoute = lazy(
 const PartnerAnalyticsPage = lazy(() => import("./pages/PartnerAnalyticsPage"));
 const PartnerSettingsPage = lazy(() => import("./pages/PartnerSettingsPage"));
 const PartnerVipCheckinPage = lazy(() => import("./pages/PartnerVipCheckinPage"));
+const PartnerValidatorPage = lazy(() => import("./pages/PartnerValidatorPage"));
 
 
 const Fallback = () => (
@@ -97,6 +98,7 @@ const PartnerApp = () => (
               element={L(<PartnerVipListDetailRoute />)}
             />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
+            <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerSettingsPage />)} />
             <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
           </Route>

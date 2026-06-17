@@ -141,17 +141,17 @@ const PartnerVipListPage = () => {
         <VipListEmptyState />
       ) : (
         <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
-          <TabsList className="w-full overflow-x-auto justify-start">
-            <TabsTrigger value="active">
+          <TabsList className="w-full overflow-x-auto justify-start whitespace-nowrap flex-nowrap">
+            <TabsTrigger value="active" className="shrink-0">
               Ativas {buckets.active.length ? `(${buckets.active.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="closed">
+            <TabsTrigger value="closed" className="shrink-0">
               Fechadas {buckets.closed.length ? `(${buckets.closed.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="ended">
+            <TabsTrigger value="ended" className="shrink-0">
               Encerradas {buckets.ended.length ? `(${buckets.ended.length})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="archived">
+            <TabsTrigger value="archived" className="shrink-0">
               Arquivadas {buckets.archived.length ? `(${buckets.archived.length})` : ""}
             </TabsTrigger>
           </TabsList>

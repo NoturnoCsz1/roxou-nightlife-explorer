@@ -26,6 +26,7 @@ const TABS: Array<{ to: string; label: string; end?: boolean }> = [
   { to: "/eventos", label: "Eventos" },
   { to: "/reservas", label: "Reservas" },
   { to: "/lista-vip", label: "Lista VIP" },
+  { to: "/validator", label: "Validador" },
   { to: "/analytics", label: "Analytics" },
   { to: "/configuracoes", label: "Configurações" },
 ];
@@ -79,7 +80,13 @@ const PartnerStandaloneLayout = () => {
 
   return (
     <PartnerProvider>
-      <div className="w-full max-w-7xl mx-auto px-4 overflow-x-hidden space-y-4 py-3">
+      <div
+        className="w-full max-w-7xl mx-auto px-4 overflow-x-hidden space-y-4 py-3"
+        style={{
+          paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
+          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+        }}
+      >
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 break-words">
           <strong className="font-semibold">BETA FECHADO</strong> · parceiro.roxou.com.br
           {isAdmin ? (
@@ -89,12 +96,16 @@ const PartnerStandaloneLayout = () => {
           ) : null}
         </div>
 
-        <nav className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1">
+        <nav
+          className="flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1"
+          style={{ scrollSnapType: "x proximity" }}
+        >
           {TABS.map((t) => (
             <NavLink
               key={t.to}
               to={t.to}
               end={t.end}
+              style={{ scrollSnapAlign: "start" }}
               className={({ isActive }) =>
                 cn(
                   "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition",
