@@ -23,6 +23,7 @@ import {
   getPublicVipList,
   getPublicVipListByPartner,
 } from "@/services/publicVipList";
+import SaveToAccountButton from "@/components/customer/SaveToAccountButton";
 
 interface LocationState {
   result?: PublicVipSubmitResult;
@@ -265,6 +266,12 @@ const PublicVipListSuccessPage = () => {
             Compartilhar comprovante
           </Button>
         </div>
+
+        {publicToken ? (
+          <SaveToAccountButton kind="vip_entry" token={publicToken} />
+        ) : null}
+
+
 
         {result?.status === "pending" ? (
           <Card className="p-3 text-xs text-amber-500 text-center">

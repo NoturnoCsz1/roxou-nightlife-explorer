@@ -137,6 +137,13 @@ const PartnerScopedComingSoon = lazy(() => import("./pages/PartnerScopedComingSo
 const DevRoutes = lazy(() => import("./pages/DevRoutes"));
 const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutRedirect"));
 
+// Cliente Roxou (Fase Cadastro Cliente — MVP)
+const CustomerLogin = lazy(() => import("./pages/customer/CustomerLogin"));
+const CustomerCallback = lazy(() => import("./pages/customer/CustomerCallback"));
+const CustomerReservations = lazy(() => import("./pages/customer/CustomerReservations"));
+const CustomerAccount = lazy(() => import("./pages/customer/CustomerAccount"));
+const CustomerInvites = lazy(() => import("./pages/customer/CustomerInvites"));
+
 
 import PedirCaronaGate from "./components/PedirCaronaGate";
 
@@ -257,6 +264,20 @@ const App = () => (
             path="/vip/:listSlug/sucesso/:publicToken"
             element={L(<PublicVipListSuccess />)}
           />
+
+          {/* ========= ÁREA DO CLIENTE (Roxou) ========= */}
+          <Route path="/cliente/login" element={L(<CustomerLogin />)} />
+          <Route path="/cliente/callback" element={L(<CustomerCallback />)} />
+          <Route
+            path="/cliente/minhas-reservas"
+            element={L(<CustomerReservations />)}
+          />
+          <Route path="/cliente/minha-conta" element={L(<CustomerAccount />)} />
+          <Route
+            path="/cliente/meus-convites"
+            element={L(<CustomerInvites />)}
+          />
+
 
 
           {/* ========= Atalhos /partner/* (Navigator interno) ========= */}
