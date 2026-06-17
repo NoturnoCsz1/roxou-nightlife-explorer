@@ -131,7 +131,7 @@ export async function getPublicPartnerReservationsContext(
 } | null> {
   const { data: partner, error: e1 } = await supabase
     .from("partners")
-    .select("id, name, slug, logo_url, city, address")
+    .select("id, name, slug, logo_url, city, address, type, instagram, whatsapp, short_description")
     .eq("slug", partnerSlug)
     .maybeSingle();
   if (e1) throw e1;
