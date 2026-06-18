@@ -249,33 +249,33 @@ export default function Expo2026() {
       </section>
 
       {/* ============== MAPA DO EVENTO ============== */}
-      <section className="px-5 py-12 max-w-5xl mx-auto">
+      <section className="px-2 sm:px-5 py-12 max-w-5xl mx-auto">
         <SectionTitle eyebrow="MAPA DO EVENTO" title="Conheça os setores" />
-        <p className="text-center text-[#B8B8B8] -mt-4 mb-8 text-sm">
-          Toque na imagem para ampliar
+        <p className="text-center text-[#B8B8B8] -mt-4 mb-6 text-sm">
+          Toque no mapa para ampliar
         </p>
 
         <button
+          type="button"
           onClick={() => !mapaError && setMapaOpen(true)}
-          className="group block w-full rounded-3xl overflow-hidden border border-white/10 bg-[#121212] relative aspect-[4/3] md:aspect-[16/9]"
+          className="group block w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a] relative"
+          aria-label="Ampliar mapa do evento"
         >
           {!mapaError ? (
             <>
               <img
                 src={MAPA_IMG}
                 alt="Mapa oficial dos setores da Expo Prudente 2026"
-                className="absolute inset-0 w-full h-full object-contain bg-black"
+                className="block w-full h-[70vw] max-h-[560px] sm:h-[480px] md:h-[560px] object-contain bg-black"
                 loading="lazy"
                 onError={() => setMapaError(true)}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-5">
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur text-sm">
-                  <ZoomIn className="w-4 h-4" /> Ampliar mapa
-                </span>
+              <div className="absolute bottom-3 right-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur text-xs font-semibold border border-white/10">
+                <ZoomIn className="w-3.5 h-3.5" /> Toque para ampliar
               </div>
             </>
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-4 p-10 text-center h-[60vw] max-h-[420px]">
               <MapPin className="w-10 h-10 text-[#FF8A00]" />
               <p className="text-[#B8B8B8] text-sm max-w-xs">
                 Mapa oficial em breve. Consulte a Eventou e o Instagram
@@ -285,17 +285,31 @@ export default function Expo2026() {
           )}
         </button>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {!mapaError && (
+          <div className="mt-4 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setMapaOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-[#FF8A00]/40 text-[#FFC300] bg-[#121212] hover:bg-[#1a1a1a] transition-colors"
+            >
+              <ZoomIn className="w-4 h-4" />
+              Ampliar mapa
+            </button>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-2.5 px-2">
           {SETORES.map((s) => (
             <span
               key={s}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#121212] border border-white/10 text-[#FFC300]"
+              className="px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold bg-[#121212] border border-white/10 text-[#FFC300]"
             >
               • {s}
             </span>
           ))}
         </div>
       </section>
+
 
       {/* ============== PROGRAMAÇÃO ============== */}
       <section id="shows" ref={showsRef} className="px-5 py-12 max-w-5xl mx-auto">
