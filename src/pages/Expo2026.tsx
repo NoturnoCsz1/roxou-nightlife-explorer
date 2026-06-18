@@ -134,8 +134,10 @@ export default function Expo2026() {
   const { days, hours, valid: countdownValid } = useCountdown(EVENT_START_RAW);
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaError, setMapaError] = useState(false);
+  const [activeSector, setActiveSector] = useState<number | null>(null);
   const [showFloatingCta, setShowFloatingCta] = useState(false);
   const showsRef = useRef<HTMLElement | null>(null);
+
 
   useEffect(() => {
     const onScroll = () => setShowFloatingCta(window.scrollY > 600);
