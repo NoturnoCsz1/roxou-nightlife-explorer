@@ -296,14 +296,42 @@ export default function Expo2026() {
             <>
               <img
                 src={MAPA_IMG}
-                alt="Mapa oficial dos setores da Expo Prudente 2026"
-                className="block w-full h-[70vw] max-h-[560px] sm:h-[480px] md:h-[560px] object-contain bg-black"
+                alt="Mapa oficial dos setores da Expo Prudente 2026 com Arquibancada, Pista Arena, Camarotes, Área VIP, Front Open Bar, Palco e Boate"
+                className="block w-full h-[85vw] max-h-[650px] sm:h-[520px] md:h-[600px] object-contain bg-black"
                 loading="lazy"
                 onError={() => setMapaError(true)}
               />
               <div className="absolute bottom-3 right-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur text-xs font-semibold border border-white/10">
                 <ZoomIn className="w-3.5 h-3.5" /> Toque para ampliar
               </div>
+              {activeSector !== null && SETORES[activeSector] && (
+                <div className="absolute top-3 left-3 right-3 px-4 py-3 rounded-2xl bg-black/85 backdrop-blur border border-[#FF8A00]/40 shadow-[0_10px_30px_-10px_rgba(255,138,0,0.6)] text-left">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">
+                        SETOR EM DESTAQUE
+                      </p>
+                      <p className="text-sm font-extrabold text-white mt-0.5">
+                        {SETORES[activeSector].label}
+                      </p>
+                      <p className="text-xs text-[#D4D4D4] mt-1 leading-relaxed">
+                        {SETORES[activeSector].description}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveSector(null);
+                      }}
+                      className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0"
+                      aria-label="Fechar descrição do setor"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 p-10 text-center h-[60vw] max-h-[420px]">
@@ -329,17 +357,49 @@ export default function Expo2026() {
           </div>
         )}
 
+        <p className="mt-5 text-center text-xs sm:text-sm text-[#B8B8B8] px-4 max-w-xl mx-auto leading-relaxed">
+          📍 Dica: amplie o mapa para visualizar a localização de cada setor e escolher a experiência ideal para você.
+        </p>
+
         <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-2.5 px-2">
-          {SETORES.map((s) => (
-            <span
-              key={s}
-              className="px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold bg-[#121212] border border-white/10 text-[#FFC300]"
-            >
-              • {s}
-            </span>
-          ))}
+          {SETORES.map((s, i) => {
+            const isActive = activeSector === i;
+            return (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() =>
+                  setActiveSector((prev) => (prev === i ? null : i))
+                }
+                aria-pressed={isActive}
+                className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all ${
+                  isActive
+                    ? "bg-gradient-to-r from-[#FF8A00] to-[#FFC300] text-black border-transparent shadow-[0_6px_20px_-6px_rgba(255,138,0,0.7)]"
+                    : "bg-[#121212] border-white/10 text-[#FFC300] hover:border-[#FF8A00]/40"
+                }`}
+              >
+                • {s.label}
+              </button>
+            );
+          })}
         </div>
+
+        {/* JSON-LD do mapa para Google Imagens */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ImageObject",
+              name: "Mapa Oficial Expo Prudente 2026",
+              description:
+                "Mapa dos setores da Expo Prudente 2026 em Presidente Prudente/SP",
+              contentUrl: "https://roxou.com.br/images/expo2026-mapa.jpg",
+            }),
+          }}
+        />
       </section>
+
 
 
       {/* ============== PROGRAMAÇÃO ============== */}
