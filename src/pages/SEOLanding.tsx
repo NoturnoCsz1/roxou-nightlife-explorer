@@ -322,12 +322,15 @@ const SEOLanding = () => {
       <SEO
         title={config.metaTitle}
         description={config.metaDescription}
-        canonical={`https://roxou.com.br/${config.slug}`}
+        canonical={canonicalUrl}
         jsonLd={jsonLd}
       />
       {/* Extra structured data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {faqLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />}
+      {eventLd && eventLd.map((ld, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      ))}
 
       <DesktopNav />
 
@@ -350,8 +353,56 @@ const SEOLanding = () => {
       </header>
 
       <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-4 md:mt-6 space-y-8">
+        {config.longIntro && config.longIntro.length > 0 && (
+          <section className="max-w-2xl space-y-3">
+            {config.longIntro.map((p, i) => (
+              <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+            ))}
+          </section>
+        )}
+
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-12">Carregando eventos...</p>
+        ) : config.sections && config.sections.length > 0 ? (
+          <>
+            {config.sections.map((sec, idx) => {
+              const list = sec.filter ? filtered.filter(sec.filter) : filtered;
+              return (
+                <section key={idx} className="space-y-3">
+                  <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{sec.heading}</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{sec.body}</p>
+                  {list.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4">Nenhum evento confirmado nesta seção no momento. Veja a agenda completa abaixo.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                      {list.map((e, i) => (
+                        <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+
+            <section className="space-y-3">
+              <h2 className="text-lg md:text-xl font-bold font-display text-foreground">Próximos eventos de pagode em {CITY}</h2>
+              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                Veja todos os próximos eventos de pagode em {CITY} confirmados na Roxou, em ordem cronológica.
+              </p>
+              {filtered.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Nenhum evento de pagode confirmado no momento.</p>
+                  <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                  {filtered.map((e, i) => (
+                    <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">Nenhum evento encontrado nesta categoria no momento.</p>
