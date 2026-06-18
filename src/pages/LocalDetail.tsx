@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
 import { ArrowLeft, MapPin, Instagram, MessageCircle, ExternalLink } from "lucide-react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
