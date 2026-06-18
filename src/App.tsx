@@ -58,6 +58,7 @@ const PartnerAccessRequests = lazy(() => import("./apps/admin/pages/PartnerAcces
 const PartnerPilot = lazy(() => import("./apps/admin/pages/PartnerPilot"));
 const AdminSystem = lazy(() => import("./apps/admin/pages/AdminSystem"));
 const AdminLogs = lazy(() => import("./apps/admin/pages/AdminLogs"));
+const Expo2026Admin = lazy(() => import("./apps/admin/pages/Expo2026Admin"));
 const BarDoMes = lazy(() => import("./pages/BarDoMes"));
 
 
@@ -202,6 +203,7 @@ const App = () => (
             <Route path="partner-pilot" element={L(<PartnerPilot />)} />
             <Route path="system" element={L(<AdminSystem />)} />
             <Route path="logs" element={L(<AdminLogs />)} />
+            <Route path="expo2026" element={L(<Expo2026Admin />)} />
           </Route>
 
 

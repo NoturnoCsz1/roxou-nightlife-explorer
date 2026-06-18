@@ -63,5 +63,6 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/partner-pilot", icon: Rocket, label: "Piloto Partner Pro" },
   { to: "/admin/system", icon: Activity, label: "Sistema" },
   { to: "/admin/logs", icon: FileText, label: "Logs" },
+  { to: "/admin/expo2026", icon: Trophy, label: "Expo 2026" },
 ];
 

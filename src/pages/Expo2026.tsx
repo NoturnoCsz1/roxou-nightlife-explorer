@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Ticket, MapPin, X, ZoomIn, Instagram } from "lucide-react";
+import {
+  Ticket,
+  MapPin,
+  X,
+  ZoomIn,
+  RotateCcw,
+  Instagram,
+  Plus,
+  Minus,
+} from "lucide-react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import SEO from "@/components/SEO";
+import { trackExpoEvent } from "@/lib/expoAnalytics";
 
 /* ============================================================================
  * EXPO PRUDENTE 2026 — Landing oficial de divulgação (hub Roxou → Eventou)
@@ -10,13 +22,11 @@ import SEO from "@/components/SEO";
  * ========================================================================= */
 
 const EVENT_START_RAW = "2026-09-10T18:00:00-03:00";
-
-// Primary: served from /public on VPS. Fallback handled by onError.
 const MAPA_IMG = "/images/expo2026-mapa.jpg";
 
 interface ShowCard {
   id: string;
-  date: string; // "10/09"
+  date: string;
   weekday: string;
   artists: string[];
   link: string;
@@ -69,44 +79,70 @@ const EXPERIENCIAS = [
   { icon: "👑", label: "Área VIP" },
 ];
 
-const SETORES: { label: string; description: string }[] = [
+/**
+ * Setores com coordenadas relativas (0..1) sobre a imagem do mapa.
+ * Os valores são aproximados — ajustam o foco do zoom programático.
+ */
+interface Setor {
+  label: string;
+  description: string;
+  tip: string;
+  /** Posição relativa no mapa (cx, cy em 0..1) usada para centralizar o zoom. */
+  cx: number;
+  cy: number;
+}
+
+const SETORES: Setor[] = [
   {
     label: "Arquibancada",
-    description:
-      "Espaço coberto com assentos numerados em estrutura elevada. Ideal para quem busca conforto e boa visão do palco com lugar marcado.",
+    description: "Espaço coberto com assentos numerados em estrutura elevada.",
+    tip: "Ideal para conforto e visão ampla do palco, com lugar marcado.",
+    cx: 0.18,
+    cy: 0.55,
   },
   {
     label: "Pista Arena",
-    description:
-      "Área em pé próxima ao palco, perfeita para curtir os shows de perto com a maior energia do público da Expo.",
+    description: "Área em pé próxima ao palco, com a maior energia do público.",
+    tip: "Posicione-se perto da grade frontal para curtir os shows de pertinho.",
+    cx: 0.5,
+    cy: 0.6,
   },
   {
     label: "Camarotes",
-    description:
-      "Espaços privativos elevados, com vista privilegiada e serviços diferenciados. Indicado para grupos e experiência premium.",
+    description: "Espaços privativos elevados, com vista privilegiada e serviços diferenciados.",
+    tip: "Setor premium nas laterais — vista 360° do palco principal.",
+    cx: 0.82,
+    cy: 0.5,
   },
   {
     label: "Área VIP",
-    description:
-      "Setor exclusivo com acesso facilitado, ambiente reservado e estrutura premium para uma noite completa.",
+    description: "Setor exclusivo com acesso facilitado e estrutura premium.",
+    tip: "Ambiente reservado próximo ao palco, com fluxo controlado.",
+    cx: 0.68,
+    cy: 0.45,
   },
   {
     label: "Front Open Bar",
-    description:
-      "Área frontal com bebidas inclusas (open bar), ambientação especial e proximidade total com os artistas.",
+    description: "Área frontal com bebidas inclusas (open bar) e ambientação especial.",
+    tip: "Proximidade total com os artistas e atendimento dedicado.",
+    cx: 0.45,
+    cy: 0.38,
   },
   {
     label: "Palco",
-    description:
-      "Palco principal onde acontecem todos os grandes shows nacionais da Expo Prudente 2026.",
+    description: "Palco principal onde acontecem todos os grandes shows nacionais.",
+    tip: "Centro do mapa — referência para localizar os demais setores.",
+    cx: 0.5,
+    cy: 0.22,
   },
   {
     label: "Boate",
-    description:
-      "Ambiente fechado e climatizado para after parties, com DJs e pista de dança após os shows do palco principal.",
+    description: "Ambiente fechado e climatizado para after parties com DJs.",
+    tip: "Funciona após os shows do palco principal — pista de dança.",
+    cx: 0.88,
+    cy: 0.78,
   },
 ];
-
 
 function useCountdown(targetIso: string) {
   const [now, setNow] = useState(() => Date.now());
@@ -136,15 +172,50 @@ export default function Expo2026() {
   const [mapaError, setMapaError] = useState(false);
   const [activeSector, setActiveSector] = useState<number | null>(null);
   const [showFloatingCta, setShowFloatingCta] = useState(false);
-  const showsRef = useRef<HTMLElement | null>(null);
+  const programacaoRef = useRef<HTMLElement | null>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef | null>(null);
 
-
+  // expo_view (once)
   useEffect(() => {
-    const onScroll = () => setShowFloatingCta(window.scrollY > 600);
+    trackExpoEvent("expo_view", {}, { once: true });
+  }, []);
+
+  // Scroll: floating CTA + scroll depth (50% / 90%)
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowFloatingCta(y > 600);
+      const docH = Math.max(
+        document.documentElement.scrollHeight - window.innerHeight,
+        1,
+      );
+      const pct = (y / docH) * 100;
+      if (pct >= 50) trackExpoEvent("expo_scroll_50", { pct: Math.round(pct) }, { once: true });
+      if (pct >= 90) trackExpoEvent("expo_scroll_90", { pct: Math.round(pct) }, { once: true });
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Observa o título "PROGRAMAÇÃO OFICIAL" para disparar expo_programacao_view
+  useEffect(() => {
+    if (!programacaoRef.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            trackExpoEvent("expo_programacao_view", {}, { once: true });
+            obs.disconnect();
+          }
+        });
+      },
+      { threshold: 0.4 },
+    );
+    obs.observe(programacaoRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  // Bloqueia scroll quando o modal abre
   useEffect(() => {
     if (!mapaOpen) return;
     const prev = document.body.style.overflow;
@@ -156,6 +227,46 @@ export default function Expo2026() {
       window.removeEventListener("keydown", onKey);
     };
   }, [mapaOpen]);
+
+  const openMapa = () => {
+    if (mapaError) return;
+    setMapaOpen(true);
+    trackExpoEvent("expo_map_open", { activeSector: activeSector ?? null });
+  };
+
+  const handleSectorClick = (i: number) => {
+    const setor = SETORES[i];
+    setActiveSector((prev) => (prev === i ? null : i));
+    trackExpoEvent("expo_sector_click", { sector: setor.label });
+    // Se modal aberto, centraliza zoom no setor; senão, abre modal já focado
+    if (mapaOpen) {
+      focusSectorInZoom(i);
+    } else {
+      setMapaOpen(true);
+      trackExpoEvent("expo_map_open", { sector: setor.label, source: "chip" });
+      setTimeout(() => focusSectorInZoom(i), 250);
+    }
+  };
+
+  const focusSectorInZoom = (i: number) => {
+    const setor = SETORES[i];
+    const ref = transformRef.current;
+    if (!ref) return;
+    // setTransform(x, y, scale) — desloca para que (cx, cy) fique no centro
+    const scale = 2.4;
+    const wrapper =
+      (ref as any).instance?.wrapperComponent ??
+      (ref as any).instance?.wrapperRef;
+    const w = wrapper?.clientWidth ?? window.innerWidth;
+    const h = wrapper?.clientHeight ?? window.innerHeight;
+    const x = w / 2 - setor.cx * w * scale;
+    const y = h / 2 - setor.cy * h * scale;
+    try {
+      ref.setTransform(x, y, scale, 400, "easeOut");
+    } catch {
+      /* noop */
+    }
+  };
 
   const jsonLd = useMemo(
     () => ({
@@ -193,7 +304,7 @@ export default function Expo2026() {
         },
       })),
     }),
-    []
+    [],
   );
 
   return (
@@ -218,7 +329,6 @@ export default function Expo2026() {
 
       {/* ============== HERO ============== */}
       <section className="relative pt-10 pb-16 px-5 text-center">
-        {/* Cantos curvos decorativos */}
         <CornerCurve className="absolute -top-2 -left-2 w-24 h-24 md:w-32 md:h-32" />
         <CornerCurve className="absolute -top-2 -right-2 w-24 h-24 md:w-32 md:h-32" rotate={90} />
 
@@ -237,9 +347,7 @@ export default function Expo2026() {
             <span className="block text-white">EXPO PRUDENTE</span>
             <span
               className="block bg-clip-text text-transparent"
-              style={{
-                backgroundImage: "linear-gradient(135deg, #FF8A00, #FFC300)",
-              }}
+              style={{ backgroundImage: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
             >
               2026
             </span>
@@ -248,32 +356,25 @@ export default function Expo2026() {
           <p className="mt-6 text-lg md:text-2xl font-bold text-white">
             A MAIOR GRADE DE SHOWS JÁ DIVULGADA!
           </p>
-
           <p className="mt-3 text-sm md:text-base text-[#B8B8B8] tracking-wider">
             10 A 14 DE SETEMBRO · PRESIDENTE PRUDENTE/SP
           </p>
 
-
-          {/* Countdown */}
           <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/10 bg-[#121212]/70 backdrop-blur">
             <span className="text-2xl">⏳</span>
             {countdownValid ? (
               <p className="text-sm md:text-base text-white">
                 Faltam{" "}
-                <span className="font-black text-[#FFC300] text-lg">{days}</span>{" "}
-                dias
+                <span className="font-black text-[#FFC300] text-lg">{days}</span> dias
                 {days < 30 && hours > 0 && (
                   <>
-                    {" "}e{" "}
-                    <span className="font-black text-[#FFC300]">{hours}h</span>
+                    {" "}e <span className="font-black text-[#FFC300]">{hours}h</span>
                   </>
                 )}{" "}
                 para a Expo Prudente 2026
               </p>
             ) : (
-              <p className="text-sm md:text-base text-white font-bold">
-                Expo Prudente 2026
-              </p>
+              <p className="text-sm md:text-base text-white font-bold">Expo Prudente 2026</p>
             )}
           </div>
         </div>
@@ -283,12 +384,12 @@ export default function Expo2026() {
       <section className="px-2 sm:px-5 py-12 max-w-5xl mx-auto">
         <SectionTitle eyebrow="MAPA DO EVENTO" title="Conheça os setores" />
         <p className="text-center text-[#B8B8B8] -mt-4 mb-6 text-sm">
-          Toque no mapa para ampliar
+          Toque no mapa para ampliar e dar zoom
         </p>
 
         <button
           type="button"
-          onClick={() => !mapaError && setMapaOpen(true)}
+          onClick={openMapa}
           className="group block w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a] relative"
           aria-label="Ampliar mapa do evento"
         >
@@ -316,6 +417,9 @@ export default function Expo2026() {
                       </p>
                       <p className="text-xs text-[#D4D4D4] mt-1 leading-relaxed">
                         {SETORES[activeSector].description}
+                      </p>
+                      <p className="text-[11px] text-[#FFC300]/80 mt-1.5 italic">
+                        📍 {SETORES[activeSector].tip}
                       </p>
                     </div>
                     <button
@@ -348,17 +452,16 @@ export default function Expo2026() {
           <div className="mt-4 flex justify-center">
             <button
               type="button"
-              onClick={() => setMapaOpen(true)}
+              onClick={openMapa}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-[#FF8A00]/40 text-[#FFC300] bg-[#121212] hover:bg-[#1a1a1a] transition-colors"
             >
-              <ZoomIn className="w-4 h-4" />
-              Ampliar mapa
+              <ZoomIn className="w-4 h-4" /> Ampliar mapa
             </button>
           </div>
         )}
 
         <p className="mt-5 text-center text-xs sm:text-sm text-[#B8B8B8] px-4 max-w-xl mx-auto leading-relaxed">
-          📍 Dica: amplie o mapa para visualizar a localização de cada setor e escolher a experiência ideal para você.
+          📍 Dica: toque em um setor abaixo para o mapa centralizar e dar zoom nele automaticamente.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-2.5 px-2">
@@ -368,13 +471,11 @@ export default function Expo2026() {
               <button
                 key={s.label}
                 type="button"
-                onClick={() =>
-                  setActiveSector((prev) => (prev === i ? null : i))
-                }
+                onClick={() => handleSectorClick(i)}
                 aria-pressed={isActive}
                 className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-[#FF8A00] to-[#FFC300] text-black border-transparent shadow-[0_6px_20px_-6px_rgba(255,138,0,0.7)]"
+                    ? "bg-gradient-to-r from-[#FF8A00] to-[#FFC300] text-black border-transparent shadow-[0_6px_20px_-6px_rgba(255,138,0,0.7)] animate-pulse"
                     : "bg-[#121212] border-white/10 text-[#FFC300] hover:border-[#FF8A00]/40"
                 }`}
               >
@@ -384,7 +485,6 @@ export default function Expo2026() {
           })}
         </div>
 
-        {/* JSON-LD do mapa para Google Imagens */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -400,28 +500,20 @@ export default function Expo2026() {
         />
       </section>
 
-
-
       {/* ============== PROGRAMAÇÃO ============== */}
-      <section id="shows" ref={showsRef} className="px-5 py-12 max-w-5xl mx-auto">
-        <SectionTitle
-          eyebrow="PROGRAMAÇÃO OFICIAL"
-          title="Todos os dias de shows"
-        />
+      <section id="shows" ref={programacaoRef} className="px-5 py-12 max-w-5xl mx-auto">
+        <SectionTitle eyebrow="PROGRAMAÇÃO OFICIAL" title="Todos os dias de shows" />
 
         <div className="grid gap-5 md:grid-cols-2 mt-8">
           {(SHOWS ?? []).map((show) => (
-            <ShowCard key={show.id} show={show} />
+            <ShowCardItem key={show.id} show={show} />
           ))}
         </div>
       </section>
 
       {/* ============== EXPERIÊNCIAS ============== */}
       <section className="px-5 py-12 max-w-5xl mx-auto">
-        <SectionTitle
-          eyebrow="EXPO COMPLETA"
-          title="Experiências da Expo"
-        />
+        <SectionTitle eyebrow="EXPO COMPLETA" title="Experiências da Expo" />
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
           {EXPERIENCIAS.map((exp) => (
@@ -446,9 +538,7 @@ export default function Expo2026() {
           <br />
           <span
             className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage: "linear-gradient(135deg, #FF8A00, #FFC300)",
-            }}
+            style={{ backgroundImage: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
           >
             ANTES QUE ESGOTE!
           </span>
@@ -487,7 +577,7 @@ export default function Expo2026() {
         </div>
       </footer>
 
-      {/* ============== FLOATING CTA (após scroll) ============== */}
+      {/* Floating CTA mobile */}
       {showFloatingCta && (
         <button
           onClick={() => scrollToId("shows")}
@@ -499,42 +589,128 @@ export default function Expo2026() {
         </button>
       )}
 
-      {/* ============== MODAL MAPA ============== */}
+      {/* ============== MODAL MAPA INTERATIVO ============== */}
       {mapaOpen && (
         <div
           className="fixed inset-0 z-[100] bg-black flex flex-col"
-          onClick={() => setMapaOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-label="Mapa do evento ampliado"
         >
-          <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/90 z-10">
-            <p className="text-xs sm:text-sm text-white/80">
+          {/* Header fixo */}
+          <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/95 z-10">
+            <p className="text-xs sm:text-sm text-white/80 pr-2">
               Arraste ou dê zoom para visualizar os setores
             </p>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMapaOpen(false);
-              }}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+              onClick={() => setMapaOpen(false)}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0"
               aria-label="Fechar mapa"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div
-            className="flex-1 overflow-auto overscroll-contain bg-black flex items-start sm:items-center justify-center p-2 sm:p-6"
-            onClick={(e) => e.stopPropagation()}
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            <img
-              src={MAPA_IMG}
-              alt="Mapa oficial dos setores da Expo Prudente 2026"
-              className="max-w-none sm:max-w-full w-[200%] sm:w-auto sm:max-h-full select-none"
-              style={{ touchAction: "pinch-zoom" }}
-              draggable={false}
-            />
+
+          {/* Área de zoom/pan */}
+          <div className="flex-1 relative bg-black overflow-hidden">
+            <TransformWrapper
+              ref={transformRef}
+              initialScale={1}
+              minScale={1}
+              maxScale={5}
+              doubleClick={{ disabled: false, mode: "zoomIn", step: 0.8 }}
+              wheel={{ step: 0.2 }}
+              pinch={{ step: 5 }}
+              panning={{ velocityDisabled: false }}
+              onZoom={(ref) => {
+                const z = Number(ref.state.scale.toFixed(2));
+                trackExpoEvent("expo_map_zoom", { zoomLevel: z });
+              }}
+            >
+              {({ zoomIn, zoomOut, resetTransform }) => (
+                <>
+                  <TransformComponent
+                    wrapperStyle={{
+                      width: "100%",
+                      height: "100%",
+                      background: "#000",
+                    }}
+                    contentStyle={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <img
+                      src={MAPA_IMG}
+                      alt="Mapa oficial dos setores da Expo Prudente 2026"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                        objectFit: "contain",
+                      }}
+                      draggable={false}
+                    />
+                  </TransformComponent>
+
+                  {/* Controles flutuantes */}
+                  <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20">
+                    <button
+                      type="button"
+                      onClick={() => zoomIn()}
+                      className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur flex items-center justify-center border border-white/10"
+                      aria-label="Ampliar"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => zoomOut()}
+                      className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur flex items-center justify-center border border-white/10"
+                      aria-label="Reduzir"
+                    >
+                      <Minus className="w-5 h-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        resetTransform();
+                        trackExpoEvent("expo_map_reset", {});
+                      }}
+                      className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur flex items-center justify-center border border-white/10"
+                      aria-label="Resetar zoom"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </TransformWrapper>
+          </div>
+
+          {/* Chips dos setores no rodapé do modal */}
+          <div className="border-t border-white/10 bg-black/95 px-3 py-3 overflow-x-auto">
+            <div className="flex gap-2 min-w-max">
+              {SETORES.map((s, i) => {
+                const isActive = activeSector === i;
+                return (
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => handleSectorClick(i)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#FF8A00] to-[#FFC300] text-black border-transparent shadow-[0_4px_14px_-4px_rgba(255,138,0,0.8)]"
+                        : "bg-white/5 border-white/10 text-[#FFC300]"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -542,18 +718,11 @@ export default function Expo2026() {
   );
 }
 
-
 /* ============================================================================
  * Subcomponentes
  * ========================================================================= */
 
-function SectionTitle({
-  eyebrow,
-  title,
-}: {
-  eyebrow: string;
-  title: string;
-}) {
+function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="text-center mb-6">
       <p
@@ -572,15 +741,30 @@ function SectionTitle({
   );
 }
 
-function ShowCard({ show }: { show: ShowCard }) {
+function ShowCardItem({ show }: { show: ShowCard }) {
+  const handleClick = () => {
+    trackExpoEvent("expo_show_card_click", {
+      artist: show.artists.join(", "),
+      date: show.date,
+      weekday: show.weekday,
+    });
+  };
+  const handleEventou = () => {
+    trackExpoEvent("expo_eventou_click", {
+      artist: show.artists.join(", "),
+      date: show.date,
+      weekday: show.weekday,
+    });
+  };
   return (
-    <article className="group relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] p-6 hover:border-[#FF8A00]/50 transition-all hover:-translate-y-1 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]">
-      {/* Glow */}
+    <article
+      onClick={handleClick}
+      className="group relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] p-6 hover:border-[#FF8A00]/50 transition-all hover:-translate-y-1 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
+    >
       <div
         className="absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"
         style={{ background: "radial-gradient(circle, #FF8A00, transparent)" }}
       />
-
       <div className="relative flex items-start justify-between mb-4">
         <div>
           <p className="text-xs font-bold tracking-widest text-[#FFC300]">
@@ -610,6 +794,7 @@ function ShowCard({ show }: { show: ShowCard }) {
           href={show.link}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={handleEventou}
           className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
           style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
         >
@@ -645,11 +830,7 @@ function CornerCurve({
           <stop offset="100%" stopColor="#FFC300" />
         </linearGradient>
       </defs>
-      <path
-        d="M0,0 L40,0 Q0,0 0,40 Z"
-        fill={`url(#cg-${rotate})`}
-        opacity="0.85"
-      />
+      <path d="M0,0 L40,0 Q0,0 0,40 Z" fill={`url(#cg-${rotate})`} opacity="0.85" />
     </svg>
   );
 }
