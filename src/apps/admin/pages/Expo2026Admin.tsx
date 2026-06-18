@@ -163,20 +163,20 @@ export default function Expo2026Admin() {
       {!loading && !error && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <MetricCard icon={Eye} label="Visualizações" value={stats.views} />
-            <MetricCard icon={MapIcon} label="Aberturas do mapa" value={stats.mapOpens} />
-            <MetricCard icon={SearchIcon} label="Zooms" value={stats.zooms} />
-            <MetricCard icon={Ticket} label="Cliques ingressos" value={stats.eventouClicks} />
-            <MetricCard icon={MapPin} label="Setor + acessado" value={stats.topSector} />
-            <MetricCard icon={Smartphone} label="Origem + comum" value={stats.topSource} />
+            <MetricCard icon={Eye} title="Visualizações" value={stats.views} />
+            <MetricCard icon={MapIcon} title="Aberturas do mapa" value={stats.mapOpens} />
+            <MetricCard icon={SearchIcon} title="Zooms" value={stats.zooms} />
+            <MetricCard icon={Ticket} title="Cliques ingressos" value={stats.eventouClicks} />
+            <MetricCard icon={MapPin} title="Setor + acessado" value={stats.topSector} />
+            <MetricCard icon={Smartphone} title="Origem + comum" value={stats.topSource} />
             <MetricCard
               icon={BarChart3}
-              label="Scroll → Programação"
+              title="Scroll → Programação"
               value={stats.programacao}
             />
             <MetricCard
               icon={BarChart3}
-              label="Total de eventos"
+              title="Total de eventos"
               value={rows.length}
             />
           </div>
