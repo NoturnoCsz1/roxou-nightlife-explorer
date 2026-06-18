@@ -11,6 +11,16 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { isTodaySP, isTomorrowSP, getWeekendRangeSP } from "@/lib/dateUtils";
 
 /* ─── Landing page config ─── */
+interface EvergreenSection {
+  heading: string;
+  body: string[];
+}
+interface LandingEvergreen {
+  context: EvergreenSection;
+  places: EvergreenSection;
+  howToFollow: EvergreenSection;
+  finalCta: EvergreenSection;
+}
 interface LandingConfig {
   slug: string;
   title: string;
@@ -24,7 +34,39 @@ interface LandingConfig {
   longIntro?: string[];
   sections?: { heading: string; body: string; filter?: (e: SupabaseEvent) => boolean }[];
   emitEventJsonLd?: boolean;
+  evergreen?: LandingEvergreen;
 }
+
+/** Default evergreen block used as fallback when a config does not define its own. */
+const DEFAULT_EVERGREEN = (genre: string): LandingEvergreen => ({
+  context: {
+    heading: `${genre} em Presidente Prudente: história e contexto`,
+    body: [
+      `${genre} faz parte do dia a dia cultural de Presidente Prudente. A cidade, polo do Oeste Paulista, sempre teve uma cena viva de bares, casas noturnas e eventos que abraçam diferentes estilos, e ${genre.toLowerCase()} ocupa um espaço importante nessa rotina, atraindo público universitário, famílias e turistas das cidades vizinhas.`,
+      `Ao longo dos anos, produtoras locais, casas noturnas e bares passaram a investir em programações com ${genre.toLowerCase()}, criando uma agenda regular de eventos. A Roxou nasceu para organizar essa cena em um só lugar: tudo o que rola na cidade, com horários, locais e link direto para o evento.`,
+    ],
+  },
+  places: {
+    heading: `Onde costuma ter ${genre.toLowerCase()} em Presidente Prudente`,
+    body: [
+      `Os eventos de ${genre.toLowerCase()} em Presidente Prudente acontecem em diferentes tipos de espaço: bares com música ao vivo no centro da cidade, casas noturnas com pista, restaurantes e espaços de eventos maiores para shows e festas com público regional.`,
+      `Por isso a Roxou agrega todos esses formatos numa mesma agenda — você encontra desde happy hour intimista até eventos para milhares de pessoas, sempre com link para conferir o local, o Instagram da casa e como garantir presença.`,
+    ],
+  },
+  howToFollow: {
+    heading: `Como acompanhar a agenda de ${genre.toLowerCase()} pela Roxou`,
+    body: [
+      `A agenda da Roxou é atualizada todos os dias com base nas confirmações de produtoras, bares e casas noturnas de Presidente Prudente e região. Sempre que um novo evento de ${genre.toLowerCase()} é divulgado, ele aparece nesta página com data, horário e local.`,
+      `Você pode salvar a Roxou na tela inicial do celular para acesso rápido (funciona como app), seguir o nosso Instagram para alertas e voltar a esta página sempre que quiser saber o que fazer em Presidente Prudente hoje.`,
+    ],
+  },
+  finalCta: {
+    heading: `Veja a agenda completa de Presidente Prudente`,
+    body: [
+      `Não encontrou o evento de ${genre.toLowerCase()} ideal para hoje? Sem problema — a Roxou tem a agenda completa de Presidente Prudente, com baladas, bares, shows, futebol ao vivo e muito mais. Clique no botão abaixo e descubra o que rola na cidade nesta semana.`,
+    ],
+  },
+});
 
 const CITY = "Presidente Prudente";
 
