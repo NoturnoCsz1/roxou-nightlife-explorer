@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Ticket, MapPin, X, ZoomIn, Instagram } from "lucide-react";
 import SEO from "@/components/SEO";
+import mapaAsset from "@/assets/expo2026-mapa.jpg.asset.json";
 
 /* ============================================================================
  * EXPO PRUDENTE 2026 — Landing oficial de divulgação (hub Roxou → Eventou)
