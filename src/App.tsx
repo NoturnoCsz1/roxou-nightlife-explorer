@@ -127,6 +127,7 @@ const Resultados = lazy(() => import("./pages/Resultados"));
 const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 const SEOLanding = lazy(() => import("./pages/SEOLanding"));
+const Expo2026 = lazy(() => import("./pages/Expo2026"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 const PublicVipList = lazy(() => import("./pages/PublicVipList"));
@@ -295,11 +296,10 @@ const App = () => (
 
 
 
-          {/* ========= EXPO 2026 — DESATIVADA (redireciona para Home) ========= */}
-          <Route path="/expo2026" element={<Navigate to="/" replace />} />
-          <Route path="/expo2026/*" element={<Navigate to="/" replace />} />
-          <Route path="/expoprudente" element={<Navigate to="/" replace />} />
-          <Route path="/expoprudente/*" element={<Navigate to="/" replace />} />
+          {/* ========= EXPO PRUDENTE 2026 — landing oficial de divulgação ========= */}
+          <Route path="/expo2026" element={L(<Expo2026 />)} />
+          <Route path="/expoprudente" element={<Navigate to="/expo2026" replace />} />
+          <Route path="/expoprudente/*" element={<Navigate to="/expo2026" replace />} />
 
           {/* ========= NOTÍCIAS ROXOU ========= */}
           <Route path="/noticias" element={L(<RoxouNoticias />)} />
