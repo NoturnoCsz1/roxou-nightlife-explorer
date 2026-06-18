@@ -1293,6 +1293,30 @@ export type Database = {
         }
         Relationships: []
       }
+      expo2026_analytics: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          metadata: Json | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+        }
+        Relationships: []
+      }
       expo2026_contacts: {
         Row: {
           contact_type: string
