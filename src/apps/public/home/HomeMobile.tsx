@@ -11,6 +11,7 @@ import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 import V3VibeChips from "@/components/v3/V3VibeChips";
 import CategoryChips from "@/components/v3/CategoryChips";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
