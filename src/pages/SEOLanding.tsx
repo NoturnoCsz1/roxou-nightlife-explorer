@@ -467,24 +467,12 @@ const SEOLanding = () => {
               );
             })}
 
-            <section className="space-y-3">
-              <h2 className="text-lg md:text-xl font-bold font-display text-foreground">Próximos eventos de pagode em {CITY}</h2>
-              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-                Veja todos os próximos eventos de pagode em {CITY} confirmados na Roxou, em ordem cronológica.
-              </p>
-              {filtered.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Nenhum evento de pagode confirmado no momento.</p>
-                  <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                  {filtered.map((e, i) => (
-                    <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
-                  ))}
-                </div>
-              )}
-            </section>
+            {filtered.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Nenhum evento encontrado no momento. Continue acompanhando a agenda da Roxou.</p>
+                <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
+              </div>
+            )}
           </>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
