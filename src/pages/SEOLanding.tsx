@@ -11,6 +11,16 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { isTodaySP, isTomorrowSP, getWeekendRangeSP } from "@/lib/dateUtils";
 
 /* ─── Landing page config ─── */
+interface EvergreenSection {
+  heading: string;
+  body: string[];
+}
+interface LandingEvergreen {
+  context: EvergreenSection;
+  places: EvergreenSection;
+  howToFollow: EvergreenSection;
+  finalCta: EvergreenSection;
+}
 interface LandingConfig {
   slug: string;
   title: string;
@@ -24,7 +34,39 @@ interface LandingConfig {
   longIntro?: string[];
   sections?: { heading: string; body: string; filter?: (e: SupabaseEvent) => boolean }[];
   emitEventJsonLd?: boolean;
+  evergreen?: LandingEvergreen;
 }
+
+/** Default evergreen block used as fallback when a config does not define its own. */
+const DEFAULT_EVERGREEN = (genre: string): LandingEvergreen => ({
+  context: {
+    heading: `${genre} em Presidente Prudente: história e contexto`,
+    body: [
+      `${genre} faz parte do dia a dia cultural de Presidente Prudente. A cidade, polo do Oeste Paulista, sempre teve uma cena viva de bares, casas noturnas e eventos que abraçam diferentes estilos, e ${genre.toLowerCase()} ocupa um espaço importante nessa rotina, atraindo público universitário, famílias e turistas das cidades vizinhas.`,
+      `Ao longo dos anos, produtoras locais, casas noturnas e bares passaram a investir em programações com ${genre.toLowerCase()}, criando uma agenda regular de eventos. A Roxou nasceu para organizar essa cena em um só lugar: tudo o que rola na cidade, com horários, locais e link direto para o evento.`,
+    ],
+  },
+  places: {
+    heading: `Onde costuma ter ${genre.toLowerCase()} em Presidente Prudente`,
+    body: [
+      `Os eventos de ${genre.toLowerCase()} em Presidente Prudente acontecem em diferentes tipos de espaço: bares com música ao vivo no centro da cidade, casas noturnas com pista, restaurantes e espaços de eventos maiores para shows e festas com público regional.`,
+      `Por isso a Roxou agrega todos esses formatos numa mesma agenda — você encontra desde happy hour intimista até eventos para milhares de pessoas, sempre com link para conferir o local, o Instagram da casa e como garantir presença.`,
+    ],
+  },
+  howToFollow: {
+    heading: `Como acompanhar a agenda de ${genre.toLowerCase()} pela Roxou`,
+    body: [
+      `A agenda da Roxou é atualizada todos os dias com base nas confirmações de produtoras, bares e casas noturnas de Presidente Prudente e região. Sempre que um novo evento de ${genre.toLowerCase()} é divulgado, ele aparece nesta página com data, horário e local.`,
+      `Você pode salvar a Roxou na tela inicial do celular para acesso rápido (funciona como app), seguir o nosso Instagram para alertas e voltar a esta página sempre que quiser saber o que fazer em Presidente Prudente hoje.`,
+    ],
+  },
+  finalCta: {
+    heading: `Veja a agenda completa de Presidente Prudente`,
+    body: [
+      `Não encontrou o evento de ${genre.toLowerCase()} ideal para hoje? Sem problema — a Roxou tem a agenda completa de Presidente Prudente, com baladas, bares, shows, futebol ao vivo e muito mais. Clique no botão abaixo e descubra o que rola na cidade nesta semana.`,
+    ],
+  },
+});
 
 const CITY = "Presidente Prudente";
 
@@ -311,6 +353,66 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
       { label: "Bares", href: "/bares-em-presidente-prudente" },
     ],
   },
+  "musica-ao-vivo-em-presidente-prudente": {
+    slug: "musica-ao-vivo-em-presidente-prudente",
+    title: `Música ao Vivo em ${CITY} Hoje`,
+    metaTitle: `Música ao Vivo em ${CITY} Hoje | Bares, Shows e Eventos | Roxou`,
+    metaDescription: `Veja onde tem música ao vivo em ${CITY} hoje. Descubra bares, restaurantes, eventos e casas noturnas com programação atualizada diariamente.`,
+    heading: `Música ao Vivo em ${CITY} Hoje`,
+    intro: `Bares com música ao vivo, shows e eventos com voz e violão, banda, samba ao vivo, sertanejo ao vivo e mais — agenda atualizada em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /m[uú]sica ao vivo|musica ao vivo|ao vivo|show ao vivo|banda|voz e viol[ãa]o|rock ao vivo|samba ao vivo|sertanejo ao vivo|pagode ao vivo|mpb/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando música ao vivo em ${CITY} hoje? A Roxou reúne em uma única agenda todos os bares com música ao vivo em ${CITY}, shows com bandas e duplas, rodas de samba, sertanejo ao vivo, voz e violão e eventos com programação musical confirmada. Tudo o que rola de música ao vivo em Prudente fica aqui, organizado por data, horário e local.`,
+      `Listamos os bares de ${CITY} que abrem com música ao vivo durante a semana, as casas que recebem bandas convidadas aos fins de semana e os grandes shows que acontecem em espaços de eventos da cidade. Quer saber o que fazer em ${CITY} hoje? Esta página resolve — sem precisar caçar story por story no Instagram.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Música ao Vivo"),
+    faqItems: [
+      { q: `Onde tem música ao vivo em ${CITY} hoje?`, a: `Os bares e eventos com música ao vivo em ${CITY} marcados para hoje aparecem no topo desta página. A Roxou atualiza a agenda em tempo real conforme bares e produtoras confirmam a programação.` },
+      { q: `Quais bares têm música ao vivo em ${CITY}?`, a: `Listamos aqui os bares de ${CITY} com programação ao vivo confirmada, com endereço, horário e Instagram para você conferir o ambiente antes de ir.` },
+      { q: `Como saber dos próximos shows em Prudente?`, a: `Acompanhe esta página — a agenda é atualizada diariamente. Você também pode salvar a Roxou na tela inicial do celular para acesso rápido.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
+      { label: "Shows", href: "/shows-em-presidente-prudente" },
+      { label: "Pagode", href: "/pagode-em-presidente-prudente" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Bares", href: "/bares-em-presidente-prudente" },
+      { label: "O que fazer hoje", href: "/o-que-fazer-em-presidente-prudente-hoje" },
+    ],
+  },
+  "o-que-fazer-em-presidente-prudente-hoje": {
+    slug: "o-que-fazer-em-presidente-prudente-hoje",
+    title: `O Que Fazer em ${CITY} Hoje?`,
+    metaTitle: `O Que Fazer em ${CITY} Hoje? | Agenda de Eventos, Bares e Rolês | Roxou`,
+    metaDescription: `Descubra o que fazer em ${CITY} hoje. Bares, baladas, shows, música ao vivo, festas universitárias, futebol ao vivo e eventos na agenda atualizada da Roxou.`,
+    heading: `O Que Fazer em ${CITY} Hoje?`,
+    intro: `A agenda completa de hoje em ${CITY}: bares, baladas, shows, festas, música ao vivo, jogos e mais — atualizada em tempo real.`,
+    filter: (e) => isTodaySP(new Date(e.date_time)),
+    emitEventJsonLd: true,
+    longIntro: [
+      `Não sabe o que fazer em ${CITY} hoje? A Roxou reúne em uma única página tudo o que está acontecendo agora na cidade: bares com música ao vivo, baladas, shows, festas universitárias, eventos especiais e transmissões de jogos. Tudo organizado por horário, com link direto para conferir o local e garantir presença.`,
+      `Nossa missão é simples: facilitar a sua noite em ${CITY}. Em vez de abrir 10 perfis no Instagram para descobrir o rolê do dia, basta esta página — é a agenda definitiva de eventos em Presidente Prudente, atualizada em tempo real conforme bares e produtoras confirmam a programação.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Eventos"),
+    faqItems: [
+      { q: `O que fazer em ${CITY} hoje?`, a: `Os eventos confirmados para hoje em ${CITY} aparecem nesta página, organizados por horário. Você encontra bares, baladas, shows, festas, música ao vivo e jogos transmitidos ao vivo.` },
+      { q: `Tem balada hoje em ${CITY}?`, a: `Se houver baladas confirmadas para hoje, elas aparecem na lista acima. Para ver todas as baladas da cidade, acesse nossa página dedicada.` },
+      { q: `Onde tem show hoje em ${CITY}?`, a: `Os shows e eventos com música ao vivo de hoje em ${CITY} estão listados nesta página. Cada evento traz horário, local e link para conferir.` },
+    ],
+    relatedLinks: [
+      { label: "Baladas", href: "/baladas-em-presidente-prudente" },
+      { label: "Bares", href: "/bares-em-presidente-prudente" },
+      { label: "Shows", href: "/shows-em-presidente-prudente" },
+      { label: "Música ao vivo", href: "/musica-ao-vivo-em-presidente-prudente" },
+      { label: "Pagode", href: "/pagode-em-presidente-prudente" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Funk", href: "/funk-em-presidente-prudente" },
+    ],
+  },
 };
 
 export const SEO_LANDING_SLUGS = Object.keys(LANDING_CONFIGS);
@@ -454,42 +556,79 @@ const SEOLanding = () => {
           <>
             {config.sections.map((sec, idx) => {
               const list = sec.filter ? filtered.filter(sec.filter) : filtered;
+              if (list.length === 0) return null;
               return (
                 <section key={idx} className="space-y-3">
                   <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{sec.heading}</h2>
                   <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{sec.body}</p>
-                  {list.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4">Nenhum evento confirmado nesta seção no momento. Veja a agenda completa abaixo.</p>
-                  ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                      {list.map((e, i) => (
-                        <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                    {list.map((e, i) => (
+                      <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
+                    ))}
+                  </div>
                 </section>
               );
             })}
-
-            {filtered.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Nenhum evento encontrado no momento. Continue acompanhando a agenda da Roxou.</p>
-                <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
-              </div>
-            )}
           </>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-sm text-muted-foreground">Nenhum evento encontrado nesta categoria no momento.</p>
-            <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
-          </div>
-        ) : (
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {filtered.map((e, i) => (
               <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
             ))}
           </div>
-        )}
+        ) : null}
+
+        {/* Evergreen content — sempre renderizado para evitar Soft 404 */}
+        {(() => {
+          const ever = config.evergreen ?? DEFAULT_EVERGREEN(config.title);
+          const noEvents = !loading && filtered.length === 0;
+          return (
+            <>
+              {noEvents && (
+                <section className="rounded-2xl bg-card/60 border border-border/40 p-5 card-shadow">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Ainda não encontramos eventos desta categoria confirmados para o momento, mas a agenda da Roxou é atualizada constantemente. Veja abaixo o contexto da cena local, os locais que costumam receber esse tipo de programação e confira a agenda completa de {CITY}.
+                  </p>
+                </section>
+              )}
+
+              <section className="max-w-2xl space-y-3">
+                <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{ever.context.heading}</h2>
+                {ever.context.body.map((p, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+                ))}
+              </section>
+
+              <section className="max-w-2xl space-y-3">
+                <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{ever.places.heading}</h2>
+                {ever.places.body.map((p, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+                ))}
+              </section>
+
+              <section className="max-w-2xl space-y-3">
+                <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{ever.howToFollow.heading}</h2>
+                {ever.howToFollow.body.map((p, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+                ))}
+              </section>
+
+              <section className="rounded-2xl gradient-primary p-5 text-primary-foreground">
+                <h2 className="text-lg md:text-xl font-bold font-display">{ever.finalCta.heading}</h2>
+                {ever.finalCta.body.map((p, i) => (
+                  <p key={i} className="text-sm leading-relaxed opacity-90 mt-2">{p}</p>
+                ))}
+                <Link
+                  to="/agenda"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-background/95 px-4 py-2.5 text-xs font-bold text-foreground hover:bg-background transition-colors"
+                >
+                  Ver agenda completa →
+                </Link>
+              </section>
+            </>
+          );
+        })()}
+
 
         {/* FAQ section */}
         {config.faqItems && config.faqItems.length > 0 && (

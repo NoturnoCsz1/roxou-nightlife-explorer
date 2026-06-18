@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
 import { ArrowLeft, MapPin, Instagram, MessageCircle, ExternalLink } from "lucide-react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
@@ -96,12 +96,8 @@ const LocalDetail = () => {
   }
 
   if (!partner) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-sm text-muted-foreground">Local não encontrado.</p>
-        <button onClick={() => navigate("/")} className="text-primary text-sm font-semibold">Voltar</button>
-      </div>
-    );
+    // Slug não encontrado: redireciona para /agenda (SPA fallback).
+    return <Navigate to="/agenda" replace />;
   }
 
   const mapsUrl = partner.address
@@ -263,6 +259,38 @@ const LocalDetail = () => {
             )}
           </div>
         )}
+
+        {/* Conteúdo evergreen — evita Soft 404 quando o local não tem eventos confirmados */}
+        {upcomingEvents.length === 0 && (
+          <div className="rounded-2xl bg-card/60 border border-border/40 p-5 card-shadow space-y-2">
+            <h3 className="text-sm font-bold text-foreground">Programação em {partner.city}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {partner.name} faz parte da agenda da Roxou em {partner.city}. A programação pode variar conforme a semana — acompanhe nesta página para ver novos eventos, shows, transmissões e experiências confirmadas.
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Enquanto não há eventos confirmados aqui, confira a agenda completa de {partner.city} com bares, baladas, shows e música ao vivo na cidade.
+            </p>
+            <Link
+              to="/agenda"
+              className="mt-2 inline-flex items-center gap-2 rounded-xl gradient-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Ver agenda completa →
+            </Link>
+          </div>
+        )}
+
+        {/* Links internos */}
+        <div>
+          <h3 className="text-sm font-bold text-foreground mb-3">Explore na Roxou</h3>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/agenda" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Agenda</Link>
+            <Link to="/parceiros" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Todos os locais</Link>
+            <Link to="/o-que-fazer-em-presidente-prudente-hoje" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">O que fazer hoje</Link>
+            <Link to="/musica-ao-vivo-em-presidente-prudente" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Música ao vivo</Link>
+            <Link to="/bares-em-presidente-prudente" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Bares</Link>
+            <Link to="/baladas-em-presidente-prudente" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Baladas</Link>
+          </div>
+        </div>
       </main>
       <Footer />
       <BottomNav />
