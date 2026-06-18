@@ -143,17 +143,56 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   },
   "pagode-em-presidente-prudente": {
     slug: "pagode-em-presidente-prudente",
-    title: `Pagode em ${CITY}`,
-    metaTitle: `Pagode e Samba em ${CITY} | ROXOU`,
-    metaDescription: `Eventos de pagode e samba em ${CITY}. Veja onde curtir pagode ao vivo.`,
-    heading: `🥁 Pagode em ${CITY}`,
-    intro: `Os melhores eventos de samba e pagode em ${CITY}. Roda de samba, pagode ao vivo e muito mais.`,
-    filter: (e) => e.category === "festa",
+    title: `Pagode em ${CITY} Hoje`,
+    metaTitle: `Pagode em ${CITY} Hoje | Agenda de Pagodes, Rodas de Samba e Eventos | Roxou`,
+    metaDescription: `Veja onde tem pagode em ${CITY} hoje. Agenda atualizada com rodas de samba, bares com pagode ao vivo, eventos, shows e festas em ${CITY} e região.`,
+    heading: `Pagode em ${CITY} Hoje`,
+    intro: `A agenda definitiva de pagode em ${CITY}: rodas de samba, bares com pagode ao vivo, eventos e shows atualizados em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /pagode|samba|roda de samba|sambar/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando pagode em ${CITY} hoje? Você está no lugar certo. A Roxou reúne, em uma única agenda, todos os eventos de pagode em Prudente — de rodas de samba intimistas em bares do centro até grandes shows com bandas locais e nacionais. Tudo o que rola de música ao vivo em Prudente com batuque, cavaco e pandeiro fica aqui, atualizado em tempo real.`,
+      `Nossa missão é simples: se tem pagode em ${CITY} hoje, a Roxou mostra. Listamos os bares com pagode em ${CITY} que abrem durante a semana, as casas que fazem roda de samba em ${CITY} aos sábados e os principais eventos de pagode em ${CITY} para o fim de semana e datas comemorativas. Você confere horário, local, line-up e link direto para o evento sem precisar caçar story por story no Instagram.`,
+      `Sempre que possível, indicamos também opções de pagode em Prudente para diferentes públicos: do happy hour com samba raiz ao pagode 90 que toma conta da noite, passando por encontros de samba de roda, sambas autorais e shows com bandas convidadas de cidades vizinhas. Se você curte música ao vivo em Prudente, esta página é seu ponto de partida — salve nos favoritos e volte sempre que bater aquela vontade de pagodear.`,
+    ],
+    sections: [
+      {
+        heading: `Onde tem pagode hoje em ${CITY}?`,
+        body: `Confira agora os eventos de pagode em ${CITY} marcados para hoje. Mostramos apenas o que está acontecendo no dia, com horário e local confirmados. Se nenhum evento aparecer aqui, role para baixo e veja os próximos pagodes da semana.`,
+        filter: (e) => isTodaySP(new Date(e.date_time)),
+      },
+      {
+        heading: `Agenda de Pagodes em ${CITY}`,
+        body: `Agenda completa de pagode em ${CITY} e região: rodas de samba, shows, encontros e festas autorais. Tudo organizado por data, do mais próximo ao mais distante.`,
+      },
+      {
+        heading: `Bares com pagode ao vivo em ${CITY}`,
+        body: `Veja os bares com pagode em ${CITY} que estão com programação ao vivo nos próximos dias. Cada evento traz o endereço do bar, o Instagram da casa e o link para garantir presença.`,
+      },
+    ],
+    faqItems: [
+      {
+        q: `Onde tem pagode hoje em ${CITY}?`,
+        a: `Os pagodes em ${CITY} marcados para hoje aparecem no topo desta página. A Roxou atualiza a agenda em tempo real conforme bares e produtores confirmam a programação. Se nenhum evento de hoje for listado, significa que ainda não há roda de samba ou pagode ao vivo confirmado para a data — vale acompanhar a página de eventos da semana.`,
+      },
+      {
+        q: `Quais bares têm pagode em ${CITY}?`,
+        a: `Vários bares de ${CITY} mantêm programação fixa ou rotativa de pagode e samba ao vivo. Listamos aqui os bares com pagode em ${CITY} que estão com eventos confirmados, com endereço, horário e perfil no Instagram para você conferir o ambiente antes de ir.`,
+      },
+      {
+        q: `Como saber os próximos eventos de pagode em Prudente?`,
+        a: `Basta acompanhar esta página: a agenda de eventos de pagode em ${CITY} é atualizada diariamente com novas rodas de samba, shows e festas. Você também pode salvar a Roxou na tela inicial do celular para receber a programação completa de música ao vivo em Prudente.`,
+      },
+    ],
     relatedLinks: [
+      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
+      { label: "Eventos fim de semana", href: "/eventos-fim-de-semana-em-presidente-prudente" },
       { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
       { label: "Shows", href: "/shows-em-presidente-prudente" },
       { label: "Bares", href: "/bares-em-presidente-prudente" },
-      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
     ],
   },
   "funk-em-presidente-prudente": {
