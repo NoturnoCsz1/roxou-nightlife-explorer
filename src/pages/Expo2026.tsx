@@ -79,16 +79,21 @@ const SETORES = [
   "Boate",
 ];
 
-function useCountdown(target: Date) {
+function useCountdown(targetIso: string) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000 * 30);
     return () => clearInterval(id);
   }, []);
-  const diff = Math.max(0, target.getTime() - now);
+  const targetMs = (() => {
+    const t = new Date(targetIso).getTime();
+    return Number.isFinite(t) ? t : NaN;
+  })();
+  if (!Number.isFinite(targetMs)) return { days: 0, hours: 0, valid: false };
+  const diff = Math.max(0, targetMs - now);
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  return { days, hours };
+  return { days, hours, valid: true };
 }
 
 function scrollToId(id: string) {
