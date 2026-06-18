@@ -69,15 +69,44 @@ const EXPERIENCIAS = [
   { icon: "👑", label: "Área VIP" },
 ];
 
-const SETORES = [
-  "Arquibancada",
-  "Pista Arena",
-  "Camarotes",
-  "Área VIP",
-  "Front Open Bar",
-  "Palco",
-  "Boate",
+const SETORES: { label: string; description: string }[] = [
+  {
+    label: "Arquibancada",
+    description:
+      "Espaço coberto com assentos numerados em estrutura elevada. Ideal para quem busca conforto e boa visão do palco com lugar marcado.",
+  },
+  {
+    label: "Pista Arena",
+    description:
+      "Área em pé próxima ao palco, perfeita para curtir os shows de perto com a maior energia do público da Expo.",
+  },
+  {
+    label: "Camarotes",
+    description:
+      "Espaços privativos elevados, com vista privilegiada e serviços diferenciados. Indicado para grupos e experiência premium.",
+  },
+  {
+    label: "Área VIP",
+    description:
+      "Setor exclusivo com acesso facilitado, ambiente reservado e estrutura premium para uma noite completa.",
+  },
+  {
+    label: "Front Open Bar",
+    description:
+      "Área frontal com bebidas inclusas (open bar), ambientação especial e proximidade total com os artistas.",
+  },
+  {
+    label: "Palco",
+    description:
+      "Palco principal onde acontecem todos os grandes shows nacionais da Expo Prudente 2026.",
+  },
+  {
+    label: "Boate",
+    description:
+      "Ambiente fechado e climatizado para after parties, com DJs e pista de dança após os shows do palco principal.",
+  },
 ];
+
 
 function useCountdown(targetIso: string) {
   const [now, setNow] = useState(() => Date.now());
