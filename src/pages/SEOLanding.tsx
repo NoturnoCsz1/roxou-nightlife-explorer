@@ -556,42 +556,79 @@ const SEOLanding = () => {
           <>
             {config.sections.map((sec, idx) => {
               const list = sec.filter ? filtered.filter(sec.filter) : filtered;
+              if (list.length === 0) return null;
               return (
                 <section key={idx} className="space-y-3">
                   <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{sec.heading}</h2>
                   <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{sec.body}</p>
-                  {list.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4">Nenhum evento confirmado nesta seção no momento. Veja a agenda completa abaixo.</p>
-                  ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                      {list.map((e, i) => (
-                        <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                    {list.map((e, i) => (
+                      <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
+                    ))}
+                  </div>
                 </section>
               );
             })}
-
-            {filtered.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">Nenhum evento encontrado no momento. Continue acompanhando a agenda da Roxou.</p>
-                <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
-              </div>
-            )}
           </>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-sm text-muted-foreground">Nenhum evento encontrado nesta categoria no momento.</p>
-            <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
-          </div>
-        ) : (
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {filtered.map((e, i) => (
               <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
             ))}
           </div>
-        )}
+        ) : null}
+
+        {/* Evergreen content — sempre renderizado para evitar Soft 404 */}
+        {(() => {
+          const ever = config.evergreen ?? DEFAULT_EVERGREEN(config.title);
+          const noEvents = !loading && filtered.length === 0;
+          return (
+            <>
+              {noEvents && (
+                <section className="rounded-2xl bg-card/60 border border-border/40 p-5 card-shadow">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Ainda não encontramos eventos desta categoria confirmados para o momento, mas a agenda da Roxou é atualizada constantemente. Veja abaixo o contexto da cena local, os locais que costumam receber esse tipo de programação e confira a agenda completa de {CITY}.
+                  </p>
+                </section>
+              )}
+
+              <section className="max-w-2xl space-y-3">
+                <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{ever.context.heading}</h2>
+                {ever.context.body.map((p, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+                ))}
+              </section>
+
+              <section className="max-w-2xl space-y-3">
+                <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{ever.places.heading}</h2>
+                {ever.places.body.map((p, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+                ))}
+              </section>
+
+              <section className="max-w-2xl space-y-3">
+                <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{ever.howToFollow.heading}</h2>
+                {ever.howToFollow.body.map((p, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+                ))}
+              </section>
+
+              <section className="rounded-2xl gradient-primary p-5 text-primary-foreground">
+                <h2 className="text-lg md:text-xl font-bold font-display">{ever.finalCta.heading}</h2>
+                {ever.finalCta.body.map((p, i) => (
+                  <p key={i} className="text-sm leading-relaxed opacity-90 mt-2">{p}</p>
+                ))}
+                <Link
+                  to="/agenda"
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-background/95 px-4 py-2.5 text-xs font-bold text-foreground hover:bg-background transition-colors"
+                >
+                  Ver agenda completa →
+                </Link>
+              </section>
+            </>
+          );
+        })()}
+
 
         {/* FAQ section */}
         {config.faqItems && config.faqItems.length > 0 && (
