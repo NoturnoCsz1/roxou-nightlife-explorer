@@ -71,6 +71,18 @@ Deno.serve(async (req) => {
     .eq("status", "published")
     .order("published_at", { ascending: false });
 
+  // Active partners with reservations enabled → /:partnerSlug/reservas
+  const { data: reservationPartners } = await supabase
+    .from("partner_reservation_settings")
+    .select("partner_id, reservations_enabled, partners!inner(slug, active)")
+    .eq("reservations_enabled", true);
+
+  // Active public VIP lists → /vip/:public_slug
+  const { data: vipLists } = await supabase
+    .from("partner_vip_lists")
+    .select("public_slug, updated_at")
+    .not("public_slug", "is", null);
+
   // SEO landing pages
   const seoLandings = [
     { loc: "/eventos-hoje-em-presidente-prudente", priority: "0.9", changefreq: "daily" },
@@ -153,6 +165,32 @@ Deno.serve(async (req) => {
     <lastmod>${lastmod}</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.85</priority>
+  </url>
+`;
+  }
+
+  // Public reservation pages (one per active partner with reservations enabled)
+  for (const rp of (reservationPartners || []) as Array<{ partners: { slug: string; active: boolean } | null }>) {
+    const p = rp.partners;
+    if (!p || !p.active || !p.slug) continue;
+    xml += `  <url>
+    <loc>${BASE_URL}/${p.slug}/reservas</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
+  // Public VIP list pages
+  for (const v of vipLists || []) {
+    if (!v.public_slug) continue;
+    const lastmod = (v.updated_at || today).split("T")[0];
+    xml += `  <url>
+    <loc>${BASE_URL}/vip/${v.public_slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
   </url>
 `;
   }

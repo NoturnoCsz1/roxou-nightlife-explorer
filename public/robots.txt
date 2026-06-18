@@ -1,24 +1,57 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /admin
+Disallow: /partner/
+Disallow: /partner
+Disallow: /validator/
+Disallow: /cliente/
+Disallow: /conta/
+Disallow: /configuracoes/
+Disallow: /reserva/sucesso/
+Disallow: /preview/
+Disallow: /beta/
+Disallow: /dashboard/
+Disallow: /dev/
+Disallow: /archive/
+Disallow: /auth
+Disallow: /seguranca/
+
 User-agent: Googlebot
 Allow: /
-Disallow: /admin
+Disallow: /admin/
+Disallow: /partner/
+Disallow: /validator/
+Disallow: /cliente/
+Disallow: /conta/
+Disallow: /configuracoes/
+Disallow: /reserva/sucesso/
+Disallow: /preview/
+Disallow: /beta/
+Disallow: /dashboard/
+Disallow: /dev/
 Disallow: /archive/
 
 User-agent: Bingbot
 Allow: /
-Disallow: /admin
+Disallow: /admin/
+Disallow: /partner/
+Disallow: /validator/
+Disallow: /cliente/
+Disallow: /conta/
+Disallow: /configuracoes/
+Disallow: /reserva/sucesso/
+Disallow: /preview/
+Disallow: /beta/
+Disallow: /dashboard/
+Disallow: /dev/
 Disallow: /archive/
 
 User-agent: Twitterbot
 Allow: /
-Disallow: /archive/
 
 User-agent: facebookexternalhit
 Allow: /
-Disallow: /archive/
-
-User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /archive/
 
 Sitemap: https://roxou.com.br/sitemap.xml
