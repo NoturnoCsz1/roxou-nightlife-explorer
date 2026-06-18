@@ -102,7 +102,7 @@ function scrollToId(id: string) {
 }
 
 export default function Expo2026() {
-  const { days, hours } = useCountdown(EVENT_START);
+  const { days, hours, valid: countdownValid } = useCountdown(EVENT_START_RAW);
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaError, setMapaError] = useState(false);
   const showsRef = useRef<HTMLElement | null>(null);
