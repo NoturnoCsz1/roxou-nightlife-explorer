@@ -181,6 +181,13 @@ export default function V3Agenda() {
 
   return (
     <div className="pb-28 pt-3 max-w-5xl mx-auto px-3 md:px-4">
+      <SEO
+        title="Agenda de Eventos em Presidente Prudente | Roxou"
+        description="Confira festas, bares, shows, baladas e eventos em Presidente Prudente atualizados diariamente."
+        canonical="https://roxou.com.br/agenda"
+        keywords="agenda presidente prudente, eventos presidente prudente, baladas presidente prudente, shows presidente prudente, bares presidente prudente, o que fazer em presidente prudente"
+      />
+
       {/* ===== HEADER GRADIENTE NEON — minimalista ===== */}
       <div className="relative mb-3 rounded-2xl md:rounded-3xl border border-primary/25 p-2.5 md:p-4 shadow-[0_0_42px_hsl(var(--v3-neon)/0.18)]">
         <div
