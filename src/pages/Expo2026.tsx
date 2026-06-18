@@ -396,30 +396,61 @@ export default function Expo2026() {
         </div>
       </footer>
 
+      {/* ============== FLOATING CTA (após scroll) ============== */}
+      {showFloatingCta && (
+        <button
+          onClick={() => scrollToId("shows")}
+          className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 inline-flex items-center gap-2 px-6 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_10px_40px_-10px_rgba(255,138,0,0.8)] animate-in fade-in slide-in-from-bottom-4"
+          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+        >
+          <Ticket className="w-4 h-4" />
+          COMPRAR INGRESSOS
+        </button>
+      )}
+
       {/* ============== MODAL MAPA ============== */}
       {mapaOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black flex flex-col"
           onClick={() => setMapaOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mapa do evento ampliado"
         >
-          <button
-            onClick={() => setMapaOpen(false)}
-            className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
-            aria-label="Fechar mapa"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <img
-            src={MAPA_IMG}
-            alt="Mapa oficial dos setores da Expo Prudente 2026"
-            className="max-w-full max-h-full object-contain"
+          <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/90 z-10">
+            <p className="text-xs sm:text-sm text-white/80">
+              Arraste ou dê zoom para visualizar os setores
+            </p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMapaOpen(false);
+              }}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+              aria-label="Fechar mapa"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div
+            className="flex-1 overflow-auto overscroll-contain bg-black flex items-start sm:items-center justify-center p-2 sm:p-6"
             onClick={(e) => e.stopPropagation()}
-          />
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <img
+              src={MAPA_IMG}
+              alt="Mapa oficial dos setores da Expo Prudente 2026"
+              className="max-w-none sm:max-w-full w-[200%] sm:w-auto sm:max-h-full select-none"
+              style={{ touchAction: "pinch-zoom" }}
+              draggable={false}
+            />
+          </div>
         </div>
       )}
     </div>
   );
 }
+
 
 /* ============================================================================
  * Subcomponentes
