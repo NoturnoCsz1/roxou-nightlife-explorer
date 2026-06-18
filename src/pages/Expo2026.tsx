@@ -105,7 +105,26 @@ export default function Expo2026() {
   const { days, hours, valid: countdownValid } = useCountdown(EVENT_START_RAW);
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaError, setMapaError] = useState(false);
+  const [showFloatingCta, setShowFloatingCta] = useState(false);
   const showsRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const onScroll = () => setShowFloatingCta(window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!mapaOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMapaOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mapaOpen]);
 
   const jsonLd = useMemo(
     () => ({
