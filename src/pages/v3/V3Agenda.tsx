@@ -12,6 +12,7 @@ import {
   ADMIN_PARTNER_TYPE_OPTIONS,
   PARTNER_MUSIC_STYLE_LABELS,
 } from "@/lib/categoryConfig";
+import SEO from "@/components/SEO";
 
 const PARTNER_TYPE_LABELS: Record<string, string> = Object.fromEntries(
   ADMIN_PARTNER_TYPE_OPTIONS.map((o) => [o.value, o.label]),
