@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Ticket, MapPin, X, ZoomIn, Instagram } from "lucide-react";
 import SEO from "@/components/SEO";
-import mapaAsset from "@/assets/expo2026-mapa.jpg.asset.json";
 
 /* ============================================================================
  * EXPO PRUDENTE 2026 — Landing oficial de divulgação (hub Roxou → Eventou)
@@ -10,9 +9,10 @@ import mapaAsset from "@/assets/expo2026-mapa.jpg.asset.json";
  * para a compra oficial via Eventou.
  * ========================================================================= */
 
-const EVENT_START = new Date("2026-09-10T18:00:00-03:00");
+const EVENT_START_RAW = "2026-09-10T18:00:00-03:00";
 
-const MAPA_IMG = mapaAsset.url;
+// Primary: served from /public on VPS. Fallback handled by onError.
+const MAPA_IMG = "/images/expo2026-mapa.jpg";
 
 interface ShowCard {
   id: string;
@@ -79,16 +79,21 @@ const SETORES = [
   "Boate",
 ];
 
-function useCountdown(target: Date) {
+function useCountdown(targetIso: string) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000 * 30);
     return () => clearInterval(id);
   }, []);
-  const diff = Math.max(0, target.getTime() - now);
+  const targetMs = (() => {
+    const t = new Date(targetIso).getTime();
+    return Number.isFinite(t) ? t : NaN;
+  })();
+  if (!Number.isFinite(targetMs)) return { days: 0, hours: 0, valid: false };
+  const diff = Math.max(0, targetMs - now);
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  return { days, hours };
+  return { days, hours, valid: true };
 }
 
 function scrollToId(id: string) {
@@ -97,7 +102,7 @@ function scrollToId(id: string) {
 }
 
 export default function Expo2026() {
-  const { days, hours } = useCountdown(EVENT_START);
+  const { days, hours, valid: countdownValid } = useCountdown(EVENT_START_RAW);
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaError, setMapaError] = useState(false);
   const showsRef = useRef<HTMLElement | null>(null);
@@ -212,21 +217,24 @@ export default function Expo2026() {
           {/* Countdown */}
           <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/10 bg-[#121212]/70 backdrop-blur">
             <span className="text-2xl">⏳</span>
-            <p className="text-sm md:text-base text-white">
-              Faltam{" "}
-              <span className="font-black text-[#FFC300] text-lg">
-                {days}
-              </span>{" "}
-              dias
-              {days < 30 && hours > 0 && (
-                <>
-                  {" "}
-                  e{" "}
-                  <span className="font-black text-[#FFC300]">{hours}h</span>
-                </>
-              )}{" "}
-              para a Expo Prudente 2026
-            </p>
+            {countdownValid ? (
+              <p className="text-sm md:text-base text-white">
+                Faltam{" "}
+                <span className="font-black text-[#FFC300] text-lg">{days}</span>{" "}
+                dias
+                {days < 30 && hours > 0 && (
+                  <>
+                    {" "}e{" "}
+                    <span className="font-black text-[#FFC300]">{hours}h</span>
+                  </>
+                )}{" "}
+                para a Expo Prudente 2026
+              </p>
+            ) : (
+              <p className="text-sm md:text-base text-white font-bold">
+                Expo Prudente 2026
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -288,7 +296,7 @@ export default function Expo2026() {
         />
 
         <div className="grid gap-5 md:grid-cols-2 mt-8">
-          {SHOWS.map((show) => (
+          {(SHOWS ?? []).map((show) => (
             <ShowCard key={show.id} show={show} />
           ))}
         </div>
@@ -431,20 +439,20 @@ function ShowCard({ show }: { show: ShowCard }) {
       <div className="relative flex items-start justify-between mb-4">
         <div>
           <p className="text-xs font-bold tracking-widest text-[#FFC300]">
-            {show.weekday}
+            {show?.weekday ?? ""}
           </p>
           <p
             className="font-black mt-1"
             style={{ fontSize: "clamp(1.6rem, 5vw, 2rem)" }}
           >
-            {show.date}
+            {show?.date ?? ""}
           </p>
         </div>
         <div className="text-3xl">🎟️</div>
       </div>
 
       <ul className="relative space-y-1.5 mb-6">
-        {show.artists.map((a) => (
+        {(show?.artists ?? []).map((a) => (
           <li key={a} className="text-base md:text-lg font-bold flex items-center gap-2">
             <span className="text-[#FF8A00]">🎤</span>
             <span>{a}</span>
@@ -452,16 +460,22 @@ function ShowCard({ show }: { show: ShowCard }) {
         ))}
       </ul>
 
-      <a
-        href={show.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
-        style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-      >
-        <Ticket className="w-4 h-4" />
-        COMPRAR INGRESSOS
-      </a>
+      {show?.link ? (
+        <a
+          href={show.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
+          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+        >
+          <Ticket className="w-4 h-4" />
+          COMPRAR INGRESSOS
+        </a>
+      ) : (
+        <span className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-white/60 text-sm bg-white/5">
+          Em breve
+        </span>
+      )}
     </article>
   );
 }
