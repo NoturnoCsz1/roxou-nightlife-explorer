@@ -21,6 +21,9 @@ interface LandingConfig {
   filter: (e: SupabaseEvent) => boolean;
   faqItems?: { q: string; a: string }[];
   relatedLinks: { label: string; href: string }[];
+  longIntro?: string[];
+  sections?: { heading: string; body: string; filter?: (e: SupabaseEvent) => boolean }[];
+  emitEventJsonLd?: boolean;
 }
 
 const CITY = "Presidente Prudente";
@@ -140,17 +143,56 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   },
   "pagode-em-presidente-prudente": {
     slug: "pagode-em-presidente-prudente",
-    title: `Pagode em ${CITY}`,
-    metaTitle: `Pagode e Samba em ${CITY} | ROXOU`,
-    metaDescription: `Eventos de pagode e samba em ${CITY}. Veja onde curtir pagode ao vivo.`,
-    heading: `🥁 Pagode em ${CITY}`,
-    intro: `Os melhores eventos de samba e pagode em ${CITY}. Roda de samba, pagode ao vivo e muito mais.`,
-    filter: (e) => e.category === "festa",
+    title: `Pagode em ${CITY} Hoje`,
+    metaTitle: `Pagode em ${CITY} Hoje | Agenda de Pagodes, Rodas de Samba e Eventos | Roxou`,
+    metaDescription: `Veja onde tem pagode em ${CITY} hoje. Agenda atualizada com rodas de samba, bares com pagode ao vivo, eventos, shows e festas em ${CITY} e região.`,
+    heading: `Pagode em ${CITY} Hoje`,
+    intro: `A agenda definitiva de pagode em ${CITY}: rodas de samba, bares com pagode ao vivo, eventos e shows atualizados em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /pagode|samba|roda de samba|sambar/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando pagode em ${CITY} hoje? Você está no lugar certo. A Roxou reúne, em uma única agenda, todos os eventos de pagode em Prudente — de rodas de samba intimistas em bares do centro até grandes shows com bandas locais e nacionais. Tudo o que rola de música ao vivo em Prudente com batuque, cavaco e pandeiro fica aqui, atualizado em tempo real.`,
+      `Nossa missão é simples: se tem pagode em ${CITY} hoje, a Roxou mostra. Listamos os bares com pagode em ${CITY} que abrem durante a semana, as casas que fazem roda de samba em ${CITY} aos sábados e os principais eventos de pagode em ${CITY} para o fim de semana e datas comemorativas. Você confere horário, local, line-up e link direto para o evento sem precisar caçar story por story no Instagram.`,
+      `Sempre que possível, indicamos também opções de pagode em Prudente para diferentes públicos: do happy hour com samba raiz ao pagode 90 que toma conta da noite, passando por encontros de samba de roda, sambas autorais e shows com bandas convidadas de cidades vizinhas. Se você curte música ao vivo em Prudente, esta página é seu ponto de partida — salve nos favoritos e volte sempre que bater aquela vontade de pagodear.`,
+    ],
+    sections: [
+      {
+        heading: `Onde tem pagode hoje em ${CITY}?`,
+        body: `Confira agora os eventos de pagode em ${CITY} marcados para hoje. Mostramos apenas o que está acontecendo no dia, com horário e local confirmados. Se nenhum evento aparecer aqui, role para baixo e veja os próximos pagodes da semana.`,
+        filter: (e) => isTodaySP(new Date(e.date_time)),
+      },
+      {
+        heading: `Agenda de Pagodes em ${CITY}`,
+        body: `Agenda completa de pagode em ${CITY} e região: rodas de samba, shows, encontros e festas autorais. Tudo organizado por data, do mais próximo ao mais distante.`,
+      },
+      {
+        heading: `Bares com pagode ao vivo em ${CITY}`,
+        body: `Veja os bares com pagode em ${CITY} que estão com programação ao vivo nos próximos dias. Cada evento traz o endereço do bar, o Instagram da casa e o link para garantir presença.`,
+      },
+    ],
+    faqItems: [
+      {
+        q: `Onde tem pagode hoje em ${CITY}?`,
+        a: `Os pagodes em ${CITY} marcados para hoje aparecem no topo desta página. A Roxou atualiza a agenda em tempo real conforme bares e produtores confirmam a programação. Se nenhum evento de hoje for listado, significa que ainda não há roda de samba ou pagode ao vivo confirmado para a data — vale acompanhar a página de eventos da semana.`,
+      },
+      {
+        q: `Quais bares têm pagode em ${CITY}?`,
+        a: `Vários bares de ${CITY} mantêm programação fixa ou rotativa de pagode e samba ao vivo. Listamos aqui os bares com pagode em ${CITY} que estão com eventos confirmados, com endereço, horário e perfil no Instagram para você conferir o ambiente antes de ir.`,
+      },
+      {
+        q: `Como saber os próximos eventos de pagode em Prudente?`,
+        a: `Basta acompanhar esta página: a agenda de eventos de pagode em ${CITY} é atualizada diariamente com novas rodas de samba, shows e festas. Você também pode salvar a Roxou na tela inicial do celular para receber a programação completa de música ao vivo em Prudente.`,
+      },
+    ],
     relatedLinks: [
+      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
+      { label: "Eventos fim de semana", href: "/eventos-fim-de-semana-em-presidente-prudente" },
       { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
       { label: "Shows", href: "/shows-em-presidente-prudente" },
       { label: "Bares", href: "/bares-em-presidente-prudente" },
-      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
     ],
   },
   "funk-em-presidente-prudente": {
@@ -213,26 +255,53 @@ const SEOLanding = () => {
 
   const filtered = events.filter(config.filter);
 
+  const canonicalUrl = `https://roxou.com.br/${config.slug}`;
+
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "ItemList",
+    "@type": "CollectionPage",
     name: config.title,
     description: config.metaDescription,
-    numberOfItems: filtered.length,
-    itemListElement: filtered.slice(0, 20).map((e, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: `https://roxou.com.br/evento/${e.slug}`,
-      name: e.title,
-    })),
+    url: canonicalUrl,
+    inLanguage: "pt-BR",
+    about: { "@type": "Thing", name: "Pagode e samba em Presidente Prudente" },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: filtered.length,
+      itemListElement: filtered.slice(0, 20).map((e, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `https://roxou.com.br/evento/${e.slug}`,
+        name: e.title,
+      })),
+    },
   };
+
+  const eventLd = config.emitEventJsonLd
+    ? filtered.slice(0, 10).map((e) => ({
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: e.title,
+        startDate: e.date_time,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        location: {
+          "@type": "Place",
+          name: e.venue_name || CITY,
+          address: e.address || `${CITY}, SP, Brasil`,
+        },
+        ...(e.image_url ? { image: e.image_url } : {}),
+        url: `https://roxou.com.br/evento/${e.slug}`,
+        description: e.description?.slice(0, 280) || config.metaDescription,
+      }))
+    : null;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "ROXOU", item: "https://roxou.com.br" },
-      { "@type": "ListItem", position: 2, name: config.title, item: `https://roxou.com.br/${config.slug}` },
+      { "@type": "ListItem", position: 2, name: config.title, item: canonicalUrl },
     ],
   };
 
@@ -253,12 +322,15 @@ const SEOLanding = () => {
       <SEO
         title={config.metaTitle}
         description={config.metaDescription}
-        canonical={`https://roxou.com.br/${config.slug}`}
+        canonical={canonicalUrl}
         jsonLd={jsonLd}
       />
       {/* Extra structured data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {faqLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />}
+      {eventLd && eventLd.map((ld, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      ))}
 
       <DesktopNav />
 
@@ -281,8 +353,56 @@ const SEOLanding = () => {
       </header>
 
       <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-4 md:mt-6 space-y-8">
+        {config.longIntro && config.longIntro.length > 0 && (
+          <section className="max-w-2xl space-y-3">
+            {config.longIntro.map((p, i) => (
+              <p key={i} className="text-sm text-muted-foreground leading-relaxed">{p}</p>
+            ))}
+          </section>
+        )}
+
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-12">Carregando eventos...</p>
+        ) : config.sections && config.sections.length > 0 ? (
+          <>
+            {config.sections.map((sec, idx) => {
+              const list = sec.filter ? filtered.filter(sec.filter) : filtered;
+              return (
+                <section key={idx} className="space-y-3">
+                  <h2 className="text-lg md:text-xl font-bold font-display text-foreground">{sec.heading}</h2>
+                  <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{sec.body}</p>
+                  {list.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4">Nenhum evento confirmado nesta seção no momento. Veja a agenda completa abaixo.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                      {list.map((e, i) => (
+                        <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+
+            <section className="space-y-3">
+              <h2 className="text-lg md:text-xl font-bold font-display text-foreground">Próximos eventos de pagode em {CITY}</h2>
+              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+                Veja todos os próximos eventos de pagode em {CITY} confirmados na Roxou, em ordem cronológica.
+              </p>
+              {filtered.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Nenhum evento de pagode confirmado no momento.</p>
+                  <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+                  {filtered.map((e, i) => (
+                    <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">Nenhum evento encontrado nesta categoria no momento.</p>
