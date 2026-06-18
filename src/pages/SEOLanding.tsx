@@ -353,6 +353,66 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
       { label: "Bares", href: "/bares-em-presidente-prudente" },
     ],
   },
+  "musica-ao-vivo-em-presidente-prudente": {
+    slug: "musica-ao-vivo-em-presidente-prudente",
+    title: `Música ao Vivo em ${CITY} Hoje`,
+    metaTitle: `Música ao Vivo em ${CITY} Hoje | Bares, Shows e Eventos | Roxou`,
+    metaDescription: `Veja onde tem música ao vivo em ${CITY} hoje. Descubra bares, restaurantes, eventos e casas noturnas com programação atualizada diariamente.`,
+    heading: `Música ao Vivo em ${CITY} Hoje`,
+    intro: `Bares com música ao vivo, shows e eventos com voz e violão, banda, samba ao vivo, sertanejo ao vivo e mais — agenda atualizada em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /m[uú]sica ao vivo|musica ao vivo|ao vivo|show ao vivo|banda|voz e viol[ãa]o|rock ao vivo|samba ao vivo|sertanejo ao vivo|pagode ao vivo|mpb/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando música ao vivo em ${CITY} hoje? A Roxou reúne em uma única agenda todos os bares com música ao vivo em ${CITY}, shows com bandas e duplas, rodas de samba, sertanejo ao vivo, voz e violão e eventos com programação musical confirmada. Tudo o que rola de música ao vivo em Prudente fica aqui, organizado por data, horário e local.`,
+      `Listamos os bares de ${CITY} que abrem com música ao vivo durante a semana, as casas que recebem bandas convidadas aos fins de semana e os grandes shows que acontecem em espaços de eventos da cidade. Quer saber o que fazer em ${CITY} hoje? Esta página resolve — sem precisar caçar story por story no Instagram.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Música ao Vivo"),
+    faqItems: [
+      { q: `Onde tem música ao vivo em ${CITY} hoje?`, a: `Os bares e eventos com música ao vivo em ${CITY} marcados para hoje aparecem no topo desta página. A Roxou atualiza a agenda em tempo real conforme bares e produtoras confirmam a programação.` },
+      { q: `Quais bares têm música ao vivo em ${CITY}?`, a: `Listamos aqui os bares de ${CITY} com programação ao vivo confirmada, com endereço, horário e Instagram para você conferir o ambiente antes de ir.` },
+      { q: `Como saber dos próximos shows em Prudente?`, a: `Acompanhe esta página — a agenda é atualizada diariamente. Você também pode salvar a Roxou na tela inicial do celular para acesso rápido.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
+      { label: "Shows", href: "/shows-em-presidente-prudente" },
+      { label: "Pagode", href: "/pagode-em-presidente-prudente" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Bares", href: "/bares-em-presidente-prudente" },
+      { label: "O que fazer hoje", href: "/o-que-fazer-em-presidente-prudente-hoje" },
+    ],
+  },
+  "o-que-fazer-em-presidente-prudente-hoje": {
+    slug: "o-que-fazer-em-presidente-prudente-hoje",
+    title: `O Que Fazer em ${CITY} Hoje?`,
+    metaTitle: `O Que Fazer em ${CITY} Hoje? | Agenda de Eventos, Bares e Rolês | Roxou`,
+    metaDescription: `Descubra o que fazer em ${CITY} hoje. Bares, baladas, shows, música ao vivo, festas universitárias, futebol ao vivo e eventos na agenda atualizada da Roxou.`,
+    heading: `O Que Fazer em ${CITY} Hoje?`,
+    intro: `A agenda completa de hoje em ${CITY}: bares, baladas, shows, festas, música ao vivo, jogos e mais — atualizada em tempo real.`,
+    filter: (e) => isTodaySP(new Date(e.date_time)),
+    emitEventJsonLd: true,
+    longIntro: [
+      `Não sabe o que fazer em ${CITY} hoje? A Roxou reúne em uma única página tudo o que está acontecendo agora na cidade: bares com música ao vivo, baladas, shows, festas universitárias, eventos especiais e transmissões de jogos. Tudo organizado por horário, com link direto para conferir o local e garantir presença.`,
+      `Nossa missão é simples: facilitar a sua noite em ${CITY}. Em vez de abrir 10 perfis no Instagram para descobrir o rolê do dia, basta esta página — é a agenda definitiva de eventos em Presidente Prudente, atualizada em tempo real conforme bares e produtoras confirmam a programação.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Eventos"),
+    faqItems: [
+      { q: `O que fazer em ${CITY} hoje?`, a: `Os eventos confirmados para hoje em ${CITY} aparecem nesta página, organizados por horário. Você encontra bares, baladas, shows, festas, música ao vivo e jogos transmitidos ao vivo.` },
+      { q: `Tem balada hoje em ${CITY}?`, a: `Se houver baladas confirmadas para hoje, elas aparecem na lista acima. Para ver todas as baladas da cidade, acesse nossa página dedicada.` },
+      { q: `Onde tem show hoje em ${CITY}?`, a: `Os shows e eventos com música ao vivo de hoje em ${CITY} estão listados nesta página. Cada evento traz horário, local e link para conferir.` },
+    ],
+    relatedLinks: [
+      { label: "Baladas", href: "/baladas-em-presidente-prudente" },
+      { label: "Bares", href: "/bares-em-presidente-prudente" },
+      { label: "Shows", href: "/shows-em-presidente-prudente" },
+      { label: "Música ao vivo", href: "/musica-ao-vivo-em-presidente-prudente" },
+      { label: "Pagode", href: "/pagode-em-presidente-prudente" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Funk", href: "/funk-em-presidente-prudente" },
+    ],
+  },
 };
 
 export const SEO_LANDING_SLUGS = Object.keys(LANDING_CONFIGS);
