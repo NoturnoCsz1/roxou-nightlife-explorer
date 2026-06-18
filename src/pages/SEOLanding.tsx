@@ -21,6 +21,9 @@ interface LandingConfig {
   filter: (e: SupabaseEvent) => boolean;
   faqItems?: { q: string; a: string }[];
   relatedLinks: { label: string; href: string }[];
+  longIntro?: string[];
+  sections?: { heading: string; body: string; filter?: (e: SupabaseEvent) => boolean }[];
+  emitEventJsonLd?: boolean;
 }
 
 const CITY = "Presidente Prudente";
