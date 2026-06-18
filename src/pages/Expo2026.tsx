@@ -439,20 +439,20 @@ function ShowCard({ show }: { show: ShowCard }) {
       <div className="relative flex items-start justify-between mb-4">
         <div>
           <p className="text-xs font-bold tracking-widest text-[#FFC300]">
-            {show.weekday}
+            {show?.weekday ?? ""}
           </p>
           <p
             className="font-black mt-1"
             style={{ fontSize: "clamp(1.6rem, 5vw, 2rem)" }}
           >
-            {show.date}
+            {show?.date ?? ""}
           </p>
         </div>
         <div className="text-3xl">🎟️</div>
       </div>
 
       <ul className="relative space-y-1.5 mb-6">
-        {show.artists.map((a) => (
+        {(show?.artists ?? []).map((a) => (
           <li key={a} className="text-base md:text-lg font-bold flex items-center gap-2">
             <span className="text-[#FF8A00]">🎤</span>
             <span>{a}</span>
@@ -460,16 +460,22 @@ function ShowCard({ show }: { show: ShowCard }) {
         ))}
       </ul>
 
-      <a
-        href={show.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
-        style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-      >
-        <Ticket className="w-4 h-4" />
-        COMPRAR INGRESSOS
-      </a>
+      {show?.link ? (
+        <a
+          href={show.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
+          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+        >
+          <Ticket className="w-4 h-4" />
+          COMPRAR INGRESSOS
+        </a>
+      ) : (
+        <span className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-white/60 text-sm bg-white/5">
+          Em breve
+        </span>
+      )}
     </article>
   );
 }
