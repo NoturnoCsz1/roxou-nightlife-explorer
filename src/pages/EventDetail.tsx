@@ -114,17 +114,9 @@ const EventDetail = () => {
   }
 
   if (!event) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4">
-        <p className="text-muted-foreground">Evento não encontrado.</p>
-        <button
-          onClick={() => navigate("/")}
-          className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition hover:opacity-90"
-        >
-          Voltar ao início
-        </button>
-      </div>
-    );
+    // Slug não encontrado: redireciona para /agenda (SPA fallback).
+    // Em servidor próprio, configurar 301 real para /evento/* não encontrado → /agenda.
+    return <Navigate to="/agenda" replace />;
   }
 
   const dt = new Date(event.date_time);
