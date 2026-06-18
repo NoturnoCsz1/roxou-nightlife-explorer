@@ -623,6 +623,22 @@ const EventDetail = () => {
           </div>
         )}
 
+        {/* Aviso de evento encerrado */}
+        {dt.getTime() < Date.now() && !todayEvent && (
+          <div className="mb-4 rounded-2xl border border-border/40 bg-card/60 p-4 card-shadow">
+            <h2 className="text-sm font-bold text-foreground">Este evento já aconteceu</h2>
+            <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+              A Roxou mantém esta página como registro da agenda de eventos em Presidente Prudente. Confira abaixo outras opções parecidas ou veja a agenda atualizada.
+            </p>
+            <Link
+              to="/agenda"
+              className="mt-3 inline-flex items-center gap-2 rounded-xl gradient-primary px-4 py-2.5 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Ver agenda atualizada →
+            </Link>
+          </div>
+        )}
+
         {/* Related events */}
         {relatedEvents.length > 0 && (
           <div className="mb-4">
@@ -636,6 +652,22 @@ const EventDetail = () => {
             </div>
           </div>
         )}
+
+        {/* Links internos para reduzir Soft 404 */}
+        <div className="mb-4">
+          <h2 className="mb-3 text-sm font-bold text-foreground">Explore na Roxou</h2>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/agenda" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Agenda</Link>
+            <Link to="/o-que-fazer-em-presidente-prudente-hoje" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">O que fazer hoje</Link>
+            <Link to="/musica-ao-vivo-em-presidente-prudente" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Música ao vivo</Link>
+            <Link to="/baladas-em-presidente-prudente" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Baladas</Link>
+            <Link to="/bares-em-presidente-prudente" className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">Bares</Link>
+            {partner?.slug && (
+              <Link to={`/local/${partner.slug}`} className="rounded-xl bg-card px-3 py-2 text-xs font-semibold text-foreground card-shadow hover:text-primary transition-colors">{partner.name || "Local"}</Link>
+            )}
+          </div>
+        </div>
+
 
         {/* Bottom CTA */}
         <div className="flex gap-3 mt-8">
