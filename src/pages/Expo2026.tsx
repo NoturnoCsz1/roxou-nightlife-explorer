@@ -222,16 +222,6 @@ export default function Expo2026() {
             10 A 14 DE SETEMBRO · PRESIDENTE PRUDENTE/SP
           </p>
 
-          <button
-            onClick={() => scrollToId("shows")}
-            className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-full font-extrabold text-black text-base md:text-lg shadow-[0_10px_40px_-10px_rgba(255,138,0,0.7)] hover:scale-[1.03] active:scale-[0.98] transition-transform"
-            style={{
-              background: "linear-gradient(135deg, #FF8A00, #FFC300)",
-            }}
-          >
-            <Ticket className="w-5 h-5" />
-            COMPRAR INGRESSOS
-          </button>
 
           {/* Countdown */}
           <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/10 bg-[#121212]/70 backdrop-blur">
