@@ -172,6 +172,10 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
         heading: `Bares com pagode ao vivo em ${CITY}`,
         body: `Veja os bares com pagode em ${CITY} que estão com programação ao vivo nos próximos dias. Cada evento traz o endereço do bar, o Instagram da casa e o link para garantir presença.`,
       },
+      {
+        heading: `Próximos eventos de pagode em ${CITY}`,
+        body: `Todos os próximos eventos de pagode em ${CITY} confirmados na Roxou, em ordem cronológica. Rodas de samba, shows e festas autorais.`,
+      },
     ],
     faqItems: [
       {
@@ -197,31 +201,114 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
   },
   "funk-em-presidente-prudente": {
     slug: "funk-em-presidente-prudente",
-    title: `Funk em ${CITY}`,
-    metaTitle: `Funk em ${CITY} — Baile Funk e Festas | ROXOU`,
-    metaDescription: `Festas e bailes funk em ${CITY}. Confira a programação atualizada.`,
-    heading: `🔊 Funk em ${CITY}`,
-    intro: `Baile funk, festas e eventos com funk em ${CITY}. Confira onde curtir.`,
-    filter: (e) => e.category === "funk",
+    title: `Funk em ${CITY} Hoje`,
+    metaTitle: `Funk em ${CITY} Hoje | Bailes, Festas e Eventos de Funk | Roxou`,
+    metaDescription: `Veja onde tem funk em ${CITY} hoje. Encontre bailes, festas universitárias, baladas, eventos de funk e música ao vivo em ${CITY} e região.`,
+    heading: `Funk em ${CITY} Hoje`,
+    intro: `A agenda definitiva de funk em ${CITY}: bailes, festas universitárias, baladas e eventos atualizados em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /funk|baile|universit[áa]ri|balada/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Quer saber onde tem funk em ${CITY} hoje? A Roxou reúne em uma agenda única todos os bailes funk em Prudente, festas universitárias em Prudente, baladas e eventos com pista de funk — de open bar com 150 BPM a baile de favela com MCs locais e nacionais. Tudo o que rola de funk em Prudente fica aqui, organizado por data, horário e local, atualizado em tempo real conforme produtoras e casas noturnas confirmam a programação.`,
+      `Nossa missão é simples: se tem funk em ${CITY} hoje, a Roxou mostra. Listamos as baladas em ${CITY} que tocam funk durante a semana, as festas universitárias em Prudente que acontecem nas quintas e os principais eventos de funk em ${CITY} para o fim de semana. Quer saber o que fazer em ${CITY} hoje? Esta página resolve — sem precisar caçar story por story no Instagram, com link direto para garantir presença.`,
+      `Mostramos também opções de funk em Prudente para diferentes perfis: do baile funk de rua à festa universitária com line-up de DJs, passando por baladas premium e eventos com MC convidado. Salve a Roxou na tela inicial do celular e volte sempre que bater vontade de pista, grave e 150.`,
+    ],
+    sections: [
+      {
+        heading: `Onde tem funk hoje em ${CITY}?`,
+        body: `Confira agora os eventos de funk em ${CITY} marcados para hoje. Mostramos apenas o que está rolando no dia, com horário e local confirmados. Se nada aparecer aqui, role para baixo e veja a agenda dos próximos dias.`,
+        filter: (e) => isTodaySP(new Date(e.date_time)),
+      },
+      {
+        heading: `Agenda de Funk em ${CITY}`,
+        body: `Agenda completa de funk em ${CITY} e região: bailes, festas universitárias, baladas e eventos com pista de funk. Tudo organizado por data, do mais próximo ao mais distante.`,
+      },
+      {
+        heading: `Baladas e festas com funk em ${CITY}`,
+        body: `Veja as baladas em ${CITY} e festas universitárias em Prudente que estão com programação de funk confirmada nos próximos dias. Cada evento traz endereço, perfil no Instagram e link direto para ingresso.`,
+      },
+    ],
+    faqItems: [
+      {
+        q: `Onde tem funk hoje em ${CITY}?`,
+        a: `Os eventos de funk em ${CITY} marcados para hoje aparecem no topo desta página. A Roxou atualiza a agenda em tempo real conforme baladas, produtoras e bares confirmam a programação. Se nenhum evento de hoje for listado, ainda não há baile funk ou festa universitária em Prudente confirmada para a data — vale acompanhar a agenda da semana.`,
+      },
+      {
+        q: `Quais baladas tocam funk em ${CITY}?`,
+        a: `Diversas baladas em ${CITY} mantêm pista de funk fixa ou alternada com outros estilos. Listamos aqui as casas e produtoras com eventos de funk em ${CITY} confirmados, com endereço, horário e Instagram para você conferir o ambiente antes de ir.`,
+      },
+      {
+        q: `Como saber os próximos eventos de funk em Prudente?`,
+        a: `Basta acompanhar esta página: a agenda de funk em Prudente é atualizada diariamente com novos bailes, festas universitárias e baladas. Você também pode salvar a Roxou na tela inicial do celular para acessar rápido sempre que quiser saber o que fazer em ${CITY} hoje.`,
+      },
+    ],
     relatedLinks: [
-      { label: "Baladas", href: "/baladas-em-presidente-prudente" },
-      { label: "Pagode", href: "/pagode-em-presidente-prudente" },
       { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
+      { label: "Baladas", href: "/baladas-em-presidente-prudente" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Pagode", href: "/pagode-em-presidente-prudente" },
+      { label: "Shows", href: "/shows-em-presidente-prudente" },
     ],
   },
   "sertanejo-em-presidente-prudente": {
     slug: "sertanejo-em-presidente-prudente",
-    title: `Sertanejo em ${CITY}`,
-    metaTitle: `Sertanejo em ${CITY} — Shows e Festas | ROXOU`,
-    metaDescription: `Shows de sertanejo e sertanejo universitário em ${CITY}. Veja a programação.`,
-    heading: `🤠 Sertanejo em ${CITY}`,
-    intro: `Os melhores eventos de sertanejo e sertanejo universitário em ${CITY}. Shows ao vivo e festas.`,
-    filter: (e) => e.category === "sertanejo",
+    title: `Sertanejo em ${CITY} Hoje`,
+    metaTitle: `Sertanejo em ${CITY} Hoje | Shows, Bares e Eventos Sertanejos | Roxou`,
+    metaDescription: `Veja onde tem sertanejo em ${CITY} hoje. Descubra bares, shows, festas e eventos sertanejos atualizados diariamente em ${CITY} e região.`,
+    heading: `Sertanejo em ${CITY} Hoje`,
+    intro: `A agenda definitiva de sertanejo em ${CITY}: shows ao vivo, bares com música sertaneja, festas universitárias e eventos atualizados em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /sertanej|moda de viola|viola caipira|caipira|m[uú]sica ao vivo/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando sertanejo em ${CITY} hoje? A Roxou reúne em uma única agenda todos os shows sertanejos em ${CITY}, bares sertanejos em Prudente e festas com pista de sertanejo universitário — do raiz com viola caipira ao sertanejo pop com line-up de duplas nacionais. Tudo o que rola de sertanejo em Prudente fica aqui, organizado por data, horário e local, atualizado em tempo real.`,
+      `Nossa missão é direta: se tem sertanejo em ${CITY} hoje, a Roxou mostra. Listamos os bares sertanejos em Prudente que abrem com música ao vivo durante a semana, as casas que recebem duplas convidadas aos fins de semana e os grandes shows sertanejos em ${CITY} para datas comemorativas. Quer saber o que fazer em ${CITY} hoje? Esta página resolve — com link direto para garantir presença e sem precisar caçar story por story no Instagram.`,
+      `Indicamos também opções de sertanejo em Prudente para diferentes públicos: do happy hour com sertanejo raiz à balada universitária com sertanejo pop, passando por shows intimistas, eventos autorais e grandes festivais. Se você curte música ao vivo em Prudente, esta é a sua página — salve nos favoritos e volte sempre que bater vontade de chapéu, viola e dupla cantando junto.`,
+    ],
+    sections: [
+      {
+        heading: `Onde tem sertanejo hoje em ${CITY}?`,
+        body: `Confira agora os eventos sertanejos em ${CITY} marcados para hoje. Mostramos apenas o que está rolando no dia, com horário e local confirmados. Se nada aparecer aqui, veja a agenda dos próximos dias logo abaixo.`,
+        filter: (e) => isTodaySP(new Date(e.date_time)),
+      },
+      {
+        heading: `Agenda de Sertanejo em ${CITY}`,
+        body: `Agenda completa de sertanejo em ${CITY} e região: shows ao vivo, festas universitárias, bares com música sertaneja e eventos autorais. Tudo organizado por data, do mais próximo ao mais distante.`,
+      },
+      {
+        heading: `Bares com música sertaneja em ${CITY}`,
+        body: `Veja os bares sertanejos em Prudente com programação ao vivo confirmada nos próximos dias. Cada evento traz endereço, perfil no Instagram da casa e link direto para reservar mesa ou comprar ingresso.`,
+      },
+      {
+        heading: `Próximos shows sertanejos em ${CITY}`,
+        body: `Os próximos shows sertanejos em ${CITY} confirmados na Roxou aparecem aqui, em ordem cronológica. Duplas locais, regionais e nacionais — tudo no mesmo lugar.`,
+      },
+    ],
+    faqItems: [
+      {
+        q: `Onde tem sertanejo hoje em ${CITY}?`,
+        a: `Os eventos sertanejos em ${CITY} marcados para hoje aparecem no topo desta página. A Roxou atualiza a agenda em tempo real conforme bares, produtoras e casas noturnas confirmam a programação. Se nenhum evento de hoje for listado, ainda não há show sertanejo em ${CITY} ou música ao vivo em Prudente confirmada para a data.`,
+      },
+      {
+        q: `Quais bares têm música sertaneja em ${CITY}?`,
+        a: `Vários bares sertanejos em Prudente mantêm programação fixa ou rotativa com duplas ao vivo. Listamos aqui os bares e casas com eventos sertanejos em ${CITY} confirmados, com endereço, horário e Instagram para você conferir o ambiente antes de ir.`,
+      },
+      {
+        q: `Como saber os próximos shows sertanejos em Prudente?`,
+        a: `Basta acompanhar esta página: a agenda de sertanejo em Prudente é atualizada diariamente com novos shows, festas e eventos. Você também pode salvar a Roxou na tela inicial do celular para acessar rápido sempre que quiser saber o que fazer em ${CITY} hoje.`,
+      },
+    ],
     relatedLinks: [
+      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
       { label: "Shows", href: "/shows-em-presidente-prudente" },
       { label: "Pagode", href: "/pagode-em-presidente-prudente" },
-      { label: "Baladas", href: "/baladas-em-presidente-prudente" },
-      { label: "Eventos hoje", href: "/eventos-hoje-em-presidente-prudente" },
+      { label: "Funk", href: "/funk-em-presidente-prudente" },
+      { label: "Bares", href: "/bares-em-presidente-prudente" },
     ],
   },
 };
@@ -384,24 +471,12 @@ const SEOLanding = () => {
               );
             })}
 
-            <section className="space-y-3">
-              <h2 className="text-lg md:text-xl font-bold font-display text-foreground">Próximos eventos de pagode em {CITY}</h2>
-              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-                Veja todos os próximos eventos de pagode em {CITY} confirmados na Roxou, em ordem cronológica.
-              </p>
-              {filtered.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Nenhum evento de pagode confirmado no momento.</p>
-                  <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                  {filtered.map((e, i) => (
-                    <EventCard key={e.id} event={e} index={i} sponsored={e.featured} />
-                  ))}
-                </div>
-              )}
-            </section>
+            {filtered.length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Nenhum evento encontrado no momento. Continue acompanhando a agenda da Roxou.</p>
+                <Link to="/" className="text-primary text-sm font-semibold mt-2 inline-block">Ver todos os eventos →</Link>
+              </div>
+            )}
           </>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
