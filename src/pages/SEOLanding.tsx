@@ -255,26 +255,53 @@ const SEOLanding = () => {
 
   const filtered = events.filter(config.filter);
 
+  const canonicalUrl = `https://roxou.com.br/${config.slug}`;
+
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "ItemList",
+    "@type": "CollectionPage",
     name: config.title,
     description: config.metaDescription,
-    numberOfItems: filtered.length,
-    itemListElement: filtered.slice(0, 20).map((e, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      url: `https://roxou.com.br/evento/${e.slug}`,
-      name: e.title,
-    })),
+    url: canonicalUrl,
+    inLanguage: "pt-BR",
+    about: { "@type": "Thing", name: "Pagode e samba em Presidente Prudente" },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: filtered.length,
+      itemListElement: filtered.slice(0, 20).map((e, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: `https://roxou.com.br/evento/${e.slug}`,
+        name: e.title,
+      })),
+    },
   };
+
+  const eventLd = config.emitEventJsonLd
+    ? filtered.slice(0, 10).map((e) => ({
+        "@context": "https://schema.org",
+        "@type": "Event",
+        name: e.title,
+        startDate: e.date_time,
+        eventStatus: "https://schema.org/EventScheduled",
+        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+        location: {
+          "@type": "Place",
+          name: e.venue_name || CITY,
+          address: e.address || `${CITY}, SP, Brasil`,
+        },
+        ...(e.image_url ? { image: e.image_url } : {}),
+        url: `https://roxou.com.br/evento/${e.slug}`,
+        description: e.description?.slice(0, 280) || config.metaDescription,
+      }))
+    : null;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "ROXOU", item: "https://roxou.com.br" },
-      { "@type": "ListItem", position: 2, name: config.title, item: `https://roxou.com.br/${config.slug}` },
+      { "@type": "ListItem", position: 2, name: config.title, item: canonicalUrl },
     ],
   };
 
