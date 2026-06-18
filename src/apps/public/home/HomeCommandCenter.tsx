@@ -83,12 +83,7 @@ export function CommandCenter({
 
           {/* Busca + Vibe chips */}
           <div className="space-y-3">
-            <V3SearchBar
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              events={safeEvents(events) as any}
-              fallbackEvent={null}
-              placeholder="Buscar evento, local, vibe..."
-            />
+            <GlobalSearchTrigger placeholder="Buscar evento, local, vibe..." />
             <V3VibeChips className="!py-0 -mx-0" />
           </div>
 
