@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
     { loc: "/sertanejo-em-presidente-prudente", priority: "0.7", changefreq: "daily" },
     { loc: "/musica-ao-vivo-em-presidente-prudente", priority: "0.8", changefreq: "daily" },
     { loc: "/o-que-fazer-em-presidente-prudente-hoje", priority: "0.9", changefreq: "daily" },
+    { loc: "/expo2026", priority: "1.0", changefreq: "daily" },
   ];
 
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
