@@ -8,6 +8,7 @@ import {
   ArrowRight, BadgeCheck, CalendarDays, ChevronRight, Crown, Flame, Gem, Sparkles, TrendingUp, Trophy,
 } from "lucide-react";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 import V3VibeChips from "@/components/v3/V3VibeChips";
 import SmartImage from "@/components/v3/SmartImage";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
