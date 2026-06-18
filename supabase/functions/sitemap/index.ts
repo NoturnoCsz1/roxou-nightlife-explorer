@@ -71,6 +71,18 @@ Deno.serve(async (req) => {
     .eq("status", "published")
     .order("published_at", { ascending: false });
 
+  // Active partners with reservations enabled → /:partnerSlug/reservas
+  const { data: reservationPartners } = await supabase
+    .from("partner_reservation_settings")
+    .select("partner_id, reservations_enabled, partners!inner(slug, active)")
+    .eq("reservations_enabled", true);
+
+  // Active public VIP lists → /vip/:public_slug
+  const { data: vipLists } = await supabase
+    .from("partner_vip_lists")
+    .select("public_slug, updated_at")
+    .not("public_slug", "is", null);
+
   // SEO landing pages
   const seoLandings = [
     { loc: "/eventos-hoje-em-presidente-prudente", priority: "0.9", changefreq: "daily" },
