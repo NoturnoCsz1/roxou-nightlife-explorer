@@ -217,21 +217,24 @@ export default function Expo2026() {
           {/* Countdown */}
           <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/10 bg-[#121212]/70 backdrop-blur">
             <span className="text-2xl">⏳</span>
-            <p className="text-sm md:text-base text-white">
-              Faltam{" "}
-              <span className="font-black text-[#FFC300] text-lg">
-                {days}
-              </span>{" "}
-              dias
-              {days < 30 && hours > 0 && (
-                <>
-                  {" "}
-                  e{" "}
-                  <span className="font-black text-[#FFC300]">{hours}h</span>
-                </>
-              )}{" "}
-              para a Expo Prudente 2026
-            </p>
+            {countdownValid ? (
+              <p className="text-sm md:text-base text-white">
+                Faltam{" "}
+                <span className="font-black text-[#FFC300] text-lg">{days}</span>{" "}
+                dias
+                {days < 30 && hours > 0 && (
+                  <>
+                    {" "}e{" "}
+                    <span className="font-black text-[#FFC300]">{hours}h</span>
+                  </>
+                )}{" "}
+                para a Expo Prudente 2026
+              </p>
+            ) : (
+              <p className="text-sm md:text-base text-white font-bold">
+                Expo Prudente 2026
+              </p>
+            )}
           </div>
         </div>
       </section>
