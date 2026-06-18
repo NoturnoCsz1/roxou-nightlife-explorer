@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
 import DesktopNav from "@/components/DesktopNav";
 import {
   ArrowLeft,
