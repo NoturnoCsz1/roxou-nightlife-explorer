@@ -3523,6 +3523,39 @@ export type Database = {
           },
         ]
       }
+      search_logs: {
+        Row: {
+          clicked_result: string | null
+          created_at: string
+          id: string
+          query: string
+          result_type: string | null
+          results_count: number
+          session_id: string | null
+          time_to_click_ms: number | null
+        }
+        Insert: {
+          clicked_result?: string | null
+          created_at?: string
+          id?: string
+          query: string
+          result_type?: string | null
+          results_count?: number
+          session_id?: string | null
+          time_to_click_ms?: number | null
+        }
+        Update: {
+          clicked_result?: string | null
+          created_at?: string
+          id?: string
+          query?: string
+          result_type?: string | null
+          results_count?: number
+          session_id?: string | null
+          time_to_click_ms?: number | null
+        }
+        Relationships: []
+      }
       security_reports: {
         Row: {
           admin_notes: string | null

@@ -11,6 +11,7 @@ import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 import V3VibeChips from "@/components/v3/V3VibeChips";
 import CategoryChips from "@/components/v3/CategoryChips";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
@@ -146,13 +147,7 @@ export function HomeMobile(props: HomeMobileProps) {
         {/* SEARCH BAR */}
         <HomeSectionBoundary name="Search bar" silent>
           <div className="px-4 pt-4">
-            <V3SearchBar
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              events={safeEvents(events) as any}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              fallbackEvent={(featured[0] || safeEvents(events)[0]) as any}
-              placeholder="Buscar evento, local, vibe..."
-            />
+            <GlobalSearchTrigger placeholder="Buscar evento, local, vibe..." />
           </div>
         </HomeSectionBoundary>
 

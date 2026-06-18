@@ -8,6 +8,7 @@ import {
   ArrowRight, BadgeCheck, CalendarDays, ChevronRight, Crown, Flame, Gem, Sparkles, TrendingUp, Trophy,
 } from "lucide-react";
 import V3SearchBar from "@/components/v3/V3SearchBar";
+import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 import V3VibeChips from "@/components/v3/V3VibeChips";
 import SmartImage from "@/components/v3/SmartImage";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
@@ -83,12 +84,7 @@ export function CommandCenter({
 
           {/* Busca + Vibe chips */}
           <div className="space-y-3">
-            <V3SearchBar
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              events={safeEvents(events) as any}
-              fallbackEvent={null}
-              placeholder="Buscar evento, local, vibe..."
-            />
+            <GlobalSearchTrigger placeholder="Buscar evento, local, vibe..." />
             <V3VibeChips className="!py-0 -mx-0" />
           </div>
 
