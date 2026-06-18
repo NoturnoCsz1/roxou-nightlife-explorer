@@ -12,7 +12,7 @@ import mapaAsset from "@/assets/expo2026-mapa.jpg.asset.json";
 
 const EVENT_START = new Date("2026-09-10T18:00:00-03:00");
 
-const MAPA_IMG = "/images/expo2026-mapa.jpg";
+const MAPA_IMG = mapaAsset.url;
 
 interface ShowCard {
   id: string;
