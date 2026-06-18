@@ -96,12 +96,8 @@ const LocalDetail = () => {
   }
 
   if (!partner) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-sm text-muted-foreground">Local não encontrado.</p>
-        <button onClick={() => navigate("/")} className="text-primary text-sm font-semibold">Voltar</button>
-      </div>
-    );
+    // Slug não encontrado: redireciona para /agenda (SPA fallback).
+    return <Navigate to="/agenda" replace />;
   }
 
   const mapsUrl = partner.address
