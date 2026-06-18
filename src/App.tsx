@@ -127,6 +127,7 @@ const Resultados = lazy(() => import("./pages/Resultados"));
 const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 const SEOLanding = lazy(() => import("./pages/SEOLanding"));
+const Expo2026 = lazy(() => import("./pages/Expo2026"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 const PublicVipList = lazy(() => import("./pages/PublicVipList"));
