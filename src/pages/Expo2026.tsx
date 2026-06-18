@@ -296,7 +296,7 @@ export default function Expo2026() {
         />
 
         <div className="grid gap-5 md:grid-cols-2 mt-8">
-          {SHOWS.map((show) => (
+          {(SHOWS ?? []).map((show) => (
             <ShowCard key={show.id} show={show} />
           ))}
         </div>
