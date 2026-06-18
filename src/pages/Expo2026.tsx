@@ -4,7 +4,6 @@ import {
   MapPin,
   X,
   ZoomIn,
-  ZoomOut,
   RotateCcw,
   Instagram,
   Plus,
