@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Ticket, MapPin, X, ZoomIn, Instagram } from "lucide-react";
 import SEO from "@/components/SEO";
+import mapaAsset from "@/assets/expo2026-mapa.jpg.asset.json";
 
 /* ============================================================================
  * EXPO PRUDENTE 2026 — Landing oficial de divulgação (hub Roxou → Eventou)
@@ -11,7 +12,7 @@ import SEO from "@/components/SEO";
 
 const EVENT_START = new Date("2026-09-10T18:00:00-03:00");
 
-const MAPA_IMG = "/images/expo2026-mapa.jpg";
+const MAPA_IMG = mapaAsset.url;
 
 interface ShowCard {
   id: string;
