@@ -172,6 +172,10 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
         heading: `Bares com pagode ao vivo em ${CITY}`,
         body: `Veja os bares com pagode em ${CITY} que estão com programação ao vivo nos próximos dias. Cada evento traz o endereço do bar, o Instagram da casa e o link para garantir presença.`,
       },
+      {
+        heading: `Próximos eventos de pagode em ${CITY}`,
+        body: `Todos os próximos eventos de pagode em ${CITY} confirmados na Roxou, em ordem cronológica. Rodas de samba, shows e festas autorais.`,
+      },
     ],
     faqItems: [
       {
