@@ -169,6 +169,32 @@ Deno.serve(async (req) => {
 `;
   }
 
+  // Public reservation pages (one per active partner with reservations enabled)
+  for (const rp of (reservationPartners || []) as Array<{ partners: { slug: string; active: boolean } | null }>) {
+    const p = rp.partners;
+    if (!p || !p.active || !p.slug) continue;
+    xml += `  <url>
+    <loc>${BASE_URL}/${p.slug}/reservas</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
+  // Public VIP list pages
+  for (const v of vipLists || []) {
+    if (!v.public_slug) continue;
+    const lastmod = (v.updated_at || today).split("T")[0];
+    xml += `  <url>
+    <loc>${BASE_URL}/vip/${v.public_slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
   xml += `</urlset>`;
 
   return new Response(xml, {
