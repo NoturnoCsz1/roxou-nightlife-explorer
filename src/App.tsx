@@ -295,11 +295,10 @@ const App = () => (
 
 
 
-          {/* ========= EXPO 2026 — DESATIVADA (redireciona para Home) ========= */}
-          <Route path="/expo2026" element={<Navigate to="/" replace />} />
-          <Route path="/expo2026/*" element={<Navigate to="/" replace />} />
-          <Route path="/expoprudente" element={<Navigate to="/" replace />} />
-          <Route path="/expoprudente/*" element={<Navigate to="/" replace />} />
+          {/* ========= EXPO PRUDENTE 2026 — landing oficial de divulgação ========= */}
+          <Route path="/expo2026" element={L(<Expo2026 />)} />
+          <Route path="/expoprudente" element={<Navigate to="/expo2026" replace />} />
+          <Route path="/expoprudente/*" element={<Navigate to="/expo2026" replace />} />
 
           {/* ========= NOTÍCIAS ROXOU ========= */}
           <Route path="/noticias" element={L(<RoxouNoticias />)} />
