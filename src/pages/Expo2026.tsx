@@ -575,19 +575,7 @@ export default function Expo2026() {
           })}
         </div>
 
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ImageObject",
-              name: "Mapa Oficial Expo Prudente 2026",
-              description:
-                "Mapa dos setores da Expo Prudente 2026 em Presidente Prudente/SP",
-              contentUrl: "https://roxou.com.br/images/expo2026-mapa.jpg",
-            }),
-          }}
-        />
+        {/* ImageObject e demais schemas estão no @graph injetado pelo <SEO /> */}
       </section>
 
       {/* ============== PROGRAMAÇÃO ============== */}
