@@ -53,7 +53,7 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
  * para a compra oficial via Eventou.
  * ========================================================================= */
 
-const EVENT_START_RAW = "2026-09-10T18:00:00-03:00";
+const EVENT_START_RAW = "2026-09-10T19:00:00-03:00";
 const MAPA_IMG = "/images/expo2026-mapa.jpg";
 
 interface ShowCard {
