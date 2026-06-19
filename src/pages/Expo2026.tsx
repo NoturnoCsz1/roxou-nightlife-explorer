@@ -606,8 +606,6 @@ export default function Expo2026() {
         </div>
       </section>
 
-      </section>
-
       {/* ============== FAQ ============== */}
       <section className="px-5 py-12 max-w-3xl mx-auto">
         <SectionTitle eyebrow="PERGUNTAS FREQUENTES" title="Tudo sobre a Expo Prudente 2026" />
