@@ -130,6 +130,11 @@ const RemoverDados = lazy(() => import("./pages/RemoverDados"));
 const CadastroMotorista = lazy(() => import("./pages/CadastroMotorista"));
 const SEOLanding = lazy(() => import("./pages/SEOLanding"));
 const Expo2026 = lazy(() => import("./pages/Expo2026"));
+const ExpoIngressos = lazy(() => import("./pages/expo2026/Ingressos"));
+const ExpoFrontStage = lazy(() => import("./pages/expo2026/FrontStage"));
+const ExpoMapa = lazy(() => import("./pages/expo2026/Mapa"));
+const ExpoMenores = lazy(() => import("./pages/expo2026/Menores"));
+const ExpoInformacoes = lazy(() => import("./pages/expo2026/Informacoes"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CopaDoMundo2026 = lazy(() => import("./pages/CopaDoMundo2026"));
 const PublicVipList = lazy(() => import("./pages/PublicVipList"));
@@ -302,6 +307,11 @@ const App = () => (
 
           {/* ========= EXPO PRUDENTE 2026 — landing oficial de divulgação ========= */}
           <Route path="/expo2026" element={L(<Expo2026 />)} />
+          <Route path="/expo2026/ingressos" element={L(<ExpoIngressos />)} />
+          <Route path="/expo2026/front-stage" element={L(<ExpoFrontStage />)} />
+          <Route path="/expo2026/mapa" element={L(<ExpoMapa />)} />
+          <Route path="/expo2026/menores" element={L(<ExpoMenores />)} />
+          <Route path="/expo2026/informacoes" element={L(<ExpoInformacoes />)} />
           <Route path="/expoprudente" element={<Navigate to="/expo2026" replace />} />
           <Route path="/expoprudente/*" element={<Navigate to="/expo2026" replace />} />
 
