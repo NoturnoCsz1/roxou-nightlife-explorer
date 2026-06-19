@@ -15,12 +15,21 @@ export type ExpoEventName =
   | "expo_programacao_view"
   | "expo_show_card_click"
   | "expo_eventou_click"
+  | "expo_scroll_25"
   | "expo_scroll_50"
+  | "expo_scroll_75"
   | "expo_scroll_90"
+  | "expo_scroll_100"
   | "expo_engagement_30s"
   | "expo_engagement_60s"
   | "expo_engagement_120s"
-  | "expo_faq_open";
+  | "expo_faq_open"
+  | "expo_google_organic"
+  | "expo_google_discover"
+  | "expo_google_images"
+  | "expo_copy_link"
+  | "expo_share_native"
+  | "expo_performance";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";
