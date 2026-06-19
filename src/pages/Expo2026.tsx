@@ -15,6 +15,31 @@ import SEO from "@/components/SEO";
 import { trackExpoEvent, createDebouncedTracker } from "@/lib/expoAnalytics";
 
 const debouncedZoomTrack = createDebouncedTracker(500);
+const debouncedSectorTrack = createDebouncedTracker(500);
+const debouncedPanTrack = createDebouncedTracker(500);
+
+const FAQ_ITEMS: { q: string; a: string }[] = [
+  {
+    q: "Quando acontece a Expo Prudente 2026?",
+    a: "A Expo Prudente 2026 acontece de 10 a 14 de setembro, em Presidente Prudente/SP.",
+  },
+  {
+    q: "Onde comprar ingressos da Expo Prudente 2026?",
+    a: "Os ingressos podem ser acessados pelos links oficiais disponibilizados nos cards de cada show na página da Roxou, direcionando para a plataforma de venda responsável.",
+  },
+  {
+    q: "Quais artistas estão confirmados na Expo Prudente 2026?",
+    a: "A programação divulgada inclui Leonardo, Antony & Gabriel, Loubet, Panda, Ícaro & Gilmar, MC Hariel, Pedro Sanches & Thiago, Zé Neto & Cristiano, Mariana & Mateus, Zezé Di Camargo & Luciano e Mariana Fagundes, conforme a grade exibida na página.",
+  },
+  {
+    q: "Onde fica o mapa dos setores da Expo Prudente 2026?",
+    a: "O mapa dos setores está disponível na página /expo2026/, com visualização ampliada, zoom e setores como Arquibancada, Pista Arena, Camarotes, Área VIP, Front Open Bar, Palco e Boate.",
+  },
+  {
+    q: "A Roxou é organizadora oficial da Expo Prudente?",
+    a: "Não. A Roxou atua como portal de divulgação e curadoria de informações públicas sobre eventos, ingressos, programação e agenda regional. Para informações oficiais, consulte os canais oficiais do evento.",
+  },
+];
 
 /* ============================================================================
  * EXPO PRUDENTE 2026 — Landing oficial de divulgação (hub Roxou → Eventou)
