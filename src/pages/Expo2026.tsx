@@ -274,7 +274,7 @@ export default function Expo2026() {
   const handleSectorClick = (i: number) => {
     const setor = SETORES[i];
     setActiveSector((prev) => (prev === i ? null : i));
-    trackExpoEvent("expo_sector_click", { sector: setor.label });
+    debouncedSectorTrack("expo_sector_click", { sector: setor.label });
     // Se modal aberto, centraliza zoom no setor; senão, abre modal já focado
     if (mapaOpen) {
       focusSectorInZoom(i);
