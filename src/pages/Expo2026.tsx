@@ -847,6 +847,11 @@ export default function Expo2026() {
                 const z = Number(ref.state.scale.toFixed(2));
                 debouncedZoomTrack("expo_map_zoom", { zoomLevel: z });
               }}
+              onPanning={(ref) => {
+                debouncedPanTrack("expo_map_pan", {
+                  scale: Number(ref.state.scale.toFixed(2)),
+                });
+              }}
             >
               {({ zoomIn, zoomOut, resetTransform }) => (
                 <>
