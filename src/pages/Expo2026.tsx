@@ -207,6 +207,16 @@ export default function Expo2026() {
     trackExpoEvent("expo_view", {}, { once: true });
   }, []);
 
+  // Engagement timers: 30s, 60s, 120s (once per session)
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => trackExpoEvent("expo_engagement_30s", { seconds: 30 }, { once: true }), 30_000),
+      setTimeout(() => trackExpoEvent("expo_engagement_60s", { seconds: 60 }, { once: true }), 60_000),
+      setTimeout(() => trackExpoEvent("expo_engagement_120s", { seconds: 120 }, { once: true }), 120_000),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   // Scroll: floating CTA + scroll depth (50% / 90%)
   useEffect(() => {
     const onScroll = () => {
