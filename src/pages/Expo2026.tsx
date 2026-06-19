@@ -999,38 +999,55 @@ function ShowCardItem({ show }: { show: ShowCard }) {
       weekday: show.weekday,
     });
   };
+  const artists = show?.artists ?? [];
+  const visibleArtists = artists.slice(0, 3);
+  const extraCount = Math.max(0, artists.length - 3);
   return (
     <article
       onClick={handleClick}
-      className="group relative rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] p-6 hover:border-[#FF8A00]/50 transition-all hover:-translate-y-1 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
+      className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] p-4 hover:border-[#FF8A00]/50 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
     >
       <div
-        className="absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"
+        className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"
         style={{ background: "radial-gradient(circle, #FF8A00, transparent)" }}
       />
-      <div className="relative flex items-start justify-between mb-4">
-        <div>
-          <p className="text-xs font-bold tracking-widest text-[#FFC300]">
+      <div className="relative flex items-center justify-between gap-3 mb-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">
             {show?.weekday ?? ""}
           </p>
           <p
-            className="font-black mt-1"
-            style={{ fontSize: "clamp(1.6rem, 5vw, 2rem)" }}
+            className="font-black leading-none mt-0.5"
+            style={{ fontSize: "clamp(1.25rem, 4.5vw, 1.6rem)" }}
           >
             {show?.date ?? ""}
           </p>
         </div>
-        <div className="text-3xl">🎟️</div>
+        <Ticket className="w-5 h-5 text-[#FFC300]/70 flex-shrink-0" aria-hidden />
       </div>
 
-      <ul className="relative space-y-1.5 mb-6">
-        {(show?.artists ?? []).map((a) => (
-          <li key={a} className="text-base md:text-lg font-bold flex items-center gap-2">
-            <span className="text-[#FF8A00]">🎤</span>
-            <span>{a}</span>
-          </li>
+      <div
+        className="relative flex flex-wrap gap-1.5 mb-3"
+        title={artists.join(" • ")}
+      >
+        {visibleArtists.map((a) => (
+          <span
+            key={a}
+            className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold text-[#FFC300] bg-[#FFC300]/10 border border-[#FFC300]/20 max-w-full truncate"
+          >
+            {a}
+          </span>
         ))}
-      </ul>
+        {extraCount > 0 && (
+          <span
+            className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold text-black"
+            style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+            title={artists.slice(3).join(" • ")}
+          >
+            +{extraCount} {extraCount === 1 ? "atração" : "atrações"}
+          </span>
+        )}
+      </div>
 
       {show?.link ? (
         <a
@@ -1038,14 +1055,14 @@ function ShowCardItem({ show }: { show: ShowCard }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleEventou}
-          className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
+          className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-extrabold text-black text-xs shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
           style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
         >
           <Ticket className="w-4 h-4" />
           COMPRAR INGRESSOS
         </a>
       ) : (
-        <span className="relative inline-flex w-full items-center justify-center gap-2 px-5 py-3 rounded-full font-bold text-white/60 text-sm bg-white/5">
+        <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-white/60 text-xs bg-white/5">
           Em breve
         </span>
       )}
