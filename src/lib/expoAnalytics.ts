@@ -18,6 +18,7 @@ export type ExpoEventName =
   | "expo_scroll_90";
 
 const SESSION_KEY = "expo2026:sid";
+const ONCE_PREFIX = "expo2026:once:";
 
 function getSessionId(): string {
   try {
@@ -40,8 +41,13 @@ export function detectSource(): string {
     const ua = navigator.userAgent || "";
     const params = new URLSearchParams(window.location.search);
     const utm = params.get("utm_source")?.toLowerCase();
+    const utmMedium = params.get("utm_medium")?.toLowerCase() || "";
     if (utm) {
-      if (utm.includes("insta") || utm.includes("ig")) return "Instagram";
+      if (utm.includes("insta") || utm.includes("ig")) {
+        if (utmMedium.includes("story") || utmMedium.includes("stories")) return "Instagram Stories";
+        if (utmMedium.includes("feed") || utmMedium.includes("post")) return "Instagram Feed";
+        return "Instagram";
+      }
       if (utm.includes("face") || utm.includes("fb")) return "Facebook";
       if (utm.includes("whats") || utm.includes("wa")) return "WhatsApp";
       if (utm.includes("google")) return "Google";
@@ -74,19 +80,26 @@ function baseMetadata() {
   };
 }
 
-const sent = new Set<string>();
+function alreadySent(key: string): boolean {
+  try {
+    if (sessionStorage.getItem(ONCE_PREFIX + key)) return true;
+    sessionStorage.setItem(ONCE_PREFIX + key, "1");
+    return false;
+  } catch {
+    return false;
+  }
+}
 
-/** Dispara um evento de telemetria. `once` evita reenvio na sessão. */
+/** Dispara um evento de telemetria. `once` deduplica via sessionStorage (sobrevive a re-renders). */
 export function trackExpoEvent(
   event: ExpoEventName,
   metadata: Record<string, unknown> = {},
-  options: { once?: boolean } = {},
+  options: { once?: boolean; onceKey?: string } = {},
 ) {
   if (typeof window === "undefined") return;
-  const dedupeKey = options.once ? event : `${event}:${Date.now()}`;
   if (options.once) {
-    if (sent.has(event)) return;
-    sent.add(event);
+    const key = options.onceKey ?? event;
+    if (alreadySent(key)) return;
   }
   void (async () => {
     try {
@@ -99,5 +112,19 @@ export function trackExpoEvent(
       /* silencioso — analytics não pode quebrar a UI */
     }
   })();
-  return dedupeKey;
+}
+
+/** Cria uma versão debounced de trackExpoEvent (para zoom/pan/pinch). */
+export function createDebouncedTracker(delay = 500) {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let lastArgs: Parameters<typeof trackExpoEvent> | null = null;
+  return (...args: Parameters<typeof trackExpoEvent>) => {
+    lastArgs = args;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (lastArgs) trackExpoEvent(...lastArgs);
+      timer = null;
+      lastArgs = null;
+    }, delay);
+  };
 }

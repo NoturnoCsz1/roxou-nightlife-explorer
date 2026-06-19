@@ -7,6 +7,8 @@ import {
   MapPin,
   Smartphone,
   BarChart3,
+  Users,
+  TrendingDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import MetricCard from "@/components/admin/MetricCard";
@@ -35,9 +37,38 @@ interface ExpoEventRow {
 }
 
 const PIE_COLORS = ["#FF8A00", "#FFC300", "#FF5C8A", "#7E57C2", "#26C6DA", "#66BB6A", "#EF5350"];
+const CACHE_KEY = "expo2026:admin:cache";
+const CACHE_TTL_MS = 60_000;
+
+interface CachePayload {
+  ts: number;
+  rows: ExpoEventRow[];
+  totalEvents: number;
+}
+
+function readCache(): CachePayload | null {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachePayload;
+    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(payload: CachePayload) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function Expo2026Admin() {
   const [rows, setRows] = useState<ExpoEventRow[]>([]);
+  const [totalEvents, setTotalEvents] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,14 +76,36 @@ export default function Expo2026Admin() {
     let active = true;
     (async () => {
       try {
-        const { data, error: err } = await supabase
+        const cached = readCache();
+        if (cached) {
+          setRows(cached.rows);
+          setTotalEvents(cached.totalEvents);
+          setLoading(false);
+          return;
+        }
+
+        // KPI total de eventos via head+count (não usa data.length)
+        const countQuery = supabase
+          .from("expo2026_analytics" as any)
+          .select("*", { count: "exact", head: true });
+
+        // Amostra recente para gráficos/rankings (não usada para o KPI total)
+        const sampleQuery = supabase
           .from("expo2026_analytics" as any)
           .select("*")
           .order("created_at", { ascending: false })
           .limit(5000);
+
+        const [countRes, sampleRes] = await Promise.all([countQuery, sampleQuery]);
         if (!active) return;
-        if (err) throw err;
-        setRows((data as any[]) ?? []);
+        if (countRes.error) throw countRes.error;
+        if (sampleRes.error) throw sampleRes.error;
+
+        const total = countRes.count ?? 0;
+        const sampleRows = ((sampleRes.data as any[]) ?? []) as ExpoEventRow[];
+        setTotalEvents(total);
+        setRows(sampleRows);
+        writeCache({ ts: Date.now(), rows: sampleRows, totalEvents: total });
       } catch (e: any) {
         if (active) setError(e?.message ?? "Erro ao carregar analytics");
       } finally {
@@ -65,13 +118,78 @@ export default function Expo2026Admin() {
   }, []);
 
   const stats = useMemo(() => {
+    const uniqBy = (filter: (r: ExpoEventRow) => boolean) => {
+      const s = new Set<string>();
+      rows.forEach((r) => {
+        if (filter(r) && r.session_id) s.add(r.session_id);
+      });
+      return s.size;
+    };
+
     const views = rows.filter((r) => r.event === "expo_view").length;
     const mapOpens = rows.filter((r) => r.event === "expo_map_open").length;
     const zooms = rows.filter((r) => r.event === "expo_map_zoom").length;
     const eventouClicks = rows.filter((r) => r.event === "expo_eventou_click").length;
     const programacao = rows.filter((r) => r.event === "expo_programacao_view").length;
 
-    // setor mais clicado
+    const uniqueViews = uniqBy((r) => r.event === "expo_view");
+    const uniqueMapOpens = uniqBy((r) => r.event === "expo_map_open");
+    const uniqueProgramacao = uniqBy((r) => r.event === "expo_programacao_view");
+    const uniqueEventouClicks = uniqBy((r) => r.event === "expo_eventou_click");
+
+    // Funil
+    const funnel = [
+      { name: "Visualizou página", value: uniqueViews, fill: PIE_COLORS[0] },
+      { name: "Abriu mapa", value: uniqueMapOpens, fill: PIE_COLORS[1] },
+      { name: "Viu programação", value: uniqueProgramacao, fill: PIE_COLORS[2] },
+      { name: "Clicou ingressos", value: uniqueEventouClicks, fill: PIE_COLORS[3] },
+    ];
+    const funnelWithDrop = funnel.map((step, i) => {
+      const prev = i === 0 ? step.value : funnel[i - 1].value;
+      const dropPct = prev > 0 ? Math.round(((prev - step.value) / prev) * 100) : 0;
+      const pctFromTop = uniqueViews > 0 ? Math.round((step.value / uniqueViews) * 100) : 0;
+      return { ...step, dropPct, pctFromTop };
+    });
+
+    // Taxa de conversão única (ingressos/views)
+    const taxaConversao =
+      uniqueViews > 0 ? (uniqueEventouClicks / uniqueViews) * 100 : 0;
+
+    // Tempo médio na página e profundidade de scroll (a partir de metadata, se disponível)
+    const scrollDepths: number[] = [];
+    rows.forEach((r) => {
+      const pct = Number(r.metadata?.pct);
+      if (Number.isFinite(pct)) scrollDepths.push(pct);
+    });
+    const avgScroll =
+      scrollDepths.length > 0
+        ? Math.round(scrollDepths.reduce((a, b) => a + b, 0) / scrollDepths.length)
+        : 0;
+
+    // Tempo médio na página = diferença entre primeiro e último evento por sessão
+    const sessionTimes = new Map<string, { min: number; max: number }>();
+    rows.forEach((r) => {
+      if (!r.session_id) return;
+      const t = new Date(r.created_at).getTime();
+      const cur = sessionTimes.get(r.session_id);
+      if (!cur) sessionTimes.set(r.session_id, { min: t, max: t });
+      else {
+        if (t < cur.min) cur.min = t;
+        if (t > cur.max) cur.max = t;
+      }
+    });
+    let totalDur = 0;
+    let n = 0;
+    sessionTimes.forEach((v) => {
+      const dur = (v.max - v.min) / 1000;
+      if (dur >= 0 && dur < 60 * 60) {
+        totalDur += dur;
+        n++;
+      }
+    });
+    const avgTimeOnPage = n > 0 ? Math.round(totalDur / n) : 0;
+
+    // Ranking setores
     const sectorCounts = new Map<string, number>();
     rows
       .filter((r) => r.event === "expo_sector_click")
@@ -84,21 +202,21 @@ export default function Expo2026Admin() {
       .sort((a, b) => b.value - a.value);
     const topSector = sectorsArr[0]?.name ?? "—";
 
-    // origem
-    const sourceCounts = new Map<string, number>();
+    // Origem (visualizações únicas por sessão)
+    const sourceSession = new Map<string, Set<string>>();
     rows
       .filter((r) => r.event === "expo_view")
       .forEach((r) => {
         const s = (r.metadata?.source as string) || "Direct";
-        sourceCounts.set(s, (sourceCounts.get(s) ?? 0) + 1);
+        if (!sourceSession.has(s)) sourceSession.set(s, new Set());
+        if (r.session_id) sourceSession.get(s)!.add(r.session_id);
       });
-    const sourcesArr = Array.from(sourceCounts.entries()).map(([name, value]) => ({
-      name,
-      value,
-    }));
-    const topSource = sourcesArr.sort((a, b) => b.value - a.value)[0]?.name ?? "—";
+    const sourcesArr = Array.from(sourceSession.entries())
+      .map(([name, set]) => ({ name, value: set.size }))
+      .sort((a, b) => b.value - a.value);
+    const topSource = sourcesArr[0]?.name ?? "—";
 
-    // eventos por hora (24h)
+    // Eventos por hora
     const hourMap = new Map<string, number>();
     rows.forEach((r) => {
       const d = new Date(r.created_at);
@@ -110,16 +228,17 @@ export default function Expo2026Admin() {
       return { name: k, value: hourMap.get(k) ?? 0 };
     });
 
-    // conversão eventou por artista
-    const eventouByArtist = new Map<string, number>();
+    // Conversão eventou por artista (cliques únicos)
+    const artistSessions = new Map<string, Set<string>>();
     rows
       .filter((r) => r.event === "expo_eventou_click")
       .forEach((r) => {
         const a = (r.metadata?.artist as string) || "—";
-        eventouByArtist.set(a, (eventouByArtist.get(a) ?? 0) + 1);
+        if (!artistSessions.has(a)) artistSessions.set(a, new Set());
+        if (r.session_id) artistSessions.get(a)!.add(r.session_id);
       });
-    const conversionArr = Array.from(eventouByArtist.entries())
-      .map(([name, value]) => ({ name, value }))
+    const conversionArr = Array.from(artistSessions.entries())
+      .map(([name, set]) => ({ name, value: set.size }))
       .sort((a, b) => b.value - a.value);
 
     return {
@@ -128,12 +247,20 @@ export default function Expo2026Admin() {
       zooms,
       eventouClicks,
       programacao,
+      uniqueViews,
+      uniqueMapOpens,
+      uniqueProgramacao,
+      uniqueEventouClicks,
+      taxaConversao,
+      avgScroll,
+      avgTimeOnPage,
       topSector,
       topSource,
       sectorsArr,
       sourcesArr,
       hourArr,
       conversionArr,
+      funnelWithDrop,
     };
   }, [rows]);
 
@@ -147,7 +274,7 @@ export default function Expo2026Admin() {
           Dashboard /expo2026
         </h1>
         <p className="text-sm text-white/60 mt-1">
-          Telemetria de comportamento de usuários na landing oficial.
+          Telemetria de comportamento de usuários na landing oficial. Cache 60s.
         </p>
       </header>
 
@@ -162,26 +289,68 @@ export default function Expo2026Admin() {
 
       {!loading && !error && (
         <>
+          {/* KPIs principais */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MetricCard icon={Users} title="Usuários únicos" value={stats.uniqueViews} />
             <MetricCard icon={Eye} title="Visualizações" value={stats.views} />
-            <MetricCard icon={MapIcon} title="Aberturas do mapa" value={stats.mapOpens} />
-            <MetricCard icon={SearchIcon} title="Zooms" value={stats.zooms} />
-            <MetricCard icon={Ticket} title="Cliques ingressos" value={stats.eventouClicks} />
-            <MetricCard icon={MapPin} title="Setor + acessado" value={stats.topSector} />
-            <MetricCard icon={Smartphone} title="Origem + comum" value={stats.topSource} />
+            <MetricCard icon={MapIcon} title="Aberturas únicas mapa" value={stats.uniqueMapOpens} />
+            <MetricCard icon={Ticket} title="Cliques únicos ingressos" value={stats.uniqueEventouClicks} />
             <MetricCard
-              icon={BarChart3}
-              title="Scroll → Programação"
-              value={stats.programacao}
+              icon={TrendingDown}
+              title="Taxa de conversão"
+              value={`${stats.taxaConversao.toFixed(1)}%`}
             />
             <MetricCard
               icon={BarChart3}
-              title="Total de eventos"
-              value={rows.length}
+              title="Scroll médio"
+              value={`${stats.avgScroll}%`}
+            />
+            <MetricCard
+              icon={SearchIcon}
+              title="Tempo médio"
+              value={`${stats.avgTimeOnPage}s`}
+            />
+            <MetricCard icon={BarChart3} title="Total de eventos" value={totalEvents} />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MetricCard icon={MapPin} title="Setor + acessado" value={stats.topSector} />
+            <MetricCard icon={Smartphone} title="Origem + comum" value={stats.topSource} />
+            <MetricCard icon={MapIcon} title="Zooms (debounce 500ms)" value={stats.zooms} />
+            <MetricCard
+              icon={BarChart3}
+              title="Programação (únicos)"
+              value={stats.uniqueProgramacao}
             />
           </div>
 
-          <ChartCard title="Eventos por hora (últimas 24h)">
+          {/* Funil */}
+          <ChartCard title="Funil de navegação (usuários únicos)">
+            <div className="space-y-2">
+              {stats.funnelWithDrop.map((step, i) => (
+                <div key={step.name} className="flex items-center gap-3">
+                  <div className="w-40 text-sm text-white/80 shrink-0">{step.name}</div>
+                  <div className="flex-1 bg-white/5 rounded-md overflow-hidden h-8 relative">
+                    <div
+                      className="h-full"
+                      style={{
+                        width: `${step.pctFromTop}%`,
+                        background: step.fill,
+                      }}
+                    />
+                    <span className="absolute inset-0 flex items-center px-2 text-xs font-bold text-white drop-shadow">
+                      {step.value} ({step.pctFromTop}%)
+                    </span>
+                  </div>
+                  <div className="w-24 text-right text-xs text-red-300 shrink-0">
+                    {i === 0 ? "—" : `↓ ${step.dropPct}% abandono`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+
+          <ChartCard title="Eventos por hora (24h)">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={stats.hourArr}>
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" />
@@ -200,7 +369,7 @@ export default function Expo2026Admin() {
           </ChartCard>
 
           <div className="grid md:grid-cols-2 gap-4">
-            <ChartCard title="Setores mais visualizados">
+            <ChartCard title="Setores mais acessados">
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={stats.sectorsArr}>
                   <XAxis dataKey="name" stroke="#888" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
@@ -217,7 +386,7 @@ export default function Expo2026Admin() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Origem dos usuários">
+            <ChartCard title="Origem dos usuários (únicos)">
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
@@ -244,8 +413,8 @@ export default function Expo2026Admin() {
             </ChartCard>
           </div>
 
-          <ChartCard title="Conversão para Eventou (cliques por artista)">
-            <ResponsiveContainer width="100%" height={280}>
+          <ChartCard title="Artistas mais clicados (sessões únicas)">
+            <ResponsiveContainer width="100%" height={Math.max(280, stats.conversionArr.length * 24)}>
               <BarChart data={stats.conversionArr} layout="vertical" margin={{ left: 60 }}>
                 <XAxis type="number" stroke="#888" tick={{ fontSize: 10 }} />
                 <YAxis dataKey="name" type="category" stroke="#888" tick={{ fontSize: 10 }} width={140} />
