@@ -626,7 +626,7 @@ export default function Expo2026() {
               panning={{ velocityDisabled: false }}
               onZoom={(ref) => {
                 const z = Number(ref.state.scale.toFixed(2));
-                trackExpoEvent("expo_map_zoom", { zoomLevel: z });
+                debouncedZoomTrack("expo_map_zoom", { zoomLevel: z });
               }}
             >
               {({ zoomIn, zoomOut, resetTransform }) => (
