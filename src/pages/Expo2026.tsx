@@ -198,6 +198,9 @@ function scrollToId(id: string) {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+const SHOW_EXPO_EXPERIENCES = false;
+
+
 export default function Expo2026() {
   const { days, hours, valid: countdownValid } = useCountdown(EVENT_START_RAW);
   const [mapaOpen, setMapaOpen] = useState(false);
