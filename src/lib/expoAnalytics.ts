@@ -56,6 +56,7 @@ export function detectSource(): string {
     const params = new URLSearchParams(window.location.search);
     const utm = params.get("utm_source")?.toLowerCase();
     const utmMedium = params.get("utm_medium")?.toLowerCase() || "";
+
     if (utm) {
       if (utm.includes("insta") || utm.includes("ig")) {
         if (utmMedium.includes("story") || utmMedium.includes("stories")) return "Instagram Stories";
@@ -64,19 +65,43 @@ export function detectSource(): string {
       }
       if (utm.includes("face") || utm.includes("fb")) return "Facebook";
       if (utm.includes("whats") || utm.includes("wa")) return "WhatsApp";
-      if (utm.includes("google")) return "Google";
+      if (utm.includes("google")) {
+        if (utmMedium.includes("discover")) return "Google Discover";
+        if (utmMedium.includes("image")) return "Google Images";
+        return "Google Search";
+      }
       return utm;
     }
+
     if (/Instagram/i.test(ua)) return "Instagram";
     if (/FBAN|FBAV|FB_IAB/i.test(ua)) return "Facebook";
     if (/WhatsApp/i.test(ua)) return "WhatsApp";
     if (!ref) return "Direct";
-    const host = new URL(ref).hostname.toLowerCase();
+
+    const refUrl = (() => {
+      try {
+        return new URL(ref);
+      } catch {
+        return null;
+      }
+    })();
+    const host = refUrl?.hostname.toLowerCase() ?? "";
+    const path = refUrl?.pathname.toLowerCase() ?? "";
+
     if (host.includes("instagram")) return "Instagram";
     if (host.includes("facebook") || host.includes("fb.")) return "Facebook";
     if (host.includes("whatsapp") || host.includes("wa.me")) return "WhatsApp";
-    if (host.includes("google")) return "Google";
-    return host || "Direct";
+    if (host.includes("google")) {
+      if (path.includes("/imgres") || path.includes("/images")) return "Google Images";
+      // Google Discover usa googleapp:// ou parâmetros específicos
+      if (/googleapp|GSA/i.test(ua) || path.includes("/url")) {
+        // Heurística: tráfego do app do Google sem termo de busca → provável Discover
+        const hasQ = refUrl?.searchParams.has("q");
+        return hasQ ? "Google Search" : "Google Discover";
+      }
+      return "Google Search";
+    }
+    return host || "Other";
   } catch {
     return "Direct";
   }
