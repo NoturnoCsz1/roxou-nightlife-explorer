@@ -307,6 +307,11 @@ const App = () => (
 
           {/* ========= EXPO PRUDENTE 2026 — landing oficial de divulgação ========= */}
           <Route path="/expo2026" element={L(<Expo2026 />)} />
+          <Route path="/expo2026/ingressos" element={L(<ExpoIngressos />)} />
+          <Route path="/expo2026/front-stage" element={L(<ExpoFrontStage />)} />
+          <Route path="/expo2026/mapa" element={L(<ExpoMapa />)} />
+          <Route path="/expo2026/menores" element={L(<ExpoMenores />)} />
+          <Route path="/expo2026/informacoes" element={L(<ExpoInformacoes />)} />
           <Route path="/expoprudente" element={<Navigate to="/expo2026" replace />} />
           <Route path="/expoprudente/*" element={<Navigate to="/expo2026" replace />} />
 
