@@ -9,13 +9,18 @@ export type ExpoEventName =
   | "expo_view"
   | "expo_map_open"
   | "expo_map_zoom"
+  | "expo_map_pan"
   | "expo_map_reset"
   | "expo_sector_click"
   | "expo_programacao_view"
   | "expo_show_card_click"
   | "expo_eventou_click"
   | "expo_scroll_50"
-  | "expo_scroll_90";
+  | "expo_scroll_90"
+  | "expo_engagement_30s"
+  | "expo_engagement_60s"
+  | "expo_engagement_120s"
+  | "expo_faq_open";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";
