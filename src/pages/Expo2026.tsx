@@ -1084,3 +1084,121 @@ function CornerCurve({
     </svg>
   );
 }
+
+function PremiumCountdown({ targetIso }: { targetIso: string }) {
+  const targetMs = useMemo(() => {
+    const t = new Date(targetIso).getTime();
+    return Number.isFinite(t) ? t : NaN;
+  }, [targetIso]);
+
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!Number.isFinite(targetMs)) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [targetMs]);
+
+  if (!Number.isFinite(targetMs)) {
+    return (
+      <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/10 bg-[#121212]/70 backdrop-blur">
+        <p className="text-sm md:text-base text-white font-bold">Expo Prudente 2026</p>
+      </div>
+    );
+  }
+
+  const diff = targetMs - now;
+
+  if (diff <= 0) {
+    return (
+      <div
+        className="mt-10 inline-flex items-center gap-3 px-6 py-4 rounded-2xl border bg-[#121212]/70 backdrop-blur animate-fade-in"
+        style={{
+          borderColor: "rgba(255,195,0,0.4)",
+          boxShadow: "0 10px 40px -15px rgba(255,138,0,0.6)",
+        }}
+      >
+        <p className="text-base md:text-lg font-black text-white">
+          🎉 A Expo Prudente 2026 começou!
+        </p>
+      </div>
+    );
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  const totalMs = targetMs - new Date("2026-01-01T00:00:00-03:00").getTime();
+  const elapsedMs = Math.max(0, totalMs - diff);
+  const progress = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
+
+  return (
+    <div className="mt-10 w-full max-w-md mx-auto">
+      <p className="text-[11px] font-bold tracking-[0.3em] text-[#FFC300] text-center mb-3">
+        ⏳ FALTAM APENAS
+      </p>
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        <CountdownCard value={days} label="DIAS" />
+        <CountdownCard value={hours} label="HORAS" />
+        <CountdownCard value={minutes} label="MIN" />
+        <CountdownCard value={seconds} label="SEG" />
+      </div>
+      <p className="text-xs sm:text-sm text-[#B8B8B8] text-center mt-3">
+        Para a <span className="font-bold text-white">Expo Prudente 2026</span>
+      </p>
+      <div className="mt-4 px-1">
+        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/5">
+          <div
+            className="h-full rounded-full transition-all duration-1000 ease-out"
+            style={{
+              width: `${progress}%`,
+              background: "linear-gradient(90deg, #FF8A00, #FFC300)",
+              boxShadow: "0 0 12px rgba(255,138,0,0.6)",
+            }}
+          />
+        </div>
+        <p className="text-[10px] text-[#888] text-center mt-2 italic">
+          🔥 A cada segundo estamos mais perto da maior Expo Prudente da história.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function CountdownCard({ value, label }: { value: number; label: string }) {
+  const display = String(value).padStart(2, "0");
+  return (
+    <div
+      className="relative rounded-2xl border bg-white/[0.04] backdrop-blur-md px-2 py-3 sm:py-4 text-center overflow-hidden"
+      style={{
+        borderColor: "rgba(255,195,0,0.25)",
+        boxShadow:
+          "inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px -12px rgba(255,138,0,0.5)",
+      }}
+    >
+      <div
+        className="absolute inset-0 pointer-events-none opacity-60"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 50% 0%, rgba(255,138,0,0.18), transparent 60%)",
+        }}
+      />
+      <p
+        key={display}
+        className="relative font-black tabular-nums leading-none animate-fade-in"
+        style={{
+          fontSize: "clamp(1.5rem, 7vw, 2.25rem)",
+          color: "#FFC300",
+          textShadow: "0 0 18px rgba(255,138,0,0.45)",
+        }}
+      >
+        {display}
+      </p>
+      <p className="relative mt-1.5 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] text-white/70">
+        {label}
+      </p>
+    </div>
+  );
+}
