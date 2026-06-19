@@ -368,6 +368,20 @@ export default function Expo2026() {
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "WebSite",
+          "@id": "https://roxou.com.br/#website",
+          url: "https://roxou.com.br/",
+          name: "Roxou",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: "https://roxou.com.br/agenda?q={search_term_string}",
+            },
+            "query-input": "required name=search_term_string",
+          },
+        },
+        {
           "@type": "Festival",
           "@id": "https://roxou.com.br/expo2026/#festival",
           name: "Expo Prudente 2026",
