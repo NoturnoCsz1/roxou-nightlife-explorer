@@ -77,6 +77,14 @@ function isInWeekendSP(value: string): boolean {
   return t >= new Date(start).getTime() && t < new Date(end).getTime();
 }
 
+// Próximos 7 dias (a partir de agora em America/Sao_Paulo)
+function isInNext7DaysSP(value: string): boolean {
+  const now = Date.now();
+  const week = now + 7 * 24 * 60 * 60 * 1000;
+  const t = new Date(value).getTime();
+  return t >= now && t <= week;
+}
+
 const LANDING_CONFIGS: Record<string, LandingConfig> = {
   "eventos-hoje-em-presidente-prudente": {
     slug: "eventos-hoje-em-presidente-prudente",
