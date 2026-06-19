@@ -202,7 +202,7 @@ const SHOW_EXPO_EXPERIENCES = false;
 
 
 export default function Expo2026() {
-  const { days, hours, valid: countdownValid } = useCountdown(EVENT_START_RAW);
+  // countdown agora é renderizado pelo componente PremiumCountdown
   const [mapaOpen, setMapaOpen] = useState(false);
   const [mapaError, setMapaError] = useState(false);
   const [activeSector, setActiveSector] = useState<number | null>(null);
