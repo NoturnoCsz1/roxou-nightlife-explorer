@@ -259,22 +259,65 @@ export default function Expo2026Admin() {
     const copyCount = rows.filter((r) => r.event === "expo_copy_link").length;
 
     // Performance média (apenas eventos expo_performance com metadata.performance)
-    const perfSamples = rows
+    type PerfKey = "fcp" | "lcp" | "domReady" | "totalLoad";
+    interface PerfSample {
+      perf: Record<PerfKey, number>;
+      device: "mobile" | "desktop";
+      source: string;
+    }
+    const normalizeSource = (raw: string): string => {
+      const s = (raw || "Direct").toLowerCase();
+      if (s.includes("instagram")) return "Instagram";
+      if (s.includes("whats")) return "WhatsApp";
+      if (s.includes("google search") || s === "google") return "Google Search";
+      if (s.includes("google discover")) return "Google Discover";
+      if (s.includes("google images")) return "Google Images";
+      if (s === "direct") return "Direct";
+      return "Other";
+    };
+    const perfSamples: PerfSample[] = rows
       .filter((r) => r.event === "expo_performance")
-      .map((r) => (r.metadata?.performance ?? {}) as Record<string, number | null>);
-    const avgPerf = (key: "fcp" | "lcp" | "domReady" | "totalLoad") => {
-      const vals = perfSamples
-        .map((p) => Number(p[key]))
+      .map((r) => {
+        const p = (r.metadata?.performance ?? {}) as Record<string, unknown>;
+        const sw = Number(r.metadata?.screenWidth);
+        const device: "mobile" | "desktop" =
+          Number.isFinite(sw) && sw >= 768 ? "desktop" : "mobile";
+        return {
+          perf: {
+            fcp: Number(p.fcp),
+            lcp: Number(p.lcp),
+            domReady: Number(p.domReady),
+            totalLoad: Number(p.totalLoad),
+          } as Record<PerfKey, number>,
+          device,
+          source: normalizeSource(String(r.metadata?.source ?? "")),
+        };
+      });
+
+    const avgOf = (samples: PerfSample[], key: PerfKey) => {
+      const vals = samples
+        .map((s) => s.perf[key])
         .filter((v) => Number.isFinite(v) && v > 0);
       if (!vals.length) return 0;
       return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
     };
+    const buildBlock = (samples: PerfSample[]) => ({
+      fcp: avgOf(samples, "fcp"),
+      lcp: avgOf(samples, "lcp"),
+      domReady: avgOf(samples, "domReady"),
+      totalLoad: avgOf(samples, "totalLoad"),
+      samples: samples.length,
+    });
+
     const performance = {
-      fcp: avgPerf("fcp"),
-      lcp: avgPerf("lcp"),
-      domReady: avgPerf("domReady"),
-      totalLoad: avgPerf("totalLoad"),
-      samples: perfSamples.length,
+      ...buildBlock(perfSamples),
+      byDevice: {
+        mobile: buildBlock(perfSamples.filter((s) => s.device === "mobile")),
+        desktop: buildBlock(perfSamples.filter((s) => s.device === "desktop")),
+      },
+      bySource: (["Instagram", "Google Search", "Google Discover", "WhatsApp", "Direct", "Other"] as const).map(
+        (name) => ({ name, ...buildBlock(perfSamples.filter((s) => s.source === name)) }),
+      ),
     };
 
     return {
@@ -375,6 +418,11 @@ export default function Expo2026Admin() {
             <MetricCard icon={Users} title="Amostras perf." value={stats.performance.samples} />
             <MetricCard icon={BarChart3} title="Total mapeado" value={rows.length} />
           </div>
+
+          {/* Web Vitals detalhado: por dispositivo e por origem */}
+          <PerformanceBreakdown performance={stats.performance} />
+
+
 
           {/* Scroll heatmap */}
           <ChartCard title="Heatmap de scroll (usuários únicos por profundidade)">
@@ -508,5 +556,117 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
       <p className="text-sm font-bold text-white/80 mb-3">{title}</p>
       {children}
     </div>
+  );
+}
+
+interface PerfBlock {
+  fcp: number;
+  lcp: number;
+  domReady: number;
+  totalLoad: number;
+  samples: number;
+}
+interface PerfStats extends PerfBlock {
+  byDevice: { mobile: PerfBlock; desktop: PerfBlock };
+  bySource: Array<PerfBlock & { name: string }>;
+}
+
+function fmtMs(v: number) {
+  return v > 0 ? `${v} ms` : "—";
+}
+
+function PerformanceBreakdown({ performance }: { performance: PerfStats }) {
+  if (!performance.samples) {
+    return (
+      <ChartCard title="Web Vitals · Por dispositivo e origem">
+        <p className="text-sm text-white/60">
+          Ainda não há dados suficientes de performance.
+        </p>
+      </ChartCard>
+    );
+  }
+  const deviceRows = [
+    { label: "📱 Mobile (< 768px)", block: performance.byDevice.mobile },
+    { label: "🖥️ Desktop (≥ 768px)", block: performance.byDevice.desktop },
+  ];
+  const sourceRows = performance.bySource.filter((s) => s.samples > 0);
+  return (
+    <ChartCard title="Web Vitals · Por dispositivo e origem">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-bold tracking-widest text-white/60 mb-2">
+            POR DISPOSITIVO
+          </p>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <table className="w-full text-xs sm:text-sm min-w-[480px]">
+              <thead className="text-white/50">
+                <tr className="text-left">
+                  <th className="py-2 pr-3 font-semibold">Grupo</th>
+                  <th className="py-2 pr-3 font-semibold">FCP</th>
+                  <th className="py-2 pr-3 font-semibold">LCP</th>
+                  <th className="py-2 pr-3 font-semibold">DOM Ready</th>
+                  <th className="py-2 pr-3 font-semibold">Total Load</th>
+                  <th className="py-2 pr-3 font-semibold text-right">Amostras</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deviceRows.map((r) => (
+                  <tr key={r.label} className="border-t border-white/5">
+                    <td className="py-2 pr-3 text-white/90">{r.label}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.fcp)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.lcp)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.domReady)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.totalLoad)}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-white/70">
+                      {r.block.samples}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold tracking-widest text-white/60 mb-2">
+            POR ORIGEM
+          </p>
+          {sourceRows.length === 0 ? (
+            <p className="text-sm text-white/60">
+              Ainda não há dados suficientes de performance por origem.
+            </p>
+          ) : (
+            <div className="overflow-x-auto -mx-2 px-2">
+              <table className="w-full text-xs sm:text-sm min-w-[480px]">
+                <thead className="text-white/50">
+                  <tr className="text-left">
+                    <th className="py-2 pr-3 font-semibold">Origem</th>
+                    <th className="py-2 pr-3 font-semibold">FCP</th>
+                    <th className="py-2 pr-3 font-semibold">LCP</th>
+                    <th className="py-2 pr-3 font-semibold">DOM Ready</th>
+                    <th className="py-2 pr-3 font-semibold">Total Load</th>
+                    <th className="py-2 pr-3 font-semibold text-right">Amostras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourceRows.map((r) => (
+                    <tr key={r.name} className="border-t border-white/5">
+                      <td className="py-2 pr-3 text-white/90">{r.name}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.fcp)}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.lcp)}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.domReady)}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.totalLoad)}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-white/70">
+                        {r.samples}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </ChartCard>
   );
 }

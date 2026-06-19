@@ -49,6 +49,14 @@ server {
     access_log off;
   }
 
+  # Cache long-lived das imagens estáticas da Expo Prudente 2026
+  location ~* ^/images/expo2026-.*\.(webp|png|jpg|jpeg)$ {
+    proxy_pass http://roxou_web;
+    expires 365d;
+    add_header Cache-Control "public, immutable, max-age=31536000";
+    access_log off;
+  }
+
   # Sitemap/robots vindos da API (dinâmicos)
   location = /sitemap.xml { proxy_pass http://roxou_api/sitemap.xml; }
   location = /robots.txt  { proxy_pass http://roxou_web/robots.txt; }
