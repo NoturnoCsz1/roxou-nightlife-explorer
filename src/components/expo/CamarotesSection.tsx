@@ -11,7 +11,7 @@ import {
   type Camarote,
 } from "@/hooks/useExpoCamarotes";
 import { trackExpoEvent } from "@/lib/expoAnalytics";
-import mapaCamarotesAsset from "@/assets/expo2026-mapa-camarotes.jpg.asset.json";
+import mapaCamarotesAsset from "@/assets/expo2026-mapa-camarotes.png.asset.json";
 
 const MAPA_CAMAROTES_IMG = mapaCamarotesAsset.url;
 
