@@ -1317,6 +1317,30 @@ export type Database = {
         }
         Relationships: []
       }
+      expo2026_camarotes: {
+        Row: {
+          customer_name: string | null
+          notes: string | null
+          number: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          customer_name?: string | null
+          notes?: string | null
+          number: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          customer_name?: string | null
+          notes?: string | null
+          number?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expo2026_contacts: {
         Row: {
           contact_type: string
