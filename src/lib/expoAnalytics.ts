@@ -36,7 +36,12 @@ export type ExpoEventName =
   | "expo_camarote_click"
   | "expo_camarote_status_change"
   | "expo_camarote_sold_view"
-  | "expo_camarote_reserved_view";
+  | "expo_camarote_reserved_view"
+  | "expo_grade_oficial_view"
+  | "expo_grade_oficial_open"
+  | "expo_grade_oficial_zoom"
+  | "expo_grade_oficial_share"
+  | "expo_grade_oficial_buy_click";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";
