@@ -26,9 +26,6 @@ import {
   LineChart,
   Line,
   CartesianGrid,
-  FunnelChart,
-  Funnel,
-  LabelList,
 } from "recharts";
 
 interface ExpoEventRow {
