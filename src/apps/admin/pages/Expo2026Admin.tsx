@@ -241,6 +241,42 @@ export default function Expo2026Admin() {
       .map(([name, set]) => ({ name, value: set.size }))
       .sort((a, b) => b.value - a.value);
 
+    // Heatmap de scroll (usuários únicos que atingiram cada limiar)
+    const scrollThresholds: Array<["expo_scroll_25" | "expo_scroll_50" | "expo_scroll_75" | "expo_scroll_90" | "expo_scroll_100", string]> = [
+      ["expo_scroll_25", "25%"],
+      ["expo_scroll_50", "50%"],
+      ["expo_scroll_75", "75%"],
+      ["expo_scroll_90", "90%"],
+      ["expo_scroll_100", "100%"],
+    ];
+    const scrollHeatmap = scrollThresholds.map(([ev, label]) => ({
+      name: label,
+      value: uniqBy((r) => r.event === ev),
+    }));
+
+    // Compartilhamentos / cópias de link
+    const shareCount = rows.filter((r) => r.event === "expo_share_native").length;
+    const copyCount = rows.filter((r) => r.event === "expo_copy_link").length;
+
+    // Performance média (apenas eventos expo_performance com metadata.performance)
+    const perfSamples = rows
+      .filter((r) => r.event === "expo_performance")
+      .map((r) => (r.metadata?.performance ?? {}) as Record<string, number | null>);
+    const avgPerf = (key: "fcp" | "lcp" | "domReady" | "totalLoad") => {
+      const vals = perfSamples
+        .map((p) => Number(p[key]))
+        .filter((v) => Number.isFinite(v) && v > 0);
+      if (!vals.length) return 0;
+      return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+    };
+    const performance = {
+      fcp: avgPerf("fcp"),
+      lcp: avgPerf("lcp"),
+      domReady: avgPerf("domReady"),
+      totalLoad: avgPerf("totalLoad"),
+      samples: perfSamples.length,
+    };
+
     return {
       views,
       mapOpens,
@@ -261,6 +297,10 @@ export default function Expo2026Admin() {
       hourArr,
       conversionArr,
       funnelWithDrop,
+      scrollHeatmap,
+      shareCount,
+      copyCount,
+      performance,
     };
   }, [rows]);
 
