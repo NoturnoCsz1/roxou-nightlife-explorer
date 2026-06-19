@@ -664,6 +664,9 @@ export default function Expo2026() {
         {/* ImageObject e demais schemas estão no @graph injetado pelo <SEO /> */}
       </section>
 
+      {/* ============== CAMAROTES ============== */}
+      <CamarotesSection />
+
       {/* ============== PROGRAMAÇÃO ============== */}
       <section id="shows" ref={programacaoRef} className="px-5 py-12 max-w-5xl mx-auto">
         <SectionTitle eyebrow="PROGRAMAÇÃO OFICIAL" title="Todos os dias de shows" />
