@@ -419,6 +419,11 @@ export default function Expo2026Admin() {
             <MetricCard icon={BarChart3} title="Total mapeado" value={rows.length} />
           </div>
 
+          {/* Web Vitals detalhado: por dispositivo e por origem */}
+          <PerformanceBreakdown performance={stats.performance} />
+
+
+
           {/* Scroll heatmap */}
           <ChartCard title="Heatmap de scroll (usuários únicos por profundidade)">
             <ResponsiveContainer width="100%" height={220}>
