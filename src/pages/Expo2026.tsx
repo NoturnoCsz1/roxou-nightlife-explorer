@@ -681,22 +681,24 @@ export default function Expo2026() {
         </div>
       </section>
 
-      {/* ============== EXPERIÊNCIAS ============== */}
-      <section className="px-5 py-12 max-w-5xl mx-auto">
-        <SectionTitle eyebrow="EXPO COMPLETA" title="Experiências da Expo" />
+      {/* ============== EXPERIÊNCIAS (desativada via feature flag) ============== */}
+      {SHOW_EXPO_EXPERIENCES && (
+        <section className="px-5 py-12 max-w-5xl mx-auto">
+          <SectionTitle eyebrow="EXPO COMPLETA" title="Experiências da Expo" />
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
-          {EXPERIENCIAS.map((exp) => (
-            <div
-              key={exp.label}
-              className="rounded-2xl p-5 bg-[#121212] border border-white/10 hover:border-[#FF8A00]/40 transition-colors text-center"
-            >
-              <div className="text-4xl mb-2">{exp.icon}</div>
-              <p className="text-sm font-bold text-white">{exp.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+            {EXPERIENCIAS.map((exp) => (
+              <div
+                key={exp.label}
+                className="rounded-2xl p-5 bg-[#121212] border border-white/10 hover:border-[#FF8A00]/40 transition-colors text-center"
+              >
+                <div className="text-4xl mb-2">{exp.icon}</div>
+                <p className="text-sm font-bold text-white">{exp.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ============== FAQ ============== */}
       <section className="px-5 py-12 max-w-3xl mx-auto">
