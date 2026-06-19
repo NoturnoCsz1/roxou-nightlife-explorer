@@ -41,7 +41,12 @@ export type ExpoEventName =
   | "expo_grade_oficial_open"
   | "expo_grade_oficial_zoom"
   | "expo_grade_oficial_share"
-  | "expo_grade_oficial_buy_click";
+  | "expo_grade_oficial_buy_click"
+  | "expo_nav_ingressos"
+  | "expo_nav_front_stage"
+  | "expo_nav_mapa"
+  | "expo_nav_menores"
+  | "expo_nav_info";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";
