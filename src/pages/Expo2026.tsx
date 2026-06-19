@@ -12,7 +12,9 @@ import {
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import SEO from "@/components/SEO";
-import { trackExpoEvent } from "@/lib/expoAnalytics";
+import { trackExpoEvent, createDebouncedTracker } from "@/lib/expoAnalytics";
+
+const debouncedZoomTrack = createDebouncedTracker(500);
 
 /* ============================================================================
  * EXPO PRUDENTE 2026 — Landing oficial de divulgação (hub Roxou → Eventou)
