@@ -29,7 +29,14 @@ export type ExpoEventName =
   | "expo_google_images"
   | "expo_copy_link"
   | "expo_share_native"
-  | "expo_performance";
+  | "expo_performance"
+  | "expo_camarotes_view"
+  | "expo_camarotes_map_open"
+  | "expo_camarotes_whatsapp_click"
+  | "expo_camarote_click"
+  | "expo_camarote_status_change"
+  | "expo_camarote_sold_view"
+  | "expo_camarote_reserved_view";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";

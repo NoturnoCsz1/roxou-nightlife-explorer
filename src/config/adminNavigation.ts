@@ -64,5 +64,6 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/system", icon: Activity, label: "Sistema" },
   { to: "/admin/logs", icon: FileText, label: "Logs" },
   { to: "/admin/expo2026", icon: Trophy, label: "Expo 2026" },
+  { to: "/admin/expo2026/camarotes", icon: Building2, label: "Camarotes Expo" },
 ];
 

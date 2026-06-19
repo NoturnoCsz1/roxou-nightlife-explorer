@@ -13,6 +13,7 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import SEO from "@/components/SEO";
 import { trackExpoEvent, createDebouncedTracker, detectSource } from "@/lib/expoAnalytics";
+import CamarotesSection from "@/components/expo/CamarotesSection";
 
 const debouncedZoomTrack = createDebouncedTracker(500);
 const debouncedSectorTrack = createDebouncedTracker(500);
@@ -38,6 +39,10 @@ const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: "A Roxou é organizadora oficial da Expo Prudente?",
     a: "Não. A Roxou atua como portal de divulgação e curadoria de informações públicas sobre eventos, ingressos, programação e agenda regional. Para informações oficiais, consulte os canais oficiais do evento.",
+  },
+  {
+    q: "Os camarotes da Expo Prudente 2026 já estão disponíveis?",
+    a: "Sim. A organização oficial divulgou o mapa de camarotes da Expo Prudente 2026 com 120 espaços numerados. Informações de venda podem ser consultadas pelo WhatsApp oficial: (18) 99108-6855.",
   },
 ];
 
@@ -462,6 +467,15 @@ export default function Expo2026() {
           contentUrl: "https://roxou.com.br/images/expo2026-mapa.jpg",
           url: "https://roxou.com.br/expo2026/",
         },
+        {
+          "@type": "ImageObject",
+          "@id": "https://roxou.com.br/expo2026/#mapa-camarotes",
+          name: "Mapa de Camarotes da Expo Prudente 2026",
+          description:
+            "Mapa oficial de camarotes da Expo Prudente 2026 com 120 espaços numerados.",
+          contentUrl: "https://roxou.com.br/images/expo2026-camarotes.jpg",
+          url: "https://roxou.com.br/expo2026/",
+        },
       ],
     }),
     [],
@@ -649,6 +663,9 @@ export default function Expo2026() {
 
         {/* ImageObject e demais schemas estão no @graph injetado pelo <SEO /> */}
       </section>
+
+      {/* ============== CAMAROTES ============== */}
+      <CamarotesSection />
 
       {/* ============== PROGRAMAÇÃO ============== */}
       <section id="shows" ref={programacaoRef} className="px-5 py-12 max-w-5xl mx-auto">
