@@ -671,7 +671,7 @@ export default function Expo2026() {
       <section id="shows" ref={programacaoRef} className="px-5 py-12 max-w-5xl mx-auto">
         <SectionTitle eyebrow="PROGRAMAÇÃO OFICIAL" title="Todos os dias de shows" />
 
-        <div className="grid gap-5 md:grid-cols-2 mt-8">
+        <div className="grid gap-2.5 md:gap-3 md:grid-cols-2 mt-6">
           {(SHOWS ?? []).map((show) => (
             <ShowCardItem key={show.id} show={show} />
           ))}
