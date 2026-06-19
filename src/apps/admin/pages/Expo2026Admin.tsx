@@ -259,22 +259,65 @@ export default function Expo2026Admin() {
     const copyCount = rows.filter((r) => r.event === "expo_copy_link").length;
 
     // Performance média (apenas eventos expo_performance com metadata.performance)
-    const perfSamples = rows
+    type PerfKey = "fcp" | "lcp" | "domReady" | "totalLoad";
+    interface PerfSample {
+      perf: Record<PerfKey, number>;
+      device: "mobile" | "desktop";
+      source: string;
+    }
+    const normalizeSource = (raw: string): string => {
+      const s = (raw || "Direct").toLowerCase();
+      if (s.includes("instagram")) return "Instagram";
+      if (s.includes("whats")) return "WhatsApp";
+      if (s.includes("google search") || s === "google") return "Google Search";
+      if (s.includes("google discover")) return "Google Discover";
+      if (s.includes("google images")) return "Google Images";
+      if (s === "direct") return "Direct";
+      return "Other";
+    };
+    const perfSamples: PerfSample[] = rows
       .filter((r) => r.event === "expo_performance")
-      .map((r) => (r.metadata?.performance ?? {}) as Record<string, number | null>);
-    const avgPerf = (key: "fcp" | "lcp" | "domReady" | "totalLoad") => {
-      const vals = perfSamples
-        .map((p) => Number(p[key]))
+      .map((r) => {
+        const p = (r.metadata?.performance ?? {}) as Record<string, unknown>;
+        const sw = Number(r.metadata?.screenWidth);
+        const device: "mobile" | "desktop" =
+          Number.isFinite(sw) && sw >= 768 ? "desktop" : "mobile";
+        return {
+          perf: {
+            fcp: Number(p.fcp),
+            lcp: Number(p.lcp),
+            domReady: Number(p.domReady),
+            totalLoad: Number(p.totalLoad),
+          } as Record<PerfKey, number>,
+          device,
+          source: normalizeSource(String(r.metadata?.source ?? "")),
+        };
+      });
+
+    const avgOf = (samples: PerfSample[], key: PerfKey) => {
+      const vals = samples
+        .map((s) => s.perf[key])
         .filter((v) => Number.isFinite(v) && v > 0);
       if (!vals.length) return 0;
       return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
     };
+    const buildBlock = (samples: PerfSample[]) => ({
+      fcp: avgOf(samples, "fcp"),
+      lcp: avgOf(samples, "lcp"),
+      domReady: avgOf(samples, "domReady"),
+      totalLoad: avgOf(samples, "totalLoad"),
+      samples: samples.length,
+    });
+
     const performance = {
-      fcp: avgPerf("fcp"),
-      lcp: avgPerf("lcp"),
-      domReady: avgPerf("domReady"),
-      totalLoad: avgPerf("totalLoad"),
-      samples: perfSamples.length,
+      ...buildBlock(perfSamples),
+      byDevice: {
+        mobile: buildBlock(perfSamples.filter((s) => s.device === "mobile")),
+        desktop: buildBlock(perfSamples.filter((s) => s.device === "desktop")),
+      },
+      bySource: (["Instagram", "Google Search", "Google Discover", "WhatsApp", "Direct", "Other"] as const).map(
+        (name) => ({ name, ...buildBlock(perfSamples.filter((s) => s.source === name)) }),
+      ),
     };
 
     return {
