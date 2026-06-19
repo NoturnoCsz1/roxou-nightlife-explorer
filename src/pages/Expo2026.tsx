@@ -479,6 +479,15 @@ export default function Expo2026() {
           contentUrl: "https://roxou.com.br/images/expo2026-camarotes.png",
           url: "https://roxou.com.br/expo2026/",
         },
+        {
+          "@type": "ImageObject",
+          "@id": "https://roxou.com.br/expo2026/#grade-oficial",
+          name: "Grade Oficial de Shows Expo Prudente 2026",
+          description:
+            "Programação oficial de shows da Expo Prudente 2026.",
+          contentUrl: "https://roxou.com.br/images/expo2026-grade-oficial.webp",
+          url: "https://roxou.com.br/expo2026/",
+        },
       ],
     }),
     [],
@@ -490,7 +499,7 @@ export default function Expo2026() {
         title="Expo Prudente 2026 | Shows, Mapa, Setores e Ingressos"
         description="Confira a programação da Expo Prudente 2026, mapa dos setores, shows confirmados e links oficiais de ingressos."
         canonical="https://roxou.com.br/expo2026/"
-        ogImage="https://roxou.com.br/og-image.png"
+        ogImage="https://roxou.com.br/images/expo2026-grade-oficial.webp"
         keywords="expo prudente 2026, ingressos expo prudente, leonardo prudente, zé neto e cristiano prudente, zezé di camargo prudente, expo prudente programação, mapa expo prudente"
         jsonLd={jsonLd}
       />
@@ -543,6 +552,9 @@ export default function Expo2026() {
 
         </div>
       </section>
+
+      {/* ============== GRADE OFICIAL DE SHOWS ============== */}
+      <GradeOficialSection />
 
       {/* ============== MAPA DO EVENTO ============== */}
       <section className="px-2 sm:px-5 py-12 max-w-5xl mx-auto">
