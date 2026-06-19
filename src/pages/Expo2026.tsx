@@ -12,7 +12,7 @@ import {
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import SEO from "@/components/SEO";
-import { trackExpoEvent, createDebouncedTracker } from "@/lib/expoAnalytics";
+import { trackExpoEvent, createDebouncedTracker, detectSource } from "@/lib/expoAnalytics";
 
 const debouncedZoomTrack = createDebouncedTracker(500);
 const debouncedSectorTrack = createDebouncedTracker(500);
@@ -202,9 +202,63 @@ export default function Expo2026() {
   const programacaoRef = useRef<HTMLElement | null>(null);
   const transformRef = useRef<ReactZoomPanPinchRef | null>(null);
 
-  // expo_view (once)
+  // expo_view (once) + Google traffic auto-detect + performance capture
   useEffect(() => {
     trackExpoEvent("expo_view", {}, { once: true });
+
+    // Auto-detecta tráfego do Google e dispara evento específico (uma vez por sessão)
+    try {
+      const src = detectSource();
+      if (src === "Google Search") trackExpoEvent("expo_google_organic", {}, { once: true });
+      else if (src === "Google Discover") trackExpoEvent("expo_google_discover", {}, { once: true });
+      else if (src === "Google Images") trackExpoEvent("expo_google_images", {}, { once: true });
+    } catch {
+      /* noop */
+    }
+
+    // Performance: FCP, LCP, DOM Ready, Total Load Time (uma vez)
+    const capturePerf = () => {
+      try {
+        const nav = (performance.getEntriesByType("navigation")[0] ?? null) as
+          | PerformanceNavigationTiming
+          | null;
+        const fcpEntry = performance.getEntriesByName("first-contentful-paint")[0];
+        let lcp: number | undefined;
+        if ("PerformanceObserver" in window) {
+          try {
+            const po = new PerformanceObserver((list) => {
+              const entries = list.getEntries();
+              const last = entries[entries.length - 1];
+              if (last) lcp = last.startTime;
+            });
+            po.observe({ type: "largest-contentful-paint", buffered: true });
+            // Encerra após 5s
+            setTimeout(() => po.disconnect(), 5000);
+          } catch {
+            /* noop */
+          }
+        }
+        // Espera o load completo + 1s para LCP estabilizar
+        setTimeout(() => {
+          trackExpoEvent(
+            "expo_performance",
+            {
+              performance: {
+                fcp: fcpEntry ? Math.round(fcpEntry.startTime) : null,
+                lcp: lcp ? Math.round(lcp) : null,
+                domReady: nav ? Math.round(nav.domContentLoadedEventEnd) : null,
+                totalLoad: nav ? Math.round(nav.loadEventEnd || nav.duration) : null,
+              },
+            },
+            { once: true },
+          );
+        }, 3500);
+      } catch {
+        /* noop */
+      }
+    };
+    if (document.readyState === "complete") capturePerf();
+    else window.addEventListener("load", capturePerf, { once: true });
   }, []);
 
   // Engagement timers: 30s, 60s, 120s (once per session)
@@ -217,7 +271,7 @@ export default function Expo2026() {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  // Scroll: floating CTA + scroll depth (50% / 90%)
+  // Scroll heatmap: 25 / 50 / 75 / 90 / 100 (uma vez por sessão)
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
@@ -227,8 +281,12 @@ export default function Expo2026() {
         1,
       );
       const pct = (y / docH) * 100;
-      if (pct >= 50) trackExpoEvent("expo_scroll_50", { pct: Math.round(pct) }, { once: true });
-      if (pct >= 90) trackExpoEvent("expo_scroll_90", { pct: Math.round(pct) }, { once: true });
+      const rounded = Math.round(pct);
+      if (pct >= 25) trackExpoEvent("expo_scroll_25", { pct: rounded }, { once: true });
+      if (pct >= 50) trackExpoEvent("expo_scroll_50", { pct: rounded }, { once: true });
+      if (pct >= 75) trackExpoEvent("expo_scroll_75", { pct: rounded }, { once: true });
+      if (pct >= 90) trackExpoEvent("expo_scroll_90", { pct: rounded }, { once: true });
+      if (pct >= 99) trackExpoEvent("expo_scroll_100", { pct: rounded }, { once: true });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -309,6 +367,20 @@ export default function Expo2026() {
     () => ({
       "@context": "https://schema.org",
       "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://roxou.com.br/#website",
+          url: "https://roxou.com.br/",
+          name: "Roxou",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: "https://roxou.com.br/agenda?q={search_term_string}",
+            },
+            "query-input": "required name=search_term_string",
+          },
+        },
         {
           "@type": "Festival",
           "@id": "https://roxou.com.br/expo2026/#festival",
@@ -656,6 +728,52 @@ export default function Expo2026() {
         >
           🎟️ COMPRAR INGRESSOS
         </button>
+
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={async () => {
+              const url = "https://roxou.com.br/expo2026/";
+              const data = {
+                title: "Expo Prudente 2026",
+                text: "Confira a programação, mapa e ingressos da Expo Prudente 2026!",
+                url,
+              };
+              try {
+                if (navigator.share) {
+                  await navigator.share(data);
+                  trackExpoEvent("expo_share_native", { method: "native" });
+                  return;
+                }
+              } catch {
+                /* usuário cancelou ou indisponível */
+              }
+              try {
+                await navigator.clipboard.writeText(url);
+                trackExpoEvent("expo_copy_link", { method: "clipboard" });
+              } catch {
+                /* noop */
+              }
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            📤 Compartilhar
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText("https://roxou.com.br/expo2026/");
+                trackExpoEvent("expo_copy_link", { method: "button" });
+              } catch {
+                /* noop */
+              }
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            🔗 Copiar link
+          </button>
+        </div>
       </section>
 
       {/* ============== AVISO LEGAL ============== */}
@@ -728,6 +846,11 @@ export default function Expo2026() {
               onZoom={(ref) => {
                 const z = Number(ref.state.scale.toFixed(2));
                 debouncedZoomTrack("expo_map_zoom", { zoomLevel: z });
+              }}
+              onPanning={(ref) => {
+                debouncedPanTrack("expo_map_pan", {
+                  scale: Number(ref.state.scale.toFixed(2)),
+                });
               }}
             >
               {({ zoomIn, zoomOut, resetTransform }) => (
