@@ -1214,3 +1214,197 @@ function CountdownCard({ value, label }: { value: number; label: string }) {
     </div>
   );
 }
+
+const GRADE_IMG = "/images/expo2026-grade-oficial.webp";
+const SHOWS_BUY_LINK = "https://eventou.com.br/evento/Quinta-10-09---Leonardo---Expo-Prudente__3013";
+
+function GradeOficialSection() {
+  const [open, setOpen] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            trackExpoEvent("expo_grade_oficial_view", {}, { once: true });
+            obs.disconnect();
+          }
+        });
+      },
+      { threshold: 0.35 },
+    );
+    obs.observe(sectionRef.current);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const handleOpen = () => {
+    setOpen(true);
+    trackExpoEvent("expo_grade_oficial_open", {});
+  };
+
+  const handleShare = async () => {
+    const url = "https://roxou.com.br/expo2026/";
+    const data = {
+      title: "Grade Oficial — Expo Prudente 2026",
+      text: "Confira a programação oficial de shows da Expo Prudente 2026!",
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(data);
+        trackExpoEvent("expo_grade_oficial_share", { method: "native" });
+        return;
+      }
+    } catch {
+      /* cancelado */
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      trackExpoEvent("expo_grade_oficial_share", { method: "clipboard" });
+    } catch {
+      /* noop */
+    }
+  };
+
+  return (
+    <section
+      ref={sectionRef}
+      className="px-2 sm:px-5 py-12 max-w-5xl mx-auto"
+      aria-label="Grade oficial de shows da Expo Prudente 2026"
+    >
+      <SectionTitle eyebrow="🎤 GRADE OFICIAL DE SHOWS" title="Programação completa" />
+      <p className="text-center text-[#B8B8B8] -mt-3 mb-6 text-sm sm:text-base px-3">
+        Confira a programação completa da Expo Prudente 2026, de 10 a 14 de setembro.
+      </p>
+
+      <button
+        type="button"
+        onClick={handleOpen}
+        aria-label="Ampliar grade oficial de shows"
+        className="group block w-full overflow-hidden bg-black/60 backdrop-blur border border-white/10 transition-all duration-300 hover:border-[#FF8A00]/50 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.6)] hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-[#FFC300]/60"
+        style={{ borderRadius: 24, boxShadow: "0 12px 40px -20px rgba(0,0,0,0.8)" }}
+      >
+        <img
+          src={GRADE_IMG}
+          alt="Grade Oficial de Shows da Expo Prudente 2026"
+          loading="lazy"
+          decoding="async"
+          className="block w-full h-auto object-cover"
+        />
+        <div className="px-4 py-2 text-center bg-black/70 text-[11px] sm:text-xs font-semibold text-[#FFC300] tracking-wider inline-flex w-full items-center justify-center gap-2">
+          <ZoomIn className="w-3.5 h-3.5" /> Toque para ampliar e dar zoom
+        </div>
+      </button>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <a
+          href={SHOWS_BUY_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackExpoEvent("expo_grade_oficial_buy_click", {})}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-extrabold text-black text-sm sm:text-base shadow-[0_10px_30px_-10px_rgba(255,138,0,0.7)] hover:scale-[1.03] active:scale-[0.98] transition-transform"
+          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+        >
+          🎟️ Comprar Ingressos
+        </a>
+        <button
+          type="button"
+          onClick={handleShare}
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
+        >
+          📲 Compartilhar Programação
+        </button>
+      </div>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-[100] bg-black flex flex-col"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Grade oficial ampliada"
+        >
+          <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/95 z-10">
+            <p className="text-xs sm:text-sm text-white/80 pr-2 truncate">
+              🎤 Grade Oficial — Expo Prudente 2026
+            </p>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0"
+              aria-label="Fechar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="relative flex-1 overflow-hidden bg-black">
+            <TransformWrapper
+              initialScale={1}
+              minScale={1}
+              maxScale={5}
+              doubleClick={{ mode: "toggle", step: 2 }}
+              wheel={{ step: 0.2 }}
+              pinch={{ step: 5 }}
+              onZoom={() => debouncedZoomTrack("expo_grade_oficial_zoom", {})}
+            >
+              {({ zoomIn, zoomOut, resetTransform }) => (
+                <>
+                  <TransformComponent
+                    wrapperStyle={{ width: "100%", height: "100%" }}
+                    contentStyle={{ width: "100%", height: "100%" }}
+                  >
+                    <img
+                      src={GRADE_IMG}
+                      alt="Grade Oficial de Shows da Expo Prudente 2026 — ampliada"
+                      className="block w-full h-full object-contain select-none"
+                      draggable={false}
+                    />
+                  </TransformComponent>
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-full bg-black/80 backdrop-blur border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => zoomIn()}
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                      aria-label="Aumentar zoom"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => zoomOut()}
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                      aria-label="Diminuir zoom"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resetTransform()}
+                      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                      aria-label="Resetar zoom"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </TransformWrapper>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
