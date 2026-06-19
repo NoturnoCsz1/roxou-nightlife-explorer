@@ -308,38 +308,89 @@ export default function Expo2026() {
   const jsonLd = useMemo(
     () => ({
       "@context": "https://schema.org",
-      "@type": "Festival",
-      name: "Expo Prudente 2026",
-      startDate: "2026-09-10",
-      endDate: "2026-09-14",
-      eventStatus: "https://schema.org/EventScheduled",
-      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-      location: {
-        "@type": "Place",
-        name: "Recinto de Exposições — Presidente Prudente/SP",
-        address: {
-          "@type": "PostalAddress",
-          addressLocality: "Presidente Prudente",
-          addressRegion: "SP",
-          addressCountry: "BR",
+      "@graph": [
+        {
+          "@type": "Festival",
+          "@id": "https://roxou.com.br/expo2026/#festival",
+          name: "Expo Prudente 2026",
+          startDate: "2026-09-10",
+          endDate: "2026-09-14",
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          url: "https://roxou.com.br/expo2026/",
+          image: "https://roxou.com.br/images/expo2026-mapa.jpg",
+          location: {
+            "@type": "Place",
+            name: "Recinto de Exposições — Presidente Prudente/SP",
+            address: {
+              "@type": "PostalAddress",
+              addressLocality: "Presidente Prudente",
+              addressRegion: "SP",
+              addressCountry: "BR",
+            },
+          },
+          offers: SHOWS.map((s) => ({
+            "@type": "Offer",
+            url: s.link,
+            availability: "https://schema.org/InStock",
+            category: "primary",
+          })),
+          subEvent: SHOWS.map((s) => ({
+            "@type": "MusicEvent",
+            name: `${s.artists.join(", ")} — Expo Prudente 2026`,
+            startDate: `2026-09-${s.date.split("/")[0]}T22:00:00-03:00`,
+            eventStatus: "https://schema.org/EventScheduled",
+            eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+            url: s.link,
+            image: "https://roxou.com.br/images/expo2026-mapa.jpg",
+            description: `Show de ${s.artists.join(", ")} na Expo Prudente 2026 — ${s.weekday}, ${s.date}.`,
+            performer: s.artists.map((a) => ({ "@type": "MusicGroup", name: a })),
+            location: {
+              "@type": "Place",
+              name: "Recinto de Exposições — Presidente Prudente/SP",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: "Presidente Prudente",
+                addressRegion: "SP",
+                addressCountry: "BR",
+              },
+            },
+            offers: {
+              "@type": "Offer",
+              url: s.link,
+              availability: "https://schema.org/InStock",
+              category: "primary",
+            },
+          })),
         },
-      },
-      offers: SHOWS.map((s) => ({
-        "@type": "Offer",
-        url: s.link,
-        availability: "https://schema.org/InStock",
-        category: "primary",
-      })),
-      subEvent: SHOWS.map((s) => ({
-        "@type": "MusicEvent",
-        name: `${s.artists.join(", ")} — Expo Prudente 2026`,
-        startDate: `2026-09-${s.date.split("/")[0]}T22:00:00-03:00`,
-        url: s.link,
-        location: {
-          "@type": "Place",
-          name: "Recinto de Exposições — Presidente Prudente/SP",
+        {
+          "@type": "FAQPage",
+          "@id": "https://roxou.com.br/expo2026/#faq",
+          mainEntity: FAQ_ITEMS.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
         },
-      })),
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://roxou.com.br/expo2026/#breadcrumb",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Início", item: "https://roxou.com.br/" },
+            { "@type": "ListItem", position: 2, name: "Eventos", item: "https://roxou.com.br/agenda" },
+            { "@type": "ListItem", position: 3, name: "Expo Prudente 2026", item: "https://roxou.com.br/expo2026/" },
+          ],
+        },
+        {
+          "@type": "ImageObject",
+          "@id": "https://roxou.com.br/expo2026/#mapa",
+          name: "Mapa Oficial dos Setores da Expo Prudente 2026",
+          description:
+            "Mapa dos setores da Expo Prudente 2026 em Presidente Prudente/SP, incluindo Arquibancada, Pista Arena, Camarotes, Área VIP, Front Open Bar, Palco e Boate.",
+          contentUrl: "https://roxou.com.br/images/expo2026-mapa.jpg",
+          url: "https://roxou.com.br/expo2026/",
+        },
+      ],
     }),
     [],
   );
@@ -347,12 +398,14 @@ export default function Expo2026() {
   return (
     <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden">
       <SEO
-        title="Expo Prudente 2026: Ingressos Oficiais, Mapa do Evento e Programação Completa | Roxou"
-        description="Confira a programação completa da Expo Prudente 2026, mapa do evento, setores e links oficiais para compra de ingressos de todos os dias de shows em Presidente Prudente."
-        canonical="https://roxou.com.br/expo2026"
-        keywords="expo prudente 2026, ingressos expo prudente, leonardo prudente, zé neto e cristiano prudente, zezé di camargo prudente, expo prudente programação"
+        title="Expo Prudente 2026 | Shows, Mapa, Setores e Ingressos"
+        description="Confira a programação da Expo Prudente 2026, mapa dos setores, shows confirmados e links oficiais de ingressos."
+        canonical="https://roxou.com.br/expo2026/"
+        ogImage="https://roxou.com.br/og-image.png"
+        keywords="expo prudente 2026, ingressos expo prudente, leonardo prudente, zé neto e cristiano prudente, zezé di camargo prudente, expo prudente programação, mapa expo prudente"
         jsonLd={jsonLd}
       />
+
 
       {/* Background textura */}
       <div
