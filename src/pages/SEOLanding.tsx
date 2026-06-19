@@ -421,6 +421,268 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
       { label: "Funk", href: "/funk-em-presidente-prudente" },
     ],
   },
+  // ───────────── SHORT-SLUG SEO PAGES ─────────────
+  "hoje": {
+    slug: "hoje",
+    title: `Eventos Hoje em ${CITY}`,
+    metaTitle: `Eventos Hoje em ${CITY} | Festas, Shows e Baladas | Roxou`,
+    metaDescription: `Veja o que rola hoje em ${CITY}: festas, baladas, shows ao vivo, bares e happy hour. Agenda atualizada em tempo real.`,
+    heading: `🔥 Eventos Hoje em ${CITY}`,
+    intro: `Tudo o que está rolando hoje em ${CITY} — baladas, bares, shows, pagode, sertanejo e happy hour, num só lugar.`,
+    filter: (e) => isTodaySP(new Date(e.date_time)),
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando o que fazer em ${CITY} hoje? A Roxou reúne em uma única página todos os eventos confirmados para hoje na cidade: baladas, bares com música ao vivo, shows, pagode, sertanejo, festas universitárias e happy hour. Sem precisar caçar story por story no Instagram.`,
+      `A agenda é atualizada em tempo real conforme bares, casas noturnas e produtoras confirmam a programação. Cada evento traz horário, local, link para o Instagram da casa e como garantir presença.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Eventos Hoje"),
+    faqItems: [
+      { q: `O que fazer hoje em ${CITY}?`, a: `Veja a lista acima — toda a agenda confirmada para hoje em ${CITY}, com baladas, shows, bares e happy hour.` },
+      { q: `Tem festa hoje em ${CITY}?`, a: `Sim! Toda festa em ${CITY} hoje aparece nesta página, atualizada em tempo real.` },
+      { q: `Onde sair hoje em ${CITY}?`, a: `A Roxou lista bares, baladas e shows com programação confirmada para hoje. Clique em cada card para ver o endereço e o Instagram da casa.` },
+    ],
+    relatedLinks: [
+      { label: "Agenda da semana", href: "/agenda-semana" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+      { label: "Baladas", href: "/baladas" },
+      { label: "Bares", href: "/bares" },
+      { label: "Shows", href: "/shows" },
+      { label: "Happy hour", href: "/happy-hour" },
+    ],
+  },
+  "baladas": {
+    slug: "baladas",
+    title: `Baladas em ${CITY}`,
+    metaTitle: `Baladas em ${CITY} | Festas, Pista e Noite | Roxou`,
+    metaDescription: `As melhores baladas em ${CITY}: festas universitárias, eletrônica, funk e sertanejo universitário. Agenda atualizada em tempo real.`,
+    heading: `🎧 Baladas em ${CITY}`,
+    intro: `A agenda completa das baladas em ${CITY}: festas universitárias, eletrônica, funk, sertanejo universitário e mais.`,
+    filter: (e) => {
+      const cat = (e.category ?? "").toLowerCase();
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""}`.toLowerCase();
+      return cat === "balada" || cat === "eletronica" || /balada|festa universit|open bar|pista|club/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `As baladas em ${CITY} têm cenário forte de festas universitárias, casas noturnas com pista de funk e sertanejo, eventos open bar e festas autorais. A Roxou reúne todas essas opções em uma agenda única, atualizada em tempo real.`,
+      `Encontre baladas em ${CITY} hoje, amanhã ou no fim de semana — com horário, local, line-up e link direto para garantir presença.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Baladas"),
+    faqItems: [
+      { q: `Quais as melhores baladas em ${CITY}?`, a: `Listamos acima as baladas com eventos confirmados em ${CITY}. Cada balada tem endereço, Instagram e programação.` },
+      { q: `Tem balada hoje em ${CITY}?`, a: `Os eventos de balada de hoje aparecem na agenda acima. Para ver só hoje, acesse /hoje.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Shows", href: "/shows" },
+      { label: "Bares", href: "/bares" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+    ],
+  },
+  "pagode": {
+    slug: "pagode",
+    title: `Pagode em ${CITY}`,
+    metaTitle: `Pagode em ${CITY} | Rodas de Samba e Shows | Roxou`,
+    metaDescription: `Onde tem pagode em ${CITY}: rodas de samba, bares com pagode ao vivo, shows e eventos. Agenda atualizada em tempo real.`,
+    heading: `🥁 Pagode em ${CITY}`,
+    intro: `Rodas de samba, bares com pagode ao vivo e shows em ${CITY}: a agenda definitiva de pagode em Prudente.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /pagode|samba|roda de samba|sambar/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando pagode em ${CITY}? A Roxou reúne todos os eventos de pagode em Prudente — de rodas de samba intimistas em bares do centro a shows com bandas locais e nacionais.`,
+      `A agenda é atualizada em tempo real. Veja onde tem pagode em ${CITY} hoje, amanhã ou no fim de semana, com horário, local e link direto para o evento.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Pagode"),
+    faqItems: [
+      { q: `Onde tem pagode hoje em ${CITY}?`, a: `Veja a lista acima — todos os pagodes com programação confirmada para os próximos dias em ${CITY}.` },
+      { q: `Quais bares têm pagode em ${CITY}?`, a: `Os bares com pagode em Prudente aparecem nos cards acima, com endereço e Instagram.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Shows", href: "/shows" },
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+    ],
+  },
+  "shows": {
+    slug: "shows",
+    title: `Shows em ${CITY}`,
+    metaTitle: `Shows ao Vivo em ${CITY} | Agenda Completa | Roxou`,
+    metaDescription: `Agenda de shows ao vivo em ${CITY}: rock, pop, MPB, pagode, sertanejo e mais. Confira datas, locais e ingressos.`,
+    heading: `🎤 Shows em ${CITY}`,
+    intro: `Shows ao vivo em ${CITY}: rock, pop, MPB, pagode, sertanejo e muito mais. Agenda atualizada em tempo real.`,
+    filter: (e) => {
+      const cat = (e.category ?? "").toLowerCase();
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""}`.toLowerCase();
+      return cat === "show" || /show|banda|cantor|cantora|dupla|ao vivo/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Todos os shows em ${CITY} reunidos em uma agenda única. De shows intimistas em bares a grandes apresentações em espaços de eventos da cidade — tudo atualizado em tempo real.`,
+      `Veja datas, line-up, local e link direto para garantir presença ou comprar ingresso. A Roxou conecta produtoras, casas e público em um só lugar.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Shows"),
+    faqItems: [
+      { q: `Tem show hoje em ${CITY}?`, a: `Os shows de hoje aparecem na lista acima. Para ver só hoje, acesse /hoje.` },
+      { q: `Quais os próximos shows em ${CITY}?`, a: `A agenda completa com os próximos shows em ${CITY} está nos cards acima, em ordem cronológica.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+      { label: "Agenda da semana", href: "/agenda-semana" },
+    ],
+  },
+  "bares": {
+    slug: "bares",
+    title: `Bares em ${CITY}`,
+    metaTitle: `Melhores Bares em ${CITY} | Happy Hour e Música ao Vivo | Roxou`,
+    metaDescription: `Os melhores bares em ${CITY}: happy hour, música ao vivo, chopp gelado e programação atualizada. Descubra onde sair hoje.`,
+    heading: `🍻 Bares em ${CITY}`,
+    intro: `Os melhores bares em ${CITY} com eventos, happy hour e música ao vivo. Encontre onde curtir hoje.`,
+    filter: (e) => {
+      const cat = (e.category ?? "").toLowerCase();
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.venue_name ?? ""}`.toLowerCase();
+      return cat === "bar" || /\bbar\b|boteco|botequim|chopp|petiscos|happy hour/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Os melhores bares em ${CITY} estão na Roxou. Listamos bares com música ao vivo, happy hour, boteco tradicional e casas com programação especial — tudo organizado por data e proximidade.`,
+      `Cada bar traz endereço, horário, Instagram da casa e os próximos eventos. A agenda é atualizada em tempo real conforme as casas confirmam a programação.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Bares"),
+    faqItems: [
+      { q: `Quais os melhores bares em ${CITY}?`, a: `Veja a lista acima — os bares de ${CITY} com eventos e programação confirmada, com endereço e Instagram.` },
+      { q: `Onde tomar uma cerveja em ${CITY}?`, a: `Os bares listados acima abrem ao longo da semana. Para happy hour, acesse /happy-hour.` },
+    ],
+    relatedLinks: [
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+      { label: "Happy hour", href: "/happy-hour" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Shows", href: "/shows" },
+      { label: "Eventos hoje", href: "/hoje" },
+    ],
+  },
+  "bares-musica-ao-vivo": {
+    slug: "bares-musica-ao-vivo",
+    title: `Bares com Música ao Vivo em ${CITY}`,
+    metaTitle: `Bares com Música ao Vivo em ${CITY} | Roxou`,
+    metaDescription: `Bares com música ao vivo em ${CITY}: voz e violão, samba, sertanejo e MPB. Agenda atualizada em tempo real.`,
+    heading: `🎶 Bares com Música ao Vivo em ${CITY}`,
+    intro: `Os bares de ${CITY} com música ao vivo confirmada: voz e violão, samba, sertanejo, MPB e mais.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""} ${e.venue_name ?? ""}`.toLowerCase();
+      const isBar = /\bbar\b|boteco|botequim|pub|chopperia/.test(hay) || (e.category ?? "").toLowerCase() === "bar";
+      const liveMusic = /m[uú]sica ao vivo|ao vivo|voz e viol[ãa]o|banda|samba|sertanejo|mpb|pagode|roda de samba|cantor|cantora|dupla/.test(hay);
+      return liveMusic && (isBar || (e.category ?? "").toLowerCase() === "show");
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Os bares com música ao vivo em ${CITY} estão entre os destinos preferidos para uma noite descontraída. Voz e violão, samba ao vivo, sertanejo, MPB, pagode — a Roxou reúne todos os bares de Prudente com programação ao vivo confirmada.`,
+      `Veja os bares com música ao vivo em ${CITY} hoje, amanhã ou no fim de semana, com horário, atração e endereço.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Bares com Música ao Vivo"),
+    faqItems: [
+      { q: `Quais bares têm música ao vivo em ${CITY}?`, a: `Listamos acima os bares com música ao vivo em Prudente com eventos confirmados. Cada card mostra a atração e o horário.` },
+      { q: `Tem voz e violão hoje em ${CITY}?`, a: `Se houver atração de voz e violão hoje, ela aparece na lista. Para ver tudo de hoje, acesse /hoje.` },
+    ],
+    relatedLinks: [
+      { label: "Bares", href: "/bares" },
+      { label: "Happy hour", href: "/happy-hour" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Shows", href: "/shows" },
+      { label: "Eventos hoje", href: "/hoje" },
+    ],
+  },
+  "happy-hour": {
+    slug: "happy-hour",
+    title: `Happy Hour em ${CITY}`,
+    metaTitle: `Happy Hour em ${CITY} | Bares e Promoções | Roxou`,
+    metaDescription: `Happy hour em ${CITY}: bares com promoção de chopp, drink, petiscos e música. Veja onde ir hoje.`,
+    heading: `🍺 Happy Hour em ${CITY}`,
+    intro: `Os melhores happy hour em ${CITY}: chopp gelado, drinks, petiscos e música. Agenda atualizada em tempo real.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""} ${e.venue_name ?? ""}`.toLowerCase();
+      const isBar = /\bbar\b|boteco|botequim|pub|chopperia/.test(hay) || (e.category ?? "").toLowerCase() === "bar";
+      const hour = new Date(e.date_time).getUTCHours() - 3; // SP UTC-3
+      const inHappyHour = hour >= 17 && hour < 21;
+      return /happy hour|happy-hour|promo[çc][ãa]o|chopp|drink|petisco/.test(hay) || (isBar && inHappyHour);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `O happy hour em ${CITY} é um clássico do fim de tarde. Bares com chopp gelado, drinks autorais, petiscos e música ao vivo recebem o público entre 17h e 21h, sempre com promoções e ambientes acolhedores.`,
+      `A Roxou lista os bares de Prudente com happy hour confirmado, com horário, promoção e atração musical quando houver.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Happy Hour"),
+    faqItems: [
+      { q: `Onde tem happy hour em ${CITY}?`, a: `Os bares com happy hour confirmado em Prudente estão na lista acima, com endereço e horário.` },
+      { q: `Qual o melhor happy hour em ${CITY}?`, a: `Depende do estilo — listamos opções com chopp, drinks, música ao vivo e petiscos.` },
+    ],
+    relatedLinks: [
+      { label: "Bares", href: "/bares" },
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+    ],
+  },
+  "agenda-semana": {
+    slug: "agenda-semana",
+    title: `Agenda da Semana em ${CITY}`,
+    metaTitle: `Agenda da Semana em ${CITY} | Eventos dos Próximos 7 Dias | Roxou`,
+    metaDescription: `Agenda completa da semana em ${CITY}: festas, baladas, shows, bares e happy hour nos próximos 7 dias.`,
+    heading: `🗓️ Agenda da Semana em ${CITY}`,
+    intro: `Tudo o que rola em ${CITY} nos próximos 7 dias: festas, baladas, shows, bares e happy hour.`,
+    filter: (e) => isInNext7DaysSP(e.date_time),
+    emitEventJsonLd: true,
+    longIntro: [
+      `A agenda da semana em ${CITY} reúne todos os eventos dos próximos 7 dias — baladas, bares com música ao vivo, shows, pagode, sertanejo, happy hour e festas universitárias.`,
+      `Ideal para se planejar a semana toda. Atualizada em tempo real conforme bares e produtoras confirmam novos eventos.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Agenda da Semana"),
+    faqItems: [
+      { q: `O que tem essa semana em ${CITY}?`, a: `Veja a lista acima — todos os eventos confirmados em ${CITY} para os próximos 7 dias.` },
+      { q: `Tem festa na quinta em ${CITY}?`, a: `As festas universitárias e baladas de quinta aparecem na agenda da semana acima.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+      { label: "Baladas", href: "/baladas" },
+      { label: "Shows", href: "/shows" },
+      { label: "Bares", href: "/bares" },
+    ],
+  },
+  "agenda-fim-de-semana": {
+    slug: "agenda-fim-de-semana",
+    title: `Agenda de Fim de Semana em ${CITY}`,
+    metaTitle: `Agenda Fim de Semana em ${CITY} | Sábado e Domingo | Roxou`,
+    metaDescription: `Agenda do fim de semana em ${CITY}: festas, baladas, shows e bares no sábado e domingo. Atualizada em tempo real.`,
+    heading: `🎉 Fim de Semana em ${CITY}`,
+    intro: `Os melhores eventos do fim de semana em ${CITY}. Sábado e domingo com festas, shows, baladas e bares.`,
+    filter: (e) => isInWeekendSP(e.date_time),
+    emitEventJsonLd: true,
+    longIntro: [
+      `O fim de semana em ${CITY} concentra a maior agenda de eventos da cidade: baladas universitárias, shows ao vivo, pagode, sertanejo, festas autorais e bares com programação especial.`,
+      `Veja tudo o que rola em ${CITY} no sábado e domingo, com horário, local e link direto para garantir presença.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Fim de Semana"),
+    faqItems: [
+      { q: `O que fazer no fim de semana em ${CITY}?`, a: `A agenda completa de sábado e domingo está nos cards acima — baladas, shows, bares e mais.` },
+      { q: `Tem festa no sábado em ${CITY}?`, a: `Sim, as festas de sábado aparecem na lista acima, com horário e local.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Agenda da semana", href: "/agenda-semana" },
+      { label: "Baladas", href: "/baladas" },
+      { label: "Shows", href: "/shows" },
+      { label: "Bares", href: "/bares" },
+    ],
+  },
 };
 
 export const SEO_LANDING_SLUGS = Object.keys(LANDING_CONFIGS);
