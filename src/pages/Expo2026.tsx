@@ -606,6 +606,33 @@ export default function Expo2026() {
         </div>
       </section>
 
+      </section>
+
+      {/* ============== FAQ ============== */}
+      <section className="px-5 py-12 max-w-3xl mx-auto">
+        <SectionTitle eyebrow="PERGUNTAS FREQUENTES" title="Tudo sobre a Expo Prudente 2026" />
+        <div className="mt-8 space-y-3">
+          {FAQ_ITEMS.map((item, i) => (
+            <details
+              key={i}
+              className="group rounded-2xl border border-white/10 bg-[#121212] hover:border-[#FF8A00]/40 transition-colors"
+              onToggle={(e) => {
+                if ((e.currentTarget as HTMLDetailsElement).open) {
+                  trackExpoEvent("expo_faq_open", { question: item.q });
+                }
+              }}
+            >
+              <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-3">
+                <span className="font-bold text-white text-sm md:text-base">{item.q}</span>
+                <Plus className="w-4 h-4 text-[#FFC300] group-open:hidden flex-shrink-0" />
+                <Minus className="w-4 h-4 text-[#FFC300] hidden group-open:block flex-shrink-0" />
+              </summary>
+              <p className="px-5 pb-5 text-sm text-[#B8B8B8] leading-relaxed">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* ============== CTA FINAL ============== */}
       <section className="px-5 py-16 max-w-3xl mx-auto text-center">
         <h2
