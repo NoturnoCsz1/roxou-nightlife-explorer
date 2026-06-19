@@ -364,6 +364,33 @@ export default function Expo2026Admin() {
             />
           </div>
 
+          {/* Performance + sharing */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MetricCard icon={BarChart3} title="FCP médio (ms)" value={stats.performance.fcp || "—"} />
+            <MetricCard icon={BarChart3} title="LCP médio (ms)" value={stats.performance.lcp || "—"} />
+            <MetricCard icon={BarChart3} title="DOM ready (ms)" value={stats.performance.domReady || "—"} />
+            <MetricCard icon={BarChart3} title="Total load (ms)" value={stats.performance.totalLoad || "—"} />
+            <MetricCard icon={SearchIcon} title="Compartilhamentos" value={stats.shareCount} />
+            <MetricCard icon={SearchIcon} title="Cópias de link" value={stats.copyCount} />
+            <MetricCard icon={Users} title="Amostras perf." value={stats.performance.samples} />
+            <MetricCard icon={BarChart3} title="Total mapeado" value={rows.length} />
+          </div>
+
+          {/* Scroll heatmap */}
+          <ChartCard title="Heatmap de scroll (usuários únicos por profundidade)">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={stats.scrollHeatmap}>
+                <XAxis dataKey="name" stroke="#888" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#888" tick={{ fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ background: "#111", border: "1px solid #333", borderRadius: 8 }}
+                />
+                <Bar dataKey="value" fill="#FF5C8A" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+
           {/* Funil */}
           <ChartCard title="Funil de navegação (usuários únicos)">
             <div className="space-y-2">
