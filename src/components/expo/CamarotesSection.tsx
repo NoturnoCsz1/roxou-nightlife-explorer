@@ -11,9 +11,8 @@ import {
   type Camarote,
 } from "@/hooks/useExpoCamarotes";
 import { trackExpoEvent } from "@/lib/expoAnalytics";
-import mapaCamarotesAsset from "@/assets/expo2026-mapa-camarotes.png.asset.json";
-
-const MAPA_CAMAROTES_IMG = mapaCamarotesAsset.url;
+const MAPA_CAMAROTES_IMG = "/images/expo2026-camarotes.png";
+const MAPA_CAMAROTES_FALLBACK = "/images/expo2026-mapa.jpg";
 
 const CHIPS = [
   "120 camarotes",
@@ -147,10 +146,18 @@ export default function CamarotesSection() {
           <>
             <img
               src={MAPA_CAMAROTES_IMG}
-              alt="Mapa oficial dos camarotes da Expo Prudente 2026 com 120 espaços numerados"
+              alt="Mapa oficial de camarotes da Expo Prudente 2026"
               className="block w-full h-[85vw] max-h-[650px] sm:h-[520px] md:h-[600px] object-contain bg-black"
               loading="lazy"
-              onError={() => setImgError(true)}
+              onError={(e) => {
+                const t = e.currentTarget;
+                if (!t.dataset.fallback) {
+                  t.dataset.fallback = "1";
+                  t.src = MAPA_CAMAROTES_FALLBACK;
+                } else {
+                  setImgError(true);
+                }
+              }}
             />
             <div className="absolute bottom-3 right-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur text-xs font-semibold border border-white/10">
               <ZoomIn className="w-3.5 h-3.5" /> Toque para ver disponibilidade
@@ -236,10 +243,16 @@ export default function CamarotesSection() {
                   >
                     <img
                       src={MAPA_CAMAROTES_IMG}
-                      alt="Mapa oficial dos camarotes da Expo Prudente 2026"
+                      alt="Mapa oficial de camarotes da Expo Prudente 2026"
                       style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
                       draggable={false}
-                      onError={() => setImgError(true)}
+                      onError={(e) => {
+                        const t = e.currentTarget;
+                        if (!t.dataset.fallback) {
+                          t.dataset.fallback = "1";
+                          t.src = MAPA_CAMAROTES_FALLBACK;
+                        }
+                      }}
                     />
                   </TransformComponent>
                   <div className="absolute bottom-3 right-3 flex flex-col gap-2 z-20">

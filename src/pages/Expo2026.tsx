@@ -473,10 +473,10 @@ export default function Expo2026() {
         {
           "@type": "ImageObject",
           "@id": "https://roxou.com.br/expo2026/#mapa-camarotes",
-          name: "Mapa de Camarotes da Expo Prudente 2026",
+          name: "Mapa Oficial de Camarotes - Expo Prudente 2026",
           description:
             "Mapa oficial de camarotes da Expo Prudente 2026 com 120 espaços numerados.",
-          contentUrl: "https://roxou.com.br/images/expo2026-camarotes.jpg",
+          contentUrl: "https://roxou.com.br/images/expo2026-camarotes.png",
           url: "https://roxou.com.br/expo2026/",
         },
       ],
