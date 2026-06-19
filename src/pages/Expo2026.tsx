@@ -728,6 +728,52 @@ export default function Expo2026() {
         >
           🎟️ COMPRAR INGRESSOS
         </button>
+
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={async () => {
+              const url = "https://roxou.com.br/expo2026/";
+              const data = {
+                title: "Expo Prudente 2026",
+                text: "Confira a programação, mapa e ingressos da Expo Prudente 2026!",
+                url,
+              };
+              try {
+                if (navigator.share) {
+                  await navigator.share(data);
+                  trackExpoEvent("expo_share_native", { method: "native" });
+                  return;
+                }
+              } catch {
+                /* usuário cancelou ou indisponível */
+              }
+              try {
+                await navigator.clipboard.writeText(url);
+                trackExpoEvent("expo_copy_link", { method: "clipboard" });
+              } catch {
+                /* noop */
+              }
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            📤 Compartilhar
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText("https://roxou.com.br/expo2026/");
+                trackExpoEvent("expo_copy_link", { method: "button" });
+              } catch {
+                /* noop */
+              }
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            🔗 Copiar link
+          </button>
+        </div>
       </section>
 
       {/* ============== AVISO LEGAL ============== */}
