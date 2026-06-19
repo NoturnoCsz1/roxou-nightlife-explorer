@@ -558,3 +558,115 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
     </div>
   );
 }
+
+interface PerfBlock {
+  fcp: number;
+  lcp: number;
+  domReady: number;
+  totalLoad: number;
+  samples: number;
+}
+interface PerfStats extends PerfBlock {
+  byDevice: { mobile: PerfBlock; desktop: PerfBlock };
+  bySource: Array<PerfBlock & { name: string }>;
+}
+
+function fmtMs(v: number) {
+  return v > 0 ? `${v} ms` : "—";
+}
+
+function PerformanceBreakdown({ performance }: { performance: PerfStats }) {
+  if (!performance.samples) {
+    return (
+      <ChartCard title="Web Vitals · Por dispositivo e origem">
+        <p className="text-sm text-white/60">
+          Ainda não há dados suficientes de performance.
+        </p>
+      </ChartCard>
+    );
+  }
+  const deviceRows = [
+    { label: "📱 Mobile (< 768px)", block: performance.byDevice.mobile },
+    { label: "🖥️ Desktop (≥ 768px)", block: performance.byDevice.desktop },
+  ];
+  const sourceRows = performance.bySource.filter((s) => s.samples > 0);
+  return (
+    <ChartCard title="Web Vitals · Por dispositivo e origem">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-bold tracking-widest text-white/60 mb-2">
+            POR DISPOSITIVO
+          </p>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <table className="w-full text-xs sm:text-sm min-w-[480px]">
+              <thead className="text-white/50">
+                <tr className="text-left">
+                  <th className="py-2 pr-3 font-semibold">Grupo</th>
+                  <th className="py-2 pr-3 font-semibold">FCP</th>
+                  <th className="py-2 pr-3 font-semibold">LCP</th>
+                  <th className="py-2 pr-3 font-semibold">DOM Ready</th>
+                  <th className="py-2 pr-3 font-semibold">Total Load</th>
+                  <th className="py-2 pr-3 font-semibold text-right">Amostras</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deviceRows.map((r) => (
+                  <tr key={r.label} className="border-t border-white/5">
+                    <td className="py-2 pr-3 text-white/90">{r.label}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.fcp)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.lcp)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.domReady)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{fmtMs(r.block.totalLoad)}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-white/70">
+                      {r.block.samples}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold tracking-widest text-white/60 mb-2">
+            POR ORIGEM
+          </p>
+          {sourceRows.length === 0 ? (
+            <p className="text-sm text-white/60">
+              Ainda não há dados suficientes de performance por origem.
+            </p>
+          ) : (
+            <div className="overflow-x-auto -mx-2 px-2">
+              <table className="w-full text-xs sm:text-sm min-w-[480px]">
+                <thead className="text-white/50">
+                  <tr className="text-left">
+                    <th className="py-2 pr-3 font-semibold">Origem</th>
+                    <th className="py-2 pr-3 font-semibold">FCP</th>
+                    <th className="py-2 pr-3 font-semibold">LCP</th>
+                    <th className="py-2 pr-3 font-semibold">DOM Ready</th>
+                    <th className="py-2 pr-3 font-semibold">Total Load</th>
+                    <th className="py-2 pr-3 font-semibold text-right">Amostras</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourceRows.map((r) => (
+                    <tr key={r.name} className="border-t border-white/5">
+                      <td className="py-2 pr-3 text-white/90">{r.name}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.fcp)}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.lcp)}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.domReady)}</td>
+                      <td className="py-2 pr-3 tabular-nums">{fmtMs(r.totalLoad)}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums text-white/70">
+                        {r.samples}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </ChartCard>
+  );
+}
