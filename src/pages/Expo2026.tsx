@@ -12,7 +12,7 @@ import {
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import SEO from "@/components/SEO";
-import { trackExpoEvent, createDebouncedTracker } from "@/lib/expoAnalytics";
+import { trackExpoEvent, createDebouncedTracker, detectSource } from "@/lib/expoAnalytics";
 
 const debouncedZoomTrack = createDebouncedTracker(500);
 const debouncedSectorTrack = createDebouncedTracker(500);
