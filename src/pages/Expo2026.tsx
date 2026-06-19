@@ -500,6 +500,8 @@ export default function Expo2026() {
         description="Confira a programação da Expo Prudente 2026, mapa dos setores, shows confirmados e links oficiais de ingressos."
         canonical="https://roxou.com.br/expo2026/"
         ogImage="https://roxou.com.br/images/expo2026-grade-oficial.webp"
+        ogImageWidth={1536}
+        ogImageHeight={691}
         keywords="expo prudente 2026, ingressos expo prudente, leonardo prudente, zé neto e cristiano prudente, zezé di camargo prudente, expo prudente programação, mapa expo prudente"
         jsonLd={jsonLd}
       />

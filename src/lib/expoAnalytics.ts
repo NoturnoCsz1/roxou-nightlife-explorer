@@ -121,6 +121,17 @@ export function detectSource(): string {
 
 function baseMetadata() {
   if (typeof window === "undefined") return {};
+  let utm_source: string | null = null;
+  let utm_medium: string | null = null;
+  let utm_campaign: string | null = null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    utm_source = params.get("utm_source");
+    utm_medium = params.get("utm_medium");
+    utm_campaign = params.get("utm_campaign");
+  } catch {
+    /* noop */
+  }
   return {
     source: detectSource(),
     screenWidth: window.innerWidth,
@@ -128,6 +139,9 @@ function baseMetadata() {
     userAgent: navigator.userAgent,
     referrer: document.referrer || null,
     path: window.location.pathname + window.location.search,
+    utm_source,
+    utm_medium,
+    utm_campaign,
   };
 }
 

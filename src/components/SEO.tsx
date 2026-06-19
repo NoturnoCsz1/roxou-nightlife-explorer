@@ -6,6 +6,8 @@ interface SEOProps {
   description: string;
   canonical?: string;
   ogImage?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   ogType?: string;
   jsonLd?: Record<string, unknown>;
   keywords?: string;
@@ -58,7 +60,7 @@ function stripTrackingParams(url: string): string {
   }
 }
 
-const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogType = "website", jsonLd, keywords, locale = "pt_BR" }: SEOProps) => {
+const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogImageWidth = 1200, ogImageHeight = 630, ogType = "website", jsonLd, keywords, locale = "pt_BR" }: SEOProps) => {
   const resolvedCanonical = canonical
     ? stripTrackingParams(canonical)
     : buildCanonicalFromLocation();
@@ -82,8 +84,8 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
     setMeta("og:description", description, "property");
     setMeta("og:type", ogType, "property");
     setMeta("og:image", ogImage, "property");
-    setMeta("og:image:width", "1200", "property");
-    setMeta("og:image:height", "630", "property");
+    setMeta("og:image:width", String(ogImageWidth), "property");
+    setMeta("og:image:height", String(ogImageHeight), "property");
     setMeta("og:image:alt", title, "property");
     setMeta("og:locale", locale, "property");
     setMeta("og:site_name", "ROXOU", "property");
@@ -100,7 +102,7 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
       document.head.appendChild(link);
     }
     link.setAttribute("href", resolvedCanonical);
-  }, [title, description, resolvedCanonical, ogImage, ogType, keywords, locale]);
+  }, [title, description, resolvedCanonical, ogImage, ogImageWidth, ogImageHeight, ogType, keywords, locale]);
 
   if (!jsonLd) return null;
 
