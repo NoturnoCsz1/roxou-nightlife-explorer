@@ -131,35 +131,83 @@ const PartnerHomePage = () => {
     const today = new Date();
     const startToday = new Date(today);
     startToday.setHours(0, 0, 0, 0);
+    const dayStart = startToday.getTime();
+    const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+    const yStart = dayStart - 24 * 60 * 60 * 1000;
+    const weekStart = dayStart - 7 * 24 * 60 * 60 * 1000;
+
     let checkins = 0;
     let pending = 0;
     let noShow = 0;
+    let revenueToday = 0;
+    let reservasToday = 0;
+    let reservasYesterday = 0;
+    let reservasWeek = 0;
+
     for (const r of rows) {
       const d = new Date(r.reservation_date).getTime();
-      const dayStart = startToday.getTime();
-      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      const created = new Date(r.created_at).getTime();
       const isToday = d >= dayStart && d < dayEnd;
-      if (isToday && r.status === "completed") checkins += 1;
-      if (
-        isToday &&
-        (r.status === "pending" || r.status === "pending_payment")
-      )
-        pending += 1;
-      if (isToday && r.status === "no_show") noShow += 1;
+      const isY = d >= yStart && d < dayStart;
+      if (isToday) {
+        reservasToday += 1;
+        if (r.status === "completed") checkins += 1;
+        if (r.status === "pending" || r.status === "pending_payment") pending += 1;
+        if (r.status === "no_show") noShow += 1;
+        if (
+          (r.status === "confirmed" || r.status === "completed") &&
+          typeof r.total_price === "number"
+        ) {
+          revenueToday += Number(r.total_price) || 0;
+        }
+      }
+      if (isY) reservasYesterday += 1;
+      if (created >= weekStart) reservasWeek += 1;
     }
+
+    const fila = waitlist.filter((w) => w.status === "waiting").length;
+    const avg7 = reservasWeek / 7;
+    const diffY = reservasYesterday > 0
+      ? Math.round(((reservasToday - reservasYesterday) / reservasYesterday) * 100)
+      : reservasToday > 0
+        ? 100
+        : 0;
+    const diff7 = avg7 > 0
+      ? Math.round(((reservasToday - avg7) / avg7) * 100)
+      : reservasToday > 0
+        ? 100
+        : 0;
+
     return {
-      reservasHoje: stats.today,
+      reservasHoje: reservasToday,
       checkins,
       pending,
       noShow,
-      fila: waitlist.filter((w) => w.status === "waiting").length,
+      fila,
+      revenueToday,
+      diffYesterday: diffY,
+      diff7Days: diff7,
     };
-  }, [rows, stats.today, waitlist]);
+  }, [rows, waitlist]);
+
+  useEffect(() => {
+    if (!loading && selectedPartnerId) {
+      trackPartnerClient("partner_home_summary_view", {
+        reservasHoje: kpis.reservasHoje,
+        fila: kpis.fila,
+      });
+    }
+  }, [loading, selectedPartnerId, kpis.reservasHoje, kpis.fila]);
 
   if (isLoading) {
     return (
       <PartnerScreen title="Início">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <OccupancySkeleton />
+        <div className="grid grid-cols-2 gap-2.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <PartnerCardSkeleton key={i} />
+          ))}
+        </div>
       </PartnerScreen>
     );
   }
