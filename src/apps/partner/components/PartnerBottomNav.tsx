@@ -4,6 +4,7 @@
  * 5 itens fixos com grid 5 colunas, safe-area e altura 64px.
  * Glow reduzido para melhor legibilidade.
  */
+import { memo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Calendar,
@@ -13,6 +14,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { haptics } from "../lib/partnerInteractions";
 
 type Item = {
   to: string;
@@ -55,17 +57,9 @@ const ITEMS: Item[] = [
   },
 ];
 
-const tap = () => {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    try {
-      (navigator as Navigator).vibrate?.(8);
-    } catch {
-      /* noop */
-    }
-  }
-};
+const tap = () => haptics.tap();
 
-export function PartnerBottomNav() {
+function PartnerBottomNavImpl() {
   const { pathname } = useLocation();
 
   return (
@@ -122,4 +116,5 @@ export function PartnerBottomNav() {
   );
 }
 
+export const PartnerBottomNav = memo(PartnerBottomNavImpl);
 export default PartnerBottomNav;

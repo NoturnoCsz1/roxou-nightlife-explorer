@@ -3,8 +3,11 @@
  * Tabs: Hoje · Semana · Mês · IA. Reaproveita componentes existentes.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { LineChart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AnalyticsSkeleton } from "../components/PartnerSkeletons";
+import { trackPartnerClient } from "../lib/partnerInteractions";
 
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { PartnerScreen } from "../components/PartnerScreen";
@@ -29,9 +32,25 @@ import {
 
 type Tab = "today" | "week" | "month" | "ai";
 
+type Tab2 = Tab;
+const TAB_PARAM: Record<Tab2, string> = {
+  today: "hoje",
+  week: "semana",
+  month: "mes",
+  ai: "ia",
+};
+const PARAM_TAB: Record<string, Tab2> = {
+  hoje: "today",
+  semana: "week",
+  mes: "month",
+  ia: "ai",
+};
+
 const PartnerRelatoriosPage = () => {
   const { selectedPartnerId, isLoading, canEditProfile } = usePartnerAuth();
-  const [tab, setTab] = useState<Tab>("today");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = PARAM_TAB[searchParams.get("tab") ?? ""] ?? "today";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [waitlist, setWaitlist] = useState<ReservationWaitlistEntry[]>([]);
@@ -66,10 +85,25 @@ const PartnerRelatoriosPage = () => {
     };
   }, [selectedPartnerId]);
 
-  if (isLoading) {
+  useEffect(() => {
+    const fromUrl = PARAM_TAB[searchParams.get("tab") ?? ""];
+    if (fromUrl && fromUrl !== tab) setTab(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    const next = v as Tab;
+    setTab(next);
+    const sp = new URLSearchParams(searchParams);
+    sp.set("tab", TAB_PARAM[next]);
+    setSearchParams(sp, { replace: true });
+    trackPartnerClient("partner_deeplink_open", { page: "relatorios", tab: TAB_PARAM[next] });
+  };
+
+  if (isLoading || (loading && !weekly)) {
     return (
       <PartnerScreen title="Relatórios">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <AnalyticsSkeleton />
       </PartnerScreen>
     );
   }
@@ -88,7 +122,7 @@ const PartnerRelatoriosPage = () => {
       subtitle={loading ? "Atualizando…" : "Operação e crescimento"}
       right={<LineChart className="h-5 w-5 text-muted-foreground" />}
     >
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+      <Tabs value={tab} onValueChange={handleTabChange} className="animate-in fade-in duration-200">
         <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/8">
           <TabsTrigger value="today" className="text-xs">Hoje</TabsTrigger>
           <TabsTrigger value="week" className="text-xs">Semana</TabsTrigger>

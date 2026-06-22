@@ -34,6 +34,8 @@ import { OccupancyRing } from "../components/OccupancyRing";
 import { PartnerActionsSheet } from "../components/PartnerActionsSheet";
 import { PartnerNotificationsCenter } from "../components/PartnerNotificationsCenter";
 import { PartnerEmptyState } from "../components/PartnerEmptyState";
+import { OccupancySkeleton, PartnerCardSkeleton } from "../components/PartnerSkeletons";
+import { trackPartnerClient } from "../lib/partnerInteractions";
 
 const SHORTCUTS: Array<{ to: string; icon: typeof Calendar; label: string }> = [
   { to: "/reservas", icon: Calendar, label: "Reservas" },
@@ -75,6 +77,37 @@ function Kpi({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function SummaryCell({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[9px] uppercase tracking-wider text-muted-foreground truncate">
+        {label}
+      </div>
+      <div className="text-base font-semibold tabular-nums text-foreground truncate">
+        {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
+      </div>
+    </div>
+  );
+}
+
+function ComparePill({ label, value }: { label: string; value: number }) {
+  const tone =
+    value > 0
+      ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/20"
+      : value < 0
+        ? "bg-rose-400/10 text-rose-300 border-rose-400/20"
+        : "bg-white/5 text-muted-foreground border-white/10";
+  const sign = value > 0 ? "+" : "";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${tone}`}
+    >
+      <span className="text-muted-foreground/80">{label}</span>
+      <span className="font-semibold tabular-nums">{sign}{value}%</span>
+    </span>
   );
 }
 
@@ -131,35 +164,83 @@ const PartnerHomePage = () => {
     const today = new Date();
     const startToday = new Date(today);
     startToday.setHours(0, 0, 0, 0);
+    const dayStart = startToday.getTime();
+    const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+    const yStart = dayStart - 24 * 60 * 60 * 1000;
+    const weekStart = dayStart - 7 * 24 * 60 * 60 * 1000;
+
     let checkins = 0;
     let pending = 0;
     let noShow = 0;
+    let revenueToday = 0;
+    let reservasToday = 0;
+    let reservasYesterday = 0;
+    let reservasWeek = 0;
+
     for (const r of rows) {
       const d = new Date(r.reservation_date).getTime();
-      const dayStart = startToday.getTime();
-      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      const created = new Date(r.created_at).getTime();
       const isToday = d >= dayStart && d < dayEnd;
-      if (isToday && r.status === "completed") checkins += 1;
-      if (
-        isToday &&
-        (r.status === "pending" || r.status === "pending_payment")
-      )
-        pending += 1;
-      if (isToday && r.status === "no_show") noShow += 1;
+      const isY = d >= yStart && d < dayStart;
+      if (isToday) {
+        reservasToday += 1;
+        if (r.status === "completed") checkins += 1;
+        if (r.status === "pending" || r.status === "pending_payment") pending += 1;
+        if (r.status === "no_show") noShow += 1;
+        if (
+          (r.status === "confirmed" || r.status === "completed") &&
+          typeof r.total_price === "number"
+        ) {
+          revenueToday += Number(r.total_price) || 0;
+        }
+      }
+      if (isY) reservasYesterday += 1;
+      if (created >= weekStart) reservasWeek += 1;
     }
+
+    const fila = waitlist.filter((w) => w.status === "waiting").length;
+    const avg7 = reservasWeek / 7;
+    const diffY = reservasYesterday > 0
+      ? Math.round(((reservasToday - reservasYesterday) / reservasYesterday) * 100)
+      : reservasToday > 0
+        ? 100
+        : 0;
+    const diff7 = avg7 > 0
+      ? Math.round(((reservasToday - avg7) / avg7) * 100)
+      : reservasToday > 0
+        ? 100
+        : 0;
+
     return {
-      reservasHoje: stats.today,
+      reservasHoje: reservasToday,
       checkins,
       pending,
       noShow,
-      fila: waitlist.filter((w) => w.status === "waiting").length,
+      fila,
+      revenueToday,
+      diffYesterday: diffY,
+      diff7Days: diff7,
     };
-  }, [rows, stats.today, waitlist]);
+  }, [rows, waitlist]);
+
+  useEffect(() => {
+    if (!loading && selectedPartnerId) {
+      trackPartnerClient("partner_home_summary_view", {
+        reservasHoje: kpis.reservasHoje,
+        fila: kpis.fila,
+      });
+    }
+  }, [loading, selectedPartnerId, kpis.reservasHoje, kpis.fila]);
 
   if (isLoading) {
     return (
       <PartnerScreen title="Início">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <OccupancySkeleton />
+        <div className="grid grid-cols-2 gap-2.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <PartnerCardSkeleton key={i} />
+          ))}
+        </div>
       </PartnerScreen>
     );
   }
@@ -213,6 +294,38 @@ const PartnerHomePage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* 📈 Resumo Hoje (comparativos) */}
+        <Card className="border-white/8 bg-white/[0.03]">
+          <CardContent className="p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                📈 Hoje
+              </span>
+              <span className="text-[10px] text-muted-foreground/80">
+                vs ontem · 7d
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <SummaryCell label="Reservas" value={kpis.reservasHoje} />
+              <SummaryCell
+                label="Receita"
+                value={
+                  kpis.revenueToday > 0
+                    ? `R$ ${Math.round(kpis.revenueToday).toLocaleString("pt-BR")}`
+                    : "—"
+                }
+              />
+              <SummaryCell label="Fila" value={kpis.fila} />
+              <SummaryCell label="Check-ins" value={kpis.checkins} />
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <ComparePill label="vs ontem" value={kpis.diffYesterday} />
+              <ComparePill label="vs 7d" value={kpis.diff7Days} />
+            </div>
+          </CardContent>
+        </Card>
+
 
         {/* KPIs do dia */}
         <div className="grid grid-cols-2 gap-2.5">

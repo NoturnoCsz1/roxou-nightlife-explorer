@@ -4,7 +4,8 @@
  * Tabs: Mesas · Bistrôs · Camarotes · Lista de Espera.
  * Reaproveita listReservations + WaitlistManager existentes.
  */
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Hourglass, Users, Clock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,11 @@ import { PartnerScreen } from "../components/PartnerScreen";
 import { PartnerEmptyState } from "../components/PartnerEmptyState";
 import { WaitlistManager } from "../components/WaitlistManager";
 import {
+  ReservationCardSkeletonList,
+  WaitlistSkeleton,
+} from "../components/PartnerSkeletons";
+import { trackPartnerClient } from "../lib/partnerInteractions";
+import {
   listReservations,
   listReservationTypes,
   type PartnerReservationRow,
@@ -24,6 +30,19 @@ import {
 import { formatDateTimeSP } from "@/lib/dateUtils";
 
 type Tab = "table" | "bistro" | "box" | "waitlist";
+
+const TAB_TO_PARAM: Record<Tab, string> = {
+  table: "mesas",
+  bistro: "bistros",
+  box: "camarotes",
+  waitlist: "espera",
+};
+const PARAM_TO_TAB: Record<string, Tab> = {
+  mesas: "table",
+  bistros: "bistro",
+  camarotes: "box",
+  espera: "waitlist",
+};
 
 const KIND_LABEL: Record<PartnerReservationTypeKind, string> = {
   table: "Mesas",
@@ -43,7 +62,23 @@ function fmtRemaining(mins: number): string {
   return `Em ${h}h ${mins % 60}min`;
 }
 
-function ClientCard({
+type Priority = {
+  emoji: string;
+  cls: string;
+  label: string;
+};
+
+function priorityOf(waitMinutes: number): Priority {
+  if (waitMinutes < 15)
+    return { emoji: "🟢", cls: "bg-emerald-400/15 text-emerald-300 border-emerald-400/25", label: `${waitMinutes}min` };
+  if (waitMinutes < 30)
+    return { emoji: "🟡", cls: "bg-amber-300/15 text-amber-200 border-amber-300/25", label: `${waitMinutes}min` };
+  if (waitMinutes < 60)
+    return { emoji: "🟠", cls: "bg-orange-400/15 text-orange-300 border-orange-400/30", label: `${waitMinutes}min` };
+  return { emoji: "🔴", cls: "bg-rose-500/15 text-rose-300 border-rose-500/30", label: `${waitMinutes}min` };
+}
+
+const ClientCard = memo(function ClientCard({
   row,
   type,
 }: {
@@ -51,6 +86,13 @@ function ClientCard({
   type?: PartnerReservationType;
 }) {
   const mins = minutesUntil(row.reservation_date);
+  const waitMs = Date.now() - new Date(row.created_at).getTime();
+  const waitMin = Math.max(0, Math.round(waitMs / 60000));
+  const prio = priorityOf(waitMin);
+  const expiresMin = row.expires_at
+    ? minutesUntil(row.expires_at)
+    : null;
+
   const initials = (row.name ?? "?")
     .split(" ")
     .slice(0, 2)
@@ -66,7 +108,7 @@ function ClientCard({
         : "border-white/8 bg-white/[0.03]";
 
   return (
-    <Card className={`${toneClass} overflow-hidden`}>
+    <Card className={`${toneClass} overflow-hidden transition-colors`}>
       <CardContent className="p-3 flex items-center gap-3">
         <div className="h-10 w-10 shrink-0 rounded-full bg-white/8 flex items-center justify-center text-sm font-semibold text-foreground/90">
           {initials || "?"}
@@ -76,9 +118,19 @@ function ClientCard({
             <span className="text-sm font-medium text-foreground truncate">
               {row.name ?? "Sem nome"}
             </span>
-            <Badge variant="secondary" className="text-[10px]">
-              {row.status}
-            </Badge>
+            <button
+              type="button"
+              onClick={() =>
+                trackPartnerClient("partner_waitlist_priority_click", {
+                  waitMinutes: waitMin,
+                })
+              }
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${prio.cls}`}
+              aria-label={`Prioridade ${prio.label}`}
+            >
+              <span>{prio.emoji}</span>
+              <span className="tabular-nums">{prio.label}</span>
+            </button>
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -90,6 +142,11 @@ function ClientCard({
               <Clock className="h-3 w-3" />
               {fmtRemaining(mins)}
             </span>
+            {expiresMin !== null && expiresMin > -120 ? (
+              <span className="inline-flex items-center gap-1 text-amber-300/90">
+                ⌛ Expira em {Math.max(0, expiresMin)}min
+              </span>
+            ) : null}
           </div>
           <div className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
             {formatDateTimeSP(row.reservation_date)}
@@ -98,14 +155,32 @@ function ClientCard({
       </CardContent>
     </Card>
   );
-}
+});
 
 const PartnerFilaPage = () => {
   const { selectedPartner, selectedPartnerId, isLoading } = usePartnerAuth();
-  const [tab, setTab] = useState<Tab>("table");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = PARAM_TO_TAB[searchParams.get("tab") ?? ""] ?? "table";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // sincroniza tab ↔ URL
+  useEffect(() => {
+    const fromUrl = PARAM_TO_TAB[searchParams.get("tab") ?? ""];
+    if (fromUrl && fromUrl !== tab) setTab(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    const next = v as Tab;
+    setTab(next);
+    const sp = new URLSearchParams(searchParams);
+    sp.set("tab", TAB_TO_PARAM[next]);
+    setSearchParams(sp, { replace: true });
+    trackPartnerClient("partner_deeplink_open", { page: "fila", tab: TAB_TO_PARAM[next] });
+  };
 
   useEffect(() => {
     if (!selectedPartnerId) {
@@ -140,18 +215,31 @@ const PartnerFilaPage = () => {
 
   const filtered = useMemo(() => {
     if (tab === "waitlist") return [] as PartnerReservationRow[];
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       const t = r.reservation_type_id ? typeMap.get(r.reservation_type_id) : null;
       const kind = t?.kind;
-      if (!kind) return tab === "table"; // sem tipo → mesa
-      return kind === tab && (r.status === "pending" || r.status === "pending_payment" || r.status === "confirmed");
+      if (!kind) return tab === "table";
+      return (
+        kind === tab &&
+        (r.status === "pending" || r.status === "pending_payment" || r.status === "confirmed")
+      );
+    });
+    // Ordenação: expirando primeiro → maior espera → mais pessoas
+    return list.slice().sort((a, b) => {
+      const expA = a.expires_at ? minutesUntil(a.expires_at) : Infinity;
+      const expB = b.expires_at ? minutesUntil(b.expires_at) : Infinity;
+      if (expA !== expB) return expA - expB;
+      const wA = Date.now() - new Date(a.created_at).getTime();
+      const wB = Date.now() - new Date(b.created_at).getTime();
+      if (wA !== wB) return wB - wA;
+      return (b.people_count ?? 0) - (a.people_count ?? 0);
     });
   }, [rows, typeMap, tab]);
 
-  if (isLoading) {
+  if (isLoading || (loading && rows.length === 0)) {
     return (
       <PartnerScreen title="Fila">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        {tab === "waitlist" ? <WaitlistSkeleton /> : <ReservationCardSkeletonList count={5} />}
       </PartnerScreen>
     );
   }
@@ -170,7 +258,8 @@ const PartnerFilaPage = () => {
       subtitle={loading ? "Atualizando…" : "Mesas, bistrôs, camarotes e espera"}
       right={<Hourglass className="h-5 w-5 text-muted-foreground" />}
     >
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+      <Tabs value={tab} onValueChange={handleTabChange} className="animate-in fade-in duration-200">
+
         <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/8">
           <TabsTrigger value="table" className="text-xs">Mesas</TabsTrigger>
           <TabsTrigger value="bistro" className="text-xs">Bistrôs</TabsTrigger>

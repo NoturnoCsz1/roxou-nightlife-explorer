@@ -69,7 +69,16 @@ const Fallback = () => (
 );
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // FASE 2 — cache mais agressivo para painel ágil sem novas queries.
+      staleTime: 5 * 60 * 1000, // 5 min
+      gcTime: 15 * 60 * 1000, // 15 min
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const PartnerApp = () => (
   <QueryClientProvider client={queryClient}>
