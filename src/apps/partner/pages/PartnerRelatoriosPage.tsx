@@ -85,10 +85,25 @@ const PartnerRelatoriosPage = () => {
     };
   }, [selectedPartnerId]);
 
-  if (isLoading) {
+  useEffect(() => {
+    const fromUrl = PARAM_TAB[searchParams.get("tab") ?? ""];
+    if (fromUrl && fromUrl !== tab) setTab(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    const next = v as Tab;
+    setTab(next);
+    const sp = new URLSearchParams(searchParams);
+    sp.set("tab", TAB_PARAM[next]);
+    setSearchParams(sp, { replace: true });
+    trackPartnerClient("partner_deeplink_open", { page: "relatorios", tab: TAB_PARAM[next] });
+  };
+
+  if (isLoading || (loading && !weekly)) {
     return (
       <PartnerScreen title="Relatórios">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        <AnalyticsSkeleton />
       </PartnerScreen>
     );
   }
@@ -107,7 +122,7 @@ const PartnerRelatoriosPage = () => {
       subtitle={loading ? "Atualizando…" : "Operação e crescimento"}
       right={<LineChart className="h-5 w-5 text-muted-foreground" />}
     >
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+      <Tabs value={tab} onValueChange={handleTabChange} className="animate-in fade-in duration-200">
         <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/8">
           <TabsTrigger value="today" className="text-xs">Hoje</TabsTrigger>
           <TabsTrigger value="week" className="text-xs">Semana</TabsTrigger>
