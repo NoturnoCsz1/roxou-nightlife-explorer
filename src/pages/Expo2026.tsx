@@ -36,6 +36,7 @@ export default function Expo2026() {
 
   useEffect(() => {
     trackExpoEvent("expo_view", { page: "home" }, { once: true });
+    trackExpoEvent("expo_passaporte_view", { page: "home" }, { once: true, onceKey: "expo_passaporte_view_home" });
     try {
       const src = detectSource();
       if (src === "Google Search") trackExpoEvent("expo_google_organic", {}, { once: true });
