@@ -250,12 +250,22 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                   </label>
                   <select
                     value={originFilter}
-                    onChange={(e) => setOriginFilter(e.target.value as OriginFilter)}
+                    onChange={(e) => {
+                      setOriginFilter(e.target.value as OriginFilter);
+                      trackAdminEvent("admin_events_filter_used", {
+                        source: "sheet",
+                        filter: "origin",
+                        value: e.target.value,
+                      });
+                    }}
                     className="w-full rounded-lg border border-border/40 bg-background/80 px-3 py-2 text-sm"
                   >
                     <option value="todos">Todas as origens</option>
-                    <option value="ai">Criados por IA</option>
-                    <option value="manual">Criados manualmente</option>
+                    <option value="aura">Aura</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="eventou">Eventou</option>
+                    <option value="ai">IA (qualquer)</option>
+                    <option value="manual">Manual</option>
                   </select>
                 </div>
 
