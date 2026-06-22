@@ -3,6 +3,7 @@
 
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
+import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
@@ -75,6 +76,11 @@ export function HomeDesktop(props: HomeDesktopProps) {
       <div className="hidden lg:block max-w-5xl mx-auto">
         <HomeSectionBoundary name="Copa Highlight (desktop)" silent>
           <CopaHighlightCard />
+        </HomeSectionBoundary>
+
+        {/* Expo Prudente 2026 — desktop */}
+        <HomeSectionBoundary name="Expo Highlight (desktop)" silent>
+          <ExpoHighlightCard />
         </HomeSectionBoundary>
       </div>
 

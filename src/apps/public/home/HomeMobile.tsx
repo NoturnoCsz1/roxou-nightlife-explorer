@@ -7,6 +7,7 @@ import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
+import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
@@ -116,6 +117,10 @@ export function HomeMobile(props: HomeMobileProps) {
           <CopaHighlightCard />
         </HomeSectionBoundary>
 
+        {/* Expo Prudente 2026 */}
+        <HomeSectionBoundary name="Expo Highlight (mobile)" silent>
+          <ExpoHighlightCard />
+        </HomeSectionBoundary>
 
         {/* Jogos ao vivo */}
         {!isLoading && !hasHomeDataError && (

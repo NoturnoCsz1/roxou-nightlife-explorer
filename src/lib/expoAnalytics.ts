@@ -46,7 +46,13 @@ export type ExpoEventName =
   | "expo_nav_front_stage"
   | "expo_nav_mapa"
   | "expo_nav_menores"
-  | "expo_nav_info";
+  | "expo_nav_info"
+  | "expo_home_card_click"
+  | "expo_home_ingressos_click"
+  | "expo_home_frontstage_click"
+  | "expo_home_menores_click"
+  | "expo_home_mapa_click"
+  | "expo_home_info_click";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";
