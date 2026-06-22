@@ -57,17 +57,9 @@ const ITEMS: Item[] = [
   },
 ];
 
-const tap = () => {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    try {
-      (navigator as Navigator).vibrate?.(8);
-    } catch {
-      /* noop */
-    }
-  }
-};
+const tap = () => haptics.tap();
 
-export function PartnerBottomNav() {
+function PartnerBottomNavImpl() {
   const { pathname } = useLocation();
 
   return (
@@ -124,4 +116,5 @@ export function PartnerBottomNav() {
   );
 }
 
+export const PartnerBottomNav = memo(PartnerBottomNavImpl);
 export default PartnerBottomNav;
