@@ -537,7 +537,7 @@ const PartnerReservationsPage = () => {
           {loading && rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">Carregando reservas…</p>
           ) : rows.length === 0 ? (
-            <ReservationEmptyState />
+            <ReservationEmptyState ctaLabel="Criar reserva" ctaTo="/reservas?new=1" />
           ) : (
             <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
               <div className="-mx-1 overflow-x-auto">

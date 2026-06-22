@@ -246,7 +246,7 @@ const PartnerFilaPage = () => {
   if (!selectedPartnerId) {
     return (
       <PartnerScreen title="Fila">
-        <PartnerEmptyState />
+        <PartnerEmptyState ctaLabel="Abrir configurações" ctaTo="/configuracoes" />
       </PartnerScreen>
     );
   }
