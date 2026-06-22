@@ -146,7 +146,6 @@ export function PartnerActionsSheet({
           open={qrOpen}
           onOpenChange={setQrOpen}
           url={publicUrl}
-          title={partnerName ?? "Reservas"}
         />
       ) : null}
     </>
