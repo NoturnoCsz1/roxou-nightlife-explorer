@@ -93,6 +93,18 @@ const PartnerConfiguracoesPage = () => {
       ],
     },
     {
+      title: "Manutenção",
+      items: [
+        {
+          icon: Sparkles,
+          label: "Limpeza de registros",
+          to: "/configuracoes/limpeza",
+          hint: "Arquive reservas, filas e eventos antigos",
+          keywords: "limpeza arquivar antigos manutencao cache historico",
+        },
+      ],
+    },
+    {
       title: "Conta",
       items: [
         { icon: LogOut, label: "Sair", onClick: signOut, danger: true, keywords: "sair logout encerrar sessao" },
