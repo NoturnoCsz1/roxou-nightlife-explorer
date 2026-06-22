@@ -62,7 +62,10 @@ export type ChecklistKey = "title" | "date" | "description" | "flyer";
 export interface Checklist {
   title: boolean;
   date: boolean;
+  /** "Tem descrição alguma" — usa hasEventDescription. */
   description: boolean;
+  /** "Tem descrição rica para publicar" — exige HTML estruturado. */
+  descriptionRich: boolean;
   flyer: boolean;
   complete: boolean;
 }

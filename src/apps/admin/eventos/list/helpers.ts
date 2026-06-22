@@ -2,6 +2,7 @@
 // Lógica preservada literalmente — não mexer em regras de checklist,
 // detecção de IA ou formatação de data SP sem revisão explícita.
 
+import { hasEventDescription } from "@/lib/eventDescription";
 import type { EventRow, Checklist } from "./types";
 
 export function getQualityScore(e: EventRow): number {
@@ -13,19 +14,25 @@ export function getQualityScore(e: EventRow): number {
   return s;
 }
 
+/**
+ * `description` = "tem descrição alguma" (usado por badge "Falta descrição",
+ *   contadores, filtros, bulk).
+ * `descriptionRich` = "tem descrição rica pronta para publicar" (gate
+ *   editorial usado por `complete`).
+ */
 export function getChecklist(e: EventRow): Checklist {
   const titleText = (e.title || "").trim();
   const title = titleText.length >= 5 && !/[—–\-:|/]/.test(titleText);
   const date = !!e.date_time && new Date(e.date_time).getTime() > Date.now();
   const desc = (e.description || "").trim();
-  // Persona V2 = HTML rica com checklist (📝 O QUE VOCÊ PRECISA SABER) ou ao menos <ul> + <strong> + 80+ chars
-  const description =
+  const descriptionRich =
     desc.length >= 80 &&
     /<(p|ul|li|strong)\b/i.test(desc) &&
     (/O QUE VOC[ÊE] PRECISA SABER/i.test(desc) || /<ul[\s>]/i.test(desc));
+  const description = hasEventDescription(e);
   const flyer = !!e.image_url && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(e.image_url.trim());
-  const complete = title && date && description && flyer;
-  return { title, date, description, flyer, complete };
+  const complete = title && date && descriptionRich && flyer;
+  return { title, date, description, descriptionRich, flyer, complete };
 }
 
 export function normalizeAiTitle(title: string) {
