@@ -73,12 +73,19 @@ import {
 
 const ACCORDION_KEY = "partner_reservas_accordion_v1";
 
-type Bucket = "active" | "pending" | "ended" | "archived";
+type Bucket = "active" | "pending" | "checkin" | "ended" | "archived";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 const bucketOf = (r: PartnerReservationRow): Bucket => {
   if (r.status === "pending_payment" || r.status === "pending") return "pending";
-  if (r.status === "no_show" || r.status === "expired") return "archived";
-  if (r.status === "cancelled") return "archived";
+  const finished = r.status === "completed" || r.status === "cancelled" ||
+    r.status === "no_show" || r.status === "expired";
+  const updatedTs = new Date(r.updated_at ?? r.reservation_date).getTime();
+  const isOld = Date.now() - updatedTs > SEVEN_DAYS_MS;
+  if (finished && isOld) return "archived";
+  if (r.status === "no_show" || r.status === "expired" || r.status === "cancelled") return "archived";
+  if (r.checked_in_at) return "checkin";
   if (r.status === "completed") return "ended";
   const past = new Date(r.reservation_date).getTime() < Date.now();
   if (past) return "ended";
@@ -220,6 +227,7 @@ const PartnerReservationsPage = () => {
     const acc: Record<Bucket, PartnerReservationRow[]> = {
       active: [],
       pending: [],
+      checkin: [],
       ended: [],
       archived: [],
     };
@@ -486,35 +494,35 @@ const PartnerReservationsPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button
+                onClick={() => void handleShareLink()}
+                className="min-h-[48px] w-full overflow-hidden"
+              >
+                <Share2 className="mr-1.5 h-4 w-4 shrink-0" />
+                <span className="truncate">Compartilhar</span>
+              </Button>
+              <Button
                 variant="outline"
                 onClick={handleOpenLink}
-                className="min-h-[44px] w-full"
+                className="min-h-[48px] w-full overflow-hidden"
               >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Abrir link
+                <ExternalLink className="mr-1.5 h-4 w-4 shrink-0" />
+                <span className="truncate">Abrir</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={() => void handleCopyLink()}
-                className="min-h-[44px] w-full"
+                className="min-h-[48px] w-full overflow-hidden"
               >
-                <Copy className="mr-2 h-4 w-4" />
-                Copiar link
+                <Copy className="mr-1.5 h-4 w-4 shrink-0" />
+                <span className="truncate">Copiar</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setQrOpen(true)}
-                className="min-h-[44px] w-full"
+                className="min-h-[48px] w-full overflow-hidden"
               >
-                <QrCode className="mr-2 h-4 w-4" />
-                Ver QR
-              </Button>
-              <Button
-                onClick={() => void handleShareLink()}
-                className="min-h-[44px] w-full"
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                Compartilhar reserva
+                <QrCode className="mr-1.5 h-4 w-4 shrink-0" />
+                <span className="truncate">QR</span>
               </Button>
             </div>
           </CardContent>
@@ -529,7 +537,7 @@ const PartnerReservationsPage = () => {
           {loading && rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">Carregando reservas…</p>
           ) : rows.length === 0 ? (
-            <ReservationEmptyState />
+            <ReservationEmptyState ctaLabel="Criar reserva" ctaTo="/reservas?new=1" />
           ) : (
             <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
               <div className="-mx-1 overflow-x-auto">
@@ -544,8 +552,12 @@ const PartnerReservationsPage = () => {
                       ? `(${buckets.pending.length})`
                       : ""}
                   </TabsTrigger>
+                  <TabsTrigger value="checkin" className="shrink-0 whitespace-nowrap">
+                    Check-in{" "}
+                    {buckets.checkin.length ? `(${buckets.checkin.length})` : ""}
+                  </TabsTrigger>
                   <TabsTrigger value="ended" className="shrink-0 whitespace-nowrap">
-                    Encerradas{" "}
+                    Histórico{" "}
                     {buckets.ended.length ? `(${buckets.ended.length})` : ""}
                   </TabsTrigger>
                   <TabsTrigger value="archived" className="shrink-0 whitespace-nowrap">
@@ -561,6 +573,9 @@ const PartnerReservationsPage = () => {
               </TabsContent>
               <TabsContent value="pending" className="mt-4">
                 {renderBucket("pending")}
+              </TabsContent>
+              <TabsContent value="checkin" className="mt-4">
+                {renderBucket("checkin")}
               </TabsContent>
               <TabsContent value="ended" className="mt-4">
                 {renderBucket("ended")}

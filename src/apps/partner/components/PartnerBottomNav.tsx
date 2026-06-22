@@ -69,14 +69,15 @@ function PartnerBottomNavImpl() {
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40 md:hidden",
         "border-t border-white/8",
-        "bg-[rgba(15,15,18,0.9)] backdrop-blur-xl",
+        "bg-[rgba(15,15,18,0.78)] backdrop-blur-[30px]",
+        "shadow-[0_-6px_24px_-12px_rgba(0,0,0,0.6)]",
       )}
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        ["--partner-bottom-nav-h" as never]: "64px",
+        ["--partner-bottom-nav-h" as never]: "84px",
       }}
     >
-      <ul className="grid grid-cols-5 h-16">
+      <ul className="grid grid-cols-5" style={{ height: 84 }}>
         {ITEMS.map((item) => {
           const Icon = item.icon;
           const active = item.matches
@@ -89,7 +90,7 @@ function PartnerBottomNavImpl() {
                 onClick={tap}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "h-full flex flex-col items-center justify-center gap-0.5 px-1",
+                  "h-full flex flex-col items-center justify-center gap-1 px-1",
                   "text-[10px] font-medium tracking-tight transition-colors",
                   active
                     ? "text-foreground"
@@ -99,9 +100,7 @@ function PartnerBottomNavImpl() {
                 <span
                   className={cn(
                     "flex items-center justify-center rounded-full transition-all",
-                    active
-                      ? "bg-white/8 px-3 py-1"
-                      : "px-2 py-1",
+                    active ? "bg-white/8 px-3 py-1" : "px-2 py-1",
                   )}
                 >
                   <Icon className={cn("h-5 w-5", active && "text-violet-300")} />

@@ -248,7 +248,7 @@ const PartnerHomePage = () => {
   if (!selectedPartnerId) {
     return (
       <PartnerScreen title="Início">
-        <PartnerEmptyState />
+        <PartnerEmptyState ctaLabel="Abrir configurações" ctaTo="/configuracoes" />
       </PartnerScreen>
     );
   }
