@@ -194,18 +194,19 @@ export function EventosListCompactRow({
 
 
       {/* Ações */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 self-center">
         <Link
           to={getEventEditPath(e.id)}
-          className="inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/15 h-10 min-w-10 px-2 text-[11px] font-bold uppercase text-primary hover:bg-primary/25 transition"
+          className="inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/15 h-9 w-9 text-primary hover:bg-primary/25 transition"
           title="Editar"
+          aria-label="Editar"
         >
           <Pencil className="h-3.5 w-3.5" />
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="inline-flex items-center justify-center rounded-lg border border-border/40 bg-secondary/40 h-10 w-10 text-muted-foreground hover:bg-secondary/70 transition"
+              className="inline-flex items-center justify-center rounded-lg border border-border/40 bg-secondary/40 h-9 w-9 text-muted-foreground hover:bg-secondary/70 transition"
               aria-label="Mais ações"
             >
               <MoreHorizontal className="h-4 w-4" />
