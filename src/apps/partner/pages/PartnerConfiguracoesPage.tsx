@@ -18,6 +18,7 @@ import {
   Search,
   Wallet,
   MessageSquare,
+  Sparkles,
   Clock as ClockIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
