@@ -63,7 +63,15 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
     publishing,
     readyInFiltered,
     setBulkSafeOpen,
+    viewMode,
+    setViewMode,
   } = ctx;
+
+  function changeViewMode(mode: "cards" | "compact") {
+    if (mode === viewMode) return;
+    setViewMode(mode);
+    trackAdminEvent("admin_events_view_mode_changed", { mode });
+  }
 
   return (
     <>
