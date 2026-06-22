@@ -70,6 +70,8 @@ export function PartnerActionsSheet({
       icon: CalendarPlus,
       label: "Nova reserva",
       onClick: () => {
+        haptics.newReservation();
+        trackPartnerClient("partner_quick_action_vibrate", { action: "new" });
         setOpen(false);
         navigate("/reservas");
       },
@@ -78,20 +80,28 @@ export function PartnerActionsSheet({
       icon: BellRing,
       label: "Chamar próximo",
       onClick: () => {
+        haptics.callNext();
+        trackPartnerClient("partner_quick_action_vibrate", { action: "call_next" });
         setOpen(false);
         if (onCallNext) onCallNext();
-        else navigate("/fila");
+        else navigate("/fila?tab=espera");
       },
     },
     {
       icon: Share2,
       label: "Compartilhar link",
-      onClick: handleShare,
+      onClick: () => {
+        haptics.tap();
+        trackPartnerClient("partner_quick_action_vibrate", { action: "share" });
+        void handleShare();
+      },
     },
     {
       icon: QrCode,
       label: "Mostrar QR",
       onClick: () => {
+        haptics.tap();
+        trackPartnerClient("partner_quick_action_vibrate", { action: "qr" });
         setOpen(false);
         setQrOpen(true);
       },
