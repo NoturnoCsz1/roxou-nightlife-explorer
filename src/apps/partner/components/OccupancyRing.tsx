@@ -51,7 +51,7 @@ function moodOf(pct: number): Mood {
   };
 }
 
-export function OccupancyRing({
+function OccupancyRingImpl({
   value,
   reservedSeats,
   totalCapacity,
@@ -110,4 +110,5 @@ export function OccupancyRing({
   );
 }
 
+export const OccupancyRing = memo(OccupancyRingImpl);
 export default OccupancyRing;
