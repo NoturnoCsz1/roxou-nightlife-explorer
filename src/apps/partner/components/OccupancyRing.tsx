@@ -2,6 +2,7 @@
  * OccupancyRing — anel SVG de ocupação com status de movimento.
  * UI only — recebe percentual já calculado.
  */
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 interface Props {
