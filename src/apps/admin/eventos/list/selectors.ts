@@ -59,9 +59,14 @@ export function computeEventosListDerived(input: SelectorInput) {
     .filter((e) => {
       const q = search.trim().toLowerCase();
       if (!q) return true;
-      return [e.title, e.slug, e.id, e.venue_name || ""].some((value) =>
-        value.toLowerCase().includes(q)
-      );
+      return [
+        e.title,
+        e.slug,
+        e.id,
+        e.venue_name || "",
+        e.category || "",
+        e.sub_category || "",
+      ].some((value) => value.toLowerCase().includes(q));
     })
     .filter((e) => !activeCategory || e.category === activeCategory)
     .filter((e) => !activeStatus || e.status === activeStatus)
