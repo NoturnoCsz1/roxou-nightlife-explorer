@@ -683,6 +683,219 @@ const LANDING_CONFIGS: Record<string, LandingConfig> = {
       { label: "Bares", href: "/bares" },
     ],
   },
+
+  // ───────────── NEW LOCAL SEO PAGES (2026) ─────────────
+  "eventos-em-presidente-prudente-hoje": {
+    slug: "eventos-em-presidente-prudente-hoje",
+    title: `Eventos em ${CITY} Hoje`,
+    metaTitle: `Eventos em ${CITY} Hoje | Agenda Completa do Dia | Roxou`,
+    metaDescription: `Veja todos os eventos em ${CITY} hoje: festas, shows, baladas, bares com música ao vivo e happy hour. Agenda atualizada em tempo real pela Roxou.`,
+    heading: `Eventos em ${CITY} Hoje`,
+    intro: `A agenda definitiva de eventos em ${CITY} hoje — festas, shows, baladas, bares e happy hour, atualizada em tempo real.`,
+    filter: (e) => isTodaySP(new Date(e.date_time)),
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando eventos em ${CITY} hoje? A Roxou reúne em uma página única tudo o que está acontecendo agora na cidade: festas universitárias, shows ao vivo, baladas, bares com programação especial, pagode, sertanejo e happy hour — com horário, local e link direto para o evento.`,
+      `A agenda é atualizada em tempo real conforme bares, casas noturnas e produtoras confirmam os eventos do dia. Em vez de caçar story por story no Instagram, basta esta página.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Eventos Hoje"),
+    faqItems: [
+      { q: `Quais eventos têm em ${CITY} hoje?`, a: `Veja a lista acima — toda a programação confirmada para hoje em ${CITY}, com baladas, shows, bares, pagode, sertanejo e happy hour.` },
+      { q: `Onde encontrar a agenda de eventos de ${CITY}?`, a: `Aqui mesmo na Roxou. Atualizamos diariamente com base nas confirmações de bares, casas e produtoras locais.` },
+      { q: `Tem evento gratuito hoje em ${CITY}?`, a: `Alguns bares e casas oferecem entrada gratuita ou cortesia até determinado horário. Confira nos cards acima — cada evento traz a política de entrada quando disponível.` },
+    ],
+    relatedLinks: [
+      { label: "O que fazer hoje", href: "/o-que-fazer-em-presidente-prudente-hoje" },
+      { label: "Bares", href: "/bares" },
+      { label: "Shows", href: "/shows" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Baladas", href: "/baladas" },
+      { label: "Jogos ao vivo", href: "/jogos" },
+      { label: "Guia de Informações da Expo Prudente 2026", href: "/expo2026" },
+    ],
+  },
+  "festa-em-presidente-prudente-hoje": {
+    slug: "festa-em-presidente-prudente-hoje",
+    title: `Festa em ${CITY} Hoje`,
+    metaTitle: `Festa em ${CITY} Hoje | Baladas, Open Bar e Universitárias | Roxou`,
+    metaDescription: `Veja onde tem festa em ${CITY} hoje: baladas, festas universitárias, open bar e eventos com pista. Agenda atualizada em tempo real pela Roxou.`,
+    heading: `Festa em ${CITY} Hoje`,
+    intro: `Onde tem festa hoje em ${CITY}: baladas, universitárias, open bar e eventos com pista — agenda atualizada em tempo real.`,
+    filter: (e) => {
+      if (!isTodaySP(new Date(e.date_time))) return false;
+      const cat = (e.category ?? "").toLowerCase();
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""}`.toLowerCase();
+      return cat === "balada" || cat === "eletronica" || /festa|balada|open bar|universit|pista|club/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando festa em ${CITY} hoje? A Roxou reúne todas as festas confirmadas para hoje na cidade — baladas universitárias, open bar, festas autorais e eventos com pista de funk, sertanejo, eletrônica e pagode.`,
+      `Cada festa traz horário, local, line-up de DJs e link direto para garantir presença. A agenda é atualizada em tempo real conforme produtoras e casas confirmam a programação.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Festas"),
+    faqItems: [
+      { q: `Tem festa hoje em ${CITY}?`, a: `Sim — todas as festas confirmadas para hoje em ${CITY} aparecem na lista acima, com horário e local.` },
+      { q: `Onde tem festa universitária em ${CITY} hoje?`, a: `As festas universitárias com data de hoje aparecem na agenda acima. Cada evento traz o Instagram da produtora e o link para ingresso.` },
+      { q: `Qual a melhor festa de ${CITY} hoje?`, a: `Depende do estilo — funk, sertanejo, open bar, eletrônica. Veja todas as opções e escolha a que combina com você.` },
+    ],
+    relatedLinks: [
+      { label: "Baladas", href: "/baladas" },
+      { label: "Funk", href: "/funk-em-presidente-prudente" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+    ],
+  },
+  "show-em-presidente-prudente-hoje": {
+    slug: "show-em-presidente-prudente-hoje",
+    title: `Show em ${CITY} Hoje`,
+    metaTitle: `Show em ${CITY} Hoje | Música ao Vivo, Bandas e Duplas | Roxou`,
+    metaDescription: `Veja onde tem show em ${CITY} hoje: bandas, duplas, sertanejo, pagode, rock e MPB ao vivo. Agenda atualizada em tempo real pela Roxou.`,
+    heading: `Show em ${CITY} Hoje`,
+    intro: `Todos os shows confirmados para hoje em ${CITY}: bandas, duplas, sertanejo, pagode, rock, MPB e muito mais.`,
+    filter: (e) => {
+      if (!isTodaySP(new Date(e.date_time))) return false;
+      const cat = (e.category ?? "").toLowerCase();
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""}`.toLowerCase();
+      return cat === "show" || /show|banda|cantor|cantora|dupla|ao vivo|voz e viol/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando show em ${CITY} hoje? A Roxou reúne todos os shows confirmados para hoje na cidade — bandas locais, duplas sertanejas, pagode ao vivo, rock, MPB, voz e violão e apresentações em casas noturnas e espaços de eventos.`,
+      `Cada show traz horário, local, line-up e link para garantir presença ou comprar ingresso. Agenda atualizada em tempo real.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Shows"),
+    faqItems: [
+      { q: `Tem show hoje em ${CITY}?`, a: `Os shows com data de hoje aparecem na lista acima, com horário e local. Se nada aparecer, ainda não há show confirmado para hoje.` },
+      { q: `Quem está se apresentando hoje em ${CITY}?`, a: `Cada card traz a atração principal, o local e o horário. Clique para ver detalhes e ingressos.` },
+    ],
+    relatedLinks: [
+      { label: "Shows", href: "/shows" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Pagode hoje", href: "/pagode-em-presidente-prudente-hoje" },
+      { label: "Música ao vivo", href: "/musica-ao-vivo-presidente-prudente" },
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+    ],
+  },
+  "pagode-em-presidente-prudente-hoje": {
+    slug: "pagode-em-presidente-prudente-hoje",
+    title: `Pagode em ${CITY} Hoje`,
+    metaTitle: `Pagode em ${CITY} Hoje | Rodas de Samba e Bares Ao Vivo | Roxou`,
+    metaDescription: `Veja onde tem pagode em ${CITY} hoje: rodas de samba, bares com pagode ao vivo, shows e eventos. Agenda atualizada em tempo real pela Roxou.`,
+    heading: `Pagode em ${CITY} Hoje`,
+    intro: `Onde tem pagode em ${CITY} hoje: rodas de samba, bares com pagode ao vivo e shows confirmados para o dia.`,
+    filter: (e) => {
+      if (!isTodaySP(new Date(e.date_time))) return false;
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /pagode|samba|roda de samba|sambar/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando pagode em ${CITY} hoje? A Roxou mostra todas as rodas de samba, bares com pagode ao vivo e shows confirmados para hoje na cidade. Cavaco, pandeiro, batuque — tudo organizado por horário e local.`,
+      `A agenda é atualizada em tempo real. Se não houver pagode confirmado hoje, veja a página de pagode em Prudente para a programação dos próximos dias.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Pagode"),
+    faqItems: [
+      { q: `Onde tem pagode hoje em ${CITY}?`, a: `Veja a lista acima — todos os pagodes e rodas de samba com data de hoje em ${CITY}, com endereço e horário.` },
+      { q: `Tem roda de samba hoje em ${CITY}?`, a: `Se houver, ela aparece na agenda acima. Caso contrário, confira a página /pagode para os próximos dias.` },
+    ],
+    relatedLinks: [
+      { label: "Pagode (agenda completa)", href: "/pagode" },
+      { label: "Shows", href: "/shows" },
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+      { label: "Música ao vivo", href: "/musica-ao-vivo-presidente-prudente" },
+      { label: "Eventos hoje", href: "/hoje" },
+    ],
+  },
+  "musica-ao-vivo-presidente-prudente": {
+    slug: "musica-ao-vivo-presidente-prudente",
+    title: `Música ao Vivo em ${CITY}`,
+    metaTitle: `Música ao Vivo em ${CITY} | Bares, Shows e Agenda | Roxou`,
+    metaDescription: `Música ao vivo em ${CITY}: bares com voz e violão, samba, sertanejo, MPB, rock e pagode ao vivo. Agenda atualizada em tempo real pela Roxou.`,
+    heading: `Música ao Vivo em ${CITY}`,
+    intro: `Bares e eventos com música ao vivo em ${CITY}: voz e violão, samba, sertanejo, MPB, rock, pagode e muito mais.`,
+    filter: (e) => {
+      const hay = `${e.title} ${e.description ?? ""} ${e.sub_category ?? ""} ${e.category ?? ""}`.toLowerCase();
+      return /m[uú]sica ao vivo|musica ao vivo|ao vivo|show ao vivo|banda|voz e viol[ãa]o|rock ao vivo|samba ao vivo|sertanejo ao vivo|pagode ao vivo|mpb/.test(hay);
+    },
+    emitEventJsonLd: true,
+    longIntro: [
+      `Procurando música ao vivo em ${CITY}? A Roxou lista todos os bares e eventos com programação ao vivo em Prudente — voz e violão, samba, sertanejo, MPB, rock, pagode — com horário, atração e endereço.`,
+      `A agenda é atualizada em tempo real conforme bares e produtoras confirmam a programação musical.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Música ao Vivo"),
+    faqItems: [
+      { q: `Onde tem música ao vivo em ${CITY}?`, a: `Os bares e eventos com música ao vivo em Prudente aparecem na lista acima, com horário, atração e endereço.` },
+      { q: `Tem voz e violão hoje em ${CITY}?`, a: `Se houver, aparece na agenda. Confira também /bares-musica-ao-vivo para ver todos os bares com programação.` },
+      { q: `Quais bares têm música ao vivo em ${CITY}?`, a: `Listamos aqui os bares de Prudente com programação ao vivo confirmada, com endereço e Instagram para você conferir o ambiente antes de ir.` },
+    ],
+    relatedLinks: [
+      { label: "Bares com música ao vivo", href: "/bares-musica-ao-vivo" },
+      { label: "Shows", href: "/shows" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Sertanejo", href: "/sertanejo-em-presidente-prudente" },
+      { label: "Bares", href: "/bares" },
+      { label: "Eventos hoje", href: "/hoje" },
+    ],
+  },
+  "onde-sair-em-presidente-prudente": {
+    slug: "onde-sair-em-presidente-prudente",
+    title: `Onde Sair em ${CITY}`,
+    metaTitle: `Onde Sair em ${CITY} | Bares, Baladas e Rolês | Roxou`,
+    metaDescription: `Onde sair em ${CITY}: bares, baladas, shows, música ao vivo, happy hour e eventos para todos os estilos. Agenda atualizada em tempo real pela Roxou.`,
+    heading: `Onde Sair em ${CITY}`,
+    intro: `Onde sair em ${CITY} hoje, amanhã ou no fim de semana — bares, baladas, shows, música ao vivo e happy hour, num só lugar.`,
+    filter: (e) => isInNext7DaysSP(e.date_time),
+    emitEventJsonLd: true,
+    longIntro: [
+      `Não sabe onde sair em ${CITY}? A Roxou reúne em uma única agenda todos os bares, baladas, shows, eventos com música ao vivo e happy hour confirmados para os próximos dias. De rolês intimistas a grandes festas, tudo organizado por data e estilo.`,
+      `Cada opção traz horário, local, Instagram da casa e link direto para o evento. Atualizamos em tempo real para você não perder nada do que rola em Prudente.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Onde Sair"),
+    faqItems: [
+      { q: `Onde sair hoje em ${CITY}?`, a: `Veja a agenda acima — bares, baladas, shows e happy hour com programação confirmada nos próximos dias. Para só hoje, acesse /hoje.` },
+      { q: `Quais os melhores rolês em ${CITY}?`, a: `Listamos todas as opções por data. Cada card mostra a casa, a atração e o horário para você escolher.` },
+      { q: `Onde ir no fim de semana em ${CITY}?`, a: `Acesse /agenda-fim-de-semana para ver a programação completa de sábado e domingo.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Bares", href: "/bares" },
+      { label: "Baladas", href: "/baladas" },
+      { label: "Shows", href: "/shows" },
+      { label: "Pagode", href: "/pagode" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+      { label: "Jogos ao vivo", href: "/jogos" },
+    ],
+  },
+  "agenda-cultural-presidente-prudente": {
+    slug: "agenda-cultural-presidente-prudente",
+    title: `Agenda Cultural de ${CITY}`,
+    metaTitle: `Agenda Cultural de ${CITY} | Shows, Eventos e Música ao Vivo | Roxou`,
+    metaDescription: `Agenda cultural de ${CITY}: shows, eventos, música ao vivo, festas, exposições e programação cultural atualizada em tempo real pela Roxou.`,
+    heading: `Agenda Cultural de ${CITY}`,
+    intro: `A agenda cultural completa de ${CITY} — shows, música ao vivo, festas, eventos e programação cultural atualizada em tempo real.`,
+    filter: (e) => isInNext7DaysSP(e.date_time),
+    emitEventJsonLd: true,
+    longIntro: [
+      `A agenda cultural de ${CITY} reúne shows, eventos, música ao vivo, festas e programação cultural da cidade e região. A Roxou organiza tudo em um só lugar, com data, horário, local e link direto para o evento.`,
+      `Atualizamos em tempo real com base nas confirmações de produtoras, bares, casas noturnas e espaços culturais. Acompanhe esta página para se planejar — e salve a Roxou na tela inicial do celular para acesso rápido. Você também encontra aqui o Guia de Informações da Expo Prudente 2026, com tudo sobre o maior evento da cidade. A Roxou apenas divulga informações públicas. Para informações oficiais, consulte os canais oficiais do evento.`,
+    ],
+    evergreen: DEFAULT_EVERGREEN("Agenda Cultural"),
+    faqItems: [
+      { q: `O que tem na agenda cultural de ${CITY} esta semana?`, a: `Veja a lista acima — todos os eventos culturais, shows, festas e programação confirmados para os próximos 7 dias em ${CITY}.` },
+      { q: `Onde acompanhar a agenda cultural de ${CITY}?`, a: `Aqui na Roxou. Atualizamos diariamente com base nas confirmações de produtoras, bares, casas noturnas e espaços culturais.` },
+      { q: `Tem evento cultural gratuito em ${CITY}?`, a: `Alguns eventos têm entrada gratuita ou cortesia. Confira em cada card a política de entrada quando informada pela casa.` },
+    ],
+    relatedLinks: [
+      { label: "Eventos hoje", href: "/hoje" },
+      { label: "Shows", href: "/shows" },
+      { label: "Música ao vivo", href: "/musica-ao-vivo-presidente-prudente" },
+      { label: "Bares", href: "/bares" },
+      { label: "Fim de semana", href: "/agenda-fim-de-semana" },
+      { label: "Jogos ao vivo", href: "/jogos" },
+      { label: "Guia de Informações da Expo Prudente 2026", href: "/expo2026" },
+    ],
+  },
 };
 
 export const SEO_LANDING_SLUGS = Object.keys(LANDING_CONFIGS);
