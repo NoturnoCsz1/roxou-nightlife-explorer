@@ -321,32 +321,69 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6 md:ml-44 overflow-hidden min-w-0">
-      {/* ── Analytics Premium (Header + KPIs + estados) ── */}
-      <AnalyticsHero cityFilter={cityFilter} />
+    <div className="space-y-6 md:ml-44 overflow-x-hidden min-w-0 max-w-full">
+      {/* ── Analytics Premium (desktop only) ── */}
+      <div className="hidden md:block">
+        <AnalyticsHero cityFilter={cityFilter} />
+      </div>
+
+      {/* ── Analytics compacto (mobile · max 80px) ── */}
+      <div className="md:hidden">
+        <div className={cn("flex items-center justify-between gap-2 px-3", GLASS)} style={{ height: 80 }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary/15 text-primary shrink-0">
+              <Globe className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Ao vivo</p>
+              <p className="text-xs font-semibold text-foreground truncate">Site Roxou</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-center shrink-0">
+            <div>
+              <p className="text-base font-bold tabular-nums text-foreground leading-none">{realtime.activeUsers}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">Ativos</p>
+            </div>
+            <div className="h-6 w-px bg-border/40" />
+            <div>
+              <p className="text-base font-bold tabular-nums text-foreground leading-none">{realtime.sessions}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">Sessões</p>
+            </div>
+            <div className="h-6 w-px bg-border/40" />
+            <div>
+              <p className="text-base font-bold tabular-nums text-foreground leading-none">{realtime.pageViews}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">Views</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ── 1. KPIs ── */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {loading ? (
             <>
               <Skeleton className={cn("h-[110px]", GLASS)} />
               <Skeleton className={cn("h-[110px]", GLASS)} />
-              <Skeleton className={cn("h-[110px]", GLASS)} />
+              <Skeleton className={cn("h-[110px] col-span-2 md:col-span-1", GLASS)} />
             </>
           ) : (
             <>
               <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
               <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
-              <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+              <div className="col-span-2 md:col-span-1">
+                <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+              </div>
             </>
           )}
         </div>
       </section>
 
-      {/* ── Audiência (Site GA4 + Instagram) ── */}
-      <section>
+
+      {/* ── Audiência (Site GA4 + Instagram) — desktop only ── */}
+      <section className="hidden md:block">
+
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Audiência em Tempo Real
         </h2>
@@ -556,29 +593,42 @@ const Dashboard = () => {
       </Collapsible>
       )}
 
-      {/* ── 6. Oportunidades ── */}
+      {/* ── 6. Oportunidades (colapsável) ── */}
       {opportunities.length > 0 && (
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Oportunidades</h2>
-          <div className={cn("p-4 space-y-2", GLASS)}>
-            {opportunities.map((title, i) => (
-              <div key={i} className="flex items-center gap-2.5">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                <span className="text-xs text-foreground/80 truncate">"{title}" tem poucas views</span>
-              </div>
-            ))}
-            <p className="text-[10px] text-muted-foreground pt-1">Considere divulgar esses eventos nas redes sociais</p>
-          </div>
-        </section>
+        <Collapsible>
+          <CollapsibleTrigger className="flex items-center justify-between w-full group">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+              Oportunidades · {opportunities.length}
+            </h2>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className={cn("p-4 space-y-2", GLASS)}>
+              {opportunities.map((title, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                  <span className="text-xs text-foreground/80 truncate">"{title}" tem poucas views</span>
+                </div>
+              ))}
+              <p className="text-[10px] text-muted-foreground pt-1">Considere divulgar esses eventos nas redes sociais</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* ── 7. Atividade recente ── */}
       {recentActivity.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Atividade recente</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center justify-between">
+            <span>Atividade recente</span>
+            <Link to="/admin/eventos" className="text-[10px] font-bold text-primary hover:underline normal-case tracking-normal">
+              Ver tudo
+            </Link>
+          </h2>
           <div className={cn("p-4", GLASS)}>
             <ul className="space-y-1">
-              {recentActivity.map(item => (
+              {recentActivity.slice(0, 3).map(item => (
                 <li key={item.id}>
                   <Link
                     to={item.type === "event" ? `/admin/eventos/${item.id}/editar` : `/admin/parceiros/${item.id}/editar`}
@@ -603,6 +653,7 @@ const Dashboard = () => {
           </div>
         </section>
       )}
+
     </div>
   );
 };
