@@ -229,6 +229,10 @@ export function useEventosList() {
     setSearchInput,
     filtersOpen,
     setFiltersOpen,
+    viewMode,
+    setViewMode,
+    bulkConfirm,
+    setBulkConfirm,
     // ações
     ...actions,
     // derivados
