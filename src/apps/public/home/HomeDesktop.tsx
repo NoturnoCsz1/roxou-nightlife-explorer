@@ -3,6 +3,7 @@
 
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
+import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
