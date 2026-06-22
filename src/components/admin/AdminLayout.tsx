@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
-import { Plus, ArrowLeft, LogOut, MapPin } from "lucide-react";
+import {
+  Plus, ArrowLeft, LogOut, MapPin,
+  LayoutDashboard, Sparkles, CalendarDays, Trophy, MoreHorizontal,
+  Users, BarChart3, Instagram, Globe, Search, Settings, FileText, X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { ADMIN_NAVIGATION as navItems } from "@/config/adminNavigation";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+
 
 const AdminLayout = () => {
   const { pathname } = useLocation();
