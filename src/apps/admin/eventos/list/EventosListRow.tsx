@@ -248,6 +248,11 @@ export function EventosListRow({ e, ctx, isDuplicate = false }: RowProps) {
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
               </span>
             )}
+            {isDuplicate && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30 inline-flex items-center gap-0.5">
+                <Copy className="h-2.5 w-2.5" /> Possível duplicado
+              </span>
+            )}
             {clickCounts[e.id] > 0 && (
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded text-primary bg-primary/10 inline-flex items-center gap-0.5">
                 <MousePointerClick className="h-2.5 w-2.5" />
