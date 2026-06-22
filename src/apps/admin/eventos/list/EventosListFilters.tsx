@@ -399,7 +399,17 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setActiveTab(t.key)}
+                onClick={() => {
+                  setActiveTab(t.key);
+                  trackAdminEvent("admin_events_filter_used", {
+                    source: "tabs",
+                    filter: "tab",
+                    value: t.key,
+                  });
+                  if (t.key === "revisao") {
+                    trackAdminEvent("admin_events_review_opened", { source: "tab" });
+                  }
+                }}
                 className={`shrink-0 relative px-3 py-1.5 text-xs font-semibold transition ${
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
