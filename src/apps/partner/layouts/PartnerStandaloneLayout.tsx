@@ -22,13 +22,9 @@ import { cn } from "@/lib/utils";
 
 const TABS: Array<{ to: string; label: string; end?: boolean }> = [
   { to: "/", label: "Início", end: true },
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/perfil", label: "Perfil" },
-  { to: "/eventos", label: "Eventos" },
   { to: "/reservas", label: "Reservas" },
-  { to: "/lista-vip", label: "Lista VIP" },
-  { to: "/validator", label: "Validador" },
-  { to: "/analytics", label: "Analytics" },
+  { to: "/fila", label: "Fila" },
+  { to: "/relatorios", label: "Relatórios" },
   { to: "/configuracoes", label: "Configurações" },
 ];
 
@@ -37,6 +33,8 @@ const ACTION_BY_PATH: Record<string, string> = {
   "/perfil": "edit_profile",
   "/eventos": "create_event",
   "/reservas": "open_reservations",
+  "/fila": "open_reservations",
+  "/relatorios": "open_analytics",
   "/lista-vip": "open_vip_list",
   "/analytics": "open_analytics",
   "/configuracoes": "open_settings",

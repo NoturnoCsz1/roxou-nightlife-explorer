@@ -1,54 +1,51 @@
 /**
- * PartnerBottomNav — barra inferior mobile premium (Fase 5).
+ * PartnerBottomNav — barra inferior mobile (Partner Pro v2).
  *
- * 5 itens fixos. Mobile-only (md:hidden). Glass + gradient pill no item ativo.
- * Vibração tátil leve no toque. Sem novas regras de negócio.
- *
- * Mapeamento:
- *   Início        → /
- *   Reservas      → /reservas
- *   Fila          → /reservas (hash #fila — abre o accordion de lista de espera)
- *   Relatório     → /analytics
- *   Configurações → /configuracoes
+ * 5 itens fixos com grid 5 colunas, safe-area e altura 64px.
+ * Glow reduzido para melhor legibilidade.
  */
 import { NavLink, useLocation } from "react-router-dom";
-import { Calendar, Hourglass, LayoutDashboard, LineChart, Settings } from "lucide-react";
+import {
+  Calendar,
+  Home,
+  Hourglass,
+  LineChart,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Item = {
   to: string;
   label: string;
   icon: typeof Calendar;
-  hash?: string;
-  /** path patterns considered active */
-  matches?: (pathname: string, hash: string) => boolean;
+  matches?: (pathname: string) => boolean;
 };
 
 const ITEMS: Item[] = [
   {
     to: "/",
     label: "Início",
-    icon: LayoutDashboard,
+    icon: Home,
     matches: (p) => p === "/" || p === "/dashboard",
   },
   {
     to: "/reservas",
     label: "Reservas",
     icon: Calendar,
-    matches: (p, h) => p.startsWith("/reservas") && h !== "#fila",
+    matches: (p) => p.startsWith("/reservas"),
   },
   {
-    to: "/reservas#fila",
+    to: "/fila",
     label: "Fila",
     icon: Hourglass,
-    hash: "#fila",
-    matches: (p, h) => p.startsWith("/reservas") && h === "#fila",
+    matches: (p) => p.startsWith("/fila"),
   },
   {
-    to: "/analytics",
-    label: "Relatório",
+    to: "/relatorios",
+    label: "Relatórios",
     icon: LineChart,
-    matches: (p) => p.startsWith("/analytics"),
+    matches: (p) =>
+      p.startsWith("/relatorios") || p.startsWith("/analytics"),
   },
   {
     to: "/configuracoes",
@@ -69,7 +66,7 @@ const tap = () => {
 };
 
 export function PartnerBottomNav() {
-  const { pathname, hash } = useLocation();
+  const { pathname } = useLocation();
 
   return (
     <nav
@@ -77,16 +74,19 @@ export function PartnerBottomNav() {
       aria-label="Navegação principal"
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40 md:hidden",
-        "border-t border-white/10",
-        "bg-[rgba(17,17,17,0.65)] backdrop-blur-xl",
+        "border-t border-white/8",
+        "bg-[rgba(15,15,18,0.9)] backdrop-blur-xl",
       )}
-      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        ["--partner-bottom-nav-h" as never]: "64px",
+      }}
     >
-      <ul className="grid grid-cols-5 gap-1 px-2 pt-1.5 pb-1.5">
+      <ul className="grid grid-cols-5 h-16">
         {ITEMS.map((item) => {
           const Icon = item.icon;
           const active = item.matches
-            ? item.matches(pathname, hash)
+            ? item.matches(pathname)
             : pathname === item.to;
           return (
             <li key={item.to} className="min-w-0">
@@ -95,32 +95,24 @@ export function PartnerBottomNav() {
                 onClick={tap}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 rounded-2xl py-1.5 px-1 min-h-[52px] transition-all",
-                  "text-[10px] font-medium tracking-tight",
+                  "h-full flex flex-col items-center justify-center gap-0.5 px-1",
+                  "text-[10px] font-medium tracking-tight transition-colors",
                   active
-                    ? "text-white"
-                    : "text-foreground/55 hover:text-foreground/80",
+                    ? "text-foreground"
+                    : "text-foreground/55 hover:text-foreground/85",
                 )}
               >
-                {active && (
-                  <span
-                    aria-hidden
-                    className="absolute inset-0 rounded-2xl opacity-90"
-                    style={{
-                      background: "var(--partner-gradient)",
-                      boxShadow: "0 8px 24px rgba(168,85,247,0.35)",
-                    }}
-                  />
-                )}
-                <Icon
+                <span
                   className={cn(
-                    "relative h-5 w-5 transition-transform",
-                    active && "scale-110",
+                    "flex items-center justify-center rounded-full transition-all",
+                    active
+                      ? "bg-white/8 px-3 py-1"
+                      : "px-2 py-1",
                   )}
-                />
-                <span className="relative truncate max-w-full">
-                  {item.label}
+                >
+                  <Icon className={cn("h-5 w-5", active && "text-violet-300")} />
                 </span>
+                <span className="truncate max-w-full">{item.label}</span>
               </NavLink>
             </li>
           );
