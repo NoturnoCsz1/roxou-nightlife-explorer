@@ -10,7 +10,10 @@ import { EventosListDialogs } from "./EventosListDialogs";
 export function EventosListShell() {
   const ctx = useEventosList();
   return (
-    <div className="space-y-4 md:ml-44">
+    <div
+      className="space-y-4 md:ml-44 overflow-x-hidden"
+      style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}
+    >
       <EventosListFilters ctx={ctx} />
       <EventosListBulkActions ctx={ctx} />
       <EventosListTable ctx={ctx} />

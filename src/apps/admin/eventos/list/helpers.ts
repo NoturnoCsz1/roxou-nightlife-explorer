@@ -71,3 +71,24 @@ export const spDateStr = (d: Date) =>
   }).format(d);
 
 export const eventDayStr = (e: EventRow) => (e.date_time ? spDateStr(new Date(e.date_time)) : "");
+
+export type EventOrigin = "aura" | "instagram" | "eventou" | "ai" | "manual";
+
+export function getOrigin(e: EventRow): EventOrigin {
+  const src = (e.verification_source || "").toLowerCase();
+  if (src.includes("eventou")) return "eventou";
+  if (src.includes("instagram")) return "instagram";
+  if (e.aura_pick || src.includes("aura")) return "aura";
+  if (src.includes("ia") || src.includes("ai") || src.includes("flyer")) return "ai";
+  return "manual";
+}
+
+export function getMissingFields(e: EventRow): string[] {
+  const cl = getChecklist(e);
+  const miss: string[] = [];
+  if (!cl.flyer) miss.push("capa");
+  if (!cl.description) miss.push("descrição");
+  if (!e.venue_name || !e.venue_name.trim()) miss.push("local");
+  if (!cl.date) miss.push("data");
+  return miss;
+}
