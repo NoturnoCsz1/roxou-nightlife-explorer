@@ -92,3 +92,37 @@ export function getMissingFields(e: EventRow): string[] {
   if (!cl.date) miss.push("data");
   return miss;
 }
+
+// === Detecção de duplicados sem IA ===
+// Normaliza título removendo acentos, pontuação e palavras genéricas.
+export function normalizeTitleForDup(title: string): string {
+  return (title || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\[(revisar|importado|rascunho)\]/gi, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Retorna um Set de IDs suspeitos de duplicação. Critério: mesmo título
+// normalizado + mesmo dia (SP) + mesmo parceiro/local. Nunca exclui nada.
+export function detectDuplicates(events: EventRow[]): Set<string> {
+  const buckets = new Map<string, string[]>();
+  for (const e of events) {
+    const t = normalizeTitleForDup(e.title);
+    if (!t || t.length < 4) continue;
+    const day = eventDayStr(e) || "no-date";
+    const place = (e.partner_id || (e.venue_name || "").toLowerCase().trim() || "no-venue");
+    const key = `${t}::${day}::${place}`;
+    const arr = buckets.get(key) || [];
+    arr.push(e.id);
+    buckets.set(key, arr);
+  }
+  const dups = new Set<string>();
+  for (const arr of buckets.values()) {
+    if (arr.length > 1) arr.forEach((id) => dups.add(id));
+  }
+  return dups;
+}
