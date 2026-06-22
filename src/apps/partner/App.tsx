@@ -29,6 +29,10 @@ const PartnerRequestSuccessPage = lazy(
 const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage"));
 
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
+const PartnerHomePage = lazy(() => import("./pages/PartnerHomePage"));
+const PartnerFilaPage = lazy(() => import("./pages/PartnerFilaPage"));
+const PartnerRelatoriosPage = lazy(() => import("./pages/PartnerRelatoriosPage"));
+const PartnerConfiguracoesPage = lazy(() => import("./pages/PartnerConfiguracoesPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
 const PartnerEventNewRoute = lazy(() =>
