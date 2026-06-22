@@ -331,8 +331,27 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                 </div>
               </div>
             </SheetContent>
-          </Sheet>
         </div>
+
+        {/* Empresa (mobile) */}
+        <div className="md:hidden">
+          <select
+            value={activePartner}
+            onChange={(e) => setActivePartner(e.target.value)}
+            className="w-full rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50 truncate"
+            aria-label="Filtrar por empresa"
+          >
+            <option value="todos">Todas as empresas</option>
+            <option value="sem-parceiro">Sem parceiro</option>
+            {partnerOptions.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+
 
         {/* Tabs operacionais minimalistas */}
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1">
