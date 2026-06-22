@@ -34,12 +34,19 @@ type ViewMode =
   | { kind: "create" }
   | { kind: "edit"; event: PartnerEventRow };
 
-type Bucket = "upcoming" | "ended" | "archived";
+type Bucket = "upcoming" | "ongoing" | "ended" | "archived";
+
+const ONGOING_WINDOW_MS = 8 * 60 * 60 * 1000;
+const AUTO_ARCHIVE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const bucketOf = (e: PartnerEventRow): Bucket => {
   if (e.status === "archived") return "archived";
-  const past = new Date(e.date_time).getTime() < Date.now();
-  return past ? "ended" : "upcoming";
+  const start = new Date(e.date_time).getTime();
+  const now = Date.now();
+  if (start > now) return "upcoming";
+  if (now - start < ONGOING_WINDOW_MS) return "ongoing";
+  if (now - start > AUTO_ARCHIVE_MS) return "archived";
+  return "ended";
 };
 
 const PartnerEventsPage = () => {
@@ -79,6 +86,7 @@ const PartnerEventsPage = () => {
   const buckets = useMemo(() => {
     const acc: Record<Bucket, PartnerEventRow[]> = {
       upcoming: [],
+      ongoing: [],
       ended: [],
       archived: [],
     };
@@ -301,8 +309,12 @@ const PartnerEventsPage = () => {
                 Próximos{" "}
                 {buckets.upcoming.length ? `(${buckets.upcoming.length})` : ""}
               </TabsTrigger>
+              <TabsTrigger value="ongoing">
+                Em andamento{" "}
+                {buckets.ongoing.length ? `(${buckets.ongoing.length})` : ""}
+              </TabsTrigger>
               <TabsTrigger value="ended">
-                Encerrados{" "}
+                Finalizados{" "}
                 {buckets.ended.length ? `(${buckets.ended.length})` : ""}
               </TabsTrigger>
               <TabsTrigger value="archived">
@@ -312,6 +324,9 @@ const PartnerEventsPage = () => {
             </TabsList>
             <TabsContent value="upcoming" className="mt-4">
               {renderBucket("upcoming")}
+            </TabsContent>
+            <TabsContent value="ongoing" className="mt-4">
+              {renderBucket("ongoing")}
             </TabsContent>
             <TabsContent value="ended" className="mt-4">
               {renderBucket("ended")}
