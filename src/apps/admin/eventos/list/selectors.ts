@@ -88,19 +88,31 @@ export function computeEventosListDerived(input: SelectorInput) {
     .filter((e) => {
       if (activeDateFilter === "todos") return true;
       const eventDay = eventDayStr(e);
+      if (activeDateFilter === "sem-data") return !e.date_time;
+      if (!eventDay) return false;
       if (activeDateFilter === "hoje") return eventDay === todayStr;
       if (activeDateFilter === "futuros") return eventDay > todayStr;
       if (activeDateFilter === "passados") return eventDay < todayStr;
+      if (activeDateFilter === "mes") return eventDay >= todayStr && eventDay <= monthEndStr;
       return eventDay >= todayStr && eventDay <= weekEndStr;
     })
     .filter((e) => !onlyIncomplete || !getChecklist(e).complete)
     .filter((e) => !onlyNeedsReview || needsReview(e))
-    .filter((e) => originFilter === "todos" || (originFilter === "ai" ? isAiOrigin(e) : !isAiOrigin(e)))
+    .filter((e) => {
+      if (originFilter === "todos") return true;
+      // Compat: "ai" engloba qualquer origem automática; "manual" exclui qualquer automática.
+      if (originFilter === "ai") return isAiOrigin(e);
+      if (originFilter === "manual") return !isAiOrigin(e);
+      return getOrigin(e) === originFilter;
+    })
     .filter((e) => {
       if (extraFilter === "todos") return true;
       if (extraFilter === "aura") return e.aura_pick;
       if (extraFilter === "destaques") return e.featured;
       if (extraFilter === "sem-imagem") return !e.image_url;
+      if (extraFilter === "sem-descricao") return !getChecklist(e).description;
+      if (extraFilter === "sem-local") return !e.venue_name || !e.venue_name.trim();
+      if (extraFilter === "sem-data") return !e.date_time;
       if (extraFilter === "incompletos") return getQualityScore(e) < 100;
       if (extraFilter === "em-alta")
         return (
@@ -112,6 +124,7 @@ export function computeEventosListDerived(input: SelectorInput) {
         return e.status !== "published" && e.status !== "archived" && getChecklist(e).complete;
       if (extraFilter === "revisar")
         return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
+      if (extraFilter === "duplicados") return duplicateIds.has(e.id);
       return true;
     })
     .filter((e) => {
@@ -121,6 +134,19 @@ export function computeEventosListDerived(input: SelectorInput) {
       if (activeTab === "problemas")
         return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
       if (activeTab === "destaques") return e.featured || e.aura_pick;
+      if (activeTab === "revisao") {
+        if (e.status === "archived") return false;
+        const cl = getChecklist(e);
+        return (
+          !cl.flyer ||
+          !cl.description ||
+          !e.venue_name ||
+          !e.date_time ||
+          (e.title || "").trim().length < 5 ||
+          duplicateIds.has(e.id) ||
+          (isAiOrigin(e) && e.needs_review === true)
+        );
+      }
       return true;
     });
 
