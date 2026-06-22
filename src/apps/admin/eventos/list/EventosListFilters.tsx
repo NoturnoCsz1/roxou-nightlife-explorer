@@ -331,7 +331,9 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                 </div>
               </div>
             </SheetContent>
+          </Sheet>
         </div>
+
 
         {/* Empresa (mobile) */}
         <div className="md:hidden">
