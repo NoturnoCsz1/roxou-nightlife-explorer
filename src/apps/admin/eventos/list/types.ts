@@ -25,20 +25,38 @@ export interface EventRow {
   aura_score?: number | null;
 }
 
-export type OriginFilter = "todos" | "ai" | "manual";
+export type OriginFilter =
+  | "todos"
+  | "aura"
+  | "instagram"
+  | "eventou"
+  | "ai"
+  | "manual";
 export type ExtraFilter =
   | "todos"
   | "aura"
   | "destaques"
   | "sem-imagem"
+  | "sem-descricao"
+  | "sem-local"
+  | "sem-data"
   | "incompletos"
   | "em-alta"
   | "detectados-hoje"
   | "arquivados"
   | "prontos"
-  | "revisar";
-export type DateQuickFilter = "todos" | "hoje" | "semana" | "futuros" | "passados";
-export type TabKey = "todos" | "hoje" | "rascunhos" | "problemas" | "destaques";
+  | "revisar"
+  | "duplicados";
+export type DateQuickFilter =
+  | "todos"
+  | "hoje"
+  | "semana"
+  | "mes"
+  | "futuros"
+  | "passados"
+  | "sem-data";
+export type TabKey = "todos" | "hoje" | "rascunhos" | "problemas" | "destaques" | "revisao";
+export type ViewMode = "cards" | "compact";
 
 export type ChecklistKey = "title" | "date" | "description" | "flyer";
 export interface Checklist {
