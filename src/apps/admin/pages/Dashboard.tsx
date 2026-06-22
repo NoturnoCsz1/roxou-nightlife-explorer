@@ -381,8 +381,9 @@ const Dashboard = () => {
       </section>
 
 
-      {/* ── Audiência (Site GA4 + Instagram) ── */}
-      <section>
+      {/* ── Audiência (Site GA4 + Instagram) — desktop only ── */}
+      <section className="hidden md:block">
+
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Audiência em Tempo Real
         </h2>
