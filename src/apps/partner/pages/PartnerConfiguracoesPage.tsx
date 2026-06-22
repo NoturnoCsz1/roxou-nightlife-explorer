@@ -2,6 +2,7 @@
  * PartnerConfiguracoesPage — Configurações Partner Pro.
  * Lista categorias e navega para páginas existentes sem alterar formulários.
  */
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronRight,
@@ -14,14 +15,20 @@ import {
   BarChart3,
   ScanLine,
   LogOut,
+  Search,
+  Wallet,
+  MessageSquare,
+  Clock as ClockIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 import { PartnerScreen } from "../components/PartnerScreen";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { trackPartnerClient } from "../lib/partnerInteractions";
 
 type Section = {
   title: string;
