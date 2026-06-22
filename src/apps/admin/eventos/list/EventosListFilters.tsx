@@ -27,6 +27,15 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "destaques", label: "Destaques" },
 ];
 
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "todos", label: "Todos" },
+  { key: "hoje", label: "Hoje" },
+  { key: "rascunhos", label: "Rascunhos" },
+  { key: "revisao", label: "Revisão" },
+  { key: "problemas", label: "Problemas" },
+  { key: "destaques", label: "Destaques" },
+];
+
 export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
   const {
     setAuraModalOpen,
