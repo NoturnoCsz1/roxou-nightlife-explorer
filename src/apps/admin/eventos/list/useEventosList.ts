@@ -69,6 +69,22 @@ export function useEventosList() {
   const [activeTab, setActiveTab] = useState<TabKey>("todos");
   const [searchInput, setSearchInput] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => loadInitialViewMode());
+  const [bulkConfirm, setBulkConfirm] = useState<
+    | { kind: "delete"; ids: string[] }
+    | { kind: "ai-desc"; ids: string[] }
+    | { kind: "needs-review"; ids: string[] }
+    | null
+  >(null);
+
+  function setViewMode(mode: ViewMode) {
+    setViewModeState(mode);
+    try {
+      window.localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {
+      /* noop */
+    }
+  }
 
   // Debounce de busca (250ms)
   useEffect(() => {
