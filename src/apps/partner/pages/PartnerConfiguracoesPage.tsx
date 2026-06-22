@@ -1,6 +1,13 @@
 /**
  * PartnerConfiguracoesPage — Configurações Partner Pro.
- * Lista categorias e navega para páginas existentes sem alterar formulários.
+ * Cada item tem ação garantida: navega para rota real, abre confirmação
+ * (logout) ou cai em /configuracoes/em-breve (PartnerComingSoonPage).
+ *
+ * Checklist auditado:
+ *  Perfil público • Horários • Reservas • Tipos de mesa • VIP/Listas •
+ *  Equipe • Assinatura • Notificações • Validador • Limpeza • Ferramentas
+ *  antigas (Painel antigo, Settings avançado, Link público/QR, Perfil
+ *  completo) • Sair (com confirmação).
  */
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -21,17 +28,27 @@ import {
   Sparkles,
   Clock as ClockIcon,
   LayoutDashboard as LayoutDashboardIcon,
+  Armchair,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { PartnerScreen } from "../components/PartnerScreen";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { trackPartnerClient } from "../lib/partnerInteractions";
-
 
 type Section = {
   title: string;
@@ -43,14 +60,21 @@ type Section = {
     hint?: string;
     danger?: boolean;
     keywords?: string;
+    comingSoon?: boolean;
   }>;
 };
+
+const comingSoon = (titulo: string, desc?: string) =>
+  `/configuracoes/em-breve?titulo=${encodeURIComponent(titulo)}${
+    desc ? `&desc=${encodeURIComponent(desc)}` : ""
+  }`;
 
 const PartnerConfiguracoesPage = () => {
   const navigate = useNavigate();
   const { selectedPartner } = usePartnerAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
-  const signOut = async () => {
+  const doSignOut = async () => {
     try {
       await supabase.auth.signOut();
       toast({ title: "Sessão encerrada" });
@@ -65,7 +89,16 @@ const PartnerConfiguracoesPage = () => {
       title: "Estabelecimento",
       items: [
         { icon: Store, label: "Perfil público", to: "/perfil", keywords: "perfil bio descrição loja logo" },
-        { icon: ClockIcon, label: "Horários de funcionamento", to: "/perfil", keywords: "horarios abertura fechamento dias" },
+        {
+          icon: ClockIcon,
+          label: "Horários de funcionamento",
+          to: comingSoon(
+            "Horários de funcionamento",
+            "Defina dias e horários de abertura. Por enquanto edite em Perfil público.",
+          ),
+          comingSoon: true,
+          keywords: "horarios abertura fechamento dias",
+        },
         { icon: CalendarRange, label: "Eventos", to: "/eventos", keywords: "eventos agenda festa show" },
         { icon: ScanLine, label: "Validador de check-in", to: "/validator", keywords: "validador qr checkin entrada portaria" },
       ],
@@ -73,7 +106,17 @@ const PartnerConfiguracoesPage = () => {
     {
       title: "Reservas & VIP",
       items: [
-        { icon: CalendarRange, label: "Reservas e tipos", to: "/reservas", keywords: "reservas mesas bistros camarotes tipos" },
+        { icon: CalendarRange, label: "Reservas", to: "/reservas", keywords: "reservas ativas pendentes checkin" },
+        {
+          icon: Armchair,
+          label: "Tipos de mesa",
+          to: comingSoon(
+            "Tipos de mesa",
+            "Em breve você poderá criar mesas, bistrôs e camarotes com regras próprias.",
+          ),
+          comingSoon: true,
+          keywords: "tipos mesa bistro camarote categorias",
+        },
         { icon: Crown, label: "Listas VIP", to: "/lista-vip", keywords: "vip lista entrada cortesia" },
         { icon: Users, label: "Equipe & permissões", to: "/configuracoes/avancado", keywords: "equipe time permissoes promoters usuarios" },
       ],
@@ -90,7 +133,16 @@ const PartnerConfiguracoesPage = () => {
       title: "Negócio",
       items: [
         { icon: BarChart3, label: "Analytics avançado", to: "/analytics", keywords: "analytics relatorios metricas dashboard" },
-        { icon: CreditCard, label: "Assinatura", to: "/configuracoes/avancado", keywords: "assinatura plano cobranca billing" },
+        {
+          icon: CreditCard,
+          label: "Assinatura",
+          to: comingSoon(
+            "Assinatura",
+            "Gestão de planos chega em breve. Use Configurações avançadas para detalhes atuais.",
+          ),
+          comingSoon: true,
+          keywords: "assinatura plano cobranca billing",
+        },
       ],
     },
     {
@@ -106,24 +158,33 @@ const PartnerConfiguracoesPage = () => {
       ],
     },
     {
-      // Fallback de rotas antigas — garante que nenhuma tela legada
-      // (PartnerDashboardPage, PartnerSettingsPage, perfil/QR/link público)
-      // fique inacessível após a refatoração do bottom-nav.
-      // Checklist preservado: Perfil público, Horários, Reservas/config,
-      // Tipos de mesa, VIP/Listas, Equipe, Assinatura, Notificações,
-      // Validador, Link público, QR Code, Analytics, Settings antigos, Sair.
       title: "Ferramentas antigas",
       items: [
         { icon: LayoutDashboardIcon, label: "Painel antigo", to: "/dashboard-antigo", keywords: "dashboard painel antigo legado" },
-        { icon: Users, label: "Configurações avançadas (antigas)", to: "/configuracoes/avancado", keywords: "settings antigo legado equipe pix whatsapp assinatura notificacoes tipos mesa" },
-        { icon: ScanLine, label: "Link público / QR Code", to: "/perfil", keywords: "link publico qr code compartilhar url" },
+        { icon: Users, label: "Configurações avançadas (antigas)", to: "/configuracoes/avancado", keywords: "settings antigo legado equipe pix whatsapp" },
+        {
+          icon: ScanLine,
+          label: "Link público / QR Code",
+          to: comingSoon(
+            "Link público / QR Code",
+            "Em breve: geração de link curto e QR Code para divulgar reservas e listas.",
+          ),
+          comingSoon: true,
+          keywords: "link publico qr code compartilhar url",
+        },
         { icon: Store, label: "Perfil completo", to: "/perfil", keywords: "perfil completo bio descricao" },
       ],
     },
     {
       title: "Conta",
       items: [
-        { icon: LogOut, label: "Sair", onClick: signOut, danger: true, keywords: "sair logout encerrar sessao" },
+        {
+          icon: LogOut,
+          label: "Sair",
+          onClick: () => setLogoutOpen(true),
+          danger: true,
+          keywords: "sair logout encerrar sessao",
+        },
       ],
     },
   ];
@@ -131,10 +192,7 @@ const PartnerConfiguracoesPage = () => {
   const [query, setQuery] = useState("");
 
   const normalized = (s: string) =>
-    s
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   const filteredSections = useMemo(() => {
     const q = normalized(query.trim());
@@ -184,6 +242,7 @@ const PartnerConfiguracoesPage = () => {
           </div>
           <Card className="overflow-hidden divide-y divide-white/5 border-white/8 bg-white/[0.03]">
             {section.items.map((item) => {
+              const isNav = !!item.to;
               const inner = (
                 <div className="flex items-center gap-3 px-3 py-3 min-w-0">
                   <item.icon
@@ -192,12 +251,19 @@ const PartnerConfiguracoesPage = () => {
                     }`}
                   />
                   <div className="flex-1 min-w-0">
-                    <div
-                      className={`text-sm truncate ${
-                        item.danger ? "text-rose-300" : "text-foreground"
-                      }`}
-                    >
-                      {item.label}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={`text-sm truncate ${
+                          item.danger ? "text-rose-300" : "text-foreground"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      {item.comingSoon ? (
+                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
+                          Em breve
+                        </span>
+                      ) : null}
                     </div>
                     {item.hint ? (
                       <div className="text-[11px] text-muted-foreground truncate">
@@ -205,7 +271,7 @@ const PartnerConfiguracoesPage = () => {
                       </div>
                     ) : null}
                   </div>
-                  {item.to ? (
+                  {isNav ? (
                     <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
                   ) : null}
                 </div>
@@ -241,6 +307,26 @@ const PartnerConfiguracoesPage = () => {
           <Link to="/">← Voltar ao início</Link>
         </Button>
       </div>
+
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar sessão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você precisará fazer login novamente para acessar o Partner Pro.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={doSignOut}
+              className="bg-rose-500 hover:bg-rose-600 text-white"
+            >
+              Sair
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PartnerScreen>
   );
 };
