@@ -422,7 +422,38 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
             );
           })}
 
-          <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="ml-auto flex items-center gap-1.5 shrink-0">
+            {/* View mode toggle */}
+            <div className="inline-flex items-center rounded-lg border border-border/40 bg-background/60 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => changeViewMode("cards")}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase transition ${
+                  viewMode === "cards"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:bg-secondary/60"
+                }`}
+                title="Visualização em cards"
+                aria-label="Cards"
+              >
+                <LayoutGrid className="h-3 w-3" />
+                <span className="hidden sm:inline">Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => changeViewMode("compact")}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase transition border-l border-border/40 ${
+                  viewMode === "compact"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:bg-secondary/60"
+                }`}
+                title="Lista compacta"
+                aria-label="Lista compacta"
+              >
+                <List className="h-3 w-3" />
+                <span className="hidden sm:inline">Lista</span>
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => setTriageMode(!triageMode)}
