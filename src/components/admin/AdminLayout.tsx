@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Outlet, Link, useLocation, Navigate } from "react-router-dom";
 import {
   Plus, ArrowLeft, LogOut, MapPin,
@@ -142,6 +142,24 @@ const MobileBottomNav = ({ pathname, signOut }: { pathname: string; signOut: () 
   const [open, setOpen] = useState(false);
   const inMore = MORE_ITEMS.some(i => pathname.startsWith(i.to));
 
+  /**
+   * Fallback: qualquer item de ADMIN_NAVIGATION que NÃO esteja já em
+   * PRIMARY_ITEMS nem em MORE_ITEMS é exibido aqui em "Ferramentas antigas",
+   * garantindo que nenhuma tela legada fique inacessível no mobile.
+   *
+   * Checklist de rotas preservadas (Admin):
+   *  Dashboard, Aura, Eventos, Jogos, Parceiros, Analytics, Instagram,
+   *  Eventou, SEO (sugestoes), Configurações (editores), Logs, Sair,
+   *  + todos os itens de ADMIN_NAVIGATION via "Ferramentas antigas".
+   */
+  const legacyItems = useMemo(() => {
+    const visible = new Set<string>([
+      ...PRIMARY_ITEMS.map(i => i.to),
+      ...MORE_ITEMS.map(i => i.to),
+    ]);
+    return navItems.filter(i => !visible.has(i.to));
+  }, []);
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/85 backdrop-blur-xl md:hidden"
@@ -182,9 +200,9 @@ const MobileBottomNav = ({ pathname, signOut }: { pathname: string; signOut: () 
           </SheetTrigger>
           <SheetContent
             side="bottom"
-            className="rounded-t-3xl border-t border-white/10 bg-black/95 backdrop-blur-2xl p-0 max-h-[80vh]"
+            className="rounded-t-3xl border-t border-white/10 bg-black/95 backdrop-blur-2xl p-0 max-h-[85vh] overflow-y-auto"
           >
-            <SheetHeader className="px-5 pt-4 pb-2 flex-row items-center justify-between space-y-0">
+            <SheetHeader className="px-5 pt-4 pb-2 flex-row items-center justify-between space-y-0 sticky top-0 bg-black/95 z-10">
               <SheetTitle className="text-base font-bold text-foreground">Mais opções</SheetTitle>
               <button
                 onClick={() => setOpen(false)}
@@ -194,10 +212,11 @@ const MobileBottomNav = ({ pathname, signOut }: { pathname: string; signOut: () 
                 <X className="h-4 w-4" />
               </button>
             </SheetHeader>
-            <div
-              className="grid grid-cols-3 gap-2 p-4"
-              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
-            >
+
+            <div className="px-5 pt-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              Principais
+            </div>
+            <div className="grid grid-cols-3 gap-2 px-4 pb-2">
               {MORE_ITEMS.map(item => {
                 const active = pathname.startsWith(item.to);
                 return (
@@ -217,12 +236,47 @@ const MobileBottomNav = ({ pathname, signOut }: { pathname: string; signOut: () 
                   </Link>
                 );
               })}
+            </div>
+
+            {legacyItems.length > 0 && (
+              <>
+                <div className="px-5 pt-3 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Ferramentas antigas
+                </div>
+                <div className="grid grid-cols-3 gap-2 px-4 pb-2">
+                  {legacyItems.map(item => {
+                    const active = pathname.startsWith(item.to);
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                          "flex flex-col items-center justify-center gap-2 rounded-2xl border p-3 transition",
+                          active
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-white/10 bg-white/[0.02] text-foreground/70 hover:border-primary/30"
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="text-[10px] font-semibold text-center leading-tight">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            <div
+              className="px-4 pt-2 pb-4"
+              style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)" }}
+            >
               <button
                 onClick={() => { setOpen(false); signOut(); }}
-                className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-rose-300 transition hover:bg-rose-500/20"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 py-3 text-rose-300 transition hover:bg-rose-500/20"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="text-[11px] font-semibold">Sair</span>
+                <span className="text-sm font-semibold">Sair</span>
               </button>
             </div>
           </SheetContent>
