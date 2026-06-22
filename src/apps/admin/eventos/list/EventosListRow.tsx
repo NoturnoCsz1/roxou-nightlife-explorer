@@ -121,7 +121,7 @@ function formatDateTime(iso: string | null) {
   return { day: `${weekday.replace(".", "")} ${day}`, time };
 }
 
-export function EventosListRow({ e, ctx }: RowProps) {
+export function EventosListRow({ e, ctx, isDuplicate = false }: RowProps) {
   const {
     aiBusy,
     triageMode,
