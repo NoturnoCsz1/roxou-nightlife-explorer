@@ -153,6 +153,7 @@ export default function ExpoIngressos() {
         </article>
       </section>
 
+      <section className="px-5 py-8 max-w-5xl mx-auto">
         <SectionTitle eyebrow="ESCOLHA SEU SETOR" title="Setores disponíveis" />
         <div className="grid gap-3 md:grid-cols-2 mt-6">
           {SETORES_INFO.map((s) => (
