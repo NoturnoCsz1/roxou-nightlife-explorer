@@ -4,7 +4,8 @@
  * Tabs: Mesas · Bistrôs · Camarotes · Lista de Espera.
  * Reaproveita listReservations + WaitlistManager existentes.
  */
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Hourglass, Users, Clock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,11 @@ import { PartnerScreen } from "../components/PartnerScreen";
 import { PartnerEmptyState } from "../components/PartnerEmptyState";
 import { WaitlistManager } from "../components/WaitlistManager";
 import {
+  ReservationCardSkeletonList,
+  WaitlistSkeleton,
+} from "../components/PartnerSkeletons";
+import { trackPartnerClient } from "../lib/partnerInteractions";
+import {
   listReservations,
   listReservationTypes,
   type PartnerReservationRow,
@@ -24,6 +30,19 @@ import {
 import { formatDateTimeSP } from "@/lib/dateUtils";
 
 type Tab = "table" | "bistro" | "box" | "waitlist";
+
+const TAB_TO_PARAM: Record<Tab, string> = {
+  table: "mesas",
+  bistro: "bistros",
+  box: "camarotes",
+  waitlist: "espera",
+};
+const PARAM_TO_TAB: Record<string, Tab> = {
+  mesas: "table",
+  bistros: "bistro",
+  camarotes: "box",
+  espera: "waitlist",
+};
 
 const KIND_LABEL: Record<PartnerReservationTypeKind, string> = {
   table: "Mesas",
