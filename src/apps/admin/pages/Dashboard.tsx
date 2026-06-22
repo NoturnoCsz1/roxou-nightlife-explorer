@@ -593,29 +593,42 @@ const Dashboard = () => {
       </Collapsible>
       )}
 
-      {/* ── 6. Oportunidades ── */}
+      {/* ── 6. Oportunidades (colapsável) ── */}
       {opportunities.length > 0 && (
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Oportunidades</h2>
-          <div className={cn("p-4 space-y-2", GLASS)}>
-            {opportunities.map((title, i) => (
-              <div key={i} className="flex items-center gap-2.5">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                <span className="text-xs text-foreground/80 truncate">"{title}" tem poucas views</span>
-              </div>
-            ))}
-            <p className="text-[10px] text-muted-foreground pt-1">Considere divulgar esses eventos nas redes sociais</p>
-          </div>
-        </section>
+        <Collapsible>
+          <CollapsibleTrigger className="flex items-center justify-between w-full group">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+              Oportunidades · {opportunities.length}
+            </h2>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3">
+            <div className={cn("p-4 space-y-2", GLASS)}>
+              {opportunities.map((title, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                  <span className="text-xs text-foreground/80 truncate">"{title}" tem poucas views</span>
+                </div>
+              ))}
+              <p className="text-[10px] text-muted-foreground pt-1">Considere divulgar esses eventos nas redes sociais</p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* ── 7. Atividade recente ── */}
       {recentActivity.length > 0 && (
         <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Atividade recente</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center justify-between">
+            <span>Atividade recente</span>
+            <Link to="/admin/eventos" className="text-[10px] font-bold text-primary hover:underline normal-case tracking-normal">
+              Ver tudo
+            </Link>
+          </h2>
           <div className={cn("p-4", GLASS)}>
             <ul className="space-y-1">
-              {recentActivity.map(item => (
+              {recentActivity.slice(0, 3).map(item => (
                 <li key={item.id}>
                   <Link
                     to={item.type === "event" ? `/admin/eventos/${item.id}/editar` : `/admin/parceiros/${item.id}/editar`}
@@ -640,6 +653,7 @@ const Dashboard = () => {
           </div>
         </section>
       )}
+
     </div>
   );
 };
