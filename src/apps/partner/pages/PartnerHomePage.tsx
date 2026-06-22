@@ -80,6 +80,37 @@ function Kpi({
   );
 }
 
+function SummaryCell({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[9px] uppercase tracking-wider text-muted-foreground truncate">
+        {label}
+      </div>
+      <div className="text-base font-semibold tabular-nums text-foreground truncate">
+        {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
+      </div>
+    </div>
+  );
+}
+
+function ComparePill({ label, value }: { label: string; value: number }) {
+  const tone =
+    value > 0
+      ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/20"
+      : value < 0
+        ? "bg-rose-400/10 text-rose-300 border-rose-400/20"
+        : "bg-white/5 text-muted-foreground border-white/10";
+  const sign = value > 0 ? "+" : "";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${tone}`}
+    >
+      <span className="text-muted-foreground/80">{label}</span>
+      <span className="font-semibold tabular-nums">{sign}{value}%</span>
+    </span>
+  );
+}
+
 const PartnerHomePage = () => {
   const { selectedPartner, selectedPartnerId, isLoading } = usePartnerAuth();
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
