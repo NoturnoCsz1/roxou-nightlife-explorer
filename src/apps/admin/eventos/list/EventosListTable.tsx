@@ -1,10 +1,13 @@
 // Tabela / seções agrupadas de eventos (Aura, Destaques, Hoje, Próximos
-// e Passados). JSX copiado literalmente da função renderSection.
+// e Passados). Suporta visualização em Cards (agrupado) ou Lista compacta.
 
+import { useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EventosListRow } from "./EventosListRow";
+import { EventosListCompactRow } from "./EventosListCompactRow";
 import { EventosListPagination } from "./EventosListPagination";
+import { trackAdminEvent } from "@/lib/adminAnalytics";
 import type { EventRow } from "./types";
 import type { EventosListCtx } from "./useEventosList";
 
@@ -20,6 +23,7 @@ function Section({
   ctx: EventosListCtx;
 }) {
   if (items.length === 0) return null;
+  const dups = ctx.duplicateIds;
   return (
     <div>
       <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">
@@ -27,7 +31,7 @@ function Section({
       </h2>
       <div className="space-y-2">
         {items.map((e) => (
-          <EventosListRow key={e.id} e={e} ctx={ctx} />
+          <EventosListRow key={e.id} e={e} ctx={ctx} isDuplicate={dups.has(e.id)} />
         ))}
       </div>
     </div>
@@ -38,6 +42,7 @@ export function EventosListTable({ ctx }: { ctx: EventosListCtx }) {
   const {
     loading,
     filtered,
+    visibleFiltered,
     auraEvents,
     featuredTodayEvents,
     todayEvents,
@@ -45,13 +50,42 @@ export function EventosListTable({ ctx }: { ctx: EventosListCtx }) {
     pastEvents,
     pastOpen,
     setPastOpen,
+    viewMode,
+    duplicateIds,
   } = ctx;
+
+  // Sinaliza ao analytics que duplicados foram exibidos (debounced via memo)
+  useMemo(() => {
+    if (duplicateIds.size > 0) {
+      trackAdminEvent("admin_events_duplicate_flag_seen", { count: duplicateIds.size });
+    }
+    return null;
+  }, [duplicateIds]);
 
   if (loading) {
     return <p className="text-xs text-muted-foreground text-center py-8">Carregando...</p>;
   }
   if (filtered.length === 0) {
     return <p className="text-xs text-muted-foreground text-center py-8">Nenhum evento encontrado.</p>;
+  }
+
+  if (viewMode === "compact") {
+    return (
+      <div className="space-y-1.5">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          {filtered.length} resultado(s) · lista compacta
+        </p>
+        {visibleFiltered.map((e) => (
+          <EventosListCompactRow
+            key={e.id}
+            e={e}
+            ctx={ctx}
+            isDuplicate={duplicateIds.has(e.id)}
+          />
+        ))}
+        <EventosListPagination ctx={ctx} />
+      </div>
+    );
   }
 
   return (
@@ -76,7 +110,12 @@ export function EventosListTable({ ctx }: { ctx: EventosListCtx }) {
           <CollapsibleContent className="mt-2">
             <div className="space-y-2">
               {pastEvents.map((e) => (
-                <EventosListRow key={e.id} e={e} ctx={ctx} />
+                <EventosListRow
+                  key={e.id}
+                  e={e}
+                  ctx={ctx}
+                  isDuplicate={duplicateIds.has(e.id)}
+                />
               ))}
             </div>
           </CollapsibleContent>
