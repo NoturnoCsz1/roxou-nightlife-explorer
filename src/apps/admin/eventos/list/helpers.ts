@@ -29,7 +29,7 @@ export function getChecklist(e: EventRow): Checklist {
     desc.length >= 80 &&
     /<(p|ul|li|strong)\b/i.test(desc) &&
     (/O QUE VOC[ÊE] PRECISA SABER/i.test(desc) || /<ul[\s>]/i.test(desc));
-  const description = hasEventDescription(e);
+  const description = hasEventDescription(e as unknown as Record<string, unknown>);
   const flyer = !!e.image_url && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(e.image_url.trim());
   const complete = title && date && descriptionRich && flyer;
   return { title, date, description, descriptionRich, flyer, complete };
