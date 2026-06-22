@@ -29,6 +29,10 @@ const PartnerRequestSuccessPage = lazy(
 const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage"));
 
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
+const PartnerHomePage = lazy(() => import("./pages/PartnerHomePage"));
+const PartnerFilaPage = lazy(() => import("./pages/PartnerFilaPage"));
+const PartnerRelatoriosPage = lazy(() => import("./pages/PartnerRelatoriosPage"));
+const PartnerConfiguracoesPage = lazy(() => import("./pages/PartnerConfiguracoesPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
 const PartnerEventNewRoute = lazy(() =>
@@ -85,8 +89,9 @@ const PartnerApp = () => (
 
 
           <Route path="/" element={<PartnerStandaloneLayout />}>
-            <Route index element={L(<PartnerBetaLandingPage />)} />
-            <Route path="dashboard" element={L(<PartnerDashboardPage />)} />
+            <Route index element={L(<PartnerHomePage />)} />
+            <Route path="dashboard" element={<Navigate to="/" replace />} />
+            <Route path="inicio" element={<Navigate to="/" replace />} />
             <Route path="perfil" element={L(<PartnerProfilePage />)} />
             <Route path="eventos" element={L(<PartnerEventsPage />)} />
             <Route path="eventos/novo" element={L(<PartnerEventNewRoute />)} />
@@ -97,6 +102,8 @@ const PartnerApp = () => (
               path="reservas/:reservationId"
               element={L(<PartnerReservationDetailPage />)}
             />
+            <Route path="fila" element={L(<PartnerFilaPage />)} />
+            <Route path="relatorios" element={L(<PartnerRelatoriosPage />)} />
             <Route path="lista-vip" element={L(<PartnerVipListPage />)} />
             <Route
               path="lista-vip/:listId"
@@ -104,7 +111,8 @@ const PartnerApp = () => (
             />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
-            <Route path="configuracoes" element={L(<PartnerSettingsPage />)} />
+            <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
+            <Route path="configuracoes/avancado" element={L(<PartnerSettingsPage />)} />
             <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
           </Route>
 
