@@ -321,29 +321,65 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6 md:ml-44 overflow-hidden min-w-0">
-      {/* ── Analytics Premium (Header + KPIs + estados) ── */}
-      <AnalyticsHero cityFilter={cityFilter} />
+    <div className="space-y-6 md:ml-44 overflow-x-hidden min-w-0 max-w-full">
+      {/* ── Analytics Premium (desktop only) ── */}
+      <div className="hidden md:block">
+        <AnalyticsHero cityFilter={cityFilter} />
+      </div>
+
+      {/* ── Analytics compacto (mobile · max 80px) ── */}
+      <div className="md:hidden">
+        <div className={cn("flex items-center justify-between gap-2 px-3", GLASS)} style={{ height: 80 }}>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary/15 text-primary shrink-0">
+              <Globe className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Ao vivo</p>
+              <p className="text-xs font-semibold text-foreground truncate">Site Roxou</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-center shrink-0">
+            <div>
+              <p className="text-base font-bold tabular-nums text-foreground leading-none">{realtime.activeUsers}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">Ativos</p>
+            </div>
+            <div className="h-6 w-px bg-border/40" />
+            <div>
+              <p className="text-base font-bold tabular-nums text-foreground leading-none">{realtime.sessions}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">Sessões</p>
+            </div>
+            <div className="h-6 w-px bg-border/40" />
+            <div>
+              <p className="text-base font-bold tabular-nums text-foreground leading-none">{realtime.pageViews}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">Views</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ── 1. KPIs ── */}
       <section>
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Resumo</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {loading ? (
             <>
               <Skeleton className={cn("h-[110px]", GLASS)} />
               <Skeleton className={cn("h-[110px]", GLASS)} />
-              <Skeleton className={cn("h-[110px]", GLASS)} />
+              <Skeleton className={cn("h-[110px] col-span-2 md:col-span-1", GLASS)} />
             </>
           ) : (
             <>
               <KpiCard label="Hoje" value={kpis.today} icon={CalendarCheck} accent="green" subtext={formatGrowth(kpiGrowth.today, "vs. ontem")} />
               <KpiCard label="Próx. 7 dias" value={kpis.week} icon={Clock} accent="accent" subtext={formatGrowth(kpiGrowth.week, "vs. semana passada")} />
-              <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+              <div className="col-span-2 md:col-span-1">
+                <KpiCard label="Total" value={kpis.total} icon={CalendarDays} accent="primary" />
+              </div>
             </>
           )}
         </div>
       </section>
+
 
       {/* ── Audiência (Site GA4 + Instagram) ── */}
       <section>
