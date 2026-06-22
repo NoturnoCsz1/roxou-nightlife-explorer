@@ -72,9 +72,24 @@ export function EventosListTable({ ctx }: { ctx: EventosListCtx }) {
   if (viewMode === "compact") {
     return (
       <div className="space-y-1.5">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          {filtered.length} resultado(s) · lista compacta
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground">
+            <span className="font-semibold text-foreground/80 tabular-nums">{filtered.length}</span>{" "}
+            eventos • Lista compacta
+          </p>
+          <details className="relative">
+            <summary className="list-none cursor-pointer inline-flex items-center justify-center h-6 w-6 rounded-full border border-border/40 bg-secondary/40 text-[10px] font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition select-none">
+              ?
+            </summary>
+            <div className="absolute right-0 top-full mt-1 z-30 w-48 rounded-lg border border-border/40 bg-card/95 backdrop-blur-xl p-2.5 shadow-xl text-[11px] space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Status</p>
+              <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-400" /> Publicado</div>
+              <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-400" /> Hoje / atenção</div>
+              <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-yellow-400" /> Rascunho / revisão</div>
+              <div className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-muted-foreground/40" /> Arquivado</div>
+            </div>
+          </details>
+        </div>
         {visibleFiltered.map((e) => (
           <EventosListCompactRow
             key={e.id}
