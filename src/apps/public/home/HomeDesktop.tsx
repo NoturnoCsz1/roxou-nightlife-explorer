@@ -77,6 +77,11 @@ export function HomeDesktop(props: HomeDesktopProps) {
         <HomeSectionBoundary name="Copa Highlight (desktop)" silent>
           <CopaHighlightCard />
         </HomeSectionBoundary>
+
+        {/* Expo Prudente 2026 — desktop */}
+        <HomeSectionBoundary name="Expo Highlight (desktop)" silent>
+          <ExpoHighlightCard />
+        </HomeSectionBoundary>
       </div>
 
       {/* ══════ NOTÍCIAS — após layout principal ══════ */}

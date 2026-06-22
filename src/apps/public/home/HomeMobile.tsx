@@ -117,6 +117,10 @@ export function HomeMobile(props: HomeMobileProps) {
           <CopaHighlightCard />
         </HomeSectionBoundary>
 
+        {/* Expo Prudente 2026 */}
+        <HomeSectionBoundary name="Expo Highlight (mobile)" silent>
+          <ExpoHighlightCard />
+        </HomeSectionBoundary>
 
         {/* Jogos ao vivo */}
         {!isLoading && !hasHomeDataError && (
