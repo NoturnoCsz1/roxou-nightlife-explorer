@@ -56,6 +56,14 @@ export function computeEventosListDerived(input: SelectorInput) {
     d.setDate(d.getDate() + 7);
     return spDateStr(d);
   })();
+  const monthEndStr = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return spDateStr(d);
+  })();
+
+  // Suspeitos de duplicação (cálculo local, sem IA)
+  const duplicateIds = detectDuplicates(events);
 
   const filtered = events
     .filter((e) => {
