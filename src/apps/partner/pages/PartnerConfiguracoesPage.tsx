@@ -30,17 +30,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { trackPartnerClient } from "../lib/partnerInteractions";
 
-type Section = {
-  title: string;
-  items: Array<{
-    icon: typeof Store;
-    label: string;
-    to?: string;
-    onClick?: () => void;
-    hint?: string;
-    danger?: boolean;
-  }>;
-};
 
 type Section = {
   title: string;
