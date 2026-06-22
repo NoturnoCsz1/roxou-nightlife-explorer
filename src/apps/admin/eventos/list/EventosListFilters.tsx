@@ -139,13 +139,14 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
             <option value="archived">Arquivados</option>
           </select>
 
-          {/* Parceiro */}
+          {/* Parceiro (desktop) */}
           <select
             value={activePartner}
             onChange={(e) => setActivePartner(e.target.value)}
-            className="hidden md:block max-w-[160px] rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50 truncate"
+            className="hidden md:block max-w-[180px] rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 text-xs text-foreground outline-none focus:border-primary/50 truncate"
+            title="Filtrar por empresa/parceiro"
           >
-            <option value="todos">Parceiro</option>
+            <option value="todos">Todas as empresas</option>
             <option value="sem-parceiro">Sem parceiro</option>
             {partnerOptions.map(([id, name]) => (
               <option key={id} value={id}>
@@ -153,6 +154,7 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
               </option>
             ))}
           </select>
+
 
           {/* Botão Filtros (drawer) */}
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
