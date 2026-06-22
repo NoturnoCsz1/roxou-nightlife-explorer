@@ -28,6 +28,7 @@ import {
   type PartnerReservationTypeKind,
 } from "../services/partnerReservations";
 import { formatDateTimeSP } from "@/lib/dateUtils";
+import { formatRelativeTime } from "@/lib/formatRelativeTime";
 
 type Tab = "table" | "bistro" | "box" | "waitlist";
 
@@ -55,11 +56,8 @@ function minutesUntil(iso: string): number {
 }
 
 function fmtRemaining(mins: number): string {
-  if (mins < -60) return `Atrasado ${Math.abs(Math.round(mins / 60))}h`;
-  if (mins < 0) return `Atrasado ${Math.abs(mins)}min`;
-  if (mins < 60) return `Em ${mins}min`;
-  const h = Math.floor(mins / 60);
-  return `Em ${h}h ${mins % 60}min`;
+  const human = formatRelativeTime(Math.abs(mins));
+  return mins < 0 ? `Atrasado ${human}` : `Em ${human}`;
 }
 
 type Priority = {
@@ -69,13 +67,14 @@ type Priority = {
 };
 
 function priorityOf(waitMinutes: number): Priority {
+  const label = formatRelativeTime(waitMinutes);
   if (waitMinutes < 15)
-    return { emoji: "🟢", cls: "bg-emerald-400/15 text-emerald-300 border-emerald-400/25", label: `${waitMinutes}min` };
+    return { emoji: "🟢", cls: "bg-emerald-400/15 text-emerald-300 border-emerald-400/25", label };
   if (waitMinutes < 30)
-    return { emoji: "🟡", cls: "bg-amber-300/15 text-amber-200 border-amber-300/25", label: `${waitMinutes}min` };
+    return { emoji: "🟡", cls: "bg-amber-300/15 text-amber-200 border-amber-300/25", label };
   if (waitMinutes < 60)
-    return { emoji: "🟠", cls: "bg-orange-400/15 text-orange-300 border-orange-400/30", label: `${waitMinutes}min` };
-  return { emoji: "🔴", cls: "bg-rose-500/15 text-rose-300 border-rose-500/30", label: `${waitMinutes}min` };
+    return { emoji: "🟠", cls: "bg-orange-400/15 text-orange-300 border-orange-400/30", label };
+  return { emoji: "🔴", cls: "bg-rose-500/15 text-rose-300 border-rose-500/30", label };
 }
 
 const ClientCard = memo(function ClientCard({
@@ -144,7 +143,7 @@ const ClientCard = memo(function ClientCard({
             </span>
             {expiresMin !== null && expiresMin > -120 ? (
               <span className="inline-flex items-center gap-1 text-amber-300/90">
-                ⌛ Expira em {Math.max(0, expiresMin)}min
+                ⌛ Expira em {formatRelativeTime(Math.max(0, expiresMin))}
               </span>
             ) : null}
           </div>
