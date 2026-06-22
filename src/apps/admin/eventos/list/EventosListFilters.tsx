@@ -1,18 +1,21 @@
 // Toolbar de filtros: header, busca, selects, Sheet de filtros avançados
-// e abas operacionais (Fase 3B). JSX copiado literalmente.
+// e abas operacionais. Adiciona toggle de modo (Cards/Compacto).
 
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   Bot,
   Check,
+  LayoutGrid,
   Layers,
+  List,
   Plus,
   Search,
   Settings2,
   X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { trackAdminEvent } from "@/lib/adminAnalytics";
 import type { DateQuickFilter, ExtraFilter, OriginFilter, TabKey } from "./types";
 import type { EventosListCtx } from "./useEventosList";
 
