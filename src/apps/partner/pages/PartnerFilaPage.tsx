@@ -62,7 +62,23 @@ function fmtRemaining(mins: number): string {
   return `Em ${h}h ${mins % 60}min`;
 }
 
-function ClientCard({
+type Priority = {
+  emoji: string;
+  cls: string;
+  label: string;
+};
+
+function priorityOf(waitMinutes: number): Priority {
+  if (waitMinutes < 15)
+    return { emoji: "🟢", cls: "bg-emerald-400/15 text-emerald-300 border-emerald-400/25", label: `${waitMinutes}min` };
+  if (waitMinutes < 30)
+    return { emoji: "🟡", cls: "bg-amber-300/15 text-amber-200 border-amber-300/25", label: `${waitMinutes}min` };
+  if (waitMinutes < 60)
+    return { emoji: "🟠", cls: "bg-orange-400/15 text-orange-300 border-orange-400/30", label: `${waitMinutes}min` };
+  return { emoji: "🔴", cls: "bg-rose-500/15 text-rose-300 border-rose-500/30", label: `${waitMinutes}min` };
+}
+
+const ClientCard = memo(function ClientCard({
   row,
   type,
 }: {
@@ -70,6 +86,13 @@ function ClientCard({
   type?: PartnerReservationType;
 }) {
   const mins = minutesUntil(row.reservation_date);
+  const waitMs = Date.now() - new Date(row.created_at).getTime();
+  const waitMin = Math.max(0, Math.round(waitMs / 60000));
+  const prio = priorityOf(waitMin);
+  const expiresMin = row.expires_at
+    ? minutesUntil(row.expires_at)
+    : null;
+
   const initials = (row.name ?? "?")
     .split(" ")
     .slice(0, 2)
@@ -85,7 +108,7 @@ function ClientCard({
         : "border-white/8 bg-white/[0.03]";
 
   return (
-    <Card className={`${toneClass} overflow-hidden`}>
+    <Card className={`${toneClass} overflow-hidden transition-colors`}>
       <CardContent className="p-3 flex items-center gap-3">
         <div className="h-10 w-10 shrink-0 rounded-full bg-white/8 flex items-center justify-center text-sm font-semibold text-foreground/90">
           {initials || "?"}
@@ -95,9 +118,19 @@ function ClientCard({
             <span className="text-sm font-medium text-foreground truncate">
               {row.name ?? "Sem nome"}
             </span>
-            <Badge variant="secondary" className="text-[10px]">
-              {row.status}
-            </Badge>
+            <button
+              type="button"
+              onClick={() =>
+                trackPartnerClient("partner_waitlist_priority_click", {
+                  waitMinutes: waitMin,
+                })
+              }
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${prio.cls}`}
+              aria-label={`Prioridade ${prio.label}`}
+            >
+              <span>{prio.emoji}</span>
+              <span className="tabular-nums">{prio.label}</span>
+            </button>
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -109,6 +142,11 @@ function ClientCard({
               <Clock className="h-3 w-3" />
               {fmtRemaining(mins)}
             </span>
+            {expiresMin !== null && expiresMin > -120 ? (
+              <span className="inline-flex items-center gap-1 text-amber-300/90">
+                ⌛ Expira em {Math.max(0, expiresMin)}min
+              </span>
+            ) : null}
           </div>
           <div className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
             {formatDateTimeSP(row.reservation_date)}
@@ -117,7 +155,7 @@ function ClientCard({
       </CardContent>
     </Card>
   );
-}
+});
 
 const PartnerFilaPage = () => {
   const { selectedPartner, selectedPartnerId, isLoading } = usePartnerAuth();
