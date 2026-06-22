@@ -173,12 +173,12 @@ const MobileBottomNav = ({ pathname, signOut }: { pathname: string; signOut: () 
               key={item.to}
               to={item.to}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1 text-[10px] font-semibold uppercase tracking-wide transition-colors",
+                "relative flex flex-col items-center justify-center gap-1 px-1 text-[10px] font-semibold uppercase tracking-tight transition-colors min-w-0",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_8px_hsl(var(--primary)/0.7)]")} />
-              <span className="truncate max-w-[60px]">{item.label}</span>
+              <item.icon className={cn("h-5 w-5 shrink-0", active && "drop-shadow-[0_0_8px_hsl(var(--primary)/0.7)]")} />
+              <span className="truncate max-w-full leading-none">{item.label}</span>
               {active && <span className="absolute top-1 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.9)]" />}
             </Link>
           );
