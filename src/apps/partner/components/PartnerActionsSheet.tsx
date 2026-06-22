@@ -16,6 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { PublicLinkQrDialog } from "./PublicLinkQrDialog";
 import { cn } from "@/lib/utils";
+import { haptics, trackPartnerClient } from "../lib/partnerInteractions";
 
 interface Props {
   partnerSlug?: string | null;
