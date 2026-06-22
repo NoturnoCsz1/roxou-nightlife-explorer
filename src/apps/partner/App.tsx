@@ -101,6 +101,7 @@ const PartnerApp = () => (
           <Route path="/" element={<PartnerStandaloneLayout />}>
             <Route index element={L(<PartnerHomePage />)} />
             <Route path="dashboard" element={<Navigate to="/" replace />} />
+            <Route path="dashboard-antigo" element={L(<PartnerDashboardPage />)} />
             <Route path="inicio" element={<Navigate to="/" replace />} />
             <Route path="perfil" element={L(<PartnerProfilePage />)} />
             <Route path="eventos" element={L(<PartnerEventsPage />)} />

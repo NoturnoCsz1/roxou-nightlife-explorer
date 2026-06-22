@@ -105,6 +105,21 @@ const PartnerConfiguracoesPage = () => {
       ],
     },
     {
+      // Fallback de rotas antigas — garante que nenhuma tela legada
+      // (PartnerDashboardPage, PartnerSettingsPage, perfil/QR/link público)
+      // fique inacessível após a refatoração do bottom-nav.
+      // Checklist preservado: Perfil público, Horários, Reservas/config,
+      // Tipos de mesa, VIP/Listas, Equipe, Assinatura, Notificações,
+      // Validador, Link público, QR Code, Analytics, Settings antigos, Sair.
+      title: "Ferramentas antigas",
+      items: [
+        { icon: LayoutDashboardIcon, label: "Painel antigo", to: "/dashboard-antigo", keywords: "dashboard painel antigo legado" },
+        { icon: Users, label: "Configurações avançadas (antigas)", to: "/configuracoes/avancado", keywords: "settings antigo legado equipe pix whatsapp assinatura notificacoes tipos mesa" },
+        { icon: ScanLine, label: "Link público / QR Code", to: "/perfil", keywords: "link publico qr code compartilhar url" },
+        { icon: Store, label: "Perfil completo", to: "/perfil", keywords: "perfil completo bio descricao" },
+      ],
+    },
+    {
       title: "Conta",
       items: [
         { icon: LogOut, label: "Sair", onClick: signOut, danger: true, keywords: "sair logout encerrar sessao" },
