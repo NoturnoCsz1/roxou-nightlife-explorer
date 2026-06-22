@@ -264,6 +264,38 @@ const PartnerHomePage = () => {
           </CardContent>
         </Card>
 
+        {/* 📈 Resumo Hoje (comparativos) */}
+        <Card className="border-white/8 bg-white/[0.03]">
+          <CardContent className="p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                📈 Hoje
+              </span>
+              <span className="text-[10px] text-muted-foreground/80">
+                vs ontem · 7d
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <SummaryCell label="Reservas" value={kpis.reservasHoje} />
+              <SummaryCell
+                label="Receita"
+                value={
+                  kpis.revenueToday > 0
+                    ? `R$ ${Math.round(kpis.revenueToday).toLocaleString("pt-BR")}`
+                    : "—"
+                }
+              />
+              <SummaryCell label="Fila" value={kpis.fila} />
+              <SummaryCell label="Check-ins" value={kpis.checkins} />
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <ComparePill label="vs ontem" value={kpis.diffYesterday} />
+              <ComparePill label="vs 7d" value={kpis.diff7Days} />
+            </div>
+          </CardContent>
+        </Card>
+
+
         {/* KPIs do dia */}
         <div className="grid grid-cols-2 gap-2.5">
           <Kpi
