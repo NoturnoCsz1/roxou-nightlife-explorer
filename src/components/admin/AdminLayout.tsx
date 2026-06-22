@@ -122,7 +122,7 @@ const AdminLayout = () => {
 
 /* ─────────── Mobile bottom nav (5 col grid + "Mais" sheet) ─────────── */
 const PRIMARY_ITEMS = [
-  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/admin/dashboard", icon: LayoutDashboard, label: "Início" },
   { to: "/admin/aura", icon: Sparkles, label: "Aura" },
   { to: "/admin/eventos", icon: CalendarDays, label: "Eventos" },
   { to: "/admin/jogos", icon: Trophy, label: "Jogos" },
