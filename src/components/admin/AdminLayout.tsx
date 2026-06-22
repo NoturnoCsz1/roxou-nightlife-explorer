@@ -85,42 +85,13 @@ const AdminLayout = () => {
         <Outlet />
       </main>
 
-      {/* Bottom nav (mobile) — Midnight Premium glass */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/80 backdrop-blur-xl md:hidden safe-area-bottom">
-        <div
-          className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2 pl-3 pr-8"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
-          {navItems.map((item) => {
-            const active = pathname.startsWith(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "relative flex flex-col items-center gap-1 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition-colors flex-none min-w-[64px]",
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 transition-all",
-                    active && "text-primary drop-shadow-[0_0_8px_hsl(var(--primary)/0.7)]"
-                  )}
-                />
-                <span>{item.label}</span>
-                {active && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.9)]" />
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Bottom nav (mobile) — 5 col grid, no scroll */}
+      <MobileBottomNav pathname={pathname} signOut={signOut} />
 
       {/* Desktop sidebar */}
       <aside className="hidden md:block fixed left-0 top-12 bottom-0 w-44 z-40 border-r border-border/40 bg-card/50 backdrop-blur-sm overflow-y-auto">
         <nav className="flex flex-col gap-0.5 p-2 mt-2">
+
           {navItems.map((item) => {
             const active = pathname.startsWith(item.to);
             return (
