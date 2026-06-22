@@ -11,10 +11,28 @@ import type {
   ExtraFilter,
   OriginFilter,
   TabKey,
+  ViewMode,
 } from "./types";
 import { computeEventosListDerived } from "./selectors";
 import { useEventosListActions } from "./useEventosListActions";
 import { useTriageShortcuts } from "./useTriageShortcuts";
+
+const VIEW_MODE_KEY = "admin.eventos.viewMode";
+
+function loadInitialViewMode(): ViewMode {
+  if (typeof window === "undefined") return "cards";
+  try {
+    const v = window.localStorage.getItem(VIEW_MODE_KEY);
+    if (v === "compact" || v === "cards") return v;
+  } catch {
+    /* noop */
+  }
+  // Mobile-first: padrão lista compacta em telas pequenas
+  if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)")?.matches) {
+    return "compact";
+  }
+  return "cards";
+}
 
 export function useEventosList() {
   const navigate = useNavigate();
@@ -51,6 +69,22 @@ export function useEventosList() {
   const [activeTab, setActiveTab] = useState<TabKey>("todos");
   const [searchInput, setSearchInput] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [viewMode, setViewModeState] = useState<ViewMode>(() => loadInitialViewMode());
+  const [bulkConfirm, setBulkConfirm] = useState<
+    | { kind: "delete"; ids: string[] }
+    | { kind: "ai-desc"; ids: string[] }
+    | { kind: "needs-review"; ids: string[] }
+    | null
+  >(null);
+
+  function setViewMode(mode: ViewMode) {
+    setViewModeState(mode);
+    try {
+      window.localStorage.setItem(VIEW_MODE_KEY, mode);
+    } catch {
+      /* noop */
+    }
+  }
 
   // Debounce de busca (250ms)
   useEffect(() => {
@@ -195,6 +229,10 @@ export function useEventosList() {
     setSearchInput,
     filtersOpen,
     setFiltersOpen,
+    viewMode,
+    setViewMode,
+    bulkConfirm,
+    setBulkConfirm,
     // ações
     ...actions,
     // derivados

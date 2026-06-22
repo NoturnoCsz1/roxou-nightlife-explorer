@@ -48,6 +48,7 @@ import type { EventosListCtx } from "./useEventosList";
 interface RowProps {
   e: EventRow;
   ctx: EventosListCtx;
+  isDuplicate?: boolean;
 }
 
 const ORIGIN_META: Record<
@@ -120,7 +121,7 @@ function formatDateTime(iso: string | null) {
   return { day: `${weekday.replace(".", "")} ${day}`, time };
 }
 
-export function EventosListRow({ e, ctx }: RowProps) {
+export function EventosListRow({ e, ctx, isDuplicate = false }: RowProps) {
   const {
     aiBusy,
     triageMode,
@@ -245,6 +246,11 @@ export function EventosListRow({ e, ctx }: RowProps) {
             {review && (
               <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-400 border border-yellow-400/30 inline-flex items-center gap-0.5">
                 <AlertTriangle className="h-2.5 w-2.5" /> Revisar
+              </span>
+            )}
+            {isDuplicate && (
+              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30 inline-flex items-center gap-0.5">
+                <Copy className="h-2.5 w-2.5" /> Possível duplicado
               </span>
             )}
             {clickCounts[e.id] > 0 && (

@@ -413,6 +413,118 @@ export function useEventosListActions(deps: ActionsDeps) {
       toast.success(`🗃 ${ids.length} arquivado(s)`);
     }
 
+    // === Excluir selecionados em lote (com confirmação no dialog do shell) ===
+    async function handleBulkDelete(ids: string[]) {
+      if (ids.length === 0) return;
+      const { error } = await supabase.from("events").delete().in("id", ids);
+      if (error) {
+        toast.error("Erro ao excluir em lote");
+        return;
+      }
+      setEvents((prev) => prev.filter((e) => !ids.includes(e.id)));
+      setSelectedIds(new Set());
+      toast.success(`🗑 ${ids.length} evento(s) excluído(s)`);
+    }
+
+    // === Marcar para revisão em lote ===
+    async function handleBulkNeedsReview() {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from("events")
+        .update({ needs_review: true } as any)
+        .in("id", ids);
+      if (error) {
+        toast.error("Erro ao marcar para revisão");
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => (ids.includes(e.id) ? { ...e, needs_review: true } : e))
+      );
+      setSelectedIds(new Set());
+      toast.success(`✅ ${ids.length} enviado(s) para revisão`);
+    }
+
+    // === Aplicar categoria em lote ===
+    async function handleBulkAssignCategory(category: string) {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0 || !category) return;
+      const { error } = await supabase
+        .from("events")
+        .update({ category })
+        .in("id", ids);
+      if (error) {
+        toast.error("Erro ao aplicar categoria");
+        return;
+      }
+      setEvents((prev) => prev.map((e) => (ids.includes(e.id) ? { ...e, category } : e)));
+      setSelectedIds(new Set());
+      toast.success(`🏷 Categoria "${category}" aplicada a ${ids.length}`);
+    }
+
+    // === Aplicar parceiro/local em lote ===
+    async function handleBulkAssignPartner(partnerId: string, venueName?: string | null) {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) return;
+      const patch: { partner_id: string | null; venue_name?: string | null } = {
+        partner_id: partnerId || null,
+      };
+      if (venueName !== undefined) patch.venue_name = venueName;
+      const { error } = await supabase.from("events").update(patch).in("id", ids);
+      if (error) {
+        toast.error("Erro ao aplicar parceiro");
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => (ids.includes(e.id) ? { ...e, ...patch } : e))
+      );
+      setSelectedIds(new Set());
+      toast.success(`👥 Parceiro aplicado a ${ids.length} evento(s)`);
+    }
+
+    // === Gerar descrição IA para selecionados sem descrição (após confirmação) ===
+    async function handleBulkGenerateDescriptions(ids: string[]) {
+      const targets = events.filter(
+        (e) => ids.includes(e.id) && !getChecklist(e).description
+      );
+      if (targets.length === 0) {
+        toast.info("Nenhum dos selecionados precisa de descrição.");
+        return;
+      }
+      let ok = 0;
+      let fail = 0;
+      for (const e of targets) {
+        setAiBusy((p) => ({ ...p, [e.id]: "desc" }));
+        try {
+          const { data, error } = await supabase.functions.invoke("generate-description", {
+            body: {
+              title: e.title,
+              venue_name: e.venue_name,
+              address: e.address,
+              date_time: e.date_time,
+              category: e.category,
+              sub_category: e.sub_category || undefined,
+              partner_id: e.partner_id || undefined,
+            },
+          });
+          if (error) throw error;
+          const html = (data as any)?.descricao_rica || (data as any)?.description;
+          if (!html) throw new Error("sem retorno");
+          await supabase.from("events").update({ description: html }).eq("id", e.id);
+          setEvents((prev) =>
+            prev.map((x) => (x.id === e.id ? { ...x, description: html } : x))
+          );
+          ok++;
+        } catch {
+          fail++;
+        } finally {
+          setAiBusy((p) => ({ ...p, [e.id]: null }));
+        }
+      }
+      if (ok > 0) toast.success(`✨ ${ok} descrição(ões) geradas com IA`);
+      if (fail > 0) toast.error(`${fail} falharam ao gerar descrição`);
+    }
+
     async function handleApproveAllSafe(visibleSafeIds: string[]) {
       if (visibleSafeIds.length === 0) {
         toast.error("Nenhum evento seguro encontrado nos filtros atuais.");
@@ -457,6 +569,11 @@ export function useEventosListActions(deps: ActionsDeps) {
       handleBulkApprove,
       handleBulkArchive,
       handleApproveAllSafe,
+      handleBulkDelete,
+      handleBulkNeedsReview,
+      handleBulkAssignCategory,
+      handleBulkAssignPartner,
+      handleBulkGenerateDescriptions,
     };
   }, [deps]);
 }

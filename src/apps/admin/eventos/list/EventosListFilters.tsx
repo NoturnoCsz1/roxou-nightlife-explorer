@@ -1,25 +1,30 @@
 // Toolbar de filtros: header, busca, selects, Sheet de filtros avançados
-// e abas operacionais (Fase 3B). JSX copiado literalmente.
+// e abas operacionais. Adiciona toggle de modo (Cards/Compacto).
 
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
   Bot,
   Check,
+  LayoutGrid,
   Layers,
+  List,
   Plus,
   Search,
   Settings2,
   X,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { trackAdminEvent } from "@/lib/adminAnalytics";
 import type { DateQuickFilter, ExtraFilter, OriginFilter, TabKey } from "./types";
 import type { EventosListCtx } from "./useEventosList";
+
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "todos", label: "Todos" },
   { key: "hoje", label: "Hoje" },
   { key: "rascunhos", label: "Rascunhos" },
+  { key: "revisao", label: "Revisão" },
   { key: "problemas", label: "Problemas" },
   { key: "destaques", label: "Destaques" },
 ];
@@ -58,7 +63,15 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
     publishing,
     readyInFiltered,
     setBulkSafeOpen,
+    viewMode,
+    setViewMode,
   } = ctx;
+
+  function changeViewMode(mode: "cards" | "compact") {
+    if (mode === viewMode) return;
+    setViewMode(mode);
+    trackAdminEvent("admin_events_view_mode_changed", { mode });
+  }
 
   return (
     <>
@@ -189,14 +202,23 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                   </label>
                   <select
                     value={activeDateFilter}
-                    onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)}
+                    onChange={(e) => {
+                      setActiveDateFilter(e.target.value as DateQuickFilter);
+                      trackAdminEvent("admin_events_filter_used", {
+                        source: "sheet",
+                        filter: "date",
+                        value: e.target.value,
+                      });
+                    }}
                     className="w-full rounded-lg border border-border/40 bg-background/80 px-3 py-2 text-sm"
                   >
                     <option value="todos">Todas as datas</option>
                     <option value="hoje">Hoje</option>
                     <option value="semana">Próximos 7 dias</option>
+                    <option value="mes">Este mês (30d)</option>
                     <option value="futuros">Futuros</option>
                     <option value="passados">Passados</option>
+                    <option value="sem-data">Sem data</option>
                   </select>
                 </div>
 
@@ -237,12 +259,22 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                   </label>
                   <select
                     value={originFilter}
-                    onChange={(e) => setOriginFilter(e.target.value as OriginFilter)}
+                    onChange={(e) => {
+                      setOriginFilter(e.target.value as OriginFilter);
+                      trackAdminEvent("admin_events_filter_used", {
+                        source: "sheet",
+                        filter: "origin",
+                        value: e.target.value,
+                      });
+                    }}
                     className="w-full rounded-lg border border-border/40 bg-background/80 px-3 py-2 text-sm"
                   >
                     <option value="todos">Todas as origens</option>
-                    <option value="ai">Criados por IA</option>
-                    <option value="manual">Criados manualmente</option>
+                    <option value="aura">Aura</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="eventou">Eventou</option>
+                    <option value="ai">IA (qualquer)</option>
+                    <option value="manual">Manual</option>
                   </select>
                 </div>
 
@@ -256,11 +288,15 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                         { key: "todos", label: "Todos" },
                         { key: "prontos", label: "Prontos para publicar" },
                         { key: "revisar", label: "Revisar" },
+                        { key: "duplicados", label: "Possíveis duplicados" },
                         { key: "aura", label: "Aura Pick" },
                         { key: "destaques", label: "Destaques" },
                         { key: "em-alta", label: "Em alta" },
                         { key: "detectados-hoje", label: "Detectados hoje" },
-                        { key: "sem-imagem", label: "Sem imagem" },
+                        { key: "sem-imagem", label: "Sem capa" },
+                        { key: "sem-descricao", label: "Sem descrição" },
+                        { key: "sem-local", label: "Sem local" },
+                        { key: "sem-data", label: "Sem data" },
                         { key: "incompletos", label: "Incompletos" },
                         { key: "arquivados", label: "Arquivados" },
                       ] as const
@@ -363,7 +399,17 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setActiveTab(t.key)}
+                onClick={() => {
+                  setActiveTab(t.key);
+                  trackAdminEvent("admin_events_filter_used", {
+                    source: "tabs",
+                    filter: "tab",
+                    value: t.key,
+                  });
+                  if (t.key === "revisao") {
+                    trackAdminEvent("admin_events_review_opened", { source: "tab" });
+                  }
+                }}
                 className={`shrink-0 relative px-3 py-1.5 text-xs font-semibold transition ${
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -376,7 +422,38 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
             );
           })}
 
-          <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="ml-auto flex items-center gap-1.5 shrink-0">
+            {/* View mode toggle */}
+            <div className="inline-flex items-center rounded-lg border border-border/40 bg-background/60 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => changeViewMode("cards")}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase transition ${
+                  viewMode === "cards"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:bg-secondary/60"
+                }`}
+                title="Visualização em cards"
+                aria-label="Cards"
+              >
+                <LayoutGrid className="h-3 w-3" />
+                <span className="hidden sm:inline">Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => changeViewMode("compact")}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase transition border-l border-border/40 ${
+                  viewMode === "compact"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:bg-secondary/60"
+                }`}
+                title="Lista compacta"
+                aria-label="Lista compacta"
+              >
+                <List className="h-3 w-3" />
+                <span className="hidden sm:inline">Lista</span>
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => setTriageMode(!triageMode)}
