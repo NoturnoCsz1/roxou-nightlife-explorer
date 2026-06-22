@@ -4,6 +4,7 @@
  * 5 itens fixos com grid 5 colunas, safe-area e altura 64px.
  * Glow reduzido para melhor legibilidade.
  */
+import { memo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Calendar,
@@ -13,6 +14,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { haptics } from "../lib/partnerInteractions";
 
 type Item = {
   to: string;
