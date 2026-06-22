@@ -95,7 +95,7 @@ const PartnerHomePage = () => {
     let cancelled = false;
     setLoading(true);
     Promise.all([
-      listReservations({ partnerId: selectedPartnerId, limit: 200 }),
+      listReservations(selectedPartnerId, { limit: 200 }),
       listReservationTypes(selectedPartnerId),
       listReservationWaitlist(selectedPartnerId),
     ])
