@@ -202,74 +202,98 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
                     };
                     const fixed = type && type.requires_guest_count === false;
                     const peopleCount = fixed ? type!.seats : entry.guests_count;
+                    const expiresLabel = entry.expires_at
+                      ? formatRelativeTime(entry.expires_at)
+                      : null;
+                    const phoneFmt = formatPhoneBR(entry.phone);
                     return (
                       <div
                         key={entry.id}
-                        className="rounded-md border border-border/60 bg-card/50 p-3 text-xs"
+                        className="rounded-lg border border-border/60 bg-card/50 p-3 text-xs space-y-1.5"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              <span className="mr-1 inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                                #{idx + 1}
-                              </span>
-                              {entry.name}
-                            </p>
-                            <p className="text-muted-foreground break-all">
-                              {formatPhoneBR(entry.phone)}
-                            </p>
-                            <p className="text-muted-foreground">
-                              👥 {peopleCount} {peopleCount === 1 ? "pessoa" : "pessoas"}
-                              {fixed ? " incluídas" : ""}
-                              {type ? ` · ${type.name}` : ""}
-                            </p>
-                          </div>
-                          <Badge className={meta.cls}>{meta.label}</Badge>
+                        {/* Linha 1: #N Nome + badge */}
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground min-w-0">
+                            <span className="mr-1.5 inline-flex items-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              #{idx + 1}
+                            </span>
+                            {entry.name}
+                          </p>
+                          <Badge className={`${meta.cls} shrink-0`}>{meta.label}</Badge>
                         </div>
-                        <div className="mt-1 text-[11px] text-muted-foreground">
-                          {formatTimeAgo(entry.created_at)} ·{" "}
-                          {formatDateTimeSP(entry.created_at)}
-                          {entry.notified_at
-                            ? ` · Notificado ${formatDateTimeSP(entry.notified_at)}`
-                            : ""}
-                          {entry.expires_at
-                            ? ` · Expira ${formatDateTimeSP(entry.expires_at)}`
-                            : ""}
-                        </div>
+
+                        {/* Linha 2: 👥 pessoas • Mesa/Bistrô/Camarote */}
+                        <p className="text-muted-foreground truncate">
+                          👥 {peopleCount} {peopleCount === 1 ? "pessoa" : "pessoas"}
+                          {fixed ? " incl." : ""}
+                          {" • "}
+                          {type?.name ?? KIND_SINGULAR[kind]}
+                        </p>
+
+                        {/* Linha 3: ⌛ Expira em X */}
+                        {expiresLabel ? (
+                          <p className="text-amber-300/90">
+                            ⌛ Expira em {expiresLabel}
+                          </p>
+                        ) : (
+                          <p className="text-muted-foreground/80">
+                            🕒 {formatRelativeTime(entry.created_at)} aguardando
+                          </p>
+                        )}
+
+                        {/* Linha 4: 📞 telefone */}
+                        {phoneFmt ? (
+                          <a
+                            href={`tel:${entry.phone.replace(/\D/g, "")}`}
+                            className="block text-muted-foreground hover:text-foreground transition-colors truncate"
+                          >
+                            📞 {phoneFmt}
+                          </a>
+                        ) : null}
+
                         {entry.notes ? (
-                          <p className="mt-1 text-[11px] italic text-muted-foreground">
+                          <p className="italic text-muted-foreground truncate">
                             📝 “{entry.notes}”
                           </p>
                         ) : null}
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {entry.status === "waiting" && (
+
+                        {/* Ações: Notificar · Liberar · Cancelar */}
+                        <div className="pt-1 grid grid-cols-3 gap-1.5">
+                          {entry.status === "waiting" ? (
                             <Button
                               size="sm"
                               onClick={() => void handleNotify(entry)}
+                              className="min-h-[40px] text-xs"
                             >
-                              Notificar cliente
+                              Notificar
                             </Button>
+                          ) : (
+                            <span />
                           )}
-                          {(entry.status === "waiting" ||
-                            entry.status === "notified") && (
+                          {(entry.status === "waiting" || entry.status === "notified") ? (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => void handleCopy(entry)}
+                              className="min-h-[40px] text-xs"
                             >
-                              Copiar mensagem
+                              Liberar
                             </Button>
+                          ) : (
+                            <span />
                           )}
-                          {entry.status !== "cancelled" &&
-                            entry.status !== "expired" && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => void handleCancel(entry)}
-                              >
-                                Cancelar
-                              </Button>
-                            )}
+                          {entry.status !== "cancelled" && entry.status !== "expired" ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => void handleCancel(entry)}
+                              className="min-h-[40px] text-xs"
+                            >
+                              Cancelar
+                            </Button>
+                          ) : (
+                            <span />
+                          )}
                         </div>
                       </div>
                     );
