@@ -179,7 +179,7 @@ const PartnerEventsPage = () => {
         />
       );
     }
-    if (key === "upcoming") {
+    if (key === "upcoming" || key === "ongoing") {
       return (
         <PartnerEventsTable
           events={list}
