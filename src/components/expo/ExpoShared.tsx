@@ -6,6 +6,8 @@ export const GRADE_IMG = "/images/expo2026-grade-oficial.webp";
 export const CAMAROTES_IMG = "/images/expo2026-camarotes.png";
 export const SHOWS_BUY_LINK =
   "https://eventou.com.br/evento/Quinta-10-09---Leonardo---Expo-Prudente__3013";
+export const PASSPORT_LINK =
+  "https://eventou.com.br/evento/PASSAPORTE---TODOS-OS-DIAS---Expo-Prudente__3018";
 
 export interface ShowCard {
   id: string;

@@ -12,6 +12,7 @@ import {
   SectionTitle,
   FAQ_ITEMS,
   type ShowCard,
+  PASSPORT_LINK,
 } from "@/components/expo/ExpoShared";
 
 const debouncedZoomTrack = createDebouncedTracker(500);
@@ -35,6 +36,7 @@ export default function Expo2026() {
 
   useEffect(() => {
     trackExpoEvent("expo_view", { page: "home" }, { once: true });
+    trackExpoEvent("expo_passaporte_view", { page: "home" }, { once: true, onceKey: "expo_passaporte_view_home" });
     try {
       const src = detectSource();
       if (src === "Google Search") trackExpoEvent("expo_google_organic", {}, { once: true });
@@ -320,6 +322,36 @@ export default function Expo2026() {
         >
           🎟️ COMPRAR INGRESSOS
         </button>
+
+        {/* ===== Destaque compacto Passaporte Todos os Dias ===== */}
+        <div className="mt-6 max-w-xl mx-auto rounded-2xl border border-[#FFC300]/35 bg-gradient-to-br from-[#1a1305] to-[#0a0a0a] p-4 md:p-5 text-left">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl leading-none">🎟️</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">NOVIDADE</p>
+              <h3 className="font-extrabold text-white text-base md:text-lg leading-tight">
+                Passaporte — Todos os Dias
+              </h3>
+              <p className="mt-1.5 text-xs md:text-sm text-[#B8B8B8] leading-relaxed">
+                Acesso para todos os dias da Expo Prudente 2026. Ideal para quem quer curtir a programação completa de 10 a 14 de setembro.
+              </p>
+              <a
+                href={PASSPORT_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  trackExpoEvent("expo_passaporte_click", { source: "home_cta" });
+                  trackExpoEvent("expo_passaporte_eventou_click", { source: "home_cta" });
+                }}
+                className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-extrabold text-black text-xs md:text-sm hover:scale-[1.03] active:scale-[0.98] transition-transform"
+                style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+              >
+                Comprar Passaporte
+              </a>
+            </div>
+          </div>
+        </div>
+
 
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
