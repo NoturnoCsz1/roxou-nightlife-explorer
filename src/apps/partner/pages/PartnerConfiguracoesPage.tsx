@@ -42,6 +42,19 @@ type Section = {
   }>;
 };
 
+type Section = {
+  title: string;
+  items: Array<{
+    icon: typeof Store;
+    label: string;
+    to?: string;
+    onClick?: () => void;
+    hint?: string;
+    danger?: boolean;
+    keywords?: string;
+  }>;
+};
+
 const PartnerConfiguracoesPage = () => {
   const navigate = useNavigate();
   const { selectedPartner } = usePartnerAuth();
