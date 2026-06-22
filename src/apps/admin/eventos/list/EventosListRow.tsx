@@ -48,6 +48,7 @@ import type { EventosListCtx } from "./useEventosList";
 interface RowProps {
   e: EventRow;
   ctx: EventosListCtx;
+  isDuplicate?: boolean;
 }
 
 const ORIGIN_META: Record<
