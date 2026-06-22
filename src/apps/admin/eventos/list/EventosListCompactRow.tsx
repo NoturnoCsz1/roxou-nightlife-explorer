@@ -109,11 +109,21 @@ export function EventosListCompactRow({
       ? "bg-muted-foreground/40"
       : "bg-yellow-400";
 
+  // Problema principal (1 sinal mais relevante) — evita renderizar muitos badges
+  const mainIssue =
+    missing.length > 0
+      ? `Falta ${missing[0]}${missing.length > 1 ? ` +${missing.length - 1}` : ""}`
+      : review
+      ? "Revisar"
+      : isDuplicate
+      ? "Possível duplicado"
+      : "";
+
   return (
-    <div className="flex items-stretch gap-2 rounded-xl border border-border/40 bg-white/[0.03] px-2.5 py-2 transition hover:bg-white/[0.06]">
+    <div className="flex items-stretch gap-2 rounded-xl border border-border/40 bg-white/[0.03] px-2 py-1.5 transition hover:bg-white/[0.06] min-h-[88px]">
       <button
         onClick={() => toggleSelect(e.id)}
-        className="shrink-0 flex items-center justify-center w-7"
+        className="shrink-0 flex items-center justify-center w-6"
         aria-label="Selecionar"
       >
         {selectedIds.has(e.id) ? (
@@ -123,93 +133,80 @@ export function EventosListCompactRow({
         )}
       </button>
 
-      <div className="min-w-0 flex-1 space-y-1">
-        {/* Linha 1: status • título */}
+      <div className="min-w-0 flex-1 flex flex-col justify-center gap-0.5">
+        {/* Linha 1: status + título */}
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${statusDot}`} />
+          <span
+            className={`h-2 w-2 rounded-full shrink-0 ${statusDot}`}
+            title={
+              e.status === "published"
+                ? "Publicado"
+                : e.status === "archived"
+                ? "Arquivado"
+                : isToday
+                ? "Hoje / atenção"
+                : review
+                ? "Revisão"
+                : "Rascunho"
+            }
+          />
           <h3 className="text-[13px] font-semibold text-foreground truncate">
             {e.title || "(sem título)"}
           </h3>
         </div>
 
-        {/* Linha 2: local • data hora • categoria */}
+        {/* Linha 2: local · data hora · categoria */}
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
-          <span className="truncate max-w-[45%]">{partnerLabel}</span>
-          <span className="opacity-50">·</span>
-          <span className="font-medium text-foreground/85 whitespace-nowrap">
+          <span className="truncate flex-1 min-w-0">{partnerLabel}</span>
+          <span className="opacity-50 shrink-0">·</span>
+          <span className="font-medium text-foreground/85 whitespace-nowrap shrink-0">
             {d}
             {t && ` ${t}`}
           </span>
           <span
-            className={`${categoryBadge[e.category] || "bg-secondary"} ml-auto rounded px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0`}
+            className={`${categoryBadge[e.category] || "bg-secondary"} ml-1 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase shrink-0 max-w-[72px] truncate`}
+            title={getCategoryLabel(e.category, e.sub_category)}
           >
             {getCategoryLabel(e.category, e.sub_category)}
           </span>
         </div>
 
-        {/* Linha 3: origem + sinais + faltas */}
-        <div className="flex flex-wrap items-center gap-1">
+        {/* Linha 3: origem · problema principal */}
+        <div className="flex items-center gap-1.5 text-[10px] min-w-0">
           <span
-            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${ORIGIN_TINT[origin]}`}
+            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-bold uppercase shrink-0 ${ORIGIN_TINT[origin]}`}
           >
             <OriginIcon className="h-2.5 w-2.5" />
             {origin}
           </span>
-          {isToday && (
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-orange-500/20 text-orange-300">
-              Hoje
+          {(e.aura_pick || e.featured) && (
+            <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-bold uppercase shrink-0 bg-primary/15 text-primary">
+              {e.aura_pick ? "Aura" : <><Flame className="h-2.5 w-2.5" />Dest</>}
             </span>
           )}
-          {e.aura_pick && (
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-primary/20 text-primary">
-              Aura
-            </span>
-          )}
-          {e.featured && !e.aura_pick && (
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-yellow-400/15 text-yellow-300 inline-flex items-center gap-0.5">
-              <Flame className="h-2.5 w-2.5" />
-              Dest
-            </span>
-          )}
-          {review && (
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-yellow-400/10 text-yellow-400 inline-flex items-center gap-0.5">
-              <AlertTriangle className="h-2.5 w-2.5" /> Revisar
-            </span>
-          )}
-          {isDuplicate && (
-            <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-fuchsia-500/15 text-fuchsia-300 inline-flex items-center gap-0.5">
-              <CopyIcon className="h-2.5 w-2.5" /> Possível duplicado
-            </span>
-          )}
-          {missing.slice(0, 3).map((m) => (
-            <span
-              key={m}
-              className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase bg-red-500/10 text-red-300 inline-flex items-center gap-0.5"
-            >
-              Falta {m}
-            </span>
-          ))}
-          {missing.length > 3 && (
-            <span className="text-[9px] font-bold uppercase text-red-300/80">
-              +{missing.length - 3}
+          {mainIssue && (
+            <span className="text-muted-foreground truncate min-w-0">
+              <span className="opacity-50">·</span> {mainIssue}
             </span>
           )}
         </div>
       </div>
 
+
       {/* Ações */}
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center gap-1 shrink-0 self-center">
         <Link
           to={getEventEditPath(e.id)}
-          className="inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/15 h-10 min-w-10 px-2 text-[11px] font-bold uppercase text-primary hover:bg-primary/25 transition"
+          className="inline-flex items-center justify-center rounded-lg border border-primary/40 bg-primary/15 h-9 w-9 text-primary hover:bg-primary/25 transition"
           title="Editar"
+          aria-label="Editar"
         >
           <Pencil className="h-3.5 w-3.5" />
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="inline-flex items-center justify-center rounded-lg border border-border/40 bg-secondary/40 h-10 w-10 text-muted-foreground hover:bg-secondary/70 transition"
+              className="inline-flex items-center justify-center rounded-lg border border-border/40 bg-secondary/40 h-9 w-9 text-muted-foreground hover:bg-secondary/70 transition"
               aria-label="Mais ações"
             >
               <MoreHorizontal className="h-4 w-4" />

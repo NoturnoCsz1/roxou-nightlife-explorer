@@ -108,14 +108,14 @@ export function EventosListStatsBar({ ctx }: { ctx: EventosListCtx }) {
   ];
 
   return (
-    <div className="-mx-2 px-2">
-      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+    <div className="-mx-3 sm:mx-0">
+      <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto scrollbar-hide px-3 pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {chips.map((c) => (
           <button
             key={c.key}
             type="button"
             onClick={c.onClick}
-            className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+            className={`flex-shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
               c.active
                 ? "ring-1 ring-primary/40 border-primary/50 bg-primary/15 text-primary"
                 : toneCls[c.tone]
@@ -128,6 +128,7 @@ export function EventosListStatsBar({ ctx }: { ctx: EventosListCtx }) {
             </span>
           </button>
         ))}
+        <span aria-hidden className="flex-shrink-0 w-1" />
       </div>
     </div>
   );

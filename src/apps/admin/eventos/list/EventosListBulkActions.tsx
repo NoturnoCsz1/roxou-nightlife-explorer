@@ -68,171 +68,164 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
 
   return (
     <>
-      <div className="sticky top-[140px] z-40 -mx-2 px-3 py-2 rounded-2xl border border-primary/40 bg-primary/10 backdrop-blur-xl flex items-center gap-2 flex-wrap shadow-[0_0_24px_hsl(var(--primary)/0.25)]">
-        <span className="text-xs font-bold text-primary inline-flex items-center gap-1">
-          <CheckSquare className="h-3.5 w-3.5" /> {selectedCount} selecionado(s)
-        </span>
-        <span className="text-[10px] text-muted-foreground">
-          {selectedReadyToPublish} pronto(s) p/ publicar
-        </span>
-        <span className="w-px h-4 bg-border/40" />
+      <div
+        className="fixed left-0 right-0 z-40 border-t border-primary/40 bg-background/95 backdrop-blur-xl shadow-[0_-8px_24px_rgba(0,0,0,0.4)]"
+        style={{
+          bottom: "calc(4rem + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
+        <div className="md:ml-44 px-3 py-2 flex items-center gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
+            <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-xs font-bold text-primary whitespace-nowrap">
+              {selectedCount} selecionado(s)
+            </span>
+          </div>
 
-        <button
-          onClick={() => {
-            track("approve");
-            handleBulkApprove();
-          }}
-          disabled={selectedReadyToPublish === 0 || publishing}
-          className="inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition"
-        >
-          <Check className="h-3 w-3" /> Aprovar
-        </button>
-        <button
-          onClick={() => {
-            track("approve_featured");
-            handleBulkApprove({ featured: true });
-          }}
-          disabled={selectedReadyToPublish === 0}
-          className="inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 disabled:opacity-40 transition"
-        >
-          <Flame className="h-3 w-3" /> + Destaque
-        </button>
-        <button
-          onClick={() => {
-            track("approve_aura");
-            handleBulkApprove({ auraPick: true });
-          }}
-          disabled={selectedReadyToPublish === 0}
-          className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/25 disabled:opacity-40 transition"
-        >
-          <Bot className="h-3 w-3" /> + Aura
-        </button>
-        <button
-          onClick={() => {
-            track("aura_pick");
-            handleBulkAura(true);
-          }}
-          className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition"
-        >
-          🤖 Aura Pick
-        </button>
-        <button
-          onClick={() => {
-            track("needs_review");
-            setBulkConfirm({ kind: "needs-review", ids: idsArr });
-          }}
-          className="inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2.5 py-1 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 transition"
-        >
-          <AlertTriangle className="h-3 w-3" /> Revisão
-        </button>
-        <button
-          onClick={() => {
-            track("archive");
-            handleBulkArchive();
-          }}
-          className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1 text-[10px] font-bold uppercase text-muted-foreground hover:bg-secondary/70 transition"
-        >
-          🗃 Arquivar
-        </button>
-        <button
-          onClick={() => {
-            track("delete_request");
-            setBulkConfirm({ kind: "delete", ids: idsArr });
-          }}
-          className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1 text-[10px] font-bold uppercase text-red-300 hover:bg-red-500/20 transition"
-        >
-          <Trash2 className="h-3 w-3" /> Excluir
-        </button>
+          <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button
+              onClick={() => {
+                track("ai_desc_request", { eligible: missingDescCount });
+                setBulkConfirm({ kind: "ai-desc", ids: idsArr });
+              }}
+              disabled={missingDescCount === 0}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-violet-500/40 bg-violet-500/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-violet-300 hover:bg-violet-500/20 disabled:opacity-40 transition whitespace-nowrap"
+              title={
+                missingDescCount > 0
+                  ? `${missingDescCount} sem descrição — IA após confirmação`
+                  : "Nenhum selecionado precisa de descrição"
+              }
+            >
+              <Sparkles className="h-3 w-3" /> IA {missingDescCount > 0 ? `(${missingDescCount})` : ""}
+            </button>
 
-        {/* Aplicar categoria */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowCat((v) => !v);
-              setShowPartner(false);
-            }}
-            className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1 text-[10px] font-bold uppercase text-foreground/80 hover:bg-secondary/70 transition"
-          >
-            <Tag className="h-3 w-3" /> Categoria
-          </button>
-          {showCat && (
-            <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-border/40 bg-card/95 backdrop-blur-xl p-1 shadow-xl min-w-[140px]">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => {
-                    track("assign_category", { category: c });
-                    handleBulkAssignCategory(c);
-                    setShowCat(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1 text-[11px] font-semibold capitalize rounded hover:bg-primary/10 hover:text-primary transition"
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Aplicar parceiro */}
-        <div className="relative">
-          <button
-            onClick={() => {
-              setShowPartner((v) => !v);
-              setShowCat(false);
-            }}
-            className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1 text-[10px] font-bold uppercase text-foreground/80 hover:bg-secondary/70 transition"
-          >
-            <Users className="h-3 w-3" /> Parceiro
-          </button>
-          {showPartner && (
-            <div className="absolute top-full left-0 mt-1 z-50 rounded-lg border border-border/40 bg-card/95 backdrop-blur-xl p-1 shadow-xl min-w-[200px] max-h-64 overflow-y-auto">
-              {partnerOptions.map(([id, name]) => (
-                <button
-                  key={id}
-                  onClick={() => {
-                    track("assign_partner", { partner_id: id });
-                    handleBulkAssignPartner(id, name);
-                    setShowPartner(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1 text-[11px] font-medium rounded hover:bg-primary/10 hover:text-primary transition truncate"
-                >
-                  {name}
-                </button>
-              ))}
-              {partnerOptions.length === 0 && (
-                <p className="px-2 py-1 text-[10px] text-muted-foreground">
-                  Nenhum parceiro disponível.
-                </p>
+            <div className="relative shrink-0">
+              <button
+                onClick={() => {
+                  setShowCat((v) => !v);
+                  setShowPartner(false);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-bold uppercase text-foreground/80 hover:bg-secondary/70 transition whitespace-nowrap"
+              >
+                <Tag className="h-3 w-3" /> Categoria
+              </button>
+              {showCat && (
+                <div className="absolute bottom-full left-0 mb-1 z-50 rounded-lg border border-border/40 bg-card/95 backdrop-blur-xl p-1 shadow-xl min-w-[140px]">
+                  {CATEGORIES.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        track("assign_category", { category: c });
+                        handleBulkAssignCategory(c);
+                        setShowCat(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1 text-[11px] font-semibold capitalize rounded hover:bg-primary/10 hover:text-primary transition"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
-          )}
+
+            <div className="relative shrink-0">
+              <button
+                onClick={() => {
+                  setShowPartner((v) => !v);
+                  setShowCat(false);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-bold uppercase text-foreground/80 hover:bg-secondary/70 transition whitespace-nowrap"
+              >
+                <Users className="h-3 w-3" /> Parceiro
+              </button>
+              {showPartner && (
+                <div className="absolute bottom-full left-0 mb-1 z-50 rounded-lg border border-border/40 bg-card/95 backdrop-blur-xl p-1 shadow-xl min-w-[200px] max-h-64 overflow-y-auto">
+                  {partnerOptions.map(([id, name]) => (
+                    <button
+                      key={id}
+                      onClick={() => {
+                        track("assign_partner", { partner_id: id });
+                        handleBulkAssignPartner(id, name);
+                        setShowPartner(false);
+                      }}
+                      className="w-full text-left px-2.5 py-1 text-[11px] font-medium rounded hover:bg-primary/10 hover:text-primary transition truncate"
+                    >
+                      {name}
+                    </button>
+                  ))}
+                  {partnerOptions.length === 0 && (
+                    <p className="px-2 py-1 text-[10px] text-muted-foreground">
+                      Nenhum parceiro disponível.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => {
+                track("needs_review");
+                setBulkConfirm({ kind: "needs-review", ids: idsArr });
+              }}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 transition whitespace-nowrap"
+            >
+              <AlertTriangle className="h-3 w-3" /> Revisão
+            </button>
+
+            <button
+              onClick={() => {
+                track("approve");
+                handleBulkApprove();
+              }}
+              disabled={selectedReadyToPublish === 0 || publishing}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition whitespace-nowrap"
+              title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
+            >
+              <Check className="h-3 w-3" /> Aprovar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
+            </button>
+
+            <button
+              onClick={() => {
+                track("aura_pick");
+                handleBulkAura(true);
+              }}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition whitespace-nowrap"
+            >
+              <Bot className="h-3 w-3" /> Aura
+            </button>
+
+            <button
+              onClick={() => {
+                track("archive");
+                handleBulkArchive();
+              }}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-border/40 bg-secondary/40 px-2.5 py-1.5 text-[10px] font-bold uppercase text-muted-foreground hover:bg-secondary/70 transition whitespace-nowrap"
+            >
+              Arquivar
+            </button>
+
+            <button
+              onClick={() => {
+                track("delete_request");
+                setBulkConfirm({ kind: "delete", ids: idsArr });
+              }}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-red-300 hover:bg-red-500/20 transition whitespace-nowrap"
+            >
+              <Trash2 className="h-3 w-3" /> Excluir
+            </button>
+          </div>
+
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="shrink-0 inline-flex items-center justify-center h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
+            aria-label="Limpar seleção"
+            title="Limpar seleção"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-
-        {/* IA: gerar descrição (apenas após confirmação) */}
-        <button
-          onClick={() => {
-            track("ai_desc_request", { eligible: missingDescCount });
-            setBulkConfirm({ kind: "ai-desc", ids: idsArr });
-          }}
-          disabled={missingDescCount === 0}
-          className="inline-flex items-center gap-1 rounded-lg border border-violet-500/40 bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase text-violet-300 hover:bg-violet-500/20 disabled:opacity-40 transition"
-          title={
-            missingDescCount > 0
-              ? `${missingDescCount} sem descrição — IA será chamada após confirmação`
-              : "Nenhum selecionado precisa de descrição"
-          }
-        >
-          <Sparkles className="h-3 w-3" /> IA descrição ({missingDescCount})
-        </button>
-
-        <button
-          onClick={() => setSelectedIds(new Set())}
-          className="ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition"
-        >
-          <X className="h-3 w-3" /> Limpar
-        </button>
       </div>
+
 
       {/* Confirm: exclusão em massa */}
       <AlertDialog

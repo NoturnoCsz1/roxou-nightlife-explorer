@@ -9,10 +9,15 @@ import { EventosListDialogs } from "./EventosListDialogs";
 
 export function EventosListShell() {
   const ctx = useEventosList();
+  const hasSelection = ctx.selectedCount > 0;
   return (
     <div
       className="space-y-3 md:ml-44 overflow-x-hidden"
-      style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}
+      style={{
+        paddingBottom: hasSelection
+          ? "calc(10rem + env(safe-area-inset-bottom, 0px))"
+          : "calc(6rem + env(safe-area-inset-bottom, 0px))",
+      }}
     >
       <EventosListFilters ctx={ctx} />
       <EventosListStatsBar ctx={ctx} />
