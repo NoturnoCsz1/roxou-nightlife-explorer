@@ -159,10 +159,28 @@ const ClientCard = memo(function ClientCard({
 
 const PartnerFilaPage = () => {
   const { selectedPartner, selectedPartnerId, isLoading } = usePartnerAuth();
-  const [tab, setTab] = useState<Tab>("table");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = PARAM_TO_TAB[searchParams.get("tab") ?? ""] ?? "table";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // sincroniza tab ↔ URL
+  useEffect(() => {
+    const fromUrl = PARAM_TO_TAB[searchParams.get("tab") ?? ""];
+    if (fromUrl && fromUrl !== tab) setTab(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    const next = v as Tab;
+    setTab(next);
+    const sp = new URLSearchParams(searchParams);
+    sp.set("tab", TAB_TO_PARAM[next]);
+    setSearchParams(sp, { replace: true });
+    trackPartnerClient("partner_deeplink_open", { page: "fila", tab: TAB_TO_PARAM[next] });
+  };
 
   useEffect(() => {
     if (!selectedPartnerId) {
@@ -197,18 +215,31 @@ const PartnerFilaPage = () => {
 
   const filtered = useMemo(() => {
     if (tab === "waitlist") return [] as PartnerReservationRow[];
-    return rows.filter((r) => {
+    const list = rows.filter((r) => {
       const t = r.reservation_type_id ? typeMap.get(r.reservation_type_id) : null;
       const kind = t?.kind;
-      if (!kind) return tab === "table"; // sem tipo → mesa
-      return kind === tab && (r.status === "pending" || r.status === "pending_payment" || r.status === "confirmed");
+      if (!kind) return tab === "table";
+      return (
+        kind === tab &&
+        (r.status === "pending" || r.status === "pending_payment" || r.status === "confirmed")
+      );
+    });
+    // Ordenação: expirando primeiro → maior espera → mais pessoas
+    return list.slice().sort((a, b) => {
+      const expA = a.expires_at ? minutesUntil(a.expires_at) : Infinity;
+      const expB = b.expires_at ? minutesUntil(b.expires_at) : Infinity;
+      if (expA !== expB) return expA - expB;
+      const wA = Date.now() - new Date(a.created_at).getTime();
+      const wB = Date.now() - new Date(b.created_at).getTime();
+      if (wA !== wB) return wB - wA;
+      return (b.people_count ?? 0) - (a.people_count ?? 0);
     });
   }, [rows, typeMap, tab]);
 
-  if (isLoading) {
+  if (isLoading || (loading && rows.length === 0)) {
     return (
       <PartnerScreen title="Fila">
-        <p className="text-sm text-muted-foreground">Carregando…</p>
+        {tab === "waitlist" ? <WaitlistSkeleton /> : <ReservationCardSkeletonList count={5} />}
       </PartnerScreen>
     );
   }
@@ -227,7 +258,8 @@ const PartnerFilaPage = () => {
       subtitle={loading ? "Atualizando…" : "Mesas, bistrôs, camarotes e espera"}
       right={<Hourglass className="h-5 w-5 text-muted-foreground" />}
     >
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+      <Tabs value={tab} onValueChange={handleTabChange} className="animate-in fade-in duration-200">
+
         <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/8">
           <TabsTrigger value="table" className="text-xs">Mesas</TabsTrigger>
           <TabsTrigger value="bistro" className="text-xs">Bistrôs</TabsTrigger>
