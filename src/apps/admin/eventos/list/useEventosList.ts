@@ -11,10 +11,28 @@ import type {
   ExtraFilter,
   OriginFilter,
   TabKey,
+  ViewMode,
 } from "./types";
 import { computeEventosListDerived } from "./selectors";
 import { useEventosListActions } from "./useEventosListActions";
 import { useTriageShortcuts } from "./useTriageShortcuts";
+
+const VIEW_MODE_KEY = "admin.eventos.viewMode";
+
+function loadInitialViewMode(): ViewMode {
+  if (typeof window === "undefined") return "cards";
+  try {
+    const v = window.localStorage.getItem(VIEW_MODE_KEY);
+    if (v === "compact" || v === "cards") return v;
+  } catch {
+    /* noop */
+  }
+  // Mobile-first: padrão lista compacta em telas pequenas
+  if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)")?.matches) {
+    return "compact";
+  }
+  return "cards";
+}
 
 export function useEventosList() {
   const navigate = useNavigate();
