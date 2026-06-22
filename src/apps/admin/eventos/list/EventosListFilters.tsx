@@ -19,13 +19,6 @@ import { trackAdminEvent } from "@/lib/adminAnalytics";
 import type { DateQuickFilter, ExtraFilter, OriginFilter, TabKey } from "./types";
 import type { EventosListCtx } from "./useEventosList";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "todos", label: "Todos" },
-  { key: "hoje", label: "Hoje" },
-  { key: "rascunhos", label: "Rascunhos" },
-  { key: "problemas", label: "Problemas" },
-  { key: "destaques", label: "Destaques" },
-];
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "todos", label: "Todos" },
