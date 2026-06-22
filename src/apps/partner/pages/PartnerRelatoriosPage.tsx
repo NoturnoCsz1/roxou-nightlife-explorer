@@ -3,8 +3,11 @@
  * Tabs: Hoje · Semana · Mês · IA. Reaproveita componentes existentes.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { LineChart } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AnalyticsSkeleton } from "../components/PartnerSkeletons";
+import { trackPartnerClient } from "../lib/partnerInteractions";
 
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { PartnerScreen } from "../components/PartnerScreen";
@@ -29,9 +32,25 @@ import {
 
 type Tab = "today" | "week" | "month" | "ai";
 
+type Tab2 = Tab;
+const TAB_PARAM: Record<Tab2, string> = {
+  today: "hoje",
+  week: "semana",
+  month: "mes",
+  ai: "ia",
+};
+const PARAM_TAB: Record<string, Tab2> = {
+  hoje: "today",
+  semana: "week",
+  mes: "month",
+  ia: "ai",
+};
+
 const PartnerRelatoriosPage = () => {
   const { selectedPartnerId, isLoading, canEditProfile } = usePartnerAuth();
-  const [tab, setTab] = useState<Tab>("today");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = PARAM_TAB[searchParams.get("tab") ?? ""] ?? "today";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [waitlist, setWaitlist] = useState<ReservationWaitlistEntry[]>([]);
