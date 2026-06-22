@@ -34,6 +34,8 @@ import { OccupancyRing } from "../components/OccupancyRing";
 import { PartnerActionsSheet } from "../components/PartnerActionsSheet";
 import { PartnerNotificationsCenter } from "../components/PartnerNotificationsCenter";
 import { PartnerEmptyState } from "../components/PartnerEmptyState";
+import { OccupancySkeleton, PartnerCardSkeleton } from "../components/PartnerSkeletons";
+import { trackPartnerClient } from "../lib/partnerInteractions";
 
 const SHORTCUTS: Array<{ to: string; icon: typeof Calendar; label: string }> = [
   { to: "/reservas", icon: Calendar, label: "Reservas" },
