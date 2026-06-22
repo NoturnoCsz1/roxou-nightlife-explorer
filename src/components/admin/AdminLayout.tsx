@@ -81,9 +81,13 @@ const AdminLayout = () => {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-5xl px-3 py-4 pb-20 overflow-x-clip">
+      <main
+        className="mx-auto max-w-5xl px-3 py-4 overflow-x-clip"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
+      >
         <Outlet />
       </main>
+
 
       {/* Bottom nav (mobile) — 5 col grid, no scroll */}
       <MobileBottomNav pathname={pathname} signOut={signOut} />
