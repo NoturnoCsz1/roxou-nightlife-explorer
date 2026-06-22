@@ -18,6 +18,7 @@ import {
   Search,
   Wallet,
   MessageSquare,
+  Sparkles,
   Clock as ClockIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,18 @@ const PartnerConfiguracoesPage = () => {
       items: [
         { icon: BarChart3, label: "Analytics avançado", to: "/analytics", keywords: "analytics relatorios metricas dashboard" },
         { icon: CreditCard, label: "Assinatura", to: "/configuracoes/avancado", keywords: "assinatura plano cobranca billing" },
+      ],
+    },
+    {
+      title: "Manutenção",
+      items: [
+        {
+          icon: Sparkles,
+          label: "Limpeza de registros",
+          to: "/configuracoes/limpeza",
+          hint: "Arquive reservas, filas e eventos antigos",
+          keywords: "limpeza arquivar antigos manutencao cache historico",
+        },
       ],
     },
     {

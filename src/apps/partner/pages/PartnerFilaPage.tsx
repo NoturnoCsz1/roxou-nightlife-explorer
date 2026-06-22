@@ -1,15 +1,16 @@
 /**
- * PartnerFilaPage — Fila Partner Pro.
+ * PartnerFilaPage — FASE 4.
  *
- * Tabs: Mesas · Bistrôs · Camarotes · Lista de Espera.
+ * Tabs simplificadas: Abertas · Fechadas · Arquivadas.
+ * Mantém filtro secundário por tipo (mesa/bistrô/camarote/espera) em chips.
  * Reaproveita listReservations + WaitlistManager existentes.
  */
 import { memo, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Hourglass, Users, Clock } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { PartnerScreen } from "../components/PartnerScreen";
@@ -17,7 +18,6 @@ import { PartnerEmptyState } from "../components/PartnerEmptyState";
 import { WaitlistManager } from "../components/WaitlistManager";
 import {
   ReservationCardSkeletonList,
-  WaitlistSkeleton,
 } from "../components/PartnerSkeletons";
 import { trackPartnerClient } from "../lib/partnerInteractions";
 import {
@@ -29,27 +29,30 @@ import {
 } from "../services/partnerReservations";
 import { formatDateTimeSP } from "@/lib/dateUtils";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
+import { getArchivedIds } from "../lib/partnerLocalArchive";
 
-type Tab = "table" | "bistro" | "box" | "waitlist";
+type Bucket = "open" | "closed" | "archived";
+type KindChip = "all" | PartnerReservationTypeKind | "waitlist";
 
-const TAB_TO_PARAM: Record<Tab, string> = {
-  table: "mesas",
-  bistro: "bistros",
-  box: "camarotes",
-  waitlist: "espera",
+const BUCKET_PARAM: Record<Bucket, string> = {
+  open: "abertas",
+  closed: "fechadas",
+  archived: "arquivadas",
 };
-const PARAM_TO_TAB: Record<string, Tab> = {
-  mesas: "table",
-  bistros: "bistro",
-  camarotes: "box",
-  espera: "waitlist",
+const PARAM_BUCKET: Record<string, Bucket> = {
+  abertas: "open",
+  fechadas: "closed",
+  arquivadas: "archived",
 };
 
-const KIND_LABEL: Record<PartnerReservationTypeKind, string> = {
-  table: "Mesas",
-  bistro: "Bistrôs",
-  box: "Camarotes",
-};
+const DAY = 24 * 60 * 60 * 1000;
+const OPEN_STATUS = new Set(["pending", "pending_payment", "confirmed"]);
+const CLOSED_STATUS = new Set([
+  "completed",
+  "cancelled",
+  "no_show",
+  "expired",
+]);
 
 function minutesUntil(iso: string): number {
   return Math.round((new Date(iso).getTime() - Date.now()) / 60000);
@@ -60,13 +63,7 @@ function fmtRemaining(mins: number): string {
   return mins < 0 ? `Atrasado ${human}` : `Em ${human}`;
 }
 
-type Priority = {
-  emoji: string;
-  cls: string;
-  label: string;
-};
-
-function priorityOf(waitMinutes: number): Priority {
+function priorityOf(waitMinutes: number) {
   const label = formatRelativeTime(waitMinutes);
   if (waitMinutes < 15)
     return { emoji: "🟢", cls: "bg-emerald-400/15 text-emerald-300 border-emerald-400/25", label };
@@ -88,9 +85,7 @@ const ClientCard = memo(function ClientCard({
   const waitMs = Date.now() - new Date(row.created_at).getTime();
   const waitMin = Math.max(0, Math.round(waitMs / 60000));
   const prio = priorityOf(waitMin);
-  const expiresMin = row.expires_at
-    ? minutesUntil(row.expires_at)
-    : null;
+  const expiresMin = row.expires_at ? minutesUntil(row.expires_at) : null;
 
   const initials = (row.name ?? "?")
     .split(" ")
@@ -117,19 +112,13 @@ const ClientCard = memo(function ClientCard({
             <span className="text-sm font-medium text-foreground truncate">
               {row.name ?? "Sem nome"}
             </span>
-            <button
-              type="button"
-              onClick={() =>
-                trackPartnerClient("partner_waitlist_priority_click", {
-                  waitMinutes: waitMin,
-                })
-              }
+            <span
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${prio.cls}`}
               aria-label={`Prioridade ${prio.label}`}
             >
               <span>{prio.emoji}</span>
               <span className="tabular-nums">{prio.label}</span>
-            </button>
+            </span>
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -159,26 +148,30 @@ const ClientCard = memo(function ClientCard({
 const PartnerFilaPage = () => {
   const { selectedPartner, selectedPartnerId, isLoading } = usePartnerAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = PARAM_TO_TAB[searchParams.get("tab") ?? ""] ?? "table";
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const initialBucket =
+    PARAM_BUCKET[searchParams.get("tab") ?? ""] ?? "open";
+  const [bucket, setBucket] = useState<Bucket>(initialBucket);
+  const [kind, setKind] = useState<KindChip>("all");
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // sincroniza tab ↔ URL
   useEffect(() => {
-    const fromUrl = PARAM_TO_TAB[searchParams.get("tab") ?? ""];
-    if (fromUrl && fromUrl !== tab) setTab(fromUrl);
+    const fromUrl = PARAM_BUCKET[searchParams.get("tab") ?? ""];
+    if (fromUrl && fromUrl !== bucket) setBucket(fromUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const handleTabChange = (v: string) => {
-    const next = v as Tab;
-    setTab(next);
+  const handleBucketChange = (v: string) => {
+    const next = v as Bucket;
+    setBucket(next);
     const sp = new URLSearchParams(searchParams);
-    sp.set("tab", TAB_TO_PARAM[next]);
+    sp.set("tab", BUCKET_PARAM[next]);
     setSearchParams(sp, { replace: true });
-    trackPartnerClient("partner_deeplink_open", { page: "fila", tab: TAB_TO_PARAM[next] });
+    trackPartnerClient("partner_deeplink_open", {
+      page: "fila",
+      tab: BUCKET_PARAM[next],
+    });
   };
 
   useEffect(() => {
@@ -190,7 +183,7 @@ const PartnerFilaPage = () => {
     let cancelled = false;
     setLoading(true);
     Promise.all([
-      listReservations(selectedPartnerId, { limit: 200 }),
+      listReservations(selectedPartnerId, { limit: 300 }),
       listReservationTypes(selectedPartnerId),
     ])
       .then(([r, t]) => {
@@ -212,18 +205,33 @@ const PartnerFilaPage = () => {
     return m;
   }, [types]);
 
+  const archivedIds = useMemo(() => getArchivedIds("reservations"), [rows]);
+
   const filtered = useMemo(() => {
-    if (tab === "waitlist") return [] as PartnerReservationRow[];
     const list = rows.filter((r) => {
+      const isArchivedLocal = archivedIds.has(r.id);
+      const ageDays =
+        (Date.now() - new Date(r.updated_at ?? r.created_at).getTime()) / DAY;
+
+      let inBucket = false;
+      if (bucket === "open") {
+        inBucket = OPEN_STATUS.has(r.status) && !isArchivedLocal;
+      } else if (bucket === "closed") {
+        inBucket =
+          CLOSED_STATUS.has(r.status) && ageDays <= 7 && !isArchivedLocal;
+      } else {
+        inBucket =
+          isArchivedLocal || (CLOSED_STATUS.has(r.status) && ageDays > 7);
+      }
+      if (!inBucket) return false;
+
+      if (kind === "all" || kind === "waitlist") return true;
       const t = r.reservation_type_id ? typeMap.get(r.reservation_type_id) : null;
-      const kind = t?.kind;
-      if (!kind) return tab === "table";
-      return (
-        kind === tab &&
-        (r.status === "pending" || r.status === "pending_payment" || r.status === "confirmed")
-      );
+      const k = t?.kind;
+      if (!k) return kind === "table";
+      return k === kind;
     });
-    // Ordenação: expirando primeiro → maior espera → mais pessoas
+
     return list.slice().sort((a, b) => {
       const expA = a.expires_at ? minutesUntil(a.expires_at) : Infinity;
       const expB = b.expires_at ? minutesUntil(b.expires_at) : Infinity;
@@ -233,63 +241,94 @@ const PartnerFilaPage = () => {
       if (wA !== wB) return wB - wA;
       return (b.people_count ?? 0) - (a.people_count ?? 0);
     });
-  }, [rows, typeMap, tab]);
+  }, [rows, typeMap, bucket, kind, archivedIds]);
 
   if (isLoading || (loading && rows.length === 0)) {
     return (
-      <PartnerScreen title="Fila">
-        {tab === "waitlist" ? <WaitlistSkeleton /> : <ReservationCardSkeletonList count={5} />}
+      <PartnerScreen title="Listas">
+        <ReservationCardSkeletonList count={5} />
       </PartnerScreen>
     );
   }
 
   if (!selectedPartnerId) {
     return (
-      <PartnerScreen title="Fila">
+      <PartnerScreen title="Listas">
         <PartnerEmptyState ctaLabel="Abrir configurações" ctaTo="/configuracoes" />
       </PartnerScreen>
     );
   }
 
+  const showWaitlist = bucket === "open" && kind === "waitlist";
+
+  const chip = (value: KindChip, label: string) => (
+    <Button
+      key={value}
+      type="button"
+      size="sm"
+      variant={kind === value ? "default" : "outline"}
+      className="h-8 px-3 text-[11px] rounded-full"
+      onClick={() => setKind(value)}
+    >
+      {label}
+    </Button>
+  );
+
   return (
     <PartnerScreen
-      title="Fila"
-      subtitle={loading ? "Atualizando…" : "Mesas, bistrôs, camarotes e espera"}
+      title="Listas"
+      subtitle={loading ? "Atualizando…" : "Abertas, fechadas e arquivadas"}
       right={<Hourglass className="h-5 w-5 text-muted-foreground" />}
     >
-      <Tabs value={tab} onValueChange={handleTabChange} className="animate-in fade-in duration-200">
-
-        <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/8">
-          <TabsTrigger value="table" className="text-xs">Mesas</TabsTrigger>
-          <TabsTrigger value="bistro" className="text-xs">Bistrôs</TabsTrigger>
-          <TabsTrigger value="box" className="text-xs">Camarotes</TabsTrigger>
-          <TabsTrigger value="waitlist" className="text-xs">Espera</TabsTrigger>
+      <Tabs
+        value={bucket}
+        onValueChange={handleBucketChange}
+        className="animate-in fade-in duration-200"
+      >
+        <TabsList className="grid w-full grid-cols-3 bg-white/5 border border-white/8">
+          <TabsTrigger value="open" className="text-xs">
+            Abertas
+          </TabsTrigger>
+          <TabsTrigger value="closed" className="text-xs">
+            Fechadas
+          </TabsTrigger>
+          <TabsTrigger value="archived" className="text-xs">
+            Arquivadas
+          </TabsTrigger>
         </TabsList>
 
-        {(["table", "bistro", "box"] as const).map((k) => (
-          <TabsContent key={k} value={k} className="mt-3 space-y-2">
-            {filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-10">
-                Sem clientes em {KIND_LABEL[k].toLowerCase()}.
-              </div>
-            ) : (
-              filtered.map((r) => (
-                <ClientCard
-                  key={r.id}
-                  row={r}
-                  type={r.reservation_type_id ? typeMap.get(r.reservation_type_id) : undefined}
-                />
-              ))
-            )}
-          </TabsContent>
-        ))}
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {chip("all", "Todos")}
+          {chip("table", "Mesas")}
+          {chip("bistro", "Bistrôs")}
+          {chip("box", "Camarotes")}
+          {bucket === "open" ? chip("waitlist", "Espera") : null}
+        </div>
 
-        <TabsContent value="waitlist" className="mt-3">
-          <WaitlistManager
-            partnerId={selectedPartnerId}
-            partnerName={selectedPartner?.name ?? ""}
-            partnerSlug={selectedPartner?.slug ?? null}
-          />
+        <TabsContent value={bucket} className="mt-3 space-y-2">
+          {showWaitlist ? (
+            <WaitlistManager
+              partnerId={selectedPartnerId}
+              partnerName={selectedPartner?.name ?? ""}
+              partnerSlug={selectedPartner?.slug ?? null}
+            />
+          ) : filtered.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-10">
+              {bucket === "open"
+                ? "Sem registros nas listas abertas."
+                : bucket === "closed"
+                  ? "Nenhuma lista encerrada nos últimos 7 dias."
+                  : "Nada arquivado. Use a Central de Limpeza para organizar."}
+            </div>
+          ) : (
+            filtered.map((r) => (
+              <ClientCard
+                key={r.id}
+                row={r}
+                type={r.reservation_type_id ? typeMap.get(r.reservation_type_id) : undefined}
+              />
+            ))
+          )}
         </TabsContent>
       </Tabs>
     </PartnerScreen>
