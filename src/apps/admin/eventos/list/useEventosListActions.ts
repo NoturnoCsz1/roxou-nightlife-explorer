@@ -14,6 +14,7 @@ import { spLocalToISO } from "@/lib/dateUtils";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import type { EventRow } from "./types";
 import { getChecklist, normalizeAiTitle } from "./helpers";
+import { hasEventDescription } from "@/lib/eventDescription";
 
 interface ActionsDeps {
   navigate: NavigateFunction;
@@ -275,12 +276,14 @@ export function useEventosListActions(deps: ActionsDeps) {
       }
     }
 
-    async function regenerateDescription(e: EventRow) {
-      if ((e.description || "").trim()) {
-        toast.info("A descrição já existe. Edite manualmente ou apague para gerar outra.");
+    async function regenerateDescription(e: EventRow, opts?: { force?: boolean }) {
+      const alreadyHas = hasEventDescription(e as unknown as Record<string, unknown>);
+      if (alreadyHas && !opts?.force) {
+        toast.info("Este evento já possui descrição. Use 'Substituir' para regerar.");
         return;
       }
       setAiBusy((p) => ({ ...p, [e.id]: "desc" }));
+      const startedAt = performance.now();
       try {
         const { data, error } = await supabase.functions.invoke("generate-description", {
           body: {
@@ -298,6 +301,13 @@ export function useEventosListActions(deps: ActionsDeps) {
         if (!html) throw new Error("IA não retornou descrição");
         await supabase.from("events").update({ description: html }).eq("id", e.id);
         setEvents((prev) => prev.map((x) => (x.id === e.id ? { ...x, description: html } : x)));
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.debug("[regenerateDescription]", {
+            id: e.id,
+            ms: Math.round(performance.now() - startedAt),
+          });
+        }
         toast.success("Descrição rica gerada");
       } catch (err: any) {
         toast.error(err?.message || "Falha ao gerar descrição");
@@ -483,17 +493,27 @@ export function useEventosListActions(deps: ActionsDeps) {
     }
 
     // === Gerar descrição IA para selecionados sem descrição (após confirmação) ===
+    // Fila client-side com concorrência 2 + relatório final.
     async function handleBulkGenerateDescriptions(ids: string[]) {
-      const targets = events.filter(
-        (e) => ids.includes(e.id) && !getChecklist(e).description
+      const selected = events.filter((e) => ids.includes(e.id));
+      const ignored = selected.filter((e) =>
+        hasEventDescription(e as unknown as Record<string, unknown>)
+      ).length;
+      const targets = selected.filter(
+        (e) => !hasEventDescription(e as unknown as Record<string, unknown>)
       );
       if (targets.length === 0) {
         toast.info("Nenhum dos selecionados precisa de descrição.");
         return;
       }
+
+      const total = targets.length;
+      const progressId = toast.loading(`Gerando descrição: 0 de ${total}…`);
       let ok = 0;
       let fail = 0;
-      for (const e of targets) {
+      let done = 0;
+
+      const runOne = async (e: EventRow) => {
         setAiBusy((p) => ({ ...p, [e.id]: "desc" }));
         try {
           const { data, error } = await supabase.functions.invoke("generate-description", {
@@ -519,10 +539,32 @@ export function useEventosListActions(deps: ActionsDeps) {
           fail++;
         } finally {
           setAiBusy((p) => ({ ...p, [e.id]: null }));
+          done++;
+          toast.loading(`Gerando descrição: ${done} de ${total}…`, { id: progressId });
         }
-      }
-      if (ok > 0) toast.success(`✨ ${ok} descrição(ões) geradas com IA`);
-      if (fail > 0) toast.error(`${fail} falharam ao gerar descrição`);
+      };
+
+      // Worker pool: concorrência máxima 2. Se uma falhar, as demais seguem.
+      const CONCURRENCY = 2;
+      const queue = [...targets];
+      const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+        while (queue.length > 0) {
+          const next = queue.shift();
+          if (!next) break;
+          await runOne(next);
+        }
+      });
+      await Promise.all(workers);
+
+      toast.dismiss(progressId);
+      const parts: string[] = [];
+      if (ok > 0) parts.push(`${ok} geradas`);
+      if (ignored > 0) parts.push(`${ignored} ignoradas (já tinham descrição)`);
+      if (fail > 0) parts.push(`${fail} falhas`);
+      const summary = parts.join(" · ");
+      if (fail === 0 && ok > 0) toast.success(`✨ ${summary}`);
+      else if (ok === 0 && fail > 0) toast.error(summary);
+      else toast.message(summary);
     }
 
     async function handleApproveAllSafe(visibleSafeIds: string[]) {

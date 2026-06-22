@@ -3,6 +3,7 @@
 // Recebe o estado bruto e devolve todos os agregados/contadores usados
 // pela toolbar, seções, dialogs e bulk actions.
 
+import { isOperationalEvent } from "@/lib/eventLifecycle";
 import { CATEGORIES, type EventRow } from "./types";
 import {
   detectDuplicates,
@@ -183,7 +184,13 @@ export function computeEventosListDerived(input: SelectorInput) {
     ).entries()
   );
 
-  const draftEvents = events.filter((e) => e.status === "draft");
+  // Conjunto operacional: usado pelos contadores e seções do dashboard que
+  // NÃO devem mostrar eventos passados/arquivados por padrão. Filtros
+  // explícitos do usuário (dateFilter=passados, extraFilter=arquivados)
+  // continuam funcionando porque consultam `filtered` direto.
+  const operationalEvents = events.filter((e) => isOperationalEvent(e));
+
+  const draftEvents = operationalEvents.filter((e) => e.status === "draft");
   const draftsReady = draftEvents.filter((e) => getChecklist(e).complete).length;
   const draftsAttention = draftEvents.length - draftsReady;
   const selectedReadyToPublish = events.filter(
@@ -193,7 +200,10 @@ export function computeEventosListDerived(input: SelectorInput) {
     (e) => e.status !== "published" && e.status !== "archived" && getChecklist(e).complete
   ).length;
   const reviewInFiltered = filtered.filter(
-    (e) => e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete)
+    (e) =>
+      e.status !== "archived" &&
+      isOperationalEvent(e) &&
+      (needsReview(e) || !getChecklist(e).complete)
   ).length;
 
   const hasActiveAdvanced =
@@ -205,17 +215,19 @@ export function computeEventosListDerived(input: SelectorInput) {
     extraFilter !== "todos";
 
   // === Stats globais (barra de chips no topo) ===
+  // Counters operacionais ignoram eventos passados/arquivados — eles ainda
+  // ficam acessíveis via filtro explícito "passados" / "arquivados".
   const statsBar = {
-    hoje: events.filter((e) => eventDayStr(e) === todayStr).length,
-    semana: events.filter((e) => {
+    hoje: operationalEvents.filter((e) => eventDayStr(e) === todayStr).length,
+    semana: operationalEvents.filter((e) => {
       const d = eventDayStr(e);
       return d && d >= todayStr && d <= weekEndStr;
     }).length,
-    semCapa: events.filter((e) => !getChecklist(e).flyer).length,
-    semDescricao: events.filter((e) => !getChecklist(e).description).length,
-    semLocal: events.filter((e) => !e.venue_name || !e.venue_name.trim()).length,
-    semData: events.filter((e) => !e.date_time).length,
-    precisamRevisao: events.filter(
+    semCapa: operationalEvents.filter((e) => !getChecklist(e).flyer).length,
+    semDescricao: operationalEvents.filter((e) => !getChecklist(e).description).length,
+    semLocal: operationalEvents.filter((e) => !e.venue_name || !e.venue_name.trim()).length,
+    semData: operationalEvents.filter((e) => !e.date_time).length,
+    precisamRevisao: operationalEvents.filter(
       (e) => e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete)
     ).length,
     publicados: events.filter((e) => e.status === "published").length,

@@ -1,84 +1,631 @@
-## Refatoração Partner Pro — Mobile-first
+Implementar correção definitiva do fluxo de descrição automática + arquivamento operacional de eventos passados no Admin/Partner Roxou.
 
-### Nova arquitetura de navegação (5 abas)
+OBJETIVO:
 
-Substituir o `PartnerBottomNav` atual por 5 itens:
+1. Corrigir o problema de eventos que já possuem descrição continuarem aparecendo como "Falta descrição".
 
-| Ícone | Label | Rota |
-|---|---|---|
-| 🏠 | Início | `/partner` |
-| 📅 | Reservas | `/partner/reservas` |
-| ⏳ | Fila | `/partner/fila` |
-| 📈 | Relatórios | `/partner/relatorios` |
-| ⚙️ | Configurações | `/partner/configuracoes` |
+2. Evitar gasto desnecessário de créditos de IA.
 
-Rotas antigas (`/partner/eventos`, `/partner/vip-list`, `/partner/analytics`, `/partner/settings`, `/partner/profile`, `/partner/validator`) **permanecem funcionando** via redirects e acessíveis a partir do menu Configurações / ações rápidas. Nada de mudar Supabase, RLS, hooks de dados ou serviços.
+3. Melhorar velocidade dos botões "Gerar descrição", "Injetar hype" e "Adicionar descrição".
 
-### Telas
+4. Arquivar/ocultar eventos passados das telas operacionais, mantendo acesso em Histórico, Relatórios e Analytics.
 
-**🏠 Início (`PartnerHomePage`)**
-- Hero de ocupação com **progress ring** (capacidade ocupada × total) e badge de status de movimento (Tranquilo / Aquecendo / Cheio / Lotado), derivado dos dados já consumidos por `OccupancyInsightsPremium` + `LiveOperationsPanel`.
-- Central de alertas clicável (reaproveita `PartnerNotificationsCenter`) num card compacto que abre sheet com a lista completa.
-- KPIs do dia (reservas, check-ins, fila, no-show) em grid 2 col.
-- FAB → **Bottom Sheet de Ações Rápidas**: Nova Reserva, Chamar Próximo, Compartilhar Link Público, Mostrar QR.
+NÃO ALTERAR:
 
-**📅 Reservas (`PartnerReservasPage`)**
-- Tabs: **Ativas · Pendentes · Check-in · Histórico**.
-- Cada tab usa o mesmo `useReservations` já existente, só muda o filtro de status.
-- Cards `ReservationCard` redesenhados (variant `compact-mobile`): linha 1 nome + horário; linha 2 pessoas · mesa/área · tempo restante; linha 3 status badge + ações principais.
+- Supabase RLS
 
-**⏳ Fila (`PartnerFilaPage`)**
-- Tabs: **Mesas · Bistrôs · Camarotes · Lista de Espera**.
-- Reaproveita `WaitlistManager` parametrizado por tipo (já existe `reservation_types`).
-- Card de cliente: avatar inicial, pessoas, mesa/área alvo, tempo de espera (cronômetro) e expiração estimada.
+- Auth
 
-**📈 Relatórios (`PartnerRelatoriosPage`)**
-- Tabs: **Hoje · Semana · Mês · IA**.
-- Hoje = `DailyOperationsReport`; Semana = `WeeklyHeatmap` + `GrowthSummaryCard`; Mês = `ExecutiveAnalyticsHero` (filtro 30d); IA = `OccupancyInsightsPremium` + insights existentes.
+- Schema do banco
 
-**⚙️ Configurações (`PartnerConfiguracoesPage`)**
-- Lista de categorias (estilo iOS Settings): Perfil público · Horários · Reservas · Tipos de mesa · VIP/Listas · Equipe · Assinatura · Notificações · Sair.
-- Cada item navega para a página correspondente já existente (sem alterar formulários).
+- Edge functions existentes
 
-### UI / estilo
+- Partner público
 
-- Novo arquivo `src/apps/partner/styles/partner-pro.css` com tokens mais sóbrios: reduzir `--partner-glow-*` (opacidades ~40%→18%), aumentar contraste de texto secundário (`text-muted-foreground` ≥ 70% L em dark).
-- Componente compartilhado `PartnerScreen` (header sticky + safe areas + scroll container) usado por todas as telas.
-- `PartnerActionsSheet` novo componente (shadcn `Sheet` lado `bottom`) com os 4 atalhos.
-- `OccupancyRing` novo componente SVG reutilizando dados de ocupação.
+- VIP
 
-### O que NÃO muda
+- Expo
 
-- Schema/migrations Supabase, políticas RLS, edge functions.
-- Hooks de dados (`useReservations`, `useWaitlist`, `usePartnerAnalytics` etc.).
-- Tracking/analytics existente (eventos mantidos; só adiciono `partner_nav_*` para as novas abas).
-- Páginas de detalhe (`PartnerReservationDetailPage`, `PartnerEventDetailPage`, VIP detail, validator, login, onboarding) — só recebem o novo layout/header.
-- Admin, Public, Expo, VIP público, Search.
+- Search
 
-### Arquivos principais
+- Páginas públicas
+
+- SEO
+
+- Timezone SP/dateUtils
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+1. HELPER CENTRAL DE DESCRIÇÃO
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Criar arquivo:
+
+src/lib/eventDescription.ts
+
+Funções:
+
+hasEventDescription(event)
+
+getEventDescriptionText(event)
+
+stripHtml(value)
+
+hasEventDescription deve retornar true se qualquer um destes campos tiver pelo menos 20 caracteres úteis após stripHtml + trim:
+
+- description
+
+- short_description
+
+- generated_description
+
+- ai_description
+
+- caption
+
+- social_caption
+
+- metadata.description
+
+- [metadata.ai](http://metadata.ai)_description
+
+Ignorar como inválido:
+
+- null
+
+- undefined
+
+- ""
+
+- espaços
+
+- "<p></p>"
+
+- "<br>"
+
+- "null"
+
+- "undefined"
+
+getEventDescriptionText(event) deve retornar a primeira descrição válida encontrada.
+
+Logs apenas em DEV:
+
+if ([import.meta.env.DEV](http://import.meta.env.DEV)) console.debug(...)
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+2. DIFERENCIAR "TEM DESCRIÇÃO" DE "DESCRIÇÃO RICA"
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Hoje getChecklist(e).description exige:
+
+- 80+ caracteres
+
+- HTML rico
+
+- marcador "O QUE VOCÊ PRECISA SABER" ou lista
+
+Manter essa lógica apenas como:
+
+descriptionRich
+
+Uso:
+
+- critério de "pronto para publicar"
+
+- qualidade editorial
+
+Para "Falta descrição", usar apenas:
+
+hasEventDescription(event)
+
+Substituir regra em:
+
+src/apps/admin/eventos/list/helpers.ts
+
+src/apps/admin/eventos/list/selectors.ts
+
+src/apps/admin/eventos/list/EventosListBulkActions.tsx
+
+src/apps/admin/eventos/list/EventosListRow.tsx
+
+src/apps/admin/eventos/list/EventosListCompactRow.tsx
+
+Também ajustar:
+
+getMissingFields(event)
+
+para não retornar "descrição" quando hasEventDescription(event) for true.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+3. OPTIMISTIC UPDATE
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Após gerar descrição com IA ou salvar manualmente:
+
+- atualizar setEvents local imediatamente;
+
+- remover badge "Falta descrição" sem reload;
+
+- atualizar contador "Sem descrição";
+
+- invalidar cache/query correta, se existir;
+
+- sincronizar descrição principal em event.description quando possível.
+
+Se IA gerar em outro campo, a UI deve passar a ler getEventDescriptionText(event).
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+4. EVITAR GASTO DESNECESSÁRIO DE IA
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Antes de chamar IA:
+
+- verificar hasEventDescription(event);
+
+- se já existir descrição válida, mostrar confirmação:
+
+  "Este evento já possui descrição. Deseja substituir?"
+
+Não chamar IA antes da confirmação.
+
+Bulk IA:
+
+- processar apenas eventos sem descrição válida;
+
+- ignorar automaticamente eventos que já possuem descrição;
+
+- mostrar resumo final:
+
+  geradas
+
+  ignoradas
+
+  falhas
+
+Confirmação antes do bulk:
+
+"Isso pode consumir créditos de IA. Apenas eventos sem descrição válida serão processados."
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+5. FILA CLIENT-SIDE DE IA
+
+━━━━━━━━━━━━━━━━━━━━━━
 
 Criar:
-- `pages/PartnerHomePage.tsx`
-- `pages/PartnerReservasPage.tsx`
-- `pages/PartnerFilaPage.tsx`
-- `pages/PartnerRelatoriosPage.tsx`
-- `pages/PartnerConfiguracoesPage.tsx`
-- `components/PartnerScreen.tsx`
-- `components/PartnerActionsSheet.tsx`
-- `components/OccupancyRing.tsx`
-- `components/PartnerAlertsCenter.tsx` (wrapper clicável de `PartnerNotificationsCenter`)
-- `styles/partner-pro.css`
 
-Editar:
-- `components/PartnerBottomNav.tsx` (5 itens + safe-area + grid)
-- `components/ReservationCard.tsx` (variant compact-mobile)
-- `App.tsx` ou router do partner (novas rotas + redirects das antigas)
-- `layouts/PartnerStandaloneLayout.tsx` (header mais leve, safe-area)
+src/apps/admin/eventos/list/useAiQueue.ts
 
-### Validação
+Recursos:
 
-`bun run typecheck` e `bun run build`. Verificação visual rápida via Playwright headless nas 5 telas em 360×800.
+- enqueue(eventId, action)
 
----
+- cancel(eventId)
 
-Posso seguir com esta refatoração?
+- retry(eventId)
+
+- status por evento:
+
+  idle
+
+  queued
+
+  running
+
+  success
+
+  error
+
+Concorrência máxima:
+
+2
+
+Timeout:
+
+45 segundos
+
+Se falhar:
+
+- não travar a fila inteira;
+
+- permitir retry manual.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+6. BOTÕES RÁPIDOS
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Gerar descrição:
+
+- se não tiver descrição, gera base;
+
+- se já tiver descrição, pede confirmação para substituir.
+
+Injetar hype:
+
+- usar getEventDescriptionText(event) como entrada;
+
+- se não houver descrição, gerar descrição base primeiro;
+
+- não duplicar texto.
+
+Adicionar descrição:
+
+- criar QuickDescriptionDialog;
+
+- modal leve com Textarea;
+
+- salvar sem sair da lista;
+
+- aplicar optimistic update.
+
+Feedback no card:
+
+running:
+
+"Gerando descrição..."
+
+success:
+
+"Descrição adicionada"
+
+error:
+
+"Falhou — tentar novamente"
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+7. BULK IA COM PROGRESSO
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Atualizar handleBulkGenerateDescriptions em:
+
+src/apps/admin/eventos/list/useEventosListActions.ts
+
+Comportamento:
+
+- filtrar eventos com hasEventDescription === false;
+
+- enfileirar via useAiQueue;
+
+- mostrar progresso:
+
+  "3 de 20 descrições geradas"
+
+- concorrência 2;
+
+- se uma falhar, continuar;
+
+- ao final:
+
+  "5 geradas, 15 ignoradas, 0 falhas"
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+8. HELPER DE CICLO DE VIDA DO EVENTO
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Criar:
+
+src/lib/eventLifecycle.ts
+
+Funções:
+
+isPastEvent(event)
+
+isArchivedEvent(event)
+
+isOperationalEvent(event)
+
+getEventArchiveAge(event)
+
+Regras:
+
+isPastEvent:
+
+- end_date < now()
+
+OU
+
+- date_time < now() - 1h
+
+OU
+
+- status === "completed"
+
+isArchivedEvent:
+
+- status === "archived"
+
+OU
+
+- archived_at definido
+
+OU
+
+- evento passado há mais de 30 dias
+
+isOperationalEvent:
+
+- não é passado
+
+- não é arquivado
+
+- status !== "archived"
+
+getEventArchiveAge:
+
+- retornar dias desde encerramento/data final.
+
+Sem chamadas de banco.
+
+Sem migrations.
+
+Usar campos existentes:
+
+date_time
+
+start_date
+
+end_date
+
+status
+
+completed_at
+
+archived_at
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+9. APLICAR ARQUIVAMENTO NO ADMIN
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Em selectors.ts:
+
+Ocultar eventos passados/arquivados por padrão em:
+
+- Dashboard
+
+- Pendências
+
+- Cards de Hoje
+
+- Próximos 7 dias
+
+- Ações rápidas
+
+- Revisão operacional
+
+- Contadores principais
+
+- draftEvents
+
+- featuredTodayEvents
+
+- todayEvents
+
+- upcomingEvents
+
+- reviewInFiltered
+
+Manter acessível em:
+
+- chip "Mostrar arquivados/passados"
+
+- dateFilter === "passados"
+
+- collapsible "Eventos Passados"
+
+- Analytics
+
+- Logs
+
+Adicionar badge visual:
+
+"Arquivado · Encerrado em DD/MM/YYYY"
+
+Para eventos antigos.
+
+Regra 180 dias:
+
+- eventos passados há mais de 180 dias só aparecem quando o usuário ativar:
+
+  "Mostrar todos os arquivados"
+
+Adicionar toggle no sheet de filtros avançados.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+10. APLICAR ARQUIVAMENTO NO PARTNER
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Filtrar via isOperationalEvent nas áreas operacionais:
+
+PartnerHomePage:
+
+- próxima reserva
+
+- KPIs do dia
+
+- alertas
+
+- operação em tempo real
+
+PartnerReservationsPage:
+
+- ativas
+
+- pendentes
+
+- check-in
+
+PartnerFilaPage:
+
+- abertas
+
+- fechadas
+
+PartnerEventsPage:
+
+- próximos
+
+- em andamento
+
+Manter acesso completo em:
+
+- Histórico
+
+- Relatórios
+
+- Analytics
+
+- Dashboard antigo
+
+- Ferramentas antigas
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+11. LOGS DEV
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Adicionar console.debug apenas em DEV para:
+
+hasEventDescription:
+
+- event_id
+
+- campos detectados
+
+- resultado
+
+IA queue:
+
+- event_id
+
+- action
+
+- tempo da chamada
+
+- status final
+
+Não logar em produção.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+12. ARQUIVOS NOVOS
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Criar:
+
+src/lib/eventDescription.ts
+
+src/lib/eventLifecycle.ts
+
+src/apps/admin/eventos/list/useAiQueue.ts
+
+src/apps/admin/eventos/list/QuickDescriptionDialog.tsx
+
+Editar principais:
+
+src/apps/admin/eventos/list/helpers.ts
+
+src/apps/admin/eventos/list/selectors.ts
+
+src/apps/admin/eventos/list/useEventosListActions.ts
+
+src/apps/admin/eventos/list/EventosListBulkActions.tsx
+
+src/apps/admin/eventos/list/EventosListRow.tsx
+
+src/apps/admin/eventos/list/EventosListCompactRow.tsx
+
+src/apps/admin/eventos/list/EventosListFilters.tsx
+
+src/apps/partner/pages/PartnerHomePage.tsx
+
+src/apps/partner/pages/PartnerReservationsPage.tsx
+
+src/apps/partner/pages/PartnerFilaPage.tsx
+
+src/apps/partner/pages/PartnerEventsPage.tsx
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+13. VALIDAÇÃO
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Testar:
+
+1. Evento com:
+
+description = "Festa boa, venha curtir com sua turma."
+
+→ não aparece como "Falta descrição".
+
+2. Evento com HTML simples sem marcador:
+
+<p>Show especial hoje à noite.</p>
+
+→ não aparece como "Falta descrição".
+
+3. Evento com:
+
+<p></p>
+
+→ continua como falta descrição.
+
+4. Clicar "Gerar descrição" em evento já preenchido:
+
+→ mostra confirmação "Substituir?"
+
+→ não chama IA antes.
+
+5. Bulk IA em 20 eventos, 15 já com descrição:
+
+→ processa apenas 5.
+
+→ toast: "5 geradas, 15 ignoradas, 0 falhas".
+
+6. Evento de ontem:
+
+→ some do Dashboard Admin e Home Partner.
+
+→ aparece em Eventos Passados / Histórico / Relatórios.
+
+7. Evento encerrado há mais de 180 dias:
+
+→ aparece apenas com "Mostrar todos os arquivados".
+
+8. Typecheck e build:
+
+bun run typecheck
+
+bun run build
+
+Resultado esperado:
+
+- "Falta descrição" fantasma corrigido.
+
+- IA mais rápida e econômica.
+
+- Botões não travam.
+
+- Eventos passados saem das áreas operacionais.
+
+- Dados históricos continuam acessíveis.
