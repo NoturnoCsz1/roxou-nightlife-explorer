@@ -202,14 +202,23 @@ export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {
                   </label>
                   <select
                     value={activeDateFilter}
-                    onChange={(e) => setActiveDateFilter(e.target.value as DateQuickFilter)}
+                    onChange={(e) => {
+                      setActiveDateFilter(e.target.value as DateQuickFilter);
+                      trackAdminEvent("admin_events_filter_used", {
+                        source: "sheet",
+                        filter: "date",
+                        value: e.target.value,
+                      });
+                    }}
                     className="w-full rounded-lg border border-border/40 bg-background/80 px-3 py-2 text-sm"
                   >
                     <option value="todos">Todas as datas</option>
                     <option value="hoje">Hoje</option>
                     <option value="semana">Próximos 7 dias</option>
+                    <option value="mes">Este mês (30d)</option>
                     <option value="futuros">Futuros</option>
                     <option value="passados">Passados</option>
+                    <option value="sem-data">Sem data</option>
                   </select>
                 </div>
 
