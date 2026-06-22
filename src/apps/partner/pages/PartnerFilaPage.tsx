@@ -101,7 +101,7 @@ function ClientCard({
 }
 
 const PartnerFilaPage = () => {
-  const { selectedPartnerId, isLoading } = usePartnerAuth();
+  const { selectedPartner, selectedPartnerId, isLoading } = usePartnerAuth();
   const [tab, setTab] = useState<Tab>("table");
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
@@ -197,7 +197,11 @@ const PartnerFilaPage = () => {
         ))}
 
         <TabsContent value="waitlist" className="mt-3">
-          <WaitlistManager />
+          <WaitlistManager
+            partnerId={selectedPartnerId}
+            partnerName={selectedPartner?.name ?? ""}
+            partnerSlug={selectedPartner?.slug ?? null}
+          />
         </TabsContent>
       </Tabs>
     </PartnerScreen>
