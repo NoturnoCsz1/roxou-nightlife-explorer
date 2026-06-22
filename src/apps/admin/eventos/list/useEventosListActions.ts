@@ -569,6 +569,11 @@ export function useEventosListActions(deps: ActionsDeps) {
       handleBulkApprove,
       handleBulkArchive,
       handleApproveAllSafe,
+      handleBulkDelete,
+      handleBulkNeedsReview,
+      handleBulkAssignCategory,
+      handleBulkAssignPartner,
+      handleBulkGenerateDescriptions,
     };
   }, [deps]);
 }
