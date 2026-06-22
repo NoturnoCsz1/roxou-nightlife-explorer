@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import SEO from "@/components/SEO";
 import { ExpoLayout } from "@/components/expo/ExpoLayout";
-import { SectionTitle, GoldButton, SHOWS_BUY_LINK } from "@/components/expo/ExpoShared";
+import { SectionTitle, GoldButton, SHOWS_BUY_LINK, PASSPORT_LINK } from "@/components/expo/ExpoShared";
 import CamarotesSection from "@/components/expo/CamarotesSection";
 import { trackExpoEvent } from "@/lib/expoAnalytics";
 
@@ -42,6 +42,13 @@ const jsonLd = {
       name: "Ingressos Expo Prudente 2026 — VIP, Front Stage, Camarotes e Pista",
       description:
         "Ingressos oficiais da Expo Prudente 2026: Área VIP, Front Stage (Open Bar), Camarotes e Pista.",
+      offers: {
+        "@type": "Offer",
+        name: "Passaporte — Todos os Dias — Expo Prudente 2026",
+        url: PASSPORT_LINK,
+        availability: "https://schema.org/InStock",
+        category: "primary",
+      },
     },
     {
       "@type": "BreadcrumbList",
@@ -57,6 +64,7 @@ const jsonLd = {
 export default function ExpoIngressos() {
   useEffect(() => {
     trackExpoEvent("expo_view", { page: "ingressos" }, { once: true, onceKey: "expo_view_ingressos" });
+    trackExpoEvent("expo_passaporte_view", { page: "ingressos" }, { once: true, onceKey: "expo_passaporte_view_ingressos" });
   }, []);
 
   return (
