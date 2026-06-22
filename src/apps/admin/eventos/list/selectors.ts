@@ -204,9 +204,29 @@ export function computeEventosListDerived(input: SelectorInput) {
     originFilter !== "todos" ||
     extraFilter !== "todos";
 
+  // === Stats globais (barra de chips no topo) ===
+  const statsBar = {
+    hoje: events.filter((e) => eventDayStr(e) === todayStr).length,
+    semana: events.filter((e) => {
+      const d = eventDayStr(e);
+      return d && d >= todayStr && d <= weekEndStr;
+    }).length,
+    semCapa: events.filter((e) => !getChecklist(e).flyer).length,
+    semDescricao: events.filter((e) => !getChecklist(e).description).length,
+    semLocal: events.filter((e) => !e.venue_name || !e.venue_name.trim()).length,
+    semData: events.filter((e) => !e.date_time).length,
+    precisamRevisao: events.filter(
+      (e) => e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete)
+    ).length,
+    publicados: events.filter((e) => e.status === "published").length,
+    duplicados: duplicateIds.size,
+    total: events.length,
+  };
+
   return {
     todayStr,
     weekEndStr,
+    monthEndStr,
     filtered,
     visibleFiltered,
     auraEvents,
@@ -227,6 +247,8 @@ export function computeEventosListDerived(input: SelectorInput) {
     readyInFiltered,
     reviewInFiltered,
     hasActiveAdvanced,
+    duplicateIds,
+    statsBar,
   };
 }
 
