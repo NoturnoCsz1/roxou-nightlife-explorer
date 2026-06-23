@@ -48,6 +48,14 @@ const PartnerEventEditRoute = lazy(() =>
   import("./routes/PartnerEventRoutes").then((m) => ({ default: m.PartnerEventEditRoute })),
 );
 const PartnerReservationsPage = lazy(() => import("./pages/PartnerReservationsPage"));
+const PartnerReservasListaPage = lazy(() => import("./pages/PartnerReservasListaPage"));
+const PartnerReservasTiposPage = lazy(() => import("./pages/PartnerReservasTiposPage"));
+const PartnerReservasConfiguracoesPage = lazy(
+  () => import("./pages/PartnerReservasConfiguracoesPage"),
+);
+const PartnerReservasEquipePage = lazy(
+  () => import("./pages/PartnerReservasEquipePage"),
+);
 const PartnerReservationDetailPage = lazy(
   () => import("./pages/PartnerReservationDetailPage"),
 );
