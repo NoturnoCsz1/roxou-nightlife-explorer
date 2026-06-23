@@ -212,11 +212,15 @@ export async function createExcursionTrip(
       departure_address: payload.departure_address?.trim() || null,
       departure_at: departure,
       return_at: payload.return_at ?? null,
-      session_date: sessionDate ?? undefined,
+      ...(sessionDate ? { session_date: sessionDate } : {}),
       capacity: Math.max(0, Math.min(200, Math.floor(payload.capacity || 0))),
       price_cents: Math.max(0, Math.floor(payload.price_cents ?? 0)),
       status: payload.status ?? "draft",
       notes: payload.notes?.trim() || null,
+      // public_slug é preenchido pelo trigger excursion_trips_set_slug
+      // quando vier vazio. Mantemos string vazia para satisfazer o tipo
+      // gerado (NOT NULL sem default a nível de coluna).
+      public_slug: "",
     })
     .select("*")
     .single();

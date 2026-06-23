@@ -20,7 +20,12 @@ import {
   type PartnerReservationRow,
 } from "./partnerReservations";
 
-export type ValidatorItemType = "vip" | "reservation" | "invite" | "unknown";
+export type ValidatorItemType =
+  | "vip"
+  | "reservation"
+  | "invite"
+  | "excursion"
+  | "unknown";
 
 export interface ParsedQrPayload {
   type: ValidatorItemType;
@@ -82,13 +87,24 @@ export function parseQrPayload(raw: string): ParsedQrPayload {
       return { type: "vip", token: sucessoMatch[1], id: null, raw: value };
     }
 
-    if (typeParam === "vip" || typeParam === "reservation" || typeParam === "invite") {
+    if (
+      typeParam === "vip" ||
+      typeParam === "reservation" ||
+      typeParam === "invite" ||
+      typeParam === "excursion"
+    ) {
       return {
         type: typeParam,
         token: token ?? null,
         id: id ?? null,
         raw: value,
       };
+    }
+
+    // /transportes/acompanhar/<token> → excursion
+    const acompMatch = url.pathname.match(/\/transportes\/acompanhar\/([^/?#]+)/i);
+    if (acompMatch?.[1]) {
+      return { type: "excursion", token: acompMatch[1], id: null, raw: value };
     }
 
     // Fallback: extrai UUID da string
@@ -339,6 +355,94 @@ async function validateReservation(
   };
 }
 
+async function validateExcursion(
+  parsed: ParsedQrPayload,
+): Promise<ValidationResult> {
+  const token = parsed.token;
+  if (!token) {
+    return {
+      outcome: "not_found",
+      type: "excursion",
+      message: "QR de excursão sem token.",
+    };
+  }
+  // Server-side: a RPC board_excursion_seat checa status, parceiro e audita.
+  // O preview chama em modo "dry-run" via public_get_excursion_ticket para
+  // mostrar dados antes de confirmar; confirm() chama o board_excursion_seat.
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data, error } = await supabase.rpc("public_get_excursion_ticket", {
+    _token: token,
+  });
+  if (error) {
+    return {
+      outcome: "error",
+      type: "excursion",
+      message: error.message,
+    };
+  }
+  if (!data) {
+    return {
+      outcome: "not_found",
+      type: "excursion",
+      message: "Comprovante não encontrado.",
+    };
+  }
+  const ticket = data as {
+    seat: { seat_number: string; passenger_name: string | null; status: string };
+    trip: { title: string; destination: string | null };
+  };
+  const ref = `${ticket.trip.title} · Assento ${ticket.seat.seat_number}`;
+  if (ticket.seat.status === "boarded") {
+    return {
+      outcome: "already_used",
+      type: "excursion",
+      message: "Passageiro já embarcado.",
+      ref,
+    };
+  }
+  if (ticket.seat.status === "cancelled") {
+    return {
+      outcome: "expired",
+      type: "excursion",
+      message: "Reserva cancelada.",
+      ref,
+    };
+  }
+  return {
+    outcome: "valid",
+    type: "excursion",
+    message: `${ticket.seat.passenger_name ?? "Passageiro"} · ${ticket.trip.title}`,
+    ref,
+    confirm: async () => {
+      const { data: res, error: err } = await supabase.rpc("board_excursion_seat", {
+        _token: token,
+      });
+      if (err) {
+        return {
+          outcome: "error",
+          type: "excursion",
+          message: err.message,
+          ref,
+        };
+      }
+      const out = res as {
+        outcome: ValidationOutcome;
+        message: string;
+        seat?: { seat_number: string; passenger_name: string | null };
+        trip?: { title: string };
+      };
+      return {
+        outcome: out.outcome,
+        type: "excursion",
+        message: out.message,
+        ref: out.seat
+          ? `${out.trip?.title ?? ""} · Assento ${out.seat.seat_number}`
+          : ref,
+      };
+    },
+  };
+}
+
 const DEV = typeof import.meta !== "undefined" && Boolean(import.meta.env?.DEV);
 
 export async function validateQrCode(
@@ -355,6 +459,8 @@ export async function validateQrCode(
       r = await validateVip(parsed);
     } else if (parsed.type === "reservation") {
       r = await validateReservation(parsed, partnerId);
+    } else if (parsed.type === "excursion") {
+      r = await validateExcursion(parsed);
     } else if (parsed.type === "invite") {
       r = {
         outcome: "unsupported",

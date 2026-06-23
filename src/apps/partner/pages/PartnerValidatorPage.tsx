@@ -73,6 +73,7 @@ const typeLabel: Record<ValidatorItemType, string> = {
   vip: "Lista VIP",
   reservation: "Reserva",
   invite: "Convite",
+  excursion: "Excursão",
   unknown: "Desconhecido",
 };
 
@@ -390,7 +391,7 @@ const PartnerValidatorPage = () => {
           </p>
           <h1 className="text-2xl font-bold">Validador</h1>
           <p className="text-xs text-muted-foreground break-words">
-            {partnerName} · valida Lista VIP, Reservas e Convites por QR.
+            {partnerName} · valida Lista VIP, Reservas, Convites e Excursões 🚍 por QR.
           </p>
         </header>
 
@@ -473,7 +474,9 @@ const PartnerValidatorPage = () => {
                 {result.outcome === "valid"
                   ? result.type === "reservation"
                     ? "Reserva validada"
-                    : "Check-in realizado"
+                    : result.type === "excursion"
+                      ? "Embarque confirmado"
+                      : "Check-in realizado"
                   : result.outcome === "already_used"
                     ? "Já utilizado"
                     : style.label}
