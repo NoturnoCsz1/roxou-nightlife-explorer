@@ -116,7 +116,7 @@ const PartnerLoginPage = () => {
         password,
       });
       if (error || !data?.user) {
-        toast.error("E-mail ou senha inválidos.");
+        toast.error(mapAuthError(error));
         setEmailLoading(false);
         return;
       }
@@ -124,8 +124,7 @@ const PartnerLoginPage = () => {
       const dest = next ?? (await resolveDestination(data.user.id));
       navigate(dest, { replace: true });
     } catch (err) {
-      console.error("[PARTNER LOGIN] email/password error:", err);
-      toast.error("E-mail ou senha inválidos.");
+      toast.error(mapAuthError(err));
       setEmailLoading(false);
     }
   };
@@ -139,12 +138,11 @@ const PartnerLoginPage = () => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
-        { redirectTo: buildPartnerUrl("/login") },
+        { redirectTo: buildPartnerUrl("/auth/update-password") },
       );
       if (error) throw error;
       toast.success("Enviamos um link para redefinir sua senha.");
-    } catch (err) {
-      console.error("[PARTNER LOGIN] reset password error:", err);
+    } catch {
       toast.error("Não foi possível enviar o e-mail de redefinição.");
     } finally {
       setResetLoading(false);
@@ -156,19 +154,19 @@ const PartnerLoginPage = () => {
       toast.info("Login com Google em breve. Use e-mail e senha por enquanto.");
       return;
     }
-    try {
-      const next = readNextParam() ?? "/dashboard";
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: buildPartnerUrl(next) },
-      });
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
-    } catch (err) {
-      console.error("[PARTNER LOGIN] Google OAuth error:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Erro ao entrar com Google",
-      );
+    setEmailLoading(true);
+    const next = readNextParam() ?? "/dashboard";
+    const r = await signInWithGoogle(next);
+    setEmailLoading(false);
+    if (!r.ok) {
+      toast.error(r.error ?? "Erro ao entrar com Google");
+      return;
+    }
+    // Sessão setada pelo lovable.auth; resolve destino.
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      const dest = next ?? (await resolveDestination(data.user.id));
+      navigate(dest, { replace: true });
     }
   };
 
