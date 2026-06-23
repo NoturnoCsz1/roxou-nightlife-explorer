@@ -2702,6 +2702,66 @@ export type Database = {
           },
         ]
       }
+      partner_staff_accounts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          last_login_at: string | null
+          name: string
+          partner_id: string
+          permissions: Json
+          pin: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          name: string
+          partner_id: string
+          permissions?: Json
+          pin?: string | null
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          name?: string
+          partner_id?: string
+          permissions?: Json
+          pin?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_staff_accounts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_staff_accounts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_subscriptions: {
         Row: {
           created_at: string
