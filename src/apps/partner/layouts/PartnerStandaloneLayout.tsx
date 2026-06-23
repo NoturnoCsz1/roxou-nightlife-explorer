@@ -126,6 +126,7 @@ const PartnerStandaloneLayout = () => {
         </div>
       </div>
       <PartnerBottomNav />
+      <PartnerFab />
     </PartnerProvider>
   );
 };
