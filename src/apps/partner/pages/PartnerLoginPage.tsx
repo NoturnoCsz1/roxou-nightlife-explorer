@@ -19,8 +19,9 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { listMyAccessRequests } from "../services/partnerAccessRequests";
+import { mapAuthError, signInWithGoogle, safeReturnTo } from "@/lib/authHelpers";
 
-const GOOGLE_ENABLED = false;
+const GOOGLE_ENABLED = true;
 
 const partnerOrigin = () =>
   typeof window === "undefined" ? "" : window.location.origin;
@@ -31,12 +32,10 @@ const readNextParam = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
     const sp = new URLSearchParams(window.location.search);
-    const n = sp.get("next");
-    if (n && n.startsWith("/") && !n.startsWith("//")) return n;
+    return safeReturnTo(sp.get("next") ?? sp.get("returnTo"), "") || null;
   } catch {
-    /* noop */
+    return null;
   }
-  return null;
 };
 
 async function resolveDestination(userId: string): Promise<string> {
