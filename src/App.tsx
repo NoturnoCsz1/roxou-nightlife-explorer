@@ -450,13 +450,7 @@ const App = () => (
             />
             <Route
               path="transportes/motorista/gps"
-              element={L(
-                <TransportesComingSoon
-                  title="Compartilhar GPS"
-                  description="Inicie a transmissão do trajeto em tempo real."
-                  emoji="📍"
-                />,
-              )}
+              element={L(<MotoristaGpsPage />)}
             />
             <Route
               path="transportes/motorista/checkins"
