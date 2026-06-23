@@ -155,21 +155,28 @@ export function WaitlistManager({ partnerId, partnerName, partnerSlug }: Props) 
     }
   };
 
+  // FASE 5 — Oculta entradas encerradas (cancelled/expired) da fila aberta.
+  // Elas continuam acessíveis em Histórico/Arquivadas via outras telas.
+  const openRows = useMemo(
+    () => rows.filter((r) => r.status !== "cancelled" && r.status !== "expired"),
+    [rows],
+  );
+
   const grouped = useMemo(() => {
     const acc: Record<"table" | "bistro" | "box", ReservationWaitlistEntry[]> = {
       table: [],
       bistro: [],
       box: [],
     };
-    for (const r of rows) {
+    for (const r of openRows) {
       const t = typeMap.get(r.reservation_type_id);
       if (!t) continue;
       acc[t.kind].push(r);
     }
     return acc;
-  }, [rows, typeMap]);
+  }, [openRows, typeMap]);
 
-  const total = rows.length;
+  const total = openRows.length;
 
   return (
     <Card>
