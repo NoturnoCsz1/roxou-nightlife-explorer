@@ -163,6 +163,12 @@ const PartnerApp = () => (
             <Route path="excursoes/veiculos" element={L(<PartnerExcursoesVeiculosPage />)} />
             <Route path="excursoes/viagens" element={L(<PartnerExcursoesViagensPage />)} />
             <Route path="excursoes/viagens/:tripId" element={L(<PartnerExcursoesViagemDetailPage />)} />
+            <Route path="excursoes/assentos" element={L(<PartnerComingSoonPage />)} />
+            <Route path="excursoes/passageiros" element={L(<PartnerComingSoonPage />)} />
+            <Route path="excursoes/equipe" element={L(<PartnerComingSoonPage />)} />
+            <Route path="excursoes/operacao" element={L(<PartnerComingSoonPage />)} />
+            <Route path="excursoes/operacao/:tripId" element={L(<PartnerComingSoonPage />)} />
+            <Route path="excursoes/relatorios" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
