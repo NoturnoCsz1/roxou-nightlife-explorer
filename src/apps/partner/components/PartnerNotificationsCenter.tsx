@@ -363,14 +363,18 @@ export function PartnerNotificationsCenter({
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="partner-tap h-9 w-9 text-emerald-300/80 hover:text-emerald-300"
+                        onClick={() => handleResolve(it.id)}
+                        aria-label="Marcar como resolvido"
+                        title="Marcar como resolvido — some da lista"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
                         className="partner-tap h-9 w-9 text-muted-foreground"
-                        onClick={() =>
-                          setDismissed((prev) => {
-                            const next = new Set(prev);
-                            next.add(it.id);
-                            return next;
-                          })
-                        }
+                        onClick={() => handleDismiss(it.id)}
                         aria-label="Dispensar alerta (não cancela o cliente)"
                         title="Dispensar alerta — não cancela o cliente"
                       >
