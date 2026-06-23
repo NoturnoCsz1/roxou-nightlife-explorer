@@ -145,6 +145,15 @@ const PartnerApp = () => (
               path="lista-vip/:listId"
               element={L(<PartnerVipListDetailRoute />)}
             />
+            <Route path="listas" element={L(<PartnerListasHubPage />)} />
+            <Route path="listas/abertas" element={L(<PartnerListasAbertasPage />)} />
+            <Route path="listas/fechadas" element={L(<PartnerListasFechadasPage />)} />
+            <Route path="listas/participantes" element={L(<PartnerListasParticipantesPage />)} />
+            <Route path="listas/promoters" element={L(<PartnerListasPromotersPage />)} />
+            <Route path="listas/configuracoes" element={L(<PartnerListasConfiguracoesPage />)} />
+            <Route path="listas/historico" element={L(<PartnerListasHistoricoPage />)} />
+            <Route path="listas/operacao" element={L(<PartnerListasOperacaoPage />)} />
+            <Route path="listas/equipe" element={L(<PartnerListasEquipePage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
