@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarClock, MapPin, BusFront } from "lucide-react";
+import { ArrowLeft, CalendarClock, MapPin, BusFront, Radio, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,13 @@ import {
   getPublicExcursionTicket,
   type PublicTicket,
 } from "@/services/publicExcursoes";
+import {
+  getPublicLive,
+  operationStatusEmoji,
+  operationStatusLabel,
+  type ExcursionOperationStatus,
+  type PublicLiveData,
+} from "@/services/excursionGps";
 
 function formatBRL(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", {
