@@ -104,7 +104,37 @@ export function PartnerNotificationsCenter({
   waitlist,
   onOpenSection,
 }: Props) {
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissedIds());
+  const [resolved, setResolved] = useState<Set<string>>(() => getResolvedIds());
+
+  // Re-sincroniza ao montar (caso outra aba tenha alterado).
+  useEffect(() => {
+    setDismissed(getDismissedIds());
+    setResolved(getResolvedIds());
+  }, []);
+
+  const handleDismiss = useCallback((id: string) => {
+    markNotif(id, "dismissed");
+    setDismissed((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleResolve = useCallback((id: string) => {
+    markNotif(id, "resolved");
+    setResolved((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleClearResolved = useCallback(() => {
+    clearResolvedNotifs();
+    setResolved(new Set());
+  }, []);
 
   const items = useMemo<NotificationItem[]>(() => {
     const out: NotificationItem[] = [];
