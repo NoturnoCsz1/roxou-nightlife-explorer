@@ -29,6 +29,7 @@ import {
   Clock as ClockIcon,
   LayoutDashboard as LayoutDashboardIcon,
   Armchair,
+  PlayCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -142,6 +143,18 @@ const PartnerConfiguracoesPage = () => {
           ),
           comingSoon: true,
           keywords: "assinatura plano cobranca billing",
+        },
+      ],
+    },
+    {
+      title: "Operação diária",
+      items: [
+        {
+          icon: PlayCircle,
+          label: "Abrir / encerrar operação",
+          to: "/configuracoes/operacao",
+          hint: "Sessão diária, notificações, histórico e arquivados",
+          keywords: "operacao sessao abrir encerrar fechar dia noite reset notificacoes historico reabrir arquivados",
         },
       ],
     },

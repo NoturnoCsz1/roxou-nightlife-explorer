@@ -11,16 +11,24 @@
  * - No-shows recentes do dia (potencial fricção)
  * - Reservas encerradas sem liberação de mesa (ocupando recurso)
  */
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Bell,
+  Check,
   CheckCircle2,
   Clock,
+  Trash2,
   Users,
   X,
   ChevronRight,
 } from "lucide-react";
+import {
+  getDismissedIds,
+  getResolvedIds,
+  markNotif,
+  clearResolved as clearResolvedNotifs,
+} from "../lib/partnerNotificationDismissal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GlassCard, SectionHeader } from "./ui";
@@ -96,7 +104,37 @@ export function PartnerNotificationsCenter({
   waitlist,
   onOpenSection,
 }: Props) {
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissedIds());
+  const [resolved, setResolved] = useState<Set<string>>(() => getResolvedIds());
+
+  // Re-sincroniza ao montar (caso outra aba tenha alterado).
+  useEffect(() => {
+    setDismissed(getDismissedIds());
+    setResolved(getResolvedIds());
+  }, []);
+
+  const handleDismiss = useCallback((id: string) => {
+    markNotif(id, "dismissed");
+    setDismissed((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleResolve = useCallback((id: string) => {
+    markNotif(id, "resolved");
+    setResolved((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleClearResolved = useCallback(() => {
+    clearResolvedNotifs();
+    setResolved(new Set());
+  }, []);
 
   const items = useMemo<NotificationItem[]>(() => {
     const out: NotificationItem[] = [];
@@ -195,7 +233,7 @@ export function PartnerNotificationsCenter({
       });
 
     return out
-      .filter((i) => !dismissed.has(i.id))
+      .filter((i) => !dismissed.has(i.id) && !resolved.has(i.id))
       .sort((a, b) => {
         const order: Record<Severity, number> = {
           critical: 0,
@@ -205,7 +243,7 @@ export function PartnerNotificationsCenter({
         };
         return order[a.severity] - order[b.severity];
       });
-  }, [rows, waitlist, dismissed]);
+  }, [rows, waitlist, dismissed, resolved]);
 
   const counts = useMemo(() => {
     const c: Record<Severity, number> = {
@@ -231,7 +269,7 @@ export function PartnerNotificationsCenter({
             : `${items.length} ${items.length === 1 ? "alerta ativo" : "alertas ativos"} agora.`
         }
         action={
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(["critical", "warning", "info"] as Severity[]).map((s) =>
               counts[s] > 0 ? (
                 <Badge
@@ -243,6 +281,18 @@ export function PartnerNotificationsCenter({
                 </Badge>
               ) : null,
             )}
+            {resolved.size > 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                onClick={handleClearResolved}
+                title="Remove permanentemente as notificações já resolvidas"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Limpar resolvidas ({resolved.size})
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -313,14 +363,18 @@ export function PartnerNotificationsCenter({
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="partner-tap h-9 w-9 text-emerald-300/80 hover:text-emerald-300"
+                        onClick={() => handleResolve(it.id)}
+                        aria-label="Marcar como resolvido"
+                        title="Marcar como resolvido — some da lista"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
                         className="partner-tap h-9 w-9 text-muted-foreground"
-                        onClick={() =>
-                          setDismissed((prev) => {
-                            const next = new Set(prev);
-                            next.add(it.id);
-                            return next;
-                          })
-                        }
+                        onClick={() => handleDismiss(it.id)}
                         aria-label="Dispensar alerta (não cancela o cliente)"
                         title="Dispensar alerta — não cancela o cliente"
                       >

@@ -34,6 +34,7 @@ const PartnerFilaPage = lazy(() => import("./pages/PartnerFilaPage"));
 const PartnerRelatoriosPage = lazy(() => import("./pages/PartnerRelatoriosPage"));
 const PartnerConfiguracoesPage = lazy(() => import("./pages/PartnerConfiguracoesPage"));
 const PartnerLimpezaPage = lazy(() => import("./pages/PartnerLimpezaPage"));
+const PartnerOperacaoPage = lazy(() => import("./pages/PartnerOperacaoPage"));
 const PartnerComingSoonPage = lazy(() => import("./pages/PartnerComingSoonPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
@@ -126,6 +127,7 @@ const PartnerApp = () => (
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
             <Route path="configuracoes/avancado" element={L(<PartnerSettingsPage />)} />
             <Route path="configuracoes/limpeza" element={L(<PartnerLimpezaPage />)} />
+            <Route path="configuracoes/operacao" element={L(<PartnerOperacaoPage />)} />
             <Route path="configuracoes/em-breve" element={L(<PartnerComingSoonPage />)} />
             <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
           </Route>
