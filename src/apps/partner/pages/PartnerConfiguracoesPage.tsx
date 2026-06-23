@@ -29,6 +29,7 @@ import {
   Clock as ClockIcon,
   LayoutDashboard as LayoutDashboardIcon,
   Armchair,
+  PlayCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
