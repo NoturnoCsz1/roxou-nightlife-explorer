@@ -86,7 +86,7 @@ export default function MotoristaGpsPage() {
         if (partnerIds.length === 0) return;
         const all: ExcursionTrip[] = [];
         for (const pid of partnerIds) {
-          const t = await listPartnerExcursionTrips(pid).catch(() => []);
+          const t = await listExcursionTrips(pid).catch(() => []);
           all.push(...t);
         }
         all.sort((a, b) => a.departure_at.localeCompare(b.departure_at));
