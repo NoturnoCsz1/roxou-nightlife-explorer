@@ -58,6 +58,9 @@ const AuraCommand = lazy(() => import("./apps/admin/pages/AuraCommand"));
 const JogosAdmin = lazy(() => import("./apps/admin/pages/JogosAdmin"));
 const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
 const Editores = lazy(() => import("./apps/admin/pages/Editores"));
+const CrmHub = lazy(() => import("./apps/admin/pages/CrmHub"));
+const CrmCustomerDetail = lazy(() => import("./apps/admin/pages/CrmCustomerDetail"));
+const PrivacidadeOptOut = lazy(() => import("./pages/privacidade/OptOutPage"));
 const NoticiasList = lazy(() => import("./apps/admin/pages/NoticiasList"));
 const NoticiaForm = lazy(() => import("./apps/admin/pages/NoticiaForm"));
 const Premiacoes = lazy(() => import("./apps/admin/pages/Premiacoes"));
@@ -232,7 +235,12 @@ const App = () => (
             <Route path="logs" element={L(<AdminLogs />)} />
             <Route path="expo2026" element={L(<Expo2026Admin />)} />
             <Route path="expo2026/camarotes" element={L(<Expo2026CamarotesAdmin />)} />
+            <Route path="crm" element={L(<CrmHub />)} />
+            <Route path="crm/:id" element={L(<CrmCustomerDetail />)} />
           </Route>
+
+          {/* Privacidade / Opt-out público */}
+          <Route path="/privacidade/optout/:token" element={L(<PrivacidadeOptOut />)} />
 
 
           {/* ─── Partner Pro Preview (Fase 9J/9K — beta fechado) ─────────

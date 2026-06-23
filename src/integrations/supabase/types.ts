@@ -705,6 +705,183 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_consents: {
+        Row: {
+          channel: string
+          consent_type: string
+          created_at: string
+          customer_id: string
+          granted_at: string | null
+          id: string
+          metadata: Json
+          opt_out_token: string | null
+          revoked_at: string | null
+          source: string | null
+        }
+        Insert: {
+          channel: string
+          consent_type: string
+          created_at?: string
+          customer_id: string
+          granted_at?: string | null
+          id?: string
+          metadata?: Json
+          opt_out_token?: string | null
+          revoked_at?: string | null
+          source?: string | null
+        }
+        Update: {
+          channel?: string
+          consent_type?: string
+          created_at?: string
+          customer_id?: string
+          granted_at?: string | null
+          id?: string
+          metadata?: Json
+          opt_out_token?: string | null
+          revoked_at?: string | null
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_consents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_customer_audit_logs: {
+        Row: {
+          action: string
+          actor_partner_id: string | null
+          actor_user_id: string | null
+          created_at: string
+          customer_id: string | null
+          field: string | null
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_partner_id?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          field?: string | null
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_partner_id?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          field?: string | null
+          id?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_customer_audit_logs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_customer_links: {
+        Row: {
+          created_at: string
+          customer_id: string
+          event_id: string | null
+          id: string
+          metadata: Json
+          partner_id: string | null
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          event_id?: string | null
+          id?: string
+          metadata?: Json
+          partner_id?: string | null
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          event_id?: string | null
+          id?: string
+          metadata?: Json
+          partner_id?: string | null
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_customer_links_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_customers: {
+        Row: {
+          birth_date: string | null
+          city: string | null
+          cpf_hash: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          last_seen_at: string | null
+          metadata: Json
+          phone: string | null
+          phone_normalized: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          city?: string | null
+          cpf_hash?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          metadata?: Json
+          phone?: string | null
+          phone_normalized?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          city?: string | null
+          cpf_hash?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          metadata?: Json
+          phone?: string | null
+          phone_normalized?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_profiles: {
         Row: {
           avatar_url: string | null
@@ -5318,6 +5495,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      crm_customer_visible_to_user: {
+        Args: { _customer_id: string; _user: string }
+        Returns: boolean
+      }
+      crm_reveal_customer_field: {
+        Args: { _customer_id: string; _field: string; _partner_id?: string }
+        Returns: string
+      }
+      crm_revoke_consent_by_token: {
+        Args: { _token: string }
+        Returns: boolean
+      }
+      crm_upsert_customer_and_link: {
+        Args: {
+          _city: string
+          _consent_channel?: string
+          _email: string
+          _event_id: string
+          _full_name: string
+          _marketing_consent?: boolean
+          _partner_id: string
+          _phone: string
+          _source: string
+          _source_id: string
+          _source_type: string
+        }
+        Returns: string
+      }
       delete_my_customer_account: { Args: never; Returns: Json }
       duplicate_partner_event: {
         Args: { _event_id: string }
@@ -5568,6 +5773,7 @@ export type Database = {
         }
       }
       normalize_phone: { Args: { _input: string }; Returns: string }
+      normalize_phone_br: { Args: { _phone: string }; Returns: string }
       notify_waitlist_entry: { Args: { _entry_id: string }; Returns: Json }
       open_partner_vip_list: {
         Args: { _list_id: string }

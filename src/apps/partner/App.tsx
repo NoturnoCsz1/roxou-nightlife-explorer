@@ -65,6 +65,7 @@ const PartnerVipListDetailRoute = lazy(
 );
 const PartnerAnalyticsPage = lazy(() => import("./pages/PartnerAnalyticsPage"));
 const PartnerSettingsPage = lazy(() => import("./pages/PartnerSettingsPage"));
+const PartnerCrmPage = lazy(() => import("./pages/PartnerCrmPage"));
 const PartnerVipCheckinPage = lazy(() => import("./pages/PartnerVipCheckinPage"));
 const PartnerValidatorPage = lazy(() => import("./pages/PartnerValidatorPage"));
 const PublicReservation = lazy(() => import("@/pages/PublicReservation"));
@@ -171,6 +172,7 @@ const PartnerApp = () => (
             <Route path="excursoes/operacao/:tripId" element={L(<PartnerExcursaoOperacaoPage />)} />
             <Route path="excursoes/relatorios" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
+            <Route path="crm" element={L(<PartnerCrmPage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />

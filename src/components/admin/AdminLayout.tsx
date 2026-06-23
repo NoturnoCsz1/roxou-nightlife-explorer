@@ -130,6 +130,7 @@ const PRIMARY_ITEMS = [
 
 const MORE_ITEMS = [
   { to: "/admin/parceiros", icon: Users, label: "Parceiros" },
+  { to: "/admin/crm", icon: Users, label: "CRM" },
   { to: "/admin/system", icon: BarChart3, label: "Analytics" },
   { to: "/admin/instagram", icon: Instagram, label: "Instagram" },
   { to: "/admin/eventou", icon: Globe, label: "Eventou" },
