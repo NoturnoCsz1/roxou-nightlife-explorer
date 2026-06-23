@@ -25,6 +25,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./styles/partner-ui.css";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
+const UpdatePasswordPage = lazy(() => import("@/pages/auth/UpdatePasswordPage"));
 
 const PartnerOnboardingPage = lazy(() => import("./pages/PartnerOnboardingPage"));
 const PartnerPendingApprovalPage = lazy(
