@@ -124,6 +124,7 @@ const PartnerApp = () => (
         <Routes>
           {/* Rotas sem layout/gate */}
           <Route path="/login" element={<PartnerLoginPage />} />
+          <Route path="/auth/update-password" element={L(<UpdatePasswordPage />)} />
           <Route path="/onboarding" element={L(<PartnerOnboardingPage />)} />
           <Route path="/pending" element={L(<PartnerPendingApprovalPage />)} />
           <Route
