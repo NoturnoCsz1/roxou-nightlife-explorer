@@ -172,6 +172,7 @@ const PartnerApp = () => (
             <Route path="excursoes/operacao/:tripId" element={L(<PartnerExcursaoOperacaoPage />)} />
             <Route path="excursoes/relatorios" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
+            <Route path="crm" element={L(<PartnerCrmPage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
