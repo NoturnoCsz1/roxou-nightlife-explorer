@@ -111,15 +111,11 @@ const PartnerConfiguracoesPage = () => {
         {
           icon: Armchair,
           label: "Tipos de mesa",
-          to: comingSoon(
-            "Tipos de mesa",
-            "Em breve você poderá criar mesas, bistrôs e camarotes com regras próprias.",
-          ),
-          comingSoon: true,
+          to: "/reservas/tipos",
           keywords: "tipos mesa bistro camarote categorias",
         },
         { icon: Crown, label: "Listas VIP", to: "/lista-vip", keywords: "vip lista entrada cortesia" },
-        { icon: Users, label: "Equipe & permissões", to: "/configuracoes/avancado", keywords: "equipe time permissoes promoters usuarios" },
+        { icon: Users, label: "Equipe e acessos", to: "/reservas/equipe", keywords: "equipe time permissoes promoters usuarios validador recepcao caixa gerente pin" },
       ],
     },
     {
