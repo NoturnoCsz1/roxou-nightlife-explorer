@@ -233,7 +233,7 @@ export function PartnerNotificationsCenter({
       });
 
     return out
-      .filter((i) => !dismissed.has(i.id))
+      .filter((i) => !dismissed.has(i.id) && !resolved.has(i.id))
       .sort((a, b) => {
         const order: Record<Severity, number> = {
           critical: 0,
@@ -243,7 +243,7 @@ export function PartnerNotificationsCenter({
         };
         return order[a.severity] - order[b.severity];
       });
-  }, [rows, waitlist, dismissed]);
+  }, [rows, waitlist, dismissed, resolved]);
 
   const counts = useMemo(() => {
     const c: Record<Severity, number> = {
