@@ -61,6 +61,7 @@ export default function AcompanharExcursaoPage() {
   const { token = "" } = useParams<{ token: string }>();
   const [ticket, setTicket] = useState<PublicTicket | null>(null);
   const [qrPng, setQrPng] = useState<string | null>(null);
+  const [live, setLive] = useState<PublicLiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,8 +96,31 @@ export default function AcompanharExcursaoPage() {
     };
   }, [token]);
 
+  // Polling leve a cada 20s para status + posição (sem realtime, evita socket público)
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const data = await getPublicLive(token);
+        if (alive) setLive(data);
+      } catch {
+        /* silent */
+      }
+    };
+    void tick();
+    const id = window.setInterval(tick, 20_000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [token]);
+
   const status = ticket?.seat.status ?? "reserved";
   const badge = statusBadge[status] ?? statusBadge.reserved;
+  const opStatus: ExcursionOperationStatus =
+    live?.operation_status ?? "scheduled";
+  const ping = live?.ping ?? null;
 
   return (
     <main
