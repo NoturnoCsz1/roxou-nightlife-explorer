@@ -17,6 +17,7 @@ import { PartnerProvider } from "../contexts/PartnerContext";
 import { usePartnerBetaAccess } from "../hooks/usePartnerBetaAccess";
 
 import { PartnerBottomNav } from "../components/PartnerBottomNav";
+import { PartnerFab } from "../components/PartnerFab";
 import { trackBetaEvent } from "../services/partnerBeta";
 import { cn } from "@/lib/utils";
 
