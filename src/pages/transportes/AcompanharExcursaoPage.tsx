@@ -10,7 +10,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarClock, MapPin, BusFront } from "lucide-react";
+import { ArrowLeft, CalendarClock, MapPin, BusFront, Radio, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,13 @@ import {
   getPublicExcursionTicket,
   type PublicTicket,
 } from "@/services/publicExcursoes";
+import {
+  getPublicLive,
+  operationStatusEmoji,
+  operationStatusLabel,
+  type ExcursionOperationStatus,
+  type PublicLiveData,
+} from "@/services/excursionGps";
 
 function formatBRL(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", {
@@ -54,6 +61,7 @@ export default function AcompanharExcursaoPage() {
   const { token = "" } = useParams<{ token: string }>();
   const [ticket, setTicket] = useState<PublicTicket | null>(null);
   const [qrPng, setQrPng] = useState<string | null>(null);
+  const [live, setLive] = useState<PublicLiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,8 +96,31 @@ export default function AcompanharExcursaoPage() {
     };
   }, [token]);
 
+  // Polling leve a cada 20s para status + posição (sem realtime, evita socket público)
+  useEffect(() => {
+    if (!token) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const data = await getPublicLive(token);
+        if (alive) setLive(data);
+      } catch {
+        /* silent */
+      }
+    };
+    void tick();
+    const id = window.setInterval(tick, 20_000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [token]);
+
   const status = ticket?.seat.status ?? "reserved";
   const badge = statusBadge[status] ?? statusBadge.reserved;
+  const opStatus: ExcursionOperationStatus =
+    live?.operation_status ?? "scheduled";
+  const ping = live?.ping ?? null;
 
   return (
     <main
@@ -158,6 +189,67 @@ export default function AcompanharExcursaoPage() {
                 </Button>
               ) : null}
             </Card>
+
+            {/* Live status + GPS */}
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Acompanhamento ao vivo
+                </p>
+                {ping ? (
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[10px]">
+                    <Radio className="h-3 w-3 mr-1 animate-pulse" /> Ao vivo
+                  </Badge>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-lg">{operationStatusEmoji[opStatus]}</span>
+                <span className="font-medium">{operationStatusLabel[opStatus]}</span>
+              </div>
+              {ping ? (
+                <>
+                  <div className="aspect-video rounded-lg overflow-hidden bg-black/30">
+                    <iframe
+                      title="Posição do ônibus"
+                      src={`https://www.google.com/maps?q=${ping.lat},${ping.lng}&z=15&output=embed`}
+                      className="w-full h-full border-0"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground">
+                      Atualizado{" "}
+                      {new Date(ping.recorded_at).toLocaleTimeString("pt-BR", {
+                        timeZone: "America/Sao_Paulo",
+                      })}
+                    </span>
+                    <a
+                      href={`https://www.google.com/maps?q=${ping.lat},${ping.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      Abrir no Maps <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  O motorista ainda não compartilhou a localização ao vivo.
+                </p>
+              )}
+              {ticket.partner?.whatsapp ? (
+                <a
+                  href={`https://wa.me/${ticket.partner.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  📱 Falar com o responsável
+                </a>
+              ) : null}
+            </Card>
+
 
             <Card className="p-4 space-y-2 text-sm">
               <div className="flex items-start gap-2">
