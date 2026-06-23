@@ -1,68 +1,60 @@
 /**
- * PartnerReservationsPage — Reservas Pro
+ * PartnerReservationsPage — Hub de Reservas (FASE 6, refatorado).
  *
- * Reservas do parceiro com:
- * - Buckets operacionais (Ativas / Pendentes / Encerradas / Arquivadas)
- * - Tipos de reserva (mesas/bistrôs/camarotes)
- * - Auto-expiração de pendentes via `expire_due_partner_reservations`
- * - Confirmação de pagamento manual
+ * Dashboard slim mobile-first. Mantém:
+ *  - Hero/KPIs
+ *  - Notificações operacionais
+ *  - Próxima reserva
+ *  - Pendências
+ *  - Ações rápidas em tiles com chevron → subpáginas
+ *
+ * Foram movidos para subpáginas próprias:
+ *  - Tipos de reserva → /reservas/tipos
+ *  - Lista (Tabs Hoje/Pendentes/Check-in/Histórico/Arquivadas) → /reservas/lista
+ *  - Lista de espera + filtros → /reservas/fila
+ *  - Configurações + link público → /reservas/configuracoes
+ *  - Operação diária → /reservas/operacao
+ *  - Equipe → /reservas/equipe
+ *
+ * Não altera Supabase, RLS, Auth ou serviços.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useLocation, useSearchParams } from "react-router-dom";
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ExternalLink, QrCode, Share2 } from "lucide-react";
+  Calendar,
+  Hourglass,
+  ListChecks,
+  Settings,
+  Sparkles,
+  Users as UsersIcon,
+  ScanLine,
+  PlayCircle,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { usePartnerAuth } from "../hooks/usePartnerAuth";
+
+import { PartnerScreen } from "../components/PartnerScreen";
+import { PartnerEmptyState } from "../components/PartnerEmptyState";
+import { PartnerActionTile } from "../components/PartnerActionTile";
 import {
-  ReservationCard,
-  ReservationEmptyState,
-  ReservationSettingsForm,
-  ReservationTable,
-  ReservationTypesManager,
-  WaitlistManager,
   GuestNameDialog,
-  PublicLinkQrDialog,
-  DailyOperationsReport,
-  OccupancyInsightsPanel,
   ReservationHeroCard,
   ReservationHeroMobile,
   ReservationKpiGrid,
-  ReservationTimeline,
-  UpcomingReservationCard,
   ReservationPendingCard,
+  UpcomingReservationCard,
   LiveOperationsPanel,
-  ExecutiveDashboard,
-  WeeklyHeatmap,
-  OccupancyInsightsPremium,
   PartnerNotificationsCenter,
 } from "../components";
+import { usePartnerAuth } from "../hooks/usePartnerAuth";
+import { onFabClick } from "../components/PartnerFab";
 import {
-  cancelReservation,
-  cancelWaitlistEntry,
-  completeReservation,
   computeReservationStats,
-  confirmReservation,
-  confirmReservationPayment,
   createReservation,
   getReservationSettings,
   listReservationTypes,
   listReservationWaitlist,
   listReservations,
-  noShowReservation,
-  notifyWaitlistEntry,
-  releasePartnerReservationTable,
-  updateReservationSettings,
-  waivePartnerReservationDeposit,
   type PartnerReservationRow,
-  type PartnerReservationSettings,
   type PartnerReservationType,
   type ReservationWaitlistEntry,
 } from "../services/partnerReservations";
@@ -71,106 +63,19 @@ import {
   expireDuePartnerReservations,
 } from "../services/partnerMaintenance";
 
-const ACCORDION_KEY = "partner_reservas_accordion_v1";
-
-type Bucket = "active" | "pending" | "checkin" | "ended" | "archived";
-
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-const bucketOf = (r: PartnerReservationRow): Bucket => {
-  if (r.status === "pending_payment" || r.status === "pending") return "pending";
-  const finished = r.status === "completed" || r.status === "cancelled" ||
-    r.status === "no_show" || r.status === "expired";
-  const updatedTs = new Date(r.updated_at ?? r.reservation_date).getTime();
-  const isOld = Date.now() - updatedTs > SEVEN_DAYS_MS;
-  if (finished && isOld) return "archived";
-  if (r.status === "no_show" || r.status === "expired" || r.status === "cancelled") return "archived";
-  if (r.checked_in_at) return "checkin";
-  if (r.status === "completed") return "ended";
-  const past = new Date(r.reservation_date).getTime() < Date.now();
-  if (past) return "ended";
-  return "active";
-};
-
 const PartnerReservationsPage = () => {
-  const { selectedPartner, role, isLoading: authLoading } = usePartnerAuth();
+  const { selectedPartner, isLoading: authLoading, role } = usePartnerAuth();
+  const { hash } = useLocation();
+  const [params] = useSearchParams();
+
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
-  const [settings, setSettings] = useState<PartnerReservationSettings | null>(
-    null,
-  );
   const [waitlist, setWaitlist] = useState<ReservationWaitlistEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<Bucket>("active");
-  const [quickOpen, setQuickOpen] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
-  const [openSection, setOpenSection] = useState<string>(() => {
-    if (typeof window === "undefined") return "list";
-    return window.localStorage.getItem(ACCORDION_KEY) ?? "list";
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(ACCORDION_KEY, openSection || "");
-  }, [openSection]);
-
-  // Bottom-nav: navegar para /reservas#fila abre o accordion + scroll + highlight.
-  // `key` muda a cada navegação repetida, então clicar Fila novamente também rola.
-  const { hash, key: locationKey } = useLocation();
-  useEffect(() => {
-    if (hash !== "#fila") return;
-    setOpenSection("waitlist");
-    // aguarda accordion abrir antes de rolar / piscar
-    const t = window.setTimeout(() => {
-      const el = document.getElementById("fila");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        el.classList.add("partner-flash");
-        window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
-      }
-    }, 240);
-    return () => window.clearTimeout(t);
-  }, [hash, locationKey]);
-
-  // Timeline → rola até o card da reserva em "Reservas recentes"
-  const handleTimelineSelect = useCallback((r: PartnerReservationRow) => {
-    setTab(bucketOf(r));
-    window.setTimeout(() => {
-      const el = document.getElementById(`res-${r.id}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        el.classList.add("partner-flash");
-        window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
-      }
-    }, 80);
-  }, []);
-
-  // Notificações → abre seção e foca elemento alvo
-  const handleOpenNotifSection = useCallback(
-    (section: "list" | "waitlist" | "report") => {
-      setOpenSection(section);
-      window.setTimeout(() => {
-        const targetId = section === "waitlist" ? "fila" : section;
-        const el = document.getElementById(targetId);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-          el.classList.add("partner-flash");
-          window.setTimeout(() => el.classList.remove("partner-flash"), 1200);
-        }
-      }, 240);
-    },
-    [],
-  );
+  const [quickOpen, setQuickOpen] = useState(params.get("new") === "1");
 
   const partnerId = selectedPartner?.id ?? null;
-
   const canCreate = role === "owner" || role === "admin";
-  const canConfirm =
-    role === "owner" || role === "admin" || role === "editor" || role === "attendant";
-  const canComplete = role === "owner" || role === "admin" || role === "attendant";
-  const canCancel = role === "owner" || role === "admin";
-  const canRelease =
-    role === "owner" || role === "admin" || role === "editor" || role === "attendant";
-  const canEditSettings = role === "owner" || role === "admin";
 
   const load = useCallback(async () => {
     if (!partnerId) return;
@@ -180,19 +85,17 @@ const PartnerReservationsPage = () => {
         closeDuePartnerReservations(),
         expireDuePartnerReservations(),
       ]);
-      const [list, sett, tps, wl] = await Promise.all([
+      const [list, _sett, tps, wl] = await Promise.all([
         listReservations(partnerId, { status: "all" }),
         getReservationSettings(partnerId),
         listReservationTypes(partnerId, { onlyActive: true }),
         listReservationWaitlist(partnerId).catch(() => []),
       ]);
       setRows(list);
-      setSettings(sett);
       setTypes(tps);
       setWaitlist(wl);
     } catch (err) {
-      const e = err as Error;
-      toast({ title: "Erro ao carregar reservas", description: e.message });
+      toast({ title: "Erro", description: (err as Error).message });
     } finally {
       setLoading(false);
     }
@@ -202,12 +105,20 @@ const PartnerReservationsPage = () => {
     void load();
   }, [load]);
 
-  // Refresh a cada 30s para atualizar contadores e expirados
   useEffect(() => {
     if (!partnerId) return;
     const iv = setInterval(() => void load(), 30000);
     return () => clearInterval(iv);
   }, [partnerId, load]);
+
+  useEffect(() => onFabClick("reservation:new", () => setQuickOpen(true)), []);
+
+  // Deep link legado #fila → redireciona para /reservas/fila
+  useEffect(() => {
+    if (hash === "#fila") {
+      window.location.replace("/reservas/fila");
+    }
+  }, [hash]);
 
   const totalCapacity = useMemo(
     () =>
@@ -217,48 +128,10 @@ const PartnerReservationsPage = () => {
       ),
     [types],
   );
-
   const stats = useMemo(
     () => computeReservationStats(rows, totalCapacity),
     [rows, totalCapacity],
   );
-
-  const buckets = useMemo(() => {
-    const acc: Record<Bucket, PartnerReservationRow[]> = {
-      active: [],
-      pending: [],
-      checkin: [],
-      ended: [],
-      archived: [],
-    };
-    for (const r of rows) acc[bucketOf(r)].push(r);
-    return acc;
-  }, [rows]);
-
-  const wrap = (fn: () => Promise<unknown>, okMsg: string) => async () => {
-    try {
-      await fn();
-      toast({ title: okMsg });
-      void load();
-    } catch (err) {
-      toast({ title: "Erro", description: (err as Error).message });
-    }
-  };
-
-  const handleConfirm = (r: PartnerReservationRow) =>
-    wrap(() => confirmReservation(r.id), "Reserva confirmada")();
-  const handleConfirmPayment = (r: PartnerReservationRow) =>
-    wrap(() => confirmReservationPayment(r.id), "Pagamento confirmado")();
-  const handleCancel = (r: PartnerReservationRow) =>
-    wrap(() => cancelReservation(r.id), "Reserva cancelada")();
-  const handleComplete = (r: PartnerReservationRow) =>
-    wrap(() => completeReservation(r.id), "Reserva concluída")();
-  const handleNoShow = (r: PartnerReservationRow) =>
-    wrap(() => noShowReservation(r.id), "Marcado como no-show")();
-  const handleWaiveDeposit = (r: PartnerReservationRow) =>
-    wrap(() => waivePartnerReservationDeposit(r.id), "Sinal dispensado")();
-  const handleRelease = (r: PartnerReservationRow) =>
-    wrap(() => releasePartnerReservationTable(r.id), "Mesa liberada")();
 
   const handleQuickAdd = async (values: {
     name: string;
@@ -271,188 +144,42 @@ const PartnerReservationsPage = () => {
       toast({ title: "Reserva criada" });
       void load();
     } catch (err) {
-      toast({ title: "Erro ao criar", description: (err as Error).message });
+      toast({ title: "Erro", description: (err as Error).message });
       throw err;
     }
   };
 
   if (authLoading) {
     return (
-      <main className="min-h-screen p-6">
+      <PartnerScreen title="Reservas">
         <p className="text-sm text-muted-foreground">Carregando…</p>
-      </main>
+      </PartnerScreen>
     );
   }
 
   if (!partnerId) {
     return (
-      <main className="min-h-screen p-6">
-        <h1 className="mb-2 text-2xl font-bold">Reservas</h1>
-        <p className="text-sm text-muted-foreground">
-          Selecione um estabelecimento para começar.
-        </p>
-      </main>
+      <PartnerScreen title="Reservas">
+        <PartnerEmptyState ctaLabel="Voltar" ctaTo="/" />
+      </PartnerScreen>
     );
   }
 
-  const renderBucket = (key: Bucket) => {
-    const list = buckets[key];
-    if (!list.length) {
-      return (
-        <p className="text-sm text-muted-foreground py-6">
-          Nada por aqui ainda.
-        </p>
-      );
-    }
-    return (
-      <>
-        <div className="hidden md:block">
-          <ReservationTable
-            reservations={list}
-            onConfirm={handleConfirm}
-            onConfirmPayment={handleConfirmPayment}
-            onCancel={handleCancel}
-            onComplete={handleComplete}
-            onNoShow={handleNoShow}
-            onRelease={handleRelease}
-            canCancel={canCancel}
-            canConfirm={canConfirm}
-            canComplete={canComplete}
-            canRelease={canRelease}
-          />
-        </div>
-        <div className="grid gap-3 md:hidden">
-          {list.map((r) => (
-            <div key={r.id} id={`res-${r.id}`} className="scroll-mt-24 rounded-2xl">
-              <ReservationCard
-                reservation={r}
-                onConfirm={handleConfirm}
-                onConfirmPayment={handleConfirmPayment}
-                onWaiveDeposit={handleWaiveDeposit}
-                onCancel={handleCancel}
-                onComplete={handleComplete}
-                onNoShow={handleNoShow}
-                onRelease={handleRelease}
-                canCancel={canCancel}
-                canConfirm={canConfirm}
-                canComplete={canComplete}
-                canRelease={canRelease}
-              />
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  };
-
-  const publicUrl = (() => {
-    const slug = selectedPartner?.slug;
-    if (!slug) return "";
-    if (typeof window === "undefined") return `/${slug}/reservas`;
-    const host = window.location.hostname;
-    // Prefer the canonical public domain (roxou.com.br) over the partner subdomain
-    if (host === "parceiro.roxou.com.br") {
-      return `https://roxou.com.br/${slug}/reservas`;
-    }
-    return `${window.location.origin}/${slug}/reservas`;
-  })();
-
-  const handleCopyLink = async () => {
-    if (!publicUrl) return;
-    try {
-      await navigator.clipboard.writeText(publicUrl);
-      toast({ title: "Link copiado" });
-    } catch {
-      toast({ title: "Não foi possível copiar" });
-    }
-  };
-
-  const handleShareLink = async () => {
-    if (!publicUrl) return;
-    if (typeof navigator !== "undefined" && "share" in navigator) {
-      try {
-        await (navigator as Navigator).share({
-          title: `Reservas — ${selectedPartner?.name ?? ""}`,
-          url: publicUrl,
-        });
-        return;
-      } catch {
-        /* usuário cancelou */
-      }
-    }
-    void handleCopyLink();
-  };
-
-  const handleOpenLink = () => {
-    if (!publicUrl) return;
-    window.open(publicUrl, "_blank", "noopener,noreferrer");
-  };
-
   return (
-    <main
-      className="min-h-screen w-full max-w-7xl mx-auto space-y-5 p-4 sm:p-6 overflow-x-hidden"
-      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+    <PartnerScreen
+      title="Reservas"
+      subtitle={selectedPartner?.name ?? undefined}
     >
-      <header className="flex flex-wrap items-end justify-between gap-3 min-w-0">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold">Reservas</h1>
-          <p className="text-sm text-muted-foreground truncate">
-            {selectedPartner?.name}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canCreate && (
-            <Button onClick={() => setQuickOpen(true)} className="min-h-[44px]" title="Cadastre uma reserva feita por WhatsApp, telefone ou presencial">
-              Criar reserva manual
-            </Button>
-          )}
-          <Button asChild variant="outline" className="min-h-[44px]">
-            <Link to="/painel">Voltar</Link>
-          </Button>
-        </div>
-      </header>
-
-      <GuestNameDialog
-        open={quickOpen}
-        onOpenChange={setQuickOpen}
-        onConfirm={handleQuickAdd}
-      />
-      <PublicLinkQrDialog
-        open={qrOpen}
-        onOpenChange={setQrOpen}
-        url={publicUrl}
-        filename={`reservas-${selectedPartner?.slug ?? "qr"}.png`}
-      />
-
-      {/* MOBILE — central operacional simplificada */}
-      <div className="block md:hidden space-y-4 min-w-0">
+      {/* Hero */}
+      <div className="block md:hidden">
         <ReservationHeroMobile
           partnerName={selectedPartner?.name}
           rows={rows}
           waitlist={waitlist}
           stats={stats}
         />
-        <LiveOperationsPanel
-          rows={rows}
-          waitlist={waitlist}
-          onSelectBucket={(b) => {
-            if (b === "waitlist") setOpenSection("waitlist");
-            else setTab(b === "released" ? "ended" : "active");
-          }}
-        />
-        <PartnerNotificationsCenter
-          rows={rows}
-          waitlist={waitlist}
-          onOpenSection={handleOpenNotifSection}
-        />
-        <UpcomingReservationCard reservations={rows} types={types} />
-        <ReservationPendingCard reservations={rows} waitlist={waitlist} />
-        <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
-        <ReservationTimeline reservations={rows} types={types} onSelect={handleTimelineSelect} />
       </div>
-
-      {/* DESKTOP — dashboard completo */}
-      <div className="hidden md:block space-y-5">
+      <div className="hidden md:block">
         <ReservationHeroCard
           partnerName={selectedPartner?.name}
           rows={rows}
@@ -460,290 +187,107 @@ const PartnerReservationsPage = () => {
           types={types}
           stats={stats}
         />
-        <LiveOperationsPanel
-          rows={rows}
-          waitlist={waitlist}
-          onSelectBucket={(b) => {
-            if (b === "waitlist") setOpenSection("waitlist");
-            else setTab(b === "released" ? "ended" : "active");
-          }}
-        />
-        <PartnerNotificationsCenter
-          rows={rows}
-          waitlist={waitlist}
-          onOpenSection={handleOpenNotifSection}
-        />
-        <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
-        <ReservationTimeline reservations={rows} types={types} onSelect={handleTimelineSelect} />
       </div>
 
-      {settings?.reservations_enabled && selectedPartner?.slug && (
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Link público de reservas</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Envie este link para clientes fazerem reservas online.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div
-              className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs truncate font-mono"
-              title={publicUrl}
-            >
-              {publicUrl}
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Button
-                onClick={() => void handleShareLink()}
-                className="min-h-[48px] w-full overflow-hidden"
-              >
-                <Share2 className="mr-1.5 h-4 w-4 shrink-0" />
-                <span className="truncate">Compartilhar</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleOpenLink}
-                className="min-h-[48px] w-full overflow-hidden"
-              >
-                <ExternalLink className="mr-1.5 h-4 w-4 shrink-0" />
-                <span className="truncate">Abrir</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => void handleCopyLink()}
-                className="min-h-[48px] w-full overflow-hidden"
-              >
-                <Copy className="mr-1.5 h-4 w-4 shrink-0" />
-                <span className="truncate">Copiar</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setQrOpen(true)}
-                className="min-h-[48px] w-full overflow-hidden"
-              >
-                <QrCode className="mr-1.5 h-4 w-4 shrink-0" />
-                <span className="truncate">QR</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Operação ao vivo + notificações */}
+      <LiveOperationsPanel
+        rows={rows}
+        waitlist={waitlist}
+        onSelectBucket={(b) => {
+          if (b === "waitlist") window.location.assign("/reservas/fila");
+          else window.location.assign("/reservas/lista");
+        }}
+      />
+      <PartnerNotificationsCenter
+        rows={rows}
+        waitlist={waitlist}
+        onOpenSection={(s) => {
+          if (s === "waitlist") window.location.assign("/reservas/fila");
+          else if (s === "report") window.location.assign("/relatorios");
+          else window.location.assign("/reservas/lista");
+        }}
+      />
 
-      <Card id="list" className="rounded-2xl border-border/60 bg-card/40">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Reservas recentes</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {loading && rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Carregando reservas…</p>
-          ) : rows.length === 0 ? (
-            <ReservationEmptyState ctaLabel="Criar reserva" ctaTo="/reservas?new=1" />
-          ) : (
-            <Tabs value={tab} onValueChange={(v) => setTab(v as Bucket)}>
-              <div className="-mx-1 overflow-x-auto">
-                <TabsList className="inline-flex w-max min-w-full justify-start flex-nowrap">
-                  <TabsTrigger value="active" className="shrink-0 whitespace-nowrap">
-                    Ativas{" "}
-                    {buckets.active.length ? `(${buckets.active.length})` : ""}
-                  </TabsTrigger>
-                  <TabsTrigger value="pending" className="shrink-0 whitespace-nowrap">
-                    Pendentes{" "}
-                    {buckets.pending.length
-                      ? `(${buckets.pending.length})`
-                      : ""}
-                  </TabsTrigger>
-                  <TabsTrigger value="checkin" className="shrink-0 whitespace-nowrap">
-                    Check-in{" "}
-                    {buckets.checkin.length ? `(${buckets.checkin.length})` : ""}
-                  </TabsTrigger>
-                  <TabsTrigger value="ended" className="shrink-0 whitespace-nowrap">
-                    Histórico{" "}
-                    {buckets.ended.length ? `(${buckets.ended.length})` : ""}
-                  </TabsTrigger>
-                  <TabsTrigger value="archived" className="shrink-0 whitespace-nowrap">
-                    Arquivadas{" "}
-                    {buckets.archived.length
-                      ? `(${buckets.archived.length})`
-                      : ""}
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-              <TabsContent value="active" className="mt-4">
-                {renderBucket("active")}
-              </TabsContent>
-              <TabsContent value="pending" className="mt-4">
-                {renderBucket("pending")}
-              </TabsContent>
-              <TabsContent value="checkin" className="mt-4">
-                {renderBucket("checkin")}
-              </TabsContent>
-              <TabsContent value="ended" className="mt-4">
-                {renderBucket("ended")}
-              </TabsContent>
-              <TabsContent value="archived" className="mt-4">
-                {renderBucket("archived")}
-              </TabsContent>
-            </Tabs>
-          )}
-        </CardContent>
-      </Card>
+      {/* Próxima reserva + pendências */}
+      <UpcomingReservationCard reservations={rows} types={types} />
+      <ReservationPendingCard reservations={rows} waitlist={waitlist} />
 
-      <Accordion
-        type="single"
-        collapsible
-        value={openSection}
-        onValueChange={(v) => setOpenSection(v)}
-        className="space-y-3"
-      >
-        <AccordionItem
-          value="executive"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            Visão executiva (hoje · semana · mês)
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            <ExecutiveDashboard rows={rows} waitlist={waitlist} stats={stats} />
-          </AccordionContent>
-        </AccordionItem>
+      {/* KPIs compactos */}
+      <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
 
-        <AccordionItem
-          value="heatmap"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            Heatmap semanal
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            <WeeklyHeatmap rows={rows} />
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem
-          value="types"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            Tipos de reserva
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            <ReservationTypesManager
-              partnerId={partnerId}
-              canEdit={canEditSettings}
-            />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem
-          id="fila"
-          value="waitlist"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3 scroll-mt-24"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            Lista de espera
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            <WaitlistManager
-              partnerId={partnerId}
-              partnerName={selectedPartner?.name ?? ""}
-              partnerSlug={selectedPartner?.slug ?? null}
-            />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem
-          id="report"
-          value="report"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3 scroll-mt-24"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            Relatório do dia
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            <DailyOperationsReport
-              reservations={rows}
-              waitlist={waitlist}
-              types={types}
-              canConfirm={canConfirm}
-              canComplete={canComplete}
-              canCancel={canCancel}
-              canRelease={canRelease}
-              onConfirmPayment={handleConfirmPayment}
-              onComplete={handleComplete}
-              onNoShow={handleNoShow}
-              onCancel={handleCancel}
-              onRelease={handleRelease}
-              onNotifyWaitlist={async (e) => {
-                try {
-                  await notifyWaitlistEntry(e.id);
-                  toast({ title: "Cliente notificado" });
-                  void load();
-                } catch (err) {
-                  toast({ title: "Erro", description: (err as Error).message });
-                }
-              }}
-              onCancelWaitlist={async (e) => {
-                if (!window.confirm(`Remover ${e.name} da lista de espera?`))
-                  return;
-                try {
-                  await cancelWaitlistEntry(e.id);
-                  toast({ title: "Entrada cancelada" });
-                  void load();
-                } catch (err) {
-                  toast({ title: "Erro", description: (err as Error).message });
-                }
-              }}
-            />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem
-          value="ia"
-          className="rounded-2xl border border-border/60 bg-card/40 px-3"
-        >
-          <AccordionTrigger className="text-sm font-semibold">
-            IA de Ocupação
-          </AccordionTrigger>
-          <AccordionContent className="pt-2">
-            <OccupancyInsightsPremium
-              partnerId={partnerId}
-              canEdit={canEditSettings}
-            />
-          </AccordionContent>
-        </AccordionItem>
-
-
-        {canEditSettings && (
-          <AccordionItem
-            value="settings"
-            className="rounded-2xl border border-border/60 bg-card/40 px-3"
+      {/* Ações rápidas — tiles navegáveis */}
+      <section className="space-y-2" aria-label="Ações rápidas">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground px-1">
+          Gerenciar
+        </h2>
+        <div className="grid gap-2">
+          <PartnerActionTile
+            icon={ListChecks}
+            label="Lista de reservas"
+            hint="Hoje, pendentes, check-in, histórico"
+            to="/reservas/lista"
+            badge={rows.length ? String(rows.length) : undefined}
+          />
+          <PartnerActionTile
+            icon={Hourglass}
+            label="Fila e lista de espera"
+            hint="Abertas, fechadas e arquivadas"
+            to="/reservas/fila"
+            badge={waitlist.length ? String(waitlist.length) : undefined}
+          />
+          <PartnerActionTile
+            icon={Calendar}
+            label="Tipos de reserva"
+            hint="Mesas, bistrôs, camarotes e experiências"
+            to="/reservas/tipos"
+          />
+          <PartnerActionTile
+            icon={PlayCircle}
+            label="Operação diária"
+            hint="Abrir, encerrar e histórico"
+            to="/reservas/operacao"
+          />
+          <PartnerActionTile
+            icon={UsersIcon}
+            label="Equipe e acessos"
+            hint="Validador, recepção, caixa, gerente"
+            to="/reservas/equipe"
+          />
+          <PartnerActionTile
+            icon={ScanLine}
+            label="Validador QR"
+            hint="Check-in por código"
+            to="/validator"
+          />
+          <PartnerActionTile
+            icon={Settings}
+            label="Configurações de reservas"
+            hint="Prazos, limites, pagamentos, link público"
+            to="/reservas/configuracoes"
+          />
+        </div>
+        {canCreate ? (
+          <button
+            type="button"
+            onClick={() => setQuickOpen(true)}
+            className="w-full rounded-2xl border border-dashed border-white/15 px-3 py-3 text-sm text-foreground/80 hover:bg-white/[0.04] transition-colors flex items-center justify-center gap-2"
           >
-            <AccordionTrigger className="text-sm font-semibold">
-              Configurações e pagamento
-            </AccordionTrigger>
-            <AccordionContent className="pt-2">
-              <ReservationSettingsForm
-                initial={settings}
-                onSave={async (payload) => {
-                  try {
-                    const updated = await updateReservationSettings(
-                      partnerId,
-                      payload,
-                    );
-                    setSettings(updated);
-                    toast({ title: "Configurações salvas" });
-                  } catch (err) {
-                    toast({
-                      title: "Erro",
-                      description: (err as Error).message,
-                    });
-                  }
-                }}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        )}
-      </Accordion>
-    </main>
+            <Sparkles className="h-4 w-4" />
+            Criar reserva manual
+          </button>
+        ) : null}
+      </section>
+
+      <GuestNameDialog
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+        onConfirm={handleQuickAdd}
+      />
+
+      {loading && rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center">Atualizando…</p>
+      ) : null}
+    </PartnerScreen>
   );
 };
 
