@@ -1242,8 +1242,81 @@ export type Database = {
           },
         ]
       }
+      excursion_board_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          outcome: string
+          partner_id: string
+          passenger_name: string | null
+          qr_token: string | null
+          seat_id: string | null
+          seat_number: string | null
+          trip_id: string
+          validated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          outcome: string
+          partner_id: string
+          passenger_name?: string | null
+          qr_token?: string | null
+          seat_id?: string | null
+          seat_number?: string | null
+          trip_id: string
+          validated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          outcome?: string
+          partner_id?: string
+          passenger_name?: string | null
+          qr_token?: string | null
+          seat_id?: string | null
+          seat_number?: string | null
+          trip_id?: string
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excursion_board_logs_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_board_logs_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_board_logs_seat_id_fkey"
+            columns: ["seat_id"]
+            isOneToOne: false
+            referencedRelation: "excursion_seats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_board_logs_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "excursion_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       excursion_seats: {
         Row: {
+          boarded_at: string | null
+          boarded_by: string | null
           created_at: string
           hold_until: string | null
           id: string
@@ -1251,12 +1324,16 @@ export type Database = {
           passenger_doc: string | null
           passenger_name: string | null
           passenger_phone: string | null
+          qr_token: string | null
+          reserved_at: string | null
           seat_number: string
           status: string
           trip_id: string
           updated_at: string
         }
         Insert: {
+          boarded_at?: string | null
+          boarded_by?: string | null
           created_at?: string
           hold_until?: string | null
           id?: string
@@ -1264,12 +1341,16 @@ export type Database = {
           passenger_doc?: string | null
           passenger_name?: string | null
           passenger_phone?: string | null
+          qr_token?: string | null
+          reserved_at?: string | null
           seat_number: string
           status?: string
           trip_id: string
           updated_at?: string
         }
         Update: {
+          boarded_at?: string | null
+          boarded_by?: string | null
           created_at?: string
           hold_until?: string | null
           id?: string
@@ -1277,6 +1358,8 @@ export type Database = {
           passenger_doc?: string | null
           passenger_name?: string | null
           passenger_phone?: string | null
+          qr_token?: string | null
+          reserved_at?: string | null
           seat_number?: string
           status?: string
           trip_id?: string
@@ -1302,9 +1385,11 @@ export type Database = {
           destination: string | null
           event_id: string | null
           id: string
+          is_public: boolean
           notes: string | null
           partner_id: string
           price_cents: number
+          public_slug: string
           return_at: string | null
           session_date: string
           status: string
@@ -1321,9 +1406,11 @@ export type Database = {
           destination?: string | null
           event_id?: string | null
           id?: string
+          is_public?: boolean
           notes?: string | null
           partner_id: string
           price_cents?: number
+          public_slug: string
           return_at?: string | null
           session_date?: string
           status?: string
@@ -1340,9 +1427,11 @@ export type Database = {
           destination?: string | null
           event_id?: string | null
           id?: string
+          is_public?: boolean
           notes?: string | null
           partner_id?: string
           price_cents?: number
+          public_slug?: string
           return_at?: string | null
           session_date?: string
           status?: string
@@ -4801,6 +4890,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      board_excursion_seat: { Args: { _token: string }; Returns: Json }
       can_access_partner_beta: { Args: { _user: string }; Returns: boolean }
       cancel_partner_vip_entry: {
         Args: { _entry_id: string }
@@ -5421,6 +5511,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      public_get_excursion_ticket: { Args: { _token: string }; Returns: Json }
+      public_get_excursion_trip: { Args: { _slug: string }; Returns: Json }
+      public_reserve_excursion_seat: {
+        Args: {
+          _doc: string
+          _name: string
+          _phone: string
+          _seat_id: string
+          _trip_id: string
+        }
+        Returns: Json
       }
       record_radar_repost: { Args: { _scan_id: string }; Returns: undefined }
       reject_partner_access_request: {
