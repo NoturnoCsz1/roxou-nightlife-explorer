@@ -10,8 +10,8 @@ import {
   Calendar,
   Home,
   Hourglass,
-  LineChart,
   Settings,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { haptics } from "../lib/partnerInteractions";
@@ -34,26 +34,34 @@ const ITEMS: Item[] = [
     to: "/reservas",
     label: "Reservas",
     icon: Calendar,
-    matches: (p) => p.startsWith("/reservas"),
+    matches: (p) =>
+      p === "/reservas" ||
+      (p.startsWith("/reservas/") &&
+        !p.startsWith("/reservas/fila") &&
+        !p.startsWith("/reservas/equipe")),
   },
   {
     to: "/fila",
     label: "Fila",
     icon: Hourglass,
-    matches: (p) => p.startsWith("/fila"),
+    matches: (p) => p.startsWith("/fila") || p.startsWith("/reservas/fila"),
   },
   {
-    to: "/relatorios",
-    label: "Relatórios",
-    icon: LineChart,
-    matches: (p) =>
-      p.startsWith("/relatorios") || p.startsWith("/analytics"),
+    to: "/reservas/equipe",
+    label: "Equipe",
+    icon: Users,
+    matches: (p) => p.startsWith("/reservas/equipe"),
   },
   {
     to: "/configuracoes",
     label: "Config",
     icon: Settings,
-    matches: (p) => p.startsWith("/configuracoes"),
+    matches: (p) =>
+      p.startsWith("/configuracoes") ||
+      p.startsWith("/reservas/configuracoes") ||
+      p.startsWith("/relatorios") ||
+      p.startsWith("/analytics") ||
+      p.startsWith("/validator"),
   },
 ];
 
