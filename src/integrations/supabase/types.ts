@@ -1313,6 +1313,70 @@ export type Database = {
           },
         ]
       }
+      excursion_gps_pings: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          driver_id: string | null
+          heading: number | null
+          id: string
+          lat: number
+          lng: number
+          partner_id: string
+          recorded_at: string
+          speed: number | null
+          trip_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id?: string | null
+          heading?: number | null
+          id?: string
+          lat: number
+          lng: number
+          partner_id: string
+          recorded_at?: string
+          speed?: number | null
+          trip_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id?: string | null
+          heading?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          partner_id?: string
+          recorded_at?: string
+          speed?: number | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excursion_gps_pings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_gps_pings_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_gps_pings_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "excursion_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       excursion_seats: {
         Row: {
           boarded_at: string | null
@@ -1383,10 +1447,14 @@ export type Database = {
           departure_address: string | null
           departure_at: string
           destination: string | null
+          driver_id: string | null
           event_id: string | null
+          gps_ended_at: string | null
+          gps_started_at: string | null
           id: string
           is_public: boolean
           notes: string | null
+          operation_status: string
           partner_id: string
           price_cents: number
           public_slug: string
@@ -1404,10 +1472,14 @@ export type Database = {
           departure_address?: string | null
           departure_at: string
           destination?: string | null
+          driver_id?: string | null
           event_id?: string | null
+          gps_ended_at?: string | null
+          gps_started_at?: string | null
           id?: string
           is_public?: boolean
           notes?: string | null
+          operation_status?: string
           partner_id: string
           price_cents?: number
           public_slug: string
@@ -1425,10 +1497,14 @@ export type Database = {
           departure_address?: string | null
           departure_at?: string
           destination?: string | null
+          driver_id?: string | null
           event_id?: string | null
+          gps_ended_at?: string | null
+          gps_started_at?: string | null
           id?: string
           is_public?: boolean
           notes?: string | null
+          operation_status?: string
           partner_id?: string
           price_cents?: number
           public_slug?: string
@@ -5308,6 +5384,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      excursion_push_gps: {
+        Args: {
+          _accuracy?: number
+          _heading?: number
+          _lat: number
+          _lng: number
+          _speed?: number
+          _trip_id: string
+        }
+        Returns: Json
+      }
+      excursion_set_operation_status: {
+        Args: { _status: string; _trip_id: string }
+        Returns: Json
+      }
       expire_due_partner_reservations: { Args: never; Returns: number }
       expire_due_waitlist_entries: { Args: never; Returns: number }
       expire_stale_ride_requests: { Args: never; Returns: number }
@@ -5512,6 +5603,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      public_get_excursion_live: { Args: { _token: string }; Returns: Json }
       public_get_excursion_ticket: { Args: { _token: string }; Returns: Json }
       public_get_excursion_trip: { Args: { _slug: string }; Returns: Json }
       public_reserve_excursion_seat: {
