@@ -269,7 +269,7 @@ export function PartnerNotificationsCenter({
             : `${items.length} ${items.length === 1 ? "alerta ativo" : "alertas ativos"} agora.`
         }
         action={
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {(["critical", "warning", "info"] as Severity[]).map((s) =>
               counts[s] > 0 ? (
                 <Badge
@@ -281,6 +281,18 @@ export function PartnerNotificationsCenter({
                 </Badge>
               ) : null,
             )}
+            {resolved.size > 0 ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                onClick={handleClearResolved}
+                title="Remove permanentemente as notificações já resolvidas"
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Limpar resolvidas ({resolved.size})
+              </Button>
+            ) : null}
           </div>
         }
       />
