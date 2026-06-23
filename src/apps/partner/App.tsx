@@ -87,6 +87,11 @@ const PartnerListasConfiguracoesPage = lazy(() => import("./pages/PartnerListasC
 const PartnerListasHistoricoPage = lazy(() => import("./pages/PartnerListasHistoricoPage"));
 const PartnerListasOperacaoPage = lazy(() => import("./pages/PartnerListasOperacaoPage"));
 const PartnerListasEquipePage = lazy(() => import("./pages/PartnerListasEquipePage"));
+const PartnerExcursoesHubPage = lazy(() => import("./pages/PartnerExcursoesHubPage"));
+const PartnerExcursoesVeiculosPage = lazy(() => import("./pages/PartnerExcursoesVeiculosPage"));
+const PartnerExcursoesViagensPage = lazy(() => import("./pages/PartnerExcursoesViagensPage"));
+const PartnerExcursoesViagemDetailPage = lazy(() => import("./pages/PartnerExcursoesViagemDetailPage"));
+const PartnerExcursoesConfiguracoesPage = lazy(() => import("./pages/PartnerExcursoesConfiguracoesPage"));
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
 const queryClient = new QueryClient({
@@ -154,6 +159,11 @@ const PartnerApp = () => (
             <Route path="listas/historico" element={L(<PartnerListasHistoricoPage />)} />
             <Route path="listas/operacao" element={L(<PartnerListasOperacaoPage />)} />
             <Route path="listas/equipe" element={L(<PartnerListasEquipePage />)} />
+            <Route path="excursoes" element={L(<PartnerExcursoesHubPage />)} />
+            <Route path="excursoes/veiculos" element={L(<PartnerExcursoesVeiculosPage />)} />
+            <Route path="excursoes/viagens" element={L(<PartnerExcursoesViagensPage />)} />
+            <Route path="excursoes/viagens/:tripId" element={L(<PartnerExcursoesViagemDetailPage />)} />
+            <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
