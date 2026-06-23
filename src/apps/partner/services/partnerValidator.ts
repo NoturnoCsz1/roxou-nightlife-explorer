@@ -20,7 +20,12 @@ import {
   type PartnerReservationRow,
 } from "./partnerReservations";
 
-export type ValidatorItemType = "vip" | "reservation" | "invite" | "unknown";
+export type ValidatorItemType =
+  | "vip"
+  | "reservation"
+  | "invite"
+  | "excursion"
+  | "unknown";
 
 export interface ParsedQrPayload {
   type: ValidatorItemType;
