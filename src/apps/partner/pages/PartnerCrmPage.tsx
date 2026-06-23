@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { listPartnerCrmCustomers } from "@/services/crm";
 import { maskEmail, maskPhone } from "@/lib/pii";
-import { usePartnerContext } from "@/apps/partner/hooks/usePartnerContext";
+import { usePartnerAuth } from "@/apps/partner/hooks/usePartnerAuth";
 
 export default function PartnerCrmPage() {
-  const { partner } = usePartnerContext();
-  const partnerId = partner?.id;
+  const { selectedPartnerId } = usePartnerAuth();
+  const partnerId = selectedPartnerId;
   const [rows, setRows] = useState<
     { customer: any; interactions: number; last_seen_at: string | null }[]
   >([]);
