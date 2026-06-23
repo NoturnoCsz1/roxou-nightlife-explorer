@@ -474,7 +474,9 @@ const PartnerValidatorPage = () => {
                 {result.outcome === "valid"
                   ? result.type === "reservation"
                     ? "Reserva validada"
-                    : "Check-in realizado"
+                    : result.type === "excursion"
+                      ? "Embarque confirmado"
+                      : "Check-in realizado"
                   : result.outcome === "already_used"
                     ? "Já utilizado"
                     : style.label}
