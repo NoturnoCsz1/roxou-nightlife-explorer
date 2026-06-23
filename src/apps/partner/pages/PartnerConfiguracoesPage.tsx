@@ -115,6 +115,7 @@ const PartnerConfiguracoesPage = () => {
           keywords: "tipos mesa bistro camarote categorias",
         },
         { icon: Crown, label: "Listas VIP", to: "/listas", keywords: "vip lista entrada cortesia promoter participantes" },
+        { icon: PlayCircle, label: "Excursões oficiais", to: "/excursoes", keywords: "excursao excursoes onibus van viagem transporte transporte" },
         { icon: Users, label: "Equipe e acessos", to: "/reservas/equipe", keywords: "equipe time permissoes promoters usuarios validador recepcao caixa gerente pin" },
       ],
     },

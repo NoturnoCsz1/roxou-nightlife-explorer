@@ -42,6 +42,17 @@ interface FabAction {
 }
 
 function resolveAction(pathname: string): FabAction | null {
+  // Excursões
+  if (pathname.startsWith("/excursoes/veiculos")) {
+    return { label: "Novo veículo", scope: "excursoes:vehicle:new" };
+  }
+  if (pathname.startsWith("/excursoes/viagens")) {
+    return { label: "Nova viagem", scope: "excursoes:trip:new" };
+  }
+  if (pathname === "/excursoes" || pathname.startsWith("/excursoes")) {
+    return { label: "Nova viagem", scope: "excursoes:new" };
+  }
+
   // Listas VIP
   if (pathname.startsWith("/listas/equipe")) {
     return { label: "Novo funcionário", scope: "staff:new" };

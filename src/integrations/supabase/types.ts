@@ -1242,6 +1242,202 @@ export type Database = {
           },
         ]
       }
+      excursion_seats: {
+        Row: {
+          created_at: string
+          hold_until: string | null
+          id: string
+          notes: string | null
+          passenger_doc: string | null
+          passenger_name: string | null
+          passenger_phone: string | null
+          seat_number: string
+          status: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hold_until?: string | null
+          id?: string
+          notes?: string | null
+          passenger_doc?: string | null
+          passenger_name?: string | null
+          passenger_phone?: string | null
+          seat_number: string
+          status?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hold_until?: string | null
+          id?: string
+          notes?: string | null
+          passenger_doc?: string | null
+          passenger_name?: string | null
+          passenger_phone?: string | null
+          seat_number?: string
+          status?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excursion_seats_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "excursion_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      excursion_trips: {
+        Row: {
+          capacity: number
+          created_at: string
+          created_by: string | null
+          departure_address: string | null
+          departure_at: string
+          destination: string | null
+          event_id: string | null
+          id: string
+          notes: string | null
+          partner_id: string
+          price_cents: number
+          return_at: string | null
+          session_date: string
+          status: string
+          title: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          departure_address?: string | null
+          departure_at: string
+          destination?: string | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          partner_id: string
+          price_cents?: number
+          return_at?: string | null
+          session_date?: string
+          status?: string
+          title: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          departure_address?: string | null
+          departure_at?: string
+          destination?: string | null
+          event_id?: string | null
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          price_cents?: number
+          return_at?: string | null
+          session_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excursion_trips_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_trips_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_trips_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "excursion_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      excursion_vehicles: {
+        Row: {
+          capacity: number
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          partner_id: string
+          plate: string | null
+          seat_layout: Json | null
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          partner_id: string
+          plate?: string | null
+          seat_layout?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          partner_id?: string
+          plate?: string | null
+          seat_layout?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excursion_vehicles_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_vehicles_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expo_news: {
         Row: {
           author: string
