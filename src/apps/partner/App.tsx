@@ -77,6 +77,7 @@ const Fallback = () => (
   <div className="min-h-[40vh] flex items-center justify-center">
     <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
   </div>
+);
 const PartnerListasHubPage = lazy(() => import("./pages/PartnerListasHubPage"));
 const PartnerListasAbertasPage = lazy(() => import("./pages/PartnerListasAbertasPage"));
 const PartnerListasFechadasPage = lazy(() => import("./pages/PartnerListasFechadasPage"));
@@ -86,7 +87,6 @@ const PartnerListasConfiguracoesPage = lazy(() => import("./pages/PartnerListasC
 const PartnerListasHistoricoPage = lazy(() => import("./pages/PartnerListasHistoricoPage"));
 const PartnerListasOperacaoPage = lazy(() => import("./pages/PartnerListasOperacaoPage"));
 const PartnerListasEquipePage = lazy(() => import("./pages/PartnerListasEquipePage"));
-);
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
 const queryClient = new QueryClient({
