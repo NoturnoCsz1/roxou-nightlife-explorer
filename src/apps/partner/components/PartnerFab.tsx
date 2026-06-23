@@ -42,6 +42,24 @@ interface FabAction {
 }
 
 function resolveAction(pathname: string): FabAction | null {
+  // Listas VIP
+  if (pathname.startsWith("/listas/equipe")) {
+    return { label: "Novo funcionário", scope: "staff:new" };
+  }
+  if (pathname.startsWith("/listas/participantes")) {
+    return { label: "Adicionar participante", scope: "vip:entry:new" };
+  }
+  if (pathname.startsWith("/listas/promoters")) {
+    return { label: "Novo promoter", scope: "promoter:new" };
+  }
+  if (pathname.startsWith("/listas/abertas")) {
+    return { label: "Criar lista", scope: "vip:new" };
+  }
+  if (pathname === "/listas" || pathname.startsWith("/listas")) {
+    return { label: "Nova lista", scope: "vip:new" };
+  }
+
+  // Reservas
   if (pathname.startsWith("/reservas/equipe")) {
     return { label: "Novo funcionário", scope: "staff:new" };
   }
