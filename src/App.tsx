@@ -25,6 +25,9 @@ function RedirectExcursaoLegacy() {
   const { pathname, search, hash } = useLocation();
   const target = pathname.replace("/transportes/excursao/", "/transportes/excursoes/");
   return <Navigate to={`${target}${search}${hash}`} replace />;
+}
+
+
 
 import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
