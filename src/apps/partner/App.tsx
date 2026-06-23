@@ -127,6 +127,7 @@ const PartnerApp = () => (
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
             <Route path="configuracoes/avancado" element={L(<PartnerSettingsPage />)} />
             <Route path="configuracoes/limpeza" element={L(<PartnerLimpezaPage />)} />
+            <Route path="configuracoes/operacao" element={L(<PartnerOperacaoPage />)} />
             <Route path="configuracoes/em-breve" element={L(<PartnerComingSoonPage />)} />
             <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
           </Route>
