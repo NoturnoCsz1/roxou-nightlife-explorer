@@ -78,6 +78,15 @@ const Fallback = () => (
     <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white/80 animate-spin" />
   </div>
 );
+const PartnerListasHubPage = lazy(() => import("./pages/PartnerListasHubPage"));
+const PartnerListasAbertasPage = lazy(() => import("./pages/PartnerListasAbertasPage"));
+const PartnerListasFechadasPage = lazy(() => import("./pages/PartnerListasFechadasPage"));
+const PartnerListasParticipantesPage = lazy(() => import("./pages/PartnerListasParticipantesPage"));
+const PartnerListasPromotersPage = lazy(() => import("./pages/PartnerListasPromotersPage"));
+const PartnerListasConfiguracoesPage = lazy(() => import("./pages/PartnerListasConfiguracoesPage"));
+const PartnerListasHistoricoPage = lazy(() => import("./pages/PartnerListasHistoricoPage"));
+const PartnerListasOperacaoPage = lazy(() => import("./pages/PartnerListasOperacaoPage"));
+const PartnerListasEquipePage = lazy(() => import("./pages/PartnerListasEquipePage"));
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
 const queryClient = new QueryClient({
@@ -136,6 +145,15 @@ const PartnerApp = () => (
               path="lista-vip/:listId"
               element={L(<PartnerVipListDetailRoute />)}
             />
+            <Route path="listas" element={L(<PartnerListasHubPage />)} />
+            <Route path="listas/abertas" element={L(<PartnerListasAbertasPage />)} />
+            <Route path="listas/fechadas" element={L(<PartnerListasFechadasPage />)} />
+            <Route path="listas/participantes" element={L(<PartnerListasParticipantesPage />)} />
+            <Route path="listas/promoters" element={L(<PartnerListasPromotersPage />)} />
+            <Route path="listas/configuracoes" element={L(<PartnerListasConfiguracoesPage />)} />
+            <Route path="listas/historico" element={L(<PartnerListasHistoricoPage />)} />
+            <Route path="listas/operacao" element={L(<PartnerListasOperacaoPage />)} />
+            <Route path="listas/equipe" element={L(<PartnerListasEquipePage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
