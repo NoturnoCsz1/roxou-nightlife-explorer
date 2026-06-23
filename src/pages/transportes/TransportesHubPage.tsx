@@ -1,6 +1,6 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Car, Bus, Navigation, MapPinned, ArrowRight } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 
 type HubCard = {
   to: string;
@@ -50,15 +50,12 @@ const cards: HubCard[] = [
 ];
 
 export default function TransportesHubPage() {
+  useEffect(() => {
+    document.title = "Transporte para eventos | Roxou";
+  }, []);
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-b from-[#0b0418] to-[#150726] px-4 pb-24 pt-6 text-white">
-      <Helmet>
-        <title>Transporte para eventos | Roxou</title>
-        <meta
-          name="description"
-          content="Hub de mobilidade Roxou: caronas, excursões oficiais e transporte privativo para os principais eventos."
-        />
-      </Helmet>
+
 
       <header className="mx-auto max-w-2xl">
         <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-300/80">Roxou Mobilidade</p>

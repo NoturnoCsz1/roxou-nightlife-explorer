@@ -1,6 +1,6 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Sparkles } from "lucide-react";
-import { Helmet } from "react-helmet-async";
 
 type Props = {
   title: string;
@@ -10,12 +10,12 @@ type Props = {
 
 export default function TransportesComingSoon({ title, description, emoji }: Props) {
   const location = useLocation();
+  useEffect(() => {
+    document.title = `${title} | Roxou Transporte`;
+  }, [title]);
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-b from-[#0b0418] to-[#150726] px-4 pb-24 pt-6 text-white">
-      <Helmet>
-        <title>{title} | Roxou Transporte</title>
-        <meta name="description" content={description} />
-      </Helmet>
+
 
       <div className="mx-auto max-w-2xl">
         <Link
