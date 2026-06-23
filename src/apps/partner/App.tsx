@@ -168,7 +168,7 @@ const PartnerApp = () => (
             <Route path="excursoes/passageiros" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/equipe" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/operacao" element={L(<PartnerComingSoonPage />)} />
-            <Route path="excursoes/operacao/:tripId" element={L(<PartnerComingSoonPage />)} />
+            <Route path="excursoes/operacao/:tripId" element={L(<PartnerExcursaoOperacaoPage />)} />
             <Route path="excursoes/relatorios" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
