@@ -32,7 +32,15 @@ export type AnalyticsEventType =
   | "instagram_click"
   | "share_click"
   | "calendar_click"
-  | "maps_click";
+  | "maps_click"
+  // Excursões (fase 7.4)
+  | "excursion_view"
+  | "excursion_purchase"
+  | "excursion_seat_select"
+  | "excursion_boarding"
+  | "excursion_gps_start"
+  | "excursion_gps_share"
+  | "excursion_complete";
 
 export interface TrackEventArgs {
   event_type: AnalyticsEventType;
