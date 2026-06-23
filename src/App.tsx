@@ -20,6 +20,12 @@ function RedirectV3() {
   return <Navigate to={`${target}${search}${hash}`} replace />;
 }
 
+/** Redireciona URL legada da etapa 7.1 (`/transportes/excursao/:slug`) para a nova `/transportes/excursoes/:slug`. */
+function RedirectExcursaoLegacy() {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace("/transportes/excursao/", "/transportes/excursoes/");
+  return <Navigate to={`${target}${search}${hash}`} replace />;
+
 import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
