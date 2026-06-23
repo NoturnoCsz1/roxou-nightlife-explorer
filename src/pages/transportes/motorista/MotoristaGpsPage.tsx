@@ -21,7 +21,7 @@ import {
   type ExcursionOperationStatus,
 } from "@/services/excursionGps";
 import {
-  listPartnerExcursionTrips,
+  listExcursionTrips,
   type ExcursionTrip,
 } from "@/apps/partner/services/partnerExcursoes";
 import { supabase } from "@/integrations/supabase/client";
