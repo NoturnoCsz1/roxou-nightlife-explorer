@@ -147,6 +147,18 @@ const PartnerConfiguracoesPage = () => {
       ],
     },
     {
+      title: "Operação diária",
+      items: [
+        {
+          icon: PlayCircle,
+          label: "Abrir / encerrar operação",
+          to: "/configuracoes/operacao",
+          hint: "Sessão diária, notificações, histórico e arquivados",
+          keywords: "operacao sessao abrir encerrar fechar dia noite reset notificacoes historico reabrir arquivados",
+        },
+      ],
+    },
+    {
       title: "Manutenção",
       items: [
         {
