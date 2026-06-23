@@ -134,6 +134,7 @@ const PrivativoPlaceholder = lazy(() => import("./pages/transportes/PrivativoPla
 const TransportesComingSoon = lazy(() => import("./pages/transportes/TransportesComingSoon"));
 const MinhasViagensPage = lazy(() => import("./pages/transportes/MinhasViagensPage"));
 const MotoristaHubPage = lazy(() => import("./pages/transportes/MotoristaHubPage"));
+const MotoristaGpsPage = lazy(() => import("./pages/transportes/motorista/MotoristaGpsPage"));
 const V3Terms = lazy(() => import("./pages/v3/V3Terms"));
 const V3Privacy = lazy(() => import("./pages/v3/V3Privacy"));
 const V3TermsAcceptance = lazy(() => import("./pages/v3/V3TermsAcceptance"));
