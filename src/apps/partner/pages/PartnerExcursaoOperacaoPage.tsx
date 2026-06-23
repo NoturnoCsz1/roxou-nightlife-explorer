@@ -73,7 +73,7 @@ function exportPassengersCsv(trip: ExcursionTrip, seats: ExcursionSeat[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `excursao-${trip.public_slug ?? trip.id}.csv`;
+  a.download = `excursao-${trip.id}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
