@@ -131,7 +131,7 @@ export async function updateStaffAccount(
   if (patch.is_active !== undefined) update.is_active = patch.is_active;
   const { data, error } = await supabase
     .from("partner_staff_accounts")
-    .update(update)
+    .update(update as never)
     .eq("id", id)
     .select()
     .single();
