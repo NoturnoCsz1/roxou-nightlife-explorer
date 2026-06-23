@@ -73,6 +73,7 @@ const typeLabel: Record<ValidatorItemType, string> = {
   vip: "Lista VIP",
   reservation: "Reserva",
   invite: "Convite",
+  excursion: "Excursão",
   unknown: "Desconhecido",
 };
 
