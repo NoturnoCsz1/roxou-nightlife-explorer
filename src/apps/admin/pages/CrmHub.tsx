@@ -38,9 +38,12 @@ export default function CrmHub() {
             Clientes unificados • Reservas, VIP, Excursões, Caronas, Check-ins.
           </p>
         </div>
-        <div className="flex gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs">
           <Badge variant="secondary">{total} clientes</Badge>
           <Badge variant="outline">{recent} ativos 7d</Badge>
+          <Link to="/admin/crm/sync">
+            <Button size="sm">Sincronizar CRM</Button>
+          </Link>
         </div>
       </header>
 
