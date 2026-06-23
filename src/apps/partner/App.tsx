@@ -9,7 +9,14 @@
  * RLS, edge functions, banco nem o PWA principal.
  */
 import { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+function PartnerPrefixRedirect() {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace(/^\/partner\/?/, "/") + search + hash;
+  return <Navigate to={target || "/"} replace />;
+}
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -191,6 +198,10 @@ const PartnerApp = () => (
           <Route path="/:partnerSlug/vip/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
           <Route path="/vip/:listSlug" element={L(<PublicVipList />)} />
           <Route path="/vip/:listSlug/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
+
+          {/* Aliases /partner/* — aceita URLs com prefixo redundante */}
+          <Route path="/partner" element={<Navigate to="/" replace />} />
+          <Route path="/partner/*" element={<PartnerPrefixRedirect />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
