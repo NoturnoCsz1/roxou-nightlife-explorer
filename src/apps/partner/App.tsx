@@ -192,6 +192,10 @@ const PartnerApp = () => (
           <Route path="/vip/:listSlug" element={L(<PublicVipList />)} />
           <Route path="/vip/:listSlug/sucesso/:publicToken" element={L(<PublicVipListSuccess />)} />
 
+          {/* Aliases /partner/* — aceita URLs com prefixo redundante */}
+          <Route path="/partner" element={<Navigate to="/" replace />} />
+          <Route path="/partner/*" element={<PartnerPrefixRedirect />} />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
