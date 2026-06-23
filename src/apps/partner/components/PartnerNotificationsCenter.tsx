@@ -11,16 +11,24 @@
  * - No-shows recentes do dia (potencial fricção)
  * - Reservas encerradas sem liberação de mesa (ocupando recurso)
  */
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Bell,
+  Check,
   CheckCircle2,
   Clock,
+  Trash2,
   Users,
   X,
   ChevronRight,
 } from "lucide-react";
+import {
+  getDismissedIds,
+  getResolvedIds,
+  markNotif,
+  clearResolved as clearResolvedNotifs,
+} from "../lib/partnerNotificationDismissal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GlassCard, SectionHeader } from "./ui";
