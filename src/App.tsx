@@ -60,6 +60,7 @@ const SegurancaRevisao = lazy(() => import("./pages/SegurancaRevisao"));
 const Editores = lazy(() => import("./apps/admin/pages/Editores"));
 const CrmHub = lazy(() => import("./apps/admin/pages/CrmHub"));
 const CrmCustomerDetail = lazy(() => import("./apps/admin/pages/CrmCustomerDetail"));
+const CrmSyncPage = lazy(() => import("./apps/admin/pages/CrmSyncPage"));
 const PrivacidadeOptOut = lazy(() => import("./pages/privacidade/OptOutPage"));
 const NoticiasList = lazy(() => import("./apps/admin/pages/NoticiasList"));
 const NoticiaForm = lazy(() => import("./apps/admin/pages/NoticiaForm"));
@@ -236,6 +237,7 @@ const App = () => (
             <Route path="expo2026" element={L(<Expo2026Admin />)} />
             <Route path="expo2026/camarotes" element={L(<Expo2026CamarotesAdmin />)} />
             <Route path="crm" element={L(<CrmHub />)} />
+            <Route path="crm/sync" element={L(<CrmSyncPage />)} />
             <Route path="crm/:id" element={L(<CrmCustomerDetail />)} />
           </Route>
 
