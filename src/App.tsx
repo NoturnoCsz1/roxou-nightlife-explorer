@@ -20,6 +20,15 @@ function RedirectV3() {
   return <Navigate to={`${target}${search}${hash}`} replace />;
 }
 
+/** Redireciona URL legada da etapa 7.1 (`/transportes/excursao/:slug`) para a nova `/transportes/excursoes/:slug`. */
+function RedirectExcursaoLegacy() {
+  const { pathname, search, hash } = useLocation();
+  const target = pathname.replace("/transportes/excursao/", "/transportes/excursoes/");
+  return <Navigate to={`${target}${search}${hash}`} replace />;
+}
+
+
+
 import Maintenance from "./pages/Maintenance";
 import AdminMaintenanceGate from "./components/AdminMaintenanceGate";
 import LegacyArchiveLayout from "./components/LegacyArchiveLayout";
@@ -116,9 +125,15 @@ const V3Chat = lazy(() => import("./pages/v3/V3Chat"));
 const V3MyRides = lazy(() => import("./pages/v3/V3MyRides"));
 const TransportesHubPage = lazy(() => import("./pages/transportes/TransportesHubPage"));
 const ExcursoesListPage = lazy(() => import("./pages/transportes/ExcursoesListPage"));
-const ExcursaoPublicPage = lazy(() => import("./pages/transportes/ExcursaoPublicPage"));
+const ExcursaoDetailPage = lazy(() => import("./pages/transportes/ExcursaoDetailPage"));
+const ExcursaoAssentosPage = lazy(() => import("./pages/transportes/ExcursaoAssentosPage"));
+const ExcursaoPassageiroPage = lazy(() => import("./pages/transportes/ExcursaoPassageiroPage"));
+const ExcursaoConfirmacaoPage = lazy(() => import("./pages/transportes/ExcursaoConfirmacaoPage"));
 const AcompanharExcursaoPage = lazy(() => import("./pages/transportes/AcompanharExcursaoPage"));
 const PrivativoPlaceholder = lazy(() => import("./pages/transportes/PrivativoPlaceholder"));
+const TransportesComingSoon = lazy(() => import("./pages/transportes/TransportesComingSoon"));
+const MinhasViagensPage = lazy(() => import("./pages/transportes/MinhasViagensPage"));
+const MotoristaHubPage = lazy(() => import("./pages/transportes/MotoristaHubPage"));
 const V3Terms = lazy(() => import("./pages/v3/V3Terms"));
 const V3Privacy = lazy(() => import("./pages/v3/V3Privacy"));
 const V3TermsAcceptance = lazy(() => import("./pages/v3/V3TermsAcceptance"));
@@ -305,6 +320,9 @@ const App = () => (
           <Route path="/partner" element={L(<PartnerShortcutRedirect />)} />
           <Route path="/partner/*" element={L(<PartnerShortcutRedirect />)} />
 
+          {/* Alias top-level: /validator → área do validador no Partner Pro */}
+          <Route path="/validator" element={<Navigate to="/partner/validator" replace />} />
+
           {/* ========= Dev Navigator (interno, noindex) ========= */}
           <Route path="/dev/rotas" element={L(<DevRoutes />)} />
 
@@ -347,14 +365,108 @@ const App = () => (
             <Route path="evento/:slug" element={L(<V3EventDetail />)} />
             <Route path="local/:slug" element={L(<V3LocalDetail />)} />
             <Route path="transporte" element={L(<V3Transport />)} />
-            {/* ===== Hub Roxou Mobilidade (FASE 7.1) ===== */}
+            {/* ===== Hub Roxou Mobilidade (FASE 7.1 / 7.3) ===== */}
             <Route path="transportes" element={L(<TransportesHubPage />)} />
+
+            {/* Caronas — reorganização modular (mesma lógica V3Transport) */}
             <Route path="transportes/caronas" element={L(<V3Transport />)} />
+            <Route path="transportes/caronas/oferecer" element={L(<V3DriverBoard />)} />
+            <Route path="transportes/caronas/procurar" element={L(<V3RideRequest />)} />
+            <Route path="transportes/caronas/minhas" element={L(<V3MyRides />)} />
+            <Route path="transportes/caronas/motorista" element={L(<V3DriverBoard />)} />
+
+            {/* Excursões — fluxo público em etapas */}
             <Route path="transportes/excursoes" element={L(<ExcursoesListPage />)} />
-            <Route path="transportes/excursao/:slug" element={L(<ExcursaoPublicPage />)} />
+            <Route path="transportes/excursoes/:slug" element={L(<ExcursaoDetailPage />)} />
+            <Route
+              path="transportes/excursoes/:slug/assentos"
+              element={L(<ExcursaoAssentosPage />)}
+            />
+            <Route
+              path="transportes/excursoes/:slug/passageiro"
+              element={L(<ExcursaoPassageiroPage />)}
+            />
+            <Route
+              path="transportes/excursoes/:slug/confirmacao"
+              element={L(<ExcursaoConfirmacaoPage />)}
+            />
+            {/* Redireciona URL antiga `/transportes/excursao/:slug` para nova `/excursoes/:slug` */}
+            <Route
+              path="transportes/excursao/:slug"
+              element={<RedirectExcursaoLegacy />}
+            />
+
+            {/* Acompanhar / GPS do passageiro */}
             <Route path="transportes/acompanhar/:token" element={L(<AcompanharExcursaoPage />)} />
+
+            {/* Privativo */}
             <Route path="transportes/privativo" element={L(<PrivativoPlaceholder />)} />
-            <Route path="transportes/minhas" element={L(<V3MyRides />)} />
+            <Route
+              path="transportes/privativo/solicitar"
+              element={L(
+                <TransportesComingSoon
+                  title="Solicitar transporte privativo"
+                  description="Reserve ida e volta com motorista exclusivo para o evento."
+                  emoji="🚖"
+                />,
+              )}
+            />
+            <Route
+              path="transportes/privativo/minhas"
+              element={L(
+                <TransportesComingSoon
+                  title="Minhas viagens privativas"
+                  description="Acompanhe seus pedidos de transporte privativo."
+                  emoji="🚖"
+                />,
+              )}
+            />
+            <Route
+              path="transportes/privativo/motoristas"
+              element={L(
+                <TransportesComingSoon
+                  title="Motoristas parceiros"
+                  description="Veja os motoristas habilitados para o transporte privativo."
+                  emoji="🚖"
+                />,
+              )}
+            />
+
+            {/* Minhas viagens (passageiro) */}
+            <Route path="transportes/minhas" element={L(<MinhasViagensPage />)} />
+
+            {/* Motorista — área separada do passageiro */}
+            <Route path="transportes/motorista" element={L(<MotoristaHubPage />)} />
+            <Route
+              path="transportes/motorista/viagens"
+              element={L(
+                <TransportesComingSoon
+                  title="Próximas viagens"
+                  description="Lista das viagens em que você é o motorista."
+                  emoji="🚍"
+                />,
+              )}
+            />
+            <Route
+              path="transportes/motorista/gps"
+              element={L(
+                <TransportesComingSoon
+                  title="Compartilhar GPS"
+                  description="Inicie a transmissão do trajeto em tempo real."
+                  emoji="📍"
+                />,
+              )}
+            />
+            <Route
+              path="transportes/motorista/checkins"
+              element={L(
+                <TransportesComingSoon
+                  title="Embarques"
+                  description="Confirme passageiros embarcados e pendentes."
+                  emoji="🎫"
+                />,
+              )}
+            />
             {/* pedir-carona desativado do fluxo público (redirecionado em rota raiz) */}
             <Route path="motorista" element={L(<V3DriverBoard />)} />
             <Route path="chat/:requestId" element={L(<V3Chat />)} />
