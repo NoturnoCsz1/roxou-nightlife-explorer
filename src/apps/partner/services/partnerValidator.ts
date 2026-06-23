@@ -87,13 +87,24 @@ export function parseQrPayload(raw: string): ParsedQrPayload {
       return { type: "vip", token: sucessoMatch[1], id: null, raw: value };
     }
 
-    if (typeParam === "vip" || typeParam === "reservation" || typeParam === "invite") {
+    if (
+      typeParam === "vip" ||
+      typeParam === "reservation" ||
+      typeParam === "invite" ||
+      typeParam === "excursion"
+    ) {
       return {
         type: typeParam,
         token: token ?? null,
         id: id ?? null,
         raw: value,
       };
+    }
+
+    // /transportes/acompanhar/<token> → excursion
+    const acompMatch = url.pathname.match(/\/transportes\/acompanhar\/([^/?#]+)/i);
+    if (acompMatch?.[1]) {
+      return { type: "excursion", token: acompMatch[1], id: null, raw: value };
     }
 
     // Fallback: extrai UUID da string
