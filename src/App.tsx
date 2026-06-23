@@ -115,7 +115,9 @@ const V3DriverBoard = lazy(() => import("./pages/v3/V3DriverBoard"));
 const V3Chat = lazy(() => import("./pages/v3/V3Chat"));
 const V3MyRides = lazy(() => import("./pages/v3/V3MyRides"));
 const TransportesHubPage = lazy(() => import("./pages/transportes/TransportesHubPage"));
-const ExcursoesPlaceholder = lazy(() => import("./pages/transportes/ExcursoesPlaceholder"));
+const ExcursoesListPage = lazy(() => import("./pages/transportes/ExcursoesListPage"));
+const ExcursaoPublicPage = lazy(() => import("./pages/transportes/ExcursaoPublicPage"));
+const AcompanharExcursaoPage = lazy(() => import("./pages/transportes/AcompanharExcursaoPage"));
 const PrivativoPlaceholder = lazy(() => import("./pages/transportes/PrivativoPlaceholder"));
 const V3Terms = lazy(() => import("./pages/v3/V3Terms"));
 const V3Privacy = lazy(() => import("./pages/v3/V3Privacy"));
@@ -348,7 +350,9 @@ const App = () => (
             {/* ===== Hub Roxou Mobilidade (FASE 7.1) ===== */}
             <Route path="transportes" element={L(<TransportesHubPage />)} />
             <Route path="transportes/caronas" element={L(<V3Transport />)} />
-            <Route path="transportes/excursoes" element={L(<ExcursoesPlaceholder />)} />
+            <Route path="transportes/excursoes" element={L(<ExcursoesListPage />)} />
+            <Route path="transportes/excursao/:slug" element={L(<ExcursaoPublicPage />)} />
+            <Route path="transportes/acompanhar/:token" element={L(<AcompanharExcursaoPage />)} />
             <Route path="transportes/privativo" element={L(<PrivativoPlaceholder />)} />
             <Route path="transportes/minhas" element={L(<V3MyRides />)} />
             {/* pedir-carona desativado do fluxo público (redirecionado em rota raiz) */}
