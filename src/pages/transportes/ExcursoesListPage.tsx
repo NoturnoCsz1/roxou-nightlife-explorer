@@ -122,7 +122,7 @@ export default function ExcursoesListPage() {
           <ul className="space-y-3">
             {trips.map((t) => (
               <li key={t.id}>
-                <Link to={`/transportes/excursao/${t.public_slug}`}>
+                <Link to={`/transportes/excursoes/${t.public_slug}`}>
                   <Card className="p-4 space-y-2 hover:border-primary/40 transition">
                     <p className="font-semibold leading-snug">{t.title}</p>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">

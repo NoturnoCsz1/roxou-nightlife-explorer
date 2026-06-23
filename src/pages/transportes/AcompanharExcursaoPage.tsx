@@ -204,7 +204,7 @@ export default function AcompanharExcursaoPage() {
             </Card>
 
             <Button asChild variant="secondary" className="w-full">
-              <Link to={`/transportes/excursao/${ticket.trip.public_slug}`}>
+              <Link to={`/transportes/excursoes/${ticket.trip.public_slug}`}>
                 Ver detalhes da viagem
               </Link>
             </Button>
