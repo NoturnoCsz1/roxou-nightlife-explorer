@@ -1,5 +1,5 @@
 /**
- * PartnerLoginPage — Fase 10C (login e-mail/senha).
+ * PartnerLoginPage — Ajuste final com explicação comercial e UX mobile.
  *
  * Login principal no `parceiro.roxou.com.br` agora é e-mail + senha via
  * `supabase.auth.signInWithPassword`, enquanto o Google OAuth segue
@@ -15,6 +15,7 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { listMyAccessRequests } from "../services/partnerAccessRequests";
@@ -65,6 +66,21 @@ async function resolveDestination(userId: string): Promise<string> {
   return "/onboarding";
 }
 
+const features = [
+  "Reservas e camarotes",
+  "Listas VIP e check-in por QR Code",
+  "Equipe, validadores e acessos temporários",
+  "Relatórios, operação diária e transporte",
+];
+
+const sheetItems = [
+  { title: "Reservas Pro", desc: "Gestão de reservas, camarotes e mesas com controle de lotação em tempo real." },
+  { title: "Listas VIP", desc: "Listas por nome, check-in via QR Code e controle de entrada com validadores." },
+  { title: "Equipe e validadores", desc: "Cadastro de funcionários, permissões granulares e acessos temporários por PIN." },
+  { title: "Transporte e excursões", desc: "Organização de excursões, caronas e transporte privativo para eventos." },
+  { title: "Relatórios", desc: "Dashboard com métricas de ocupação, conversão, faturamento e operação diária." },
+];
+
 const PartnerLoginPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -72,6 +88,7 @@ const PartnerLoginPage = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [requestLoading, setRequestLoading] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,20 +194,37 @@ const PartnerLoginPage = () => {
   const busy = emailLoading || resetLoading || requestLoading;
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-10 bg-background">
-      <div className="w-full max-w-md space-y-6">
-        <header className="text-center space-y-2">
+    <main className="min-h-screen flex items-center justify-center px-4 py-6 bg-background">
+      <div className="w-full max-w-md space-y-4">
+        {/* Header */}
+        <header className="text-center space-y-1.5">
           <span className="inline-block rounded-full bg-amber-500/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300">
             Beta Fechado
           </span>
           <h1 className="text-2xl font-display font-black text-primary tracking-tight">
             ROXOU PARTNER PRO
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie seu estabelecimento, eventos, reservas e listas VIP em um só lugar.
+          <p className="text-sm text-muted-foreground leading-snug">
+            Gerencie reservas, listas VIP, equipe, check-ins e operações do seu evento em um só lugar.
           </p>
         </header>
 
+        {/* What you manage */}
+        <div className="rounded-xl border border-border/40 bg-card/40 px-4 py-3">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            O que você gerencia aqui?
+          </p>
+          <ul className="space-y-1">
+            {features.map((f) => (
+              <li key={f} className="flex items-start gap-2 text-xs text-foreground">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
+                <span className="leading-snug">{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Login form */}
         <form
           onSubmit={handleEmailLogin}
           className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-3 relative z-10"
@@ -264,14 +298,41 @@ const PartnerLoginPage = () => {
               className="w-full h-10 rounded-md border border-border bg-background text-muted-foreground text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               title={GOOGLE_ENABLED ? "" : "Em breve"}
             >
-              {GOOGLE_ENABLED ? "Entrar com Google" : "Entrar com Google (em breve)"}
+              {GOOGLE_ENABLED ? "Entrar com Google" : "Google em breve"}
             </button>
           </div>
-
-          <p className="text-[11px] text-muted-foreground text-center pt-1">
-            Disponível apenas para estabelecimentos já cadastrados na Roxou.
-          </p>
         </form>
+
+        {/* Features accordion */}
+        <div className="rounded-xl border border-border/40 bg-card/40 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setSheetOpen((s) => !s)}
+            className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-medium text-primary hover:opacity-80 transition-opacity"
+          >
+            <span>Conheça os recursos</span>
+            {sheetOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+          {sheetOpen && (
+            <div className="px-4 pb-3 space-y-2 border-t border-border/30">
+              {sheetItems.map((item) => (
+                <div key={item.title} className="pt-2">
+                  <p className="text-xs font-semibold text-foreground">{item.title}</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer copy */}
+        <p className="text-[11px] text-muted-foreground text-center leading-snug px-2">
+          Uma central para bares, festas e eventos controlarem reservas, listas VIP, check-ins, equipe e operação em tempo real.
+        </p>
+
+        <p className="text-[11px] text-muted-foreground text-center px-4">
+          Disponível apenas para estabelecimentos e organizadores cadastrados na Roxou.
+        </p>
 
         <p className="text-[11px] text-center text-muted-foreground">
           Para visitantes:{" "}
