@@ -62,6 +62,7 @@ const CrmHub = lazy(() => import("./apps/admin/pages/CrmHub"));
 const CrmCustomerDetail = lazy(() => import("./apps/admin/pages/CrmCustomerDetail"));
 const CrmSyncPage = lazy(() => import("./apps/admin/pages/CrmSyncPage"));
 const PrivacidadeOptOut = lazy(() => import("./pages/privacidade/OptOutPage"));
+const UpdatePasswordPage = lazy(() => import("./pages/auth/UpdatePasswordPage"));
 const NoticiasList = lazy(() => import("./apps/admin/pages/NoticiasList"));
 const NoticiaForm = lazy(() => import("./apps/admin/pages/NoticiaForm"));
 const Premiacoes = lazy(() => import("./apps/admin/pages/Premiacoes"));
