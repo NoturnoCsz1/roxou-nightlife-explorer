@@ -391,7 +391,7 @@ const PartnerValidatorPage = () => {
           </p>
           <h1 className="text-2xl font-bold">Validador</h1>
           <p className="text-xs text-muted-foreground break-words">
-            {partnerName} · valida Lista VIP, Reservas e Convites por QR.
+            {partnerName} · valida Lista VIP, Reservas, Convites e Excursões 🚍 por QR.
           </p>
         </header>
 
