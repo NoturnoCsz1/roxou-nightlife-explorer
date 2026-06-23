@@ -265,6 +265,7 @@ const App = () => (
           </Route>
 
           {/* ========= AUTH ========= */}
+          <Route path="/auth/update-password" element={L(<UpdatePasswordPage />)} />
           <Route path="/auth" element={<V3Auth />} />
           <Route path="/auth/*" element={<V3Auth />} />
           <Route path="/seguranca/revisao" element={L(<SegurancaRevisao />)} />
