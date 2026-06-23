@@ -65,6 +65,7 @@ const PartnerVipListDetailRoute = lazy(
 );
 const PartnerAnalyticsPage = lazy(() => import("./pages/PartnerAnalyticsPage"));
 const PartnerSettingsPage = lazy(() => import("./pages/PartnerSettingsPage"));
+const PartnerCrmPage = lazy(() => import("./pages/PartnerCrmPage"));
 const PartnerVipCheckinPage = lazy(() => import("./pages/PartnerVipCheckinPage"));
 const PartnerValidatorPage = lazy(() => import("./pages/PartnerValidatorPage"));
 const PublicReservation = lazy(() => import("@/pages/PublicReservation"));
