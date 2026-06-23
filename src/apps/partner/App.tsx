@@ -111,6 +111,12 @@ const PartnerApp = () => (
             <Route path="eventos/:eventId" element={L(<PartnerEventDetailRoute />)} />
             <Route path="eventos/:eventId/editar" element={L(<PartnerEventEditRoute />)} />
             <Route path="reservas" element={L(<PartnerReservationsPage />)} />
+            <Route path="reservas/lista" element={L(<PartnerReservasListaPage />)} />
+            <Route path="reservas/tipos" element={L(<PartnerReservasTiposPage />)} />
+            <Route path="reservas/fila" element={L(<PartnerFilaPage />)} />
+            <Route path="reservas/configuracoes" element={L(<PartnerReservasConfiguracoesPage />)} />
+            <Route path="reservas/operacao" element={L(<PartnerOperacaoPage />)} />
+            <Route path="reservas/equipe" element={L(<PartnerReservasEquipePage />)} />
             <Route
               path="reservas/:reservationId"
               element={L(<PartnerReservationDetailPage />)}
