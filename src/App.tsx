@@ -320,6 +320,9 @@ const App = () => (
           <Route path="/partner" element={L(<PartnerShortcutRedirect />)} />
           <Route path="/partner/*" element={L(<PartnerShortcutRedirect />)} />
 
+          {/* Alias top-level: /validator → área do validador no Partner Pro */}
+          <Route path="/validator" element={<Navigate to="/partner/validator" replace />} />
+
           {/* ========= Dev Navigator (interno, noindex) ========= */}
           <Route path="/dev/rotas" element={L(<DevRoutes />)} />
 
