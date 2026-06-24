@@ -87,8 +87,8 @@ export function HomeDesktop(props: HomeDesktopProps) {
       {/* ══════ NOTÍCIAS — após layout principal ══════ */}
       {!isLoading && !hasHomeDataError && (
         <div className="max-w-5xl mx-auto min-h-[200px] px-4 lg:px-6">
-          <HomeSectionBoundary name="Notícias trending" silent>
-            <LatestNewsSection variant="trending" limit={6} />
+          <HomeSectionBoundary name="Últimas notícias" silent>
+            <LatestNewsSection variant="latest" limit={6} />
           </HomeSectionBoundary>
           <HomeSectionBoundary name="Notícias mais vistas" silent>
             <MostViewedNews />
