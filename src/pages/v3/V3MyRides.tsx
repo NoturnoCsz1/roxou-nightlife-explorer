@@ -147,14 +147,14 @@ export default function V3MyRides() {
                     {status.label}
                   </span>
                 </div>
-                <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
-                  <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
+                <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-primary/25 bg-primary/10 text-primary"}`}>
+                  <Clock className="w-3 h-3" /> {closed ? "Período de caronas encerrado" : getRideAvailabilityText(req.event_date)}
                 </div>
 
                 {/* Details */}
                 <div className="space-y-1 text-xs text-muted-foreground">
-                  {req.pickup_address && <p>📍 De: {req.pickup_address}</p>}
-                  <p>📍 Para: {req.destination_address || req.venue_name}</p>
+                  {req.pickup_address && <p>📍 De: {formatLocation(req.pickup_address)}</p>}
+                  <p>📍 Para: {formatLocation(req.destination_address, req.venue_name)}</p>
                   {req.event_date && (
                     <p>🕐 {new Date(req.event_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</p>
                   )}
