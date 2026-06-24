@@ -195,8 +195,8 @@ export default function V3Transport() {
             <p className="font-display font-semibold text-sm text-foreground">{eventName}</p>
             {venueName && <p className="text-xs text-muted-foreground">📍 {venueName}</p>}
             {caronaClosed && (
-              <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
-                Sistema de carona encerrado para este evento
+              <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300">
+                Período de caronas encerrado
               </p>
             )}
           </div>
