@@ -35,6 +35,7 @@ const PartnerRequestSuccessPage = lazy(
   () => import("./pages/PartnerRequestSuccessPage"),
 );
 const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage"));
+const PartnerRequestAccessPage = lazy(() => import("./pages/PartnerRequestAccessPage"));
 
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
 const PartnerHomePage = lazy(() => import("./pages/PartnerHomePage"));
