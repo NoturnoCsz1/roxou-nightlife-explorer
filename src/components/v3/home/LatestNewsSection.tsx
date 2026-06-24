@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Newspaper, Flame, ChevronRight, ChevronLeft } from "lucide-react";
+import { Newspaper, Flame, ChevronRight } from "lucide-react";
 import SmartImage from "@/components/v3/SmartImage";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -17,7 +16,7 @@ interface NewsItem {
   source: "roxou" | "expo";
 }
 
-const PER_PAGE_DESKTOP = 3;
+const MAX_DESKTOP = 4;
 
 export default function LatestNewsSection({
   variant = "trending",
@@ -26,8 +25,6 @@ export default function LatestNewsSection({
   variant?: "trending" | "latest";
   limit?: number;
 }) {
-  const [page, setPage] = useState(0);
-
   const { data: items = [] } = useQuery<NewsItem[]>({
     queryKey: ["v3-home-news", variant, limit],
     queryFn: async () => {
@@ -52,11 +49,6 @@ export default function LatestNewsSection({
     ? "Notícias, rumores e assuntos que estão movimentando a cidade"
     : "Cobertura completa Roxou";
 
-  const totalPages = Math.max(1, Math.ceil(items.length / PER_PAGE_DESKTOP));
-  const safePage = Math.min(page, totalPages - 1);
-  const desktopSlice = items.slice(safePage * PER_PAGE_DESKTOP, safePage * PER_PAGE_DESKTOP + PER_PAGE_DESKTOP);
-  const canPaginate = items.length > PER_PAGE_DESKTOP;
-
   const renderCard = (n: NewsItem, sizing: string) => {
     const href = `/noticia/${n.slug}`;
     const dateLabel = n.published_at ? format(new Date(n.published_at), "d MMM", { locale: ptBR }) : null;
@@ -64,9 +56,9 @@ export default function LatestNewsSection({
       <Link
         key={`${n.source}-${n.id}`}
         to={href}
-        className={`${sizing} rounded-2xl overflow-hidden bg-card border border-border/40 hover:border-primary/40 transition-all group`}
+        className={`block rounded-2xl overflow-hidden bg-card border border-border/40 hover:border-primary/40 transition-all group ${sizing}`}
       >
-        <div className="relative aspect-[16/10] bg-secondary overflow-hidden">
+        <div className="relative aspect-video bg-secondary overflow-hidden rounded-xl">
           <SmartImage
             src={n.cover_image_url}
             alt={n.title}
@@ -95,53 +87,33 @@ export default function LatestNewsSection({
   };
 
   return (
-    <section className="px-4 pt-6 pb-2">
-      <div className="flex items-center justify-between mb-2">
+    <section className="pt-6 pb-2">
+      <div className="flex items-center justify-between px-4 mb-4">
         <div>
           <h2 className="font-display font-extrabold text-lg text-foreground uppercase tracking-wide">{title}</h2>
           <p className="text-[10px] text-muted-foreground -mt-0.5">{subtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
-          {canPaginate && (
-            <div className="hidden lg:flex items-center gap-1.5">
-              <button
-                aria-label="Anterior"
-                onClick={() => setPage((p) => (p - 1 + totalPages) % totalPages)}
-                className="w-8 h-8 flex items-center justify-center rounded-full border border-border/40 bg-background/40 backdrop-blur-md hover:border-primary/50 hover:text-primary transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                aria-label="Próxima"
-                onClick={() => setPage((p) => (p + 1) % totalPages)}
-                className="w-8 h-8 flex items-center justify-center rounded-full border border-border/40 bg-background/40 backdrop-blur-md hover:border-primary/50 hover:text-primary transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-          <Link
-            to="/noticias"
-            className="text-[11px] font-semibold text-primary flex items-center gap-0.5 hover:underline"
-          >
-            Ver todas <ChevronRight className="w-3 h-3" />
-          </Link>
-        </div>
+        <Link
+          to="/noticias"
+          className="text-[11px] font-semibold text-primary flex items-center gap-0.5 hover:underline"
+        >
+          Ver todas <ChevronRight className="w-3 h-3" />
+        </Link>
       </div>
 
-      {/* Mobile/tablet: scroll horizontal nativo */}
-      <div className="lg:hidden w-full max-w-full flex gap-3 overflow-x-auto overflow-y-visible pb-2 scrollbar-hide snap-x snap-mandatory">
-        {items.map((n) => renderCard(n, "snap-start shrink-0 w-[78%] sm:w-[58%] md:w-[42%]"))}
+      {/* Mobile/tablet: scroll horizontal nativo, 1 card por vez no mobile / 2 no tablet */}
+      <div className="lg:hidden w-full max-w-full flex gap-4 overflow-x-auto overflow-y-hidden pb-2 scrollbar-hide snap-x snap-mandatory pl-4 pr-4">
+        {items.map((n) =>
+          renderCard(
+            n,
+            "w-[85vw] max-w-[360px] md:w-[calc(50%-0.5rem)] snap-start shrink-0"
+          )
+        )}
       </div>
 
-      {/* Desktop: paginado, 3 cards por página, sem corte */}
-      <div className="hidden lg:grid grid-cols-3 gap-4">
-        {desktopSlice.map((n) => renderCard(n, "w-full"))}
-        {/* placeholders invisíveis para manter grid estável quando última página tem menos de 3 */}
-        {desktopSlice.length < PER_PAGE_DESKTOP &&
-          Array.from({ length: PER_PAGE_DESKTOP - desktopSlice.length }).map((_, i) => (
-            <div key={`ph-${i}`} className="invisible" aria-hidden />
-          ))}
+      {/* Desktop: grid responsivo, 3 cards em lg e 4 em xl */}
+      <div className="hidden lg:grid grid-cols-3 xl:grid-cols-4 gap-4 px-4">
+        {items.slice(0, MAX_DESKTOP).map((n) => renderCard(n, "w-full"))}
       </div>
     </section>
   );

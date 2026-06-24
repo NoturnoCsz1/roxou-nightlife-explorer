@@ -40,7 +40,7 @@ export default function V3Layout() {
 
 
   return (
-    <div className="v3-theme min-h-screen text-foreground font-body flex flex-col">
+    <div className="v3-theme min-h-screen text-foreground font-body flex flex-col overflow-x-hidden">
       {/* Header — premium hub */}
       <header className="sticky top-0 z-50 bg-background/88 backdrop-blur-lg border-b border-white/8">
         <div className="flex items-center gap-5 px-5 h-16 max-w-7xl mx-auto">

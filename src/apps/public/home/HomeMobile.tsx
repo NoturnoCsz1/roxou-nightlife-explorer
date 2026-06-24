@@ -314,7 +314,7 @@ export function HomeMobile(props: HomeMobileProps) {
 
         {/* Footer institucional V3 */}
         <HomeSectionBoundary name="Footer V3" silent>
-          <FadeSection className="px-4 pt-6 pb-2">
+          <FadeSection className="px-4 pt-6 pb-24">
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-muted-foreground">
               <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
               <span className="opacity-30">·</span>
