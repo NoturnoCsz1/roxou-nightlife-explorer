@@ -182,6 +182,19 @@ const PartnerApp = () => (
             <Route path="excursoes/operacao/:tripId" element={L(<PartnerExcursaoOperacaoPage />)} />
             <Route path="excursoes/relatorios" element={L(<PartnerComingSoonPage />)} />
             <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
+            {/* Roxou Transportes — módulo independente */}
+            <Route path="transportes" element={L(<PartnerTransportesHubPage />)} />
+            <Route path="transportes/excursoes" element={L(<PartnerExcursoesHubPage />)} />
+            <Route path="transportes/veiculos" element={L(<PartnerExcursoesVeiculosPage />)} />
+            <Route path="transportes/viagens" element={L(<PartnerExcursoesViagensPage />)} />
+            <Route path="transportes/viagens/:tripId" element={L(<PartnerExcursoesViagemDetailPage />)} />
+            <Route path="transportes/passageiros" element={L(<PartnerComingSoonPage />)} />
+            <Route path="transportes/operacao" element={L(<PartnerComingSoonPage />)} />
+            <Route path="transportes/operacao/:tripId" element={L(<PartnerExcursaoOperacaoPage />)} />
+            <Route path="transportes/gps" element={L(<PartnerComingSoonPage />)} />
+            <Route path="transportes/relatorios" element={L(<PartnerComingSoonPage />)} />
+            <Route path="transportes/equipe" element={L(<PartnerComingSoonPage />)} />
+            <Route path="transportes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="crm" element={L(<PartnerCrmPage />)} />
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
