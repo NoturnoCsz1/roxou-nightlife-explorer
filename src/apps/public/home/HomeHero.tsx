@@ -257,8 +257,8 @@ export function DesktopHeroSection({
           <Link to="/parceiros" className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-primary transition-colors">
             <Users className="w-3.5 h-3.5" /> Parceiros
           </Link>
-          <Link to="/transporte" className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-primary transition-colors">
-            <Car className="w-3.5 h-3.5" /> Caronas
+          <Link to="/transportes" className="flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground hover:text-primary transition-colors">
+            <Car className="w-3.5 h-3.5" /> Transportes
           </Link>
         </div>
 

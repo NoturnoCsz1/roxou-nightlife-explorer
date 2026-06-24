@@ -44,7 +44,7 @@ export function DesktopNavPanel({ todayCount }: { todayCount: number }) {
     { to: "/", label: "Início", icon: Sparkles },
     { to: "/ia", label: "Aura", icon: Bot },
     { to: "/descobrir", label: "Descobrir", icon: Search },
-    { to: "/transporte", label: "Caronas", icon: Car },
+    { to: "/transportes", label: "Transportes", icon: Car },
     { to: "/parceiros", label: "Parceiros", icon: Users },
     { to: "/agenda", label: "Agenda", icon: CalendarDays },
     { to: "/economize", label: "Economize", icon: PiggyBank },

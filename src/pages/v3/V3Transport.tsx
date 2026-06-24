@@ -75,8 +75,8 @@ function EventRideCard({ event, isGuest }: { event: RealEvent; isGuest: boolean 
         </div>
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
-            <Clock className="w-3 h-3" /> {availabilityText}
+          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-primary/25 bg-primary/10 text-primary"}`}>
+            <Clock className="w-3 h-3" /> {closed ? "Período de caronas encerrado" : availabilityText}
           </div>
           <VerifiedDriverBadge />
         </div>
@@ -195,8 +195,8 @@ export default function V3Transport() {
             <p className="font-display font-semibold text-sm text-foreground">{eventName}</p>
             {venueName && <p className="text-xs text-muted-foreground">📍 {venueName}</p>}
             {caronaClosed && (
-              <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
-                Sistema de carona encerrado para este evento
+              <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300">
+                Período de caronas encerrado
               </p>
             )}
           </div>

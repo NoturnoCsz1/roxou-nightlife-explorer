@@ -8,6 +8,7 @@ import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, Shie
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import ReportDialog from "@/components/v3/ReportDialog";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
+import { formatLocation } from "@/lib/locationDisplay";
 import type { Tables } from "@/integrations/supabase/types";
 
 function timeAgoPt(iso: string | null | undefined): string {
@@ -178,8 +179,8 @@ export default function V3DriverBoard() {
                   <p className="font-display font-semibold text-sm text-foreground">{req.event_name}</p>
                 )}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
-                    <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
+                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-primary/25 bg-primary/10 text-primary"}`}>
+                    <Clock className="w-3 h-3" /> {closed ? "Período de caronas encerrado" : getRideAvailabilityText(req.event_date)}
                   </div>
                   {!closed && (
                     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-300">
@@ -189,9 +190,7 @@ export default function V3DriverBoard() {
                 </div>
                 <div className="space-y-1.5">
                   {(() => {
-                    const raw = req.pickup_address?.trim() || "";
-                    const isRawCoord = /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(raw);
-                    const display = !raw || isRawCoord ? "Localização aproximada no mapa" : raw;
+                    const display = formatLocation(req.pickup_address);
                     const approx = (req as any).pickup_is_approximate === true || (req.origin_lat == null || req.origin_lng == null);
                     return (
                       <div className="flex items-start gap-2 text-xs text-muted-foreground flex-wrap">
@@ -213,7 +212,7 @@ export default function V3DriverBoard() {
                     return (
                       <div className="flex items-start gap-2 text-xs text-muted-foreground flex-wrap">
                         <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
-                        <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
+                        <span>Destino: {formatLocation(req.destination_address, req.venue_name)}</span>
                         {destApprox && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
                             Destino aproximado
