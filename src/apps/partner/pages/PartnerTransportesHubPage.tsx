@@ -27,9 +27,9 @@ import { usePartnerAuth } from "../hooks/usePartnerAuth";
 
 const TILES = [
   { icon: LayoutGrid, label: "Hub", hint: "Visão geral do módulo", to: "/transportes" },
-  { icon: Bus, label: "Excursões", hint: "Linhas oficiais e embarque QR", to: "/excursoes" },
-  { icon: Truck, label: "Veículos", hint: "Frota, capacidade e placa", to: "/excursoes/veiculos" },
-  { icon: CalendarRange, label: "Viagens", hint: "Sessões, assentos e horários", to: "/excursoes/viagens" },
+  { icon: Bus, label: "Excursões", hint: "Linhas oficiais e embarque QR", to: "/transportes/excursoes" },
+  { icon: Truck, label: "Veículos", hint: "Frota, capacidade e placa", to: "/transportes/veiculos" },
+  { icon: CalendarRange, label: "Viagens", hint: "Sessões, assentos e horários", to: "/transportes/viagens" },
   { icon: Users, label: "Passageiros", hint: "Lista, contato e check-in", to: "/transportes/passageiros" },
   { icon: PlayCircle, label: "Operação", hint: "Abertura, embarque e encerramento", to: "/transportes/operacao" },
   { icon: MapPin, label: "GPS", hint: "Rastreamento em tempo real", to: "/transportes/gps" },
