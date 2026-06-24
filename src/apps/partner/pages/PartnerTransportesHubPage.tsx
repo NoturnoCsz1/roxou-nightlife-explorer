@@ -38,9 +38,9 @@ const TILES = [
 ];
 
 const PartnerTransportesHubPage = () => {
-  const navigate = useNavigate();
   const { selectedPartner } = usePartnerAuth();
   const partnerId = selectedPartner?.id ?? null;
+
 
   if (!partnerId) {
     return (
