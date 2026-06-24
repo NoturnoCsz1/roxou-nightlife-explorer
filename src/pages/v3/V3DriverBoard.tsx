@@ -189,9 +189,7 @@ export default function V3DriverBoard() {
                 </div>
                 <div className="space-y-1.5">
                   {(() => {
-                    const raw = req.pickup_address?.trim() || "";
-                    const isRawCoord = /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(raw);
-                    const display = !raw || isRawCoord ? "Localização aproximada no mapa" : raw;
+                    const display = formatLocation(req.pickup_address);
                     const approx = (req as any).pickup_is_approximate === true || (req.origin_lat == null || req.origin_lng == null);
                     return (
                       <div className="flex items-start gap-2 text-xs text-muted-foreground flex-wrap">
@@ -213,7 +211,7 @@ export default function V3DriverBoard() {
                     return (
                       <div className="flex items-start gap-2 text-xs text-muted-foreground flex-wrap">
                         <MapPin className="w-3.5 h-3.5 text-primary mt-0.5" />
-                        <span>Destino: {req.destination_address || req.venue_name || "Localização aproximada no mapa"}</span>
+                        <span>Destino: {formatLocation(req.destination_address, req.venue_name)}</span>
                         {destApprox && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
                             Destino aproximado
