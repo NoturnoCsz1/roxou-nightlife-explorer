@@ -71,8 +71,8 @@ const PartnerTransportesHubPage = () => {
               label={t.label}
               hint={t.hint}
               to={t.to}
-              onClick={() => navigate(t.to)}
             />
+
           ))}
         </div>
       </section>
