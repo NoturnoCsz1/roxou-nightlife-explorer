@@ -50,19 +50,19 @@ const cards: HubCard[] = [
 
 export default function TransportesHubPage() {
   useEffect(() => {
-    document.title = "Transporte para eventos | Roxou";
+    document.title = "Roxou Transportes | Transporte para eventos";
   }, []);
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-b from-[#0b0418] to-[#150726] px-4 pb-24 pt-6 text-white">
 
 
       <header className="mx-auto max-w-2xl">
-        <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-300/80">Roxou Mobilidade</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-300/80">Roxou Transportes</p>
         <h1 className="mt-1 font-['Space_Grotesk'] text-3xl font-bold leading-tight">
           Como você vai pro evento?
         </h1>
         <p className="mt-2 text-sm text-white/70">
-          Escolha a opção que combina com sua noite. Tudo num só lugar.
+          Escolha como deseja chegar ao evento. Caronas, excursões, transporte privativo e acompanhamento em tempo real.
         </p>
       </header>
 
