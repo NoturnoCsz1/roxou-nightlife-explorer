@@ -26,8 +26,7 @@ const cards: HubCard[] = [
     emoji: "🚍",
     icon: Bus,
     title: "Excursões Oficiais",
-    description: "Viaje com segurança e embarque por QR Code.",
-    badge: "Em breve",
+    description: "Vans, ônibus e transfers para eventos com embarque por QR Code.",
     accent: "from-amber-500/20 to-orange-600/10 border-amber-400/30",
   },
   {
