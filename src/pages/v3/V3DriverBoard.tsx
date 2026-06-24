@@ -178,8 +178,8 @@ export default function V3DriverBoard() {
                   <p className="font-display font-semibold text-sm text-foreground">{req.event_name}</p>
                 )}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`}>
-                    <Clock className="w-3 h-3" /> {closed ? "Sistema de carona encerrado para este evento" : getRideAvailabilityText(req.event_date)}
+                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${closed ? "border-amber-500/40 bg-amber-500/10 text-amber-300" : "border-primary/25 bg-primary/10 text-primary"}`}>
+                    <Clock className="w-3 h-3" /> {closed ? "Período de caronas encerrado" : getRideAvailabilityText(req.event_date)}
                   </div>
                   {!closed && (
                     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-300">
