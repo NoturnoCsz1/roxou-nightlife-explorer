@@ -44,7 +44,9 @@ export default function V3MyRides() {
       .eq("passenger_id", user!.id)
       .order("created_at", { ascending: false });
 
-    const myRequests = reqs || [];
+    const dedup = new Map<string, RideRequest>();
+    (reqs || []).forEach((r) => { if (!dedup.has(r.id)) dedup.set(r.id, r); });
+    const myRequests = Array.from(dedup.values());
     setRequests(myRequests);
 
     if (myRequests.length > 0) {
