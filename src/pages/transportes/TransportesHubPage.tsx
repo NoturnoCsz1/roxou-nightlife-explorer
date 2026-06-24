@@ -34,8 +34,7 @@ const cards: HubCard[] = [
     emoji: "🚖",
     icon: Navigation,
     title: "Transporte Privativo",
-    description: "Solicite ida e volta para o evento.",
-    badge: "Em breve",
+    description: "Solicite ida e volta para eventos com motoristas parceiros.",
     accent: "from-sky-500/20 to-cyan-600/10 border-sky-400/30",
   },
   {
