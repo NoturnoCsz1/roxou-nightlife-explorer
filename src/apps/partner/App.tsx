@@ -35,6 +35,7 @@ const PartnerRequestSuccessPage = lazy(
   () => import("./pages/PartnerRequestSuccessPage"),
 );
 const PartnerBetaLandingPage = lazy(() => import("./pages/PartnerBetaLandingPage"));
+const PartnerRequestAccessPage = lazy(() => import("./pages/PartnerRequestAccessPage"));
 
 const PartnerDashboardPage = lazy(() => import("./pages/PartnerDashboardPage"));
 const PartnerHomePage = lazy(() => import("./pages/PartnerHomePage"));
@@ -127,6 +128,7 @@ const PartnerApp = () => (
           <Route path="/login" element={<PartnerLoginPage />} />
           <Route path="/auth/update-password" element={L(<UpdatePasswordPage />)} />
           <Route path="/onboarding" element={L(<PartnerOnboardingPage />)} />
+          <Route path="/solicitar-acesso" element={L(<PartnerRequestAccessPage />)} />
           <Route path="/pending" element={L(<PartnerPendingApprovalPage />)} />
           <Route
             path="/solicitacao-enviada"

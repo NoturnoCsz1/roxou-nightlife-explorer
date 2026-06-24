@@ -155,34 +155,30 @@ const PartnerLoginPage = () => {
       return;
     }
     setEmailLoading(true);
-    const next = readNextParam() ?? "/dashboard";
-    const r = await signInWithGoogle(next);
-    setEmailLoading(false);
-    if (!r.ok) {
-      toast.error(r.error ?? "Erro ao entrar com Google");
-      return;
-    }
-    // Sessão setada pelo lovable.auth; resolve destino.
-    const { data } = await supabase.auth.getUser();
-    if (data?.user) {
-      const dest = next ?? (await resolveDestination(data.user.id));
-      navigate(dest, { replace: true });
+    try {
+      const next = safeReturnTo(readNextParam() || "/dashboard", "/dashboard");
+      const r = await signInWithGoogle(next);
+      if (!r.ok) {
+        toast.error(r.error ?? "Erro ao entrar com Google");
+        setEmailLoading(false);
+        return;
+      }
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        const dest = next ?? (await resolveDestination(data.user.id));
+        navigate(dest, { replace: true });
+      }
+    } catch (err) {
+      toast.error(mapAuthError(err));
+    } finally {
+      setEmailLoading(false);
     }
   };
 
-  const handleRequestAccess = async () => {
+  const handleRequestAccess = () => {
     setRequestLoading(true);
     try {
-      const { data } = await supabase.auth.getUser();
-      if (!data?.user) {
-        navigate("/onboarding");
-        return;
-      }
-      const dest = await resolveDestination(data.user.id);
-      navigate(dest);
-    } catch (err) {
-      console.error("[PARTNER LOGIN] Access request error:", err);
-      toast.error("Não foi possível continuar.");
+      navigate("/solicitar-acesso");
     } finally {
       setRequestLoading(false);
     }
