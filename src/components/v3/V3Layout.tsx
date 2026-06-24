@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
   { to: "/agenda", icon: CalendarDays, label: "Agenda" },
   { to: "/jogos", icon: Trophy, label: "Jogos" },
-  { to: "/transporte", icon: Car, label: "Caronas" },
+  { to: "/transportes", icon: Car, label: "Transportes" },
   { to: "/perfil", icon: User, label: "Perfil" },
 ];
 
