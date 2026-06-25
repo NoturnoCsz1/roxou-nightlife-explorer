@@ -114,15 +114,18 @@ export function HomeMobile(props: HomeMobileProps) {
           ) : null}
         </HomeSectionBoundary>
 
-        {/* Destaque Copa do Mundo 2026 */}
-        <HomeSectionBoundary name="Copa Highlight (mobile)" silent>
-          <CopaHighlightCard />
+        {/* Destaques Roxou — carrossel (Expo, Copa, FEJUPI, campanhas editoriais) */}
+        <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
+          <div className="pt-3">
+            <HighlightsCarousel
+              slides={[
+                { key: "expo", node: <ExpoHighlightCard /> },
+                { key: "copa", node: <CopaHighlightCard /> },
+              ]}
+            />
+          </div>
         </HomeSectionBoundary>
 
-        {/* Expo Prudente 2026 */}
-        <HomeSectionBoundary name="Expo Highlight (mobile)" silent>
-          <ExpoHighlightCard />
-        </HomeSectionBoundary>
 
         {/* Jogos ao vivo */}
         {!isLoading && !hasHomeDataError && (
