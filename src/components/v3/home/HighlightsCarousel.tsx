@@ -9,22 +9,23 @@ interface HighlightsCarouselProps {
   slides: HighlightSlide[];
   autoplayMs?: number;
   label?: string;
+  /** Altura mínima fixa do carrossel — evita layout shift entre slides. */
+  minHeight?: number;
 }
 
 /**
  * Carrossel de destaques mobile-first.
- *
- * - Cada slide ocupa 100% da largura do container.
- * - Container com overflow-hidden e altura automática baseada no maior slide.
- * - Transição via transform: translateX(-index * 100%).
- * - Autoplay com pausa ao tocar/passar o mouse.
+ * - Cada slide ocupa 100% da largura.
+ * - Altura fixa via min-height; sem CLS.
+ * - translateX(-index * 100%) com transição suave.
+ * - Autoplay 6s, pausa em toque/hover, retoma após 3s.
  * - Swipe horizontal funcional.
- * - Indicadores abaixo do card.
  */
 export default function HighlightsCarousel({
   slides,
   autoplayMs = 6000,
   label = "Destaques Roxou",
+  minHeight = 280,
 }: HighlightsCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
@@ -53,15 +54,20 @@ export default function HighlightsCarousel({
     };
   }, []);
 
-  // Autoplay
   useEffect(() => {
     if (paused || slides.length <= 1 || !autoplayMs) return;
     const id = window.setInterval(() => {
-      const next = (active + 1) % slides.length;
-      goTo(next);
+      setActive((a) => (a + 1) % slides.length);
+      setTransitionEnabled(true);
+      setDragOffset(0);
     }, autoplayMs);
     return () => window.clearInterval(id);
-  }, [active, paused, slides.length, autoplayMs, goTo]);
+  }, [paused, slides.length, autoplayMs]);
+
+  // Mantém active válido se a lista mudar
+  useEffect(() => {
+    if (active >= slides.length) setActive(0);
+  }, [active, slides.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
@@ -93,7 +99,6 @@ export default function HighlightsCarousel({
     } else {
       goTo(active);
     }
-
     setDragOffset(0);
     scheduleResume();
   };
@@ -109,31 +114,36 @@ export default function HighlightsCarousel({
   if (slides.length === 0) return null;
 
   return (
-    <section aria-label={label} className="relative">
-      <div ref={containerRef} className="relative w-full overflow-hidden">
+    <section aria-label={label} className="relative w-full">
+      <div
+        ref={containerRef}
+        className="relative w-full overflow-hidden"
+        style={{ minHeight }}
+      >
         <div
-          className={`flex w-full ${
+          className={`flex w-full items-stretch ${
             transitionEnabled ? "transition-transform duration-500 ease-out" : ""
           }`}
           style={{
-            transform: `translateX(-${active * 100}%) translateX(${dragOffset}px)`,
+            transform: `translateX(calc(${-active * 100}% + ${dragOffset}px))`,
             touchAction: "pan-y",
           }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
+          onMouseLeave={() => {
+            setPaused(false);
+          }}
           onClickCapture={handleClickCapture}
         >
           {slides.map((s) => (
             <div
               key={s.key}
-              className="w-full min-w-full flex-shrink-0 flex flex-col"
+              className="w-full min-w-full flex-shrink-0"
+              style={{ minHeight }}
             >
-              <div className="flex-1 flex flex-col [&>*]:flex [&>*]:flex-col [&>*]:flex-1 [&>*_>*]:flex-1">
-                {s.node}
-              </div>
+              {s.node}
             </div>
           ))}
         </div>
@@ -155,6 +165,7 @@ export default function HighlightsCarousel({
               onClick={() => {
                 setPaused(true);
                 goTo(i);
+                scheduleResume();
               }}
               className={`h-1.5 rounded-full transition-all ${
                 i === active ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
