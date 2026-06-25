@@ -73,17 +73,18 @@ export function HomeDesktop(props: HomeDesktopProps) {
         </HomeSectionBoundary>
       </div>
 
-      {/* Destaque Copa do Mundo 2026 — desktop */}
+      {/* Destaques Roxou — carrossel desktop (Expo, Copa, FEJUPI, campanhas) */}
       <div className="hidden lg:block max-w-5xl mx-auto">
-        <HomeSectionBoundary name="Copa Highlight (desktop)" silent>
-          <CopaHighlightCard />
-        </HomeSectionBoundary>
-
-        {/* Expo Prudente 2026 — desktop */}
-        <HomeSectionBoundary name="Expo Highlight (desktop)" silent>
-          <ExpoHighlightCard />
+        <HomeSectionBoundary name="Destaques Roxou (desktop)" silent>
+          <HighlightsCarousel
+            slides={[
+              { key: "expo", node: <ExpoHighlightCard /> },
+              { key: "copa", node: <CopaHighlightCard /> },
+            ]}
+          />
         </HomeSectionBoundary>
       </div>
+
 
       {/* ══════ NOTÍCIAS — após layout principal ══════ */}
       {!isLoading && !hasHomeDataError && (
