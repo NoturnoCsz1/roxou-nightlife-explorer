@@ -12,48 +12,46 @@ interface HighlightsCarouselProps {
 }
 
 /**
- * Carrossel horizontal com snap, autoplay opcional e indicadores.
- * Cada slide é renderizado em largura total. Não altera o visual interno
- * dos cards passados (Expo, Copa, FEJUPI, campanhas, etc.).
+ * Carrossel de destaques mobile-first.
+ *
+ * - Cada slide ocupa 100% da largura do container.
+ * - Container com overflow-hidden e altura automática baseada no maior slide.
+ * - Transição via transform: translateX(-index * 100%).
+ * - Autoplay com pausa ao tocar/passar o mouse.
+ * - Swipe horizontal funcional.
+ * - Indicadores abaixo do card.
  */
 export default function HighlightsCarousel({
   slides,
   autoplayMs = 6000,
   label = "Destaques Roxou",
 }: HighlightsCarouselProps) {
-  const scrollerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const startXRef = useRef(0);
+  const draggedRef = useRef(false);
+  const resumeTimerRef = useRef<number | null>(null);
 
   const goTo = useCallback((idx: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const target = el.children[idx] as HTMLElement | undefined;
-    if (!target) return;
-    el.scrollTo({ left: target.offsetLeft, behavior: "smooth" });
+    setTransitionEnabled(true);
+    setDragOffset(0);
+    setActive(idx);
   }, []);
 
-  // Detectar slide ativo via IntersectionObserver
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const items = Array.from(el.children) as HTMLElement[];
-    if (items.length === 0) return;
+  const scheduleResume = useCallback(() => {
+    if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = window.setTimeout(() => setPaused(false), 3000);
+  }, []);
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-            const idx = items.indexOf(entry.target as HTMLElement);
-            if (idx >= 0) setActive(idx);
-          }
-        });
-      },
-      { root: el, threshold: [0.6] },
-    );
-    items.forEach((it) => io.observe(it));
-    return () => io.disconnect();
-  }, [slides.length]);
+  useEffect(() => {
+    return () => {
+      if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+    };
+  }, []);
 
   // Autoplay
   useEffect(() => {
@@ -65,26 +63,80 @@ export default function HighlightsCarousel({
     return () => window.clearInterval(id);
   }, [active, paused, slides.length, autoplayMs, goTo]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+    setPaused(true);
+    setTransitionEnabled(false);
+    setIsDragging(true);
+    startXRef.current = e.touches[0].clientX;
+    draggedRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientX - startXRef.current;
+    setDragOffset(delta);
+    if (Math.abs(delta) > 8) draggedRef.current = true;
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const width = containerRef.current?.offsetWidth || 0;
+    const threshold = Math.max(48, width * 0.2);
+
+    if (dragOffset < -threshold) {
+      goTo(active === slides.length - 1 ? 0 : active + 1);
+    } else if (dragOffset > threshold) {
+      goTo(active === 0 ? slides.length - 1 : active - 1);
+    } else {
+      goTo(active);
+    }
+
+    setDragOffset(0);
+    scheduleResume();
+  };
+
+  const handleClickCapture = useCallback((e: React.MouseEvent) => {
+    if (draggedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      draggedRef.current = false;
+    }
+  }, []);
+
   if (slides.length === 0) return null;
 
   return (
     <section aria-label={label} className="relative">
-      <div
-        ref={scrollerRef}
-        onTouchStart={() => setPaused(true)}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide scroll-smooth"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {slides.map((s) => (
-          <div
-            key={s.key}
-            className="min-w-full shrink-0 snap-center"
-          >
-            {s.node}
-          </div>
-        ))}
+      <div ref={containerRef} className="relative w-full overflow-hidden">
+        <div
+          className={`flex w-full ${
+            transitionEnabled ? "transition-transform duration-500 ease-out" : ""
+          }`}
+          style={{
+            transform: `translateX(-${active * 100}%) translateX(${dragOffset}px)`,
+            touchAction: "pan-y",
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onClickCapture={handleClickCapture}
+        >
+          {slides.map((s) => (
+            <div
+              key={s.key}
+              className="w-full min-w-full flex-shrink-0 flex flex-col"
+            >
+              <div className="flex-1 flex flex-col [&>*]:flex [&>*]:flex-col [&>*]:flex-1 [&>*_>*]:flex-1">
+                {s.node}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {slides.length > 1 && (

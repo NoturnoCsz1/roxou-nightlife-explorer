@@ -116,14 +116,12 @@ export function HomeMobile(props: HomeMobileProps) {
 
         {/* Destaques Roxou — carrossel (Expo, Copa, FEJUPI, campanhas editoriais) */}
         <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
-          <div className="pt-3">
-            <HighlightsCarousel
-              slides={[
-                { key: "expo", node: <ExpoHighlightCard /> },
-                { key: "copa", node: <CopaHighlightCard /> },
-              ]}
-            />
-          </div>
+          <HighlightsCarousel
+            slides={[
+              { key: "expo", node: <ExpoHighlightCard /> },
+              { key: "copa", node: <CopaHighlightCard /> },
+            ]}
+          />
         </HomeSectionBoundary>
 
 
@@ -318,9 +316,9 @@ export function HomeMobile(props: HomeMobileProps) {
           <LatestNewsSection variant="latest" limit={6} />
         </HomeSectionBoundary>
 
-        {/* Footer institucional — compacto */}
+        {/* Footer institucional — compacto e acima da Bottom Navigation */}
         <HomeSectionBoundary name="Footer V3" silent>
-          <FadeSection className="px-4 pt-4 pb-20">
+          <FadeSection className="px-4 pt-4 pb-24">
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-medium text-muted-foreground">
               <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
               <span className="opacity-30">·</span>
