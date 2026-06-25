@@ -2735,6 +2735,81 @@ export type Database = {
           },
         ]
       }
+      partner_pro_requests: {
+        Row: {
+          categoria: string | null
+          cidade: string | null
+          converted_partner_id: string | null
+          created_at: string
+          estabelecimento: string
+          id: string
+          instagram: string | null
+          mensagem: string | null
+          notes: string | null
+          responsavel: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+          whatsapp: string
+        }
+        Insert: {
+          categoria?: string | null
+          cidade?: string | null
+          converted_partner_id?: string | null
+          created_at?: string
+          estabelecimento: string
+          id?: string
+          instagram?: string | null
+          mensagem?: string | null
+          notes?: string | null
+          responsavel: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          whatsapp: string
+        }
+        Update: {
+          categoria?: string | null
+          cidade?: string | null
+          converted_partner_id?: string | null
+          created_at?: string
+          estabelecimento?: string
+          id?: string
+          instagram?: string | null
+          mensagem?: string | null
+          notes?: string | null
+          responsavel?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_pro_requests_converted_partner_id_fkey"
+            columns: ["converted_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_pro_requests_converted_partner_id_fkey"
+            columns: ["converted_partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_promoters: {
         Row: {
           created_at: string
