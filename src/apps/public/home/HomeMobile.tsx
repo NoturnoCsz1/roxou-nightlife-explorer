@@ -8,6 +8,7 @@ import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
 import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
+import HighlightsCarousel from "@/components/v3/home/HighlightsCarousel";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
@@ -113,15 +114,18 @@ export function HomeMobile(props: HomeMobileProps) {
           ) : null}
         </HomeSectionBoundary>
 
-        {/* Destaque Copa do Mundo 2026 */}
-        <HomeSectionBoundary name="Copa Highlight (mobile)" silent>
-          <CopaHighlightCard />
+        {/* Destaques Roxou — carrossel (Expo, Copa, FEJUPI, campanhas editoriais) */}
+        <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
+          <div className="pt-3">
+            <HighlightsCarousel
+              slides={[
+                { key: "expo", node: <ExpoHighlightCard /> },
+                { key: "copa", node: <CopaHighlightCard /> },
+              ]}
+            />
+          </div>
         </HomeSectionBoundary>
 
-        {/* Expo Prudente 2026 */}
-        <HomeSectionBoundary name="Expo Highlight (mobile)" silent>
-          <ExpoHighlightCard />
-        </HomeSectionBoundary>
 
         {/* Jogos ao vivo */}
         {!isLoading && !hasHomeDataError && (

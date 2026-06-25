@@ -4,6 +4,7 @@
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
 import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
+import HighlightsCarousel from "@/components/v3/home/HighlightsCarousel";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 
@@ -72,17 +73,18 @@ export function HomeDesktop(props: HomeDesktopProps) {
         </HomeSectionBoundary>
       </div>
 
-      {/* Destaque Copa do Mundo 2026 — desktop */}
+      {/* Destaques Roxou — carrossel desktop (Expo, Copa, FEJUPI, campanhas) */}
       <div className="hidden lg:block max-w-5xl mx-auto">
-        <HomeSectionBoundary name="Copa Highlight (desktop)" silent>
-          <CopaHighlightCard />
-        </HomeSectionBoundary>
-
-        {/* Expo Prudente 2026 — desktop */}
-        <HomeSectionBoundary name="Expo Highlight (desktop)" silent>
-          <ExpoHighlightCard />
+        <HomeSectionBoundary name="Destaques Roxou (desktop)" silent>
+          <HighlightsCarousel
+            slides={[
+              { key: "expo", node: <ExpoHighlightCard /> },
+              { key: "copa", node: <CopaHighlightCard /> },
+            ]}
+          />
         </HomeSectionBoundary>
       </div>
+
 
       {/* ══════ NOTÍCIAS — após layout principal ══════ */}
       {!isLoading && !hasHomeDataError && (
