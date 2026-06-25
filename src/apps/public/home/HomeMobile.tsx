@@ -14,7 +14,7 @@ import HomeJogosCard from "@/components/jogos/HomeJogosCard";
 import V3SearchBar from "@/components/v3/V3SearchBar";
 import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 import V3VibeChips from "@/components/v3/V3VibeChips";
-import CategoryChips from "@/components/v3/CategoryChips";
+
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
 import { DiscoverGrid, TransportCTA } from "@/components/v3/home/DiscoverGrid";
@@ -24,7 +24,7 @@ import { safeEvents } from "./utils";
 import { VIBE_FILTERS } from "./constants";
 import { ImmersiveHero } from "./HomeHero";
 import { PremiumEventCard } from "./HomeCuradoria";
-import { BentoGrid, Rail, VibeSelector } from "./HomeSections";
+import { Rail, VibeSelector } from "./HomeSections";
 import { FeaturedPartnerCard, VenueRankCard, VenueSpotlight } from "./HomeLists";
 import { EmptyHero, HomeDataFallback, RailSkeleton, VenueRankSkeleton } from "./HomeSkeletons";
 
