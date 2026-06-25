@@ -17,6 +17,7 @@ import V3VibeChips from "@/components/v3/V3VibeChips";
 import CategoryChips from "@/components/v3/CategoryChips";
 import AIHomeWidget from "@/components/v3/AIHomeWidget";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
+import { DiscoverGrid, TransportCTA } from "@/components/v3/home/DiscoverGrid";
 
 import type { Ev, VenueRank } from "./types";
 import { safeEvents } from "./utils";
@@ -177,9 +178,14 @@ export function HomeMobile(props: HomeMobileProps) {
           <AIHomeWidget />
         </HomeSectionBoundary>
 
-        {/* BENTO GRID */}
-        <HomeSectionBoundary name="Bento grid">
-          <BentoGrid />
+        {/* DESCOBRIR MAIS — grade moderna por categoria */}
+        <HomeSectionBoundary name="Discover grid" silent>
+          <DiscoverGrid />
+        </HomeSectionBoundary>
+
+        {/* TRANSPORTE — CTA discreto */}
+        <HomeSectionBoundary name="Transport CTA" silent>
+          <TransportCTA />
         </HomeSectionBoundary>
 
         <HomeSectionBoundary name="Vibe selector" silent>
@@ -196,20 +202,16 @@ export function HomeMobile(props: HomeMobileProps) {
           )}
         </HomeSectionBoundary>
 
-        {/* CATEGORIES */}
-        <HomeSectionBoundary name="Category chips" silent>
-          <CategoryChips selected={catFilter} onSelect={setCatFilter} />
-        </HomeSectionBoundary>
-
-        <HomeSectionBoundary name="Category filtered rail" silent>
-          {catFilter && (filtered ?? []).length > 0 && (
+        {/* Filtros por categoria preservados via DiscoverGrid (categorias levam para /descobrir?cat=) */}
+        {catFilter && (filtered ?? []).length > 0 && (
+          <HomeSectionBoundary name="Category filtered rail" silent>
             <Rail title={catFilter}>
               {(filtered ?? []).slice(0, 12).map(e => (
                 <PremiumEventCard key={e.id} ev={e} partnerRank={e.partner_id ? partnerRankMap.get(e.partner_id) : undefined} isTrending={trendingIdSet.has(e.id)} />
               ))}
             </Rail>
-          )}
-        </HomeSectionBoundary>
+          </HomeSectionBoundary>
+        )}
 
         {/* EM ALTA AGORA */}
         <HomeSectionBoundary name="Em alta agora" silent>
@@ -312,10 +314,10 @@ export function HomeMobile(props: HomeMobileProps) {
           <LatestNewsSection variant="latest" limit={6} />
         </HomeSectionBoundary>
 
-        {/* Footer institucional V3 */}
+        {/* Footer institucional — compacto */}
         <HomeSectionBoundary name="Footer V3" silent>
-          <FadeSection className="px-4 pt-6 pb-24">
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-muted-foreground">
+          <FadeSection className="px-4 pt-4 pb-20">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-medium text-muted-foreground">
               <Link to="/sobre" className="hover:text-primary transition-colors">Sobre</Link>
               <span className="opacity-30">·</span>
               <Link to="/contato" className="hover:text-primary transition-colors">Contato</Link>
