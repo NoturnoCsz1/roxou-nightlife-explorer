@@ -151,7 +151,7 @@ export function CategoryBentoCard({
 
 export function VibeSelector({ selected, onSelect }: { selected: string; onSelect: (key: string) => void }) {
   return (
-    <FadeSection className="px-4 py-2">
+    <FadeSection className="px-4 pt-2 pb-6">
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
         {VIBE_FILTERS.map((vibe) => {
           const active = selected === vibe.key;
