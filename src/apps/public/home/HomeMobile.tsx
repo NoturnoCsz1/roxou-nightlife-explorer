@@ -6,8 +6,6 @@ import { ChevronRight, Crown, Gem, Trophy } from "lucide-react";
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
-import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
-import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 import HighlightsCarousel from "@/components/v3/home/HighlightsCarousel";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
