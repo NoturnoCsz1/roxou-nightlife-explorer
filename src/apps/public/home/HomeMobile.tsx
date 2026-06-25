@@ -112,17 +112,6 @@ export function HomeMobile(props: HomeMobileProps) {
           ) : null}
         </HomeSectionBoundary>
 
-        {/* Destaques Roxou — carrossel (Expo, Copa, FEJUPI, campanhas editoriais) */}
-        <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
-          <HighlightsCarousel
-            slides={[
-              { key: "expo", node: <ExpoHighlightCard /> },
-              { key: "copa", node: <CopaHighlightCard /> },
-            ]}
-          />
-        </HomeSectionBoundary>
-
-
         {/* Jogos ao vivo */}
         {!isLoading && !hasHomeDataError && (
           <HomeSectionBoundary name="Jogos mobile" silent>
