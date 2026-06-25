@@ -6,9 +6,6 @@ import { ChevronRight, Crown, Gem, Trophy } from "lucide-react";
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
-import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
-import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
-import HighlightsCarousel from "@/components/v3/home/HighlightsCarousel";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
 import HomeJogosCard from "@/components/jogos/HomeJogosCard";
@@ -113,17 +110,6 @@ export function HomeMobile(props: HomeMobileProps) {
             <TodaySection loading={loadingToday} error={todayError} events={safeEvents(rawTodayEvents)} partnerRankMap={partnerRankMap} trendingIdSet={trendingIdSet} Timeline={TodayTimeline} EmptyState={TodayEmptyState} />
           ) : null}
         </HomeSectionBoundary>
-
-        {/* Destaques Roxou — carrossel (Expo, Copa, FEJUPI, campanhas editoriais) */}
-        <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
-          <HighlightsCarousel
-            slides={[
-              { key: "expo", node: <ExpoHighlightCard /> },
-              { key: "copa", node: <CopaHighlightCard /> },
-            ]}
-          />
-        </HomeSectionBoundary>
-
 
         {/* Jogos ao vivo */}
         {!isLoading && !hasHomeDataError && (
