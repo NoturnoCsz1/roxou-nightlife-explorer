@@ -1,19 +1,17 @@
 /**
- * PartnerRequestAccessPage — Formulário leve de solicitação de acesso.
+ * PartnerRequestAccessPage — Formulário público de solicitação de acesso ao Partner Pro.
  *
- * Não toca backend: persiste em localStorage e mostra tela de sucesso.
- * Fallback de contato direto via WhatsApp também disponível.
+ * Persiste em `partner_pro_requests` (anon INSERT permitido). Admin aprova
+ * via /admin/partner-access-requests aba "Prospects".
  */
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const STORAGE_KEY = "roxou:partner:access-requests";
 const WHATSAPP_URL =
   "https://wa.me/5518997469865?text=" +
-  encodeURIComponent(
-    "Olá! Quero solicitar acesso ao Roxou Partner Pro.",
-  );
+  encodeURIComponent("Olá! Quero solicitar acesso ao Roxou Partner Pro.");
 
 const CATEGORIES = [
   "Bar",
@@ -31,6 +29,7 @@ type FormState = {
   instagram: string;
   cidade: string;
   categoria: string;
+  mensagem: string;
 };
 
 const initial: FormState = {
@@ -40,6 +39,7 @@ const initial: FormState = {
   instagram: "",
   cidade: "",
   categoria: CATEGORIES[0],
+  mensagem: "",
 };
 
 const PartnerRequestAccessPage = () => {
@@ -51,20 +51,62 @@ const PartnerRequestAccessPage = () => {
   const update = (k: keyof FormState, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.estabelecimento.trim() || !form.responsavel.trim() || !form.whatsapp.trim()) {
+    if (
+      !form.estabelecimento.trim() ||
+      !form.responsavel.trim() ||
+      !form.whatsapp.trim()
+    ) {
       toast.error("Preencha estabelecimento, responsável e WhatsApp.");
       return;
     }
     setLoading(true);
+
+    const payload = {
+      estabelecimento: form.estabelecimento.trim(),
+      responsavel: form.responsavel.trim(),
+      whatsapp: form.whatsapp.trim(),
+      instagram: form.instagram.trim() || null,
+      cidade: form.cidade.trim() || null,
+      categoria: form.categoria,
+      mensagem: form.mensagem.trim() || null,
+      user_agent:
+        typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 280) : null,
+      source: "public_form",
+      status: "pending" as const,
+    };
+
+    // eslint-disable-next-line no-console
+    console.log("[partner-pro-request] REQUEST PAYLOAD", payload);
+
     try {
-      const list = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      list.push({ ...form, createdAt: new Date().toISOString() });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      const { data, error } = await supabase
+        .from("partner_pro_requests")
+        .insert(payload)
+        .select("id")
+        .single();
+
+      // eslint-disable-next-line no-console
+      console.log("[partner-pro-request] SUPABASE RESPONSE", { data, error });
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("[partner-pro-request] SUPABASE ERROR", error);
+        toast.error(`Não foi possível enviar: ${error.message}`);
+        return;
+      }
+
+      toast.success("Solicitação enviada! Entraremos em contato em breve.");
       setSubmitted(true);
-    } catch {
-      toast.error("Não foi possível salvar localmente. Tente o WhatsApp.");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[partner-pro-request] EXCEPTION", err);
+      toast.error(
+        err instanceof Error
+          ? `Erro: ${err.message}`
+          : "Erro inesperado ao enviar solicitação.",
+      );
     } finally {
       setLoading(false);
     }
@@ -135,6 +177,17 @@ const PartnerRequestAccessPage = () => {
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Mensagem (opcional)</label>
+            <textarea
+              value={form.mensagem}
+              onChange={(e) => update("mensagem", e.target.value)}
+              rows={3}
+              placeholder="Conte mais sobre seu negócio..."
+              className="w-full px-3 py-2 rounded-md border border-border bg-background text-foreground outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+            />
           </div>
 
           <button
