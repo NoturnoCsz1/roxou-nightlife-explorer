@@ -33,7 +33,7 @@ export function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, inde
 
   return (
     <div
-      className="relative h-[72svh] min-h-[480px] max-h-[640px] lg:h-auto lg:min-h-[460px] lg:max-h-[560px] lg:aspect-auto overflow-hidden"
+      className="relative h-[58svh] min-h-[384px] max-h-[512px] lg:h-auto lg:min-h-[368px] lg:max-h-[448px] lg:aspect-auto overflow-hidden"
       onTouchStart={(e) => {
         const t = e.touches[0];
         touchRef.current = { x: t.clientX, y: t.clientY };
