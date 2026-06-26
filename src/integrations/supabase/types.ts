@@ -497,6 +497,305 @@ export type Database = {
         }
         Relationships: []
       }
+      bio_analytics_events: {
+        Row: {
+          bio_id: string
+          created_at: string
+          device: string | null
+          event_type: string
+          id: string
+          link_id: string | null
+          metadata: Json
+          referrer: string | null
+          session_id: string | null
+          source: string | null
+          user_agent: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          bio_id: string
+          created_at?: string
+          device?: string | null
+          event_type: string
+          id?: string
+          link_id?: string | null
+          metadata?: Json
+          referrer?: string | null
+          session_id?: string | null
+          source?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          bio_id?: string
+          created_at?: string
+          device?: string | null
+          event_type?: string
+          id?: string
+          link_id?: string | null
+          metadata?: Json
+          referrer?: string | null
+          session_id?: string | null
+          source?: string | null
+          user_agent?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_analytics_events_bio_id_fkey"
+            columns: ["bio_id"]
+            isOneToOne: false
+            referencedRelation: "bio_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bio_analytics_events_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "bio_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bio_links: {
+        Row: {
+          bio_id: string
+          click_count: number
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          position: number
+          starts_at: string | null
+          title: string
+          type: string
+          url: string
+        }
+        Insert: {
+          bio_id: string
+          click_count?: number
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          position?: number
+          starts_at?: string | null
+          title: string
+          type?: string
+          url: string
+        }
+        Update: {
+          bio_id?: string
+          click_count?: number
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          position?: number
+          starts_at?: string | null
+          title?: string
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_links_bio_id_fkey"
+            columns: ["bio_id"]
+            isOneToOne: false
+            referencedRelation: "bio_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bio_profiles: {
+        Row: {
+          accent_color: string | null
+          address: string | null
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          cover_url: string | null
+          created_at: string
+          display_name: string
+          event_id: string | null
+          headline: string | null
+          id: string
+          instagram: string | null
+          is_active: boolean
+          is_public: boolean
+          lat: number | null
+          lng: number | null
+          metadata: Json
+          owner_user_id: string | null
+          partner_id: string | null
+          primary_cta_label: string | null
+          primary_cta_url: string | null
+          show_events: boolean
+          show_menu: boolean
+          show_news: boolean
+          show_reservations: boolean
+          show_transport: boolean
+          show_vip: boolean
+          slug: string
+          spotify: string | null
+          theme: string
+          tiktok: string | null
+          type: string
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+          youtube: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          address?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          display_name: string
+          event_id?: string | null
+          headline?: string | null
+          id?: string
+          instagram?: string | null
+          is_active?: boolean
+          is_public?: boolean
+          lat?: number | null
+          lng?: number | null
+          metadata?: Json
+          owner_user_id?: string | null
+          partner_id?: string | null
+          primary_cta_label?: string | null
+          primary_cta_url?: string | null
+          show_events?: boolean
+          show_menu?: boolean
+          show_news?: boolean
+          show_reservations?: boolean
+          show_transport?: boolean
+          show_vip?: boolean
+          slug: string
+          spotify?: string | null
+          theme?: string
+          tiktok?: string | null
+          type?: string
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+          youtube?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          address?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          display_name?: string
+          event_id?: string | null
+          headline?: string | null
+          id?: string
+          instagram?: string | null
+          is_active?: boolean
+          is_public?: boolean
+          lat?: number | null
+          lng?: number | null
+          metadata?: Json
+          owner_user_id?: string | null
+          partner_id?: string | null
+          primary_cta_label?: string | null
+          primary_cta_url?: string | null
+          show_events?: boolean
+          show_menu?: boolean
+          show_news?: boolean
+          show_reservations?: boolean
+          show_transport?: boolean
+          show_vip?: boolean
+          slug?: string
+          spotify?: string | null
+          theme?: string
+          tiktok?: string | null
+          type?: string
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+          youtube?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_profiles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bio_profiles_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bio_profiles_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bio_qr_codes: {
+        Row: {
+          bio_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          scan_count: number
+          table_number: string | null
+          target_path: string
+        }
+        Insert: {
+          bio_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          scan_count?: number
+          table_number?: string | null
+          target_path: string
+        }
+        Update: {
+          bio_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          scan_count?: number
+          table_number?: string | null
+          target_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bio_qr_codes_bio_id_fkey"
+            columns: ["bio_id"]
+            isOneToOne: false
+            referencedRelation: "bio_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_messages: {
         Row: {
           created_at: string
@@ -2289,6 +2588,144 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      menu_categories: {
+        Row: {
+          bio_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          partner_id: string | null
+          position: number
+        }
+        Insert: {
+          bio_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          partner_id?: string | null
+          position?: number
+        }
+        Update: {
+          bio_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          partner_id?: string | null
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_categories_bio_id_fkey"
+            columns: ["bio_id"]
+            isOneToOne: false
+            referencedRelation: "bio_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_categories_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_categories_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          bio_id: string | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean
+          is_featured: boolean
+          metadata: Json
+          name: string
+          partner_id: string | null
+          position: number
+          price: number | null
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          bio_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          metadata?: Json
+          name: string
+          partner_id?: string | null
+          position?: number
+          price?: number | null
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          bio_id?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          metadata?: Json
+          name?: string
+          partner_id?: string | null
+          position?: number
+          price?: number | null
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_bio_id_fkey"
+            columns: ["bio_id"]
+            isOneToOne: false
+            referencedRelation: "bio_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_views: {
         Row: {
@@ -6489,6 +6926,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      user_manages_partner: {
+        Args: { _partner_id: string; _user_id: string }
+        Returns: boolean
       }
       waive_partner_reservation_deposit: {
         Args: { _reservation_id: string }
