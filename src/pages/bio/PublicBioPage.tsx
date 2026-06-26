@@ -148,6 +148,68 @@ export default function PublicBioPage() {
   const [ctx, setCtx] = useState<BioContext>({ upcomingEvents: [], hasReservations: false, hasVip: false, hasTransport: false });
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  // Modo embed (preview no editor do parceiro): oculta floats/CTAs invasivos
+  const isEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("embed");
+
+  // SEO dinâmico (sem dependências novas)
+  useEffect(() => {
+    if (!bio) return;
+    const title = `${bio.display_name} · Roxou Bio`;
+    const desc = bio.headline ?? bio.bio ?? "Descubra eventos, reservas e mais no Roxou.";
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const image = bio.cover_url ?? bio.avatar_url ?? "";
+
+    document.title = title;
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.head.querySelector<HTMLMetaElement>(selector);
+      if (!el) {
+        el = document.createElement("meta");
+        const [k, v] = selector.replace(/^meta\[/, "").replace(/\]$/, "").split("=");
+        el.setAttribute(k, v.replace(/"/g, ""));
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+    setMeta('meta[name="description"]', "content", desc);
+    setMeta('meta[property="og:title"]', "content", title);
+    setMeta('meta[property="og:description"]', "content", desc);
+    setMeta('meta[property="og:type"]', "content", "profile");
+    setMeta('meta[property="og:url"]', "content", url);
+    if (image) setMeta('meta[property="og:image"]', "content", image);
+    setMeta('meta[name="twitter:card"]', "content", "summary_large_image");
+    setMeta('meta[name="twitter:title"]', "content", title);
+    setMeta('meta[name="twitter:description"]', "content", desc);
+    if (image) setMeta('meta[name="twitter:image"]', "content", image);
+
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
+    canonical.href = url;
+
+    // Schema.org Person/Organization
+    let ld = document.getElementById("bio-jsonld") as HTMLScriptElement | null;
+    if (!ld) {
+      ld = document.createElement("script");
+      ld.type = "application/ld+json";
+      ld.id = "bio-jsonld";
+      document.head.appendChild(ld);
+    }
+    ld.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: bio.display_name,
+      description: desc,
+      url,
+      image,
+      address: bio.address ?? undefined,
+      sameAs: [bio.instagram, bio.tiktok, bio.youtube, bio.website].filter(Boolean),
+    });
+  }, [bio]);
+
+
 
   useEffect(() => {
     let cancelled = false;
