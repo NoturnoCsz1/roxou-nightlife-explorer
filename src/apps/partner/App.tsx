@@ -104,6 +104,8 @@ const PartnerExcursoesViagemDetailPage = lazy(() => import("./pages/PartnerExcur
 const PartnerExcursoesConfiguracoesPage = lazy(() => import("./pages/PartnerExcursoesConfiguracoesPage"));
 const PartnerExcursaoOperacaoPage = lazy(() => import("./pages/PartnerExcursaoOperacaoPage"));
 const PartnerTransportesHubPage = lazy(() => import("./pages/PartnerTransportesHubPage"));
+const PartnerBioHubPage = lazy(() => import("./pages/PartnerBioHubPage"));
+
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
 const queryClient = new QueryClient({
@@ -198,6 +200,9 @@ const PartnerApp = () => (
             <Route path="transportes/equipe" element={L(<PartnerComingSoonPage />)} />
             <Route path="transportes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="crm" element={L(<PartnerCrmPage />)} />
+            <Route path="bio" element={L(<PartnerBioHubPage />)} />
+            <Route path="bio/:tab" element={L(<PartnerBioHubPage />)} />
+
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={L(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />

@@ -171,6 +171,12 @@ const PartnerScopedComingSoon = lazy(() => import("./pages/PartnerScopedComingSo
 const DevRoutes = lazy(() => import("./pages/DevRoutes"));
 const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutRedirect"));
 
+// Roxou Bio (Fase Bio + Menu)
+const PublicBioPage = lazy(() => import("./pages/bio/PublicBioPage"));
+const PublicBioMenuPage = lazy(() => import("./pages/bio/PublicBioMenuPage"));
+const AdminBiosPage = lazy(() => import("./pages/admin/AdminBiosPage"));
+
+
 // Cliente Roxou (Fase Cadastro Cliente — MVP)
 const CustomerLogin = lazy(() => import("./pages/customer/CustomerLogin"));
 const CustomerCallback = lazy(() => import("./pages/customer/CustomerCallback"));
@@ -240,7 +246,9 @@ const App = () => (
             <Route path="crm" element={L(<CrmHub />)} />
             <Route path="crm/sync" element={L(<CrmSyncPage />)} />
             <Route path="crm/:id" element={L(<CrmCustomerDetail />)} />
+            <Route path="bios" element={L(<AdminBiosPage />)} />
           </Route>
+
 
           {/* Privacidade / Opt-out público */}
           <Route path="/privacidade/optout/:token" element={L(<PrivacidadeOptOut />)} />
@@ -273,6 +281,12 @@ const App = () => (
 
           {/* ========= CONTATO ========= */}
           <Route path="/contato" element={L(<Contato />)} />
+
+          {/* ========= ROXOU BIO (público) ========= */}
+          <Route path="/bio/:slug" element={L(<PublicBioPage />)} />
+          <Route path="/bio/:slug/menu" element={L(<PublicBioMenuPage />)} />
+
+
 
           {/* ========= ROTAS PÚBLICAS DO PARCEIRO (Fase 10F) ========= */}
           {/* URL amigável: /:partnerSlug/vip + sub-rotas reservadas */}
