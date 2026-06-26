@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 const TABS: Array<{ to: string; label: string; end?: boolean }> = [
   { to: "/", label: "Início", end: true },
+  { to: "/promoter-central", label: "Central Promoter" },
   { to: "/reservas", label: "Reservas" },
   { to: "/fila", label: "Fila" },
   { to: "/relatorios", label: "Relatórios" },

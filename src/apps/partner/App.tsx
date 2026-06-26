@@ -105,6 +105,7 @@ const PartnerExcursoesConfiguracoesPage = lazy(() => import("./pages/PartnerExcu
 const PartnerExcursaoOperacaoPage = lazy(() => import("./pages/PartnerExcursaoOperacaoPage"));
 const PartnerTransportesHubPage = lazy(() => import("./pages/PartnerTransportesHubPage"));
 const PartnerBioHubPage = lazy(() => import("./pages/PartnerBioHubPage"));
+const PartnerPromoterCentralPage = lazy(() => import("./pages/PartnerPromoterCentralPage"));
 
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
@@ -144,6 +145,8 @@ const PartnerApp = () => (
             <Route path="dashboard-antigo" element={L(<PartnerDashboardPage />)} />
             <Route path="inicio" element={<Navigate to="/" replace />} />
             <Route path="perfil" element={L(<PartnerProfilePage />)} />
+            <Route path="promoter-central" element={L(<PartnerPromoterCentralPage />)} />
+            <Route path="promoters/central" element={<Navigate to="/promoter-central" replace />} />
             <Route path="eventos" element={L(<PartnerEventsPage />)} />
             <Route path="eventos/novo" element={L(<PartnerEventNewRoute />)} />
             <Route path="eventos/:eventId" element={L(<PartnerEventDetailRoute />)} />
