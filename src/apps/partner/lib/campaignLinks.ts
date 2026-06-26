@@ -1,36 +1,61 @@
 /**
- * Campaign Links — Fase GAP B/C
+ * Campaign Links — Fase Final
  *
- * Gera links UTM + texto pronto WhatsApp/Instagram para um evento ou lista VIP,
- * opcionalmente atribuídos a um promoter. Não cria tabelas: o vínculo é feito
- * via `utm_content=promoter:<slug>` e capturado pelo `analytics_events` existente.
+ * Helpers para gerar links UTM, QRs e textos prontos por canal.
+ * Reutiliza `withUtm` central. Não cria tabelas.
  */
 import { withUtm } from "@/lib/utm";
 
 const PUBLIC_BASE =
   typeof window !== "undefined" ? window.location.origin : "https://roxou.com.br";
 
+export type CampaignChannel =
+  | "whatsapp"
+  | "instagram"
+  | "stories"
+  | "feed"
+  | "bio"
+  | "qrcode"
+  | "link";
+
+export type CampaignTargetKind =
+  | "event"
+  | "vip_list"
+  | "reservation"
+  | "excursion"
+  | "bio";
+
 export interface CampaignTarget {
-  kind: "event" | "vip_list";
-  /** slug do evento ou public_slug da lista VIP */
+  kind: CampaignTargetKind;
+  /** slug ou identificador público (slug do evento, public_slug da lista, slug do partner para bio, etc.) */
   slug: string;
-  /** título exibido no texto compartilhado */
+  /** título exibido nos textos compartilhados */
   title: string;
-  /** ISO date opcional, exibido no texto */
+  /** ISO date opcional */
   whenIso?: string | null;
-  partnerSlug?: string | null;
+  /** slug do evento associado, usado em utm_campaign */
+  eventSlug?: string | null;
 }
 
 export interface CampaignContext {
   promoterSlug?: string | null;
   promoterName?: string | null;
-  source?: "whatsapp" | "instagram" | "stories" | "feed" | "link";
+  channel?: CampaignChannel;
 }
 
 function relativePath(target: CampaignTarget): string {
-  if (target.kind === "event") return `/evento/${target.slug}`;
-  // lista VIP pública usa slug curto
-  return `/vip/${target.slug}`;
+  switch (target.kind) {
+    case "event":
+      return `/evento/${target.slug}`;
+    case "vip_list":
+      return `/vip/${target.slug}`;
+    case "reservation":
+      return `/reservar/${target.slug}`;
+    case "excursion":
+      return `/transportes/excursoes/${target.slug}`;
+    case "bio":
+      return `/bio/${target.slug}`;
+  }
 }
 
 export function buildCampaignUrl(
@@ -38,11 +63,21 @@ export function buildCampaignUrl(
   ctx: CampaignContext = {},
 ): string {
   const path = `${PUBLIC_BASE}${relativePath(target)}`;
+  const channel = ctx.channel ?? "link";
+  const medium =
+    channel === "whatsapp"
+      ? "whatsapp"
+      : channel === "qrcode"
+        ? "qr"
+        : channel === "bio"
+          ? "bio"
+          : "social";
   return withUtm(path, {
-    source: ctx.source ?? "promoter",
-    medium: ctx.source === "whatsapp" ? "whatsapp" : "social",
-    campaign: target.slug,
+    source: "promoter",
+    medium,
+    campaign: target.eventSlug ?? target.slug,
     content: ctx.promoterSlug ? `promoter:${ctx.promoterSlug}` : undefined,
+    term: channel,
   });
 }
 
@@ -60,7 +95,7 @@ function formatWhen(iso?: string | null) {
 }
 
 export function buildWhatsappText(target: CampaignTarget, ctx: CampaignContext = {}) {
-  const url = buildCampaignUrl(target, { ...ctx, source: "whatsapp" });
+  const url = buildCampaignUrl(target, { ...ctx, channel: "whatsapp" });
   const when = formatWhen(target.whenIso);
   const intro = ctx.promoterName
     ? `🎟️ *${target.title}*${when ? ` — ${when}` : ""}\nGaranta sua entrada comigo (${ctx.promoterName}):`
@@ -69,12 +104,46 @@ export function buildWhatsappText(target: CampaignTarget, ctx: CampaignContext =
 }
 
 export function buildInstagramCaption(target: CampaignTarget, ctx: CampaignContext = {}) {
-  const url = buildCampaignUrl(target, { ...ctx, source: "instagram" });
+  const url = buildCampaignUrl(target, { ...ctx, channel: "instagram" });
   const when = formatWhen(target.whenIso);
   const line = ctx.promoterName ? `Lista com ${ctx.promoterName} 👇` : "Entre na lista 👇";
   return `${target.title}${when ? ` • ${when}` : ""}\n${line}\n${url}\n\n#roxou #lista #vip`;
 }
 
+export function buildStoriesText(target: CampaignTarget, ctx: CampaignContext = {}) {
+  const url = buildCampaignUrl(target, { ...ctx, channel: "stories" });
+  const when = formatWhen(target.whenIso);
+  return `🔥 ${target.title}${when ? ` — ${when}` : ""}\nLink na bio ou:\n${url}`;
+}
+
+export function buildFeedText(target: CampaignTarget, ctx: CampaignContext = {}) {
+  const url = buildCampaignUrl(target, { ...ctx, channel: "feed" });
+  const when = formatWhen(target.whenIso);
+  const promoterLine = ctx.promoterName ? `\nLista com ${ctx.promoterName}.` : "";
+  return `${target.title}${when ? ` — ${when}` : ""}${promoterLine}\n\nGaranta seu nome: ${url}\n\n#roxou #vip #lista #eventos`;
+}
+
+export function buildBioUrl(partnerSlug: string, ctx: CampaignContext = {}) {
+  return buildCampaignUrl(
+    { kind: "bio", slug: partnerSlug, title: "Bio", eventSlug: partnerSlug },
+    { ...ctx, channel: "bio" },
+  );
+}
+
 export function buildWhatsappShareLink(text: string) {
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
+export async function nativeShare(payload: {
+  title?: string;
+  text?: string;
+  url?: string;
+}): Promise<boolean> {
+  if (typeof navigator === "undefined" || !navigator.share) return false;
+  try {
+    await navigator.share(payload);
+    return true;
+  } catch {
+    return false;
+  }
 }
