@@ -66,16 +66,21 @@ export default function PartnerBioHubPage() {
         .eq("id", selectedPartnerId)
         .maybeSingle();
 
+      const pp = (p ?? {}) as Record<string, unknown>;
+      const str = (k: string) => (typeof pp[k] === "string" ? (pp[k] as string) : null);
+      const num = (k: string) => (typeof pp[k] === "number" ? (pp[k] as number) : null);
       await createBioForPartner({
         id: selectedPartnerId,
-        slug: (p as { slug?: string } | null)?.slug ?? selectedPartner.slug ?? null,
-        name: (p as { name?: string } | null)?.name ?? selectedPartner.name,
-        avatar_url: (p as { avatar_url?: string } | null)?.avatar_url ?? null,
-        cover_url: (p as { cover_url?: string } | null)?.cover_url ?? null,
-        bio: (p as { bio?: string } | null)?.bio ?? null,
-        city: (p as { city?: string } | null)?.city ?? null,
-        whatsapp: (p as { whatsapp?: string } | null)?.whatsapp ?? null,
-        instagram: (p as { instagram?: string } | null)?.instagram ?? null,
+        slug: str("slug") ?? selectedPartner.slug ?? null,
+        name: str("name") ?? selectedPartner.name,
+        logo_url: str("logo_url") ?? str("avatar_url"),
+        cover_url: str("cover_url"),
+        whatsapp: str("whatsapp"),
+        instagram: str("instagram"),
+        address: str("address"),
+        city: str("city"),
+        latitude: num("latitude"),
+        longitude: num("longitude"),
       });
       const fresh = await getBioByPartner(selectedPartnerId);
       setBio(fresh);
