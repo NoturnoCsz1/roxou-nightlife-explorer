@@ -83,7 +83,7 @@ export default function PartnerBioHubPage() {
 
       const created = await createBioForPartner({
         id: selectedPartnerId,
-        name: p?.name ?? selectedPartner.name,
+        name: (p?.name as string | undefined) ?? selectedPartner.name,
         slug: (p?.slug as string | null) ?? selectedPartner.slug,
         logo_url: (p?.logo_url as string | null) ?? selectedPartner.logo_url,
         cover_url: (p?.cover_url as string | null) ?? null,
