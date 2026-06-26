@@ -132,7 +132,7 @@ export async function getCampaigns(
   partnerId: string,
   perEventGoal: number,
 ): Promise<CampaignSummary[]> {
-  const todayIso = getStartOfTodaySP().toISOString();
+  const todayIso = getStartOfTodaySP();
   const { data: lists, error } = await supabase
     .from("partner_vip_lists")
     .select(
