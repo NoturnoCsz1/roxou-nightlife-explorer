@@ -2735,60 +2735,149 @@ export type Database = {
           },
         ]
       }
+      partner_pro_request_activities: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          message: string | null
+          metadata: Json
+          request_id: string
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json
+          request_id: string
+          type: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json
+          request_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_pro_request_activities_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "partner_pro_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_pro_requests: {
         Row: {
+          approved_at: string | null
+          assigned_to: string | null
           categoria: string | null
           cidade: string | null
+          contacted_at: string | null
+          converted_at: string | null
           converted_partner_id: string | null
           created_at: string
           estabelecimento: string
           id: string
           instagram: string | null
+          instagram_normalized: string | null
+          internal_notes: string | null
+          last_activity_at: string
+          lead_score: number
+          lost_reason: string | null
           mensagem: string | null
+          next_follow_up_at: string | null
           notes: string | null
+          phone_hash: string | null
+          phone_normalized: string | null
+          priority: string
+          qualified_at: string | null
+          rejected_at: string | null
           responsavel: string
           reviewed_at: string | null
           reviewed_by: string | null
           source: string
+          stage: string
           status: string
+          tags: string[]
           updated_at: string
           user_agent: string | null
           whatsapp: string
         }
         Insert: {
+          approved_at?: string | null
+          assigned_to?: string | null
           categoria?: string | null
           cidade?: string | null
+          contacted_at?: string | null
+          converted_at?: string | null
           converted_partner_id?: string | null
           created_at?: string
           estabelecimento: string
           id?: string
           instagram?: string | null
+          instagram_normalized?: string | null
+          internal_notes?: string | null
+          last_activity_at?: string
+          lead_score?: number
+          lost_reason?: string | null
           mensagem?: string | null
+          next_follow_up_at?: string | null
           notes?: string | null
+          phone_hash?: string | null
+          phone_normalized?: string | null
+          priority?: string
+          qualified_at?: string | null
+          rejected_at?: string | null
           responsavel: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           source?: string
+          stage?: string
           status?: string
+          tags?: string[]
           updated_at?: string
           user_agent?: string | null
           whatsapp: string
         }
         Update: {
+          approved_at?: string | null
+          assigned_to?: string | null
           categoria?: string | null
           cidade?: string | null
+          contacted_at?: string | null
+          converted_at?: string | null
           converted_partner_id?: string | null
           created_at?: string
           estabelecimento?: string
           id?: string
           instagram?: string | null
+          instagram_normalized?: string | null
+          internal_notes?: string | null
+          last_activity_at?: string
+          lead_score?: number
+          lost_reason?: string | null
           mensagem?: string | null
+          next_follow_up_at?: string | null
           notes?: string | null
+          phone_hash?: string | null
+          phone_normalized?: string | null
+          priority?: string
+          qualified_at?: string | null
+          rejected_at?: string | null
           responsavel?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
           source?: string
+          stage?: string
           status?: string
+          tags?: string[]
           updated_at?: string
           user_agent?: string | null
           whatsapp?: string
@@ -5883,6 +5972,21 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      partner_pro_lead_score: {
+        Args: {
+          _row: Database["public"]["Tables"]["partner_pro_requests"]["Row"]
+        }
+        Returns: number
+      }
+      partner_pro_normalize_instagram: {
+        Args: { _raw: string }
+        Returns: string
+      }
+      partner_pro_normalize_phone: { Args: { _raw: string }; Returns: string }
+      partner_pro_request_exists_for_phone: {
+        Args: { _phone_hash: string }
+        Returns: boolean
       }
       public_get_excursion_live: { Args: { _token: string }; Returns: Json }
       public_get_excursion_ticket: { Args: { _token: string }; Returns: Json }
