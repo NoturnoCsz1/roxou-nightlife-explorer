@@ -155,9 +155,15 @@ export default function PublicBioPage() {
     setNotFound(false);
     (async () => {
       try {
-        if (!slug) return;
+        if (!slug) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        if (import.meta.env.DEV) console.warn("[Bio] fetching slug:", slug);
         const b = await getBioBySlug(slug);
         if (cancelled) return;
+        if (import.meta.env.DEV) console.warn("[Bio] result:", b ? { id: b.id, slug: b.slug } : null);
         if (!b) {
           setNotFound(true);
           setLoading(false);
@@ -174,7 +180,8 @@ export default function PublicBioPage() {
         }));
         setCtx(c);
         trackBioEvent({ bio_id: b.id, event_type: "bio_view" });
-      } catch {
+      } catch (err) {
+        if (import.meta.env.DEV) console.warn("[Bio] error:", (err as Error)?.message);
         setNotFound(true);
       } finally {
         if (!cancelled) setLoading(false);
