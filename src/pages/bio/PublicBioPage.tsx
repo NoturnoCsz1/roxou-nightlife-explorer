@@ -155,9 +155,15 @@ export default function PublicBioPage() {
     setNotFound(false);
     (async () => {
       try {
-        if (!slug) return;
+        if (!slug) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        if (import.meta.env.DEV) console.warn("[Bio] fetching slug:", slug);
         const b = await getBioBySlug(slug);
         if (cancelled) return;
+        if (import.meta.env.DEV) console.warn("[Bio] result:", b ? { id: b.id, slug: b.slug } : null);
         if (!b) {
           setNotFound(true);
           setLoading(false);
@@ -174,7 +180,8 @@ export default function PublicBioPage() {
         }));
         setCtx(c);
         trackBioEvent({ bio_id: b.id, event_type: "bio_view" });
-      } catch {
+      } catch (err) {
+        if (import.meta.env.DEV) console.warn("[Bio] error:", (err as Error)?.message);
         setNotFound(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -213,9 +220,16 @@ export default function PublicBioPage() {
   if (notFound || !bio) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6 text-center">
-        <div>
+        <div className="max-w-sm">
           <h1 className="text-2xl font-bold mb-2">Bio não encontrada</h1>
-          <p className="text-white/60">Esta página pode estar inativa ou o link está incorreto.</p>
+          <p className="text-white/60 mb-6">Esta página pode estar inativa ou o link está incorreto.</p>
+          <Link
+            to="/"
+            className="inline-block rounded-xl px-5 py-3 font-semibold text-white"
+            style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)" }}
+          >
+            Voltar para Roxou
+          </Link>
         </div>
       </main>
     );
