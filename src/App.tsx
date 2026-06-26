@@ -282,6 +282,12 @@ const App = () => (
           {/* ========= CONTATO ========= */}
           <Route path="/contato" element={L(<Contato />)} />
 
+          {/* ========= ROXOU BIO (público) ========= */}
+          <Route path="/bio/:slug" element={L(<PublicBioPage />)} />
+          <Route path="/bio/:slug/menu" element={L(<PublicBioMenuPage />)} />
+
+
+
           {/* ========= ROTAS PÚBLICAS DO PARCEIRO (Fase 10F) ========= */}
           {/* URL amigável: /:partnerSlug/vip + sub-rotas reservadas */}
           <Route path="/:partnerSlug/vip" element={L(<PublicVipList />)} />
