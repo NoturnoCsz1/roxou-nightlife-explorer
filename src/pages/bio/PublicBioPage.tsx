@@ -220,9 +220,16 @@ export default function PublicBioPage() {
   if (notFound || !bio) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6 text-center">
-        <div>
+        <div className="max-w-sm">
           <h1 className="text-2xl font-bold mb-2">Bio não encontrada</h1>
-          <p className="text-white/60">Esta página pode estar inativa ou o link está incorreto.</p>
+          <p className="text-white/60 mb-6">Esta página pode estar inativa ou o link está incorreto.</p>
+          <Link
+            to="/"
+            className="inline-block rounded-xl px-5 py-3 font-semibold text-white"
+            style={{ background: "linear-gradient(90deg,#a855f7,#ec4899)" }}
+          >
+            Voltar para Roxou
+          </Link>
         </div>
       </main>
     );
