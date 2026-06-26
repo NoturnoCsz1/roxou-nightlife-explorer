@@ -77,9 +77,10 @@ export default function PartnerBioHubPage() {
       // Buscar dados extras direto da tabela partners
       const { data: p } = await supabase
         .from("partners")
-        .select("id, name, slug, logo_url, cover_url, whatsapp, instagram, address, city, latitude, longitude")
+        .select("*")
         .eq("id", selectedPartnerId)
-        .maybeSingle();
+        .maybeSingle<Record<string, unknown>>();
+
       const created = await createBioForPartner({
         id: selectedPartnerId,
         name: p?.name ?? selectedPartner.name,
