@@ -171,6 +171,12 @@ const PartnerScopedComingSoon = lazy(() => import("./pages/PartnerScopedComingSo
 const DevRoutes = lazy(() => import("./pages/DevRoutes"));
 const PartnerShortcutRedirect = lazy(() => import("./components/PartnerShortcutRedirect"));
 
+// Roxou Bio (Fase Bio + Menu)
+const PublicBioPage = lazy(() => import("./pages/bio/PublicBioPage"));
+const PublicBioMenuPage = lazy(() => import("./pages/bio/PublicBioMenuPage"));
+const AdminBiosPage = lazy(() => import("./pages/admin/AdminBiosPage"));
+
+
 // Cliente Roxou (Fase Cadastro Cliente — MVP)
 const CustomerLogin = lazy(() => import("./pages/customer/CustomerLogin"));
 const CustomerCallback = lazy(() => import("./pages/customer/CustomerCallback"));
