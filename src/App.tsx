@@ -240,7 +240,9 @@ const App = () => (
             <Route path="crm" element={L(<CrmHub />)} />
             <Route path="crm/sync" element={L(<CrmSyncPage />)} />
             <Route path="crm/:id" element={L(<CrmCustomerDetail />)} />
+            <Route path="bios" element={L(<AdminBiosPage />)} />
           </Route>
+
 
           {/* Privacidade / Opt-out público */}
           <Route path="/privacidade/optout/:token" element={L(<PrivacidadeOptOut />)} />
