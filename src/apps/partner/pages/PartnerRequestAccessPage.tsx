@@ -78,17 +78,20 @@ const PartnerRequestAccessPage = () => {
     };
 
     // eslint-disable-next-line no-console
+    console.log("[partner-pro-request] FORM STATE", form);
+    // eslint-disable-next-line no-console
     console.log("[partner-pro-request] REQUEST PAYLOAD", payload);
 
     try {
-      const { data, error } = await supabase
+      // IMPORTANT: não usar .select() aqui — a policy de SELECT exige is_admin()
+      // e o `Prefer: return=representation` faria o INSERT inteiro ser revertido
+      // para usuários anônimos (RLS error 42501).
+      const { error } = await supabase
         .from("partner_pro_requests")
-        .insert(payload)
-        .select("id")
-        .single();
+        .insert(payload);
 
       // eslint-disable-next-line no-console
-      console.log("[partner-pro-request] SUPABASE RESPONSE", { data, error });
+      console.log("[partner-pro-request] SUPABASE RESPONSE", { error });
 
       if (error) {
         // eslint-disable-next-line no-console
