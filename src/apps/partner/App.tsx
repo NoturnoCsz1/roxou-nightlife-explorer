@@ -104,6 +104,8 @@ const PartnerExcursoesViagemDetailPage = lazy(() => import("./pages/PartnerExcur
 const PartnerExcursoesConfiguracoesPage = lazy(() => import("./pages/PartnerExcursoesConfiguracoesPage"));
 const PartnerExcursaoOperacaoPage = lazy(() => import("./pages/PartnerExcursaoOperacaoPage"));
 const PartnerTransportesHubPage = lazy(() => import("./pages/PartnerTransportesHubPage"));
+const PartnerBioHubPage = lazy(() => import("./pages/PartnerBioHubPage"));
+
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
 const queryClient = new QueryClient({
