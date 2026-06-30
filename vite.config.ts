@@ -113,6 +113,19 @@ export default defineConfig(({ mode }) => ({
         main: path.resolve(__dirname, "index.html"),
         partner: path.resolve(__dirname, "partner/index.html"),
       },
+      output: {
+        // Isola bibliotecas pesadas do bundle principal para evitar
+        // que páginas que não usam gráficos/QR puxem todo o código.
+        manualChunks: (id) => {
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) {
+            return "vendor-recharts";
+          }
+          if (id.includes("node_modules/qrcode")) {
+            return "vendor-qrcode";
+          }
+          return undefined;
+        },
+      },
     },
   },
 }));
