@@ -97,12 +97,18 @@ interface Props {
   rows: PartnerReservationRow[];
   waitlist: ReservationWaitlistEntry[];
   onOpenSection?: (section: "list" | "waitlist" | "report") => void;
+  /** Evento de hoje (opcional) — alimenta insights guiados. */
+  eventToday?: { id: string; title: string } | null;
+  /** Slug do parceiro — usado nos insights de Bio/links. */
+  partnerSlug?: string | null;
 }
 
 export function PartnerNotificationsCenter({
   rows,
   waitlist,
   onOpenSection,
+  eventToday,
+  partnerSlug,
 }: Props) {
   const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissedIds());
   const [resolved, setResolved] = useState<Set<string>>(() => getResolvedIds());
