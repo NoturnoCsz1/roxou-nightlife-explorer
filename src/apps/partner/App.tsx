@@ -178,17 +178,18 @@ const PartnerApp = () => (
             <Route path="listas/historico" element={L(<PartnerListasHistoricoPage />)} />
             <Route path="listas/operacao" element={L(<PartnerListasOperacaoPage />)} />
             <Route path="listas/equipe" element={L(<PartnerListasEquipePage />)} />
-            <Route path="excursoes" element={L(<PartnerExcursoesHubPage />)} />
-            <Route path="excursoes/veiculos" element={L(<PartnerExcursoesVeiculosPage />)} />
-            <Route path="excursoes/viagens" element={L(<PartnerExcursoesViagensPage />)} />
-            <Route path="excursoes/viagens/:tripId" element={L(<PartnerExcursoesViagemDetailPage />)} />
-            <Route path="excursoes/assentos" element={L(<PartnerComingSoonPage />)} />
-            <Route path="excursoes/passageiros" element={L(<PartnerComingSoonPage />)} />
-            <Route path="excursoes/equipe" element={L(<PartnerComingSoonPage />)} />
-            <Route path="excursoes/operacao" element={L(<PartnerComingSoonPage />)} />
-            <Route path="excursoes/operacao/:tripId" element={L(<PartnerExcursaoOperacaoPage />)} />
-            <Route path="excursoes/relatorios" element={L(<PartnerComingSoonPage />)} />
-            <Route path="excursoes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
+            {/* Onda 1 V2: /excursoes/* foi consolidado em /transportes/* (rota canônica). */}
+            <Route path="excursoes" element={<Navigate to="/transportes/excursoes" replace />} />
+            <Route path="excursoes/veiculos" element={<Navigate to="/transportes/veiculos" replace />} />
+            <Route path="excursoes/viagens" element={<Navigate to="/transportes/viagens" replace />} />
+            <Route path="excursoes/viagens/:tripId" element={<Navigate to="/transportes/viagens" replace />} />
+            <Route path="excursoes/assentos" element={<Navigate to="/transportes" replace />} />
+            <Route path="excursoes/passageiros" element={<Navigate to="/transportes/passageiros" replace />} />
+            <Route path="excursoes/equipe" element={<Navigate to="/transportes/equipe" replace />} />
+            <Route path="excursoes/operacao" element={<Navigate to="/transportes/operacao" replace />} />
+            <Route path="excursoes/operacao/:tripId" element={<Navigate to="/transportes/operacao" replace />} />
+            <Route path="excursoes/relatorios" element={<Navigate to="/transportes/relatorios" replace />} />
+            <Route path="excursoes/configuracoes" element={<Navigate to="/transportes/configuracoes" replace />} />
             {/* Roxou Transportes — módulo independente */}
             <Route path="transportes" element={L(<PartnerTransportesHubPage />)} />
             <Route path="transportes/excursoes" element={L(<PartnerExcursoesHubPage />)} />
