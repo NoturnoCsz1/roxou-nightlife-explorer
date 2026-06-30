@@ -1,515 +1,140 @@
-# Roxou Bio V1.1 — Refatoração Premium (SaaS)
+# Partner Pro V2 — Plano por Ondas
 
-## Objetivo
-
-Transformar o módulo **Roxou Bio** em um produto premium SaaS totalmente integrado ao ecossistema Roxou.
-
-**Prioridade máxima:** reutilizar tudo o que já existe no projeto.
-
-O objetivo não é criar um novo sistema, mas evoluir o atual aproveitando Eventos, Reservas, Lista VIP, Excursões, Transportes, Notícias, CRM, Partner Pro e componentes compartilhados.
+Baseado na auditoria: 65+ rotas, 9 páginas > 400 linhas, 16 services, 8 duplicações de rota, 2 módulos ausentes (Cardápio e Integrações dedicada). Nada de novas tabelas/RPCs. Cada onda termina com typecheck + build verdes antes da próxima.
 
 ---
 
-# ETAPA 0 — AUDITORIA OBRIGATÓRIA
+## Detecção de papel (base para a Onda 1)
 
-Antes de escrever qualquer linha de código, realizar uma auditoria completa do projeto.
+O projeto já tem três fontes de papel — vou **consolidar num único hook** sem inventar nada:
 
-Mapear obrigatoriamente:
+1. `user_roles` (`app_role` enum: `admin`, etc.) — usado por `has_role()` no RLS.
+2. `partner_users.role` — owner/admin/manager do estabelecimento.
+3. `partner_staff_accounts` — papéis operacionais (`validador`, `recepcao`, `caixa`, `gerente`).
+4. `partner_promoters` (linkado por `user_id`/e-mail) — promoter externo.
 
-- componentes reutilizáveis
-- hooks existentes
-- services existentes
-- utilitários
-- providers
-- contexto global
-- consultas Supabase
-- tabelas existentes
-- RPCs existentes
-- páginas semelhantes
-- componentes de UI compartilhados
-- animações
-- gráficos
-- sistema de QR
-- analytics
-- design system
+**Critério final único** em `usePartnerRole()`:
 
-Ao final da auditoria apresentar um resumo contendo:
+- `admin` global → vê tudo (modo super).
+- `partner_users.role` ∈ {`owner`, `admin`, `manager`} → painel completo do estabelecimento.
+- `partner_staff_accounts.role` → painel operacional restrito (sem configurações).
+- `partner_promoters` ligado ao `auth.uid()` (ou e-mail confirmado) e não está acima → modo **Promoter exclusivo**.
 
-- componentes reaproveitados
-- hooks reaproveitados
-- services reaproveitados
-- queries reaproveitadas
-- tabelas utilizadas
-- arquivos que realmente precisarão ser alterados
-
-Somente após essa auditoria iniciar a implementação.
+Esse hook vira a fonte única para gates de menu, rotas e tiles.
 
 ---
 
-# REGRAS GERAIS
+## Onda 1 — Navegação, papéis e Dashboard (esta semana)
 
-## Não criar
+### O que entra
 
-- novas tabelas
-- novas migrations
-- novas RPCs
-- novos services equivalentes
-- novas consultas se já existir service
-- novas APIs
-- novas estruturas duplicadas
+1. `usePartnerRole()` novo hook unificando as 4 fontes acima. Reusa `usePartnerAuth`, `usePartnerBetaAccess`, services existentes.
+2. `partnerNavigation.ts` (config) — agrupa rotas por contexto:
+  - **Operação**: Dashboard, Reservas, Atendimento, Check-in (Validator), Equipe
+  - **Marketing**: Eventos, Lista VIP, Promoters, Bio, Cardápio*, QR Codes, Analytics
+  - **Negócio**: Relatórios, CRM, Clientes
+  - **Configurações**: Estabelecimento, PIX, Integrações, WhatsApp, Instagram, Google, Assinatura, Sistema
+  - *Cardápio fica como item "em breve" se não existir página; não cria nada novo.
+3. **Sidebar desktop nova** (`PartnerSidebar`) com shadcn `sidebar` collapsible="icon" + grupos. Mantém o `PartnerBottomNav` mobile.
+4. `PartnerHomePage` vira Centro de Operações: Casa aberta/fechada, Reservas do dia, Receita prevista, Check-ins, Lista de espera, Taxa de ocupação, Próxima reserva, Evento do dia, Promoter destaque, Timeline. Tudo reusando `partnerAnalytics`, `partnerReservations`, `partnerDashboard`, `promoterCentral`, `partnerEvents`. Compõe novos cards a partir de componentes que já existem (`KpiCard`, `LiveOperationsPanel`, `ExecutiveDashboard`, `UpcomingReservationCard`, `OccupancyRing`, `WeeklyHeatmap`).
+5. **Modo Promoter exclusivo**: quando `usePartnerRole()` = `promoter`, sidebar mostra apenas Dashboard, Campanhas, QR, Links, Lista VIP, Reservas, Excursões, Comissões, Ranking, Metas, Perfil. Tudo já existe dentro de `PartnerPromoterCentralPage` — vou apenas separar em **rotas filhas** dessa página para virar navegação real.
+6. **Deduplicar rotas** (`/fila`, `/transportes/*`, `/configuracoes/operacao`): manter o caminho canônico, transformar o duplicado em `<Navigate>` (sem quebrar links existentes).
 
-## Antes de criar qualquer código
+### O que NÃO entra
 
-Sempre verificar:
+Reservas detalhado, Atendimento renomeado, Cardápio inteligente, Relatórios executivos, Configurações agrupadas, Bio integrada, Mobile audit, Performance — vão para ondas seguintes.
 
-src/components
+### Risco
 
-src/hooks
-
-src/services
-
-src/lib
-
-src/utils
-
-src/features
-
-src/providers
-
-Se existir algo parecido:
-
-Reutilizar.
-
-Nunca duplicar.
+Médio. Mexe em layout/sidebar (todos veem) e em detecção de papel. Mitigado por: feature flag local opcional (`?legacyNav=1`) durante a primeira validação.
 
 ---
 
-# ECONOMIA DE CRÉDITOS
+## Onda 2 — Reservas, Atendimento, Relatórios
 
-Objetivo:
+1. **Reservas reorganizada** por contexto: Operação (Dashboard, Lista, Atendimento, Check-in, Mesas, Equipe) vs Configuração (Tipos, Configurações). Sem mover arquivos — só reagrupar via menu e adicionar sub-tabs.
+2. **Renomear "Fila" → "Atendimento"** com abas Mesas / Bistrôs / Camarotes / Lista de Espera / Clientes Presentes / Chamadas. Componentes já existem (`WaitlistManager`, `ReservationCard`, `OccupancyInsightsPanel`).
+3. `PartnerRelatoriosPage` vira Dashboard Executivo. Reusa `partnerAnalytics`, `partnerMetrics`, `partnerReservations` para Receita, No-show, Ticket médio, Heatmap, Funil. Sem novas queries — apenas agrega o que `partnerAnalytics` já calcula.
+4. Decidir o futuro de `PartnerAnalyticsPage` vs `PartnerRelatoriosPage`: um dos dois vira “Executivo”, o outro vira drill-down. Documento de decisão antes de mexer.
 
-Modificar o menor número possível de arquivos.
+### Risco
 
-Evitar:
-
-- renomeações
-- refatorações cosméticas
-- mover arquivos
-- reescrever páginas inteiras
-- alterar código fora do escopo
-
-Sempre preferir:
-
-pequenas alterações incrementais.
+Médio. Mexe em fluxo de produção (Reservas).
 
 ---
 
-# DEPENDÊNCIAS
+## Onda 3 — Cardápio inteligente, Bio integrada, Configurações agrupadas
 
-Não instalar nenhuma biblioteca nova sem necessidade.
+1. **Cardápio inteligente** dentro do `PartnerBioHubPage` (`menu_categories` + `menu_items` já existem). Sem novas tabelas: combos / mais vendidos / "complete seu pedido" calculados em runtime a partir de `bio_analytics_events`. Adiciona tabs no editor de menu, sem nova rota.
+2. **Bio integrada** ao painel: a aba "Marketing → Bio" usa o mesmo `BioTabs` já existente, com split-view Editor + Preview. Sem módulo separado.
+3. **Configurações agrupadas** em accordion: Estabelecimento, Operação, Marketing, Financeiro, Integrações, Sistema. Subpáginas existentes viram seções dentro de `PartnerConfiguracoesPage` (sem deletar rotas — mantém deep-link).
+4. **Página "Integrações"** dedicada agregando WhatsApp / Instagram / Google que hoje vivem dispersos no perfil.
 
-Antes verificar se já existe equivalente.
+### Risco
 
-Somente instalar quando não houver absolutamente nenhuma solução existente.
-
-Caso seja necessária uma dependência, justificar.
-
----
-
-# CONSULTAS SUPABASE
-
-Nunca escrever consultas diretamente nos componentes quando já existir um Service.
-
-Sempre reutilizar:
-
-src/services
-
-Caso um service precise de pequena adaptação:
-
-alterar o service existente.
-
-Não criar outro.
+Médio-baixo. Cardápio é o mais novo, mas isolado.
 
 ---
 
-# IMPACTO
+## Onda 4 — Mobile, Performance, Refactor
 
-Antes de alterar qualquer componente compartilhado:
+1. **Auditoria mobile** de todas as páginas grandes (>400 linhas). Corrige overflow horizontal, scroll horizontal, tabs cortadas, safe-area, espaçamentos. Sem redesign.
+2. **Quebrar páginas > 500 linhas** (`PartnerPromoterCentralPage` 911, `PartnerValidatorPage` 566, `PartnerLimpezaPage` 484) em subcomponentes + hooks. Não muda comportamento.
+3. **Performance**:
+  - `React.memo` em cards de listas grandes (reservas, listas VIP, viagens).
+  - Skeleton padronizado via `SkeletonBlock` em todas as páginas com `useQuery`.
+  - Debounce em buscas (CRM, Listas, Reservas) — `useDebouncedValue` simples.
+  - Tornar `PartnerLoginPage` lazy também (única rota síncrona não-essencial pós-bundle).
+  - Auditar `staleTime` e `gcTime` de queries pesadas (`partnerAnalytics`, `promoterCentral`).
+4. **Consolidar services sobrepostos**: `partnerMetrics` + `partnerDashboard` viram um único `partnerKpis` (sem mudar API pública dos consumidores — re-export).
 
-verificar onde ele é utilizado.
+### Risco
 
-Garantir que nenhuma funcionalidade existente será quebrada.
-
----
-
-# BUILD
-
-Todo código precisa terminar com:
-
-bunx tsgo --noEmit
-
-bun run build
-
-Sem warnings novos.
-
-Sem erros.
-
-Sem regressões.
+Baixo. Refactor sem mudança de comportamento.
 
 ---
 
-# PRINCÍPIOS
+## Entrega ao fim de cada onda
 
-- Mobile First
-- Glassmorphism Roxou
-- Space Grotesk + Inter
-- Design consistente
-- Performance
-- SEO
-- Zero overflow
-- Zero scroll horizontal
-- Zero regressão
+- `bunx tsgo --noEmit` verde
+- `bun run build` verde
+- Resumo do que mudou, arquivos tocados, duplicações eliminadas
+- Lista do que ficou para a próxima onda
 
 ---
 
-# ESCOPO
+## Decisões que preciso de você antes da Onda 1
 
-## A. Partner Bio Hub
+1. **Sidebar desktop** com `shadcn/sidebar` collapsible (recomendado) ou continuar com nav horizontal e só agrupar com dropdowns?
+2. **Promoter exclusivo**: se o login for promoter, **bloquear** o resto do painel (mesmo que o usuário seja owner de outro partner) ou só **mudar o default** e ainda permitir trocar de contexto?
+3. **Rotas duplicadas (**`/transportes/*` **vs** `/excursoes/*`**)**: posso manter `/excursoes/*` como canônico e redirecionar `/transportes/*` para lá (mais curto e já é o nome interno), ou o público vai pelo `/transportes` e devo inverter?
 
-Refatorar o PartnerBioHubPage.tsx em componentes menores.
+Confirme as 3 decisões e dou início imediato à Onda 1.
 
-Estrutura:
+&nbsp;
 
-src/apps/partner/bio/
+1. Sidebar desktop:
 
-PartnerBioHubPage.tsx
+Usar shadcn/sidebar collapsible.
 
-components/
+No desktop, navegação lateral agrupada por contexto.
 
-BioLivePreview.tsx
+No mobile, manter PartnerBottomNav.
 
-BioHomeDashboard.tsx
+&nbsp;
 
-BioProfileEditor.tsx
+2. Promoter exclusivo:
 
-BioLinksManager.tsx
+Se o usuário for apenas promoter, bloquear o restante do painel e mostrar somente o modo Promoter.
 
-BioMenuManager.tsx
+Se o mesmo usuário também for owner/admin/manager de algum partner, permitir trocar contexto e acessar o painel completo daquele partner.
 
-BioAnalyticsPanel.tsx
+&nbsp;
 
-BioQrStudio.tsx
+3. Rotas duplicadas:
 
-BioCtaTemplates.tsx
+Manter /transportes como rota canônica pública/comercial.
 
-BioSharePanel.tsx
+Redirecionar /excursoes para /transportes quando fizer sentido.
 
-hooks/
-
-useBioPreview.ts
-
-useBioAnalytics.ts
-
-A primeira aba deixa de ser Perfil.
-
-Agora será:
-
-Home.
-
----
-
-## B. Dashboard
-
-Reutilizar analytics existentes.
-
-Mostrar:
-
-- visitas hoje
-- visitas 7 dias
-- cliques
-- WhatsApp
-- reservas
-- lista VIP
-- eventos ativos
-- excursões
-- cardápio
-- gráfico 30 dias
-- origem
-- conversão
-
-Tudo reutilizando os services existentes.
-
----
-
-## C. Preview
-
-Preview em tempo real.
-
-Desktop:
-
-Editor + celular lado a lado.
-
-Mobile:
-
-Bottom Sheet.
-
-Atualização instantânea.
-
-Sem reload.
-
----
-
-## D. Perfil
-
-Agrupar em:
-
-Informações
-
-Contato
-
-Visual
-
-Sem novas colunas.
-
-Caso necessário usar metadata existente.
-
----
-
-## E. Links
-
-Transformar em cards.
-
-Permitir:
-
-- editar
-- mover
-- ocultar
-- duplicar
-- excluir
-
-Ícones automáticos.
-
-Sem alterar estrutura do banco.
-
----
-
-## F. Cardápio
-
-Layout inspirado no iFood.
-
-Categorias.
-
-Busca.
-
-Fotos.
-
-Preço.
-
-Badges.
-
-Tudo usando menu_categories e menu_items existentes.
-
----
-
-## G. Analytics
-
-Filtros:
-
-Hoje
-
-7 dias
-
-30 dias
-
-Mostrar:
-
-- origem
-- dispositivo
-- horário
-- CTR
-- conversões
-- links mais clicados
-- WhatsApp
-- reservas
-- VIP
-- transporte
-
-Tudo processado no frontend.
-
----
-
-## H. QR Studio
-
-Reutilizar QR existente.
-
-Modelos:
-
-Bio
-
-Menu
-
-Reserva
-
-Lista VIP
-
-Evento
-
-WhatsApp
-
-Instagram
-
-PIX
-
-Mesa
-
-Persistir usando bio_qr_codes.
-
----
-
-## I. Templates
-
-Criar templates rápidos.
-
-Reserva
-
-Lista VIP
-
-Ingressos
-
-Motorista
-
-Cardápio
-
-WhatsApp
-
-PIX
-
-Sem nova tabela.
-
----
-
-## J. Bio Pública
-
-Consumir automaticamente:
-
-Eventos
-
-Reservas
-
-Lista VIP
-
-Excursões
-
-Transportes
-
-Cardápio
-
-Notícias
-
-Nunca duplicar lógica.
-
-Consumir apenas services existentes.
-
----
-
-## K. UX
-
-Adicionar:
-
-Skeleton
-
-Micro animações
-
-Preview
-
-Helmet
-
-SEO
-
-Open Graph
-
-JSON-LD
-
-Share nativo
-
-Download QR
-
-WhatsApp
-
-Instagram
-
-Sem instalar bibliotecas desnecessárias.
-
----
-
-## L. Performance
-
-React Query.
-
-Memoização.
-
-Lazy Loading.
-
-Evitar renders desnecessários.
-
----
-
-# FORA DO ESCOPO
-
-Não implementar:
-
-- pagamentos
-- PIX automático
-- motorista
-- GPS
-- embarque
-- CRM novo
-- caronas
-- backend novo
-- novas migrations
-
----
-
-# RELATÓRIO FINAL
-
-Ao concluir, informar obrigatoriamente:
-
-## Reutilização
-
-- componentes reutilizados
-- hooks reutilizados
-- services reutilizados
-- queries reutilizadas
-- utilitários reutilizados
-
-## Alterações
-
-- arquivos criados
-- arquivos alterados
-- dependências adicionadas
-
-## Economia
-
-Explicar quais partes foram reaproveitadas e quanto código deixou de ser criado por reutilização.
-
-## Validação
-
-Executar:
-
-bunx tsgo --noEmit
-
-bun run build
-
-Realizar smoke test completo:
-
-- Partner Bio
-- Preview
-- Bio pública
-- Menu
-- Analytics
-- QR
-- Compartilhamento
-- Responsividade
-- SEO
-
-Entregar somente após confirmar que todo o fluxo funciona sem regressões.
+Motivo: “Transportes” é mais amplo e comporta excursões, caronas, privativo e futuras modalidades.
