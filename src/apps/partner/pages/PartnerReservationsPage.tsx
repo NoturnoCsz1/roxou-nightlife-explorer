@@ -215,10 +215,10 @@ const PartnerReservationsPage = () => {
       {/* KPIs compactos */}
       <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
 
-      {/* Ações rápidas — tiles navegáveis */}
-      <section className="space-y-2" aria-label="Ações rápidas">
+      {/* Operação — ações do dia a dia */}
+      <section className="space-y-2" aria-label="Operação">
         <h2 className="text-xs uppercase tracking-wider text-muted-foreground px-1">
-          Gerenciar
+          Operação
         </h2>
         <div className="grid gap-2">
           <PartnerActionTile
@@ -230,16 +230,10 @@ const PartnerReservationsPage = () => {
           />
           <PartnerActionTile
             icon={Hourglass}
-            label="Fila e lista de espera"
-            hint="Abertas, fechadas e arquivadas"
+            label="Atendimento"
+            hint="Lista de espera e fila de chegada"
             to="/reservas/fila"
             badge={waitlist.length ? String(waitlist.length) : undefined}
-          />
-          <PartnerActionTile
-            icon={Calendar}
-            label="Tipos de reserva"
-            hint="Mesas, bistrôs, camarotes e experiências"
-            to="/reservas/tipos"
           />
           <PartnerActionTile
             icon={PlayCircle}
@@ -248,22 +242,10 @@ const PartnerReservationsPage = () => {
             to="/reservas/operacao"
           />
           <PartnerActionTile
-            icon={UsersIcon}
-            label="Equipe e acessos"
-            hint="Validador, recepção, caixa, gerente"
-            to="/reservas/equipe"
-          />
-          <PartnerActionTile
             icon={ScanLine}
             label="Validador QR"
             hint="Check-in por código"
             to="/validator"
-          />
-          <PartnerActionTile
-            icon={Settings}
-            label="Configurações de reservas"
-            hint="Prazos, limites, pagamentos, link público"
-            to="/reservas/configuracoes"
           />
         </div>
         {canCreate ? (
@@ -276,6 +258,33 @@ const PartnerReservationsPage = () => {
             Criar reserva manual
           </button>
         ) : null}
+      </section>
+
+      {/* Configuração — ajustes da casa */}
+      <section className="space-y-2" aria-label="Configuração">
+        <h2 className="text-xs uppercase tracking-wider text-muted-foreground px-1">
+          Configuração
+        </h2>
+        <div className="grid gap-2">
+          <PartnerActionTile
+            icon={Calendar}
+            label="Tipos de reserva"
+            hint="Mesas, bistrôs, camarotes e experiências"
+            to="/reservas/tipos"
+          />
+          <PartnerActionTile
+            icon={UsersIcon}
+            label="Equipe e acessos"
+            hint="Validador, recepção, caixa, gerente"
+            to="/reservas/equipe"
+          />
+          <PartnerActionTile
+            icon={Settings}
+            label="Configurações de reservas"
+            hint="Prazos, limites, pagamentos, link público"
+            to="/reservas/configuracoes"
+          />
+        </div>
       </section>
 
       <GuestNameDialog

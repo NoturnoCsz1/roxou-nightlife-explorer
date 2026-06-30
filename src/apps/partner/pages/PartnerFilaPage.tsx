@@ -245,7 +245,7 @@ const PartnerFilaPage = () => {
 
   if (isLoading || (loading && rows.length === 0)) {
     return (
-      <PartnerScreen title="Listas">
+      <PartnerScreen title="Atendimento">
         <ReservationCardSkeletonList count={5} />
       </PartnerScreen>
     );
@@ -253,7 +253,7 @@ const PartnerFilaPage = () => {
 
   if (!selectedPartnerId) {
     return (
-      <PartnerScreen title="Listas">
+      <PartnerScreen title="Atendimento">
         <PartnerEmptyState ctaLabel="Abrir configurações" ctaTo="/configuracoes" />
       </PartnerScreen>
     );
@@ -276,8 +276,8 @@ const PartnerFilaPage = () => {
 
   return (
     <PartnerScreen
-      title="Listas"
-      subtitle={loading ? "Atualizando…" : "Abertas, fechadas e arquivadas"}
+      title="Atendimento"
+      subtitle={loading ? "Atualizando…" : "Lista de espera e fila de chegada"}
       right={<Hourglass className="h-5 w-5 text-muted-foreground" />}
     >
       <Tabs

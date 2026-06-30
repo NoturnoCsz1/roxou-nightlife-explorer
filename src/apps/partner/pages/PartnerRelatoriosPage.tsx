@@ -17,7 +17,9 @@ import { WeeklyHeatmap } from "../components/WeeklyHeatmap";
 import { GrowthSummaryCard } from "../components/GrowthSummaryCard";
 import { ExecutiveAnalyticsHero } from "../components/ExecutiveAnalyticsHero";
 import { OccupancyInsightsPremium } from "../components/OccupancyInsightsPremium";
+import { ReservationKpiGrid } from "../components/ReservationKpiGrid";
 import {
+  computeReservationStats,
   listReservations,
   listReservationTypes,
   listReservationWaitlist,
@@ -116,12 +118,17 @@ const PartnerRelatoriosPage = () => {
     );
   }
 
+  const stats = computeReservationStats(rows);
+
   return (
     <PartnerScreen
       title="Relatórios"
       subtitle={loading ? "Atualizando…" : "Operação e crescimento"}
       right={<LineChart className="h-5 w-5 text-muted-foreground" />}
     >
+      {/* Faixa consolidada de KPIs — reutiliza grid existente sem duplicar analytics */}
+      <ReservationKpiGrid stats={stats} rows={rows} waitlist={waitlist} />
+
       <Tabs value={tab} onValueChange={handleTabChange} className="animate-in fade-in duration-200">
         <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/8">
           <TabsTrigger value="today" className="text-xs">Hoje</TabsTrigger>
