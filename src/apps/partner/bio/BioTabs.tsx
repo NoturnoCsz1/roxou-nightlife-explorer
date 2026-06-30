@@ -1320,6 +1320,7 @@ export function BioTabsContainer({
         <TabsTrigger value="menu">Cardápio</TabsTrigger>
         <TabsTrigger value="analytics">Analytics</TabsTrigger>
         <TabsTrigger value="qr">QR</TabsTrigger>
+        <TabsTrigger value="compartilhar">Compartilhar</TabsTrigger>
         <TabsTrigger value="configuracoes">Módulos</TabsTrigger>
       </TabsList>
       <TabsContent value="home" className="mt-4">
@@ -1339,6 +1340,15 @@ export function BioTabsContainer({
       </TabsContent>
       <TabsContent value="qr" className="mt-4">
         <BioQrTab bio={bio} />
+      </TabsContent>
+      <TabsContent value="compartilhar" className="mt-4">
+        <div className="space-y-3">
+          <div className="text-sm text-muted-foreground">
+            Central de compartilhamento — copie o link, envie no WhatsApp, baixe o QR e use as legendas prontas.
+          </div>
+          <BioSharePanel bio={bio} />
+          <BioQrTab bio={bio} />
+        </div>
       </TabsContent>
       <TabsContent value="configuracoes" className="mt-4">
         <BioSettingsTab bio={bio} onUpdated={onBioUpdated} />

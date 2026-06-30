@@ -29,7 +29,7 @@ import {
   BioSharePanel,
 } from "@/apps/partner/bio/BioTabs";
 
-const VALID_TABS = ["home", "perfil", "links", "menu", "analytics", "qr", "configuracoes"] as const;
+const VALID_TABS = ["home", "perfil", "links", "menu", "analytics", "qr", "compartilhar", "configuracoes"] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 export default function PartnerBioHubPage() {
@@ -152,7 +152,7 @@ export default function PartnerBioHubPage() {
             bio={bio}
             partnerId={selectedPartnerId}
             tab={tab}
-            onTabChange={(t) => navigate(`/partner/bio/${t === "home" ? "" : t}`)}
+            onTabChange={(t) => navigate(`/bio${t === "home" ? "" : `/${t}`}`)}
             onBioUpdated={setBio}
           />
         </div>
