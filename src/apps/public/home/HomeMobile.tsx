@@ -104,7 +104,7 @@ export function HomeMobile(props: HomeMobileProps) {
       {/* 2 · DESTAQUES ROXOU (carrossel — Copa + Expo) */}
       <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
         <div className="pt-2">
-          <HighlightsCarousel slides={highlightSlides} autoplayMs={6000} minHeight={300} />
+          <HighlightsCarousel slides={highlightSlides} autoplayMs={6000} minHeight={240} />
         </div>
       </HomeSectionBoundary>
 
