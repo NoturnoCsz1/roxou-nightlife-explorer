@@ -86,9 +86,9 @@ export function HomeDesktop(props: HomeDesktopProps) {
       </div>
 
 
-      {/* ══════ NOTÍCIAS — após layout principal ══════ */}
+      {/* ══════ NOTÍCIAS — apenas desktop (mobile renderiza em HomeMobile) ══════ */}
       {!isLoading && !hasHomeDataError && (
-        <div className="max-w-5xl mx-auto min-h-[200px] px-4 lg:px-6">
+        <div className="hidden lg:block max-w-5xl mx-auto px-4 lg:px-6">
           <HomeSectionBoundary name="Últimas notícias" silent>
             <LatestNewsSection variant="latest" limit={6} />
           </HomeSectionBoundary>

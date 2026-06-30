@@ -60,10 +60,10 @@ export default function CopaHighlightCard() {
     : null;
 
   return (
-    <div className="px-4 pt-4">
+    <div className="px-4 pt-4 h-full">
       <Link
         to="/copa-do-mundo-2026"
-        className="group relative block overflow-hidden rounded-2xl border border-[#FFDF00]/30 bg-card/60 backdrop-blur-sm p-4 transition-all hover:-translate-y-0.5 hover:border-[#FFDF00]/60 hover:shadow-[0_0_30px_-8px_rgba(255,223,0,0.45)]"
+        className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#FFDF00]/30 bg-card/60 backdrop-blur-sm p-4 transition-all hover:-translate-y-0.5 hover:border-[#FFDF00]/60 hover:shadow-[0_0_30px_-8px_rgba(255,223,0,0.45)]"
       >
         {/* faixa verde→amarelo no topo */}
         <span
@@ -107,21 +107,38 @@ export default function CopaHighlightCard() {
               </>
             ) : (
               <>
-                <p className="mt-2 font-display font-black text-lg leading-tight">
-                  Aguardando próximo jogo do Brasil na Copa
+                <p className="mt-2 font-display font-black text-lg md:text-xl leading-tight">
+                  Brasil na Copa 2026
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Confira todos os jogos enquanto isso.
+                <p className="mt-1 text-[12px] text-muted-foreground leading-snug">
+                  Acompanhe tabela, resultados, transmissão e próximos jogos.
                 </p>
               </>
             )}
           </div>
 
           <span className="shrink-0 self-center inline-flex items-center gap-1 rounded-full bg-primary px-3 py-2 text-[11px] font-black uppercase tracking-wider text-primary-foreground shadow-[0_0_20px_-8px_hsl(var(--primary))] group-hover:translate-x-0.5 transition-transform">
-            Ver Copa <ArrowRight className="h-3 w-3" />
+            {nextBrasil ? "Ver Copa" : "Ver jogos"} <ArrowRight className="h-3 w-3" />
           </span>
+        </div>
+
+        {/* rodapé informativo (sempre presente — evita buraco quando não há próximo jogo) */}
+        <div className="relative mt-3 grid grid-cols-3 gap-2 rounded-xl border border-[#FFDF00]/20 bg-black/30 p-2.5 text-center text-[10px] text-muted-foreground">
+          <div>
+            <div className="text-[11px] font-black text-foreground">Tabela</div>
+            <div>Grupos & fases</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-black text-foreground">Resultados</div>
+            <div>Atualizados</div>
+          </div>
+          <div>
+            <div className="text-[11px] font-black text-foreground">Transmissão</div>
+            <div>Onde assistir</div>
+          </div>
         </div>
       </Link>
     </div>
   );
 }
+
