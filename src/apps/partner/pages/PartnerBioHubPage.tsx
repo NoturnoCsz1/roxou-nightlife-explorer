@@ -152,7 +152,7 @@ export default function PartnerBioHubPage() {
             bio={bio}
             partnerId={selectedPartnerId}
             tab={tab}
-            onTabChange={(t) => navigate(`/partner/bio/${t === "home" ? "" : t}`)}
+            onTabChange={(t) => navigate(`/bio${t === "home" ? "" : `/${t}`}`)}
             onBioUpdated={setBio}
           />
         </div>
