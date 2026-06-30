@@ -1,34 +1,26 @@
 /**
- * PartnerStandaloneLayout — Fase 9M.
+ * PartnerStandaloneLayout — Onda 1 (Partner Pro V2).
  *
- * Layout do Partner Pro quando servido em parceiro.roxou.com.br.
- * Espelha PartnerPreviewLayout mas usa rotas na raiz ("/", "/dashboard", ...).
+ * Camada visual do portal parceiro.roxou.com.br.
+ * - Desktop (md+): Sidebar lateral shadcn (collapsible "icon"), header sticky com trigger.
+ * - Mobile: Bottom-nav e FAB preservados (compatibilidade total).
  *
- * Gate:
+ * Gate de acesso (mantido):
  *   - admin Roxou      → acesso total
  *   - partner beta     → acesso ao próprio estabelecimento
  *   - demais usuários  → bloqueado
- *
- * Não cria cadastro público, não muda RLS, não toca em edge functions.
  */
 import { useEffect } from "react";
-import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+
 import { PartnerProvider } from "../contexts/PartnerContext";
 import { usePartnerBetaAccess } from "../hooks/usePartnerBetaAccess";
 
 import { PartnerBottomNav } from "../components/PartnerBottomNav";
 import { PartnerFab } from "../components/PartnerFab";
+import { PartnerSidebar } from "../components/PartnerSidebar";
 import { trackBetaEvent } from "../services/partnerBeta";
-import { cn } from "@/lib/utils";
-
-const TABS: Array<{ to: string; label: string; end?: boolean }> = [
-  { to: "/", label: "Início", end: true },
-  { to: "/promoter-central", label: "Central Promoter" },
-  { to: "/reservas", label: "Reservas" },
-  { to: "/fila", label: "Fila" },
-  { to: "/relatorios", label: "Relatórios" },
-  { to: "/configuracoes", label: "Configurações" },
-];
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const ACTION_BY_PATH: Record<string, string> = {
   "/dashboard": "open_dashboard",
@@ -78,54 +70,41 @@ const PartnerStandaloneLayout = () => {
     return <Navigate to="/onboarding" replace />;
   }
 
-
   return (
     <PartnerProvider>
-      <div
-        className="partner-shell w-full max-w-7xl mx-auto px-4 space-y-4 py-3 pb-24 md:pb-3"
-        style={{
-          paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
-          paddingBottom:
-            "calc(0.75rem + env(safe-area-inset-bottom) + var(--partner-bottom-nav-h, 68px))",
-        }}
-      >
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 break-words">
-          <strong className="font-semibold">BETA FECHADO</strong> · parceiro.roxou.com.br
-          {isAdmin ? (
-            <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-              Admin
-            </span>
-          ) : null}
-        </div>
+      <SidebarProvider defaultOpen>
+        <PartnerSidebar />
+        <SidebarInset>
+          <header
+            className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-border/40 bg-background/80 px-3 backdrop-blur md:px-4"
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
+          >
+            <SidebarTrigger className="md:flex hidden" />
+            <div className="flex-1 min-w-0">
+              <div className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-200 truncate">
+                <strong className="font-semibold">BETA</strong> · parceiro.roxou.com.br
+                {isAdmin ? (
+                  <span className="ml-1.5 rounded bg-amber-500/20 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                    Admin
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </header>
 
-        <nav
-          className="hidden md:flex overflow-x-auto whitespace-nowrap scrollbar-hide gap-1 rounded-lg border border-border/40 bg-card/40 p-1"
-          style={{ scrollSnapType: "x proximity" }}
-        >
-          {TABS.map((t) => (
-            <NavLink
-              key={t.to}
-              to={t.to}
-              end={t.end}
-              style={{ scrollSnapAlign: "start" }}
-              className={({ isActive }) =>
-                cn(
-                  "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition",
-                  isActive
-                    ? "bg-primary/20 text-primary"
-                    : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground",
-                )
-              }
-            >
-              {t.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="min-w-0">
-          <Outlet />
-        </div>
-      </div>
+          <div
+            className="partner-shell w-full max-w-7xl mx-auto px-3 md:px-4 space-y-4 py-3 pb-24 md:pb-6"
+            style={{
+              paddingBottom:
+                "calc(0.75rem + env(safe-area-inset-bottom) + var(--partner-bottom-nav-h, 68px))",
+            }}
+          >
+            <div className="min-w-0">
+              <Outlet />
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
       <PartnerBottomNav />
       <PartnerFab />
     </PartnerProvider>
