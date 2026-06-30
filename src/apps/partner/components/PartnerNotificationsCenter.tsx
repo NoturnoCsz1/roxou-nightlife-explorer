@@ -97,12 +97,18 @@ interface Props {
   rows: PartnerReservationRow[];
   waitlist: ReservationWaitlistEntry[];
   onOpenSection?: (section: "list" | "waitlist" | "report") => void;
+  /** Evento de hoje (opcional) — alimenta insights guiados. */
+  eventToday?: { id: string; title: string } | null;
+  /** Slug do parceiro — usado nos insights de Bio/links. */
+  partnerSlug?: string | null;
 }
 
 export function PartnerNotificationsCenter({
   rows,
   waitlist,
   onOpenSection,
+  eventToday,
+  partnerSlug,
 }: Props) {
   const [dismissed, setDismissed] = useState<Set<string>>(() => getDismissedIds());
   const [resolved, setResolved] = useState<Set<string>>(() => getResolvedIds());
@@ -298,17 +304,68 @@ export function PartnerNotificationsCenter({
       />
 
       {items.length === 0 ? (
-        <GlassCard className="p-5 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/15">
-            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Tudo sob controle</p>
-            <p className="text-xs text-muted-foreground">
-              Sem pendências críticas no momento.
-            </p>
-          </div>
-        </GlassCard>
+        <div className="space-y-2">
+          <GlassCard className="p-4 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/15 shrink-0">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">Nenhuma pendência crítica no momento.</p>
+              <p className="text-xs text-muted-foreground">Aproveite para movimentar a casa com as sugestões abaixo.</p>
+            </div>
+          </GlassCard>
+          <ul className="space-y-2">
+            {eventToday ? (
+              <li>
+                <GlassCard className="p-3.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">Evento de hoje: {eventToday.title}</p>
+                    <p className="text-xs text-muted-foreground">Compartilhe o link e abra a lista VIP.</p>
+                  </div>
+                  <Button size="sm" variant="ghost" asChild className="shrink-0 h-8 text-[11px]">
+                    <a href={`/eventos/${eventToday.id}`}>Abrir →</a>
+                  </Button>
+                </GlassCard>
+              </li>
+            ) : (
+              <li>
+                <GlassCard className="p-3.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">Cadastre um evento para movimentar a agenda.</p>
+                    <p className="text-xs text-muted-foreground">Evento publicado aparece automaticamente na Roxou.</p>
+                  </div>
+                  <Button size="sm" variant="ghost" asChild className="shrink-0 h-8 text-[11px]">
+                    <a href="/eventos/novo">Criar →</a>
+                  </Button>
+                </GlassCard>
+              </li>
+            )}
+            <li>
+              <GlassCard className="p-3.5 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">Compartilhe sua Bio para gerar mais acessos.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {partnerSlug ? `roxou.com.br/bio/${partnerSlug}` : "Configure o slug do seu perfil."}
+                  </p>
+                </div>
+                <Button size="sm" variant="ghost" asChild className="shrink-0 h-8 text-[11px]">
+                  <a href="/bio/compartilhar">Abrir →</a>
+                </Button>
+              </GlassCard>
+            </li>
+            <li>
+              <GlassCard className="p-3.5 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">Abra uma Lista VIP para captar clientes hoje.</p>
+                  <p className="text-xs text-muted-foreground">Promoters podem divulgar imediatamente.</p>
+                </div>
+                <Button size="sm" variant="ghost" asChild className="shrink-0 h-8 text-[11px]">
+                  <a href="/listas">Abrir →</a>
+                </Button>
+              </GlassCard>
+            </li>
+          </ul>
+        </div>
       ) : (
         <ul className="space-y-2">
           {items.map((it) => {

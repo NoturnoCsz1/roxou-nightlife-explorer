@@ -1,20 +1,27 @@
 /**
- * PartnerHomePage — Início Partner Pro (mobile-first).
+ * PartnerHomePage — Centro de Operações (Última alteração do dia).
  *
- * Hero de ocupação com anel + status, KPIs do dia, central de alertas e
- * Bottom Sheet de ações rápidas. Reaproveita services existentes e não
- * altera regras de negócio, RLS, edge functions ou banco.
+ * Mobile-first. Mostra ocupação, KPIs operacionais reais, próxima reserva,
+ * evento de hoje, atalhos comerciais e central de alertas/insights.
+ *
+ * Não cria tabela, RPC ou nova dependência. Reaproveita services existentes.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Calendar,
   Hourglass,
-  LineChart,
-  Settings,
   CheckCircle2,
   AlertTriangle,
   Users,
+  CalendarPlus,
+  Share2,
+  QrCode,
+  TrendingUp,
+  Armchair,
+  Sparkles,
+  Wallet,
+  ListChecks,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,27 +36,25 @@ import {
   type PartnerReservationType,
   type ReservationWaitlistEntry,
 } from "../services/partnerReservations";
+import { getPartnerRecentEvents, type PartnerEventRow } from "../services/partnerDashboard";
 import { PartnerScreen } from "../components/PartnerScreen";
 import { OccupancyRing } from "../components/OccupancyRing";
 import { PartnerActionsSheet } from "../components/PartnerActionsSheet";
 import { PartnerNotificationsCenter } from "../components/PartnerNotificationsCenter";
 import { PartnerEmptyState } from "../components/PartnerEmptyState";
 import { OccupancySkeleton, PartnerCardSkeleton } from "../components/PartnerSkeletons";
+import { PublicLinkQrDialog } from "../components/PublicLinkQrDialog";
 import { trackPartnerClient } from "../lib/partnerInteractions";
-
-const SHORTCUTS: Array<{ to: string; icon: typeof Calendar; label: string }> = [
-  { to: "/reservas", icon: Calendar, label: "Reservas" },
-  { to: "/fila", icon: Hourglass, label: "Fila" },
-  { to: "/relatorios", icon: LineChart, label: "Relatórios" },
-  { to: "/configuracoes", icon: Settings, label: "Config." },
-];
+import { toast } from "@/hooks/use-toast";
 
 function Kpi({
+  icon: Icon,
   label,
   value,
   hint,
   tone = "default",
 }: {
+  icon: typeof Calendar;
   label: string;
   value: number | string;
   hint?: string;
@@ -65,49 +70,15 @@ function Kpi({
           : "text-foreground";
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3 min-w-0">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-        {label}
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+        <Icon className="h-3 w-3 shrink-0" />
+        <span className="truncate">{label}</span>
       </div>
-      <div className={`mt-1 text-2xl font-bold tabular-nums ${toneCls}`}>
-        {value}
-      </div>
+      <div className={`mt-1 text-xl font-bold tabular-nums ${toneCls}`}>{value}</div>
       {hint ? (
-        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
-          {hint}
-        </div>
+        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{hint}</div>
       ) : null}
     </div>
-  );
-}
-
-function SummaryCell({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="min-w-0">
-      <div className="text-[9px] uppercase tracking-wider text-muted-foreground truncate">
-        {label}
-      </div>
-      <div className="text-base font-semibold tabular-nums text-foreground truncate">
-        {typeof value === "number" ? value.toLocaleString("pt-BR") : value}
-      </div>
-    </div>
-  );
-}
-
-function ComparePill({ label, value }: { label: string; value: number }) {
-  const tone =
-    value > 0
-      ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/20"
-      : value < 0
-        ? "bg-rose-400/10 text-rose-300 border-rose-400/20"
-        : "bg-white/5 text-muted-foreground border-white/10";
-  const sign = value > 0 ? "+" : "";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${tone}`}
-    >
-      <span className="text-muted-foreground/80">{label}</span>
-      <span className="font-semibold tabular-nums">{sign}{value}%</span>
-    </span>
   );
 }
 
@@ -116,13 +87,16 @@ const PartnerHomePage = () => {
   const [rows, setRows] = useState<PartnerReservationRow[]>([]);
   const [types, setTypes] = useState<PartnerReservationType[]>([]);
   const [waitlist, setWaitlist] = useState<ReservationWaitlistEntry[]>([]);
+  const [events, setEvents] = useState<PartnerEventRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   useEffect(() => {
     if (!selectedPartnerId) {
       setRows([]);
       setTypes([]);
       setWaitlist([]);
+      setEvents([]);
       return;
     }
     let cancelled = false;
@@ -131,12 +105,14 @@ const PartnerHomePage = () => {
       listReservations(selectedPartnerId, { limit: 200 }),
       listReservationTypes(selectedPartnerId),
       listReservationWaitlist(selectedPartnerId),
+      getPartnerRecentEvents(selectedPartnerId, 5).catch(() => [] as PartnerEventRow[]),
     ])
-      .then(([r, t, w]) => {
+      .then(([r, t, w, e]) => {
         if (cancelled) return;
         setRows(r);
         setTypes(t);
         setWaitlist(w);
+        setEvents(e);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -147,11 +123,7 @@ const PartnerHomePage = () => {
   }, [selectedPartnerId]);
 
   const totalCapacity = useMemo(
-    () =>
-      types.reduce(
-        (acc, t) => acc + (t.quantity ?? 0) * (t.seats ?? 0),
-        0,
-      ),
+    () => types.reduce((acc, t) => acc + (t.quantity ?? 0) * (t.seats ?? 0), 0),
     [types],
   );
 
@@ -166,62 +138,76 @@ const PartnerHomePage = () => {
     startToday.setHours(0, 0, 0, 0);
     const dayStart = startToday.getTime();
     const dayEnd = dayStart + 24 * 60 * 60 * 1000;
-    const yStart = dayStart - 24 * 60 * 60 * 1000;
-    const weekStart = dayStart - 7 * 24 * 60 * 60 * 1000;
 
     let checkins = 0;
     let pending = 0;
-    let noShow = 0;
+    let presentes = 0;
     let revenueToday = 0;
+    let revenueExpected = 0;
     let reservasToday = 0;
-    let reservasYesterday = 0;
-    let reservasWeek = 0;
+    let occupiedSeats = 0;
+    let nextReserva: PartnerReservationRow | null = null;
 
     for (const r of rows) {
       const d = new Date(r.reservation_date).getTime();
-      const created = new Date(r.created_at).getTime();
       const isToday = d >= dayStart && d < dayEnd;
-      const isY = d >= yStart && d < dayStart;
-      if (isToday) {
-        reservasToday += 1;
-        if (r.status === "completed") checkins += 1;
-        if (r.status === "pending" || r.status === "pending_payment") pending += 1;
-        if (r.status === "no_show") noShow += 1;
-        if (
-          (r.status === "confirmed" || r.status === "completed") &&
-          typeof r.total_price === "number"
-        ) {
-          revenueToday += Number(r.total_price) || 0;
+      if (!isToday) continue;
+      reservasToday += 1;
+      const seats = r.people_count ?? 0;
+
+      if (r.status === "completed") {
+        checkins += 1;
+        if (!r.released_at) {
+          presentes += seats;
+          occupiedSeats += seats;
         }
       }
-      if (isY) reservasYesterday += 1;
-      if (created >= weekStart) reservasWeek += 1;
+      if (r.status === "pending" || r.status === "pending_payment") pending += 1;
+      if (r.status === "confirmed") {
+        occupiedSeats += seats;
+        if (d >= Date.now() && (!nextReserva || d < new Date(nextReserva.reservation_date).getTime())) {
+          nextReserva = r;
+        }
+      }
+      if (
+        (r.status === "confirmed" || r.status === "completed") &&
+        typeof r.total_price === "number"
+      ) {
+        const v = Number(r.total_price) || 0;
+        if (r.status === "completed") revenueToday += v;
+        revenueExpected += v;
+      }
     }
 
     const fila = waitlist.filter((w) => w.status === "waiting").length;
-    const avg7 = reservasWeek / 7;
-    const diffY = reservasYesterday > 0
-      ? Math.round(((reservasToday - reservasYesterday) / reservasYesterday) * 100)
-      : reservasToday > 0
-        ? 100
-        : 0;
-    const diff7 = avg7 > 0
-      ? Math.round(((reservasToday - avg7) / avg7) * 100)
-      : reservasToday > 0
-        ? 100
-        : 0;
+    const mesasLivres = Math.max(0, totalCapacity - occupiedSeats);
+
+    // Evento hoje
+    const eventToday = events.find((e) => {
+      const d = new Date(e.date_time).getTime();
+      return d >= dayStart && d < dayEnd;
+    }) ?? null;
 
     return {
       reservasHoje: reservasToday,
+      presentes,
+      revenueExpected,
+      revenueToday,
       checkins,
       pending,
-      noShow,
       fila,
-      revenueToday,
-      diffYesterday: diffY,
-      diff7Days: diff7,
+      mesasLivres,
+      nextReserva,
+      eventToday,
     };
-  }, [rows, waitlist]);
+  }, [rows, waitlist, events, totalCapacity]);
+
+  const isEmptyDay =
+    !loading &&
+    kpis.reservasHoje === 0 &&
+    kpis.fila === 0 &&
+    kpis.checkins === 0 &&
+    !kpis.eventToday;
 
   useEffect(() => {
     if (!loading && selectedPartnerId) {
@@ -231,6 +217,43 @@ const PartnerHomePage = () => {
       });
     }
   }, [loading, selectedPartnerId, kpis.reservasHoje, kpis.fila]);
+
+  const publicUrl =
+    selectedPartner?.slug && typeof window !== "undefined"
+      ? `${window.location.origin}/${selectedPartner.slug}/reservas`
+      : null;
+  const bioUrl =
+    selectedPartner?.slug && typeof window !== "undefined"
+      ? `${window.location.origin}/bio/${selectedPartner.slug}`
+      : null;
+
+  const handleShareBio = async () => {
+    if (!bioUrl) {
+      toast({ title: "Slug indisponível", variant: "destructive" });
+      return;
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: selectedPartner?.name ?? "Bio", url: bioUrl });
+        return;
+      }
+    } catch {
+      /* noop */
+    }
+    try {
+      await navigator.clipboard.writeText(bioUrl);
+      toast({ title: "Link da Bio copiado!" });
+    } catch {
+      toast({ title: "Não foi possível copiar", variant: "destructive" });
+    }
+  };
+
+  const shortcuts = [
+    { icon: CalendarPlus, label: "Nova reserva", to: "/reservas", action: "new_reservation" },
+    { icon: Hourglass, label: "Atendimento", to: "/reservas/fila", action: "atendimento" },
+    { icon: Share2, label: "Compartilhar Bio", onClick: handleShareBio, action: "share_bio" },
+    { icon: QrCode, label: "Gerar QR", onClick: () => setQrOpen(true), action: "qr" },
+  ];
 
   if (isLoading) {
     return (
@@ -257,9 +280,9 @@ const PartnerHomePage = () => {
     <>
       <PartnerScreen
         title={selectedPartner?.name ?? "Início"}
-        subtitle={loading ? "Atualizando…" : "Visão operacional de hoje"}
+        subtitle={loading ? "Atualizando…" : "Centro de operações de hoje"}
       >
-        {/* Hero de ocupação */}
+        {/* Hero ocupação */}
         <Card className="border-white/8 bg-gradient-to-br from-white/[0.04] to-white/[0.01] overflow-hidden">
           <CardContent className="p-4 flex items-center gap-4">
             <OccupancyRing
@@ -274,9 +297,15 @@ const PartnerHomePage = () => {
               <div className="flex items-center gap-2 text-sm text-foreground/90">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="tabular-nums">
-                  {stats.reservedSeats} lugares confirmados
+                  {stats.reservedSeats}/{stats.totalCapacity || "—"} lugares
                 </span>
               </div>
+              {kpis.presentes > 0 ? (
+                <div className="flex items-center gap-2 text-sm text-emerald-300/90">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span className="tabular-nums">{kpis.presentes} clientes presentes</span>
+                </div>
+              ) : null}
               {stats.pendingSeats > 0 ? (
                 <div className="flex items-center gap-2 text-sm text-amber-300/90">
                   <AlertTriangle className="h-3.5 w-3.5" />
@@ -285,91 +314,164 @@ const PartnerHomePage = () => {
                   </span>
                 </div>
               ) : null}
-              <div className="flex items-center gap-2 text-sm text-emerald-300/90">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>
-                  {stats.confirmedRate}% taxa de confirmação
-                </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Empty state guiado */}
+        {isEmptyDay ? (
+          <Card className="border-white/8 bg-white/[0.03]">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">
+                    Hoje ainda não há movimento registrado.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Comece por uma destas ações para movimentar a agenda.
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild size="sm" variant="outline" className="justify-start">
+                  <Link to="/reservas"><CalendarPlus className="h-3.5 w-3.5 mr-1.5" />Nova reserva</Link>
+                </Button>
+                <Button asChild size="sm" variant="outline" className="justify-start">
+                  <Link to="/listas"><ListChecks className="h-3.5 w-3.5 mr-1.5" />Abrir Lista VIP</Link>
+                </Button>
+                <Button size="sm" variant="outline" className="justify-start" onClick={handleShareBio}>
+                  <Share2 className="h-3.5 w-3.5 mr-1.5" />Compartilhar Bio
+                </Button>
+                <Button size="sm" variant="outline" className="justify-start" onClick={() => setQrOpen(true)}>
+                  <QrCode className="h-3.5 w-3.5 mr-1.5" />Gerar QR
+                </Button>
+                <Button asChild size="sm" variant="outline" className="justify-start col-span-2">
+                  <Link to="/eventos/novo"><Sparkles className="h-3.5 w-3.5 mr-1.5" />Cadastrar evento</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
-        {/* 📈 Resumo Hoje (comparativos) */}
-        <Card className="border-white/8 bg-white/[0.03]">
-          <CardContent className="p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                📈 Hoje
-              </span>
-              <span className="text-[10px] text-muted-foreground/80">
-                vs ontem · 7d
-              </span>
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              <SummaryCell label="Reservas" value={kpis.reservasHoje} />
-              <SummaryCell
-                label="Receita"
-                value={
-                  kpis.revenueToday > 0
-                    ? `R$ ${Math.round(kpis.revenueToday).toLocaleString("pt-BR")}`
-                    : "—"
-                }
-              />
-              <SummaryCell label="Fila" value={kpis.fila} />
-              <SummaryCell label="Check-ins" value={kpis.checkins} />
-            </div>
-            <div className="flex items-center gap-2 text-[11px]">
-              <ComparePill label="vs ontem" value={kpis.diffYesterday} />
-              <ComparePill label="vs 7d" value={kpis.diff7Days} />
-            </div>
-          </CardContent>
-        </Card>
-
-
-        {/* KPIs do dia */}
-        <div className="grid grid-cols-2 gap-2.5">
+        {/* KPIs operacionais */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <Kpi icon={Calendar} label="Reservas hoje" value={kpis.reservasHoje} hint="no dia" />
+          <Kpi icon={Users} label="Clientes presentes" value={kpis.presentes} tone="success" />
           <Kpi
-            label="Reservas hoje"
-            value={kpis.reservasHoje}
-            hint="criadas no dia"
+            icon={Wallet}
+            label="Receita prevista"
+            value={
+              kpis.revenueExpected > 0
+                ? `R$ ${Math.round(kpis.revenueExpected).toLocaleString("pt-BR")}`
+                : "—"
+            }
+            hint={
+              kpis.revenueToday > 0
+                ? `R$ ${Math.round(kpis.revenueToday).toLocaleString("pt-BR")} realizada`
+                : undefined
+            }
           />
+          <Kpi icon={CheckCircle2} label="Check-ins" value={kpis.checkins} tone="success" />
           <Kpi
-            label="Check-ins"
-            value={kpis.checkins}
-            tone="success"
-            hint="presenças do dia"
-          />
-          <Kpi
-            label="Pendentes"
-            value={kpis.pending}
-            tone={kpis.pending > 0 ? "warning" : "default"}
-            hint="aguardando hoje"
-          />
-          <Kpi
-            label="Fila"
+            icon={Hourglass}
+            label="Lista de espera"
             value={kpis.fila}
             tone={kpis.fila > 0 ? "warning" : "default"}
-            hint="na lista de espera"
+          />
+          <Kpi
+            icon={Armchair}
+            label="Mesas livres"
+            value={totalCapacity > 0 ? kpis.mesasLivres : "—"}
+            hint={totalCapacity === 0 ? "configurar capacidade" : undefined}
           />
         </div>
 
-        {/* Atalhos */}
+        {/* Próxima reserva + Evento de hoje */}
+        {(kpis.nextReserva || kpis.eventToday) ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {kpis.nextReserva ? (
+              <Card className="border-white/8 bg-white/[0.03]">
+                <CardContent className="p-3.5">
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <TrendingUp className="h-3 w-3" /> Próxima reserva
+                  </div>
+                  <p className="mt-1 text-sm font-semibold truncate">
+                    {kpis.nextReserva.name ?? "Reserva"}
+                  </p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {new Date(kpis.nextReserva.reservation_date).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {" · "}
+                    {kpis.nextReserva.people_count ?? "?"} pessoas
+                  </p>
+                  <Button asChild size="sm" variant="ghost" className="mt-1 h-7 px-2 text-[11px]">
+                    <Link to={`/reservas/${kpis.nextReserva.id}`}>Abrir →</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : null}
+            {kpis.eventToday ? (
+              <Card className="border-white/8 bg-white/[0.03]">
+                <CardContent className="p-3.5">
+                  <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <Sparkles className="h-3 w-3" /> Evento de hoje
+                  </div>
+                  <p className="mt-1 text-sm font-semibold truncate">{kpis.eventToday.title}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {new Date(kpis.eventToday.date_time).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                  <Button asChild size="sm" variant="ghost" className="mt-1 h-7 px-2 text-[11px]">
+                    <Link to={`/eventos/${kpis.eventToday.id}`}>Abrir →</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* Ações rápidas operacionais */}
         <div className="grid grid-cols-4 gap-2">
-          {SHORTCUTS.map((s) => (
-            <Link
-              key={s.to}
-              to={s.to}
-              className="flex flex-col items-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-2 py-3 text-[11px] font-medium text-foreground/80 hover:bg-white/[0.06] transition"
-            >
-              <s.icon className="h-4.5 w-4.5 text-foreground/70" />
-              <span>{s.label}</span>
-            </Link>
-          ))}
+          {shortcuts.map((s) => {
+            const inner = (
+              <>
+                <s.icon className="h-4 w-4 text-foreground/70" />
+                <span className="text-center leading-tight">{s.label}</span>
+              </>
+            );
+            const cls =
+              "flex flex-col items-center justify-center gap-1 rounded-xl border border-white/8 bg-white/[0.03] px-2 py-3 text-[11px] font-medium text-foreground/80 hover:bg-white/[0.06] transition min-h-[64px]";
+            return s.to ? (
+              <Link key={s.label} to={s.to} className={cls}>
+                {inner}
+              </Link>
+            ) : (
+              <button
+                key={s.label}
+                type="button"
+                onClick={s.onClick}
+                className={cls}
+              >
+                {inner}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Central de alertas */}
-        <PartnerNotificationsCenter rows={rows} waitlist={waitlist} />
+        {/* Central de alertas + insights */}
+        <PartnerNotificationsCenter
+          rows={rows}
+          waitlist={waitlist}
+          eventToday={kpis.eventToday}
+          partnerSlug={selectedPartner?.slug ?? null}
+        />
 
         <div className="flex justify-end">
           <Button variant="ghost" size="sm" asChild>
@@ -382,6 +484,10 @@ const PartnerHomePage = () => {
         partnerSlug={selectedPartner?.slug ?? null}
         partnerName={selectedPartner?.name ?? null}
       />
+
+      {publicUrl ? (
+        <PublicLinkQrDialog open={qrOpen} onOpenChange={setQrOpen} url={publicUrl} />
+      ) : null}
     </>
   );
 };
