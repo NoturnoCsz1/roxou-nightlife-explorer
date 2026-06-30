@@ -188,7 +188,7 @@ export default function PublicBioMenuPage() {
             <p className="text-[11px] text-white/60 mb-3 truncate">
               Combina com <strong className="text-white/80">{completeYourOrder.seed.name}</strong>
             </p>
-            <div className="flex gap-2 overflow-x-auto -mx-1 px-1 snap-x snap-mandatory scrollbar-none">
+            <div className="flex gap-2 overflow-x-auto -mx-1 px-1 snap-x snap-mandatory scrollbar-hide">
               {completeYourOrder.suggestions.map((it) => (
                 <button
                   key={it.id}
@@ -312,7 +312,7 @@ function PremiumRow({
         <h2 className="text-base font-bold">{title}</h2>
         <span className="text-[11px] text-white/50">· {items.length}</span>
       </div>
-      <div className="flex gap-3 overflow-x-auto -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
+      <div className="flex gap-3 overflow-x-auto -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
         {items.map((it) => {
           const href = interestHref(it);
           return (
