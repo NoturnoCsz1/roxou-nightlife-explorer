@@ -17,7 +17,9 @@ import { WeeklyHeatmap } from "../components/WeeklyHeatmap";
 import { GrowthSummaryCard } from "../components/GrowthSummaryCard";
 import { ExecutiveAnalyticsHero } from "../components/ExecutiveAnalyticsHero";
 import { OccupancyInsightsPremium } from "../components/OccupancyInsightsPremium";
+import { ReservationKpiGrid } from "../components/ReservationKpiGrid";
 import {
+  computeReservationStats,
   listReservations,
   listReservationTypes,
   listReservationWaitlist,
