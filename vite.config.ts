@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mcpPlugin(),
     mode === "development" && componentTagger(),
     !disablePwa &&
       VitePWA({
