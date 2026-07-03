@@ -21,10 +21,10 @@ export default defineTool({
     const nowIso = new Date().toISOString();
     let q = supabase
       .from("events")
-      .select("id,title,city,starts_at,venue_name,slug")
+      .select("id,title,city,date_time,venue_name,slug")
       .eq("status", "published")
-      .gte("starts_at", nowIso)
-      .order("starts_at", { ascending: true })
+      .gte("date_time", nowIso)
+      .order("date_time", { ascending: true })
       .limit(limit ?? 10);
     if (city) q = q.ilike("city", `%${city}%`);
     const { data, error } = await q;

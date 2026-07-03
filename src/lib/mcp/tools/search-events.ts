@@ -21,10 +21,10 @@ export default defineTool({
     const pattern = `%${query}%`;
     const { data, error } = await supabase
       .from("events")
-      .select("id,title,city,starts_at,venue_name,slug")
+      .select("id,title,city,date_time,venue_name,slug")
       .eq("status", "published")
       .or(`title.ilike.${pattern},venue_name.ilike.${pattern},description.ilike.${pattern}`)
-      .order("starts_at", { ascending: true })
+      .order("date_time", { ascending: true })
       .limit(limit ?? 15);
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };
