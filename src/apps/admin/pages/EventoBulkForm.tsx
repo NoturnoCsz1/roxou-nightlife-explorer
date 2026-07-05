@@ -571,6 +571,7 @@ const EventoBulkForm = () => {
 
       // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
       const cached = readExtractionCache<any>(file);
+      if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
       let publicUrl: string | null = cached?.image_url ?? null;
 
       if (!publicUrl) {
