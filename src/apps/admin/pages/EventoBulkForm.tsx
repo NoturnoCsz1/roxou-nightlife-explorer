@@ -34,6 +34,8 @@ import {
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 import { updateBulkRuntimeStats, resetBulkRuntimeStats } from "@/lib/bulkRuntimeStats";
 import { saveBulkDraft, loadBulkDraft, clearBulkDraft } from "@/lib/bulkEventsDraft";
+import { classifyBulkItemDate, type BulkEventPastness } from "@/lib/bulkEventsClassify";
+
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
 
@@ -61,7 +63,14 @@ interface BulkItem {
   expanded: boolean;
   form: EventFormData;
   categoryWarning?: string | null;
+  /** HOTFIX Eventos em Lote — flag client-side, não persiste em DB. */
+  archived?: boolean;
+  /** Classificação de data em SP (past/future/ambiguous/unknown). */
+  pastness?: BulkEventPastness;
 }
+
+type BulkTab = "atuais" | "revisao" | "prontos" | "erros" | "arquivados" | "todos";
+
 
 function normalize(s: string) {
   return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -720,9 +729,21 @@ const EventoBulkForm = () => {
             needs_review: finalNeedsReview,
           } as EventFormData;
           readyForm = next;
-          return { ...it, form: next, status: "ready", categoryWarning };
+          // HOTFIX — auto-arquiva eventos claramente passados (SP tz).
+          // "ambiguous" e sem data NUNCA são arquivados automaticamente.
+          const pastness = classifyBulkItemDate(finalDateTime);
+          const autoArchive = pastness === "past" && !finalNeedsReview;
+          return {
+            ...it,
+            form: next,
+            status: "ready",
+            categoryWarning,
+            pastness,
+            archived: autoArchive ? true : it.archived,
+          };
         }),
       );
+
 
 
       // FASE 10G.1.2 — Geração de descrição agora roda no worker dedicado.
@@ -1057,13 +1078,22 @@ const EventoBulkForm = () => {
     if (bulkAiRunning) return;
     const eligible = items.filter((it) => {
       if (it.status !== "ready") return false;
+      if (it.archived) return false; // HOTFIX: não regenera arquivados
       if (!it.form.title) return false;
       if (!it.form.venue_name || !it.form.date_time) return false;
       const sd = smartDuplicates.get(it.localId);
       if (sd?.decision === "confirmed") return false;
       if (duplicateIds.has(it.localId)) return false;
+      // HOTFIX: evita chamada dupla quando o worker automático já preencheu
+      // description sem marcar needs_review. Admin ainda pode regerar item a
+      // item via "Gerar descrição" no ReviewRow.
+      const f = it.form as any;
+      const alreadyDescribed = !!(f.description && f.description.length > 40);
+      const flaggedForReview = Boolean(f.needs_review) || (Array.isArray(f.ai_warnings) && f.ai_warnings.length > 0);
+      if (alreadyDescribed && !flaggedForReview) return false;
       return true;
     });
+
 
     const duplicatesSkipped = items.filter(
       (it) => duplicateIds.has(it.localId) || smartDuplicates.get(it.localId)?.decision === "confirmed",
@@ -1174,7 +1204,7 @@ const EventoBulkForm = () => {
   }
 
   async function handleBulkSave(status: "draft" | "published") {
-    const ready = items.filter((it) => it.status === "ready");
+    const ready = items.filter((it) => it.status === "ready" && !it.archived);
     if (!ready.length) {
       toast.error("Nenhum evento pronto para salvar");
       return;
@@ -1349,15 +1379,59 @@ const EventoBulkForm = () => {
   }
 
 
-  const readyCount = items.filter((it) => it.status === "ready").length;
+  const readyCount = items.filter((it) => it.status === "ready" && !it.archived).length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
   const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
   const cancelledCount = items.filter((it) => it.status === "cancelled").length;
+  const archivedCount = items.filter((it) => it.archived).length;
   const totalCount = items.length;
-  const doneForProgress = readyCount + errorCount + cancelledCount;
+  const doneForProgress = readyCount + errorCount + cancelledCount + archivedCount;
   const progressPct = totalCount ? Math.round((doneForProgress / totalCount) * 100) : 0;
   const isProcessing = processingCount > 0 || queuedCount > 0;
+
+  // HOTFIX — abas para separar Atuais / Revisão / Prontos / Erros / Arquivados.
+  // Estado local: filtro atual e helper de visibilidade.
+  const [activeTab, setActiveTab] = useState<BulkTab>("atuais");
+  const needsReviewCount = items.filter(
+    (it) =>
+      !it.archived &&
+      it.status === "ready" &&
+      (itemFlags.incompleteIds.has(it.localId) ||
+        itemFlags.possibleDupIds.has(it.localId) ||
+        Boolean((it.form as any).needs_review) ||
+        it.pastness === "ambiguous"),
+  ).length;
+  const atuaisCount = items.filter(
+    (it) => !it.archived && it.status !== "error" && it.status !== "cancelled",
+  ).length;
+
+  const visibleItems = useMemo(() => {
+    return items.filter((it) => {
+      if (activeTab === "todos") return true;
+      if (activeTab === "arquivados") return !!it.archived;
+      if (it.archived) return false;
+      if (activeTab === "atuais") return it.status !== "error" && it.status !== "cancelled";
+      if (activeTab === "prontos") return it.status === "ready" && !itemFlags.incompleteIds.has(it.localId);
+      if (activeTab === "erros") return it.status === "error" || it.status === "cancelled";
+      if (activeTab === "revisao") {
+        if (it.status !== "ready") return false;
+        return (
+          itemFlags.incompleteIds.has(it.localId) ||
+          itemFlags.possibleDupIds.has(it.localId) ||
+          Boolean((it.form as any).needs_review) ||
+          it.pastness === "ambiguous"
+        );
+      }
+      return true;
+    });
+  }, [items, activeTab, itemFlags]);
+
+  const setArchived = useCallback((localId: string, archived: boolean) => {
+    setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, archived } : it)));
+  }, []);
+
+
 
   // FASE 10G.1.3 — telemetria de runtime para o AdminSystem
   useEffect(() => {
@@ -1509,14 +1583,42 @@ const EventoBulkForm = () => {
         />
       </div>
 
+      {/* HOTFIX — Abas: Atuais / Revisão / Prontos / Erros / Arquivados / Todos */}
+      {items.length > 0 && (
+        <div className="mt-4 -mx-1 flex flex-wrap gap-1 overflow-x-auto scrollbar-hide px-1">
+          {([
+            ["atuais", "Atuais", atuaisCount],
+            ["revisao", "Precisa revisão", needsReviewCount],
+            ["prontos", "Prontos", readyCount],
+            ["erros", "Com erro", errorCount + cancelledCount],
+            ["arquivados", "Arquivados", archivedCount],
+            ["todos", "Todos", items.length],
+          ] as Array<[BulkTab, string, number]>).map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                activeTab === key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border/50 bg-secondary/40 text-muted-foreground hover:bg-secondary/60"
+              }`}
+            >
+              {label} <span className="opacity-70">({count})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Thumbnail grid */}
       {items.length > 0 && (
         <div className="mt-4">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            Banners ({items.length})
+            Banners ({visibleItems.length}/{items.length})
           </p>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-            {items.map((it) => (
+            {visibleItems.map((it) => (
+
               <div key={it.localId} className="relative aspect-square rounded-lg overflow-hidden border border-border/40 bg-secondary/30 group">
                 {it.thumbDataUrl ? (
                   <img
@@ -1720,7 +1822,12 @@ const EventoBulkForm = () => {
             </div>
           )}
 
-          {items.map((it, idx) => (
+          {visibleItems.length === 0 && (
+            <p className="text-[11px] text-muted-foreground italic px-1 py-4">
+              Nenhum item nesta aba. Troque de filtro para ver outros itens do lote.
+            </p>
+          )}
+          {visibleItems.map((it, idx) => (
             <ReviewRow
               key={it.localId}
               index={idx}
@@ -1733,6 +1840,9 @@ const EventoBulkForm = () => {
               forcePublish={forcePublishIds.has(it.localId)}
               onToggleForcePublish={() => toggleForcePublish(it.localId)}
               smartDup={smartDuplicates.get(it.localId)}
+              isArchived={!!it.archived}
+              pastness={it.pastness}
+              onToggleArchived={() => setArchived(it.localId, !it.archived)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
@@ -1742,6 +1852,7 @@ const EventoBulkForm = () => {
               onChangeFormFull={(form) => patchForm(it.localId, form)}
             />
           ))}
+
         </div>
       )}
 
@@ -1790,6 +1901,10 @@ interface ReviewRowProps {
   forcePublish?: boolean;
   onToggleForcePublish?: () => void;
   smartDup?: DuplicateConfidenceResult;
+  /** HOTFIX Eventos em Lote. */
+  isArchived?: boolean;
+  pastness?: BulkEventPastness;
+  onToggleArchived?: () => void;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
@@ -1802,13 +1917,17 @@ interface ReviewRowProps {
 function ReviewRowBase({
   index, item, partners, isDuplicate, isPossibleDup, isIncomplete,
   classificationReason, forcePublish, onToggleForcePublish,
-  smartDup, onPartnerChange, onChangeForm,
+  smartDup, isArchived, pastness, onToggleArchived,
+  onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
+
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
-  const containerCls = isDuplicate
+  const containerCls = isArchived
+    ? "border-border/30 opacity-60"
+    : isDuplicate
     ? "border-destructive/80 ring-2 ring-destructive/40 shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
     : isPossibleDup
     ? "border-amber-500/60 ring-1 ring-amber-500/30"
@@ -1818,6 +1937,33 @@ function ReviewRowBase({
 
   return (
     <div className={`rounded-xl border bg-card overflow-hidden transition ${containerCls}`}>
+      {(isArchived || pastness === "past" || pastness === "ambiguous") && (
+        <div className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] font-semibold border-b ${
+          isArchived
+            ? "bg-secondary/40 border-border/30 text-muted-foreground"
+            : pastness === "past"
+            ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+            : "bg-amber-500/5 border-amber-500/20 text-amber-300/80"
+        }`}>
+          <span className="truncate">
+            {isArchived
+              ? "📦 Arquivado — não será publicado neste lote"
+              : pastness === "past"
+              ? "⏳ Evento no passado (SP) — considere arquivar"
+              : "🕗 Data ambígua — revisar antes de arquivar"}
+          </span>
+          {onToggleArchived && (
+            <button
+              type="button"
+              onClick={onToggleArchived}
+              className="shrink-0 rounded border border-current/30 px-2 py-0.5 hover:bg-current/10"
+            >
+              {isArchived ? "Restaurar" : "Arquivar"}
+            </button>
+          )}
+        </div>
+      )}
+
       {isDuplicate && (
         <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-2 text-[11px] font-semibold text-destructive flex items-start gap-1.5">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
