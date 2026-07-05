@@ -1515,22 +1515,28 @@ const EventoBulkForm = () => {
       duration_ms: Math.round(performance.now() - tSave),
     });
     setSaving(false);
-    // Só navega quando não sobrar nada pendente/erro — evita perder itens.
-    const anyRemaining = items.some(
-      (it) =>
-        !it.archived &&
-        it.status === "ready" &&
-        !it.publishedEventId &&
-        it.localId !== undefined,
-    );
-    if (published > 0 && failed === 0 && !anyRemaining) {
+    // Navega apenas quando 100% do batch atual publicou sem falha e nada mais está pendente.
+    const stillPending =
+      failed > 0 ||
+      skippedTotal > 0 ||
+      items.some(
+        (it) =>
+          !it.archived &&
+          it.status === "ready" &&
+          !it.publishedEventId &&
+          !ready.find((r) => r.localId === it.localId),
+      );
+    if (published > 0 && failed === 0 && !stillPending) {
       void clearBulkDraft();
       navigate("/admin/eventos");
     }
   }
 
 
-  const readyCount = items.filter((it) => it.status === "ready" && !it.archived).length;
+  // HOTFIX slug-collision — itens já publicados saem do contador do botão.
+  const readyCount = items.filter(
+    (it) => it.status === "ready" && !it.archived && !it.publishedEventId,
+  ).length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
   const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
