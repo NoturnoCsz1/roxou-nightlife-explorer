@@ -34,6 +34,8 @@ import {
 import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/lib/eventIngestionGuard";
 import { updateBulkRuntimeStats, resetBulkRuntimeStats } from "@/lib/bulkRuntimeStats";
 import { saveBulkDraft, loadBulkDraft, clearBulkDraft } from "@/lib/bulkEventsDraft";
+import { classifyBulkItemDate, type BulkEventPastness } from "@/lib/bulkEventsClassify";
+
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
 
@@ -61,7 +63,14 @@ interface BulkItem {
   expanded: boolean;
   form: EventFormData;
   categoryWarning?: string | null;
+  /** HOTFIX Eventos em Lote — flag client-side, não persiste em DB. */
+  archived?: boolean;
+  /** Classificação de data em SP (past/future/ambiguous/unknown). */
+  pastness?: BulkEventPastness;
 }
+
+type BulkTab = "atuais" | "revisao" | "prontos" | "erros" | "arquivados" | "todos";
+
 
 function normalize(s: string) {
   return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
