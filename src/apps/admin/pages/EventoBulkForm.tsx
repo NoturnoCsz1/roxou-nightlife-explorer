@@ -240,38 +240,53 @@ const EventoBulkForm = () => {
   const enqueueDescription = useCallback((
     localId: string,
     payload: Parameters<typeof descWorker.enqueue>[0]["payload"],
-  ) => {
-    descWorker.enqueue({
-      id: localId,
-      payload,
-      onUpdate: (u) => {
-        if (u.status === "done") {
-          const r: DescriptionResult = u.result;
-          const warnings = r.ai_warnings ?? [];
-          const conf = r.ai_confidence_score ?? null;
-          const lowConfidence = typeof conf === "number" && conf < 70;
-          patchForm(localId, {
-            description: r.description_html || undefined,
-            short_summary: r.short_summary || undefined,
-            meta_title: r.meta_title || undefined,
-            meta_description: r.meta_description || undefined,
-            instagram_caption: r.instagram_caption || undefined,
-            ai_confidence_score: conf,
-            ai_warnings: warnings,
-            needs_review: lowConfidence || warnings.length > 0,
-          } as Partial<EventFormData>);
-          setDescStatus(localId, "done");
-        } else if (u.status === "error") {
-          setDescStatus(localId, "error");
-          setDescErrorCount(descWorker.errorCount());
-        } else {
-          setDescStatus(localId, u.status);
-        }
-        if (u.status !== "error") setDescErrorCount(descWorker.errorCount());
-      },
+  ): Promise<{ ok: boolean; needsReview: boolean; durationMs: number; error?: string; skipped?: boolean }> => {
+    // Evita chamada dupla se o item já está aguardando/rodando no worker.
+    if (descWorker.isPending(localId)) {
+      return Promise.resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
+    }
+    return new Promise((resolve) => {
+      const enqueued = descWorker.enqueue({
+        id: localId,
+        payload,
+        onUpdate: (u) => {
+          if (u.status === "done") {
+            const r: DescriptionResult = u.result;
+            const warnings = r.ai_warnings ?? [];
+            const conf = r.ai_confidence_score ?? null;
+            const lowConfidence = typeof conf === "number" && conf < 70;
+            const needsReview = lowConfidence || warnings.length > 0;
+            patchForm(localId, {
+              description: r.description_html || undefined,
+              short_summary: r.short_summary || undefined,
+              meta_title: r.meta_title || undefined,
+              meta_description: r.meta_description || undefined,
+              instagram_caption: r.instagram_caption || undefined,
+              ai_confidence_score: conf,
+              ai_warnings: warnings,
+              needs_review: needsReview,
+            } as Partial<EventFormData>);
+            setDescStatus(localId, "done");
+            setDescErrorCount(descWorker.errorCount());
+            resolve({ ok: true, needsReview, durationMs: u.durationMs });
+          } else if (u.status === "error") {
+            setDescStatus(localId, "error");
+            setDescErrorCount(descWorker.errorCount());
+            resolve({ ok: false, needsReview: false, durationMs: 0, error: u.message });
+          } else {
+            setDescStatus(localId, u.status);
+          }
+        },
+      });
+      if (!enqueued) {
+        // enqueue rejeitado por duplicidade (corrida rara) — trata como skip.
+        resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
+        return;
+      }
+      setDescStatus(localId, "queued");
     });
-    setDescStatus(localId, "queued");
   }, [descWorker, setDescStatus]);
+
 
   const handleRequeueDescriptionErrors = useCallback(() => {
     const n = descWorker.requeueErrors();
