@@ -821,6 +821,7 @@ const EventoBulkForm = () => {
     updateBulkRuntimeStats({ cancelRequested: false });
 
     const batchT0 = performance.now();
+    bulkPerfResetBatch(arr.length);
     bulkLog("selected_files", { count: arr.length });
     stressLog("batch_start", { batch_size: arr.length });
 
