@@ -35,6 +35,16 @@ import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/li
 import { updateBulkRuntimeStats, resetBulkRuntimeStats } from "@/lib/bulkRuntimeStats";
 import { saveBulkDraft, loadBulkDraft, clearBulkDraft } from "@/lib/bulkEventsDraft";
 import { classifyBulkItemDate, type BulkEventPastness } from "@/lib/bulkEventsClassify";
+import {
+  bulkPerfResetBatch,
+  bulkPerfRecordCacheHit,
+  bulkPerfRecordCacheMiss,
+  bulkPerfRecordExtraction,
+  bulkPerfRecordFirstReady,
+  bulkPerfMarkBatchEnd,
+  bulkPerfRecordDescription,
+} from "@/lib/bulkPerformanceMetrics";
+import BulkPerformancePanel from "./EventoBulkForm/BulkPerformancePanel";
 
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
@@ -243,6 +253,7 @@ const EventoBulkForm = () => {
   ): Promise<{ ok: boolean; needsReview: boolean; durationMs: number; error?: string; skipped?: boolean }> => {
     // Evita chamada dupla se o item já está aguardando/rodando no worker.
     if (descWorker.isPending(localId)) {
+      bulkPerfRecordDescription(0, { ok: false, skipped: true });
       return Promise.resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
     }
     return new Promise((resolve) => {
@@ -268,10 +279,12 @@ const EventoBulkForm = () => {
             } as Partial<EventFormData>);
             setDescStatus(localId, "done");
             setDescErrorCount(descWorker.errorCount());
+            bulkPerfRecordDescription(u.durationMs, { ok: true });
             resolve({ ok: true, needsReview, durationMs: u.durationMs });
           } else if (u.status === "error") {
             setDescStatus(localId, "error");
             setDescErrorCount(descWorker.errorCount());
+            bulkPerfRecordDescription(0, { ok: false });
             resolve({ ok: false, needsReview: false, durationMs: 0, error: u.message });
           } else {
             setDescStatus(localId, u.status);
@@ -280,6 +293,7 @@ const EventoBulkForm = () => {
       });
       if (!enqueued) {
         // enqueue rejeitado por duplicidade (corrida rara) — trata como skip.
+        bulkPerfRecordDescription(0, { ok: false, skipped: true });
         resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
         return;
       }
@@ -561,6 +575,7 @@ const EventoBulkForm = () => {
 
       // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
       const cached = readExtractionCache<any>(file);
+      if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
       let publicUrl: string | null = cached?.image_url ?? null;
 
       if (!publicUrl) {
@@ -615,9 +630,11 @@ const EventoBulkForm = () => {
         const ocrMs = Math.round(performance.now() - ocrT0);
         if (extractResp.error) {
           ocrLog("error", { id: localId, file: file.name, duration_ms: ocrMs, message: String(extractResp.error?.message || extractResp.error) });
+          bulkPerfRecordExtraction(ocrMs, { ok: false });
           throw extractResp.error;
         }
         ocrLog("done", { id: localId, file: file.name, duration_ms: ocrMs, status: "ok", size_before: bytesBefore, size_after: bytesAfter });
+        bulkPerfRecordExtraction(ocrMs, { ok: true });
         data = extractResp.data;
         if (data && typeof data === "object" && !(data.error && !data.title)) {
           writeExtractionCache(file, {
@@ -808,6 +825,7 @@ const EventoBulkForm = () => {
     updateBulkRuntimeStats({ cancelRequested: false });
 
     const batchT0 = performance.now();
+    bulkPerfResetBatch(arr.length);
     bulkLog("selected_files", { count: arr.length });
     stressLog("batch_start", { batch_size: arr.length });
 
@@ -1468,6 +1486,16 @@ const EventoBulkForm = () => {
   }, [processingCount, queuedCount, readyCount, errorCount, cancelledCount, descWorker]);
   useEffect(() => () => { resetBulkRuntimeStats(); }, []);
 
+  // HOTFIX observabilidade — marca "primeiro pronto" e "fim do lote".
+  useEffect(() => {
+    if (readyCount > 0) bulkPerfRecordFirstReady();
+  }, [readyCount]);
+  useEffect(() => {
+    if (totalCount > 0 && processingCount === 0 && queuedCount === 0) {
+      bulkPerfMarkBatchEnd();
+    }
+  }, [totalCount, processingCount, queuedCount]);
+
   // FASE 10G.1.3 — Auto-save em IndexedDB (debounced 1.2s)
   useEffect(() => {
     if (items.length === 0) return;
@@ -1630,6 +1658,16 @@ const EventoBulkForm = () => {
           ))}
         </div>
       )}
+
+      {/* HOTFIX observabilidade — painel recolhível "Desempenho do lote" */}
+      <BulkPerformancePanel
+        batchSize={totalCount}
+        processingCount={processingCount + queuedCount}
+        readyCount={readyCount}
+        errorCount={errorCount}
+        archivedCount={archivedCount}
+        reviewCount={needsReviewCount}
+      />
 
       {/* Thumbnail grid */}
       {items.length > 0 && (
