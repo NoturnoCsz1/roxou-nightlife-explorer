@@ -1659,6 +1659,16 @@ const EventoBulkForm = () => {
         </div>
       )}
 
+      {/* HOTFIX observabilidade — painel recolhível "Desempenho do lote" */}
+      <BulkPerformancePanel
+        batchSize={totalCount}
+        processingCount={processingCount + queuedCount}
+        readyCount={readyCount}
+        errorCount={errorCount}
+        archivedCount={archivedCount}
+        reviewCount={needsReviewCount}
+      />
+
       {/* Thumbnail grid */}
       {items.length > 0 && (
         <div className="mt-4">
