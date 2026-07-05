@@ -1078,13 +1078,22 @@ const EventoBulkForm = () => {
     if (bulkAiRunning) return;
     const eligible = items.filter((it) => {
       if (it.status !== "ready") return false;
+      if (it.archived) return false; // HOTFIX: não regenera arquivados
       if (!it.form.title) return false;
       if (!it.form.venue_name || !it.form.date_time) return false;
       const sd = smartDuplicates.get(it.localId);
       if (sd?.decision === "confirmed") return false;
       if (duplicateIds.has(it.localId)) return false;
+      // HOTFIX: evita chamada dupla quando o worker automático já preencheu
+      // description sem marcar needs_review. Admin ainda pode regerar item a
+      // item via "Gerar descrição" no ReviewRow.
+      const f = it.form as any;
+      const alreadyDescribed = !!(f.description && f.description.length > 40);
+      const flaggedForReview = Boolean(f.needs_review) || (Array.isArray(f.ai_warnings) && f.ai_warnings.length > 0);
+      if (alreadyDescribed && !flaggedForReview) return false;
       return true;
     });
+
 
     const duplicatesSkipped = items.filter(
       (it) => duplicateIds.has(it.localId) || smartDuplicates.get(it.localId)?.decision === "confirmed",
