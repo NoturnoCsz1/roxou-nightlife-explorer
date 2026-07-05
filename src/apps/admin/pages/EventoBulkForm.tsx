@@ -77,6 +77,10 @@ interface BulkItem {
   archived?: boolean;
   /** Classificação de data em SP (past/future/ambiguous/unknown). */
   pastness?: BulkEventPastness;
+  /** HOTFIX slug-collision — id do evento após insert bem sucedido; impede re-envio idempotente. */
+  publishedEventId?: string;
+  /** HOTFIX slug-collision — mensagem amigável do último erro de publicação para este item. */
+  publishError?: string;
 }
 
 type BulkTab = "atuais" | "revisao" | "prontos" | "erros" | "arquivados" | "todos";
