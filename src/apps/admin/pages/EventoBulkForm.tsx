@@ -1925,7 +1925,9 @@ function ReviewRowBase({
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
-  const containerCls = isDuplicate
+  const containerCls = isArchived
+    ? "border-border/30 opacity-60"
+    : isDuplicate
     ? "border-destructive/80 ring-2 ring-destructive/40 shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"
     : isPossibleDup
     ? "border-amber-500/60 ring-1 ring-amber-500/30"
@@ -1935,6 +1937,33 @@ function ReviewRowBase({
 
   return (
     <div className={`rounded-xl border bg-card overflow-hidden transition ${containerCls}`}>
+      {(isArchived || pastness === "past" || pastness === "ambiguous") && (
+        <div className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[10px] font-semibold border-b ${
+          isArchived
+            ? "bg-secondary/40 border-border/30 text-muted-foreground"
+            : pastness === "past"
+            ? "bg-amber-500/10 border-amber-500/30 text-amber-200"
+            : "bg-amber-500/5 border-amber-500/20 text-amber-300/80"
+        }`}>
+          <span className="truncate">
+            {isArchived
+              ? "📦 Arquivado — não será publicado neste lote"
+              : pastness === "past"
+              ? "⏳ Evento no passado (SP) — considere arquivar"
+              : "🕗 Data ambígua — revisar antes de arquivar"}
+          </span>
+          {onToggleArchived && (
+            <button
+              type="button"
+              onClick={onToggleArchived}
+              className="shrink-0 rounded border border-current/30 px-2 py-0.5 hover:bg-current/10"
+            >
+              {isArchived ? "Restaurar" : "Arquivar"}
+            </button>
+          )}
+        </div>
+      )}
+
       {isDuplicate && (
         <div className="bg-destructive/10 border-b border-destructive/30 px-3 py-2 text-[11px] font-semibold text-destructive flex items-start gap-1.5">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
