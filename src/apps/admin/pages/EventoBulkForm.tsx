@@ -626,9 +626,11 @@ const EventoBulkForm = () => {
         const ocrMs = Math.round(performance.now() - ocrT0);
         if (extractResp.error) {
           ocrLog("error", { id: localId, file: file.name, duration_ms: ocrMs, message: String(extractResp.error?.message || extractResp.error) });
+          bulkPerfRecordExtraction(ocrMs, { ok: false });
           throw extractResp.error;
         }
         ocrLog("done", { id: localId, file: file.name, duration_ms: ocrMs, status: "ok", size_before: bytesBefore, size_after: bytesAfter });
+        bulkPerfRecordExtraction(ocrMs, { ok: true });
         data = extractResp.data;
         if (data && typeof data === "object" && !(data.error && !data.title)) {
           writeExtractionCache(file, {
