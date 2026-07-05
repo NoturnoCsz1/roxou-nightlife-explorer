@@ -240,38 +240,53 @@ const EventoBulkForm = () => {
   const enqueueDescription = useCallback((
     localId: string,
     payload: Parameters<typeof descWorker.enqueue>[0]["payload"],
-  ) => {
-    descWorker.enqueue({
-      id: localId,
-      payload,
-      onUpdate: (u) => {
-        if (u.status === "done") {
-          const r: DescriptionResult = u.result;
-          const warnings = r.ai_warnings ?? [];
-          const conf = r.ai_confidence_score ?? null;
-          const lowConfidence = typeof conf === "number" && conf < 70;
-          patchForm(localId, {
-            description: r.description_html || undefined,
-            short_summary: r.short_summary || undefined,
-            meta_title: r.meta_title || undefined,
-            meta_description: r.meta_description || undefined,
-            instagram_caption: r.instagram_caption || undefined,
-            ai_confidence_score: conf,
-            ai_warnings: warnings,
-            needs_review: lowConfidence || warnings.length > 0,
-          } as Partial<EventFormData>);
-          setDescStatus(localId, "done");
-        } else if (u.status === "error") {
-          setDescStatus(localId, "error");
-          setDescErrorCount(descWorker.errorCount());
-        } else {
-          setDescStatus(localId, u.status);
-        }
-        if (u.status !== "error") setDescErrorCount(descWorker.errorCount());
-      },
+  ): Promise<{ ok: boolean; needsReview: boolean; durationMs: number; error?: string; skipped?: boolean }> => {
+    // Evita chamada dupla se o item já está aguardando/rodando no worker.
+    if (descWorker.isPending(localId)) {
+      return Promise.resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
+    }
+    return new Promise((resolve) => {
+      const enqueued = descWorker.enqueue({
+        id: localId,
+        payload,
+        onUpdate: (u) => {
+          if (u.status === "done") {
+            const r: DescriptionResult = u.result;
+            const warnings = r.ai_warnings ?? [];
+            const conf = r.ai_confidence_score ?? null;
+            const lowConfidence = typeof conf === "number" && conf < 70;
+            const needsReview = lowConfidence || warnings.length > 0;
+            patchForm(localId, {
+              description: r.description_html || undefined,
+              short_summary: r.short_summary || undefined,
+              meta_title: r.meta_title || undefined,
+              meta_description: r.meta_description || undefined,
+              instagram_caption: r.instagram_caption || undefined,
+              ai_confidence_score: conf,
+              ai_warnings: warnings,
+              needs_review: needsReview,
+            } as Partial<EventFormData>);
+            setDescStatus(localId, "done");
+            setDescErrorCount(descWorker.errorCount());
+            resolve({ ok: true, needsReview, durationMs: u.durationMs });
+          } else if (u.status === "error") {
+            setDescStatus(localId, "error");
+            setDescErrorCount(descWorker.errorCount());
+            resolve({ ok: false, needsReview: false, durationMs: 0, error: u.message });
+          } else {
+            setDescStatus(localId, u.status);
+          }
+        },
+      });
+      if (!enqueued) {
+        // enqueue rejeitado por duplicidade (corrida rara) — trata como skip.
+        resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
+        return;
+      }
+      setDescStatus(localId, "queued");
     });
-    setDescStatus(localId, "queued");
   }, [descWorker, setDescStatus]);
+
 
   const handleRequeueDescriptionErrors = useCallback(() => {
     const n = descWorker.requeueErrors();
@@ -1084,9 +1099,10 @@ const EventoBulkForm = () => {
       const sd = smartDuplicates.get(it.localId);
       if (sd?.decision === "confirmed") return false;
       if (duplicateIds.has(it.localId)) return false;
-      // HOTFIX: evita chamada dupla quando o worker automático já preencheu
-      // description sem marcar needs_review. Admin ainda pode regerar item a
-      // item via "Gerar descrição" no ReviewRow.
+      // Evita enfileirar item que já está aguardando/executando no worker
+      // (dedup arquitetural: worker automático + botão manual compartilham fila).
+      if (descWorker.isPending(it.localId)) return false;
+      // Não regera item já concluído sem warnings/needs_review.
       const f = it.form as any;
       const alreadyDescribed = !!(f.description && f.description.length > 40);
       const flaggedForReview = Boolean(f.needs_review) || (Array.isArray(f.ai_warnings) && f.ai_warnings.length > 0);
@@ -1110,79 +1126,84 @@ const EventoBulkForm = () => {
     setBulkAiProgress({ current: 0, total: eligible.length });
     toast.info(`Gerando ${eligible.length} descrição(ões) com IA...`);
 
+    // Instrumentação local: métricas do lote (não persiste, sem PII).
+    const batchStart = performance.now();
+    const durations: number[] = [];
+    let firstDoneAt: number | null = null;
+    let lastDoneAt: number | null = null;
+    let errors = 0;
+    let skippedDuplicate = 0;
     let completed = 0;
-    const CONCURRENCY = 2;
-    let cursor = 0;
 
-    async function processOne(it: BulkItem) {
-      if (bulkAiAbortRef.current) return;
-      try {
-        const { data, error } = await supabase.functions.invoke("generate-description", {
-          body: {
-            title: it.form.title,
-            venue_name: it.form.venue_name,
-            address: it.form.address,
-            date_time: it.form.date_time,
-            category: it.form.category,
-            sub_category: (it.form as any)._sub || "",
-            partner_id: it.form.partner_id || undefined,
-            time_is_unknown: Boolean(it.form.time_is_unknown),
-            ticket_url: it.form.ticket_url || "",
-            instagram: it.form.instagram || "",
-          },
-        });
-        if (error) throw error;
-
-        const rich: string = data?.description_html || data?.descricao_rica || data?.description || "";
-        const chamada: string | undefined = data?.title || data?.chamada_site;
-        const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
-        const confidence: number | null =
-          typeof data?.ai_confidence_score === "number" ? data.ai_confidence_score : null;
-        const lowConfidence = typeof confidence === "number" && confidence < 70;
-
-        patchForm(it.localId, {
-          title: chamada || it.form.title,
-          description: rich || it.form.description,
-          short_summary: data?.short_summary || "",
-          meta_title: data?.meta_title || "",
-          meta_description: data?.meta_description || "",
-          instagram_caption: data?.instagram_caption || "",
-          ai_confidence_score: confidence,
-          ai_warnings: warnings,
-          needs_review: lowConfidence || warnings.length > 0,
-        });
-
-        setBulkAiCounts((c) => ({
-          ...c,
-          generated: c.generated + 1,
-          review: c.review + (lowConfidence || warnings.length > 0 ? 1 : 0),
-        }));
-      } catch (err: any) {
-        console.error("[bulk-ai] item failed", it.localId, err);
-        setBulkAiCounts((c) => ({ ...c, errors: c.errors + 1 }));
-      } finally {
+    const enqueuePromises = eligible.map((it) => {
+      if (bulkAiAbortRef.current) {
+        return Promise.resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
+      }
+      const payload = {
+        title: it.form.title,
+        venue_name: it.form.venue_name,
+        address: it.form.address,
+        date_time: it.form.date_time,
+        category: it.form.category,
+        sub_category: (it.form as any)._sub || "",
+        partner_id: it.form.partner_id || undefined,
+        time_is_unknown: Boolean(it.form.time_is_unknown),
+        ticket_url: it.form.ticket_url || "",
+        instagram: it.form.instagram || "",
+      };
+      return enqueueDescription(it.localId, payload).then((res) => {
         completed += 1;
         setBulkAiProgress({ current: completed, total: eligible.length });
-      }
-    }
+        if (res.skipped) {
+          skippedDuplicate += 1;
+        } else if (res.ok) {
+          durations.push(res.durationMs);
+          const now = performance.now();
+          if (firstDoneAt === null) firstDoneAt = now;
+          lastDoneAt = now;
+          setBulkAiCounts((c) => ({
+            ...c,
+            generated: c.generated + 1,
+            review: c.review + (res.needsReview ? 1 : 0),
+          }));
+        } else {
+          errors += 1;
+          setBulkAiCounts((c) => ({ ...c, errors: c.errors + 1 }));
+        }
+        return res;
+      });
+    });
 
-    async function worker() {
-      while (!bulkAiAbortRef.current) {
-        const i = cursor++;
-        if (i >= eligible.length) return;
-        await processOne(eligible[i]);
-      }
-    }
+    await Promise.all(enqueuePromises);
 
-    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, eligible.length) }, worker));
+    const totalMs = Math.round(performance.now() - batchStart);
+    const avgMs = durations.length
+      ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+      : 0;
+    const firstDoneMs = firstDoneAt !== null ? Math.round(firstDoneAt - batchStart) : null;
+    const lastDoneMs = lastDoneAt !== null ? Math.round(lastDoneAt - batchStart) : null;
+
+    // eslint-disable-next-line no-console
+    console.info("[BULK_DESCRIPTION] batch_metrics", {
+      total: eligible.length,
+      generated: eligible.length - errors - skippedDuplicate,
+      errors,
+      skipped_duplicate: skippedDuplicate,
+      avg_description_ms: avgMs,
+      first_done_ms: firstDoneMs,
+      last_done_ms: lastDoneMs,
+      total_batch_ms: totalMs,
+      concurrency: 3,
+    });
 
     setBulkAiRunning(false);
     if (bulkAiAbortRef.current) {
       toast.warning(`Geração interrompida. ${completed}/${eligible.length} processados.`);
     } else {
-      toast.success(`✅ ${completed} descrição(ões) geradas pela IA.`);
+      toast.success(`✅ ${completed - errors - skippedDuplicate} descrição(ões) geradas pela IA.`);
     }
   }
+
 
   function cancelBulkAi() {
     bulkAiAbortRef.current = true;

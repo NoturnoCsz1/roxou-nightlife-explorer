@@ -76,26 +76,41 @@ class DescriptionWorker {
   private readonly concurrency: number;
   /** Itens marcados como erro — usados por `requeueErrors`. */
   private errored = new Map<string, Job>();
+  /** Itens atualmente na fila ou em execução — evita enfileiramento duplicado. */
+  private pending = new Set<string>();
 
   constructor(concurrency = 2) {
     this.concurrency = concurrency;
   }
 
-  enqueue(job: Omit<Job, "attempts">) {
+  /**
+   * Enfileira um item. Retorna `false` se o mesmo `id` já está aguardando
+   * ou em execução (evita chamada dupla de `generate-description` para o
+   * mesmo evento).
+   */
+  enqueue(job: Omit<Job, "attempts">): boolean {
+    if (this.pending.has(job.id)) {
+      log("skip_duplicate", { id: job.id });
+      return false;
+    }
     this.errored.delete(job.id);
     const full: Job = { ...job, attempts: 0 };
+    this.pending.add(job.id);
     this.queue.push(full);
     log("queued", { id: job.id });
     job.onUpdate({ status: "queued" });
     this.pump();
+    return true;
   }
 
   /** Reprocessa um item específico (deve ter sido enfileirado antes). */
   requeue(id: string) {
     const prev = this.errored.get(id);
     if (!prev) return false;
+    if (this.pending.has(id)) return false;
     this.errored.delete(id);
     prev.attempts = 0;
+    this.pending.add(id);
     this.queue.push(prev);
     prev.onUpdate({ status: "queued" });
     this.pump();
@@ -123,6 +138,11 @@ class DescriptionWorker {
     return this.queue.length + this.active;
   }
 
+  /** True se o item está aguardando na fila ou executando agora. */
+  isPending(id: string): boolean {
+    return this.pending.has(id);
+  }
+
   private pump() {
     while (this.active < this.concurrency && this.queue.length > 0) {
       const job = this.queue.shift();
@@ -130,10 +150,12 @@ class DescriptionWorker {
       this.active++;
       void this.run(job).finally(() => {
         this.active--;
+        this.pending.delete(job.id);
         this.pump();
       });
     }
   }
+
 
   private async run(job: Job) {
     const t0 = performance.now();
