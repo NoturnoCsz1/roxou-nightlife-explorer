@@ -1195,7 +1195,7 @@ const EventoBulkForm = () => {
   }
 
   async function handleBulkSave(status: "draft" | "published") {
-    const ready = items.filter((it) => it.status === "ready");
+    const ready = items.filter((it) => it.status === "ready" && !it.archived);
     if (!ready.length) {
       toast.error("Nenhum evento pronto para salvar");
       return;
