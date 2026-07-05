@@ -1901,6 +1901,10 @@ interface ReviewRowProps {
   forcePublish?: boolean;
   onToggleForcePublish?: () => void;
   smartDup?: DuplicateConfidenceResult;
+  /** HOTFIX Eventos em Lote. */
+  isArchived?: boolean;
+  pastness?: BulkEventPastness;
+  onToggleArchived?: () => void;
   onPartnerChange: (id: string) => void;
   onChangeForm: (patch: Partial<EventFormData>) => void;
   onChangeFormFull: (form: EventFormData) => void;
@@ -1913,9 +1917,11 @@ interface ReviewRowProps {
 function ReviewRowBase({
   index, item, partners, isDuplicate, isPossibleDup, isIncomplete,
   classificationReason, forcePublish, onToggleForcePublish,
-  smartDup, onPartnerChange, onChangeForm,
+  smartDup, isArchived, pastness, onToggleArchived,
+  onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
 }: ReviewRowProps) {
+
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
   const isProcessing = item.status === "uploading" || item.status === "extracting";
 
