@@ -1370,15 +1370,59 @@ const EventoBulkForm = () => {
   }
 
 
-  const readyCount = items.filter((it) => it.status === "ready").length;
+  const readyCount = items.filter((it) => it.status === "ready" && !it.archived).length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
   const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
   const cancelledCount = items.filter((it) => it.status === "cancelled").length;
+  const archivedCount = items.filter((it) => it.archived).length;
   const totalCount = items.length;
-  const doneForProgress = readyCount + errorCount + cancelledCount;
+  const doneForProgress = readyCount + errorCount + cancelledCount + archivedCount;
   const progressPct = totalCount ? Math.round((doneForProgress / totalCount) * 100) : 0;
   const isProcessing = processingCount > 0 || queuedCount > 0;
+
+  // HOTFIX — abas para separar Atuais / Revisão / Prontos / Erros / Arquivados.
+  // Estado local: filtro atual e helper de visibilidade.
+  const [activeTab, setActiveTab] = useState<BulkTab>("atuais");
+  const needsReviewCount = items.filter(
+    (it) =>
+      !it.archived &&
+      it.status === "ready" &&
+      (itemFlags.incompleteIds.has(it.localId) ||
+        itemFlags.possibleDupIds.has(it.localId) ||
+        Boolean((it.form as any).needs_review) ||
+        it.pastness === "ambiguous"),
+  ).length;
+  const atuaisCount = items.filter(
+    (it) => !it.archived && it.status !== "error" && it.status !== "cancelled",
+  ).length;
+
+  const visibleItems = useMemo(() => {
+    return items.filter((it) => {
+      if (activeTab === "todos") return true;
+      if (activeTab === "arquivados") return !!it.archived;
+      if (it.archived) return false;
+      if (activeTab === "atuais") return it.status !== "error" && it.status !== "cancelled";
+      if (activeTab === "prontos") return it.status === "ready" && !itemFlags.incompleteIds.has(it.localId);
+      if (activeTab === "erros") return it.status === "error" || it.status === "cancelled";
+      if (activeTab === "revisao") {
+        if (it.status !== "ready") return false;
+        return (
+          itemFlags.incompleteIds.has(it.localId) ||
+          itemFlags.possibleDupIds.has(it.localId) ||
+          Boolean((it.form as any).needs_review) ||
+          it.pastness === "ambiguous"
+        );
+      }
+      return true;
+    });
+  }, [items, activeTab, itemFlags]);
+
+  const setArchived = useCallback((localId: string, archived: boolean) => {
+    setItems((prev) => prev.map((it) => (it.localId === localId ? { ...it, archived } : it)));
+  }, []);
+
+
 
   // FASE 10G.1.3 — telemetria de runtime para o AdminSystem
   useEffect(() => {
