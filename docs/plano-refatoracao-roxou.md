@@ -64,6 +64,37 @@ Objetivo: mover código genuinamente compartilhado para
 
 Validação: `bunx tsgo --noEmit && bun run build` a cada tarefa.
 
+### Execução parcial concluída (2026-07-05) — subset de baixo risco
+
+Movidos apenas arquivos genuinamente genéricos, com poucos consumidores
+e sem risco de quebrar comportamento. Itens médios (`use-toast`, `SEO`,
+`components/ui/*`, `dateUtils`, `utils`, `supabaseFetchAll`, `analytics`,
+`ga`, `imageOptimizer`, `useAuth`, `useSavedEvents`, `useSavedPartners`,
+`usePageTracking`, `EventCard`) permanecem em `src/lib/*`,
+`src/hooks/*` e `src/components/*` até nova onda dedicada.
+
+Arquivos movidos:
+
+- `src/lib/sanitize.ts` → `src/shared/utils/sanitize.ts`
+- `src/lib/pii.ts` → `src/shared/utils/pii.ts`
+- `src/lib/utm.ts` → `src/shared/utils/utm.ts`
+- `src/lib/formatRelativeTime.ts` → `src/shared/utils/formatRelativeTime.ts`
+- `src/lib/qrcode.ts` → `src/shared/utils/qrcode.ts`
+- `src/lib/imageHash.ts` → `src/shared/utils/imageHash.ts`
+- `src/lib/calendarUtils.ts` → `src/shared/utils/calendarUtils.ts`
+- `src/lib/geoUtils.ts` → `src/shared/utils/geoUtils.ts`
+- `src/hooks/useScrollFadeIn.ts` → `src/shared/hooks/useScrollFadeIn.ts`
+- `src/hooks/use-mobile.tsx` → `src/shared/hooks/use-mobile.tsx`
+- `src/components/SafeHtml.tsx` → `src/shared/components/SafeHtml.tsx`
+- `src/components/SectionHeader.tsx` → `src/shared/components/SectionHeader.tsx`
+- `src/components/AuraBadge.tsx` → `src/shared/components/AuraBadge.tsx`
+
+Imports atualizados em 29 arquivos consumidores (codemod `sed`).
+`bunx tsgo --noEmit` ✅ · `bun run build` ✅ (22.59s).
+
+**Status:** 2.2 (parcial), 2.3 (parcial), 2.4 (parcial) — restante
+adiado para nova onda.
+
 ---
 
 ## Etapa 3 — Partner Pro
