@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Crosshair } from "lucide-react";
-import { fetchRoute, type RouteResult } from "@/lib/geoUtils";
+import { fetchRoute, type RouteResult } from "@/shared/utils/geoUtils";
 
 export interface LatLng { lat: number; lng: number; }
 

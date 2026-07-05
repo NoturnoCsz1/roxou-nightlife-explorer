@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import type { NearbyEvent } from "@/components/maps/RoxouNearbyEventsMap";
 // Lazy: leaflet + markercluster + heat só carregam quando o mapa monta (Fase 7)
 const RoxouNearbyEventsMap = lazy(() => import("@/components/maps/RoxouNearbyEventsMap"));
-import { haversineKm, type LatLng } from "@/lib/geoUtils";
+import { haversineKm, type LatLng } from "@/shared/utils/geoUtils";
 import SEO from "@/components/SEO";
 
 

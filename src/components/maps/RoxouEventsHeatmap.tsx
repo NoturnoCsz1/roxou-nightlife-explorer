@@ -1,5 +1,5 @@
 import RoxouNearbyEventsMap, { type NearbyEvent } from "./RoxouNearbyEventsMap";
-import type { LatLng } from "@/lib/geoUtils";
+import type { LatLng } from "@/shared/utils/geoUtils";
 
 interface Props {
   events: NearbyEvent[];

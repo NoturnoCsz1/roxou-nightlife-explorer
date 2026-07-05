@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { listPartnerCrmCustomers, listCrmLinks } from "@/services/crm";
 import { computeSummary, statusBadgeVariant, type CrmStatus } from "@/services/crm360";
-import { maskEmail, maskPhone } from "@/lib/pii";
+import { maskEmail, maskPhone } from "@/shared/utils/pii";
 import { usePartnerAuth } from "@/apps/partner/hooks/usePartnerAuth";
 
 interface Row {

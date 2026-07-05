@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { useV3Profile } from "@/hooks/useV3Profile";
-import { haversineKm } from "@/lib/geoUtils";
+import { haversineKm } from "@/shared/utils/geoUtils";
 import VIPPaywallModal from "@/components/v3/VIPPaywallModal";
 import { toast } from "sonner";
 

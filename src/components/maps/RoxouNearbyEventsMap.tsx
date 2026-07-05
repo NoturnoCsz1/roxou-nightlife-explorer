@@ -7,7 +7,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
 import "leaflet.heat";
 import { useNavigate, type NavigateFunction } from "react-router-dom";
-import { haversineKm, type LatLng } from "@/lib/geoUtils";
+import { haversineKm, type LatLng } from "@/shared/utils/geoUtils";
 
 function HeatLayer({ points }: { points: Array<[number, number, number]> }) {
   const map = useMap();

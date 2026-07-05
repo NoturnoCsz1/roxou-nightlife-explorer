@@ -2,7 +2,7 @@ import { ExternalLink, Car, Sparkles, ArrowRight, Flame, BadgeCheck } from "luci
 import { useNavigate } from "react-router-dom";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/shared/hooks/use-mobile";
 import { toast } from "sonner";
 import { isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
 import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";

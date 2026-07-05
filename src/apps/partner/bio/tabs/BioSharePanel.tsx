@@ -3,7 +3,7 @@ import { Copy, Share2, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { type BioProfile } from "@/services/bio";
-import { generateQrPngDataUrl, downloadDataUrl } from "@/lib/qrcode";
+import { generateQrPngDataUrl, downloadDataUrl } from "@/shared/utils/qrcode";
 
 export function BioSharePanel({ bio }: { bio: BioProfile }) {
   const url = useMemo(

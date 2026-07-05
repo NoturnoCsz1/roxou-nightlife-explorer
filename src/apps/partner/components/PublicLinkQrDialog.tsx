@@ -16,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   downloadDataUrl,
   generateQrPngDataUrl,
-} from "@/lib/qrcode";
+} from "@/shared/utils/qrcode";
 
 interface Props {
   open: boolean;

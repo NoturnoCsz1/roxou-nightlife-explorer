@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
-import { generateQrSvg } from "@/lib/qrcode";
+import { generateQrSvg } from "@/shared/utils/qrcode";
 import { formatDateTimeSP } from "@/lib/dateUtils";
 import {
   getPublicReservation,

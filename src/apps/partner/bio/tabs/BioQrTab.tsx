@@ -28,7 +28,7 @@ import {
   type BioProfile,
   type BioQrCode,
 } from "@/services/bio";
-import { generateQrPngDataUrl, downloadDataUrl } from "@/lib/qrcode";
+import { generateQrPngDataUrl, downloadDataUrl } from "@/shared/utils/qrcode";
 
 type QrTemplate = {
   id: string;

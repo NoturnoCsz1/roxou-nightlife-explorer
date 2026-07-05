@@ -14,7 +14,7 @@ import { ArrowLeft, CalendarClock, MapPin, BusFront, Radio, ExternalLink } from 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { generateQrPngDataUrl, downloadDataUrl } from "@/lib/qrcode";
+import { generateQrPngDataUrl, downloadDataUrl } from "@/shared/utils/qrcode";
 import {
   buildExcursionQrPayload,
   getPublicExcursionTicket,

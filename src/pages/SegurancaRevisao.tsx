@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Shield, AlertTriangle, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { sanitizeText } from "@/lib/sanitize";
+import { sanitizeText } from "@/shared/utils/sanitize";
 
 export default function SegurancaRevisao() {
   const [reason, setReason] = useState("");

@@ -28,7 +28,7 @@ import {
   type PartnerReservationTypeKind,
 } from "../services/partnerReservations";
 import { formatDateTimeSP } from "@/lib/dateUtils";
-import { formatRelativeTime } from "@/lib/formatRelativeTime";
+import { formatRelativeTime } from "@/shared/utils/formatRelativeTime";
 import { getArchivedIds } from "../lib/partnerLocalArchive";
 
 type Bucket = "open" | "closed" | "archived";
