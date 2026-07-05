@@ -278,10 +278,12 @@ const EventoBulkForm = () => {
             } as Partial<EventFormData>);
             setDescStatus(localId, "done");
             setDescErrorCount(descWorker.errorCount());
+            bulkPerfRecordDescription(u.durationMs, { ok: true });
             resolve({ ok: true, needsReview, durationMs: u.durationMs });
           } else if (u.status === "error") {
             setDescStatus(localId, "error");
             setDescErrorCount(descWorker.errorCount());
+            bulkPerfRecordDescription(0, { ok: false });
             resolve({ ok: false, needsReview: false, durationMs: 0, error: u.message });
           } else {
             setDescStatus(localId, u.status);
