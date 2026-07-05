@@ -1583,14 +1583,42 @@ const EventoBulkForm = () => {
         />
       </div>
 
+      {/* HOTFIX — Abas: Atuais / Revisão / Prontos / Erros / Arquivados / Todos */}
+      {items.length > 0 && (
+        <div className="mt-4 -mx-1 flex flex-wrap gap-1 overflow-x-auto scrollbar-hide px-1">
+          {([
+            ["atuais", "Atuais", atuaisCount],
+            ["revisao", "Precisa revisão", needsReviewCount],
+            ["prontos", "Prontos", readyCount],
+            ["erros", "Com erro", errorCount + cancelledCount],
+            ["arquivados", "Arquivados", archivedCount],
+            ["todos", "Todos", items.length],
+          ] as Array<[BulkTab, string, number]>).map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition ${
+                activeTab === key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border/50 bg-secondary/40 text-muted-foreground hover:bg-secondary/60"
+              }`}
+            >
+              {label} <span className="opacity-70">({count})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Thumbnail grid */}
       {items.length > 0 && (
         <div className="mt-4">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-            Banners ({items.length})
+            Banners ({visibleItems.length}/{items.length})
           </p>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-            {items.map((it) => (
+            {visibleItems.map((it) => (
+
               <div key={it.localId} className="relative aspect-square rounded-lg overflow-hidden border border-border/40 bg-secondary/30 group">
                 {it.thumbDataUrl ? (
                   <img
