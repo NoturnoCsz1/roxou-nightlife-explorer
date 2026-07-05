@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listCrmCustomers, type CrmCustomer } from "@/services/crm";
-import { maskEmail, maskPhone } from "@/lib/pii";
+import { maskEmail, maskPhone } from "@/shared/utils/pii";
 import { supabase } from "@/integrations/supabase/client";
 import {
   computeSummary,

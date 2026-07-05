@@ -4,7 +4,7 @@
  * Helpers para gerar links UTM, QRs e textos prontos por canal.
  * Reutiliza `withUtm` central. Não cria tabelas.
  */
-import { withUtm } from "@/lib/utm";
+import { withUtm } from "@/shared/utils/utm";
 
 const PUBLIC_BASE =
   typeof window !== "undefined" ? window.location.origin : "https://roxou.com.br";

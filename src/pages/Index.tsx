@@ -12,7 +12,7 @@ import type { DateAnchor } from "@/components/DateFilterPills";
 import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "@/shared/components/SectionHeader";
 
 import PopularVenues from "@/components/PopularVenues";
 import { supabase } from "@/integrations/supabase/client";

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, User, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SEO from "@/components/SEO";
-import SafeHtml from "@/components/SafeHtml";
+import SafeHtml from "@/shared/components/SafeHtml";
 
 interface News {
   id: string;

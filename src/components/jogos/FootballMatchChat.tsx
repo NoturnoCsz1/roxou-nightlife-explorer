@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Send, MessageCircle, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { sanitizeText } from "@/lib/sanitize";
+import { sanitizeText } from "@/shared/utils/sanitize";
 
 interface FootballMatchChatProps {
   matchSlug: string;

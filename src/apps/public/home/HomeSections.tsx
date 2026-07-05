@@ -7,7 +7,7 @@ import {
   Utensils, Zap,
 } from "lucide-react";
 import FadeSection from "@/components/v3/home/FadeSection";
-import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
+import { useScrollFadeIn } from "@/shared/hooks/useScrollFadeIn";
 import { VIBE_FILTERS } from "./constants";
 
 // silencia lint para ícones expostos pelas referências quando necessário

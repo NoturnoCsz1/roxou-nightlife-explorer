@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { formatDateTimeSP } from "@/lib/dateUtils";
-import { formatRelativeTime } from "@/lib/formatRelativeTime";
+import { formatRelativeTime } from "@/shared/utils/formatRelativeTime";
 import {
   cancelWaitlistEntry,
   listReservationTypes,

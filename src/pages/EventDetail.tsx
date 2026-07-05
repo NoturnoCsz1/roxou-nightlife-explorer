@@ -23,7 +23,7 @@ import SEO from "@/components/SEO";
 import AdBanner from "@/components/AdBanner";
 import EventCountdown from "@/components/EventCountdown";
 import { isToday, formatTime, formatDateFull, formatDay, formatMonthShort } from "@/lib/dateUtils";
-import { generateICS, downloadICS } from "@/lib/calendarUtils";
+import { generateICS, downloadICS } from "@/shared/utils/calendarUtils";
 import {
   categoryConfig,
   getCategoryLabel,
@@ -31,7 +31,7 @@ import {
   PARTNER_MUSIC_STYLE_LABELS,
   SPORTS_COMPETITION_LABELS,
 } from "@/lib/categoryConfig";
-import SafeHtml from "@/components/SafeHtml";
+import SafeHtml from "@/shared/components/SafeHtml";
 import TransmissionBlock from "@/components/TransmissionBlock";
 
 const EventDetail = () => {

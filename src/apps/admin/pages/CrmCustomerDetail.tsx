@@ -23,7 +23,7 @@ import {
   statusBadgeVariant,
   type EntityMap,
 } from "@/services/crm360";
-import { maskCpf, maskEmail, maskPhone } from "@/lib/pii";
+import { maskCpf, maskEmail, maskPhone } from "@/shared/utils/pii";
 import { toast } from "sonner";
 
 const TIMELINE_PAGE = 15;

@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { useScrollFadeIn } from "@/hooks/useScrollFadeIn";
+import { useScrollFadeIn } from "@/shared/hooks/useScrollFadeIn";
 
 interface FadeSectionProps {
   className?: string;

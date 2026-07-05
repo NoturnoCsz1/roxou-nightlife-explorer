@@ -11,7 +11,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EventFormBlock, { emptyEventForm, slugify, type EventFormData } from "@/components/admin/EventFormBlock";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
 import { buildEventPayload } from "@/lib/adminEventPayload";
-import { sha256File } from "@/lib/imageHash";
+import { sha256File } from "@/shared/utils/imageHash";
 import {
   compressImage,
   readExtractionCache,
