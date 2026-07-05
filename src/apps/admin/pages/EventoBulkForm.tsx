@@ -1247,7 +1247,11 @@ const EventoBulkForm = () => {
   }
 
   async function handleBulkSave(status: "draft" | "published") {
-    const ready = items.filter((it) => it.status === "ready" && !it.archived);
+    if (saving) return; // guard duplo-clique no próprio handler
+    // HOTFIX slug-collision — idempotência: itens já publicados NÃO voltam para o insert.
+    const ready = items.filter(
+      (it) => it.status === "ready" && !it.archived && !it.publishedEventId,
+    );
     if (!ready.length) {
       toast.error("Nenhum evento pronto para salvar");
       return;
