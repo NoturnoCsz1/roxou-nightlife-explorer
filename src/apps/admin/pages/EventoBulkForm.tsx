@@ -35,6 +35,16 @@ import { validateBeforePublish, persistValidationLog, REASON_LABELS } from "@/li
 import { updateBulkRuntimeStats, resetBulkRuntimeStats } from "@/lib/bulkRuntimeStats";
 import { saveBulkDraft, loadBulkDraft, clearBulkDraft } from "@/lib/bulkEventsDraft";
 import { classifyBulkItemDate, type BulkEventPastness } from "@/lib/bulkEventsClassify";
+import {
+  bulkPerfResetBatch,
+  bulkPerfRecordCacheHit,
+  bulkPerfRecordCacheMiss,
+  bulkPerfRecordExtraction,
+  bulkPerfRecordFirstReady,
+  bulkPerfMarkBatchEnd,
+  bulkPerfRecordDescription,
+} from "@/lib/bulkPerformanceMetrics";
+import BulkPerformancePanel from "./EventoBulkForm/BulkPerformancePanel";
 
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
