@@ -253,6 +253,7 @@ const EventoBulkForm = () => {
   ): Promise<{ ok: boolean; needsReview: boolean; durationMs: number; error?: string; skipped?: boolean }> => {
     // Evita chamada dupla se o item já está aguardando/rodando no worker.
     if (descWorker.isPending(localId)) {
+      bulkPerfRecordDescription(0, { ok: false, skipped: true });
       return Promise.resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
     }
     return new Promise((resolve) => {
