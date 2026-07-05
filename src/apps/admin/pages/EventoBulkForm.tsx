@@ -77,6 +77,10 @@ interface BulkItem {
   archived?: boolean;
   /** Classificação de data em SP (past/future/ambiguous/unknown). */
   pastness?: BulkEventPastness;
+  /** HOTFIX slug-collision — id do evento após insert bem sucedido; impede re-envio idempotente. */
+  publishedEventId?: string;
+  /** HOTFIX slug-collision — mensagem amigável do último erro de publicação para este item. */
+  publishError?: string;
 }
 
 type BulkTab = "atuais" | "revisao" | "prontos" | "erros" | "arquivados" | "todos";
@@ -1243,7 +1247,11 @@ const EventoBulkForm = () => {
   }
 
   async function handleBulkSave(status: "draft" | "published") {
-    const ready = items.filter((it) => it.status === "ready" && !it.archived);
+    if (saving) return; // guard duplo-clique no próprio handler
+    // HOTFIX slug-collision — idempotência: itens já publicados NÃO voltam para o insert.
+    const ready = items.filter(
+      (it) => it.status === "ready" && !it.archived && !it.publishedEventId,
+    );
     if (!ready.length) {
       toast.error("Nenhum evento pronto para salvar");
       return;
@@ -1386,39 +1394,149 @@ const EventoBulkForm = () => {
       return;
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // HOTFIX slug-collision — insert POR ITEM (não atômico) para:
+    //   • isolar erro de um item sem derrubar o lote inteiro;
+    //   • resolver colisão de slug com sufixo determinístico legível
+    //     (base | base-YYYY-MM-DD | base-YYYY-MM-DD-venue | base-...-2);
+    //   • marcar cada item como publicado (idempotência) — retry não
+    //     tenta inserir de novo os que já foram salvos.
+    // A constraint events_slug_key continua sendo a proteção final.
+    // ═══════════════════════════════════════════════════════════════════
+
+    // Refresh de slugs em DB antes da publicação — o snapshot inicial
+    // pode estar desatualizado se este lote já publicou parcialmente antes.
     try {
-      const { data: insertedRows, error } = await supabase.from("events").insert(payloads as any).select("id");
-      if (error) throw error;
-
-      const ids = insertedRows || [];
-      await Promise.all(
-        guarded
-          .filter((g) => !g.blocked)
-          .map((g, idx) => persistValidationLog(g.guard.validationLog, ids[idx]?.id ?? null)),
-      );
-      await Promise.all(guardBlocked.map((g) => persistValidationLog(g.guard.validationLog)));
-
-      const skippedTotal = confirmed.length + possibleBlocked.length + incomplete.length + guardBlocked.length;
-      toast.success(
-        `Lote: ${clear.length} novo(s) • ${possibleForced.length} forçado(s) • ${skippedTotal} não enviado(s)`,
-        { duration: 8000 },
-      );
-      if (guardBlocked.length) {
-        const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
-        toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
+      let q = supabase.from("events").select("slug");
+      if (cityFilter) q = q.eq("city", cityFilter);
+      const { data: freshSlugs } = await q;
+      if (freshSlugs) {
+        setDbSlugs(new Set((freshSlugs as any[]).map((r) => r.slug).filter(Boolean)));
       }
-      bulkLog("save_done", { count: payloads.length, duration_ms: Math.round(performance.now() - tSave) });
+    } catch {
+      // silencioso — fallback para snapshot atual
+    }
+    const takenSlugs = new Set<string>(dbSlugs);
+
+    function dateSuffix(iso: string): string {
+      // Sufixo legível: YYYY-MM-DD do date_time (SP wall-clock aceitável para desempate).
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+      return m ? `${m[1]}-${m[2]}-${m[3]}` : "";
+    }
+    function resolveUniqueSlug(baseSlug: string, form: EventFormData): string {
+      const base = (baseSlug || "").trim() || "evento";
+      const candidates: string[] = [base];
+      const d = dateSuffix(form.date_time || "");
+      if (d) candidates.push(`${base}-${d}`);
+      const venueSlug = form.venue_name ? slugify(form.venue_name).slice(0, 40) : "";
+      if (d && venueSlug) candidates.push(`${base}-${d}-${venueSlug}`);
+      for (const c of candidates) {
+        if (c && !takenSlugs.has(c)) return c;
+      }
+      // último recurso: sufixo incremental determinístico.
+      const root = candidates[candidates.length - 1] || base;
+      for (let i = 2; i < 1000; i++) {
+        const c = `${root}-${i}`;
+        if (!takenSlugs.has(c)) return c;
+      }
+      // fallback quase impossível — mantém constraint como proteção final.
+      return `${root}-${Date.now()}`;
+    }
+
+    let published = 0;
+    let failed = 0;
+    let slugAdjusted = 0;
+    const failureLines: string[] = [];
+
+    for (const g of guarded) {
+      if (g.blocked) continue;
+      const it = g.it;
+      const originalSlug = (g.payload.slug as string) || slugify(g.payload.title || "");
+      const resolved = resolveUniqueSlug(originalSlug, it.form);
+      if (resolved !== originalSlug) slugAdjusted += 1;
+      takenSlugs.add(resolved);
+      const payload = { ...g.payload, slug: resolved };
+
+      try {
+        const { data: row, error } = await supabase
+          .from("events")
+          .insert(payload as any)
+          .select("id")
+          .single();
+        if (error) throw error;
+        const newId = (row as any)?.id as string | undefined;
+        if (newId) {
+          patchItem(it.localId, { publishedEventId: newId, publishError: undefined });
+        }
+        await persistValidationLog(g.guard.validationLog, newId ?? null);
+        published += 1;
+      } catch (err: any) {
+        const code = err?.code || err?.status;
+        const msg = String(err?.message || "");
+        const isUnique = code === "23505" || /duplicate key|unique constraint/i.test(msg);
+        const friendly = isUnique
+          ? "Este evento parece já existir na agenda (endereço público em conflito). Revise a possível duplicata."
+          : msg || "Falha ao publicar";
+        // eslint-disable-next-line no-console
+        console.warn("[BULK_EVENTS] insert_failed", {
+          id: it.localId,
+          code: code || null,
+          isUnique,
+        });
+        patchItem(it.localId, { publishError: friendly });
+        failed += 1;
+        failureLines.push(`• ${it.form.title || it.fileName || "(sem título)"}: ${friendly}`);
+      }
+    }
+
+    await Promise.all(guardBlocked.map((g) => persistValidationLog(g.guard.validationLog)));
+
+    const skippedTotal = confirmed.length + possibleBlocked.length + incomplete.length + guardBlocked.length;
+    const parts: string[] = [];
+    if (published > 0) parts.push(`${published} ${status === "published" ? "publicado(s)" : "salvo(s)"}`);
+    if (slugAdjusted > 0) parts.push(`${slugAdjusted} slug ajustado(s)`);
+    if (failed > 0) parts.push(`${failed} erro(s)`);
+    if (skippedTotal > 0) parts.push(`${skippedTotal} não enviado(s)`);
+    const summary = parts.join(" • ") || "Nada para publicar";
+    if (failed === 0 && published > 0) toast.success(`Lote: ${summary}`, { duration: 8000 });
+    else if (published > 0) toast.message(`Lote parcial: ${summary}`, { duration: 10000 });
+    else toast.error(`Lote: ${summary}`);
+    if (failureLines.length) {
+      toast.warning(failureLines.slice(0, 6).join("\n"), { duration: 12000 });
+    }
+    if (guardBlocked.length) {
+      const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
+      toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
+    }
+    bulkLog("save_done", {
+      count: published,
+      failed,
+      slug_adjusted: slugAdjusted,
+      duration_ms: Math.round(performance.now() - tSave),
+    });
+    setSaving(false);
+    // Navega apenas quando 100% do batch atual publicou sem falha e nada mais está pendente.
+    const stillPending =
+      failed > 0 ||
+      skippedTotal > 0 ||
+      items.some(
+        (it) =>
+          !it.archived &&
+          it.status === "ready" &&
+          !it.publishedEventId &&
+          !ready.find((r) => r.localId === it.localId),
+      );
+    if (published > 0 && failed === 0 && !stillPending) {
       void clearBulkDraft();
       navigate("/admin/eventos");
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar");
-    } finally {
-      setSaving(false);
     }
   }
 
 
-  const readyCount = items.filter((it) => it.status === "ready" && !it.archived).length;
+  // HOTFIX slug-collision — itens já publicados saem do contador do botão.
+  const readyCount = items.filter(
+    (it) => it.status === "ready" && !it.archived && !it.publishedEventId,
+  ).length;
   const processingCount = items.filter((it) => it.status === "uploading" || it.status === "extracting").length;
   const queuedCount = items.filter((it) => it.status === "queued").length;
   const errorCount = items.filter((it) => it.status === "error").length;
