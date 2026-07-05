@@ -292,6 +292,7 @@ const EventoBulkForm = () => {
       });
       if (!enqueued) {
         // enqueue rejeitado por duplicidade (corrida rara) — trata como skip.
+        bulkPerfRecordDescription(0, { ok: false, skipped: true });
         resolve({ ok: false, needsReview: false, durationMs: 0, skipped: true });
         return;
       }
