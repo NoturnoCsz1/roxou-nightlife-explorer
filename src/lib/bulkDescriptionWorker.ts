@@ -184,6 +184,9 @@ class DescriptionWorker {
 
 let _instance: DescriptionWorker | null = null;
 export function getDescriptionWorker(): DescriptionWorker {
-  if (!_instance) _instance = new DescriptionWorker(2);
+  // HOTFIX Eventos em Lote: concorrência 3 (antes 2) para reduzir tempo
+  // de espera na fila de descrições sem estressar o gateway.
+  if (!_instance) _instance = new DescriptionWorker(3);
   return _instance;
 }
+
