@@ -1822,7 +1822,12 @@ const EventoBulkForm = () => {
             </div>
           )}
 
-          {items.map((it, idx) => (
+          {visibleItems.length === 0 && (
+            <p className="text-[11px] text-muted-foreground italic px-1 py-4">
+              Nenhum item nesta aba. Troque de filtro para ver outros itens do lote.
+            </p>
+          )}
+          {visibleItems.map((it, idx) => (
             <ReviewRow
               key={it.localId}
               index={idx}
@@ -1835,6 +1840,9 @@ const EventoBulkForm = () => {
               forcePublish={forcePublishIds.has(it.localId)}
               onToggleForcePublish={() => toggleForcePublish(it.localId)}
               smartDup={smartDuplicates.get(it.localId)}
+              isArchived={!!it.archived}
+              pastness={it.pastness}
+              onToggleArchived={() => setArchived(it.localId, !it.archived)}
               onPartnerChange={(pid) => handlePartnerSelect(it.localId, pid)}
               onChangeForm={(patch) => patchForm(it.localId, patch)}
               onToggleExpand={() => patchItem(it.localId, { expanded: !it.expanded })}
@@ -1844,6 +1852,7 @@ const EventoBulkForm = () => {
               onChangeFormFull={(form) => patchForm(it.localId, form)}
             />
           ))}
+
         </div>
       )}
 
