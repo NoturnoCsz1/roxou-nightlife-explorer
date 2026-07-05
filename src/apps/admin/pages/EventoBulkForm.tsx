@@ -1486,6 +1486,16 @@ const EventoBulkForm = () => {
   }, [processingCount, queuedCount, readyCount, errorCount, cancelledCount, descWorker]);
   useEffect(() => () => { resetBulkRuntimeStats(); }, []);
 
+  // HOTFIX observabilidade — marca "primeiro pronto" e "fim do lote".
+  useEffect(() => {
+    if (readyCount > 0) bulkPerfRecordFirstReady();
+  }, [readyCount]);
+  useEffect(() => {
+    if (totalCount > 0 && processingCount === 0 && queuedCount === 0) {
+      bulkPerfMarkBatchEnd();
+    }
+  }, [totalCount, processingCount, queuedCount]);
+
   // FASE 10G.1.3 — Auto-save em IndexedDB (debounced 1.2s)
   useEffect(() => {
     if (items.length === 0) return;
