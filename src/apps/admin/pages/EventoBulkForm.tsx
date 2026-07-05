@@ -729,9 +729,21 @@ const EventoBulkForm = () => {
             needs_review: finalNeedsReview,
           } as EventFormData;
           readyForm = next;
-          return { ...it, form: next, status: "ready", categoryWarning };
+          // HOTFIX — auto-arquiva eventos claramente passados (SP tz).
+          // "ambiguous" e sem data NUNCA são arquivados automaticamente.
+          const pastness = classifyBulkItemDate(finalDateTime);
+          const autoArchive = pastness === "past" && !finalNeedsReview;
+          return {
+            ...it,
+            form: next,
+            status: "ready",
+            categoryWarning,
+            pastness,
+            archived: autoArchive ? true : it.archived,
+          };
         }),
       );
+
 
 
       // FASE 10G.1.2 — Geração de descrição agora roda no worker dedicado.
