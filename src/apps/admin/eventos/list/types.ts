@@ -23,6 +23,10 @@ export interface EventRow {
   needs_review?: boolean | null;
   aura_badge?: string | null;
   aura_score?: number | null;
+  instagram_caption?: string | null;
+  short_summary?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
 }
 
 export type OriginFilter =
