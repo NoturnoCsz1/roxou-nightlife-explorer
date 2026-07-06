@@ -78,7 +78,9 @@ export default function BulkPerformancePanel({
     ["Erros de conteúdo (IA)", contentErrorsLabel],
     ["Cache hits", cacheHitsLabel],
     ["Cache misses", cacheMissesLabel],
-    ["Descrições geradas", String(snap.descriptionsGenerated)],
+    ["Descrições geradas", skipDescriptions
+      ? "Geração de conteúdo: desativada pelo usuário"
+      : String(snap.descriptionsGenerated)],
     ["Duplicidades evitadas", String(snap.duplicatesSkipped)],
     ["Primeiro pronto", fmtMs(snap.firstReadyMs)],
     ["Tempo total do lote", fmtMs(snap.totalBatchMs)],
