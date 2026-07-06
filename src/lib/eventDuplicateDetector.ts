@@ -266,6 +266,12 @@ export function getDuplicateConfidence(
   }
 
   score = Math.max(0, Math.min(100, score));
+  // Onda 5 — Regra dura: se as duas datas são conhecidas e diferentes,
+  // NUNCA classificar como duplicata. Cap abaixo de 60 força "clear".
+  if (differentDates) {
+    score = Math.min(score, 45);
+    fields.push("datas diferentes (recorrente)");
+  }
   const decision = decisionFor(score);
 
   return {
