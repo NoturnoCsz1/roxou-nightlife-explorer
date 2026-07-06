@@ -194,6 +194,8 @@ const EventoBulkForm = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
   const fileMapRef = useRef<Map<string, File>>(new Map());
+  /** HOTFIX pendências — evita contar cache_hit/miss duas vezes por retry do mesmo item. */
+  const cacheMetricSeenRef = useRef<Set<string>>(new Set());
 
   // ✨ Fase 2B — geração de títulos + descrições em lote (gpt-5-mini)
   const [bulkAiRunning, setBulkAiRunning] = useState(false);
@@ -480,6 +482,11 @@ const EventoBulkForm = () => {
     }
 
     for (const it of items) {
+      // HOTFIX pendências — item ainda em pipeline não deve ser marcado como
+      // "Dados incompletos" nem como duplicado: aguardar extração terminar.
+      if (it.status === "queued" || it.status === "uploading" || it.status === "extracting") {
+        continue;
+      }
       const f = it.form;
       const hasTitle = !!(f.title || "").trim();
       const hasDate = !!(f.date_time || "").trim();
@@ -579,7 +586,12 @@ const EventoBulkForm = () => {
 
       // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
       const cached = readExtractionCache<any>(file);
-      if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
+      // HOTFIX pendências — só conta a métrica de cache na 1ª tentativa deste item.
+      // Retries (handleRetry) não podem inflar cache_miss.
+      if (!cacheMetricSeenRef.current.has(localId)) {
+        cacheMetricSeenRef.current.add(localId);
+        if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
+      }
       let publicUrl: string | null = cached?.image_url ?? null;
 
       if (!publicUrl) {
@@ -2160,15 +2172,15 @@ function ReviewRowBase({
         </div>
       )}
       {!isDuplicate && isPossibleDup && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-2 text-[11px] font-semibold text-amber-500 flex items-start gap-1.5">
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 sm:py-2 text-[11px] font-semibold text-amber-500 flex items-start gap-1.5">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
-            <div>⚠ Possível duplicado — revise antes de publicar</div>
+            <div className="truncate sm:whitespace-normal">⚠ Possível duplicado — revise</div>
             {classificationReason && (
-              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+              <div className="opacity-90 font-normal mt-0.5 hidden sm:block">{classificationReason}</div>
             )}
             {smartDup?.matched_fields?.length ? (
-              <div className="opacity-75 font-normal mt-0.5">
+              <div className="opacity-75 font-normal mt-0.5 hidden sm:block">
                 Coincidências: {smartDup.matched_fields.join(" • ")}
               </div>
             ) : null}
@@ -2182,17 +2194,17 @@ function ReviewRowBase({
                 : "border border-amber-500/40 hover:bg-amber-500/20"
             }`}
           >
-            {forcePublish ? "✓ Publicar mesmo assim" : "Publicar mesmo assim"}
+            {forcePublish ? "✓ Publicar" : "Publicar mesmo assim"}
           </button>
         </div>
       )}
       {!isDuplicate && !isPossibleDup && isIncomplete && (
-        <div className="bg-secondary/40 border-b border-muted-foreground/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground flex items-start gap-1.5">
+        <div className="bg-secondary/40 border-b border-muted-foreground/30 px-3 py-1.5 sm:py-2 text-[11px] font-semibold text-muted-foreground flex items-start gap-1.5">
           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
           <div className="flex-1 min-w-0">
-            <div>📝 Revisar dados incompletos</div>
+            <div className="truncate sm:whitespace-normal">📝 Revisar dados incompletos</div>
             {classificationReason && (
-              <div className="opacity-90 font-normal mt-0.5">{classificationReason}</div>
+              <div className="opacity-90 font-normal mt-0.5 hidden sm:block">{classificationReason}</div>
             )}
           </div>
           <button
@@ -2200,14 +2212,16 @@ function ReviewRowBase({
             onClick={onToggleExpand}
             className="rounded-md border border-muted-foreground/40 px-2 py-0.5 text-[10px] font-semibold hover:bg-secondary transition shrink-0"
           >
-            Editar dados
+            Editar
           </button>
         </div>
       )}
       {item.categoryWarning && !isDuplicate && !isPossibleDup && !isIncomplete && (
-        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
-          <AlertCircle className="h-3 w-3" />
-          ⚠️ Verifique a categoria: {item.categoryWarning}
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-3 py-1 sm:py-1.5 text-[10px] font-semibold text-amber-500 flex items-center gap-1.5">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          <span className="truncate sm:whitespace-normal flex-1 min-w-0" title={item.categoryWarning}>
+            ⚠️ <span className="sm:hidden">Revisar categoria</span><span className="hidden sm:inline">Verifique a categoria: {item.categoryWarning}</span>
+          </span>
         </div>
       )}
       <div className="flex items-stretch gap-2 p-2">
@@ -2234,12 +2248,13 @@ function ReviewRowBase({
         {/* fields */}
         <div className="flex-1 min-w-0 grid grid-cols-2 gap-1.5">
           <div className="col-span-2">
-            <input
-              className={inputCls}
+            <textarea
+              className={`${inputCls} resize-none leading-tight sm:leading-normal`}
               placeholder={isProcessing ? "Analisando a noite..." : "Qual o nome da fera?"}
               value={item.form.title}
+              rows={2}
               onChange={(e) => {
-                const t = e.target.value.toUpperCase();
+                const t = e.target.value.replace(/\n+/g, " ").toUpperCase();
                 onChangeForm({ title: t, slug: t ? slugify(t) : "" });
               }}
               disabled={isProcessing}
