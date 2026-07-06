@@ -45,6 +45,7 @@ import {
   bulkPerfRecordDescription,
 } from "@/lib/bulkPerformanceMetrics";
 import BulkPerformancePanel from "./EventoBulkForm/BulkPerformancePanel";
+import { classifyTimeStatus, timeStatusBadge } from "@/lib/eventTimeStatus";
 
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
@@ -81,6 +82,14 @@ interface BulkItem {
   publishedEventId?: string;
   /** HOTFIX slug-collision — mensagem amigável do último erro de publicação para este item. */
   publishError?: string;
+  /**
+   * Onda 4 — origem do horário (client-side, não persiste). Usado para
+   * distinguir "horário confirmado no flyer" de "horário sugerido pelo lote"
+   * de "sem horário".
+   */
+  timeSource?: import("@/lib/eventTimeStatus").EventTimeSource;
+  /** Onda 4 — admin confirmou explicitamente um horário "suggested". */
+  timeConfirmed?: boolean;
 }
 
 type BulkTab = "atuais" | "revisao" | "prontos" | "erros" | "arquivados" | "todos";
@@ -470,6 +479,8 @@ const EventoBulkForm = () => {
     const incompleteIds = new Set<string>();
     const confirmedRealIds = new Set<string>();
     const possibleDupIds = new Set<string>();
+    const unknownTimeIds = new Set<string>();
+    const suggestedTimeIds = new Set<string>();
     const reasonById = new Map<string, string>();
 
     const dbHashSet = new Set<string>(
@@ -536,16 +547,47 @@ const EventoBulkForm = () => {
           it.localId,
           `Score ${sd.duplicate_score}/100 — coincide com "${sd.matched_event_title ?? "evento existente"}".`,
         );
+        continue;
       } else if (sd && sd.level !== "none") {
         possibleDupIds.add(it.localId);
         reasonById.set(
           it.localId,
           `Possível duplicado (${sd.duplicate_score}/100) — similar a "${sd.matched_event_title ?? "evento existente"}".`,
         );
+        continue;
+      }
+
+      // Onda 4 — status de horário: item sem hora vai para revisão como
+      // "Sem horário"; item com hora sugerida (batch/partner) exige que o
+      // admin confirme antes de contar como Pronto.
+      const timeStatus = classifyTimeStatus({
+        date_time: f.date_time,
+        time_is_unknown: f.time_is_unknown,
+        timeSource: it.timeSource,
+      });
+      if (timeStatus === "unknown") {
+        unknownTimeIds.add(it.localId);
+        incompleteIds.add(it.localId);
+        if (!reasonById.has(it.localId)) {
+          reasonById.set(it.localId, "⏰ Sem horário — confirme manualmente antes de publicar.");
+        }
+      } else if (timeStatus === "suggested" && !it.timeConfirmed) {
+        suggestedTimeIds.add(it.localId);
+        incompleteIds.add(it.localId);
+        if (!reasonById.has(it.localId)) {
+          reasonById.set(it.localId, "⏰ Horário sugerido pelo lote — confirme antes de publicar.");
+        }
       }
     }
 
-    return { incompleteIds, confirmedRealIds, possibleDupIds, reasonById };
+    return {
+      incompleteIds,
+      confirmedRealIds,
+      possibleDupIds,
+      unknownTimeIds,
+      suggestedTimeIds,
+      reasonById,
+    };
   }, [items, dbEvents, dbSlugs, smartDuplicates]);
 
   // Compat: duplicateIds = só duplicados REAIS confirmados.
@@ -558,7 +600,23 @@ const EventoBulkForm = () => {
   }
   function patchForm(localId: string, patch: Partial<EventFormData>) {
     setItems((prev) =>
-      prev.map((it) => (it.localId === localId ? { ...it, form: { ...it.form, ...patch } } : it)),
+      prev.map((it) => {
+        if (it.localId !== localId) return it;
+        const nextItem: BulkItem = { ...it, form: { ...it.form, ...patch } };
+        // Onda 4 — edição manual do horário reseta a origem e a marca como
+        // confirmada pelo admin. Não mexe em time_is_unknown se o patch já
+        // trouxer esse campo explícito.
+        if (Object.prototype.hasOwnProperty.call(patch, "date_time")) {
+          nextItem.timeSource = "manual";
+          nextItem.timeConfirmed = true;
+          if (!Object.prototype.hasOwnProperty.call(patch, "time_is_unknown")) {
+            const dt = String((patch as { date_time?: string }).date_time || "");
+            const hasReal = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dt) && dt.slice(11, 16) !== "00:00";
+            nextItem.form = { ...nextItem.form, time_is_unknown: !hasReal };
+          }
+        }
+        return nextItem;
+      }),
     );
   }
 
@@ -728,6 +786,9 @@ const EventoBulkForm = () => {
           const extractedHasTime = extractedHasDate && data.time_is_unknown !== true;
           let finalDateTime = extractedDateTime;
           let finalTimeIsUnknown: boolean = data.time_is_unknown === true || !extractedHasTime;
+          // Onda 4 — origem inicial do horário: flyer se veio confiável, senão desconhecido.
+          let finalTimeSource: import("@/lib/eventTimeStatus").EventTimeSource =
+            extractedHasTime ? "flyer" : "unknown";
           if (bd.enabled && (bd.date || bd.time)) {
             const useBatchDate = force ? !!bd.date : fillMissing ? (!extractedHasDate && !!bd.date) : false;
             const useBatchTime = force ? !!bd.time : fillMissing ? (!extractedHasTime && !!bd.time) : false;
@@ -736,9 +797,12 @@ const EventoBulkForm = () => {
             if (baseDate && baseTime) {
               finalDateTime = `${baseDate}T${baseTime}`;
               finalTimeIsUnknown = false;
+              // Horário veio do padrão do lote → sugestão que exige confirmação.
+              if (useBatchTime) finalTimeSource = "batch";
             } else if (baseDate) {
               finalDateTime = `${baseDate}T00:00`;
               finalTimeIsUnknown = true;
+              finalTimeSource = "unknown";
             }
           }
 
@@ -788,6 +852,8 @@ const EventoBulkForm = () => {
             categoryWarning,
             pastness,
             archived: autoArchive ? true : it.archived,
+            timeSource: finalTimeSource,
+            timeConfirmed: finalTimeSource === "flyer",
           };
         }),
       );
@@ -1024,6 +1090,9 @@ const EventoBulkForm = () => {
         const hasTime = hasDate && f.time_is_unknown !== true;
         const next: EventFormData = { ...f };
         let changed = false;
+        // Onda 4 — rastreia origem quando o padrão do lote aplica horário.
+        let nextTimeSource: import("@/lib/eventTimeStatus").EventTimeSource | undefined = it.timeSource;
+        let nextTimeConfirmed: boolean | undefined = it.timeConfirmed;
 
         if (bd.date || bd.time) {
           const useBatchDate = force ? !!bd.date : fillMissing ? (!hasDate && !!bd.date) : false;
@@ -1032,10 +1101,16 @@ const EventoBulkForm = () => {
           const baseTime = useBatchTime ? bd.time : (hasTime ? f.date_time.slice(11, 16) : "");
           if (baseDate && baseTime) {
             const dt = `${baseDate}T${baseTime}`;
-            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = false; changed = true; }
+            if (dt !== f.date_time) {
+              next.date_time = dt; next.time_is_unknown = false; changed = true;
+              if (useBatchTime) { nextTimeSource = "batch"; nextTimeConfirmed = false; }
+            }
           } else if (baseDate) {
             const dt = `${baseDate}T00:00`;
-            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = true; changed = true; }
+            if (dt !== f.date_time) {
+              next.date_time = dt; next.time_is_unknown = true; changed = true;
+              nextTimeSource = "unknown"; nextTimeConfirmed = false;
+            }
           }
         }
         if (bd.partner_id && partner && (force || (fillMissing && !f.partner_id))) {
@@ -1054,7 +1129,9 @@ const EventoBulkForm = () => {
           if ((next as any)._sub !== bd.sub_category) { (next as any)._sub = bd.sub_category; changed = true; }
         }
         if (changed) touched++;
-        return changed ? { ...it, form: next } : it;
+        return changed
+          ? { ...it, form: next, timeSource: nextTimeSource, timeConfirmed: nextTimeConfirmed }
+          : it;
       }),
     );
     toast.success(`Padrões aplicados em ${touched} evento(s).`);
@@ -2039,6 +2116,7 @@ const EventoBulkForm = () => {
               onGenerateDesc={() => handleGenerateDescription(it.localId)}
               generatingDesc={generatingDescIds.has(it.localId)}
               onChangeFormFull={(form) => patchForm(it.localId, form)}
+              onConfirmTime={() => patchItem(it.localId, { timeConfirmed: true })}
             />
           ))}
 
@@ -2101,6 +2179,8 @@ interface ReviewRowProps {
   onRemove: () => void;
   onGenerateDesc: () => void;
   generatingDesc: boolean;
+  /** Onda 4 — confirma horário sugerido (batch/partner). */
+  onConfirmTime?: () => void;
 }
 
 function ReviewRowBase({
@@ -2109,6 +2189,7 @@ function ReviewRowBase({
   smartDup, isArchived, pastness, onToggleArchived,
   onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
+  onConfirmTime,
 }: ReviewRowProps) {
 
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
@@ -2268,6 +2349,38 @@ function ReviewRowBase({
               onChange={(e) => onChangeForm({ date_time: e.target.value })}
               disabled={isProcessing}
             />
+            {(() => {
+              const status = classifyTimeStatus({
+                date_time: item.form.date_time,
+                time_is_unknown: item.form.time_is_unknown,
+                timeSource: item.timeSource,
+              });
+              const b = timeStatusBadge(status);
+              const toneCls =
+                b.tone === "success"
+                  ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
+                  : b.tone === "warning"
+                    ? "text-amber-300 border-amber-500/40 bg-amber-500/10"
+                    : "text-muted-foreground border-border/40 bg-secondary/40";
+              const isSuggestedUnconfirmed = status === "suggested" && !item.timeConfirmed;
+              return (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${toneCls}`}>
+                    <span>{b.emoji}</span>
+                    <span className="truncate">{b.label}</span>
+                  </span>
+                  {isSuggestedUnconfirmed && onConfirmTime && (
+                    <button
+                      type="button"
+                      onClick={onConfirmTime}
+                      className="rounded border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200 hover:bg-amber-500/20"
+                    >
+                      Confirmar
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div>
             <select

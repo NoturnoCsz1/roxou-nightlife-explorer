@@ -1,168 +1,110 @@
-# Onda 4 — Plano de execução
+## Onda 4 — Horário do flyer + status "confirmado / sugerido / a confirmar"
 
-Sem novas tabelas, RPCs ou colunas. Reuso máximo. Comportamento preservado.
+### Diagnóstico
 
-## 1. Quebrar `BioTabs.tsx` (1358 linhas)
+**Causa do horário não aplicado (confirmado no código, sem alterar prompts):**
 
-Extrair cada aba para arquivo próprio em `src/apps/partner/bio/tabs/`, mantendo `BioTabs.tsx` como orquestrador (~150 linhas):
+1. A Edge Function `extract-flyer-metadata` já retorna `date_iso` (com hora) e a flag `time_is_unknown` — mas o pipeline de bulk trata "hora ausente" e "hora extraída com baixa confiança" como o mesmo estado binário (`time_is_unknown: boolean`). Não existe distinção entre **horário confirmado no flyer**, **horário sugerido pelo parceiro** e **horário a confirmar**.
+2. Em `EventoBulkForm.tsx` (linhas 727-742), a variável `finalTimeIsUnknown` é forçada a `true` sempre que o `date_iso` não vem com hora, mesmo que exista contexto (funcionamento do parceiro). Não há tentativa de fallback.
+3. O contador "Prontos / Revisão / Publicáveis" usa `getChecklist(e).complete`, que exige `date_time` completo mas não distingue eventos com hora sugerida vs. confirmada.
+
+**Campos envolvidos:**
+
+- `EventFormData.date_time` (string `YYYY-MM-DDTHH:mm`)
+- `EventFormData.time_is_unknown` (boolean, já existe em banco)
+- Retorno da edge: `data.date_iso`, `data.time_is_unknown`
+- Parceiro: `partners.*` (ver bloqueio abaixo)
+
+### Bloqueio crítico — funcionalidade parcial
+
+O escopo pede: **"se o flyer não tiver horário, sugerir horário pelo funcionamento do parceiro quando houver um único horário confiável"**.
+
+A coluna `partners.opening_hours` **não existe** no schema (confirmado em `src/integrations/supabase/types.ts` e no comentário do próprio `PartnerOpeningHoursEditor.tsx`: "A coluna `opening_hours` ainda não existe em `partners`"). O usuário proibiu explicitamente alterar banco/RLS nesta onda.
+
+**Duas opções — preciso da sua escolha antes de implementar:**
+
+**Opção A (recomendada, 100% dentro das restrições):**  
+Implementar apenas o **status semântico do horário** (confirmado / a confirmar) usando o campo `time_is_unknown` já existente + uma flag client-side `time_source: "flyer" | "batch" | "manual" | "unknown"` no estado do bulk (não persistida). O fallback por parceiro fica registrado como **"pendente — depende de** `partners.opening_hours`**"** e a UI mostra o horário como "a confirmar" quando `time_is_unknown === true`.
+
+**Opção B:**  
+Você libera a criação da coluna `partners.opening_hours` (jsonb) via migration nesta onda. Aí o fallback fica funcional.
+
+### Plano (assumindo Opção A)
+
+#### 1. Novo helper `src/lib/eventTimeStatus.ts`
+
+Função pura que classifica um evento em um dos três estados, sem tocar banco:
 
 ```text
-src/apps/partner/bio/
-├── BioTabs.tsx                  # container + shadcn Tabs + roteamento
-└── tabs/
-    ├── BioHomeTab.tsx           # já existe inline → mover
-    ├── BioProfileTab.tsx
-    ├── BioLinksTab.tsx
-    ├── BioMenuTab.tsx           # alvo da etapa 4
-    ├── BioAnalyticsTab.tsx
-    ├── BioQrTab.tsx             # alvo da etapa 3
-    ├── BioShareTab.tsx          # nova (extrai painel Compartilhar)
-    └── BioSettingsTab.tsx
+timeStatus(form) →
+  "confirmed"  se date_time tem hora E time_is_unknown === false E hora !== "00:00"
+  "suggested"  se date_time tem hora E time_is_unknown === false E veio de padrão do lote (marcador in-memory)
+  "unknown"    se time_is_unknown === true OU hora === "00:00"
 ```
 
-Sem mudança de props, sem mudança de UX. Apenas split físico + imports.
+#### 2. `EventoBulkForm.tsx`
 
-## 2. Refatorar `PartnerAnalyticsPage.tsx` (441 linhas)
+- Adicionar `timeSource?: "flyer" | "batch" | "manual"` no tipo local `BulkItem` (não vai para o payload).
+- Ao aplicar `finalDateTime`, marcar `timeSource` conforme origem (`extractedHasTime` → `"flyer"`; `useBatchTime` → `"batch"`; edição manual → `"manual"`).
+- Nunca inventar hora: se `data.time_is_unknown === true` e não há batch time, manter `time_is_unknown: true` e `date_time` sem hora (`T00:00`), exatamente como hoje.
+- Badge no card: `⏰ Horário confirmado` (verde) / `⏰ Horário sugerido — confira` (âmbar) / `⏰ Sem horário — a confirmar` (cinza).
 
-Quebrar em sub-componentes lazy:
+#### 3. Contadores "Prontos / Revisão / Publicáveis"
 
-```text
-src/apps/partner/analytics/
-├── AnalyticsKpis.tsx           # KPIs topo (sync)
-├── AnalyticsFunnel.tsx         # funil de conversão (lazy)
-├── AnalyticsSources.tsx        # origem/UTM (lazy)
-├── AnalyticsDevice.tsx         # dispositivo/SO/browser (lazy)
-└── AnalyticsHourly.tsx         # horários de pico (lazy)
-```
+- Em `itemFlags` (bulk form): item com `timeStatus === "unknown"` passa a contar em **Revisão**, não em **Prontos**, mesmo com todos os outros campos preenchidos.
+- Item com `timeStatus === "suggested"` conta em **Revisão** até o admin confirmar (clicar num check "confirmar horário").
 
-`PartnerAnalyticsPage` vira shell de tabs com `React.lazy` + `Suspense`.
+#### 4. Listagem admin (`useEventosListActions.ts` / `getChecklist`)
 
-## 3. QR Studio unificado
+- `getChecklist(e).complete` passa a exigir `!e.time_is_unknown` (já é hoje via `date_time`, mas explicitar reduz falso "pronto").
+- Sem alterar publicação/slug/Onda 2/Onda 3.
 
-Em `BioQrTab` adicionar sub-abas de geração com tipos:
+#### 5. Validação
 
-- **Bio** (já existe)
-- **Reserva** (link `/r/:partnerSlug`)
-- **Lista VIP** (link `/lista/:listId`)
-- **Evento** (link `/eventos/:slug`)
-- **WhatsApp** (`https://wa.me/<num>?text=…`)
-- **PIX** (payload BR Code copia-e-cola, gerado client-side a partir de chave/valor)
+- `bunx tsgo --noEmit`
+- `bun run build`
+- Reportar: causa, campos, fallback (bloqueado ou aplicado), impacto em Rascunhos/Revisão.
 
-Tudo client-side com a lib `qrcode` já instalada. Sem tabelas. Helper novo: `src/apps/partner/bio/qr/qrTargets.ts` com builders.
+### Não alterado
 
-## 4. Cardápio premium (sem novas tabelas)
+Publicação, slug, Onda 2 (IA(N)), Onda 3 (402), banco, RLS, auth, prompts, Edge Functions, Partner Pro/Motorista/Transporte, concorrência, `handleBulkSave`, `DescriptionWorker`.
 
-Aproveitar campos existentes em `menu_items` (`is_featured`, `is_active`, `price`, `description`, `image_url`) e flags derivadas em runtime. O que adicionar visualmente em `BioMenuTab` + página pública `PublicBioMenuPage`:
+---
 
-- **Destaque**: filtro por `is_featured`.
-- **Mais vendidos**: ranking via `bio_analytics` (eventos `menu_item_click`); fallback ordem manual.
-- **Promoções**: heurística — itens com `description` contendo "promo"/"oferta" OU preço riscado via convenção `compare_at` em metadata (se presente). Se ausente, esconder seção.
-- **Complete seu pedido**: bloco final com 3 itens da mesma categoria do último clicado (estado local).
-- **Cross-sell simples**: ao abrir detalhe de um item, sugerir 2 itens da categoria "Bebidas" se item for "Comida" e vice-versa.
-
-Tudo derivado, sem migração.
-
-## 5. Performance
-
-- `vite.config.ts` — `manualChunks` para isolar `recharts` e `qrcode`.
-- `React.lazy` nos sub-componentes do Analytics (etapa 2).
-- `loading="lazy"` + `decoding="async"` nas imagens de menu e bio.
-- Remover imports estáticos de Recharts no shell do Analytics.
-
-## 6. Revisão mobile
-
-Checklist visual via Playwright (375×800) nas rotas:
-
-- `/bio` (todas as 8 abas — overflow, sticky, FAB)
-- `/analytics` (tabs colapsadas, gráficos lazy)
-- `/bio/qr` (sub-abas + preview QR centralizado)
-- `/configuracoes` (acordeão dos 6 grupos)
-
-Correções pontuais apenas onde houver overflow ou sobreposição.
-
-## Validação final
-
-```bash
-bunx tsgo --noEmit
-bun run build
-```
-
-Confirmar redução do chunk `recharts` para fora do bundle principal e ausência de regressões.
-
-## Fora de escopo
-
-- Novas tabelas, colunas, RPCs ou edge functions.
-- Mudanças em CRM, Transportes, GPS, Pagamentos.
-- Redesign das páginas — apenas split, lazy e features visuais aditivas no cardápio.
-
-Aprovado para executar a Onda 4.
+**Confirme a Opção A (sem coluna nova) ou Opção B (crio a migration** `partners.opening_hours`**) para eu prosseguir.**
 
 &nbsp;
 
-Ajustes obrigatórios antes da implementação:
+Confirmo a Opção A.
 
 &nbsp;
 
-1. QR Studio:
-
-Antes de criar builders fixos, auditar as rotas públicas reais de Reserva, Lista VIP, Evento, WhatsApp e PIX.
-
-Usar somente rotas canônicas existentes.
-
-Não inventar rota nova.
+Prosseguir sem migration e sem coluna nova.
 
 &nbsp;
 
-2. PIX:
+Implementar apenas:
 
-Se já existir helper de BR Code no projeto, reutilizar.
+- status semântico do horário: confirmado / sugerido / a confirmar;
 
-Se não existir, nesta fase gerar apenas QR simples com chave PIX/texto informado.
+- flag client-side `timeSource`;
 
-Não implementar regra complexa de Pix copia-e-cola agora.
+- badges visuais;
 
-&nbsp;
+- item com horário desconhecido indo para Revisão;
 
-3. Escopo:
+- item com horário sugerido exigindo confirmação manual;
 
-Sem novas tabelas, colunas, RPCs, edge functions ou dependências.
-
-Sem mudança de comportamento.
-
-Apenas split, lazy loading, QR Studio, cardápio premium visual e ajustes mobile.
+- sem fallback real por funcionamento do parceiro por enquanto.
 
 &nbsp;
 
-Executar Onda 4 com:
-
-- BioTabs quebrado por abas
-
-- Analytics lazy/refatorado
-
-- QR Studio unificado
-
-- Cardápio premium sem schema novo
-
-- Manual chunks para Recharts/QRCode
-
-- Revisão mobile
+Registrar no relatório que o fallback por funcionamento do parceiro está bloqueado porque `partners.opening_hours` não existe no schema e será uma etapa futura separada.
 
 &nbsp;
 
-Finalizar com:
+Rodar:
 
 bunx tsgo --noEmit
 
 bun run build
-
-&nbsp;
-
-E entregar relatório com:
-
-- arquivos criados/alterados
-
-- chunk principal antes/depois, se disponível
-
-- validação mobile
-
-- pendências que ficaram fora de escopo

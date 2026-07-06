@@ -27,6 +27,8 @@ export interface EventRow {
   short_summary?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  /** Onda 4 — necessário para o checklist saber se o horário é confiável. */
+  time_is_unknown?: boolean | null;
 }
 
 export type OriginFilter =
