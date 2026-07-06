@@ -802,6 +802,8 @@ const EventoBulkForm = () => {
             categoryWarning,
             pastness,
             archived: autoArchive ? true : it.archived,
+            timeSource: finalTimeSource,
+            timeConfirmed: finalTimeSource === "flyer",
           };
         }),
       );
