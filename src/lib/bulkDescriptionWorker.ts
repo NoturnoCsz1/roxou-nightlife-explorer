@@ -172,7 +172,11 @@ class DescriptionWorker {
         "generate-description",
         { body: job.payload },
       );
-      if (error) throw error;
+      if (error) {
+        const { classifyAiError } = await import("./aiGatewayError");
+        const c = await classifyAiError(error, data);
+        throw new Error(c.message);
+      }
       const d = (data ?? {}) as Record<string, unknown>;
       const result: DescriptionResult = {
         description_html:
