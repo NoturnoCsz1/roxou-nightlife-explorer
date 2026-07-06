@@ -2,6 +2,7 @@
 import type React from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyAiError } from "@/lib/aiGatewayError";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import { slugify } from "./utils";
 import { buildHandleSubmit } from "./eventoFormSubmit";
