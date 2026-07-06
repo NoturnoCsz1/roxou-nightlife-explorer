@@ -1720,6 +1720,11 @@ const EventoBulkForm = () => {
         Boolean((it.form as any).needs_review) ||
         it.pastness === "ambiguous"),
   ).length;
+  // Onda 6.1 — "Pronto" (publicável) e "Revisão" NÃO podem se sobrepor.
+  // `readyCount` = todos os itens com status=ready (Processado + publicável),
+  // usado por handleBulkSave/publicação (não alterar). O painel e a aba usam
+  // `publishableReadyCount` para refletir a semântica correta.
+  const publishableReadyCount = Math.max(0, readyCount - needsReviewCount);
   const atuaisCount = items.filter(
     (it) => !it.archived && it.status !== "error" && it.status !== "cancelled",
   ).length;
