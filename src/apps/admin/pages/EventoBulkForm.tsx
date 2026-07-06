@@ -2248,12 +2248,13 @@ function ReviewRowBase({
         {/* fields */}
         <div className="flex-1 min-w-0 grid grid-cols-2 gap-1.5">
           <div className="col-span-2">
-            <input
-              className={inputCls}
+            <textarea
+              className={`${inputCls} resize-none leading-tight sm:leading-normal`}
               placeholder={isProcessing ? "Analisando a noite..." : "Qual o nome da fera?"}
               value={item.form.title}
+              rows={2}
               onChange={(e) => {
-                const t = e.target.value.toUpperCase();
+                const t = e.target.value.replace(/\n+/g, " ").toUpperCase();
                 onChangeForm({ title: t, slug: t ? slugify(t) : "" });
               }}
               disabled={isProcessing}
