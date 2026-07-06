@@ -81,6 +81,14 @@ interface BulkItem {
   publishedEventId?: string;
   /** HOTFIX slug-collision — mensagem amigável do último erro de publicação para este item. */
   publishError?: string;
+  /**
+   * Onda 4 — origem do horário (client-side, não persiste). Usado para
+   * distinguir "horário confirmado no flyer" de "horário sugerido pelo lote"
+   * de "sem horário".
+   */
+  timeSource?: import("@/lib/eventTimeStatus").EventTimeSource;
+  /** Onda 4 — admin confirmou explicitamente um horário "suggested". */
+  timeConfirmed?: boolean;
 }
 
 type BulkTab = "atuais" | "revisao" | "prontos" | "erros" | "arquivados" | "todos";
