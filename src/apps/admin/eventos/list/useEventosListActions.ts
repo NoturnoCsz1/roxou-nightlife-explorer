@@ -16,6 +16,53 @@ import type { EventRow } from "./types";
 import { getChecklist, normalizeAiTitle } from "./helpers";
 import { hasEventDescription } from "@/lib/eventDescription";
 
+/**
+ * Consome o retorno da Edge Function `generate-description` e monta um patch
+ * apenas com os campos editoriais que estão vazios no evento (ou com todos
+ * eles quando `force=true`). Aceita tanto o formato português (`descricao_rica`,
+ * `chamada_site`) quanto o inglês (`description`, `title`, `instagram_caption`).
+ */
+function buildEditorialPatch(
+  e: EventRow,
+  data: unknown,
+  opts: { force?: boolean } = {}
+): Record<string, unknown> & { __anyChange: boolean } {
+  const d = (data ?? {}) as Record<string, unknown>;
+  const pick = (v: unknown): string =>
+    typeof v === "string" ? v.trim() : "";
+  const description =
+    pick(d.description_html) || pick(d.descricao_rica) || pick(d.description);
+  const instagramCaption = pick(d.instagram_caption) || pick(d.caption);
+  const shortSummary = pick(d.short_summary) || pick(d.resumo_curto);
+  const metaTitle = pick(d.meta_title);
+  const metaDescription = pick(d.meta_description);
+
+  const patch: Record<string, unknown> = {};
+  const empty = (v: unknown) => !((typeof v === "string" ? v : "") || "").trim();
+  if (description && (opts.force || empty(e.description))) patch.description = description;
+  if (instagramCaption && (opts.force || empty(e.instagram_caption)))
+    patch.instagram_caption = instagramCaption;
+  if (shortSummary && (opts.force || empty(e.short_summary))) patch.short_summary = shortSummary;
+  if (metaTitle && (opts.force || empty(e.meta_title))) patch.meta_title = metaTitle;
+  if (metaDescription && (opts.force || empty(e.meta_description)))
+    patch.meta_description = metaDescription;
+
+  return { ...patch, __anyChange: Object.keys(patch).length > 0 };
+}
+
+/**
+ * True quando o evento ainda precisa da IA para completar conteúdo editorial.
+ * Considera-se completo quando existe descrição E legenda Instagram.
+ */
+export function eventNeedsAiContent(e: EventRow): boolean {
+  const hasDesc = hasEventDescription(e as unknown as Record<string, unknown>);
+  const hasCaption = !!(e.instagram_caption || "").trim();
+  return !hasDesc || !hasCaption;
+}
+
+// Lock de reentrância do bulk IA — impede clique duplo no botão IA(N).
+const bulkAiInflight = new Set<string>();
+
 interface ActionsDeps {
   navigate: NavigateFunction;
   cityFilter: string | null | undefined;
@@ -89,7 +136,7 @@ export function useEventosListActions(deps: ActionsDeps) {
       let query = supabase
         .from("events")
         .select(
-          "id, title, slug, venue_name, address, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score"
+          "id, title, slug, venue_name, address, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score, instagram_caption, short_summary, meta_title, meta_description"
         )
         .order("created_at", { ascending: false });
       if (cityFilter) query = query.eq("city", cityFilter);
@@ -278,8 +325,10 @@ export function useEventosListActions(deps: ActionsDeps) {
 
     async function regenerateDescription(e: EventRow, opts?: { force?: boolean }) {
       const alreadyHas = hasEventDescription(e as unknown as Record<string, unknown>);
-      if (alreadyHas && !opts?.force) {
-        toast.info("Este evento já possui descrição. Use 'Substituir' para regerar.");
+      const hasCaption = !!(e.instagram_caption || "").trim();
+      // Se já tem descrição E legenda, exige `force` para regerar.
+      if (alreadyHas && hasCaption && !opts?.force) {
+        toast.info("Este evento já possui descrição e legenda. Use 'Substituir' para regerar.");
         return;
       }
       setAiBusy((p) => ({ ...p, [e.id]: "desc" }));
@@ -297,18 +346,23 @@ export function useEventosListActions(deps: ActionsDeps) {
           },
         });
         if (error) throw error;
-        const html = (data as any)?.descricao_rica || (data as any)?.description;
-        if (!html) throw new Error("IA não retornou descrição");
-        await supabase.from("events").update({ description: html }).eq("id", e.id);
-        setEvents((prev) => prev.map((x) => (x.id === e.id ? { ...x, description: html } : x)));
+        const patch = buildEditorialPatch(e, data, { force: !!opts?.force });
+        if (!patch.__anyChange) throw new Error("IA não retornou conteúdo utilizável");
+        const dbPatch = { ...patch } as Record<string, unknown>;
+        delete dbPatch.__anyChange;
+        await supabase.from("events").update(dbPatch as any).eq("id", e.id);
+        setEvents((prev) =>
+          prev.map((x) => (x.id === e.id ? { ...x, ...(dbPatch as Partial<EventRow>) } : x))
+        );
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
           console.debug("[regenerateDescription]", {
             id: e.id,
             ms: Math.round(performance.now() - startedAt),
+            fields: Object.keys(dbPatch),
           });
         }
-        toast.success("Descrição rica gerada");
+        toast.success("Conteúdo IA aplicado");
       } catch (err: any) {
         toast.error(err?.message || "Falha ao gerar descrição");
       } finally {
@@ -492,25 +546,33 @@ export function useEventosListActions(deps: ActionsDeps) {
       toast.success(`👥 Parceiro aplicado a ${ids.length} evento(s)`);
     }
 
-    // === Gerar descrição IA para selecionados sem descrição (após confirmação) ===
-    // Fila client-side com concorrência 2 + relatório final.
+    // === Gerar conteúdo IA (descrição + legenda IG + SEO) para selecionados ===
+    // Fila client-side com concorrência 2. Só chama IA para eventos que ainda
+    // precisam de algum campo editorial (descrição OU legenda IG). Nunca
+    // sobrescreve campo que já estava preenchido.
     async function handleBulkGenerateDescriptions(ids: string[]) {
+      // Chave de reentrância: mesmo conjunto de ids não pode disparar 2×.
+      const lockKey = [...ids].sort().join(",");
+      if (bulkAiInflight.has(lockKey)) {
+        toast.info("Geração IA já em andamento para esta seleção.");
+        return;
+      }
+      bulkAiInflight.add(lockKey);
+
       const selected = events.filter((e) => ids.includes(e.id));
-      const ignored = selected.filter((e) =>
-        hasEventDescription(e as unknown as Record<string, unknown>)
-      ).length;
-      const targets = selected.filter(
-        (e) => !hasEventDescription(e as unknown as Record<string, unknown>)
-      );
+      const targets = selected.filter((e) => eventNeedsAiContent(e));
+      const ignored = selected.length - targets.length;
       if (targets.length === 0) {
-        toast.info("Nenhum dos selecionados precisa de descrição.");
+        bulkAiInflight.delete(lockKey);
+        toast.info("Nenhum dos selecionados precisa da IA.");
         return;
       }
 
       const total = targets.length;
-      const progressId = toast.loading(`Gerando descrição: 0 de ${total}…`);
+      const progressId = toast.loading(`Gerando conteúdo IA: 0 de ${total}…`);
       let ok = 0;
       let fail = 0;
+      let skipped = 0;
       let done = 0;
 
       const runOne = async (e: EventRow) => {
@@ -528,11 +590,22 @@ export function useEventosListActions(deps: ActionsDeps) {
             },
           });
           if (error) throw error;
-          const html = (data as any)?.descricao_rica || (data as any)?.description;
-          if (!html) throw new Error("sem retorno");
-          await supabase.from("events").update({ description: html }).eq("id", e.id);
+          // Snapshot atualizado do evento (pode ter mudado por outro worker).
+          const current = events.find((x) => x.id === e.id) ?? e;
+          const patch = buildEditorialPatch(current, data);
+          if (!patch.__anyChange) {
+            skipped++;
+            return;
+          }
+          const dbPatch = { ...patch } as Record<string, unknown>;
+          delete dbPatch.__anyChange;
+          const { error: upErr } = await supabase
+            .from("events")
+            .update(dbPatch as any)
+            .eq("id", e.id);
+          if (upErr) throw upErr;
           setEvents((prev) =>
-            prev.map((x) => (x.id === e.id ? { ...x, description: html } : x))
+            prev.map((x) => (x.id === e.id ? { ...x, ...(dbPatch as Partial<EventRow>) } : x))
           );
           ok++;
         } catch {
@@ -540,28 +613,33 @@ export function useEventosListActions(deps: ActionsDeps) {
         } finally {
           setAiBusy((p) => ({ ...p, [e.id]: null }));
           done++;
-          toast.loading(`Gerando descrição: ${done} de ${total}…`, { id: progressId });
+          // done inclui ok + fail + skipped — contador nunca trava em 0/N.
+          toast.loading(`Gerando conteúdo IA: ${done} de ${total}…`, { id: progressId });
         }
       };
 
-      // Worker pool: concorrência máxima 2. Se uma falhar, as demais seguem.
-      const CONCURRENCY = 2;
-      const queue = [...targets];
-      const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
-        while (queue.length > 0) {
-          const next = queue.shift();
-          if (!next) break;
-          await runOne(next);
-        }
-      });
-      await Promise.all(workers);
+      try {
+        const CONCURRENCY = 2;
+        const queue = [...targets];
+        const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+          while (queue.length > 0) {
+            const next = queue.shift();
+            if (!next) break;
+            await runOne(next);
+          }
+        });
+        await Promise.all(workers);
+      } finally {
+        bulkAiInflight.delete(lockKey);
+      }
 
       toast.dismiss(progressId);
       const parts: string[] = [];
-      if (ok > 0) parts.push(`${ok} geradas`);
-      if (ignored > 0) parts.push(`${ignored} ignoradas (já tinham descrição)`);
-      if (fail > 0) parts.push(`${fail} falhas`);
-      const summary = parts.join(" · ");
+      if (ok > 0) parts.push(`${ok} atualizado(s)`);
+      if (skipped > 0) parts.push(`${skipped} sem mudança`);
+      if (ignored > 0) parts.push(`${ignored} já estavam completos`);
+      if (fail > 0) parts.push(`${fail} falha(s)`);
+      const summary = parts.join(" · ") || "Nada a fazer";
       if (fail === 0 && ok > 0) toast.success(`✨ ${summary}`);
       else if (ok === 0 && fail > 0) toast.error(summary);
       else toast.message(summary);
