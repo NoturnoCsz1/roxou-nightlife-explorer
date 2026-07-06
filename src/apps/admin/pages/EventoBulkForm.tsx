@@ -205,7 +205,7 @@ const EventoBulkForm = () => {
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
-  const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
+  const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null; partner_id: string | null }>>([]);
   const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
   const [batchDefaults, setBatchDefaults] = useState<BatchDefaults>(emptyBatchDefaults);
   const batchDefaultsRef = useRef<BatchDefaults>(emptyBatchDefaults());
