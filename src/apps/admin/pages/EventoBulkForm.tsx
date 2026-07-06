@@ -1501,14 +1501,15 @@ const EventoBulkForm = () => {
       const lines = ready.map((it, idx) => {
         const i = idx + 1;
         const titulo = it.form.title || "(sem título)";
+        const reason = itemFlags.reasonById.get(it.localId);
         if (itemFlags.confirmedRealIds.has(it.localId)) {
-          return `• Evento ${i} — ${titulo}: duplicado real já existente`;
+          return `• Evento ${i} — ${titulo}: ${reason ?? "duplicado real já existente"}`;
         }
         if (itemFlags.possibleDupIds.has(it.localId)) {
-          return `• Evento ${i} — ${titulo}: possível duplicado (use "Publicar mesmo assim" no item)`;
+          return `• Evento ${i} — ${titulo}: ${reason ?? 'possível duplicado (use "Publicar mesmo assim" no item)'}`;
         }
         if (itemFlags.incompleteIds.has(it.localId)) {
-          return `• Evento ${i} — ${titulo}: dados incompletos`;
+          return `• Evento ${i} — ${titulo}: ${reason ?? "dados incompletos"}`;
         }
         return `• Evento ${i} — ${titulo}: pronto`;
       }).join("\n");
