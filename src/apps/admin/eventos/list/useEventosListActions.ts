@@ -16,6 +16,53 @@ import type { EventRow } from "./types";
 import { getChecklist, normalizeAiTitle } from "./helpers";
 import { hasEventDescription } from "@/lib/eventDescription";
 
+/**
+ * Consome o retorno da Edge Function `generate-description` e monta um patch
+ * apenas com os campos editoriais que estão vazios no evento (ou com todos
+ * eles quando `force=true`). Aceita tanto o formato português (`descricao_rica`,
+ * `chamada_site`) quanto o inglês (`description`, `title`, `instagram_caption`).
+ */
+function buildEditorialPatch(
+  e: EventRow,
+  data: unknown,
+  opts: { force?: boolean } = {}
+): Record<string, unknown> & { __anyChange: boolean } {
+  const d = (data ?? {}) as Record<string, unknown>;
+  const pick = (v: unknown): string =>
+    typeof v === "string" ? v.trim() : "";
+  const description =
+    pick(d.description_html) || pick(d.descricao_rica) || pick(d.description);
+  const instagramCaption = pick(d.instagram_caption) || pick(d.caption);
+  const shortSummary = pick(d.short_summary) || pick(d.resumo_curto);
+  const metaTitle = pick(d.meta_title);
+  const metaDescription = pick(d.meta_description);
+
+  const patch: Record<string, unknown> = {};
+  const empty = (v: unknown) => !((typeof v === "string" ? v : "") || "").trim();
+  if (description && (opts.force || empty(e.description))) patch.description = description;
+  if (instagramCaption && (opts.force || empty(e.instagram_caption)))
+    patch.instagram_caption = instagramCaption;
+  if (shortSummary && (opts.force || empty(e.short_summary))) patch.short_summary = shortSummary;
+  if (metaTitle && (opts.force || empty(e.meta_title))) patch.meta_title = metaTitle;
+  if (metaDescription && (opts.force || empty(e.meta_description)))
+    patch.meta_description = metaDescription;
+
+  return { ...patch, __anyChange: Object.keys(patch).length > 0 };
+}
+
+/**
+ * True quando o evento ainda precisa da IA para completar conteúdo editorial.
+ * Considera-se completo quando existe descrição E legenda Instagram.
+ */
+export function eventNeedsAiContent(e: EventRow): boolean {
+  const hasDesc = hasEventDescription(e as unknown as Record<string, unknown>);
+  const hasCaption = !!(e.instagram_caption || "").trim();
+  return !hasDesc || !hasCaption;
+}
+
+// Lock de reentrância do bulk IA — impede clique duplo no botão IA(N).
+const bulkAiInflight = new Set<string>();
+
 interface ActionsDeps {
   navigate: NavigateFunction;
   cityFilter: string | null | undefined;
