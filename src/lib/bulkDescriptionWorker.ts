@@ -165,6 +165,8 @@ class DescriptionWorker {
     const t0 = performance.now();
     job.onUpdate({ status: "running" });
     log("start", { id: job.id, attempt: job.attempts + 1 });
+    bulkPerfObserveConcurrency("description", this.active);
+    bulkPerfRecordAiCall("description");
     try {
       const { data, error } = await supabase.functions.invoke(
         "generate-description",
