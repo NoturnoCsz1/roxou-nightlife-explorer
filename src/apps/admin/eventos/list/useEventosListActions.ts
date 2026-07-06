@@ -350,7 +350,7 @@ export function useEventosListActions(deps: ActionsDeps) {
         if (!patch.__anyChange) throw new Error("IA não retornou conteúdo utilizável");
         const dbPatch = { ...patch } as Record<string, unknown>;
         delete dbPatch.__anyChange;
-        await supabase.from("events").update(dbPatch).eq("id", e.id);
+        await supabase.from("events").update(dbPatch as any).eq("id", e.id);
         setEvents((prev) =>
           prev.map((x) => (x.id === e.id ? { ...x, ...(dbPatch as Partial<EventRow>) } : x))
         );
