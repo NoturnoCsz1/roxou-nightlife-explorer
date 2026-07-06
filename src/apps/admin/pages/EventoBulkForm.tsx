@@ -482,6 +482,11 @@ const EventoBulkForm = () => {
     }
 
     for (const it of items) {
+      // HOTFIX pendências — item ainda em pipeline não deve ser marcado como
+      // "Dados incompletos" nem como duplicado: aguardar extração terminar.
+      if (it.status === "queued" || it.status === "uploading" || it.status === "extracting") {
+        continue;
+      }
       const f = it.form;
       const hasTitle = !!(f.title || "").trim();
       const hasDate = !!(f.date_time || "").trim();
