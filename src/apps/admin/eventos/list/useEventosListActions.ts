@@ -587,10 +587,16 @@ export function useEventosListActions(deps: ActionsDeps) {
       let fail = 0;
       let skipped = 0;
       let done = 0;
+      let aborted = false;
+      let abortReason: string | null = null;
 
       const runOne = async (e: EventRow) => {
         setAiBusy((p) => ({ ...p, [e.id]: "desc" }));
         try {
+          if (aborted) {
+            skipped++;
+            return;
+          }
           const { data, error } = await supabase.functions.invoke("generate-description", {
             body: {
               title: e.title,
@@ -602,7 +608,15 @@ export function useEventosListActions(deps: ActionsDeps) {
               partner_id: e.partner_id || undefined,
             },
           });
-          if (error) throw error;
+          if (error) {
+            const c = await classifyAiError(error, data);
+            if (c.fatalForBulk && !aborted) {
+              aborted = true;
+              abortReason = c.message;
+            }
+            fail++;
+            return;
+          }
           // Snapshot atualizado do evento (pode ter mudado por outro worker).
           const current = events.find((x) => x.id === e.id) ?? e;
           const patch = buildEditorialPatch(current, data);
@@ -621,12 +635,17 @@ export function useEventosListActions(deps: ActionsDeps) {
             prev.map((x) => (x.id === e.id ? { ...x, ...(dbPatch as Partial<EventRow>) } : x))
           );
           ok++;
-        } catch {
+        } catch (err) {
+          const c = await classifyAiError(err);
+          if (c.fatalForBulk && !aborted) {
+            aborted = true;
+            abortReason = c.message;
+          }
           fail++;
         } finally {
           setAiBusy((p) => ({ ...p, [e.id]: null }));
           done++;
-          // done inclui ok + fail + skipped — contador nunca trava em 0/N.
+          // done inclui ok + fail + skipped — contador nunca trava em 0/N nem X/N.
           toast.loading(`Gerando conteúdo IA: ${done} de ${total}…`, { id: progressId });
         }
       };
@@ -636,26 +655,47 @@ export function useEventosListActions(deps: ActionsDeps) {
         const queue = [...targets];
         const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
           while (queue.length > 0) {
+            // Aborto suave: drena o restante como "skipped" para o contador fechar.
+            if (aborted) {
+              const remaining = queue.splice(0, queue.length);
+              for (const r of remaining) {
+                skipped++;
+                done++;
+                setAiBusy((p) => ({ ...p, [r.id]: null }));
+                toast.loading(`Gerando conteúdo IA: ${done} de ${total}…`, { id: progressId });
+              }
+              break;
+            }
             const next = queue.shift();
             if (!next) break;
             await runOne(next);
           }
         });
         await Promise.all(workers);
+      } catch (err) {
+        // Nunca deixa a UI travada — captura qualquer erro inesperado do orquestrador.
+        const c = await classifyAiError(err);
+        toast.error(c.message);
       } finally {
         bulkAiInflight.delete(lockKey);
+        toast.dismiss(progressId);
       }
 
-      toast.dismiss(progressId);
       const parts: string[] = [];
       if (ok > 0) parts.push(`${ok} atualizado(s)`);
       if (skipped > 0) parts.push(`${skipped} sem mudança`);
       if (ignored > 0) parts.push(`${ignored} já estavam completos`);
       if (fail > 0) parts.push(`${fail} falha(s)`);
       const summary = parts.join(" · ") || "Nada a fazer";
-      if (fail === 0 && ok > 0) toast.success(`✨ ${summary}`);
-      else if (ok === 0 && fail > 0) toast.error(summary);
-      else toast.message(summary);
+      if (aborted && abortReason) {
+        toast.error(`⏹ ${abortReason} — ${summary}`);
+      } else if (fail === 0 && ok > 0) {
+        toast.success(`✨ ${summary}`);
+      } else if (ok === 0 && fail > 0) {
+        toast.error(summary);
+      } else {
+        toast.message(summary);
+      }
     }
 
     async function handleApproveAllSafe(visibleSafeIds: string[]) {
