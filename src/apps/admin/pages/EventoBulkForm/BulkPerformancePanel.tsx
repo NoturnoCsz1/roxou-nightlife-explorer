@@ -40,6 +40,7 @@ export default function BulkPerformancePanel({
   errorCount,
   archivedCount,
   reviewCount,
+  skipDescriptions = false,
 }: Props) {
   const snap = useSyncExternalStore(subscribeBulkPerf, getBulkPerfSnapshot, getBulkPerfSnapshot);
   const [open, setOpen] = useState(false);
