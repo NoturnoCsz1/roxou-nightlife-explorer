@@ -648,21 +648,32 @@ const EventoBulkForm = () => {
         if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
       }
 
-      // 0. Compressão antes do upload (resize 1600px, JPEG q=0.8).
-      const compT0 = performance.now();
-      const { file: workFile, bytesBefore, bytesAfter, compressed } =
-        await compressImage(file);
-      stageMs.compress = Math.round(performance.now() - compT0);
-      bulkPerfRecordStage("compress", stageMs.compress);
-      if (compressed) {
-        bulkLog("resized", {
-          id: localId,
-          file: file.name,
-          size_before: bytesBefore,
-          size_after: bytesAfter,
-        });
+      // Onda 6.1 — Cache HIT COMPLETO (data + image_url) NÃO exige compressão.
+      // A chave depende só de name|size|lastModified do arquivo original;
+      // comprimir aqui é trabalho puro perdido e inflava "Média compressão".
+      const fullCacheHit = !!(cached && cached.data && cached.image_url);
+      let workFile: File = file;
+      let bytesBefore = file.size;
+      let bytesAfter = file.size;
+      if (!fullCacheHit) {
+        // Compressão antes do upload (resize 1600px, JPEG q=0.8).
+        const compT0 = performance.now();
+        const res = await compressImage(file);
+        stageMs.compress = Math.round(performance.now() - compT0);
+        bulkPerfRecordStage("compress", stageMs.compress);
+        workFile = res.file;
+        bytesBefore = res.bytesBefore;
+        bytesAfter = res.bytesAfter;
+        if (res.compressed) {
+          bulkLog("resized", {
+            id: localId,
+            file: file.name,
+            size_before: bytesBefore,
+            size_after: bytesAfter,
+          });
+        }
       }
-      // Atualiza referência para retry usar o arquivo já comprimido.
+      // Atualiza referência para retry usar o arquivo (comprimido ou original).
       fileMapRef.current.set(localId, workFile);
 
       let publicUrl: string | null = cached?.image_url ?? null;
@@ -903,10 +914,28 @@ const EventoBulkForm = () => {
 
 
 
-      // FASE 10G.1.2 — Geração de descrição agora roda no worker dedicado.
-      // Não bloqueia o pipeline de extração. Erro aqui não invalida o item.
+      // FASE 10G.1.2 — Geração de descrição no worker dedicado (não bloqueia).
+      // Onda 6.1 — instrumenta elegibilidade para diagnosticar "Chamadas IA descrição: 0".
       const f = readyForm as EventFormData | null;
-      if (f && f.title && f.title.length > 3 && !skipDescriptionsRef.current) {
+      const hasDescription = !!(f?.description && f.description.length > 30);
+      const hasInstagramCaption = !!(f as any)?.instagram_caption;
+      const titleOk = !!(f && f.title && f.title.length > 3);
+      const skipSetting = skipDescriptionsRef.current;
+      const eligible = titleOk && !skipSetting;
+      const reason = !f ? "no_ready_form"
+        : !titleOk ? "title_too_short"
+        : skipSetting ? "skip_descriptions_enabled"
+        : "eligible";
+      // eslint-disable-next-line no-console
+      console.info("[BULK_DESCRIPTION_ELIGIBILITY]", {
+        localId,
+        eligible,
+        reason,
+        skipDescriptionsSetting: skipSetting,
+        hasDescription,
+        hasInstagramCaption,
+      });
+      if (eligible && f) {
         const previousDescs = items
           .map((x) => x.form.description)
           .filter((d): d is string => !!d && d.length > 30)
@@ -1691,6 +1720,11 @@ const EventoBulkForm = () => {
         Boolean((it.form as any).needs_review) ||
         it.pastness === "ambiguous"),
   ).length;
+  // Onda 6.1 — "Pronto" (publicável) e "Revisão" NÃO podem se sobrepor.
+  // `readyCount` = todos os itens com status=ready (Processado + publicável),
+  // usado por handleBulkSave/publicação (não alterar). O painel e a aba usam
+  // `publishableReadyCount` para refletir a semântica correta.
+  const publishableReadyCount = Math.max(0, readyCount - needsReviewCount);
   const atuaisCount = items.filter(
     (it) => !it.archived && it.status !== "error" && it.status !== "cancelled",
   ).length;
@@ -1888,7 +1922,7 @@ const EventoBulkForm = () => {
           {([
             ["atuais", "Atuais", atuaisCount],
             ["revisao", "Precisa revisão", needsReviewCount],
-            ["prontos", "Prontos", readyCount],
+            ["prontos", "Prontos", publishableReadyCount],
             ["erros", "Com erro", errorCount + cancelledCount],
             ["arquivados", "Arquivados", archivedCount],
             ["todos", "Todos", items.length],
@@ -1913,10 +1947,11 @@ const EventoBulkForm = () => {
       <BulkPerformancePanel
         batchSize={totalCount}
         processingCount={processingCount + queuedCount}
-        readyCount={readyCount}
+        readyCount={publishableReadyCount}
         errorCount={errorCount}
         archivedCount={archivedCount}
         reviewCount={needsReviewCount}
+        skipDescriptions={skipDescriptions}
       />
 
       {/* Thumbnail grid */}

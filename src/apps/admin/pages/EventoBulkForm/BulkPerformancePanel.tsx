@@ -18,10 +18,13 @@ interface Props {
   /** Total no lote atual (fonte de verdade = items.length). */
   batchSize: number;
   processingCount: number;
+  /** Onda 6.1 — só itens publicáveis (excl. Revisão). Não sobrepõe reviewCount. */
   readyCount: number;
   errorCount: number;
   archivedCount: number;
   reviewCount: number;
+  /** Onda 6.1 — quando true, mostra "Geração de conteúdo: desativada pelo usuário". */
+  skipDescriptions?: boolean;
 }
 
 function fmtMs(ms: number | null | undefined): string {
@@ -37,6 +40,7 @@ export default function BulkPerformancePanel({
   errorCount,
   archivedCount,
   reviewCount,
+  skipDescriptions = false,
 }: Props) {
   const snap = useSyncExternalStore(subscribeBulkPerf, getBulkPerfSnapshot, getBulkPerfSnapshot);
   const [open, setOpen] = useState(false);
@@ -74,7 +78,9 @@ export default function BulkPerformancePanel({
     ["Erros de conteúdo (IA)", contentErrorsLabel],
     ["Cache hits", cacheHitsLabel],
     ["Cache misses", cacheMissesLabel],
-    ["Descrições geradas", String(snap.descriptionsGenerated)],
+    ["Descrições geradas", skipDescriptions
+      ? "Geração de conteúdo: desativada pelo usuário"
+      : String(snap.descriptionsGenerated)],
     ["Duplicidades evitadas", String(snap.duplicatesSkipped)],
     ["Primeiro pronto", fmtMs(snap.firstReadyMs)],
     ["Tempo total do lote", fmtMs(snap.totalBatchMs)],
