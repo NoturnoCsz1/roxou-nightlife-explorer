@@ -1281,14 +1281,23 @@ const EventoBulkForm = () => {
           seed_index: Date.now() % 10000 + Math.floor(Math.random() * 100),
         },
       });
-      if (error) throw error;
+      if (error) {
+        const { classifyAiError } = await import("@/lib/aiGatewayError");
+        const c = await classifyAiError(error, data);
+        if (c.kind === "credits") toast.error(`💳 ${c.message}`);
+        else toast.error(c.message);
+        return;
+      }
       const rich = data?.descricao_rica || data?.description;
       if (rich) {
         patchForm(localId, { description: rich });
         if (data?.chamada_site) toast.success(`Copy: "${data.chamada_site}"`);
       }
-    } catch {
-      toast.error("Erro ao gerar descrição");
+    } catch (err: any) {
+      const { classifyAiError } = await import("@/lib/aiGatewayError");
+      const c = await classifyAiError(err);
+      if (c.kind === "credits") toast.error(`💳 ${c.message}`);
+      else toast.error(c.message);
     } finally {
       setGeneratingDescIds((s) => {
         const n = new Set(s);
