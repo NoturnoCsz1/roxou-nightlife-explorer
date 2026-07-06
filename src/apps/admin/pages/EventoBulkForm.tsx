@@ -478,6 +478,8 @@ const EventoBulkForm = () => {
     const incompleteIds = new Set<string>();
     const confirmedRealIds = new Set<string>();
     const possibleDupIds = new Set<string>();
+    const unknownTimeIds = new Set<string>();
+    const suggestedTimeIds = new Set<string>();
     const reasonById = new Map<string, string>();
 
     const dbHashSet = new Set<string>(
@@ -544,16 +546,47 @@ const EventoBulkForm = () => {
           it.localId,
           `Score ${sd.duplicate_score}/100 — coincide com "${sd.matched_event_title ?? "evento existente"}".`,
         );
+        continue;
       } else if (sd && sd.level !== "none") {
         possibleDupIds.add(it.localId);
         reasonById.set(
           it.localId,
           `Possível duplicado (${sd.duplicate_score}/100) — similar a "${sd.matched_event_title ?? "evento existente"}".`,
         );
+        continue;
+      }
+
+      // Onda 4 — status de horário: item sem hora vai para revisão como
+      // "Sem horário"; item com hora sugerida (batch/partner) exige que o
+      // admin confirme antes de contar como Pronto.
+      const timeStatus = classifyTimeStatus({
+        date_time: f.date_time,
+        time_is_unknown: f.time_is_unknown,
+        timeSource: it.timeSource,
+      });
+      if (timeStatus === "unknown") {
+        unknownTimeIds.add(it.localId);
+        incompleteIds.add(it.localId);
+        if (!reasonById.has(it.localId)) {
+          reasonById.set(it.localId, "⏰ Sem horário — confirme manualmente antes de publicar.");
+        }
+      } else if (timeStatus === "suggested" && !it.timeConfirmed) {
+        suggestedTimeIds.add(it.localId);
+        incompleteIds.add(it.localId);
+        if (!reasonById.has(it.localId)) {
+          reasonById.set(it.localId, "⏰ Horário sugerido pelo lote — confirme antes de publicar.");
+        }
       }
     }
 
-    return { incompleteIds, confirmedRealIds, possibleDupIds, reasonById };
+    return {
+      incompleteIds,
+      confirmedRealIds,
+      possibleDupIds,
+      unknownTimeIds,
+      suggestedTimeIds,
+      reasonById,
+    };
   }, [items, dbEvents, dbSlugs, smartDuplicates]);
 
   // Compat: duplicateIds = só duplicados REAIS confirmados.
