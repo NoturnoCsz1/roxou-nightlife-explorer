@@ -18,10 +18,13 @@ interface Props {
   /** Total no lote atual (fonte de verdade = items.length). */
   batchSize: number;
   processingCount: number;
+  /** Onda 6.1 — só itens publicáveis (excl. Revisão). Não sobrepõe reviewCount. */
   readyCount: number;
   errorCount: number;
   archivedCount: number;
   reviewCount: number;
+  /** Onda 6.1 — quando true, mostra "Geração de conteúdo: desativada pelo usuário". */
+  skipDescriptions?: boolean;
 }
 
 function fmtMs(ms: number | null | undefined): string {
