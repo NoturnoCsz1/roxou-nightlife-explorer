@@ -13,6 +13,10 @@
  * Concorrência padrão: 2 chamadas simultâneas.
  */
 import { supabase } from "@/integrations/supabase/client";
+import {
+  bulkPerfObserveConcurrency,
+  bulkPerfRecordAiCall,
+} from "./bulkPerformanceMetrics";
 
 export type DescriptionStatus =
   | "idle"
