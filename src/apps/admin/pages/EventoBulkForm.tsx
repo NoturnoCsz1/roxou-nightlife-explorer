@@ -1056,6 +1056,9 @@ const EventoBulkForm = () => {
         const hasTime = hasDate && f.time_is_unknown !== true;
         const next: EventFormData = { ...f };
         let changed = false;
+        // Onda 4 — rastreia origem quando o padrão do lote aplica horário.
+        let nextTimeSource: import("@/lib/eventTimeStatus").EventTimeSource | undefined = it.timeSource;
+        let nextTimeConfirmed: boolean | undefined = it.timeConfirmed;
 
         if (bd.date || bd.time) {
           const useBatchDate = force ? !!bd.date : fillMissing ? (!hasDate && !!bd.date) : false;
@@ -1064,10 +1067,16 @@ const EventoBulkForm = () => {
           const baseTime = useBatchTime ? bd.time : (hasTime ? f.date_time.slice(11, 16) : "");
           if (baseDate && baseTime) {
             const dt = `${baseDate}T${baseTime}`;
-            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = false; changed = true; }
+            if (dt !== f.date_time) {
+              next.date_time = dt; next.time_is_unknown = false; changed = true;
+              if (useBatchTime) { nextTimeSource = "batch"; nextTimeConfirmed = false; }
+            }
           } else if (baseDate) {
             const dt = `${baseDate}T00:00`;
-            if (dt !== f.date_time) { next.date_time = dt; next.time_is_unknown = true; changed = true; }
+            if (dt !== f.date_time) {
+              next.date_time = dt; next.time_is_unknown = true; changed = true;
+              nextTimeSource = "unknown"; nextTimeConfirmed = false;
+            }
           }
         }
         if (bd.partner_id && partner && (force || (fillMissing && !f.partner_id))) {
@@ -1086,7 +1095,9 @@ const EventoBulkForm = () => {
           if ((next as any)._sub !== bd.sub_category) { (next as any)._sub = bd.sub_category; changed = true; }
         }
         if (changed) touched++;
-        return changed ? { ...it, form: next } : it;
+        return changed
+          ? { ...it, form: next, timeSource: nextTimeSource, timeConfirmed: nextTimeConfirmed }
+          : it;
       }),
     );
     toast.success(`Padrões aplicados em ${touched} evento(s).`);
