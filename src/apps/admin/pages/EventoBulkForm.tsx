@@ -2178,6 +2178,8 @@ interface ReviewRowProps {
   onRemove: () => void;
   onGenerateDesc: () => void;
   generatingDesc: boolean;
+  /** Onda 4 — confirma horário sugerido (batch/partner). */
+  onConfirmTime?: () => void;
 }
 
 function ReviewRowBase({
@@ -2186,6 +2188,7 @@ function ReviewRowBase({
   smartDup, isArchived, pastness, onToggleArchived,
   onPartnerChange, onChangeForm,
   onChangeFormFull, onToggleExpand, onRemove, onGenerateDesc, generatingDesc,
+  onConfirmTime,
 }: ReviewRowProps) {
 
   const inputCls = "w-full rounded-md border border-border/50 bg-background px-2 py-1.5 text-xs outline-none focus:border-primary/50 transition";
