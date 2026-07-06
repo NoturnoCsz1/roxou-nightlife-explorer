@@ -43,6 +43,9 @@ import {
   bulkPerfRecordFirstReady,
   bulkPerfMarkBatchEnd,
   bulkPerfRecordDescription,
+  bulkPerfRecordStage,
+  bulkPerfObserveConcurrency,
+  bulkPerfRecordAiCall,
 } from "@/lib/bulkPerformanceMetrics";
 import BulkPerformancePanel from "./EventoBulkForm/BulkPerformancePanel";
 import { classifyTimeStatus, timeStatusBadge } from "@/lib/eventTimeStatus";
