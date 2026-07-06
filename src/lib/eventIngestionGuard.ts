@@ -371,10 +371,19 @@ export async function validateBeforePublish(input: GuardInput): Promise<GuardRes
   }
 
   // 4. Score de entretenimento
+  // Regra Onda 5 (escopo): "fora do escopo" só bloqueia quando o texto tem
+  // termo bloqueado E NENHUM sinal positivo. Se existir qualquer indício de
+  // programação presencial (show, DJ, samba, transmissão de jogo, feijoada,
+  // exposição, etc.), o item vai no máximo para Revisão. Em caso de dúvida
+  // NÃO bloqueia — cai apenas em warning de baixo score.
   const ent = computeEntertainmentScore(fullText);
-  if (ent.hasBlocked) {
+  const hasPositiveSignal = ent.matchedPositive.length > 0;
+  if (ent.hasBlocked && !hasPositiveSignal) {
     blockReasons.push("FORA_DO_ESCOPO");
     badges.push("FORA DO ESCOPO");
+  } else if (ent.hasBlocked && hasPositiveSignal) {
+    warnings.push("BAIXO_SCORE_ENTRETENIMENTO");
+    badges.push("REVISAR ESCOPO");
   } else if (ent.score < 70) {
     warnings.push("BAIXO_SCORE_ENTRETENIMENTO");
     badges.push("BAIXO SCORE");
