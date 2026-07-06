@@ -566,7 +566,23 @@ const EventoBulkForm = () => {
   }
   function patchForm(localId: string, patch: Partial<EventFormData>) {
     setItems((prev) =>
-      prev.map((it) => (it.localId === localId ? { ...it, form: { ...it.form, ...patch } } : it)),
+      prev.map((it) => {
+        if (it.localId !== localId) return it;
+        const nextItem: BulkItem = { ...it, form: { ...it.form, ...patch } };
+        // Onda 4 — edição manual do horário reseta a origem e a marca como
+        // confirmada pelo admin. Não mexe em time_is_unknown se o patch já
+        // trouxer esse campo explícito.
+        if (Object.prototype.hasOwnProperty.call(patch, "date_time")) {
+          nextItem.timeSource = "manual";
+          nextItem.timeConfirmed = true;
+          if (!Object.prototype.hasOwnProperty.call(patch, "time_is_unknown")) {
+            const dt = String((patch as { date_time?: string }).date_time || "");
+            const hasReal = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dt) && dt.slice(11, 16) !== "00:00";
+            nextItem.form = { ...nextItem.form, time_is_unknown: !hasReal };
+          }
+        }
+        return nextItem;
+      }),
     );
   }
 
