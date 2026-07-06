@@ -63,6 +63,12 @@ const ocrLog = (event: string, info: Record<string, unknown>) => {
   // eslint-disable-next-line no-console
   console.info(`[OCR] ${event}`, info);
 };
+const perfLog = (event: string, info: Record<string, unknown>) => {
+  // eslint-disable-next-line no-console
+  console.info(`[BULK_PERF] ${event}`, info);
+};
+// Onda 6 — contador global de itens em extração para observar concorrência real.
+let extractionActiveCount = 0;
 const stressLog = (event: string, info: Record<string, unknown>) => {
   // eslint-disable-next-line no-console
   console.info(`[BULK_STRESS] ${event}`, info);
