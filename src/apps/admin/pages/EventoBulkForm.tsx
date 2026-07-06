@@ -2116,6 +2116,7 @@ const EventoBulkForm = () => {
               onGenerateDesc={() => handleGenerateDescription(it.localId)}
               generatingDesc={generatingDescIds.has(it.localId)}
               onChangeFormFull={(form) => patchForm(it.localId, form)}
+              onConfirmTime={() => patchItem(it.localId, { timeConfirmed: true })}
             />
           ))}
 
