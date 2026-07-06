@@ -9,6 +9,7 @@ import { ChevronDown, ChevronUp, Copy } from "lucide-react";
 import {
   avg,
   getBulkPerfSnapshot,
+  stageAvg,
   subscribeBulkPerf,
 } from "@/lib/bulkPerformanceMetrics";
 import { toast } from "sonner";
@@ -52,8 +53,15 @@ export default function BulkPerformancePanel({
   const avgDesc = avg(snap.descriptionDurations);
 
   const totalCacheLookups = snap.cacheHits + snap.cacheMisses;
-  const cacheHitsLabel = totalCacheLookups > 0 ? String(snap.cacheHits) : "Não disponível nesta versão";
-  const cacheMissesLabel = totalCacheLookups > 0 ? String(snap.cacheMisses) : "Não disponível nesta versão";
+  const cacheHitsLabel = totalCacheLookups > 0 ? String(snap.cacheHits) : "—";
+  const cacheMissesLabel = totalCacheLookups > 0 ? String(snap.cacheMisses) : "—";
+
+  // Onda 6 — Erros de extração vêm SÓ do status dos itens (fonte de verdade).
+  // Antes somávamos errorCount + extractionsErrored, o que duplicava cada
+  // falha de extract-flyer-metadata (registrada duas vezes: no bulkPerf e no
+  // status do item).
+  const extractionErrorsLabel = String(errorCount);
+  const contentErrorsLabel = String(snap.descriptionsErrored);
 
   const rows: Array<[string, string]> = [
     ["Flyers no lote", String(batchSize)],
@@ -62,37 +70,30 @@ export default function BulkPerformancePanel({
     ["Prontos", String(readyCount)],
     ["Revisão", String(reviewCount)],
     ["Arquivados", String(archivedCount)],
-    ["Erros", String(errorCount + snap.extractionsErrored)],
+    ["Erros de extração", extractionErrorsLabel],
+    ["Erros de conteúdo (IA)", contentErrorsLabel],
     ["Cache hits", cacheHitsLabel],
     ["Cache misses", cacheMissesLabel],
     ["Descrições geradas", String(snap.descriptionsGenerated)],
     ["Duplicidades evitadas", String(snap.duplicatesSkipped)],
     ["Primeiro pronto", fmtMs(snap.firstReadyMs)],
     ["Tempo total do lote", fmtMs(snap.totalBatchMs)],
-    ["Média extração", avgExtract == null ? "Não disponível nesta versão" : fmtMs(avgExtract)],
-    ["Média descrição", avgDesc == null ? "Não disponível nesta versão" : fmtMs(avgDesc)],
+    ["Média extração IA", avgExtract == null ? "—" : fmtMs(avgExtract)],
+    ["Média descrição IA", avgDesc == null ? "—" : fmtMs(avgDesc)],
+    ["Média compressão", fmtMs(stageAvg(snap, "compress"))],
+    ["Média hash", fmtMs(stageAvg(snap, "hash"))],
+    ["Média upload", fmtMs(stageAvg(snap, "upload"))],
+    ["Concorrência extração (máx)", String(snap.concurrencyExtraction || "—")],
+    ["Concorrência descrição (máx)", String(snap.concurrencyDescription || "—")],
+    ["Chamadas IA extração", String(snap.aiCallsExtraction)],
+    ["Chamadas IA descrição", String(snap.aiCallsDescription)],
   ];
 
   const handleCopy = async () => {
     const lines = [
       "EVENTOS EM LOTE — RELATÓRIO",
       "",
-      `Flyers: ${batchSize}`,
-      `Processados: ${processed}`,
-      `Prontos: ${readyCount}`,
-      `Revisão: ${reviewCount}`,
-      `Arquivados: ${archivedCount}`,
-      `Erros: ${errorCount + snap.extractionsErrored}`,
-      `Cache hits: ${cacheHitsLabel}`,
-      `Cache misses: ${cacheMissesLabel}`,
-      `Descrições geradas: ${snap.descriptionsGenerated}`,
-      `Duplicidades evitadas: ${snap.duplicatesSkipped}`,
-      `Primeiro pronto: ${fmtMs(snap.firstReadyMs)}`,
-      `Tempo total: ${fmtMs(snap.totalBatchMs)}`,
-      `Média extração: ${avgExtract == null ? "Não disponível nesta versão" : fmtMs(avgExtract)}`,
-      `Média descrição: ${avgDesc == null ? "Não disponível nesta versão" : fmtMs(avgDesc)}`,
-      "",
-      "Chamadas totais de IA: Não disponível nesta versão",
+      ...rows.map(([k, v]) => `${k}: ${v}`),
     ].join("\n");
     try {
       await navigator.clipboard.writeText(lines);
