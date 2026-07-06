@@ -352,7 +352,12 @@ export function useEventosListActions(deps: ActionsDeps) {
             partner_id: e.partner_id || undefined,
           },
         });
-        if (error) throw error;
+        if (error) {
+          const c = await classifyAiError(error, data);
+          if (c.kind === "credits") toast.error(`💳 ${c.message}`);
+          else toast.error(c.message);
+          return;
+        }
         const patch = buildEditorialPatch(e, data, { force: !!opts?.force });
         if (!patch.__anyChange) throw new Error("IA não retornou conteúdo utilizável");
         const dbPatch = { ...patch } as Record<string, unknown>;
@@ -371,7 +376,8 @@ export function useEventosListActions(deps: ActionsDeps) {
         }
         toast.success("Conteúdo IA aplicado");
       } catch (err: any) {
-        toast.error(err?.message || "Falha ao gerar descrição");
+        const c = await classifyAiError(err);
+        toast.error(c.message);
       } finally {
         setAiBusy((p) => ({ ...p, [e.id]: null }));
       }
