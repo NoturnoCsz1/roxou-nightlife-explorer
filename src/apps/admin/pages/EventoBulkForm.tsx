@@ -633,10 +633,27 @@ const EventoBulkForm = () => {
     patchItem(localId, { status: "uploading", errorMsg: undefined });
     const t0 = performance.now();
     bulkLog("extraction_start", { id: localId, file: file.name });
+    // Onda 6 — timers por etapa (registrados no bulkPerf apenas se executarem).
+    const stageMs: Record<string, number> = {};
     try {
+      // Onda 6 — Cache-read PRIMEIRO (barato: sessionStorage key), evita
+      // pagar compressão/hash/upload em cache hit completo.
+      const cacheT0 = performance.now();
+      const cached = readExtractionCache<any>(file);
+      stageMs.cache_read = Math.round(performance.now() - cacheT0);
+      bulkPerfRecordStage("cache_read", stageMs.cache_read);
+      // Métrica de cache só na 1ª tentativa deste item (retries não inflam miss).
+      if (!cacheMetricSeenRef.current.has(localId)) {
+        cacheMetricSeenRef.current.add(localId);
+        if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
+      }
+
       // 0. Compressão antes do upload (resize 1600px, JPEG q=0.8).
+      const compT0 = performance.now();
       const { file: workFile, bytesBefore, bytesAfter, compressed } =
         await compressImage(file);
+      stageMs.compress = Math.round(performance.now() - compT0);
+      bulkPerfRecordStage("compress", stageMs.compress);
       if (compressed) {
         bulkLog("resized", {
           id: localId,
@@ -648,27 +665,33 @@ const EventoBulkForm = () => {
       // Atualiza referência para retry usar o arquivo já comprimido.
       fileMapRef.current.set(localId, workFile);
 
-      // 1. Hash da imagem comprimida (image_hash final).
-      const imageHash = await sha256File(workFile);
-
-      // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
-      const cached = readExtractionCache<any>(file);
-      // HOTFIX pendências — só conta a métrica de cache na 1ª tentativa deste item.
-      // Retries (handleRetry) não podem inflar cache_miss.
-      if (!cacheMetricSeenRef.current.has(localId)) {
-        cacheMetricSeenRef.current.add(localId);
-        if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
-      }
       let publicUrl: string | null = cached?.image_url ?? null;
+      let imageHash: string | null = cached?.image_hash ?? null;
 
       if (!publicUrl) {
-        // 2. Upload (somente se cache não tiver image_url válida).
+        // Onda 6 — hash e upload em PARALELO (ambos precisam do workFile e são
+        // independentes). Antes rodavam sequenciais, custando ~hash+upload;
+        // agora custa ~max(hash, upload).
+        const hashT0 = performance.now();
+        const upT0 = performance.now();
         const ext = (workFile.name.split(".").pop() || "jpg").toLowerCase();
         const path = `events/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage
+        const hashPromise = sha256File(workFile).then((h) => {
+          stageMs.hash = Math.round(performance.now() - hashT0);
+          bulkPerfRecordStage("hash", stageMs.hash);
+          return h;
+        });
+        const uploadPromise = supabase.storage
           .from("uploads")
-          .upload(path, workFile, { cacheControl: "3600", upsert: false });
-        if (upErr) throw upErr;
+          .upload(path, workFile, { cacheControl: "3600", upsert: false })
+          .then((res) => {
+            stageMs.upload = Math.round(performance.now() - upT0);
+            bulkPerfRecordStage("upload", stageMs.upload);
+            return res;
+          });
+        const [hashResult, upResult] = await Promise.all([hashPromise, uploadPromise]);
+        if (upResult.error) throw upResult.error;
+        imageHash = hashResult;
         publicUrl = supabase.storage.from("uploads").getPublicUrl(path).data.publicUrl;
       } else {
         bulkLog("cache_hit_url", { id: localId, file: file.name });
@@ -685,32 +708,42 @@ const EventoBulkForm = () => {
       if (!data) {
         const ocrT0 = performance.now();
         ocrLog("start", { id: localId, file: file.name, size_before: bytesBefore, size_after: bytesAfter });
-        const extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
-          body: {
-            image_url: publicUrl,
-            current_year: new Date().getFullYear(),
-            verified_partners: partners
-              .filter((p: any) => p.verified_partner)
-              .map((p: any) => ({
-                name: p.name,
-                address: p.address,
-                instagram: p.instagram,
-                type: p.type,
-                sub_category: p.sub_category,
-              })),
-            admin_feedback: adminFeedback,
-            batch_defaults: bdNow.enabled ? {
-              date: bdNow.date || null,
-              time: bdNow.time || null,
-              partner_id: bdNow.partner_id || null,
-              partner_name: bdPartner?.name || null,
-              category: bdNow.category || null,
-              sub_category: bdNow.sub_category || null,
-              mode: bdNow.mode,
-            } : null,
-          },
-        });
+        extractionActiveCount += 1;
+        bulkPerfObserveConcurrency("extraction", extractionActiveCount);
+        bulkPerfRecordAiCall("extraction");
+        let extractResp: Awaited<ReturnType<typeof supabase.functions.invoke>>;
+        try {
+          extractResp = await supabase.functions.invoke("extract-flyer-metadata", {
+            body: {
+              image_url: publicUrl,
+              current_year: new Date().getFullYear(),
+              verified_partners: partners
+                .filter((p: any) => p.verified_partner)
+                .map((p: any) => ({
+                  name: p.name,
+                  address: p.address,
+                  instagram: p.instagram,
+                  type: p.type,
+                  sub_category: p.sub_category,
+                })),
+              admin_feedback: adminFeedback,
+              batch_defaults: bdNow.enabled ? {
+                date: bdNow.date || null,
+                time: bdNow.time || null,
+                partner_id: bdNow.partner_id || null,
+                partner_name: bdPartner?.name || null,
+                category: bdNow.category || null,
+                sub_category: bdNow.sub_category || null,
+                mode: bdNow.mode,
+              } : null,
+            },
+          });
+        } finally {
+          extractionActiveCount = Math.max(0, extractionActiveCount - 1);
+        }
         const ocrMs = Math.round(performance.now() - ocrT0);
+        stageMs.extraction_ai = ocrMs;
+        bulkPerfRecordStage("extraction_ai", ocrMs);
         if (extractResp.error) {
           ocrLog("error", { id: localId, file: file.name, duration_ms: ocrMs, message: String(extractResp.error?.message || extractResp.error) });
           bulkPerfRecordExtraction(ocrMs, { ok: false });
@@ -730,6 +763,7 @@ const EventoBulkForm = () => {
         bulkLog("cache_hit_data", { id: localId, file: file.name });
         ocrLog("cache_hit", { id: localId, file: file.name });
       }
+      perfLog("item_stages", { id: localId, ...stageMs, total_item_ms: Math.round(performance.now() - t0) });
 
       if (!data || typeof data !== "object") {
         patchItem(localId, { status: "ready" });
