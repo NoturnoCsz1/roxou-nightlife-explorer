@@ -807,6 +807,34 @@ const EventoBulkForm = () => {
       if (data.genre_needs_review) warnings.push("🎵 Gênero musical com baixa certeza — confira");
       const categoryWarning: string | null = warnings.length ? warnings.join(" • ") : null;
 
+      // Onda 6.2 — Diagnóstico DEV de por que um item vai para "Revisar categoria".
+      // ATENÇÃO: a variável `categoryWarning` agrega warnings de CATEGORIA, DATA e GÊNERO.
+      // O badge no card diz "Revisar categoria" mesmo quando o motivo real é data/gênero —
+      // isso explica boa parte dos falsos "revisar categoria" observados. Não corrigimos
+      // a regra nesta onda (escopo fechado); apenas expomos a causa real via log.
+      const warningReason =
+        data.category_override_reason ? "category_override"
+        : data.genre_needs_review ? "genre_low_confidence"
+        : data.date_needs_review ? "date_needs_review"
+        : dateBadge && dateScore < 55 ? "date_low_confidence"
+        : dateBadge ? "date_badge_only"
+        : "none";
+      // eslint-disable-next-line no-console
+      console.info("[BULK_CATEGORY_DIAGNOSTIC]", {
+        localId,
+        extractedCategory: data.category ?? null,
+        normalizedCategory: data.category ?? null,
+        categoryConfidence:
+          typeof data.category_confidence === "number" ? data.category_confidence : null,
+        warningReason,
+        heuristicCategory: data.category_override_reason ? data.category ?? null : null,
+        finalCategory: data.category ?? null,
+        genreNeedsReview: !!data.genre_needs_review,
+        dateNeedsReview: !!data.date_needs_review,
+        dateScore,
+        cached: !!cached,
+      });
+
       // Força needs_review quando data tem baixa confiança — evita publicação automática em data errada
       const finalNeedsReview = Boolean(data.needs_review) || lowDateConfidence || Boolean(data.date_needs_review);
 

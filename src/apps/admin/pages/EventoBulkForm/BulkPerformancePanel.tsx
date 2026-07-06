@@ -52,7 +52,12 @@ export default function BulkPerformancePanel({
 
   if (batchSize === 0) return null;
 
-  const processed = readyCount + errorCount + archivedCount;
+  // Onda 6.2 — "Processados" = todos os itens cujo pipeline terminou
+  // (Prontos + Revisão + Arquivados + Erros). Antes a fórmula era
+  // readyCount+errorCount+archivedCount, o que EXCLUÍA os itens em Revisão
+  // (readyCount após a Onda 6.1 = apenas publicáveis). Resultado incorreto:
+  // 2 processados quando havia 6 itens completos (2 Prontos + 4 Revisão).
+  const processed = readyCount + reviewCount + archivedCount + errorCount;
   const avgExtract = avg(snap.extractDurations);
   const avgDesc = avg(snap.descriptionDurations);
 
