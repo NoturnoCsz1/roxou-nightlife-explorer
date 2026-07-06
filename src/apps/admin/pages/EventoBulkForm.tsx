@@ -581,7 +581,12 @@ const EventoBulkForm = () => {
 
       // 1b. Cache de extração por (nome|size|lastModified) — evita reler.
       const cached = readExtractionCache<any>(file);
-      if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
+      // HOTFIX pendências — só conta a métrica de cache na 1ª tentativa deste item.
+      // Retries (handleRetry) não podem inflar cache_miss.
+      if (!cacheMetricSeenRef.current.has(localId)) {
+        cacheMetricSeenRef.current.add(localId);
+        if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
+      }
       let publicUrl: string | null = cached?.image_url ?? null;
 
       if (!publicUrl) {
