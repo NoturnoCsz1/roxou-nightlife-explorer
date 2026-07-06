@@ -914,10 +914,28 @@ const EventoBulkForm = () => {
 
 
 
-      // FASE 10G.1.2 — Geração de descrição agora roda no worker dedicado.
-      // Não bloqueia o pipeline de extração. Erro aqui não invalida o item.
+      // FASE 10G.1.2 — Geração de descrição no worker dedicado (não bloqueia).
+      // Onda 6.1 — instrumenta elegibilidade para diagnosticar "Chamadas IA descrição: 0".
       const f = readyForm as EventFormData | null;
-      if (f && f.title && f.title.length > 3 && !skipDescriptionsRef.current) {
+      const hasDescription = !!(f?.description && f.description.length > 30);
+      const hasInstagramCaption = !!(f as any)?.instagram_caption;
+      const titleOk = !!(f && f.title && f.title.length > 3);
+      const skipSetting = skipDescriptionsRef.current;
+      const eligible = titleOk && !skipSetting;
+      const reason = !f ? "no_ready_form"
+        : !titleOk ? "title_too_short"
+        : skipSetting ? "skip_descriptions_enabled"
+        : "eligible";
+      // eslint-disable-next-line no-console
+      console.info("[BULK_DESCRIPTION_ELIGIBILITY]", {
+        localId,
+        eligible,
+        reason,
+        skipDescriptionsSetting: skipSetting,
+        hasDescription,
+        hasInstagramCaption,
+      });
+      if (eligible && f) {
         const previousDescs = items
           .map((x) => x.form.description)
           .filter((d): d is string => !!d && d.length > 30)
