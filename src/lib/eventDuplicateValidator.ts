@@ -273,16 +273,28 @@ export function findPossibleDuplicateEvent(
     }
 
     // ─── Proteção contra falso-positivo: eventos recorrentes ───
-    // Se ambos parecem recorrentes, datas diferem ≥ 5 dias e flyers
-    // diferentes → reduz score (é a mesma série, não duplicata).
+    // Onda 5 — Regra dura: se ambas as datas são conhecidas e diferentes
+    // (qualquer diferença de dia civil), NUNCA marcar como duplicata.
+    // Cobre "Segunda do Samba" 06/07 vs 13/07 mesmo sem `looksRecurring`.
     const recurringBoth = candIsRecurring || looksRecurring(e.title);
     const sameHash =
       !!candidate.image_hash && candidate.image_hash === e.image_hash;
-    const datesDiffer =
-      candDay && eDay && candDay !== eDay && diffDays(candidate.date_time, e.date_time) >= 5;
-    if (recurringBoth && datesDiffer && !sameHash) {
+    const bothDatesKnown = !!candDay && !!eDay;
+    const datesDiffer = bothDatesKnown && candDay !== eDay;
+    const datesDifferByDays =
+      bothDatesKnown && candDay !== eDay && diffDays(candidate.date_time, e.date_time) >= 5;
+    if (recurringBoth && datesDifferByDays && !sameHash) {
       score = Math.max(0, score - 25);
       fields.push("evento recorrente (penalizado)");
+    }
+    // Cap absoluto para datas diferentes conhecidas — impede que título +
+    // parceiro + local levem a "possible duplicate" quando é claramente
+    // outra ocorrência da mesma série.
+    if (datesDiffer && !sameHash) {
+      score = Math.min(score, 45);
+      if (!fields.includes("evento recorrente (penalizado)")) {
+        fields.push("datas diferentes");
+      }
     }
 
     score = Math.min(100, score);
