@@ -126,10 +126,13 @@ function diffDays(a: string | null | undefined, b: string | null | undefined): n
   }
 }
 
-/** Indícios de evento recorrente (semanal) no título. */
+/** Indícios de evento recorrente (semanal/mensal) no título. */
 function looksRecurring(title: string | null | undefined): boolean {
   const t = normalizeText(title);
-  return /\b(toda|todo|todas|todos|quinta|sexta|sabado|domingo|segunda|terca|quarta|weekly|semanal|residencia|noite\s+\w+)\b/.test(t);
+  // Onda 5 — regex ampliada: cobre "sextou", "sabadou", "domingou",
+  // "segundou", "tercou", "quartou", "quintou", "domingueira",
+  // "segunda do samba", "quarta cultural", "toda quinta", etc.
+  return /\b(toda|todo|todas|todos|semanal|weekly|mensal|monthly|residencia|residência|domingueira|noite\s+\w+|(segunda|terca|quarta|quinta|sexta|sabado|domingo)(ou)?|(seg|ter|qua|qui|sex|sab|dom)ou)\b/.test(t);
 }
 
 // ============================================================
