@@ -29,6 +29,7 @@ import {
 import { trackAdminEvent } from "@/lib/adminAnalytics";
 import { CATEGORIES } from "./types";
 import { getChecklist } from "./helpers";
+import { eventNeedsAiContent } from "./useEventosListActions";
 import type { EventosListCtx } from "./useEventosList";
 
 export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
@@ -58,8 +59,9 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
   if (selectedCount === 0) return null;
 
   const idsArr = Array.from(selectedIds);
+  // Elegíveis para IA(N): faltando descrição OU legenda Instagram.
   const missingDescCount = events.filter(
-    (e) => selectedIds.has(e.id) && !getChecklist(e).description
+    (e) => selectedIds.has(e.id) && eventNeedsAiContent(e)
   ).length;
 
   function track(action: string, extra: Record<string, unknown> = {}) {
