@@ -49,6 +49,7 @@ import {
 } from "@/lib/bulkPerformanceMetrics";
 import BulkPerformancePanel from "./EventoBulkForm/BulkPerformancePanel";
 import { classifyTimeStatus, timeStatusBadge } from "@/lib/eventTimeStatus";
+import { getDateKeySP } from "@/lib/dateUtils";
 
 
 import { ADMIN_MAIN_CATEGORIES, ADMIN_MUSICAL_SUBS, supportsGenre } from "@/lib/categoryConfig";
@@ -204,7 +205,7 @@ const EventoBulkForm = () => {
   const [bulkGenerating, setBulkGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [dbSlugs, setDbSlugs] = useState<Set<string>>(new Set());
-  const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null }>>([]);
+  const [dbEvents, setDbEvents] = useState<Array<{ id: string; slug: string; title: string; date_time: string; venue_name: string | null; image_hash: string | null; partner_id: string | null }>>([]);
   const [adminFeedback, setAdminFeedback] = useState<AdminFeedback[]>([]);
   const [batchDefaults, setBatchDefaults] = useState<BatchDefaults>(emptyBatchDefaults);
   const batchDefaultsRef = useRef<BatchDefaults>(emptyBatchDefaults());
@@ -404,7 +405,7 @@ const EventoBulkForm = () => {
 
   // Load existing slugs from DB for duplicate detection
   useEffect(() => {
-    let q = supabase.from("events").select("id, slug, title, date_time, venue_name, image_hash");
+    let q = supabase.from("events").select("id, slug, title, date_time, venue_name, image_hash, partner_id");
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => {
       if (data) {
@@ -528,18 +529,43 @@ const EventoBulkForm = () => {
       const slugRepeatedInBatch = !!slug && (slugCounts.get(slug) || 0) > 1;
 
       if (hashHit) {
-        confirmedRealIds.add(it.localId);
-        const matched = dbEvents.find((e) => e.image_hash === f.image_hash);
+        // HOTFIX — mesmo image_hash NÃO é mais hard-block sozinho.
+        // Só bloqueia se coincidir MESMA DATA CIVIL (SP) + MESMO PARCEIRO/LOCAL.
+        // Data diferente => evento recorrente (warning informativo, permitido).
+        const candDayKey = getDateKeySP(new Date(f.date_time));
+        const candPartner = (f.partner_id || "").trim();
+        const candVenueNorm = (f.venue_name || "").trim().toLowerCase();
+        const hashMatches = dbEvents.filter((e) => e.image_hash === f.image_hash);
+        const realDup = hashMatches.find((e) => {
+          if (!e.date_time) return false;
+          const eDayKey = getDateKeySP(new Date(e.date_time));
+          if (eDayKey !== candDayKey) return false;
+          const samePartner =
+            (candPartner && e.partner_id && candPartner === e.partner_id) ||
+            (!!candVenueNorm && (e.venue_name || "").trim().toLowerCase() === candVenueNorm);
+          return samePartner;
+        });
+        if (realDup) {
+          confirmedRealIds.add(it.localId);
+          reasonById.set(
+            it.localId,
+            `Mesmo flyer + mesma data + mesmo local: duplicata real de "${realDup.title}".`,
+          );
+          continue;
+        }
+        // Mesmo flyer em data diferente ou local diferente → recorrente/permitido.
+        // Marca apenas warning informativo (não bloqueia publicação).
+        const firstOther = hashMatches[0];
+        possibleDupIds.add(it.localId);
         reasonById.set(
           it.localId,
-          matched
-            ? `Mesmo flyer (image_hash) já cadastrado em: "${matched.title}".`
-            : `Mesmo flyer (image_hash) já cadastrado.`,
+          `Flyer já utilizado em outra data em "${firstOther?.title ?? "evento existente"}" — provável reuso recorrente.`,
         );
-        continue;
+        // NÃO fazemos continue: seguimos para validar slug/score/horário abaixo.
       }
       if (slugHitDb) {
         confirmedRealIds.add(it.localId);
+        possibleDupIds.delete(it.localId);
         reasonById.set(it.localId, `Slug "${slug}" já existe na agenda.`);
         continue;
       }
@@ -1475,14 +1501,15 @@ const EventoBulkForm = () => {
       const lines = ready.map((it, idx) => {
         const i = idx + 1;
         const titulo = it.form.title || "(sem título)";
+        const reason = itemFlags.reasonById.get(it.localId);
         if (itemFlags.confirmedRealIds.has(it.localId)) {
-          return `• Evento ${i} — ${titulo}: duplicado real já existente`;
+          return `• Evento ${i} — ${titulo}: ${reason ?? "duplicado real já existente"}`;
         }
         if (itemFlags.possibleDupIds.has(it.localId)) {
-          return `• Evento ${i} — ${titulo}: possível duplicado (use "Publicar mesmo assim" no item)`;
+          return `• Evento ${i} — ${titulo}: ${reason ?? 'possível duplicado (use "Publicar mesmo assim" no item)'}`;
         }
         if (itemFlags.incompleteIds.has(it.localId)) {
-          return `• Evento ${i} — ${titulo}: dados incompletos`;
+          return `• Evento ${i} — ${titulo}: ${reason ?? "dados incompletos"}`;
         }
         return `• Evento ${i} — ${titulo}: pronto`;
       }).join("\n");
