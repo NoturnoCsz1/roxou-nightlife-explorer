@@ -648,21 +648,32 @@ const EventoBulkForm = () => {
         if (cached) bulkPerfRecordCacheHit(); else bulkPerfRecordCacheMiss();
       }
 
-      // 0. Compressão antes do upload (resize 1600px, JPEG q=0.8).
-      const compT0 = performance.now();
-      const { file: workFile, bytesBefore, bytesAfter, compressed } =
-        await compressImage(file);
-      stageMs.compress = Math.round(performance.now() - compT0);
-      bulkPerfRecordStage("compress", stageMs.compress);
-      if (compressed) {
-        bulkLog("resized", {
-          id: localId,
-          file: file.name,
-          size_before: bytesBefore,
-          size_after: bytesAfter,
-        });
+      // Onda 6.1 — Cache HIT COMPLETO (data + image_url) NÃO exige compressão.
+      // A chave depende só de name|size|lastModified do arquivo original;
+      // comprimir aqui é trabalho puro perdido e inflava "Média compressão".
+      const fullCacheHit = !!(cached && cached.data && cached.image_url);
+      let workFile: File = file;
+      let bytesBefore = file.size;
+      let bytesAfter = file.size;
+      if (!fullCacheHit) {
+        // Compressão antes do upload (resize 1600px, JPEG q=0.8).
+        const compT0 = performance.now();
+        const res = await compressImage(file);
+        stageMs.compress = Math.round(performance.now() - compT0);
+        bulkPerfRecordStage("compress", stageMs.compress);
+        workFile = res.file;
+        bytesBefore = res.bytesBefore;
+        bytesAfter = res.bytesAfter;
+        if (res.compressed) {
+          bulkLog("resized", {
+            id: localId,
+            file: file.name,
+            size_before: bytesBefore,
+            size_after: bytesAfter,
+          });
+        }
       }
-      // Atualiza referência para retry usar o arquivo já comprimido.
+      // Atualiza referência para retry usar o arquivo (comprimido ou original).
       fileMapRef.current.set(localId, workFile);
 
       let publicUrl: string | null = cached?.image_url ?? null;
