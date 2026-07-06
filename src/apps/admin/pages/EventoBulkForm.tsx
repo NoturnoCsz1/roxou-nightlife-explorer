@@ -1947,10 +1947,11 @@ const EventoBulkForm = () => {
       <BulkPerformancePanel
         batchSize={totalCount}
         processingCount={processingCount + queuedCount}
-        readyCount={readyCount}
+        readyCount={publishableReadyCount}
         errorCount={errorCount}
         archivedCount={archivedCount}
         reviewCount={needsReviewCount}
+        skipDescriptions={skipDescriptions}
       />
 
       {/* Thumbnail grid */}
