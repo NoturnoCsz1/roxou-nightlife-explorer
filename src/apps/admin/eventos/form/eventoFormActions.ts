@@ -2,6 +2,7 @@
 import type React from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyAiError } from "@/lib/aiGatewayError";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import { slugify } from "./utils";
 import { buildHandleSubmit } from "./eventoFormSubmit";
@@ -184,7 +185,12 @@ export function createEventoFormActions(deps: EventoFormActionDeps) {
           official_source_url: info.official_source_url ?? (form as any).official_source_url ?? "",
         },
       });
-      if (error) throw error;
+      if (error) {
+        const c = await classifyAiError(error, data);
+        if (c.kind === "credits") toast.error(`💳 ${c.message}`);
+        else toast.error(c.message);
+        return;
+      }
       const rich: string = data?.description_html || data?.descricao_rica || data?.description || "";
       const chamada: string | undefined = data?.title || data?.chamada_site;
       const shortSummary: string = data?.short_summary || "";
@@ -217,8 +223,9 @@ export function createEventoFormActions(deps: EventoFormActionDeps) {
         toast.success("Descrição gerada pela IA (gpt-5-mini).");
       }
     } catch (err: any) {
-      console.error("Erro ao gerar descrição:", err);
-      toast.error(err?.message || "Falha ao gerar descrição");
+      const c = await classifyAiError(err);
+      if (c.kind === "credits") toast.error(`💳 ${c.message}`);
+      else toast.error(c.message);
     } finally {
       setGeneratingDesc(false);
     }
