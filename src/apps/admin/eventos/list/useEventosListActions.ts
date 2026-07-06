@@ -311,14 +311,20 @@ export function useEventosListActions(deps: ActionsDeps) {
         const { data, error } = await supabase.functions.invoke("extract-flyer-metadata", {
           body: { image_url: e.image_url, current_year: new Date().getFullYear() },
         });
-        if (error) throw error;
+        if (error) {
+          const c = await classifyAiError(error, data);
+          if (c.kind === "credits") toast.error(`💳 ${c.message}`);
+          else toast.error(c.message);
+          return;
+        }
         const newTitle = normalizeAiTitle((data as any)?.title || "");
         if (!newTitle) throw new Error("IA não retornou título");
         await supabase.from("events").update({ title: newTitle }).eq("id", e.id);
         setEvents((prev) => prev.map((x) => (x.id === e.id ? { ...x, title: newTitle } : x)));
         toast.success("Título atualizado pela IA");
       } catch (err: any) {
-        toast.error(err?.message || "Falha ao gerar título");
+        const c = await classifyAiError(err);
+        toast.error(c.message);
       } finally {
         setAiBusy((p) => ({ ...p, [e.id]: null }));
       }
