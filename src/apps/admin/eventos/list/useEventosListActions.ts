@@ -546,25 +546,33 @@ export function useEventosListActions(deps: ActionsDeps) {
       toast.success(`👥 Parceiro aplicado a ${ids.length} evento(s)`);
     }
 
-    // === Gerar descrição IA para selecionados sem descrição (após confirmação) ===
-    // Fila client-side com concorrência 2 + relatório final.
+    // === Gerar conteúdo IA (descrição + legenda IG + SEO) para selecionados ===
+    // Fila client-side com concorrência 2. Só chama IA para eventos que ainda
+    // precisam de algum campo editorial (descrição OU legenda IG). Nunca
+    // sobrescreve campo que já estava preenchido.
     async function handleBulkGenerateDescriptions(ids: string[]) {
+      // Chave de reentrância: mesmo conjunto de ids não pode disparar 2×.
+      const lockKey = [...ids].sort().join(",");
+      if (bulkAiInflight.has(lockKey)) {
+        toast.info("Geração IA já em andamento para esta seleção.");
+        return;
+      }
+      bulkAiInflight.add(lockKey);
+
       const selected = events.filter((e) => ids.includes(e.id));
-      const ignored = selected.filter((e) =>
-        hasEventDescription(e as unknown as Record<string, unknown>)
-      ).length;
-      const targets = selected.filter(
-        (e) => !hasEventDescription(e as unknown as Record<string, unknown>)
-      );
+      const targets = selected.filter((e) => eventNeedsAiContent(e));
+      const ignored = selected.length - targets.length;
       if (targets.length === 0) {
-        toast.info("Nenhum dos selecionados precisa de descrição.");
+        bulkAiInflight.delete(lockKey);
+        toast.info("Nenhum dos selecionados precisa da IA.");
         return;
       }
 
       const total = targets.length;
-      const progressId = toast.loading(`Gerando descrição: 0 de ${total}…`);
+      const progressId = toast.loading(`Gerando conteúdo IA: 0 de ${total}…`);
       let ok = 0;
       let fail = 0;
+      let skipped = 0;
       let done = 0;
 
       const runOne = async (e: EventRow) => {
@@ -582,11 +590,22 @@ export function useEventosListActions(deps: ActionsDeps) {
             },
           });
           if (error) throw error;
-          const html = (data as any)?.descricao_rica || (data as any)?.description;
-          if (!html) throw new Error("sem retorno");
-          await supabase.from("events").update({ description: html }).eq("id", e.id);
+          // Snapshot atualizado do evento (pode ter mudado por outro worker).
+          const current = events.find((x) => x.id === e.id) ?? e;
+          const patch = buildEditorialPatch(current, data);
+          if (!patch.__anyChange) {
+            skipped++;
+            return;
+          }
+          const dbPatch = { ...patch } as Record<string, unknown>;
+          delete dbPatch.__anyChange;
+          const { error: upErr } = await supabase
+            .from("events")
+            .update(dbPatch as any)
+            .eq("id", e.id);
+          if (upErr) throw upErr;
           setEvents((prev) =>
-            prev.map((x) => (x.id === e.id ? { ...x, description: html } : x))
+            prev.map((x) => (x.id === e.id ? { ...x, ...(dbPatch as Partial<EventRow>) } : x))
           );
           ok++;
         } catch {
@@ -594,28 +613,33 @@ export function useEventosListActions(deps: ActionsDeps) {
         } finally {
           setAiBusy((p) => ({ ...p, [e.id]: null }));
           done++;
-          toast.loading(`Gerando descrição: ${done} de ${total}…`, { id: progressId });
+          // done inclui ok + fail + skipped — contador nunca trava em 0/N.
+          toast.loading(`Gerando conteúdo IA: ${done} de ${total}…`, { id: progressId });
         }
       };
 
-      // Worker pool: concorrência máxima 2. Se uma falhar, as demais seguem.
-      const CONCURRENCY = 2;
-      const queue = [...targets];
-      const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
-        while (queue.length > 0) {
-          const next = queue.shift();
-          if (!next) break;
-          await runOne(next);
-        }
-      });
-      await Promise.all(workers);
+      try {
+        const CONCURRENCY = 2;
+        const queue = [...targets];
+        const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+          while (queue.length > 0) {
+            const next = queue.shift();
+            if (!next) break;
+            await runOne(next);
+          }
+        });
+        await Promise.all(workers);
+      } finally {
+        bulkAiInflight.delete(lockKey);
+      }
 
       toast.dismiss(progressId);
       const parts: string[] = [];
-      if (ok > 0) parts.push(`${ok} geradas`);
-      if (ignored > 0) parts.push(`${ignored} ignoradas (já tinham descrição)`);
-      if (fail > 0) parts.push(`${fail} falhas`);
-      const summary = parts.join(" · ");
+      if (ok > 0) parts.push(`${ok} atualizado(s)`);
+      if (skipped > 0) parts.push(`${skipped} sem mudança`);
+      if (ignored > 0) parts.push(`${ignored} já estavam completos`);
+      if (fail > 0) parts.push(`${fail} falha(s)`);
+      const summary = parts.join(" · ") || "Nada a fazer";
       if (fail === 0 && ok > 0) toast.success(`✨ ${summary}`);
       else if (ok === 0 && fail > 0) toast.error(summary);
       else toast.message(summary);
