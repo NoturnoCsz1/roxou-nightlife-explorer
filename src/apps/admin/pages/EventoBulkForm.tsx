@@ -405,7 +405,7 @@ const EventoBulkForm = () => {
 
   // Load existing slugs from DB for duplicate detection
   useEffect(() => {
-    let q = supabase.from("events").select("id, slug, title, date_time, venue_name, image_hash");
+    let q = supabase.from("events").select("id, slug, title, date_time, venue_name, image_hash, partner_id");
     if (cityFilter) q = q.eq("city", cityFilter);
     q.then(({ data }) => {
       if (data) {
