@@ -23,7 +23,13 @@ export function getQualityScore(e: EventRow): number {
 export function getChecklist(e: EventRow): Checklist {
   const titleText = (e.title || "").trim();
   const title = titleText.length >= 5 && !/[—–\-:|/]/.test(titleText);
-  const date = !!e.date_time && new Date(e.date_time).getTime() > Date.now();
+  // Onda 4 — não basta ter date_time futuro: se time_is_unknown ou 00:00,
+  // o evento entra em Revisão até o admin confirmar o horário.
+  const dtStr = (e.date_time || "").trim();
+  const dtValid = !!dtStr && new Date(dtStr).getTime() > Date.now();
+  const timeIsUnknown = (e as { time_is_unknown?: boolean | null }).time_is_unknown === true;
+  const hasRealTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dtStr) && dtStr.slice(11, 16) !== "00:00";
+  const date = dtValid && !timeIsUnknown && hasRealTime;
   const desc = (e.description || "").trim();
   const descriptionRich =
     desc.length >= 80 &&
