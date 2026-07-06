@@ -278,8 +278,10 @@ export function useEventosListActions(deps: ActionsDeps) {
 
     async function regenerateDescription(e: EventRow, opts?: { force?: boolean }) {
       const alreadyHas = hasEventDescription(e as unknown as Record<string, unknown>);
-      if (alreadyHas && !opts?.force) {
-        toast.info("Este evento já possui descrição. Use 'Substituir' para regerar.");
+      const hasCaption = !!(e.instagram_caption || "").trim();
+      // Se já tem descrição E legenda, exige `force` para regerar.
+      if (alreadyHas && hasCaption && !opts?.force) {
+        toast.info("Este evento já possui descrição e legenda. Use 'Substituir' para regerar.");
         return;
       }
       setAiBusy((p) => ({ ...p, [e.id]: "desc" }));
@@ -297,18 +299,23 @@ export function useEventosListActions(deps: ActionsDeps) {
           },
         });
         if (error) throw error;
-        const html = (data as any)?.descricao_rica || (data as any)?.description;
-        if (!html) throw new Error("IA não retornou descrição");
-        await supabase.from("events").update({ description: html }).eq("id", e.id);
-        setEvents((prev) => prev.map((x) => (x.id === e.id ? { ...x, description: html } : x)));
+        const patch = buildEditorialPatch(e, data, { force: !!opts?.force });
+        if (!patch.__anyChange) throw new Error("IA não retornou conteúdo utilizável");
+        const dbPatch = { ...patch } as Record<string, unknown>;
+        delete dbPatch.__anyChange;
+        await supabase.from("events").update(dbPatch).eq("id", e.id);
+        setEvents((prev) =>
+          prev.map((x) => (x.id === e.id ? { ...x, ...(dbPatch as Partial<EventRow>) } : x))
+        );
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
           console.debug("[regenerateDescription]", {
             id: e.id,
             ms: Math.round(performance.now() - startedAt),
+            fields: Object.keys(dbPatch),
           });
         }
-        toast.success("Descrição rica gerada");
+        toast.success("Conteúdo IA aplicado");
       } catch (err: any) {
         toast.error(err?.message || "Falha ao gerar descrição");
       } finally {
