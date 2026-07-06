@@ -15,6 +15,7 @@ import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import type { EventRow } from "./types";
 import { getChecklist, normalizeAiTitle } from "./helpers";
 import { hasEventDescription } from "@/lib/eventDescription";
+import { classifyAiError } from "@/lib/aiGatewayError";
 
 /**
  * Consome o retorno da Edge Function `generate-description` e monta um patch
