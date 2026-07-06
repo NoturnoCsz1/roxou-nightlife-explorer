@@ -2345,6 +2345,38 @@ function ReviewRowBase({
               onChange={(e) => onChangeForm({ date_time: e.target.value })}
               disabled={isProcessing}
             />
+            {(() => {
+              const status = classifyTimeStatus({
+                date_time: item.form.date_time,
+                time_is_unknown: item.form.time_is_unknown,
+                timeSource: item.timeSource,
+              });
+              const b = timeStatusBadge(status);
+              const toneCls =
+                b.tone === "success"
+                  ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
+                  : b.tone === "warning"
+                    ? "text-amber-300 border-amber-500/40 bg-amber-500/10"
+                    : "text-muted-foreground border-border/40 bg-secondary/40";
+              const isSuggestedUnconfirmed = status === "suggested" && !item.timeConfirmed;
+              return (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${toneCls}`}>
+                    <span>{b.emoji}</span>
+                    <span className="truncate">{b.label}</span>
+                  </span>
+                  {isSuggestedUnconfirmed && onConfirmTime && (
+                    <button
+                      type="button"
+                      onClick={onConfirmTime}
+                      className="rounded border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200 hover:bg-amber-500/20"
+                    >
+                      Confirmar
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div>
             <select
