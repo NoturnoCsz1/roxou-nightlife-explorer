@@ -216,10 +216,14 @@ export function getDuplicateConfidence(
     }
   }
 
-  // Data (dia civil SP)
+  // Data (dia civil SP) — Onda 5: datas diferentes conhecidas nunca são
+  // duplicatas. Eventos recorrentes ("Segunda do Samba" em 06/07 e 13/07)
+  // devem ser tratados como independentes. Se as datas são ambas conhecidas
+  // e diferentes, cap absoluto abaixo do threshold "review" (60).
   const dA = dateKeySafe(candidate.date_time);
   const dB = dateKeySafe(existing.date_time);
   const datesKnown = dA !== "nodate" && dB !== "nodate";
+  const differentDates = datesKnown && dA !== dB;
   if (datesKnown && dA === dB) {
     score += 25;
     fields.push("mesma data");
@@ -228,7 +232,8 @@ export function getDuplicateConfidence(
       score += 15;
       fields.push("horário próximo");
     }
-  } else if (datesKnown && dA !== dB) {
+  } else if (differentDates) {
+    // Sinal negativo forte; o cap final é aplicado abaixo.
     score -= 30;
   }
 
@@ -261,6 +266,12 @@ export function getDuplicateConfidence(
   }
 
   score = Math.max(0, Math.min(100, score));
+  // Onda 5 — Regra dura: se as duas datas são conhecidas e diferentes,
+  // NUNCA classificar como duplicata. Cap abaixo de 60 força "clear".
+  if (differentDates) {
+    score = Math.min(score, 45);
+    fields.push("datas diferentes (recorrente)");
+  }
   const decision = decisionFor(score);
 
   return {

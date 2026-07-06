@@ -107,6 +107,11 @@ interface ValidationLogRow {
 // Listas de classificação de entretenimento
 // =====================================================================
 
+// Palavras que sinalizam conteúdo fora do escopo Roxou. Só bloqueiam quando
+// aparecem SEM nenhum sinal positivo — flyers de bar/evento frequentemente
+// mencionam algumas dessas em contexto legítimo (ex.: "palestrante" no VIP,
+// "networking after work" com show). A regra final de bloqueio está em
+// `validateBeforePublish`.
 export const BLOCKED_KEYWORDS = [
   "workshop", "congresso", "seminário", "seminario", "simpósio", "simposio",
   "curso", "palestra", "palestrante", "científico", "cientifico", "ciência", "ciencia",
@@ -115,12 +120,32 @@ export const BLOCKED_KEYWORDS = [
   "reuniao empresarial", "treinamento", "capacitação", "capacitacao",
 ];
 
+// Sinais positivos ampliados: entretenimento + gastronomia + esporte exibido
+// ao público + programação cultural/recorrente. Um único match aqui já é
+// suficiente para NÃO bloquear automaticamente por "fora do escopo".
 export const POSITIVE_KEYWORDS = [
+  // música e noite
   "show", "festa", "balada", "dj", "open bar", "openbar", "pagode", "sertanejo",
-  "eletrônico", "eletronico", "música ao vivo", "musica ao vivo", "futebol",
+  "eletrônico", "eletronico", "música ao vivo", "musica ao vivo",
   "universitária", "universitaria", "lounge", "barzinho", "rave", "funk",
   "rock", "samba", "axé", "axe", "forró", "forro", "carnaval", "festival",
-  "happy hour", "after", "matinê", "matine", "boate", "boteco",
+  "happy hour", "after", "matinê", "matine", "boate", "boteco", "mpb",
+  "roda de samba", "roda samba", "karaokê", "karaoke", "banda", "acústico",
+  "acustico", "sunset", "esquenta", "esquentando", "residência", "residencia",
+  // esporte exibido em estabelecimento
+  "futebol", "telão", "telao", "transmissão", "transmissao", "brasileirão",
+  "brasileirao", "libertadores", "champions", "clássico", "classico",
+  "jogo do brasil", "seleção brasileira", "selecao brasileira", "copa",
+  "brasil x", "argentina x", "flamengo x", "palmeiras x", "corinthians x",
+  "final da", "ao vivo",
+  // gastronomia e programação de bar
+  "gastronômico", "gastronomico", "feijoada", "food truck", "chef",
+  "degustação", "degustacao", "harmonização", "harmonizacao",
+  "chopp", "cerveja artesanal", "hamburguer", "hambúrguer", "burger",
+  "menu especial", "sinuca", "quiz", "bingo",
+  // cultura e exposição
+  "exposição", "exposicao", "feira", "cultural", "teatro", "stand up",
+  "standup", "comédia", "comedia", "cinema ao ar livre",
 ];
 
 // =====================================================================
@@ -346,10 +371,19 @@ export async function validateBeforePublish(input: GuardInput): Promise<GuardRes
   }
 
   // 4. Score de entretenimento
+  // Regra Onda 5 (escopo): "fora do escopo" só bloqueia quando o texto tem
+  // termo bloqueado E NENHUM sinal positivo. Se existir qualquer indício de
+  // programação presencial (show, DJ, samba, transmissão de jogo, feijoada,
+  // exposição, etc.), o item vai no máximo para Revisão. Em caso de dúvida
+  // NÃO bloqueia — cai apenas em warning de baixo score.
   const ent = computeEntertainmentScore(fullText);
-  if (ent.hasBlocked) {
+  const hasPositiveSignal = ent.matchedPositive.length > 0;
+  if (ent.hasBlocked && !hasPositiveSignal) {
     blockReasons.push("FORA_DO_ESCOPO");
     badges.push("FORA DO ESCOPO");
+  } else if (ent.hasBlocked && hasPositiveSignal) {
+    warnings.push("BAIXO_SCORE_ENTRETENIMENTO");
+    badges.push("REVISAR ESCOPO");
   } else if (ent.score < 70) {
     warnings.push("BAIXO_SCORE_ENTRETENIMENTO");
     badges.push("BAIXO SCORE");
