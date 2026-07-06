@@ -1922,7 +1922,7 @@ const EventoBulkForm = () => {
           {([
             ["atuais", "Atuais", atuaisCount],
             ["revisao", "Precisa revisão", needsReviewCount],
-            ["prontos", "Prontos", readyCount],
+            ["prontos", "Prontos", publishableReadyCount],
             ["erros", "Com erro", errorCount + cancelledCount],
             ["arquivados", "Arquivados", archivedCount],
             ["todos", "Todos", items.length],
