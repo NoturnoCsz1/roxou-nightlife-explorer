@@ -736,6 +736,9 @@ const EventoBulkForm = () => {
           const extractedHasTime = extractedHasDate && data.time_is_unknown !== true;
           let finalDateTime = extractedDateTime;
           let finalTimeIsUnknown: boolean = data.time_is_unknown === true || !extractedHasTime;
+          // Onda 4 — origem inicial do horário: flyer se veio confiável, senão desconhecido.
+          let finalTimeSource: import("@/lib/eventTimeStatus").EventTimeSource =
+            extractedHasTime ? "flyer" : "unknown";
           if (bd.enabled && (bd.date || bd.time)) {
             const useBatchDate = force ? !!bd.date : fillMissing ? (!extractedHasDate && !!bd.date) : false;
             const useBatchTime = force ? !!bd.time : fillMissing ? (!extractedHasTime && !!bd.time) : false;
@@ -744,9 +747,12 @@ const EventoBulkForm = () => {
             if (baseDate && baseTime) {
               finalDateTime = `${baseDate}T${baseTime}`;
               finalTimeIsUnknown = false;
+              // Horário veio do padrão do lote → sugestão que exige confirmação.
+              if (useBatchTime) finalTimeSource = "batch";
             } else if (baseDate) {
               finalDateTime = `${baseDate}T00:00`;
               finalTimeIsUnknown = true;
+              finalTimeSource = "unknown";
             }
           }
 
