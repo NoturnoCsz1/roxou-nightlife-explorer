@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trackAdminEvent } from "@/lib/adminAnalytics";
 import { CATEGORIES } from "./types";
-import { getChecklist } from "./helpers";
+
 import { eventNeedsAiContent } from "./useEventosListActions";
 import type { EventosListCtx } from "./useEventosList";
 
