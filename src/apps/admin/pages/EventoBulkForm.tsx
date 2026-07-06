@@ -194,6 +194,8 @@ const EventoBulkForm = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   // mantém referência ao File original por item (para retry sem re-upload pelo usuário)
   const fileMapRef = useRef<Map<string, File>>(new Map());
+  /** HOTFIX pendências — evita contar cache_hit/miss duas vezes por retry do mesmo item. */
+  const cacheMetricSeenRef = useRef<Set<string>>(new Set());
 
   // ✨ Fase 2B — geração de títulos + descrições em lote (gpt-5-mini)
   const [bulkAiRunning, setBulkAiRunning] = useState(false);
