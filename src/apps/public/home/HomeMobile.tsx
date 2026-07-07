@@ -71,7 +71,7 @@ export function HomeMobile(props: HomeMobileProps) {
     events, weeklyHighlight,
   } = props;
 
-  // Destaques fixos — Copa primeiro, Expo em seguida.
+  // Destaques fixos — Expo.
   const highlightSlides: HighlightSlide[] = [
     { key: "expo", node: <ExpoHighlightCard /> },
   ];
