@@ -128,6 +128,9 @@ export function useHomeData() {
         return p ? { ...p, views, upcoming_events: evMap[id] || 0, follower_count: followCounts[id] || 0 } : null;
       }).filter(Boolean) as VenueRank[];
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   /* ─── FEATURED PARTNERS ─── */
