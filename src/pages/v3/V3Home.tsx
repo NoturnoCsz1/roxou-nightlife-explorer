@@ -81,8 +81,9 @@ export default function V3Home() {
   useHeroImagePreload(heroEvents[0]?.image_url);
 
 
-  // [DEBUG SORRISO MAROTO] — preservado da implementação original (telemetria via console).
+  // [DEBUG SORRISO MAROTO] — apenas em desenvolvimento (LCP-4B).
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
     const TARGET = "sorriso-maroto-ao-vivo-em-prudente";
     const findIn = (arr: typeof events, label: string) => {
       const found = arr.find(e => e.slug === TARGET || e.title?.toLowerCase().includes("sorriso"));
@@ -128,8 +129,9 @@ export default function V3Home() {
     console.groupEnd();
   }, [events, rawTodayEvents, heroEvents, trending, featured, weekEvents, weeklyHighlight]);
 
-  // [HOME DEBUG] temporário — preservado da implementação original.
+  // [HOME DEBUG] apenas em desenvolvimento (LCP-4B).
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
     console.log("[HOME] featured", featured?.length);
     console.log("[HOME] today", rawTodayEvents?.length);
     console.log("[HOME] loading", isLoading, "(raw:", loadingEventsRaw, "timedOut:", loadingTimedOut, ")");
