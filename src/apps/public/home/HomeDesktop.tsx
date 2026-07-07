@@ -2,7 +2,6 @@
 // Extraído de src/pages/v3/V3Home.tsx (Fase 5). JSX literal preservado.
 
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
-import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
 import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 import HighlightsCarousel from "@/components/v3/home/HighlightsCarousel";
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
@@ -79,7 +78,6 @@ export function HomeDesktop(props: HomeDesktopProps) {
           <HighlightsCarousel
             slides={[
               { key: "expo", node: <ExpoHighlightCard /> },
-              { key: "copa", node: <CopaHighlightCard /> },
             ]}
           />
         </HomeSectionBoundary>

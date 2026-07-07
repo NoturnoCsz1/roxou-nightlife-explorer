@@ -16,7 +16,6 @@ import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
 import { DiscoverGrid } from "@/components/v3/home/DiscoverGrid";
 import HighlightsCarousel, { type HighlightSlide } from "@/components/v3/home/HighlightsCarousel";
-import CopaHighlightCard from "@/components/v3/home/CopaHighlightCard";
 import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 
 import type { Ev, VenueRank } from "./types";
@@ -74,7 +73,6 @@ export function HomeMobile(props: HomeMobileProps) {
 
   // Destaques fixos — Copa primeiro, Expo em seguida.
   const highlightSlides: HighlightSlide[] = [
-    { key: "copa", node: <CopaHighlightCard /> },
     { key: "expo", node: <ExpoHighlightCard /> },
   ];
 
