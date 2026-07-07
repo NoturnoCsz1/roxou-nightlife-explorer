@@ -8,8 +8,10 @@ import {
   Flame, MapPin, Search, Sparkles, Trophy, Users,
 } from "lucide-react";
 import SmartImage from "@/components/v3/SmartImage";
+import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 import type { Ev } from "./types";
 import { fmtDateFull, getDayLabel } from "./utils";
+
 
 /* ─── IMMERSIVE HERO — viewport-tall, The Town vibes ─── */
 export function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, index, onChange, onPauseAutoplay, onResumeAutoplay }: {
@@ -49,13 +51,17 @@ export function ImmersiveHero({ ev, isToday, todayCount, venueRank, slides, inde
       }}
     >
       <SmartImage
-        src={ev.image_url}
+        src={optimizedImageUrl(ev.image_url, 960, 75) ?? ev.image_url}
+        srcSet={optimizedSrcSet(ev.image_url, [480, 720, 960, 1280], 75)}
+        sizes="(min-width: 1024px) 60vw, 100vw"
         alt={ev.title}
         loading="eager"
         fetchPriority="high"
+        eagerLCP
         wrapperClassName="absolute inset-0 w-full h-full"
         className="absolute inset-0 w-full h-full object-cover scale-105 animate-[v3PageFade_700ms_ease-out_both]"
       />
+
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-background/15 lg:hidden" />
       <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent lg:hidden" />
       <div
