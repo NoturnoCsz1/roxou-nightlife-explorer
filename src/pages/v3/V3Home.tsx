@@ -77,6 +77,10 @@ export default function V3Home() {
   const heroDate = hero ? toSafeDate(hero.date_time) : null;
   const heroIsToday = heroDate ? isTodayFn(heroDate) : false;
 
+  // LCP-4B: preload da imagem real do primeiro Hero assim que os dados chegam.
+  useHeroImagePreload(heroEvents[0]?.image_url);
+
+
   // [DEBUG SORRISO MAROTO] — preservado da implementação original (telemetria via console).
   useEffect(() => {
     const TARGET = "sorriso-maroto-ao-vivo-em-prudente";
