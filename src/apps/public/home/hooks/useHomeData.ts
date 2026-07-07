@@ -184,6 +184,9 @@ export function useHomeData() {
       return ordered.map((p: any) => ({ ...p, _rank: rankMap.get(p.id) || 0 }));
     },
     enabled: venueRanks !== undefined,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   /* ─── HERO PRIORITY ───
