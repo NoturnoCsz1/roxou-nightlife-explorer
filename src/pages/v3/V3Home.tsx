@@ -15,6 +15,7 @@ import { HomeDesktop } from "@/apps/public/home/HomeDesktop";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 export default function V3Home() {
+  const isDesktop = useIsDesktop();
   const data = useHomeData();
   const {
     events, rawTodayEvents, trendingIds, venueRanks, featuredPartners,
