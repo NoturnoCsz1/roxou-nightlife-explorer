@@ -86,6 +86,9 @@ export function useHomeData() {
       data.forEach((r: any) => { if (r.event_id) counts[r.event_id] = (counts[r.event_id] || 0) + 1; });
       return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([id, views]) => ({ id, views }));
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   /* ─── VENUE RANKINGS (views last 7d + partner metadata + followers) ─── */
@@ -125,6 +128,9 @@ export function useHomeData() {
         return p ? { ...p, views, upcoming_events: evMap[id] || 0, follower_count: followCounts[id] || 0 } : null;
       }).filter(Boolean) as VenueRank[];
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   /* ─── FEATURED PARTNERS ─── */
@@ -178,6 +184,9 @@ export function useHomeData() {
       return ordered.map((p: any) => ({ ...p, _rank: rankMap.get(p.id) || 0 }));
     },
     enabled: venueRanks !== undefined,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   /* ─── HERO PRIORITY ───
