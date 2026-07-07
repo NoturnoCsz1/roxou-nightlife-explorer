@@ -12,8 +12,10 @@ import { useHomeSearch } from "@/apps/public/home/hooks/useHomeSearch";
 import { safeEvents, toSafeDate } from "@/apps/public/home/utils";
 import { HomeMobile } from "@/apps/public/home/HomeMobile";
 import { HomeDesktop } from "@/apps/public/home/HomeDesktop";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 export default function V3Home() {
+  const isDesktop = useIsDesktop();
   const data = useHomeData();
   const {
     events, rawTodayEvents, trendingIds, venueRanks, featuredPartners,
@@ -140,59 +142,61 @@ export default function V3Home() {
         } as any}
       />
 
-      <HomeMobile
-        isLoading={isLoading}
-        hasHomeDataError={hasHomeDataError}
-        hero={hero}
-        heroIsToday={heroIsToday}
-        heroEvents={heroEvents ?? []}
-        heroIdx={heroIdx}
-        setHeroIdx={setHeroIdx}
-        setIsHeroPaused={setIsHeroPaused}
-        todayCount={todayCount}
-        partnerRankMap={partnerRankMap}
-        trendingIdSet={trendingIdSet}
-        loadingToday={loadingToday}
-        todayError={todayError}
-        rawTodayEvents={rawTodayEvents}
-        catFilter={catFilter}
-        setCatFilter={setCatFilter}
-        vibeFilter={vibeFilter}
-        setVibeFilter={setVibeFilter}
-        filtered={filtered}
-        vibeFiltered={vibeFiltered}
-        events={events}
-        featured={featured}
-        weeklyHighlight={weeklyHighlight}
-        trending={trending}
-        loadingTrending={loadingTrending}
-        weekEvents={weekEvents}
-        venueRanks={venueRanks}
-        loadingVenues={loadingVenues}
-        maxViews={maxViews}
-        featuredPartners={featuredPartners}
-      />
-
-      <HomeDesktop
-        isLoading={isLoading}
-        hasHomeDataError={hasHomeDataError}
-        hero={hero}
-        heroIsToday={heroIsToday}
-        heroEvents={heroEvents ?? []}
-        heroIdx={heroIdx}
-        setHeroIdx={setHeroIdx}
-        weeklyHighlight={weeklyHighlight}
-        rawTodayEvents={rawTodayEvents}
-        todayCount={todayCount}
-        trending={trending}
-        featured={featured}
-        weekEvents={weekEvents}
-        trendingIdSet={trendingIdSet}
-        partnerRankMap={partnerRankMap}
-        venueRanks={venueRanks}
-        featuredPartners={featuredPartners}
-        events={events}
-      />
+      {isDesktop ? (
+        <HomeDesktop
+          isLoading={isLoading}
+          hasHomeDataError={hasHomeDataError}
+          hero={hero}
+          heroIsToday={heroIsToday}
+          heroEvents={heroEvents ?? []}
+          heroIdx={heroIdx}
+          setHeroIdx={setHeroIdx}
+          weeklyHighlight={weeklyHighlight}
+          rawTodayEvents={rawTodayEvents}
+          todayCount={todayCount}
+          trending={trending}
+          featured={featured}
+          weekEvents={weekEvents}
+          trendingIdSet={trendingIdSet}
+          partnerRankMap={partnerRankMap}
+          venueRanks={venueRanks}
+          featuredPartners={featuredPartners}
+          events={events}
+        />
+      ) : (
+        <HomeMobile
+          isLoading={isLoading}
+          hasHomeDataError={hasHomeDataError}
+          hero={hero}
+          heroIsToday={heroIsToday}
+          heroEvents={heroEvents ?? []}
+          heroIdx={heroIdx}
+          setHeroIdx={setHeroIdx}
+          setIsHeroPaused={setIsHeroPaused}
+          todayCount={todayCount}
+          partnerRankMap={partnerRankMap}
+          trendingIdSet={trendingIdSet}
+          loadingToday={loadingToday}
+          todayError={todayError}
+          rawTodayEvents={rawTodayEvents}
+          catFilter={catFilter}
+          setCatFilter={setCatFilter}
+          vibeFilter={vibeFilter}
+          setVibeFilter={setVibeFilter}
+          filtered={filtered}
+          vibeFiltered={vibeFiltered}
+          events={events}
+          featured={featured}
+          weeklyHighlight={weeklyHighlight}
+          trending={trending}
+          loadingTrending={loadingTrending}
+          weekEvents={weekEvents}
+          venueRanks={venueRanks}
+          loadingVenues={loadingVenues}
+          maxViews={maxViews}
+          featuredPartners={featuredPartners}
+        />
+      )}
 
     </div>
   );
