@@ -600,7 +600,11 @@ const EventoBulkForm = () => {
         time_is_unknown: f.time_is_unknown,
         timeSource: it.timeSource,
       });
-      if (timeStatus === "unknown") {
+      if (timeStatus === "unknown" && !it.timeConfirmed) {
+        // HOTFIX confirmação-manual — admin pode liberar publicação como
+        // "horário a confirmar" via botão no card; nesse caso timeConfirmed
+        // fica true e o item deixa de bloquear a publicação (mantém
+        // time_is_unknown=true no payload, sem inventar hora).
         unknownTimeIds.add(it.localId);
         incompleteIds.add(it.localId);
         if (!reasonById.has(it.localId)) {
