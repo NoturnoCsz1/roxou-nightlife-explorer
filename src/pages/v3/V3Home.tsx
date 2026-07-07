@@ -2,7 +2,7 @@
 // Refatorado em Fase 5. Toda lógica visual está em src/apps/public/home/.
 // Comportamento, queries, SEO e JSX literalmente preservados.
 
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import SEO from "@/components/SEO";
 import { isTodaySP as isTodayFn } from "@/lib/dateUtils";
 
@@ -10,9 +10,21 @@ import { useHomeData } from "@/apps/public/home/hooks/useHomeData";
 import { useHomeCarousels } from "@/apps/public/home/hooks/useHomeCarousels";
 import { useHomeSearch } from "@/apps/public/home/hooks/useHomeSearch";
 import { safeEvents, toSafeDate } from "@/apps/public/home/utils";
-import { HomeMobile } from "@/apps/public/home/HomeMobile";
-import { HomeDesktop } from "@/apps/public/home/HomeDesktop";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+
+// Lazy chunks: mobile e desktop viram bundles separados; só o correspondente
+// ao viewport é baixado no carregamento inicial (LCP-2B).
+const HomeMobile = lazy(() =>
+  import("@/apps/public/home/HomeMobile").then(m => ({ default: m.HomeMobile }))
+);
+const HomeDesktop = lazy(() =>
+  import("@/apps/public/home/HomeDesktop").then(m => ({ default: m.HomeDesktop }))
+);
+
+// Fallback neutro — evita flash de layout e mantém altura mínima da dobra.
+const HomeFallback = () => (
+  <div className="w-full min-h-[60vh]" aria-hidden="true" />
+);
 
 export default function V3Home() {
   const isDesktop = useIsDesktop();
@@ -142,61 +154,63 @@ export default function V3Home() {
         } as any}
       />
 
-      {isDesktop ? (
-        <HomeDesktop
-          isLoading={isLoading}
-          hasHomeDataError={hasHomeDataError}
-          hero={hero}
-          heroIsToday={heroIsToday}
-          heroEvents={heroEvents ?? []}
-          heroIdx={heroIdx}
-          setHeroIdx={setHeroIdx}
-          weeklyHighlight={weeklyHighlight}
-          rawTodayEvents={rawTodayEvents}
-          todayCount={todayCount}
-          trending={trending}
-          featured={featured}
-          weekEvents={weekEvents}
-          trendingIdSet={trendingIdSet}
-          partnerRankMap={partnerRankMap}
-          venueRanks={venueRanks}
-          featuredPartners={featuredPartners}
-          events={events}
-        />
-      ) : (
-        <HomeMobile
-          isLoading={isLoading}
-          hasHomeDataError={hasHomeDataError}
-          hero={hero}
-          heroIsToday={heroIsToday}
-          heroEvents={heroEvents ?? []}
-          heroIdx={heroIdx}
-          setHeroIdx={setHeroIdx}
-          setIsHeroPaused={setIsHeroPaused}
-          todayCount={todayCount}
-          partnerRankMap={partnerRankMap}
-          trendingIdSet={trendingIdSet}
-          loadingToday={loadingToday}
-          todayError={todayError}
-          rawTodayEvents={rawTodayEvents}
-          catFilter={catFilter}
-          setCatFilter={setCatFilter}
-          vibeFilter={vibeFilter}
-          setVibeFilter={setVibeFilter}
-          filtered={filtered}
-          vibeFiltered={vibeFiltered}
-          events={events}
-          featured={featured}
-          weeklyHighlight={weeklyHighlight}
-          trending={trending}
-          loadingTrending={loadingTrending}
-          weekEvents={weekEvents}
-          venueRanks={venueRanks}
-          loadingVenues={loadingVenues}
-          maxViews={maxViews}
-          featuredPartners={featuredPartners}
-        />
-      )}
+      <Suspense fallback={<HomeFallback />}>
+        {isDesktop ? (
+          <HomeDesktop
+            isLoading={isLoading}
+            hasHomeDataError={hasHomeDataError}
+            hero={hero}
+            heroIsToday={heroIsToday}
+            heroEvents={heroEvents ?? []}
+            heroIdx={heroIdx}
+            setHeroIdx={setHeroIdx}
+            weeklyHighlight={weeklyHighlight}
+            rawTodayEvents={rawTodayEvents}
+            todayCount={todayCount}
+            trending={trending}
+            featured={featured}
+            weekEvents={weekEvents}
+            trendingIdSet={trendingIdSet}
+            partnerRankMap={partnerRankMap}
+            venueRanks={venueRanks}
+            featuredPartners={featuredPartners}
+            events={events}
+          />
+        ) : (
+          <HomeMobile
+            isLoading={isLoading}
+            hasHomeDataError={hasHomeDataError}
+            hero={hero}
+            heroIsToday={heroIsToday}
+            heroEvents={heroEvents ?? []}
+            heroIdx={heroIdx}
+            setHeroIdx={setHeroIdx}
+            setIsHeroPaused={setIsHeroPaused}
+            todayCount={todayCount}
+            partnerRankMap={partnerRankMap}
+            trendingIdSet={trendingIdSet}
+            loadingToday={loadingToday}
+            todayError={todayError}
+            rawTodayEvents={rawTodayEvents}
+            catFilter={catFilter}
+            setCatFilter={setCatFilter}
+            vibeFilter={vibeFilter}
+            setVibeFilter={setVibeFilter}
+            filtered={filtered}
+            vibeFiltered={vibeFiltered}
+            events={events}
+            featured={featured}
+            weeklyHighlight={weeklyHighlight}
+            trending={trending}
+            loadingTrending={loadingTrending}
+            weekEvents={weekEvents}
+            venueRanks={venueRanks}
+            loadingVenues={loadingVenues}
+            maxViews={maxViews}
+            featuredPartners={featuredPartners}
+          />
+        )}
+      </Suspense>
 
     </div>
   );
