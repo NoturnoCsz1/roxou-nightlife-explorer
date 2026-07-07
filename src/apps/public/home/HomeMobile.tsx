@@ -1,6 +1,6 @@
 // ─── HomeMobile — Layout mobile (lg:hidden) refatorado ───
-// Ordem: Hero → Destaques → Jogos → Busca → Categorias → Timeline Hoje
-//        → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
+// Ordem: Hero → Busca → Timeline Hoje → Destaques (Expo) → Jogos ao vivo
+//        → Descobrir Mais → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
 
 import { Link } from "react-router-dom";
 import { ChevronRight, Trophy } from "lucide-react";
