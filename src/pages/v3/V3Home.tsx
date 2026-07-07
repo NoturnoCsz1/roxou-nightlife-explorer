@@ -154,61 +154,63 @@ export default function V3Home() {
         } as any}
       />
 
-      {isDesktop ? (
-        <HomeDesktop
-          isLoading={isLoading}
-          hasHomeDataError={hasHomeDataError}
-          hero={hero}
-          heroIsToday={heroIsToday}
-          heroEvents={heroEvents ?? []}
-          heroIdx={heroIdx}
-          setHeroIdx={setHeroIdx}
-          weeklyHighlight={weeklyHighlight}
-          rawTodayEvents={rawTodayEvents}
-          todayCount={todayCount}
-          trending={trending}
-          featured={featured}
-          weekEvents={weekEvents}
-          trendingIdSet={trendingIdSet}
-          partnerRankMap={partnerRankMap}
-          venueRanks={venueRanks}
-          featuredPartners={featuredPartners}
-          events={events}
-        />
-      ) : (
-        <HomeMobile
-          isLoading={isLoading}
-          hasHomeDataError={hasHomeDataError}
-          hero={hero}
-          heroIsToday={heroIsToday}
-          heroEvents={heroEvents ?? []}
-          heroIdx={heroIdx}
-          setHeroIdx={setHeroIdx}
-          setIsHeroPaused={setIsHeroPaused}
-          todayCount={todayCount}
-          partnerRankMap={partnerRankMap}
-          trendingIdSet={trendingIdSet}
-          loadingToday={loadingToday}
-          todayError={todayError}
-          rawTodayEvents={rawTodayEvents}
-          catFilter={catFilter}
-          setCatFilter={setCatFilter}
-          vibeFilter={vibeFilter}
-          setVibeFilter={setVibeFilter}
-          filtered={filtered}
-          vibeFiltered={vibeFiltered}
-          events={events}
-          featured={featured}
-          weeklyHighlight={weeklyHighlight}
-          trending={trending}
-          loadingTrending={loadingTrending}
-          weekEvents={weekEvents}
-          venueRanks={venueRanks}
-          loadingVenues={loadingVenues}
-          maxViews={maxViews}
-          featuredPartners={featuredPartners}
-        />
-      )}
+      <Suspense fallback={<HomeFallback />}>
+        {isDesktop ? (
+          <HomeDesktop
+            isLoading={isLoading}
+            hasHomeDataError={hasHomeDataError}
+            hero={hero}
+            heroIsToday={heroIsToday}
+            heroEvents={heroEvents ?? []}
+            heroIdx={heroIdx}
+            setHeroIdx={setHeroIdx}
+            weeklyHighlight={weeklyHighlight}
+            rawTodayEvents={rawTodayEvents}
+            todayCount={todayCount}
+            trending={trending}
+            featured={featured}
+            weekEvents={weekEvents}
+            trendingIdSet={trendingIdSet}
+            partnerRankMap={partnerRankMap}
+            venueRanks={venueRanks}
+            featuredPartners={featuredPartners}
+            events={events}
+          />
+        ) : (
+          <HomeMobile
+            isLoading={isLoading}
+            hasHomeDataError={hasHomeDataError}
+            hero={hero}
+            heroIsToday={heroIsToday}
+            heroEvents={heroEvents ?? []}
+            heroIdx={heroIdx}
+            setHeroIdx={setHeroIdx}
+            setIsHeroPaused={setIsHeroPaused}
+            todayCount={todayCount}
+            partnerRankMap={partnerRankMap}
+            trendingIdSet={trendingIdSet}
+            loadingToday={loadingToday}
+            todayError={todayError}
+            rawTodayEvents={rawTodayEvents}
+            catFilter={catFilter}
+            setCatFilter={setCatFilter}
+            vibeFilter={vibeFilter}
+            setVibeFilter={setVibeFilter}
+            filtered={filtered}
+            vibeFiltered={vibeFiltered}
+            events={events}
+            featured={featured}
+            weeklyHighlight={weeklyHighlight}
+            trending={trending}
+            loadingTrending={loadingTrending}
+            weekEvents={weekEvents}
+            venueRanks={venueRanks}
+            loadingVenues={loadingVenues}
+            maxViews={maxViews}
+            featuredPartners={featuredPartners}
+          />
+        )}
+      </Suspense>
 
     </div>
   );
