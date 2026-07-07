@@ -52,6 +52,32 @@ export default defineConfig(({ mode }) => ({
         includeAssets: ["favicon.png", "og-image.png"],
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp,woff2}"],
+          // LCP-4D: exclui do precache inicial chunks pesados de rotas raras
+          // (admin/partner/reservas/bio). Continuam disponíveis via download
+          // sob demanda quando a rota correspondente for acessada.
+          globIgnores: [
+            "**/assets/vendor-recharts-*.js",
+            "**/assets/vendor-qrcode-*.js",
+            "**/assets/leaflet-*.js",
+            "**/assets/*leaflet*.js",
+            "**/assets/V3AIChat-*.js",
+            "**/assets/InstagramAdmin-*.js",
+            "**/assets/EventoForm-*.js",
+            "**/assets/EventoBulkForm-*.js",
+            "**/assets/EventosList-*.js",
+            "**/assets/jszip-*.js",
+            "**/assets/*jszip*.js",
+            "**/assets/qr-scanner-worker-*.js",
+            "**/assets/*qr-scanner*.js",
+            "**/assets/Radar-*.js",
+            "**/assets/*Radar*.js",
+            "**/assets/EstabelecimentosAudit-*.js",
+            "**/assets/SEOLanding-*.js",
+            "**/assets/*SEOLanding*.js",
+            "**/assets/Dashboard-*.js",
+            "**/assets/*Dashboard*.js",
+            "**/assets/PartnerPromoterCentralPage-*.js",
+          ],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           navigateFallbackDenylist: [/^\/~oauth/, /^\/health/, /^\/partner\/health/],
           skipWaiting: true,
@@ -110,6 +136,17 @@ export default defineConfig(({ mode }) => ({
   //   dist/index.html         → roxou.com.br (app público + admin)
   //   dist/partner/index.html → parceiro.roxou.com.br (Partner Pro)
   build: {
+    // LCP-4D: impede <link rel="modulepreload"> automático para chunks
+    // que não são usados no first paint da Home (recharts, qrcode).
+    // Os chunks continuam existindo e são carregados sob demanda.
+    modulePreload: {
+      resolveDependencies: (_filename, deps) =>
+        deps.filter(
+          (d) =>
+            !/vendor-recharts-.*\.js$/.test(d) &&
+            !/vendor-qrcode-.*\.js$/.test(d),
+        ),
+    },
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
