@@ -78,7 +78,6 @@ export function HomeDesktop(props: HomeDesktopProps) {
           <HighlightsCarousel
             slides={[
               { key: "expo", node: <ExpoHighlightCard /> },
-              { key: "copa", node: <CopaHighlightCard /> },
             ]}
           />
         </HomeSectionBoundary>
