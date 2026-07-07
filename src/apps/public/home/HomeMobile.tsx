@@ -106,7 +106,14 @@ export function HomeMobile(props: HomeMobileProps) {
         </div>
       </HomeSectionBoundary>
 
-      {/* 3 · JOGOS AO VIVO */}
+      {/* 3 · CAMPO DE BUSCA */}
+      <HomeSectionBoundary name="Search bar" silent>
+        <div className="px-4 pt-5">
+          <GlobalSearchTrigger placeholder="Buscar evento, local, vibe..." />
+        </div>
+      </HomeSectionBoundary>
+
+      {/* 4 · JOGOS AO VIVO */}
       {!isLoading && !hasHomeDataError && (
         <HomeSectionBoundary name="Jogos mobile" silent>
           <div className="px-4 pt-5 pb-1">
@@ -129,12 +136,6 @@ export function HomeMobile(props: HomeMobileProps) {
         </HomeSectionBoundary>
       )}
 
-      {/* 4 · CAMPO DE BUSCA */}
-      <HomeSectionBoundary name="Search bar" silent>
-        <div className="px-4 pt-5">
-          <GlobalSearchTrigger placeholder="Buscar evento, local, vibe..." />
-        </div>
-      </HomeSectionBoundary>
 
       {/* 5 · CATEGORIAS (DiscoverGrid → /descobrir?cat=) */}
       <HomeSectionBoundary name="Discover grid" silent>
