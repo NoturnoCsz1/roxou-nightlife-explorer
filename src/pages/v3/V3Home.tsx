@@ -12,6 +12,7 @@ import { useHomeSearch } from "@/apps/public/home/hooks/useHomeSearch";
 import { safeEvents, toSafeDate } from "@/apps/public/home/utils";
 import { HomeMobile } from "@/apps/public/home/HomeMobile";
 import { HomeDesktop } from "@/apps/public/home/HomeDesktop";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 export default function V3Home() {
   const data = useHomeData();
