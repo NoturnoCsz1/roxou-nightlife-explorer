@@ -11,12 +11,11 @@ import { useHomeCarousels } from "@/apps/public/home/hooks/useHomeCarousels";
 import { useHomeSearch } from "@/apps/public/home/hooks/useHomeSearch";
 import { safeEvents, toSafeDate } from "@/apps/public/home/utils";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 
-// Lazy chunks: mobile e desktop viram bundles separados; só o correspondente
-// ao viewport é baixado no carregamento inicial (LCP-2B).
-const HomeMobile = lazy(() =>
-  import("@/apps/public/home/HomeMobile").then(m => ({ default: m.HomeMobile }))
-);
+// LCP-4B: HomeMobile volta a import estático (evita hop lazy no caminho do LCP).
+// HomeDesktop continua lazy — só carrega em viewport >= 1024px.
+import { HomeMobile } from "@/apps/public/home/HomeMobile";
 const HomeDesktop = lazy(() =>
   import("@/apps/public/home/HomeDesktop").then(m => ({ default: m.HomeDesktop }))
 );
@@ -25,6 +24,39 @@ const HomeDesktop = lazy(() =>
 const HomeFallback = () => (
   <div className="w-full min-h-[60vh]" aria-hidden="true" />
 );
+
+// LCP-4B: injeta <link rel="preload" as="image"> para a imagem real do Hero
+// assim que heroEvents[0] existir. Remove/atualiza se a URL mudar.
+function useHeroImagePreload(heroImageUrl: string | null | undefined) {
+  useEffect(() => {
+    if (!heroImageUrl || typeof document === "undefined") return;
+    const href = optimizedImageUrl(heroImageUrl, 960, 75) ?? heroImageUrl;
+    const srcSet = optimizedSrcSet(heroImageUrl, [480, 720, 960, 1280], 75);
+    const sizes = "(min-width: 1024px) 60vw, 100vw";
+
+    const marker = `data-hero-preload="${href}"`;
+    if (document.head.querySelector(`link[${marker}]`)) return;
+
+    // Limpa qualquer preload anterior de hero (evita acúmulo).
+    document.head
+      .querySelectorAll('link[data-hero-preload]')
+      .forEach(el => el.remove());
+
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = href;
+    link.setAttribute("fetchpriority", "high");
+    link.setAttribute("data-hero-preload", href);
+    if (srcSet) {
+      link.setAttribute("imagesrcset", srcSet);
+      link.setAttribute("imagesizes", sizes);
+    }
+    document.head.appendChild(link);
+
+    return () => { link.remove(); };
+  }, [heroImageUrl]);
+}
 
 export default function V3Home() {
   const isDesktop = useIsDesktop();
