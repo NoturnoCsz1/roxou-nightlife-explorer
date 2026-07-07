@@ -10,11 +10,20 @@ interface SmartImageProps extends ImgHTMLAttributes<HTMLImageElement> {
   className?: string;
   /** Fallback when src is missing or fails. */
   fallbackSrc?: string;
+  /**
+   * When true, the image renders visible from the first paint (no opacity fade),
+   * so it can be counted as LCP immediately. The skeleton is still shown
+   * behind the image until it loads (avoids flash). Use ONLY for LCP images.
+   */
+  eagerLCP?: boolean;
 }
 
 /**
  * SmartImage — padroniza carregamento de flyers com skeleton roxo
  * (v3-skeleton) + fade-in suave quando a imagem fica pronta.
+ *
+ * `width`, `height`, `sizes`, `srcSet` e demais atributos nativos de <img>
+ * são aceitos via {...rest} — retrocompatível com todos os usos existentes.
  */
 export default function SmartImage({
   src,
@@ -23,6 +32,7 @@ export default function SmartImage({
   className,
   fallbackSrc = "/placeholder.svg",
   loading = "lazy",
+  eagerLCP = false,
   ...rest
 }: SmartImageProps) {
   const [loaded, setLoaded] = useState(false);
@@ -48,8 +58,9 @@ export default function SmartImage({
           setLoaded(true);
         }}
         className={cn(
-          "transition-opacity duration-500 ease-out",
-          loaded ? "opacity-100" : "opacity-0",
+          eagerLCP
+            ? "opacity-100"
+            : cn("transition-opacity duration-500 ease-out", loaded ? "opacity-100" : "opacity-0"),
           className,
         )}
         {...rest}
@@ -57,3 +68,4 @@ export default function SmartImage({
     </div>
   );
 }
+
