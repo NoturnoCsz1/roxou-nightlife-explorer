@@ -52,6 +52,32 @@ export default defineConfig(({ mode }) => ({
         includeAssets: ["favicon.png", "og-image.png"],
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,webp,woff2}"],
+          // LCP-4D: exclui do precache inicial chunks pesados de rotas raras
+          // (admin/partner/reservas/bio). Continuam disponíveis via download
+          // sob demanda quando a rota correspondente for acessada.
+          globIgnores: [
+            "**/assets/vendor-recharts-*.js",
+            "**/assets/vendor-qrcode-*.js",
+            "**/assets/leaflet-*.js",
+            "**/assets/*leaflet*.js",
+            "**/assets/V3AIChat-*.js",
+            "**/assets/InstagramAdmin-*.js",
+            "**/assets/EventoForm-*.js",
+            "**/assets/EventoBulkForm-*.js",
+            "**/assets/EventosList-*.js",
+            "**/assets/jszip-*.js",
+            "**/assets/*jszip*.js",
+            "**/assets/qr-scanner-worker-*.js",
+            "**/assets/*qr-scanner*.js",
+            "**/assets/Radar-*.js",
+            "**/assets/*Radar*.js",
+            "**/assets/EstabelecimentosAudit-*.js",
+            "**/assets/SEOLanding-*.js",
+            "**/assets/*SEOLanding*.js",
+            "**/assets/Dashboard-*.js",
+            "**/assets/*Dashboard*.js",
+            "**/assets/PartnerPromoterCentralPage-*.js",
+          ],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           navigateFallbackDenylist: [/^\/~oauth/, /^\/health/, /^\/partner\/health/],
           skipWaiting: true,
