@@ -304,13 +304,17 @@ export function DesktopHeroSection({
         }}
       >
         <SmartImage
-          src={ev.image_url}
+          src={optimizedImageUrl(ev.image_url, 960, 75) ?? ev.image_url}
+          srcSet={optimizedSrcSet(ev.image_url, [480, 720, 960, 1280], 75)}
+          sizes="(min-width: 1024px) 60vw, 100vw"
           alt={ev.title}
           loading="eager"
           fetchPriority="high"
+          eagerLCP
           wrapperClassName="absolute inset-0 w-full h-full"
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/5" />
 
         <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
