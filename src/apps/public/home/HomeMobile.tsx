@@ -99,21 +99,40 @@ export function HomeMobile(props: HomeMobileProps) {
         ) : <EmptyHero />}
       </HomeSectionBoundary>
 
-      {/* 2 · DESTAQUES ROXOU (carrossel — Copa + Expo) */}
-      <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
-        <div className="pt-2">
-          <HighlightsCarousel slides={highlightSlides} autoplayMs={6000} minHeight={240} />
-        </div>
-      </HomeSectionBoundary>
-
-      {/* 3 · CAMPO DE BUSCA */}
+      {/* 2 · CAMPO DE BUSCA */}
       <HomeSectionBoundary name="Search bar" silent>
         <div className="px-4 pt-5">
           <GlobalSearchTrigger placeholder="Buscar evento, local, vibe..." />
         </div>
       </HomeSectionBoundary>
 
-      {/* 4 · JOGOS AO VIVO */}
+      {/* 3 · TIMELINE HOJE */}
+      <HomeSectionBoundary name="Eventos de Hoje (mobile)">
+        {hasHomeDataError ? (
+          <HomeDataFallback />
+        ) : !isLoading ? (
+          <div className="pt-2">
+            <TodaySection
+              loading={loadingToday}
+              error={todayError}
+              events={safeEvents(rawTodayEvents)}
+              partnerRankMap={partnerRankMap}
+              trendingIdSet={trendingIdSet}
+              Timeline={TodayTimeline}
+              EmptyState={TodayEmptyState}
+            />
+          </div>
+        ) : null}
+      </HomeSectionBoundary>
+
+      {/* 4 · DESTAQUES ROXOU (carrossel — Expo) */}
+      <HomeSectionBoundary name="Destaques Roxou (mobile)" silent>
+        <div className="pt-2">
+          <HighlightsCarousel slides={highlightSlides} autoplayMs={6000} minHeight={240} />
+        </div>
+      </HomeSectionBoundary>
+
+      {/* 5 · JOGOS AO VIVO */}
       {!isLoading && !hasHomeDataError && (
         <HomeSectionBoundary name="Jogos mobile" silent>
           <div className="px-4 pt-5 pb-1">
@@ -136,31 +155,11 @@ export function HomeMobile(props: HomeMobileProps) {
         </HomeSectionBoundary>
       )}
 
-
-      {/* 5 · CATEGORIAS (DiscoverGrid → /descobrir?cat=) */}
+      {/* 6 · DESCobrir MAIS / CATEGORIAS (DiscoverGrid → /descobrir?cat=) */}
       <HomeSectionBoundary name="Discover grid" silent>
         <div className="pt-4">
           <DiscoverGrid />
         </div>
-      </HomeSectionBoundary>
-
-      {/* 6 · TIMELINE HOJE */}
-      <HomeSectionBoundary name="Eventos de Hoje (mobile)">
-        {hasHomeDataError ? (
-          <HomeDataFallback />
-        ) : !isLoading ? (
-          <div className="pt-2">
-            <TodaySection
-              loading={loadingToday}
-              error={todayError}
-              events={safeEvents(rawTodayEvents)}
-              partnerRankMap={partnerRankMap}
-              trendingIdSet={trendingIdSet}
-              Timeline={TodayTimeline}
-              EmptyState={TodayEmptyState}
-            />
-          </div>
-        ) : null}
       </HomeSectionBoundary>
 
       {/* 7 · DESTAQUE DA SEMANA */}
