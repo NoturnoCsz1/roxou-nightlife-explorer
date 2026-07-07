@@ -153,9 +153,18 @@ export default defineConfig(({ mode }) => ({
         partner: path.resolve(__dirname, "partner/index.html"),
       },
       output: {
-        // Isola bibliotecas pesadas do bundle principal para evitar
-        // que páginas que não usam gráficos/QR puxem todo o código.
+        // LCP-4F-1-B: isola React/ReactDOM/scheduler em uma chunk vendor
+        // dedicada. Sem isto, Rollup hoisted React para dentro da chunk
+        // `vendor-recharts` (dep compartilhada), forçando main.js a importar
+        // vendor-recharts.js só para obter React — 551 KiB decoded no LCP.
         manualChunks: (id) => {
+          if (
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/scheduler/")
+          ) {
+            return "vendor-react";
+          }
           if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) {
             return "vendor-recharts";
           }
@@ -165,6 +174,7 @@ export default defineConfig(({ mode }) => ({
           return undefined;
         },
       },
+
     },
   },
 }));
