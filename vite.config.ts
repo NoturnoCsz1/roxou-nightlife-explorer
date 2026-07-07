@@ -136,6 +136,17 @@ export default defineConfig(({ mode }) => ({
   //   dist/index.html         → roxou.com.br (app público + admin)
   //   dist/partner/index.html → parceiro.roxou.com.br (Partner Pro)
   build: {
+    // LCP-4D: impede <link rel="modulepreload"> automático para chunks
+    // que não são usados no first paint da Home (recharts, qrcode).
+    // Os chunks continuam existindo e são carregados sob demanda.
+    modulePreload: {
+      resolveDependencies: (_filename, deps) =>
+        deps.filter(
+          (d) =>
+            !/vendor-recharts-.*\.js$/.test(d) &&
+            !/vendor-qrcode-.*\.js$/.test(d),
+        ),
+    },
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, "index.html"),
