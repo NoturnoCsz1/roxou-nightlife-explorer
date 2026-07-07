@@ -600,7 +600,11 @@ const EventoBulkForm = () => {
         time_is_unknown: f.time_is_unknown,
         timeSource: it.timeSource,
       });
-      if (timeStatus === "unknown") {
+      if (timeStatus === "unknown" && !it.timeConfirmed) {
+        // HOTFIX confirmação-manual — admin pode liberar publicação como
+        // "horário a confirmar" via botão no card; nesse caso timeConfirmed
+        // fica true e o item deixa de bloquear a publicação (mantém
+        // time_is_unknown=true no payload, sem inventar hora).
         unknownTimeIds.add(it.localId);
         incompleteIds.add(it.localId);
         if (!reasonById.has(it.localId)) {
@@ -1723,15 +1727,23 @@ const EventoBulkForm = () => {
     if (failed > 0) parts.push(`${failed} erro(s)`);
     if (skippedTotal > 0) parts.push(`${skippedTotal} não enviado(s)`);
     const summary = parts.join(" • ") || "Nada para publicar";
-    if (failed === 0 && published > 0) toast.success(`Lote: ${summary}`, { duration: 8000 });
-    else if (published > 0) toast.message(`Lote parcial: ${summary}`, { duration: 10000 });
-    else toast.error(`Lote: ${summary}`);
+    // HOTFIX toast-duplicado — um único toast por tentativa, agregando
+    // o resumo, as falhas de item e os motivos de validação.
+    const detailBlocks: string[] = [];
     if (failureLines.length) {
-      toast.warning(failureLines.slice(0, 6).join("\n"), { duration: 12000 });
+      detailBlocks.push(failureLines.slice(0, 6).join("\n"));
     }
     if (guardBlocked.length) {
       const reasons = Array.from(new Set(guardBlocked.flatMap((g) => g.guard.blockReasons))).map((r) => REASON_LABELS[r] || r);
-      toast.warning(`Motivos de validação: ${reasons.join(", ")}`, { duration: 9000 });
+      if (reasons.length) detailBlocks.push(`Motivos de validação: ${reasons.join(", ")}`);
+    }
+    const detail = detailBlocks.length ? `\n\n${detailBlocks.join("\n\n")}` : "";
+    if (failed === 0 && published > 0) {
+      toast.success(`Lote: ${summary}${detail}`, { duration: 8000 });
+    } else if (published > 0) {
+      toast.message(`Lote parcial: ${summary}${detail}`, { duration: 12000 });
+    } else {
+      toast.error(`Lote: ${summary}${detail}`, { duration: 12000 });
     }
     bulkLog("save_done", {
       count: published,
@@ -2498,18 +2510,27 @@ function ReviewRowBase({
                 timeSource: item.timeSource,
               });
               const b = timeStatusBadge(status);
+              const isUnknown = status === "unknown";
+              const isSuggestedUnconfirmed = status === "suggested" && !item.timeConfirmed;
+              const isUnknownUnconfirmed = isUnknown && !item.timeConfirmed;
+              const isUnknownConfirmed = isUnknown && !!item.timeConfirmed;
+              const label = isUnknownConfirmed
+                ? "Publicar com horário a confirmar"
+                : b.label;
+              const effTone: "success" | "warning" | "neutral" = isUnknownConfirmed
+                ? "success"
+                : b.tone;
               const toneCls =
-                b.tone === "success"
+                effTone === "success"
                   ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
-                  : b.tone === "warning"
+                  : effTone === "warning"
                     ? "text-amber-300 border-amber-500/40 bg-amber-500/10"
                     : "text-muted-foreground border-border/40 bg-secondary/40";
-              const isSuggestedUnconfirmed = status === "suggested" && !item.timeConfirmed;
               return (
-                <div className="mt-1 flex items-center gap-1.5">
+                <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                   <span className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${toneCls}`}>
                     <span>{b.emoji}</span>
-                    <span className="truncate">{b.label}</span>
+                    <span className="truncate">{label}</span>
                   </span>
                   {isSuggestedUnconfirmed && onConfirmTime && (
                     <button
@@ -2518,6 +2539,16 @@ function ReviewRowBase({
                       className="rounded border border-amber-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-amber-200 hover:bg-amber-500/20"
                     >
                       Confirmar
+                    </button>
+                  )}
+                  {isUnknownUnconfirmed && onConfirmTime && (
+                    <button
+                      type="button"
+                      onClick={onConfirmTime}
+                      className="rounded border border-emerald-500/40 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200 hover:bg-emerald-500/20"
+                      title="Publicar com 'horário a confirmar' sem inventar hora"
+                    >
+                      Publicar assim
                     </button>
                   )}
                 </div>
