@@ -81,7 +81,7 @@ export function HomeMobile(props: HomeMobileProps) {
       {/* 1 · HERO */}
       <HomeSectionBoundary name="Hero mobile" fallback={<EmptyHero />}>
         {isLoading ? (
-          <div aria-hidden className="h-[96px] w-full bg-background" />
+          <div aria-hidden className="h-[58svh] min-h-[384px] max-h-[512px] w-full v3-skeleton" />
         ) : hero ? (
           <div className="relative z-10 overflow-hidden bg-background">
             <ImmersiveHero
