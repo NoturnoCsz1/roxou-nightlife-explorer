@@ -73,7 +73,6 @@ export function HomeMobile(props: HomeMobileProps) {
 
   // Destaques fixos — Copa primeiro, Expo em seguida.
   const highlightSlides: HighlightSlide[] = [
-    { key: "copa", node: <CopaHighlightCard /> },
     { key: "expo", node: <ExpoHighlightCard /> },
   ];
 
