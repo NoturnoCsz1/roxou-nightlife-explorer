@@ -129,9 +129,16 @@ export default defineConfig(({ mode }) => ({
       "@games": path.resolve(__dirname, "./src/apps/games"),
       "@shared": path.resolve(__dirname, "./src/shared"),
       "@services": path.resolve(__dirname, "./src/services"),
+      // Onda 1 — fronteiras oficiais (novos módulos usam estes aliases).
+      "@app": path.resolve(__dirname, "./src/app"),
+      "@modules": path.resolve(__dirname, "./src/modules"),
+      "@contracts": path.resolve(__dirname, "./src/contracts"),
+      "@integrations": path.resolve(__dirname, "./src/integrations"),
+      "@config": path.resolve(__dirname, "./src/config"),
     },
     dedupe: ["react", "react-dom"],
   },
+
   // Multi-entry:
   //   dist/index.html         → roxou.com.br (app público + admin)
   //   dist/partner/index.html → parceiro.roxou.com.br (Partner Pro)
