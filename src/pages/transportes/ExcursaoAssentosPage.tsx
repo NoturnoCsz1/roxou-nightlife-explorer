@@ -11,7 +11,7 @@ import {
   getPublicExcursionTrip,
   type PublicSeat,
   type PublicTripBundle,
-} from "@/services/publicExcursoes";
+} from "@modules/transport";
 import {
   readFlow,
   seatPalette,

@@ -19,7 +19,7 @@ import {
   setOperationStatus,
   operationStatusLabel,
   type ExcursionOperationStatus,
-} from "@/services/excursionGps";
+} from "@modules/transport";
 import {
   listExcursionTrips,
   type ExcursionTrip,

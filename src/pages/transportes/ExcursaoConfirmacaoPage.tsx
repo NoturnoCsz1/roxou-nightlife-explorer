@@ -14,7 +14,7 @@ import {
   reserveExcursionSeat,
   reserveReasonMessage,
   type PublicTripBundle,
-} from "@/services/publicExcursoes";
+} from "@modules/transport";
 import {
   clearFlow,
   formatBRL,

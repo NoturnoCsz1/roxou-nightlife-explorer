@@ -455,3 +455,11 @@ Ativação pública do Discovery Engine em rota genérica única `/descobrir/:ca
 - Sitemap edge (`supabase/functions/sitemap`): 10 categorias adicionadas em /descobrir/:slug. Fallback script atualizado com /descobrir.
 - robots.txt preservado (/descobrir/ já liberado; /admin/, /partner/, /auth etc. bloqueados).
 - ads.txt inalterado.
+
+
+## Onda 12 — Modularização Transporte (concluída)
+- src/services/{publicExcursoes,excursionGps,transport}.ts movidos para src/modules/transport/{excursoes/{repositories,services},rides/repositories}.
+- Barrels criados: excursoes/index.ts, rides/index.ts, transport/index.ts (superfície única).
+- 7 consumidores migrados para @modules/transport; sem Supabase inline novo.
+- Rotas preservadas 1:1; nenhuma URL, layout ou navegação alterada.
+- Ciclos 1→1 (baseline eventoForm* herdado).
