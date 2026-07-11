@@ -4,7 +4,7 @@
  */
 import { BadgeCheck, Instagram, MapPin, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { normalizeInstagramHandle } from "@/lib/instagramHandle";
+import { normalizeInstagramHandle } from "@shared/utils/instagramHandle";
 import type { PartnerProfileRow } from "../services/partnerProfile";
 
 interface Props {

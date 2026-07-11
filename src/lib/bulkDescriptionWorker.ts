@@ -173,7 +173,7 @@ class DescriptionWorker {
         { body: job.payload },
       );
       if (error) {
-        const { classifyAiError } = await import("./aiGatewayError");
+        const { classifyAiError } = await import("@shared/utils/aiGatewayError");
         const c = await classifyAiError(error, data);
         throw new Error(c.message);
       }

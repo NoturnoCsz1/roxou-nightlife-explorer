@@ -172,3 +172,20 @@ Execução em **ondas pequenas**. Cada onda tem objetivo, arquivos, risco, teste
 | 7–8 | `/transportes/*`, `/motorista`, `/chat/:id`, `/meus-pedidos`, `/cadastro-motorista` |
 | 9–13 | `/`, `/agenda`, `/evento/:slug`, `/local/:slug`, `/parceiros`, `/jogos`, `/noticias`, `/:landingSlug` |
 | 14 | matriz completa + subdomínios |
+
+---
+
+## Registro de execução
+
+### Onda 2 — Concluída (2026-07-11)
+
+Movidos 4 arquivos genéricos e de baixo risco para `src/shared/`:
+
+- `useIsDesktop` → `src/shared/hooks/`
+- `instagramHandle`, `locationDisplay`, `aiGatewayError` → `src/shared/utils/`
+
+13 imports atualizados em 12 arquivos, todos via alias `@shared/...`. Detalhes, recusas e adiamentos em `docs/onda-2-shared-baixo-risco.md`.
+
+- typecheck: ✅  build: ✅  audit:cycles: ✅ (1 ciclo herdado, sem regressão)
+- Recusados: `titleCleaner` (Radar-específico), `useAuth`, `useSaved*`, `analytics`, `ga`, `supabaseFetchAll`, `EventCard`, `V3Layout`.
+- Adiados para ondas próprias: `dateUtils` (TZ crítico, 45 consumidores), `utils.cn` (93), `use-toast` (42), `SEO` (45), `components/ui/*`, `imageOptimizer` (acoplado a Supabase Storage URL).

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageCircle, X, Clock, Check, Loader2, Car, Send } from "lucide-react";
 import { toast } from "sonner";
 import { getRideAvailabilityText, isRideWindowClosed } from "@/lib/rideTimeRules";
-import { formatLocation } from "@/lib/locationDisplay";
+import { formatLocation } from "@shared/utils/locationDisplay";
 import type { Tables } from "@/integrations/supabase/types";
 
 type RideRequest = Tables<"ride_requests">;
