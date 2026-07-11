@@ -19,14 +19,14 @@ import {
   buildExcursionQrPayload,
   getPublicExcursionTicket,
   type PublicTicket,
-} from "@/services/publicExcursoes";
+} from "@modules/transport";
 import {
   getPublicLive,
   operationStatusEmoji,
   operationStatusLabel,
   type ExcursionOperationStatus,
   type PublicLiveData,
-} from "@/services/excursionGps";
+} from "@modules/transport";
 
 function formatBRL(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", {

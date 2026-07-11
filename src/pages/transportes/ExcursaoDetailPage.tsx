@@ -11,7 +11,7 @@ import { Card } from "@/components/ui/card";
 import {
   getPublicExcursionTrip,
   type PublicTripBundle,
-} from "@/services/publicExcursoes";
+} from "@modules/transport";
 import { formatBRL, formatDateTime } from "./excursao/excursaoFlow";
 import ExcursaoStepper from "./excursao/ExcursaoStepper";
 

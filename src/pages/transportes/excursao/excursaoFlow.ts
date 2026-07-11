@@ -5,7 +5,7 @@
  * Mantém formatadores, paleta de assentos e persistência leve em
  * sessionStorage para passar estado entre as sub-páginas sem URL longa.
  */
-import type { PublicSeat } from "@/services/publicExcursoes";
+import type { PublicSeat } from "@modules/transport";
 
 export function formatBRL(cents: number): string {
   if (cents <= 0) return "Grátis";

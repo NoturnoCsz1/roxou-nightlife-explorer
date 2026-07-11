@@ -42,7 +42,7 @@ import {
   subscribeLatestPing,
   type ExcursionGpsPing,
   type ExcursionOperationStatus,
-} from "@/services/excursionGps";
+} from "@modules/transport";
 
 const OP_STATUSES: ExcursionOperationStatus[] = [
   "scheduled",
