@@ -17,6 +17,7 @@ const FALLBACK = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://roxou.com.br/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>https://roxou.com.br/agenda</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://roxou.com.br/descobrir</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
   <url><loc>https://roxou.com.br/parceiros</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://roxou.com.br/jogos</loc><changefreq>hourly</changefreq><priority>0.95</priority></url>
   <url><loc>https://roxou.com.br/noticias</loc><changefreq>daily</changefreq><priority>0.8</priority></url>

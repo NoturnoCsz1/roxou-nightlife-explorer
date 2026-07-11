@@ -76,3 +76,13 @@ Herdado das ondas LCP-4E/4F:
 ## 9. Não implementar agora
 
 Esta é auditoria. Correções vão em Onda 9 do `plano-modularizacao-roxou.md`.
+
+
+## Onda 11 — SEO Descobertas (concluída)
+- Reuso do componente `src/components/SEO.tsx` (canonical, robots, OG, Twitter, JSON-LD).
+- `DiscoveryCategoryPage` migrada de useEffect ad-hoc para <SEO/> + BreadcrumbList + CollectionPage/ItemList quando totalItems>0.
+- Canonical: https://roxou.com.br/descobrir/:slug (sem query, sem tracking).
+- Regra index: !indexable || (loaded && total<6) → noindex,follow; loading/erro → index (evita soft-404).
+- Sitemap edge (`supabase/functions/sitemap`): 10 categorias adicionadas em /descobrir/:slug. Fallback script atualizado com /descobrir.
+- robots.txt preservado (/descobrir/ já liberado; /admin/, /partner/, /auth etc. bloqueados).
+- ads.txt inalterado.

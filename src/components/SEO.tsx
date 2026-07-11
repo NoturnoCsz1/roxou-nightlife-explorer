@@ -9,9 +9,11 @@ interface SEOProps {
   ogImageWidth?: number;
   ogImageHeight?: number;
   ogType?: string;
-  jsonLd?: Record<string, unknown>;
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
   keywords?: string;
   locale?: string;
+  /** When true, emits `<meta name="robots" content="noindex,follow">`. */
+  noindex?: boolean;
 }
 
 const SITE_ORIGIN = "https://roxou.com.br";
@@ -60,7 +62,7 @@ function stripTrackingParams(url: string): string {
   }
 }
 
-const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogImageWidth = 1200, ogImageHeight = 630, ogType = "website", jsonLd, keywords, locale = "pt_BR" }: SEOProps) => {
+const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogImageWidth = 1200, ogImageHeight = 630, ogType = "website", jsonLd, keywords, locale = "pt_BR", noindex = false }: SEOProps) => {
   const resolvedCanonical = canonical
     ? stripTrackingParams(canonical)
     : buildCanonicalFromLocation();
@@ -76,6 +78,7 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
         document.head.appendChild(el);
       }
       el.setAttribute("content", content);
+      return el;
     };
 
     setMeta("description", description);
@@ -95,6 +98,7 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
     setMeta("twitter:image", ogImage, "name");
 
     setMeta("og:url", resolvedCanonical, "property");
+    const robotsEl = setMeta("robots", noindex ? "noindex,follow" : "index,follow");
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) {
       link = document.createElement("link");
@@ -102,15 +106,26 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
       document.head.appendChild(link);
     }
     link.setAttribute("href", resolvedCanonical);
-  }, [title, description, resolvedCanonical, ogImage, ogImageWidth, ogImageHeight, ogType, keywords, locale]);
+
+    return () => {
+      // Restore robots default so leaving a noindex route doesn't leak.
+      robotsEl.setAttribute("content", "index,follow");
+    };
+  }, [title, description, resolvedCanonical, ogImage, ogImageWidth, ogImageHeight, ogType, keywords, locale, noindex]);
 
   if (!jsonLd) return null;
 
+  const blocks = Array.isArray(jsonLd) ? jsonLd : [jsonLd];
   return createPortal(
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />,
+    <>
+      {blocks.map((block, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(block) }}
+        />
+      ))}
+    </>,
     document.head
   );
 };

@@ -105,3 +105,13 @@ Componentes internos: `<VenueHero>`, `<VenueGallery>`, `<VenueDescription>`, `<V
 - Categoria inválida ou desabilitada → NotFound real (404). Categoria válida com <6 itens → `robots: noindex,follow`.
 - SEO: title, meta description, canonical, `og:title/description/url/type` aplicados via `useEffect`.
 - Entrada discreta em `src/components/search/GlobalSearchOverlay.tsx` (3 quick-links para `/descobrir/*`).
+
+
+## Onda 11 — SEO Descobertas (concluída)
+- Reuso do componente `src/components/SEO.tsx` (canonical, robots, OG, Twitter, JSON-LD).
+- `DiscoveryCategoryPage` migrada de useEffect ad-hoc para <SEO/> + BreadcrumbList + CollectionPage/ItemList quando totalItems>0.
+- Canonical: https://roxou.com.br/descobrir/:slug (sem query, sem tracking).
+- Regra index: !indexable || (loaded && total<6) → noindex,follow; loading/erro → index (evita soft-404).
+- Sitemap edge (`supabase/functions/sitemap`): 10 categorias adicionadas em /descobrir/:slug. Fallback script atualizado com /descobrir.
+- robots.txt preservado (/descobrir/ já liberado; /admin/, /partner/, /auth etc. bloqueados).
+- ads.txt inalterado.
