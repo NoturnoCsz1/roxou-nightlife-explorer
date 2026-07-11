@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, X, Calendar, Newspaper, MapPin, Music, Trophy, ChevronRight, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { searchPublicEvents } from "@modules/discovery/events";
+import { searchPublicVenues } from "@modules/discovery/venues";
 import { expandQuery, fuzzyScore, normalizeText, type SearchResultItem, type SearchResultType } from "./searchUtils";
 import { Highlight, QuickLinkCloud, QUICK_LINKS } from "./Highlight";
 
