@@ -48,3 +48,49 @@ export async function fetchVenueById(
     .single();
   return data ?? null;
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Onda 8 — helpers usados pelas superfícies públicas de maior tráfego.
+// Preservam 1:1 select/filtros atuais.
+// ────────────────────────────────────────────────────────────────────
+
+/** Mapeamento id→slug para parceiros — Home/Hoje/Semana. */
+export async function fetchPartnerSlugsByIds(
+  ids: string[],
+): Promise<Array<Pick<PublicVenueRow, "id" | "slug">>> {
+  if (ids.length === 0) return [];
+  const { data } = await supabase
+    .from("partners")
+    .select("id, slug")
+    .in("id", ids);
+  return (data as Array<Pick<PublicVenueRow, "id" | "slug">> | null) ?? [];
+}
+
+/** Coordenadas dos parceiros — PertoDeMim (fallback quando o evento não tem lat/lng). */
+export async function fetchPartnerCoordsByIds(
+  ids: string[],
+): Promise<Array<Pick<PublicVenueRow, "id" | "latitude" | "longitude">>> {
+  if (ids.length === 0) return [];
+  const { data } = await supabase
+    .from("partners")
+    .select("id,latitude,longitude")
+    .in("id", ids);
+  return (
+    (data as Array<Pick<PublicVenueRow, "id" | "latitude" | "longitude">> | null) ??
+    []
+  );
+}
+
+/** GlobalSearchOverlay: índice compacto de parceiros ativos. */
+export async function searchPublicVenues(
+  limit = 300,
+): Promise<PublicVenueRow[]> {
+  const { data } = await supabase
+    .from("partners")
+    .select("id,slug,name,type,neighborhood,logo_url,short_description")
+    .eq("active", true)
+    .eq("status", "ativo")
+    .limit(limit);
+  return (data as PublicVenueRow[] | null) ?? [];
+}
+
