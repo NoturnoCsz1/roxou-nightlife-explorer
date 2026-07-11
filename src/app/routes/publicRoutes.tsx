@@ -30,6 +30,9 @@ const V3Parceiros = lazy(() => import("@/pages/v3/V3Parceiros"));
 const V3Rankings = lazy(() => import("@/pages/v3/V3Rankings"));
 const V3Community = lazy(() => import("@/pages/v3/V3Community"));
 const V3Discover = lazy(() => import("@/pages/v3/V3Discover"));
+const DiscoveryCategoryPage = lazy(
+  () => import("@/modules/discovery/pages/DiscoveryCategoryPage"),
+);
 const V3Agenda = lazy(() => import("@/pages/v3/V3Agenda"));
 const V3Profile = lazy(() => import("@/pages/v3/V3Profile"));
 const V3ProfileEdit = lazy(() => import("@/pages/v3/V3ProfileEdit"));
