@@ -237,3 +237,60 @@ link, PWA ou SEO foi alterada. URLs preservadas 1:1.
 - `Routes` recebe três fragmentos irmãos; ordem preservada da versão anterior — mudanças de ordem podem afetar catch-all `/:landingSlug` e `*`.
 - Sub-árvore de transporte ainda vive dentro de `V3Layout` (compartilha header/footer público). Extração para layout próprio fica para onda futura conforme `docs/arquitetura-futura-roxou.md`.
 - `AdminLayout` lazy adiciona um Suspense extra em `/admin/*` (fallback visual já usado em rotas filhas — sem regressão perceptível).
+
+### Onda 4 — Concluída (2026-07-11)
+
+Base modular do Partner Pro + camada de dados isolada das telas.
+Nenhuma alteração em banco, RLS, RPC, Edge Functions, autenticação,
+permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
+(páginas e componentes) — a compatibilidade é garantida por shims.
+
+**Estrutura criada em `src/modules/partner/`**
+- `reservations/{services,repositories,types}/`
+- `vip/{services,repositories,types}/`
+- `validator/{services,repositories,types}/`
+- `invitations/` (placeholder — sem código ainda)
+- `shared/{types}/`
+- READMEs curtos em cada submódulo + `discovery`, `transport`, `admin`.
+
+**Arquivos migrados (4 services movidos fisicamente)**
+- `src/apps/partner/services/partnerReservations.ts` → `src/modules/partner/reservations/services/reservationsService.ts` (623 LOC)
+- `src/apps/partner/services/partnerVipLists.ts` → `src/modules/partner/vip/services/vipService.ts` (380 LOC)
+- `src/apps/partner/services/partnerValidator.ts` → `src/modules/partner/validator/services/validatorService.ts` (488 LOC)
+- `src/apps/partner/services/partnerPromoters.ts` → `src/modules/partner/vip/services/promotersService.ts` (101 LOC)
+
+**Repositories criados (barrels públicos)**
+- `reservations/repositories/reservationsRepository.ts` — expõe operações de banco/RPCs de reservas, tipos, waitlist e insights.
+- `vip/repositories/vipRepository.ts` — expõe operações de listas VIP, entries e promoters.
+- `validator/repositories/validatorRepository.ts` — expõe `parseQrPayload` + `validateQrCode`.
+
+**Types extraídos**
+- `reservations/types/index.ts`, `vip/types/index.ts`, `validator/types/index.ts` — reexportam os tipos já declarados nos services (sem duplicação, sem cópia de schema).
+
+**Shims de compatibilidade**
+- `src/apps/partner/services/partner{Reservations,VipLists,Validator,Promoters}.ts` viraram 3-linhas `export * from "@modules/partner/..."`. Zero páginas/componentes precisaram ser tocados.
+
+**Chamadas diretas ao Supabase removidas das telas:** 0 — os fluxos de Reservas/VIP/Validador **já** iam via services antes desta onda. A única `supabase.from(...)` residual no visual Partner (`PartnerRequestAccessPage.tsx` e `bio/tabs/BioHomeTab.tsx`) está fora do escopo desta onda (não pertence a Reservas/VIP/Validador/Convites).
+
+**Áreas concluídas**
+- Reservas: ✅
+- VIP: ✅
+- Validador: ✅
+- Convites: adiado (só existe stub `"invite"` no validator).
+
+**Ciclos:** antes = 1 (`eventoFormSubmit ↔ eventoFormActions`, herdado do Admin); depois = 1 (mesmo, sem novos).
+
+**Validação**
+- `bunx tsgo --noEmit`: ✅
+- `bun run build`: ✅ (393 precache entries)
+- `bun run audit:cycles`: ✅ (baseline mantido)
+- lint dos 14 arquivos alterados: ✅ 0 erros.
+
+**Pendências / dívida técnica**
+- Split físico interno service ↔ repository (mover as `supabase.from/rpc/functions.invoke` para dentro dos arquivos `repositories/*` como funções pilha-baixa) fica para onda futura — hoje o repository é um barrel que re-exporta os símbolos do service. Contrato público estável, então esse split não quebra consumidores.
+- Migrar imports das páginas/componentes de `../services/partner*` para `@modules/partner/*` diretamente (permite eventualmente remover os shims) — pendente.
+- Módulo `invitations/` aguarda o fluxo real do produto.
+
+**Riscos restantes**
+- Shims em `src/apps/partner/services/partner*.ts` são bidirecionais no efeito: se um consumidor novo importar do caminho antigo, a fronteira modular ainda funciona, mas a métrica de adoção do `@modules/partner/*` fica menos limpa até a migração dos imports.
+- `partnerValidator` importa `vip` e `reservations` diretamente (permitido pela regra Onda 1 — mesmo produto). Nenhum ciclo detectado, mas o grafo de dependências internas do Partner cresce; monitorar via `audit:cycles`.
