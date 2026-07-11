@@ -6,9 +6,9 @@ import { L } from "./lazyFallback";
  * Sub-árvore de Transporte (Onda 3 — isolamento por produto).
  *
  * IMPORTANTE:
- *  - Estas rotas são FILHAS de `<Route path="/" element={<V3Layout />}>`
+ *  - Estas rotas são FILHAS de `<Route path="/" element={<PublicLayout />}>`
  *    definido em `publicRoutes.tsx`. Não altere esta hierarquia sem
- *    revalidar o header/footer público do V3Layout.
+ *    revalidar o header/footer público do PublicLayout.
  *  - Inclui caronas, excursões, privativo e área do motorista.
  *  - URLs preservadas 1:1.
  */
