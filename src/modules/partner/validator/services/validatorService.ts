@@ -14,11 +14,11 @@ import {
   getVipEntryByToken,
   checkInVipEntry,
   type PartnerVipEntry,
-} from "./partnerVipLists";
+} from "@modules/partner/vip/services/vipService";
 import {
   getReservation,
   type PartnerReservationRow,
-} from "./partnerReservations";
+} from "@modules/partner/reservations/services/reservationsService";
 
 export type ValidatorItemType =
   | "vip"
