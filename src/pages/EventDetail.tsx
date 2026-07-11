@@ -17,6 +17,12 @@ import { toast } from "sonner";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import {
+  fetchPublishedEventBySlug,
+  fetchSimilarByCategory,
+  fetchSimilarByDate,
+} from "@modules/discovery/events";
+import { fetchVenueById } from "@modules/discovery/venues";
 import EventCard from "@/components/EventCard";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -46,48 +52,25 @@ const EventDetail = () => {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
-        .from("events")
-        .select("*")
-        .eq("slug", slug!)
-        .eq("status", "published")
-        .single();
+      const data = await fetchPublishedEventBySlug(slug!);
       setEvent(data);
 
       if (data?.partner_id) {
-        const { data: p } = await supabase
-          .from("partners")
-          .select("*")
-          .eq("id", data.partner_id)
-          .single();
+        const p = await fetchVenueById(data.partner_id);
         setPartner(p);
       }
 
       // Fetch similar events (same category or same date, excluding current)
       if (data) {
         const eventDate = data.date_time.split("T")[0];
-        const { data: byCat } = await supabase
-          .from("events")
-          .select("*")
-          .eq("status", "published")
-          .eq("category", data.category)
-          .neq("id", data.id)
-          .gte("date_time", new Date().toISOString())
-          .order("date_time", { ascending: true })
-          .limit(4);
-        const { data: byDate } = await supabase
-          .from("events")
-          .select("*")
-          .eq("status", "published")
-          .neq("id", data.id)
-          .gte("date_time", `${eventDate}T00:00:00`)
-          .lte("date_time", `${eventDate}T23:59:59`)
-          .order("date_time", { ascending: true })
-          .limit(4);
+        const [byCat, byDate] = await Promise.all([
+          fetchSimilarByCategory(data.id, data.category, 4),
+          fetchSimilarByDate(data.id, eventDate, 4),
+        ]);
         // Merge and deduplicate, limit to 4
         const seen = new Set<string>();
-        const merged: typeof byCat = [];
-        for (const e of [...(byCat || []), ...(byDate || [])]) {
+        const merged: Tables<"events">[] = [];
+        for (const e of [...byCat, ...byDate]) {
           if (!seen.has(e.id)) {
             seen.add(e.id);
             merged.push(e);
