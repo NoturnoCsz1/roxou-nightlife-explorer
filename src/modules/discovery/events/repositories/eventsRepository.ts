@@ -113,3 +113,91 @@ export async function countPastEventsByPartner(
     .lt("date_time", now);
   return count ?? 0;
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Onda 8 — superfícies públicas de maior tráfego
+// (Index, Hoje, Semana, PertoDeMim, GlobalSearchOverlay).
+// Cada função preserva 1:1 o select/filtros/ordenação/limite atual.
+// ────────────────────────────────────────────────────────────────────
+
+/** Colunas usadas pelos cards da Home / Hoje / Semana. */
+const HOME_EVENT_COLUMNS =
+  "id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id";
+
+/** Home (Index): todos os próximos eventos publicados, `gt(now)`. */
+export async function fetchUpcomingPublishedEventsForHome(): Promise<PublicEventRow[]> {
+  const now = new Date().toISOString();
+  const { data } = await supabase
+    .from("events")
+    .select(HOME_EVENT_COLUMNS)
+    .eq("status", "published")
+    .gt("date_time", now)
+    .order("date_time", { ascending: true });
+  return (data as PublicEventRow[] | null) ?? [];
+}
+
+/** Hoje: eventos publicados no intervalo `[startOfDay, endOfDay)` (SP). */
+export async function fetchTodayPublishedEvents(
+  startOfDay: string,
+  endOfDay: string,
+): Promise<PublicEventRow[]> {
+  const { data } = await supabase
+    .from("events")
+    .select(HOME_EVENT_COLUMNS)
+    .eq("status", "published")
+    .gte("date_time", startOfDay)
+    .lt("date_time", endOfDay)
+    .order("date_time", { ascending: true });
+  return (data as PublicEventRow[] | null) ?? [];
+}
+
+/** Semana: eventos publicados nos próximos ~7 dias. */
+export async function fetchWeekPublishedEvents(): Promise<PublicEventRow[]> {
+  const now = new Date().toISOString();
+  const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("events")
+    .select(HOME_EVENT_COLUMNS)
+    .eq("status", "published")
+    .gte("date_time", now)
+    .lte("date_time", weekLater)
+    .order("date_time", { ascending: true });
+  return (data as PublicEventRow[] | null) ?? [];
+}
+
+/** Colunas usadas pelo mapa/lista "Perto de Mim". */
+const NEARBY_EVENT_COLUMNS =
+  "id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url,is_sports_transmission";
+
+/** PertoDeMim: próximos eventos com geolocalização, limitados. */
+export async function fetchUpcomingEventsForNearby(
+  limit = 200,
+): Promise<PublicEventRow[]> {
+  const now = new Date().toISOString();
+  const { data } = await supabase
+    .from("events")
+    .select(NEARBY_EVENT_COLUMNS)
+    .eq("status", "published")
+    .gt("date_time", now)
+    .order("date_time", { ascending: true })
+    .limit(limit);
+  return (data as PublicEventRow[] | null) ?? [];
+}
+
+/** Colunas usadas pela busca global. */
+const SEARCH_EVENT_COLUMNS =
+  "id,slug,title,image_url,venue_name,category,sub_category,description,date_time";
+
+/** GlobalSearchOverlay: próximos eventos para índice de busca. */
+export async function searchPublicEvents(limit = 500): Promise<PublicEventRow[]> {
+  const now = new Date().toISOString();
+  const { data } = await supabase
+    .from("events")
+    .select(SEARCH_EVENT_COLUMNS)
+    .eq("status", "published")
+    .gte("date_time", now)
+    .order("date_time", { ascending: true })
+    .limit(limit);
+  return (data as PublicEventRow[] | null) ?? [];
+}
+

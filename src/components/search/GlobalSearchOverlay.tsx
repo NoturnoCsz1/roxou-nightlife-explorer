@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, X, Calendar, Newspaper, MapPin, Music, Trophy, ChevronRight, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { searchPublicEvents } from "@modules/discovery/events";
+import { searchPublicVenues } from "@modules/discovery/venues";
 import { expandQuery, fuzzyScore, normalizeText, type SearchResultItem, type SearchResultType } from "./searchUtils";
 import { Highlight, QuickLinkCloud, QUICK_LINKS } from "./Highlight";
 
@@ -38,16 +40,16 @@ const CACHE_TTL = 5 * 60 * 1000;
 async function loadData() {
   if (cachedData && Date.now() - cachedData.fetchedAt < CACHE_TTL) return cachedData;
   const nowIso = new Date().toISOString();
-  const [evRes, newsRes, partnersRes, matchesRes] = await Promise.all([
-    supabase.from("events").select("id,slug,title,image_url,venue_name,category,sub_category,description,date_time").eq("status", "published").gte("date_time", nowIso).order("date_time", { ascending: true }).limit(500),
+  const [evData, newsRes, partnersData, matchesRes] = await Promise.all([
+    searchPublicEvents(500),
     supabase.from("roxou_news").select("id,slug,title,excerpt,cover_image_url,category,published_at").eq("status", "published").order("published_at", { ascending: false }).limit(200),
-    supabase.from("partners").select("id,slug,name,type,neighborhood,logo_url,short_description").eq("active", true).eq("status", "ativo").limit(300),
+    searchPublicVenues(300),
     supabase.from("sports_matches").select("id,slug,home_team,away_team,league_label,match_time,home_badge").gte("match_time", nowIso).order("match_time", { ascending: true }).limit(80),
   ]);
   cachedData = {
-    events: (evRes.data || []) as RawEvent[],
+    events: (evData || []) as unknown as RawEvent[],
     news: (newsRes.data || []) as RawNews[],
-    partners: (partnersRes.data || []) as RawPartner[],
+    partners: (partnersData || []) as unknown as RawPartner[],
     matches: (matchesRes.data || []) as RawMatch[],
     fetchedAt: Date.now(),
   };

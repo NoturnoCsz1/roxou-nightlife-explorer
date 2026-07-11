@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Crosshair, Calendar, Navigation, AlertTriangle, X, RefreshCw, Flame, Map as MapIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchUpcomingEventsForNearby } from "@modules/discovery/events";
+import { fetchPartnerCoordsByIds } from "@modules/discovery/venues";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { NearbyEvent } from "@/components/maps/RoxouNearbyEventsMap";
@@ -127,22 +129,14 @@ export default function PertoDeMim() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const now = new Date().toISOString();
-      const [eventsRes, awardsRes] = await Promise.all([
-        supabase
-          .from("events")
-          .select("id,title,slug,venue_name,date_time,latitude,longitude,partner_id,status,transport_reservation_enabled,category,sub_category,image_url,is_sports_transmission")
-          .eq("status", "published")
-          .gt("date_time", now)
-          .order("date_time", { ascending: true })
-          .limit(200),
+      const [list, awardsRes] = await Promise.all([
+        fetchUpcomingEventsForNearby(200),
         supabase
           .from("partner_awards")
           .select("partner_id")
           .eq("active", true),
       ]);
 
-      const list = eventsRes.data || [];
       const awards = awardsRes.data || [];
       setAwardPartnerIds(new Set(awards.map((a: any) => a.partner_id)));
 
@@ -153,8 +147,8 @@ export default function PertoDeMim() {
       ];
       const partnerMap: Record<string, { lat: number | null; lng: number | null }> = {};
       if (partnerIds.length > 0) {
-        const { data: ps } = await supabase.from("partners").select("id,latitude,longitude").in("id", partnerIds);
-        (ps || []).forEach((p) => {
+        const ps = await fetchPartnerCoordsByIds(partnerIds);
+        ps.forEach((p) => {
           partnerMap[p.id] = { lat: (p as any).latitude, lng: (p as any).longitude };
         });
       }
