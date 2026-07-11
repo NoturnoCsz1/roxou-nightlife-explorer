@@ -9,7 +9,7 @@
  * sob curadoria do Admin.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeInstagramHandle } from "@/lib/instagramHandle";
+import { normalizeInstagramHandle } from "@shared/utils/instagramHandle";
 
 export type PartnerImageType = "logo";
 

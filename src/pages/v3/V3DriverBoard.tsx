@@ -8,7 +8,7 @@ import { ArrowLeft, MapPin, Clock, Users, MessageCircle, Check, Loader2, X, Shie
 import LegalDisclaimer from "@/components/v3/LegalDisclaimer";
 import ReportDialog from "@/components/v3/ReportDialog";
 import { getRideAvailabilityText, isRideWindowClosed, RIDE_EXPIRED_MESSAGE } from "@/lib/rideTimeRules";
-import { formatLocation } from "@/lib/locationDisplay";
+import { formatLocation } from "@shared/utils/locationDisplay";
 import type { Tables } from "@/integrations/supabase/types";
 
 function timeAgoPt(iso: string | null | undefined): string {

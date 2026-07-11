@@ -12,7 +12,7 @@ import {
   SPORTS_COMPETITIONS,
 } from "@/lib/categoryConfig";
 import { useAdminProfile } from "@/hooks/useAdminProfile";
-import { normalizeInstagramHandle, validateInstagramHandle } from "@/lib/instagramHandle";
+import { normalizeInstagramHandle, validateInstagramHandle } from "@shared/utils/instagramHandle";
 
 function slugify(str: string) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");

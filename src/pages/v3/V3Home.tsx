@@ -10,7 +10,7 @@ import { useHomeData } from "@/apps/public/home/hooks/useHomeData";
 import { useHomeCarousels } from "@/apps/public/home/hooks/useHomeCarousels";
 import { useHomeSearch } from "@/apps/public/home/hooks/useHomeSearch";
 import { safeEvents, toSafeDate } from "@/apps/public/home/utils";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { useIsDesktop } from "@shared/hooks/useIsDesktop";
 import { optimizedImageUrl, optimizedSrcSet } from "@/lib/imageOptimizer";
 
 // LCP-4B: HomeMobile volta a import estático (evita hop lazy no caminho do LCP).

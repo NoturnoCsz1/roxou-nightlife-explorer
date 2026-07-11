@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStartOfTodaySP, getEndOfTodaySP } from "@/lib/dateUtils";
 import { toast } from "@/hooks/use-toast";
-import { normalizeInstagramHandle } from "@/lib/instagramHandle";
+import { normalizeInstagramHandle } from "@shared/utils/instagramHandle";
 
 // ===================================================================
 // STORY GENERATOR ROXOU NEON — 3 modos sobre o mesmo template

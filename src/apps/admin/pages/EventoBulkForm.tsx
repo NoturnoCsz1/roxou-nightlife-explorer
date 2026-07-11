@@ -1286,7 +1286,7 @@ const EventoBulkForm = () => {
         },
       });
       if (error) {
-        const { classifyAiError } = await import("@/lib/aiGatewayError");
+        const { classifyAiError } = await import("@shared/utils/aiGatewayError");
         const c = await classifyAiError(error, data);
         if (c.kind === "credits") toast.error(`💳 ${c.message}`);
         else toast.error(c.message);
@@ -1298,7 +1298,7 @@ const EventoBulkForm = () => {
         if (data?.chamada_site) toast.success(`Copy: "${data.chamada_site}"`);
       }
     } catch (err: any) {
-      const { classifyAiError } = await import("@/lib/aiGatewayError");
+      const { classifyAiError } = await import("@shared/utils/aiGatewayError");
       const c = await classifyAiError(err);
       if (c.kind === "credits") toast.error(`💳 ${c.message}`);
       else toast.error(c.message);
