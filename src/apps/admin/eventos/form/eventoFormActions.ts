@@ -6,46 +6,22 @@ import { classifyAiError } from "@shared/utils/aiGatewayError";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import { slugify } from "./utils";
 import { buildHandleSubmit } from "./eventoFormSubmit";
-import type { DuplicateCandidate, EventoFormState, Partner } from "./types";
-
+import type { EventoFormState, Partner } from "./types";
+import {
+  type EventoFormActionDeps,
+  softArchiveEvent,
+  findDuplicateByImageHash,
+  findDuplicateByTitleVenueDay,
+} from "@modules/admin/events";
 
 /**
- * Dependências do "agente" de ações do EventoForm.
- * Tudo o que vinha do escopo do componente original é passado aqui,
- * sem alterar nenhuma chamada Supabase / Edge Function / OpenAI.
+ * Re-export do contrato compartilhado do formulário administrativo de
+ * eventos. A definição vive em `@modules/admin/events` (Onda 13) para
+ * eliminar o ciclo com `eventoFormSubmit.ts`. Mantido aqui como alias
+ * para não quebrar consumidores externos que ainda importam desta rota.
  */
-export interface EventoFormActionDeps {
-  id: string | undefined;
-  isEdit: boolean;
-  cityFilter: string | null;
-  navigate: (to: number | string) => void;
-  eventouImportId: string | null | undefined;
+export type { EventoFormActionDeps };
 
-  form: EventoFormState;
-  setForm: React.Dispatch<React.SetStateAction<EventoFormState>>;
-  partners: Partner[];
-
-  originalSnapshot: React.MutableRefObject<{
-    category: string;
-    sub_category: string | null;
-    description: string | null;
-    venue_name: string | null;
-  } | null>;
-
-  duplicateCandidate: DuplicateCandidate;
-  allowDuplicate: boolean;
-  setDuplicateCandidate: (v: DuplicateCandidate) => void;
-  setAllowDuplicate: (v: boolean) => void;
-  setManualVenue: (v: boolean) => void;
-  setSuggestedPartner: (v: Partner | null) => void;
-
-  setSaving: (v: boolean) => void;
-  setGeneratingDesc: (v: boolean) => void;
-  setReprocessing: (v: boolean) => void;
-  setReprocessingSports: (v: boolean) => void;
-  setDeleting: (v: boolean) => void;
-  setDeleteOpen: (v: boolean) => void;
-}
 
 export function createEventoFormActions(deps: EventoFormActionDeps) {
   async function softDeleteEvent() {
