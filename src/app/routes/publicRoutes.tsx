@@ -219,6 +219,10 @@ export const PublicRoutes = () => (
     <Route path="/" element={<V3Layout />}>
       <Route index element={<V3Home />} />
       <Route path="descobrir" element={L(<V3Discover />)} />
+      <Route
+        path="descobrir/:categorySlug"
+        element={L(<DiscoveryCategoryPage />)}
+      />
       <Route path="agenda" element={L(<V3Agenda />)} />
       <Route path="perfil" element={L(<V3Profile />)} />
       <Route path="perfil/editar" element={L(<V3ProfileEdit />)} />
