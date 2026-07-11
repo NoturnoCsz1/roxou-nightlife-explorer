@@ -344,3 +344,39 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 - Páginas, layouts, Home, V3Layout, SEO, hooks, componentes — preservados 1:1.
 
 **Validação:** typecheck ✅ · build ✅ (393 precache) · audit:cycles ✅ (1 ciclo herdado, sem novos) · lint dos criados ✅ 0 erros.
+
+---
+
+## Onda 7 (2026-07-11) — Adoção real de Discovery (Eventos + Locais)
+
+**Fonte real anterior dos dados**
+- Eventos: `supabase.from("events")` inline em `EventDetail.tsx` (slug + similares por categoria e por dia).
+- Locais: `supabase.from("partners")` inline (base table, `active = true`) em `LocalDetail.tsx` e `LocalEventos.tsx`, mais lookup `partners` por id em `EventDetail.tsx`.
+
+**Arquivos criados (2)**
+- `src/modules/discovery/events/repositories/eventsRepository.ts` — 6 funções (`fetchPublishedEventBySlug`, `fetchSimilarByCategory`, `fetchSimilarByDate`, `fetchUpcomingEventsByPartner`, `fetchPastEventsByPartner`, `countPastEventsByPartner`). Preserva selects, filtros e ordenação atuais 1:1.
+- `src/modules/discovery/venues/repositories/venuesRepository.ts` — 3 funções (`fetchActiveVenueBySlug`, `fetchActiveVenueIdentityBySlug`, `fetchVenueById`).
+
+**Arquivos alterados (5)**
+- `src/modules/discovery/events/index.ts` e `src/modules/discovery/venues/index.ts` — passam a expor o repository.
+- `src/pages/EventDetail.tsx`, `src/pages/LocalDetail.tsx`, `src/pages/LocalEventos.tsx` — migradas para os módulos.
+
+**Consumidores migrados:** 3 páginas públicas (EventDetail, LocalDetail, LocalEventos).
+
+**Chamadas Supabase consolidadas:** 9 chamadas inline em 3 páginas removidas e centralizadas em 2 repositories.
+
+**Legado**
+- `services/eventService.ts` e `services/venueService.ts` (herdados da Onda 6, sem consumidores) foram mantidos — o barrel reexporta ambos, sem duplicação de query com o repository (funções e nomes distintos). Sem shims novos.
+
+**Query keys / cache:** preservados — as páginas migradas não usam React Query (chamadas via `useEffect` + `Promise.all`). Nenhuma query key alterada em nenhum outro consumidor.
+
+**categoryConfig:** adiado (15 consumidores cross-produto, sem separação clara pública vs admin nesta onda).
+
+**Não migrado (fora do escopo desta onda por volume/risco)**
+- Home (`Index.tsx`, `Semana.tsx`, `Hoje.tsx`, `PertoDeMim.tsx`) — cada uma tem shape de query específico + join `partners` para slug; migração completa exigiria >30 arquivos.
+- V3 (`V3Home`, `V3Agenda`, `V3Discover`, `V3EventDetail`, `V3LocalDetail`, `V3Parceiros`, `V3Profile`, `V3AIChat`) — vertical V3 completo fica para onda dedicada.
+- `GlobalSearchOverlay`, `PopularVenues`, `VenueList`, `FeaturedCarousel` — pertencem ao vertical search/home.
+
+**Ciclos:** antes 1 → depois 1 (baseline herdado do Admin).
+
+**Validação:** typecheck ✅ · build ✅ (394 precache) · audit:cycles ✅ · lint dos arquivos novos ✅ 0 erros (erros `no-explicit-any` reportados em `EventDetail`/`LocalDetail` são pré-existentes em trechos não tocados).
