@@ -99,6 +99,22 @@ Deno.serve(async (req) => {
     { loc: "/expo2026", priority: "1.0", changefreq: "daily" },
   ];
 
+  // Discovery categories (Onda 11) — espelha src/modules/discovery/categories/discoveryCategories.ts
+  // (enabled + indexable). Mantido declarativo aqui porque o edge runtime é Deno
+  // e não importa TS do bundle React.
+  const discoveryCategories = [
+    "onde-comer",
+    "onde-sair",
+    "happy-hour",
+    "romantico",
+    "familia",
+    "pet-friendly",
+    "churrascarias",
+    "pizzarias",
+    "hamburguerias",
+    "cafeterias",
+  ];
+
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 `;
