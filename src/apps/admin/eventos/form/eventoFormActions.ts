@@ -29,11 +29,8 @@ export function createEventoFormActions(deps: EventoFormActionDeps) {
     if (!id) return;
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from("events")
-        .update({ status: "archived", featured: false, needs_review: false })
-        .eq("id", id);
-      if (error) throw error;
+      await softArchiveEvent(id);
+
       toast.success("Evento excluído (arquivado). Já saiu do site público.");
       navigate("/admin/eventos");
     } catch (e: any) {
@@ -210,28 +207,20 @@ export function createEventoFormActions(deps: EventoFormActionDeps) {
   async function checkDuplicateEvent(next: Partial<EventoFormState>) {
     const { id, isEdit, form, setDuplicateCandidate, setAllowDuplicate } = deps;
     const draft = { ...form, ...next };
-    const select = "id, title, slug, date_time, venue_name";
+    const excludeId = isEdit ? (id as string | undefined) : undefined;
     let found: any = null;
 
     if (draft.image_hash) {
-      const q = supabase.from("events").select(select).eq("image_hash", draft.image_hash).limit(1);
-      const { data } = isEdit ? await q.neq("id", id!) : await q;
-      found = data?.[0] || null;
+      found = await findDuplicateByImageHash(draft.image_hash, excludeId);
     }
 
     if (!found && draft.title && draft.date_time && draft.venue_name) {
-      const dayStart = `${draft.date_time.slice(0, 10)}T00:00:00-03:00`;
-      const dayEnd = `${draft.date_time.slice(0, 10)}T23:59:59-03:00`;
-      const q = supabase
-        .from("events")
-        .select(select)
-        .ilike("title", draft.title.trim())
-        .ilike("venue_name", draft.venue_name.trim())
-        .gte("date_time", dayStart)
-        .lte("date_time", dayEnd)
-        .limit(1);
-      const { data } = isEdit ? await q.neq("id", id!) : await q;
-      found = data?.[0] || null;
+      found = await findDuplicateByTitleVenueDay({
+        title: draft.title,
+        venueName: draft.venue_name,
+        dateTime: draft.date_time,
+        excludeId,
+      });
     }
 
     setDuplicateCandidate(found);
@@ -240,6 +229,7 @@ export function createEventoFormActions(deps: EventoFormActionDeps) {
       toast.warning("⚠️ Este evento já foi postado. Deseja editar o existente ou criar um duplicado?");
     return found;
   }
+
 
   // handleSubmit é extraído para `eventoFormSubmit.ts` por limite de LOC.
   // Toda a lógica de Supabase/Guard/Payload permanece inalterada.
