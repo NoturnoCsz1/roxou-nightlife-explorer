@@ -422,3 +422,23 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 **Ciclos:** antes 1 → depois 1 (baseline herdado do Admin).
 
 **Validação:** typecheck ✅ · build ✅ (394 precache, 12 877 KiB) · audit:cycles ✅ · lint dos alterados ✅ 0 erros novos (14 erros `no-explicit-any` / `no-empty` reportados são pré-existentes em `PertoDeMim` e `GlobalSearchOverlay` fora dos trechos migrados).
+
+---
+
+## Onda 9 — Discovery Engine (base)
+
+**Motor:** `src/modules/discovery/recommendations/services/discoveryService.ts` (`discover(query, options)`) + repository interno em `recommendations/repositories/discoveryRepository.ts`.
+
+**Contratos:** `DiscoveryQuery`, `DiscoveryResult`, `DiscoveryVenueResult`, `DiscoveryEventResult`, `DiscoveryReason`, `DiscoveryContext` em `src/modules/discovery/shared/types/discoveryQuery.ts`.
+
+**Categorias iniciais (10):** onde-comer, onde-sair, happy-hour, romantico, familia, pet-friendly, churrascarias, pizzarias, hamburguerias, cafeterias — em `src/modules/discovery/categories/discoveryCategories.ts` (declarativo, com slug/title/description/filters/seoIntent/canonicalPath/indexable/enabled). Não substitui `src/lib/categoryConfig.ts`.
+
+**Ranking:** determinístico e explicável (`DiscoveryReason` tipado: matches_category/occasion/cuisine/feature/city, open_now, nearby, has_event, featured, verified). Score interno, nunca exibido como avaliação pública.
+
+**Queries reutilizadas / novas:** o repository compõe leituras contra `partners` (base `active + status=ativo`) e `events` (base `status=published + date_time >= hoje-SP`); nenhuma nova view, RPC ou migration.
+
+**Consumidor real:** `src/modules/discovery/__dev__/discoveryUsage.example.ts` (interno, sem rota) — não há `/cidade/:slug` estável hoje; integração real em superfície pública fica para a próxima onda.
+
+**Adiado:** integração em superfície pública (Home/PertoDeMim/Semana/`/cidade/:slug`), SEO Engine, sitemap dinâmico, IA contextual, mapeamento `features`/`priceRange` para colunas reais.
+
+**Validação:** typecheck ✅ · build ✅ (394 precache) · audit:cycles ✅ (baseline 1) · lint dos criados ✅ 0.
