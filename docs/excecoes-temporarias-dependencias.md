@@ -53,3 +53,17 @@ imports cruzados entre produtos. `AdminLayout` continua em
 `@modules/admin`) e é consumido apenas por `adminRoutes.tsx` — a dívida de
 mover o layout para dentro do módulo Admin permanece registrada no plano
 de modularização e será tratada em onda dedicada.
+
+## Onda 4 (2026-07-11) — sem novas exceções
+
+Modularização do Partner Pro (Reservas / VIP / Validador) foi feita
+mantendo shims em `src/apps/partner/services/partner*.ts` que apenas
+re-exportam do módulo. Não há import cruzado entre produtos nem
+ampliação de regras ESLint. Regras da Onda 1 permanecem em vigor sem
+alteração.
+
+Dívidas técnicas registradas (não são exceções, são pendências de
+onda futura): (a) split físico repository ↔ service dentro de
+`@modules/partner/*` e (b) migração dos imports das páginas legadas
+de `../services/partner*` para `@modules/partner/*` para permitir a
+remoção dos shims.
