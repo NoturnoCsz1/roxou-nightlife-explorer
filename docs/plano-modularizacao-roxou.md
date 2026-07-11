@@ -324,3 +324,23 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 - build: ✅ (393 precache entries)
 - audit:cycles: ✅ (baseline: 1 ciclo herdado do Admin `eventoFormSubmit ↔ eventoFormActions`, sem novos ciclos)
 - lint dos arquivos alterados: ✅ (0 novos erros; 1 erro `no-explicit-any` pré-existente em `PartnerCrmPage.tsx`, fora do escopo).
+
+---
+
+## Onda 6 (2026-07-11) — Fundação do módulo Discovery
+
+**Estrutura criada em `src/modules/discovery/`**
+`categories/`, `cities/`, `events/`, `venues/`, `guides/`, `search/`, `recommendations/`, `shared/` (apenas as pastas de `events/` e `venues/` receberam código nesta onda; as demais ficam como reserva oficial do domínio, com README já pré-existente na raiz do módulo).
+
+**Serviços movidos (2, ambos com zero consumidores atuais — bridges aditivas)**
+- `src/services/events.ts` → `src/modules/discovery/events/services/eventService.ts`
+- `src/services/partners.ts` → `src/modules/discovery/venues/services/venueService.ts`
+
+**Barrels criados (4):** `events/index.ts`, `events/types/index.ts`, `venues/index.ts`, `venues/types/index.ts`.
+
+**Não movidos (mantidos no legado por risco/escopo)**
+- `src/lib/categoryConfig.ts` — 15 consumidores cruzando Admin + V3, migração precisa ser dedicada.
+- `src/lib/auraVenue{Insights,Pricing,Rankings}.ts` — acoplados a componentes V3 específicos, ficam para onda dedicada de Rankings/Aura.
+- Páginas, layouts, Home, V3Layout, SEO, hooks, componentes — preservados 1:1.
+
+**Validação:** typecheck ✅ · build ✅ (393 precache) · audit:cycles ✅ (1 ciclo herdado, sem novos) · lint dos criados ✅ 0 erros.
