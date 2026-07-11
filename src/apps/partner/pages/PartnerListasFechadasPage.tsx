@@ -45,7 +45,7 @@ import {
   listVipLists,
   openVipList,
   type PartnerVipList,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 import { closeDuePartnerVipLists } from "../services/partnerMaintenance";
 
 const DAY = 24 * 60 * 60 * 1000;

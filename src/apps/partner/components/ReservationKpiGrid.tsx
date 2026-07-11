@@ -18,7 +18,7 @@ import type {
   PartnerReservationRow,
   ReservationStatsResult,
   ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import { isTodaySP } from "@/lib/dateUtils";
 
 interface Props {

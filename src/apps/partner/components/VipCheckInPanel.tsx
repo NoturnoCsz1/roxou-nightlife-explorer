@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import type { PartnerVipEntry } from "../services/partnerVipLists";
+import type { PartnerVipEntry } from "@modules/partner/vip";
 
 interface Props {
   entries: PartnerVipEntry[];

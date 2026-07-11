@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { VipListStatus } from "../services/partnerVipLists";
+import type { VipListStatus } from "@modules/partner/vip";
 
 const MAP: Record<VipListStatus, { label: string; cls: string }> = {
   draft: { label: "Rascunho", cls: "bg-muted text-muted-foreground" },

@@ -41,7 +41,7 @@ import {
   type PartnerVipList,
   type VipEntryPayload,
   deriveVipListState,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 
 type Bucket = "approved" | "pending" | "checkin" | "cancelled";
 

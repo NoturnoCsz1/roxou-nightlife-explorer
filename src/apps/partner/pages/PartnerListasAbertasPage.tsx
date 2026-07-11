@@ -17,7 +17,7 @@ import {
   deriveVipListState,
   listVipLists,
   type PartnerVipList,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 import { closeDuePartnerVipLists } from "../services/partnerMaintenance";
 
 type Range = "today" | "week" | "all";

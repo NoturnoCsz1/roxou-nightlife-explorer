@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { VipEntryPayload } from "../services/partnerVipLists";
-import type { PartnerPromoter } from "../services/partnerPromoters";
+import type { VipEntryPayload } from "@modules/partner/vip";
+import type { PartnerPromoter } from "@modules/partner/vip/promoters";
 
 interface Props {
   onSubmit: (payload: VipEntryPayload) => void | Promise<void>;

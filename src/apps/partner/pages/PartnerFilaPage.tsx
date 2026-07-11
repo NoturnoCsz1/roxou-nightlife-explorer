@@ -26,7 +26,7 @@ import {
   type PartnerReservationRow,
   type PartnerReservationType,
   type PartnerReservationTypeKind,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import { formatDateTimeSP } from "@/lib/dateUtils";
 import { formatRelativeTime } from "@/shared/utils/formatRelativeTime";
 import { getArchivedIds } from "../lib/partnerLocalArchive";

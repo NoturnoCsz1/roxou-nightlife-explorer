@@ -10,7 +10,7 @@ import type {
   DepositType,
   PartnerReservationSettings,
   PartnerReservationSettingsPayload,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const toLocalInput = (iso: string | null): string => {
   if (!iso) return "";

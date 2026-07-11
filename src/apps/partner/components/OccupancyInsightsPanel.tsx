@@ -17,7 +17,7 @@ import {
   getReservationOccupancyInsights,
   updateReservationTypeDuration,
   type OccupancyInsight,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const KIND_LABEL: Record<OccupancyInsight["type_kind"], string> = {
   table: "Mesa",

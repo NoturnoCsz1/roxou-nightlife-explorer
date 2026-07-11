@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import type { VipListStatsResult } from "../services/partnerVipLists";
+import type { VipListStatsResult } from "@modules/partner/vip";
 
 interface Props {
   stats: VipListStatsResult;

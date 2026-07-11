@@ -10,7 +10,7 @@ import { isTodaySP } from "@/lib/dateUtils";
 import type {
   PartnerReservationRow,
   ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 interface Props {
   reservations: PartnerReservationRow[];

@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { PartnerReservationStatus } from "../services/partnerReservations";
+import type { PartnerReservationStatus } from "@modules/partner/reservations";
 
 export interface ReservationFiltersValue {
   status: PartnerReservationStatus | "all";

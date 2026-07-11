@@ -33,7 +33,7 @@ import {
   releasePartnerReservationTable,
   waivePartnerReservationDeposit,
   type PartnerReservationRow,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import { onFabClick } from "../components/PartnerFab";
 import {
   closeDuePartnerReservations,

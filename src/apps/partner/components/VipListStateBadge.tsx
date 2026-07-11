@@ -5,7 +5,7 @@
  * com rótulo curto em PT-BR: Aberto / Lotado / Fechado / Encerrado.
  */
 import { Badge } from "@/components/ui/badge";
-import type { VipListOperationalState } from "../services/partnerVipLists";
+import type { VipListOperationalState } from "@modules/partner/vip";
 
 const MAP: Record<VipListOperationalState, { label: string; cls: string }> = {
   open: { label: "Aberto", cls: "bg-emerald-500/20 text-emerald-300" },

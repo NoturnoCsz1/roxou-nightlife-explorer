@@ -57,7 +57,7 @@ import {
   type PartnerReservationRow,
   type PartnerReservationType,
   type ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import {
   closeDuePartnerReservations,
   expireDuePartnerReservations,

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ReservationStatsResult } from "../services/partnerReservations";
+import type { ReservationStatsResult } from "@modules/partner/reservations";
 
 export function ReservationStats({ stats }: { stats: ReservationStatsResult }) {
   const occupied = stats.reservedSeats + stats.pendingSeats;

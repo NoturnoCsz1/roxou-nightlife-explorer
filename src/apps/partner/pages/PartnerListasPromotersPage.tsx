@@ -27,7 +27,7 @@ import {
   listPromoters,
   updatePromoter,
   type PartnerPromoter,
-} from "../services/partnerPromoters";
+} from "@modules/partner/vip/promoters";
 
 const PartnerListasPromotersPage = () => {
   const { selectedPartner, role } = usePartnerAuth();

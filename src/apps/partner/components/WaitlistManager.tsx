@@ -18,7 +18,7 @@ import {
   notifyWaitlistEntry,
   type PartnerReservationType,
   type ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   waiting: { label: "Aguardando", cls: "bg-amber-500/15 text-amber-500" },

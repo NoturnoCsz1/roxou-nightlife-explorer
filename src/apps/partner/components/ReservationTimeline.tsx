@@ -10,7 +10,7 @@ import { GlassCard, SectionHeader, StatusDot, type StatusKind } from "./ui";
 import type {
   PartnerReservationRow,
   PartnerReservationType,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import { isTodaySP } from "@/lib/dateUtils";
 
 const fmtHM = (d: Date) =>

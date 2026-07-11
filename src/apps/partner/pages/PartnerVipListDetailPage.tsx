@@ -22,14 +22,14 @@ import {
   type PartnerVipEntry,
   type PartnerVipList,
   type VipEntryPayload,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 import { closeDuePartnerVipLists } from "../services/partnerMaintenance";
 
 import {
   listPromoters,
   createPromoter,
   type PartnerPromoter,
-} from "../services/partnerPromoters";
+} from "@modules/partner/vip/promoters";
 import {
   usePartnerAuth,
   canManageEvents,

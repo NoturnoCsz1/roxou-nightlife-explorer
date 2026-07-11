@@ -35,7 +35,7 @@ import {
   type PartnerReservationRow,
   type PartnerReservationType,
   type ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import { getPartnerRecentEvents, type PartnerEventRow } from "../services/partnerDashboard";
 import { PartnerScreen } from "../components/PartnerScreen";
 import { OccupancyRing } from "../components/OccupancyRing";

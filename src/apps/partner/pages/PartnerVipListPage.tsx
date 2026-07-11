@@ -16,7 +16,7 @@ import {
   type PartnerVipList,
   type VipListPayload,
   type VipListOperationalState,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 import { closeDuePartnerVipLists } from "../services/partnerMaintenance";
 import { usePartnerAuth, canManageEvents } from "../hooks/usePartnerAuth";
 import { Button } from "@/components/ui/button";

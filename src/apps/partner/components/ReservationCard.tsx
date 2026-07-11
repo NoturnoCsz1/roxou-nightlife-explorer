@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Phone, Mail, Calendar, Clock, MessageCircle } from "lucide-react";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
-import type { PartnerReservationRow } from "../services/partnerReservations";
+import type { PartnerReservationRow } from "@modules/partner/reservations";
 
 const formatRemaining = (ms: number) => {
   if (ms <= 0) return "00:00";

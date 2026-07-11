@@ -17,7 +17,7 @@ import {
   deriveVipListState,
   listVipLists,
   type PartnerVipList,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 
 const formatDay = (iso: string | null): string =>
   iso

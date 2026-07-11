@@ -39,7 +39,7 @@ import {
   listReservationWaitlist,
   type PartnerReservationRow,
   type ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 import { listMyEvents, type PartnerEventRow } from "../services/partnerEvents";
 import {
   archiveIds,

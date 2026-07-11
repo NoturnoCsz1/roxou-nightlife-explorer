@@ -12,7 +12,7 @@ import type {
   PartnerReservationRow,
   ReservationStatsResult,
   ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 interface Props {
   partnerName?: string | null;

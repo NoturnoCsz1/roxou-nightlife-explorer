@@ -21,7 +21,7 @@ import {
   type PartnerReservationType,
   type PartnerReservationTypeKind,
   type ReservationTypeAvailability,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const KIND_LABELS: Record<PartnerReservationTypeKind, string> = {
   table: "Mesas",
