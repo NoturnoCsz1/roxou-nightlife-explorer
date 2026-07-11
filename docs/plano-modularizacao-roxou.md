@@ -294,3 +294,33 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 **Riscos restantes**
 - Shims em `src/apps/partner/services/partner*.ts` são bidirecionais no efeito: se um consumidor novo importar do caminho antigo, a fronteira modular ainda funciona, mas a métrica de adoção do `@modules/partner/*` fica menos limpa até a migração dos imports.
 - `partnerValidator` importa `vip` e `reservations` diretamente (permitido pela regra Onda 1 — mesmo produto). Nenhum ciclo detectado, mas o grafo de dependências internas do Partner cresce; monitorar via `audit:cycles`.
+
+---
+
+## Onda 5 (2026-07-11) — Adoção real do módulo Partner + remoção dos shims
+
+**Barrels criados**
+- `src/modules/partner/reservations/index.ts`
+- `src/modules/partner/vip/index.ts`
+- `src/modules/partner/vip/promoters.ts` (Promoters permanece sob VIP — consumido apenas por VIP/Listas)
+- `src/modules/partner/validator/index.ts`
+
+**Consumidores migrados:** 40 arquivos em `src/apps/partner/**` tiveram os imports de `../services/partner{Reservations,VipLists,Validator,Promoters}` reescritos para `@modules/partner/{reservations,vip,vip/promoters,validator}`. Zero mudança de API pública, zero mudança de UI/rotas/permissões.
+
+**Shims removidos**
+- `src/apps/partner/services/partnerReservations.ts`
+- `src/apps/partner/services/partnerVipLists.ts`
+- `src/apps/partner/services/partnerValidator.ts`
+- `src/apps/partner/services/partnerPromoters.ts`
+
+**Adiado (respeitando o limite de segurança da onda)**
+- Split físico interno service ↔ repository dentro de `@modules/partner/*` (repository continua reexportando do service). Contrato público estável.
+- Extração das duas chamadas Supabase inline residuais (`PartnerRequestAccessPage.tsx`, `bio/tabs/BioHomeTab.tsx`) — envolve acesso/autenticação e escopo incerto; mantidas como pendência.
+- Mover `usePartnerAuth` / `usePartnerBetaAccess` / `usePartnerRole` para `@modules/partner/shared/hooks` — mexe em provider e fluxo de login, preservados.
+- Módulo `invitations/` continua placeholder até existir fluxo real.
+
+**Validação**
+- typecheck: ✅
+- build: ✅ (393 precache entries)
+- audit:cycles: ✅ (baseline: 1 ciclo herdado do Admin `eventoFormSubmit ↔ eventoFormActions`, sem novos ciclos)
+- lint dos arquivos alterados: ✅ (0 novos erros; 1 erro `no-explicit-any` pré-existente em `PartnerCrmPage.tsx`, fora do escopo).
