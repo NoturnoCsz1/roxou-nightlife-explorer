@@ -4,7 +4,8 @@ import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchWeekPublishedEvents } from "@modules/discovery/events";
+import { fetchPartnerSlugsByIds } from "@modules/discovery/venues";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
 
@@ -15,22 +16,13 @@ const Semana = () => {
 
   useEffect(() => {
     async function load() {
-      const now = new Date().toISOString();
-      const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: eventsData } = await supabase
-        .from("events")
-        .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
-        .eq("status", "published")
-        .gte("date_time", now)
-        .lte("date_time", weekLater)
-        .order("date_time", { ascending: true });
+      const evts = await fetchWeekPublishedEvents();
 
-      const evts = eventsData || [];
       const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
       let slugMap: Record<string, string> = {};
       if (partnerIds.length > 0) {
-        const { data: partners } = await supabase.from("partners").select("id, slug").in("id", partnerIds);
-        (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
+        const partners = await fetchPartnerSlugsByIds(partnerIds);
+        partners.forEach(p => { slugMap[p.id] = p.slug; });
       }
       setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
       setLoading(false);

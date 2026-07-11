@@ -16,6 +16,8 @@ import SectionHeader from "@/shared/components/SectionHeader";
 
 import PopularVenues from "@/components/PopularVenues";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchUpcomingPublishedEventsForHome } from "@modules/discovery/events";
+import { fetchPartnerSlugsByIds } from "@modules/discovery/venues";
 import { useNavigate } from "react-router-dom";
 import { isTodaySP, isTomorrowSP, getWeekendRangeSP, getNowInSaoPaulo } from "@/lib/dateUtils";
 
@@ -66,14 +68,8 @@ const Index = () => {
 
   useEffect(() => {
     async function load() {
-      const now = new Date().toISOString();
-      const [eventsRes, trendingRes] = await Promise.all([
-        supabase
-          .from("events")
-          .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
-          .eq("status", "published")
-          .gt("date_time", now)
-          .order("date_time", { ascending: true }),
+      const [evts, trendingRes] = await Promise.all([
+        fetchUpcomingPublishedEventsForHome(),
         supabase
           .from("page_views")
           .select("event_id")
@@ -81,12 +77,11 @@ const Index = () => {
           .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
       ]);
 
-      const evts = eventsRes.data || [];
       const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
       let slugMap: Record<string, string> = {};
       if (partnerIds.length > 0) {
-        const { data: partners } = await supabase.from("partners").select("id, slug").in("id", partnerIds);
-        (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
+        const partners = await fetchPartnerSlugsByIds(partnerIds);
+        partners.forEach(p => { slugMap[p.id] = p.slug; });
       }
       setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
 

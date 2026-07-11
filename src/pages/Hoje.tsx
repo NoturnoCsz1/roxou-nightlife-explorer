@@ -4,7 +4,8 @@ import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchTodayPublishedEvents } from "@modules/discovery/events";
+import { fetchPartnerSlugsByIds } from "@modules/discovery/venues";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
 import { formatDateHeader, getStartOfTodaySP, getEndOfTodaySP, getNowInSaoPaulo } from "@/lib/dateUtils";
@@ -20,20 +21,13 @@ const Hoje = () => {
       const startOfDay = getStartOfTodaySP();
       const endOfDay = getEndOfTodaySP();
 
-      const { data: eventsData } = await supabase
-        .from("events")
-        .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
-        .eq("status", "published")
-        .gte("date_time", startOfDay)
-        .lt("date_time", endOfDay)
-        .order("date_time", { ascending: true });
+      const evts = await fetchTodayPublishedEvents(startOfDay, endOfDay);
 
-      const evts = eventsData || [];
       const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
       let slugMap: Record<string, string> = {};
       if (partnerIds.length > 0) {
-        const { data: partners } = await supabase.from("partners").select("id, slug").in("id", partnerIds);
-        (partners || []).forEach(p => { slugMap[p.id] = p.slug; });
+        const partners = await fetchPartnerSlugsByIds(partnerIds);
+        partners.forEach(p => { slugMap[p.id] = p.slug; });
       }
       setEvents(evts.map(e => ({ ...e, partner_slug: e.partner_id ? slugMap[e.partner_id] || null : null })));
       setLoading(false);
