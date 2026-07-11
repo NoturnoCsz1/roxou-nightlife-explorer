@@ -9,9 +9,11 @@ interface SEOProps {
   ogImageWidth?: number;
   ogImageHeight?: number;
   ogType?: string;
-  jsonLd?: Record<string, unknown>;
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
   keywords?: string;
   locale?: string;
+  /** When true, emits `<meta name="robots" content="noindex,follow">`. */
+  noindex?: boolean;
 }
 
 const SITE_ORIGIN = "https://roxou.com.br";
