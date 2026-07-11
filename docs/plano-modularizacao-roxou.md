@@ -442,3 +442,6 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 **Adiado:** integração em superfície pública (Home/PertoDeMim/Semana/`/cidade/:slug`), SEO Engine, sitemap dinâmico, IA contextual, mapeamento `features`/`priceRange` para colunas reais.
 
 **Validação:** typecheck ✅ · build ✅ (394 precache) · audit:cycles ✅ (baseline 1) · lint dos criados ✅ 0.
+
+## Onda 10
+Ativação pública do Discovery Engine em rota genérica única `/descobrir/:categorySlug`. Ver `docs/plano-fase-descobertas.md`.

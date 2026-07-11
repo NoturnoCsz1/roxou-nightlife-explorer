@@ -26,6 +26,9 @@ const CATEGORY_PAGES: Array<{ id: string; title: string; subtitle: string; href:
   { id: "cat-baladas", title: "Baladas em Presidente Prudente", subtitle: "Festas, clubs e baladas", href: "/baladas-em-presidente-prudente", keywords: ["balada", "festa", "club"] },
   { id: "cat-bares", title: "Bares em Presidente Prudente", subtitle: "Bares, pubs e cervejarias", href: "/bares-em-presidente-prudente", keywords: ["bar", "barzinho", "pub", "cervejaria"] },
   { id: "cat-agenda", title: "Agenda completa", subtitle: "Todos os eventos", href: "/agenda", keywords: ["agenda", "eventos", "todos"] },
+  { id: "disc-onde-comer", title: "Onde comer", subtitle: "Descobertas · restaurantes e bares", href: "/descobrir/onde-comer", keywords: ["onde comer", "restaurante", "comer"] },
+  { id: "disc-happy-hour", title: "Happy hour", subtitle: "Descobertas · bares com happy hour", href: "/descobrir/happy-hour", keywords: ["happy hour", "bar"] },
+  { id: "disc-pet-friendly", title: "Pet friendly", subtitle: "Descobertas · locais que aceitam pets", href: "/descobrir/pet-friendly", keywords: ["pet", "pet friendly", "cachorro"] },
 ];
 
 let cachedData: {

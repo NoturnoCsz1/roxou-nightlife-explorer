@@ -96,3 +96,12 @@ Componentes internos: `<VenueHero>`, `<VenueGallery>`, `<VenueDescription>`, `<V
 - Ranking simples e explicável com `DiscoveryReason` tipado.
 - Consumidor real: exemplo interno `__dev__/discoveryUsage.example.ts` (sem rota) — pendente integração em superfície pública quando `/cidade/:slug` existir.
 - Sem alterações em banco, RLS, SEO, sitemap, Home, V3, Partner, Admin ou Transporte.
+
+## Onda 10 — Ativação pública do Discovery Engine
+
+- Rota genérica única `/descobrir/:categorySlug` registrada dentro de `V3Layout` em `src/app/routes/publicRoutes.tsx`.
+- Página única `src/modules/discovery/pages/DiscoveryCategoryPage.tsx` consome exclusivamente `@modules/discovery` (`discover`, `getDiscoveryCategoryBySlug`, `listEnabledDiscoveryCategories`); nenhuma chamada Supabase direta.
+- 10 categorias declarativas ativadas via `DISCOVERY_CATEGORIES` sem duplicar arquivos.
+- Categoria inválida ou desabilitada → NotFound real (404). Categoria válida com <6 itens → `robots: noindex,follow`.
+- SEO: title, meta description, canonical, `og:title/description/url/type` aplicados via `useEffect`.
+- Entrada discreta em `src/components/search/GlobalSearchOverlay.tsx` (3 quick-links para `/descobrir/*`).
