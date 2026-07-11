@@ -139,6 +139,18 @@ Deno.serve(async (req) => {
 `;
   }
 
+  for (const slug of discoveryCategories) {
+    xml += `  <url>
+    <loc>${BASE_URL}/descobrir/${slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+`;
+  }
+
+
+
   // Event pages
   for (const event of events || []) {
     const lastmod = (event.updated_at || event.created_at || today).split("T")[0];
