@@ -189,3 +189,51 @@ Movidos 4 arquivos genéricos e de baixo risco para `src/shared/`:
 - typecheck: ✅  build: ✅  audit:cycles: ✅ (1 ciclo herdado, sem regressão)
 - Recusados: `titleCleaner` (Radar-específico), `useAuth`, `useSaved*`, `analytics`, `ga`, `supabaseFetchAll`, `EventCard`, `V3Layout`.
 - Adiados para ondas próprias: `dateUtils` (TZ crítico, 45 consumidores), `utils.cn` (93), `use-toast` (42), `SEO` (45), `components/ui/*`, `imageOptimizer` (acoplado a Supabase Storage URL).
+
+### Onda 3 — Concluída (2026-07-11)
+
+Isolamento técnico das árvores de rotas por produto. Nenhuma funcionalidade,
+UI, banco, RLS, RPC, edge function, guard, permissão, slug, redirect, deep
+link, PWA ou SEO foi alterada. URLs preservadas 1:1.
+
+**Arquivos criados**
+- `src/app/routes/lazyFallback.tsx` — helper `L()` + `LazyFallback` compartilhados.
+- `src/app/routes/adminRoutes.tsx` — árvore `/admin/*` (exceto partner-preview).
+- `src/app/routes/partnerRoutes.tsx` — `/admin/partner-preview/*`, `/partner`, `/partner/*`, `/validator`.
+- `src/app/routes/transportRoutes.tsx` — sub-árvore de transporte (caronas, excursões, privativo, motorista), filha de `V3Layout`.
+- `src/app/routes/publicRoutes.tsx` — demais rotas públicas + `V3Layout` composto com `TransportRoutes()`.
+
+**Arquivo alterado**
+- `src/App.tsx` — reduzido de 538 → 41 linhas. Agora somente monta providers, `BrowserRouter` e compõe as três árvores.
+
+**Imports estáticos removidos do entry principal**
+- `AdminLayout` (`@/components/admin/AdminLayout`) — agora lazy.
+- `AdminMaintenanceGate` — import morto removido.
+- Todos os `lazy(() => import(...))` de páginas Admin, Partner, Notícias, Cliente, Bio, Expo, Legacy, Transporte, V3 saíram de `App.tsx` e vivem dentro de cada árvore.
+
+**Layouts carregados sob demanda**
+- `AdminLayout` — chunk próprio (`AdminLayout-*.js`), só baixa em rotas `/admin/*`.
+- `PartnerPreviewLayout` — já lazy antes; permanece isolado em `PartnerPreviewLayout-*.js`.
+- `V3Layout` e `V3Home` permanecem eager (decisão LCP da Fase 7 preservada).
+- `LegacyArchiveLayout`, `Maintenance`, `PedirCaronaGate` permanecem eager (wrappers pequenos usados como `element=`).
+
+**Chunks resultantes (relevantes)**
+- `main-*.js` 319 KB / gzip 92 KB (shell público + V3Layout/V3Home eager).
+- `AdminLayout-*.js` isolado do entry.
+- `PartnerPreviewLayout-*.js` isolado do entry.
+- `vendor-react-*.js` 142 KB / gzip 45 KB.
+- `vendor-recharts-*.js` continua fora do preload inicial (LCP-4F preservada).
+
+**Validação**
+- `bunx tsgo --noEmit`: ✅
+- `bun run build`: ✅ (393 precache entries)
+- `bun run audit:cycles`: ✅ (baseline mantido — apenas o ciclo herdado `eventoFormSubmit ↔ eventoFormActions`).
+- `bunx eslint src/App.tsx src/app/routes/*.tsx`: ✅ 0 erros.
+
+**Exceções temporárias**
+- Nenhuma nova exceção introduzida. Ver `docs/excecoes-temporarias-dependencias.md`.
+
+**Riscos restantes**
+- `Routes` recebe três fragmentos irmãos; ordem preservada da versão anterior — mudanças de ordem podem afetar catch-all `/:landingSlug` e `*`.
+- Sub-árvore de transporte ainda vive dentro de `V3Layout` (compartilha header/footer público). Extração para layout próprio fica para onda futura conforme `docs/arquitetura-futura-roxou.md`.
+- `AdminLayout` lazy adiciona um Suspense extra em `/admin/*` (fallback visual já usado em rotas filhas — sem regressão perceptível).

@@ -44,3 +44,12 @@ Só se for absolutamente inevitável nesta fase da migração. Registrar:
 - responsável.
 
 Exceção não documentada é bug: será rejeitada em code review.
+
+## Onda 3 (2026-07-11) — sem novas exceções
+
+A separação das árvores de rotas em `src/app/routes/*` não introduziu novos
+imports cruzados entre produtos. `AdminLayout` continua em
+`@/components/admin/AdminLayout` (shared histórico, ainda não migrado para
+`@modules/admin`) e é consumido apenas por `adminRoutes.tsx` — a dívida de
+mover o layout para dentro do módulo Admin permanece registrada no plano
+de modularização e será tratada em onda dedicada.
