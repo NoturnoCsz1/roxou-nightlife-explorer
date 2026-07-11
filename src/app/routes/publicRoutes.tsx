@@ -216,7 +216,7 @@ export const PublicRoutes = () => (
     <Route path="/v3" element={<Navigate to="/" replace />} />
     <Route path="/v3/*" element={<RedirectV3 />} />
 
-    <Route path="/" element={<V3Layout />}>
+    <Route path="/" element={<PublicLayout />}>
       <Route index element={<V3Home />} />
       <Route path="descobrir" element={L(<V3Discover />)} />
       <Route
