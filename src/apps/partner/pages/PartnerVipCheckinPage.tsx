@@ -13,7 +13,7 @@ import {
   getVipEntryByToken,
   checkInVipEntry,
   type PartnerVipEntry,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 
 interface Props {

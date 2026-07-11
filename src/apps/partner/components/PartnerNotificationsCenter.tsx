@@ -35,7 +35,7 @@ import { GlassCard, SectionHeader } from "./ui";
 import type {
   PartnerReservationRow,
   ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 type Severity = "critical" | "warning" | "info" | "success";
 

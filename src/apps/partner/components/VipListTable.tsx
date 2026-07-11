@@ -6,7 +6,7 @@ import {
   deriveVipListState,
   type PartnerVipList,
   type VipListOperationalState,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 
 interface Props {
   lists: PartnerVipList[];

@@ -44,7 +44,7 @@ import {
 } from "recharts";
 
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
-import { listPromoters } from "../services/partnerPromoters";
+import { listPromoters } from "@modules/partner/vip/promoters";
 import {
   getCampaigns,
   getPromoterRanking,

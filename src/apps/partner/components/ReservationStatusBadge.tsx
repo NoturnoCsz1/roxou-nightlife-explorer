@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { PartnerReservationStatus } from "../services/partnerReservations";
+import type { PartnerReservationStatus } from "@modules/partner/reservations";
 
 const LABELS: Record<PartnerReservationStatus, string> = {
   pending: "Pendente",

@@ -41,8 +41,8 @@ import {
   listVipLists,
   type PartnerVipList,
   type VipListPayload,
-} from "../services/partnerVipLists";
-import { listPromoters } from "../services/partnerPromoters";
+} from "@modules/partner/vip";
+import { listPromoters } from "@modules/partner/vip/promoters";
 import { closeDuePartnerVipLists } from "../services/partnerMaintenance";
 
 const formatTime = (iso: string | null): string => {

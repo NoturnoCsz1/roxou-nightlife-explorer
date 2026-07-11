@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import type {
   PartnerVipEntry,
   VipEntryStatus,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 
 const STATUS_MAP: Record<VipEntryStatus, { label: string; cls: string }> = {
   pending: { label: "Pendente", cls: "bg-amber-500/20 text-amber-300" },

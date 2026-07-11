@@ -5,7 +5,7 @@
  */
 import { useMemo } from "react";
 import { GlassCard, SectionHeader } from "./ui";
-import type { PartnerReservationRow } from "../services/partnerReservations";
+import type { PartnerReservationRow } from "@modules/partner/reservations";
 
 interface Props {
   rows: PartnerReservationRow[];

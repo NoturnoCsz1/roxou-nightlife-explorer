@@ -15,7 +15,7 @@ import {
   confirmReservation,
   getReservation,
   type PartnerReservationRow,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const PartnerReservationDetailPage = () => {
   const { id } = useParams<{ id: string }>();

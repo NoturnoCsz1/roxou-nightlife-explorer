@@ -28,7 +28,7 @@ import {
   setVipListPublicEnabled,
   updateVipList,
   type PartnerVipList,
-} from "../services/partnerVipLists";
+} from "@modules/partner/vip";
 
 const PartnerListasConfiguracoesPage = () => {
   const { selectedPartner, role } = usePartnerAuth();

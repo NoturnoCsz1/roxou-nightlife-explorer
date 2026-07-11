@@ -11,7 +11,7 @@ import { isTodaySP } from "@/lib/dateUtils";
 import type {
   PartnerReservationRow,
   ReservationWaitlistEntry,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 type Bucket = "present" | "incoming" | "waitlist" | "released";
 

@@ -18,7 +18,7 @@ import {
   validateQrCode,
   type ValidationOutcome,
   type ValidatorItemType,
-} from "../services/partnerValidator";
+} from "@modules/partner/validator";
 
 type LastResult = Awaited<ReturnType<typeof validateQrCode>>;
 

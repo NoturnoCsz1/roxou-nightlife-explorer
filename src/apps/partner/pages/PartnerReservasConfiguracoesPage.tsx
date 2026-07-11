@@ -19,7 +19,7 @@ import {
   getReservationSettings,
   updateReservationSettings,
   type PartnerReservationSettings,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const PartnerReservasConfiguracoesPage = () => {
   const { selectedPartner, selectedPartnerId, role } = usePartnerAuth();

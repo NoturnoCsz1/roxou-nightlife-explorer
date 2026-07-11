@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
-import type { PartnerReservationRow } from "../services/partnerReservations";
+import type { PartnerReservationRow } from "@modules/partner/reservations";
 
 const formatPhoneBR = (raw: string | null | undefined): string => {
   if (!raw) return "";

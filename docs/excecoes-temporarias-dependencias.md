@@ -67,3 +67,12 @@ onda futura): (a) split físico repository ↔ service dentro de
 `@modules/partner/*` e (b) migração dos imports das páginas legadas
 de `../services/partner*` para `@modules/partner/*` para permitir a
 remoção dos shims.
+
+## Onda 5 (2026-07-11) — sem novas exceções
+
+Adoção real de `@modules/partner/*` removeu os quatro shims em
+`src/apps/partner/services/partner{Reservations,VipLists,Validator,Promoters}.ts`.
+Nenhuma regra ESLint foi relaxada. Pendências mantidas (não são exceções):
+(a) split físico repository ↔ service, (b) extração das duas chamadas
+Supabase inline em `PartnerRequestAccessPage` e `bio/tabs/BioHomeTab`,
+(c) hooks `usePartnerAuth`/`usePartnerBetaAccess`/`usePartnerRole` no local atual.

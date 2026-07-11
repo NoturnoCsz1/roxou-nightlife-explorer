@@ -18,7 +18,7 @@ import type {
   PartnerReservationRow,
   ReservationWaitlistEntry,
   PartnerReservationType,
-} from "../services/partnerReservations";
+} from "@modules/partner/reservations";
 
 const formatPhoneBR = (raw: string | null | undefined): string => {
   if (!raw) return "";

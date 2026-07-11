@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { VipListStatusBadge } from "./VipListStatusBadge";
 import { formatDateTimeSP } from "@/lib/dateUtils";
-import type { PartnerVipList } from "../services/partnerVipLists";
+import type { PartnerVipList } from "@modules/partner/vip";
 
 interface Props {
   list: PartnerVipList;
