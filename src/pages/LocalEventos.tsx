@@ -6,7 +6,11 @@ import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  fetchPastEventsByPartner,
+  countPastEventsByPartner,
+} from "@modules/discovery/events";
+import { fetchActiveVenueIdentityBySlug } from "@modules/discovery/venues";
 import SEO from "@/components/SEO";
 
 const PER_PAGE = 12;
@@ -23,47 +27,28 @@ const LocalEventos = () => {
 
   useEffect(() => {
     if (!slug) return;
-    supabase
-      .from("partners")
-      .select("id, name")
-      .eq("slug", slug)
-      .eq("active", true)
-      .single()
-      .then(({ data }) => {
-        if (!data) {
-          setLoading(false);
-          return;
-        }
-        setPartnerName(data.name);
-        setPartnerId(data.id);
-      });
+    fetchActiveVenueIdentityBySlug(slug).then((data) => {
+      if (!data) {
+        setLoading(false);
+        return;
+      }
+      setPartnerName(data.name);
+      setPartnerId(data.id);
+    });
   }, [slug]);
 
   useEffect(() => {
     if (!partnerId) return;
     setLoading(true);
-    const now = new Date().toISOString();
     const from = page * PER_PAGE;
     const to = from + PER_PAGE - 1;
 
     Promise.all([
-      supabase
-        .from("events")
-        .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
-        .eq("status", "published")
-        .eq("partner_id", partnerId)
-        .lt("date_time", now)
-        .order("date_time", { ascending: false })
-        .range(from, to),
-      supabase
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "published")
-        .eq("partner_id", partnerId)
-        .lt("date_time", now),
-    ]).then(([{ data: evts }, { count }]) => {
-      setEvents(evts || []);
-      setTotal(count || 0);
+      fetchPastEventsByPartner(partnerId, { range: [from, to] }),
+      countPastEventsByPartner(partnerId),
+    ]).then(([evts, count]) => {
+      setEvents(evts);
+      setTotal(count);
       setLoading(false);
     });
   }, [partnerId, page]);

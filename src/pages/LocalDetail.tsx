@@ -7,6 +7,12 @@ import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  fetchUpcomingEventsByPartner,
+  fetchPastEventsByPartner,
+  countPastEventsByPartner,
+} from "@modules/discovery/events";
+import { fetchActiveVenueBySlug } from "@modules/discovery/venues";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
@@ -42,49 +48,23 @@ const LocalDetail = () => {
 
   useEffect(() => {
     if (!slug) return;
-    supabase
-      .from("partners")
-      .select("*")
-      .eq("slug", slug)
-      .eq("active", true)
-      .single()
-      .then(({ data }) => {
-        setPartner(data);
-        if (data) {
-          const now = new Date().toISOString();
-          Promise.all([
-            supabase
-              .from("events")
-              .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
-              .eq("status", "published")
-              .eq("partner_id", data.id)
-              .gte("date_time", now)
-              .order("date_time", { ascending: true })
-              .limit(6),
-            supabase
-              .from("events")
-              .select("id, title, slug, description, date_time, category, sub_category, venue_name, address, instagram, image_url, featured, status, partner_id")
-              .eq("status", "published")
-              .eq("partner_id", data.id)
-              .lt("date_time", now)
-              .order("date_time", { ascending: false })
-              .limit(10),
-            supabase
-              .from("events")
-              .select("id", { count: "exact", head: true })
-              .eq("status", "published")
-              .eq("partner_id", data.id)
-              .lt("date_time", now),
-          ]).then(([{ data: upcoming }, { data: past }, { count }]) => {
-            setUpcomingEvents(upcoming || []);
-            setPastEvents(past || []);
-            setPastTotal(count || 0);
-            setLoading(false);
-          });
-        } else {
+    fetchActiveVenueBySlug(slug).then((data) => {
+      setPartner(data);
+      if (data) {
+        Promise.all([
+          fetchUpcomingEventsByPartner(data.id, 6),
+          fetchPastEventsByPartner(data.id, { limit: 10 }),
+          countPastEventsByPartner(data.id),
+        ]).then(([upcoming, past, count]) => {
+          setUpcomingEvents(upcoming);
+          setPastEvents(past);
+          setPastTotal(count);
           setLoading(false);
-        }
-      });
+        });
+      } else {
+        setLoading(false);
+      }
+    });
   }, [slug]);
 
   if (loading) {
