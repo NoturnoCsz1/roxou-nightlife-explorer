@@ -18,7 +18,7 @@ const DESKTOP_EXTRA_ITEMS = [
   { to: "/economize", icon: PiggyBank, label: "Economize" },
 ];
 
-export default function V3Layout() {
+export default function PublicLayout() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
   const { profile, isDriver } = useV3Profile();
