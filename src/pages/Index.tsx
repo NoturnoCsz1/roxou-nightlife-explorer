@@ -78,7 +78,7 @@ const Index = () => {
       ]);
 
       const partnerIds = [...new Set(evts.filter(e => e.partner_id).map(e => e.partner_id!))];
-      let slugMap: Record<string, string> = {};
+      const slugMap: Record<string, string> = {};
       if (partnerIds.length > 0) {
         const partners = await fetchPartnerSlugsByIds(partnerIds);
         partners.forEach(p => { slugMap[p.id] = p.slug; });
