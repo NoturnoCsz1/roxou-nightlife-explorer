@@ -6,10 +6,6 @@
  * dentro do service (`reservationsService.ts`) — o split mecânico é uma
  * dívida técnica registrada em `docs/plano-modularizacao-roxou.md` e
  * será feito em onda futura sem alterar contrato.
- *
- * Consumidores devem preferir importar deste arquivo quando precisarem
- * de operações de banco (list/get/insert/update/rpc); imports de tipos
- * devem vir de `@modules/partner/reservations/types`.
  */
 export {
   // Settings
@@ -17,15 +13,27 @@ export {
   updateReservationSettings,
   // Reservation types
   listReservationTypes,
-  createReservationType,
-  updateReservationType,
+  upsertReservationType,
   deleteReservationType,
+  updateReservationTypeDuration,
+  getReservationTypesAvailability,
   // Reservations
   listReservations,
   getReservation,
   createReservation,
   updateReservation,
-  updateReservationStatus,
   cancelReservation,
   confirmReservation,
+  completeReservation,
+  noShowReservation,
+  confirmReservationPayment,
+  waivePartnerReservationDeposit,
+  releasePartnerReservationTable,
+  // Waitlist
+  listReservationWaitlist,
+  notifyWaitlistEntry,
+  cancelWaitlistEntry,
+  // Insights
+  getReservationSlotAvailability,
+  getReservationOccupancyInsights,
 } from "@modules/partner/reservations/services/reservationsService";
