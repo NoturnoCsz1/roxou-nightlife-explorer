@@ -86,3 +86,13 @@ Componentes internos: `<VenueHero>`, `<VenueGallery>`, `<VenueDescription>`, `<V
 - Não criar landing page completa de local (fica na Onda 12).
 - Não trocar layout do público.
 - Não migrar dados.
+
+---
+
+## Status Onda 9
+
+- Motor criado: `discover(DiscoveryQuery, { context? })` em `modules/discovery/recommendations`.
+- Categorias declarativas iniciais em `modules/discovery/categories/discoveryCategories.ts` (10 slugs, indexable=true, sem rotas ainda).
+- Ranking simples e explicável com `DiscoveryReason` tipado.
+- Consumidor real: exemplo interno `__dev__/discoveryUsage.example.ts` (sem rota) — pendente integração em superfície pública quando `/cidade/:slug` existir.
+- Sem alterações em banco, RLS, SEO, sitemap, Home, V3, Partner, Admin ou Transporte.
