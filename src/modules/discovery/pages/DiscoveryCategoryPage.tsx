@@ -1,14 +1,16 @@
 /**
  * Onda 10 — Ativação pública do Discovery Engine.
+ * Onda 11 — Integração à infraestrutura SEO da Roxou (componente `SEO`
+ * compartilhado + BreadcrumbList / CollectionPage / ItemList JSON-LD).
  *
  * Página genérica única que atende TODAS as categorias declarativas
- * de `discoveryCategories`. Consome exclusivamente a superfície
- * pública `@modules/discovery` (sem Supabase, sem repositório interno).
+ * de `discoveryCategories`. Consome exclusivamente a superfície pública
+ * `@modules/discovery`.
  *
  * Rota: `/descobrir/:categorySlug`
  * Categoria inválida ou desabilitada → 404 real (NotFound).
  */
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, CalendarDays, ChevronRight, BadgeCheck } from "lucide-react";
@@ -19,35 +21,13 @@ import {
   type DiscoveryResult,
 } from "@modules/discovery";
 import NotFound from "@/pages/NotFound";
+import SEO from "@/components/SEO";
 
-const CANONICAL_ORIGIN = "https://roxou.lovable.app";
+const CANONICAL_ORIGIN = "https://roxou.com.br";
 /** Mínimo de itens (locais + eventos) para permitir indexação. */
 const MIN_INDEXABLE_ITEMS = 6;
-
-function setMeta(name: string, content: string, isProperty = false) {
-  const attr = isProperty ? "property" : "name";
-  let el = document.head.querySelector<HTMLMetaElement>(
-    `meta[${attr}="${name}"]`,
-  );
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute(attr, name);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-  return el;
-}
-
-function setCanonical(href: string) {
-  let el = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-  if (!el) {
-    el = document.createElement("link");
-    el.rel = "canonical";
-    document.head.appendChild(el);
-  }
-  el.href = href;
-  return el;
-}
+/** Máximo de itens exportados no ItemList JSON-LD. */
+const MAX_JSONLD_ITEMS = 20;
 
 const SkeletonCard = () => (
   <div className="rounded-2xl border border-white/10 bg-white/5 p-4 animate-pulse">
@@ -74,64 +54,93 @@ const DiscoveryCategoryPage = () => {
       }),
   });
 
-  const totalItems =
-    (query.data?.venues.length ?? 0) + (query.data?.events.length ?? 0);
-  const shouldNoIndex =
-    !category?.indexable || totalItems < MIN_INDEXABLE_ITEMS;
-
-  useEffect(() => {
-    if (!category) return;
-    const canonical = `${CANONICAL_ORIGIN}${category.canonicalPath}`;
-    const prevTitle = document.title;
-    document.title = `${category.title} — Roxou`;
-    const metaDesc = setMeta("description", category.description);
-    const canonicalEl = setCanonical(canonical);
-    const og1 = setMeta("og:title", category.title, true);
-    const og2 = setMeta("og:description", category.description, true);
-    const og3 = setMeta("og:url", canonical, true);
-    const og4 = setMeta("og:type", "website", true);
-    const robots = setMeta(
-      "robots",
-      shouldNoIndex ? "noindex,follow" : "index,follow",
-    );
-    return () => {
-      document.title = prevTitle;
-      // Restaurar robots para default indexável ao sair.
-      robots.setAttribute("content", "index,follow");
-      // Deixamos meta desc/canonical/og para a próxima rota sobrescrever.
-      void metaDesc;
-      void canonicalEl;
-      void og1;
-      void og2;
-      void og3;
-      void og4;
-    };
-  }, [category, shouldNoIndex]);
-
   if (!categorySlug || !category || !category.enabled) {
     return <NotFound />;
   }
 
   const venues = query.data?.venues ?? [];
   const events = query.data?.events ?? [];
+  const totalItems = venues.length + events.length;
   const isLoading = query.isLoading;
   const isError = query.isError;
+  const hasLoaded = !isLoading && !isError;
+
+  const canonical = `${CANONICAL_ORIGIN}/descobrir/${category.slug}`;
+  // Regra de indexação: decidir SOMENTE após o carregamento terminar.
+  // Enquanto carrega ou em erro, mantemos index padrão (evita soft-404).
+  const shouldNoIndex =
+    !category.indexable || (hasLoaded && totalItems < MIN_INDEXABLE_ITEMS);
+
+  // JSON-LD: BreadcrumbList sempre; CollectionPage + ItemList quando houver
+  // dados reais carregados. Só emitimos schema após o load terminar.
+  const jsonLdBlocks: Array<Record<string, unknown>> = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Início", item: `${CANONICAL_ORIGIN}/` },
+        { "@type": "ListItem", position: 2, name: "Descobrir", item: `${CANONICAL_ORIGIN}/descobrir` },
+        { "@type": "ListItem", position: 3, name: category.title, item: canonical },
+      ],
+    },
+  ];
+
+  if (hasLoaded && totalItems > 0) {
+    const items: Array<Record<string, unknown>> = [];
+    let pos = 1;
+    for (const { venue } of venues.slice(0, MAX_JSONLD_ITEMS)) {
+      if (!venue.slug || !venue.name) continue;
+      items.push({
+        "@type": "ListItem",
+        position: pos++,
+        url: `${CANONICAL_ORIGIN}/local/${venue.slug}`,
+        name: venue.name,
+      });
+    }
+    const remaining = MAX_JSONLD_ITEMS - items.length;
+    for (const { event } of events.slice(0, Math.max(0, remaining))) {
+      if (!event.slug || !event.title) continue;
+      items.push({
+        "@type": "ListItem",
+        position: pos++,
+        url: `${CANONICAL_ORIGIN}/evento/${event.slug}`,
+        name: event.title,
+      });
+    }
+    if (items.length > 0) {
+      jsonLdBlocks.push({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: `${category.title} — Roxou`,
+        description: category.description,
+        url: canonical,
+        mainEntity: {
+          "@type": "ItemList",
+          itemListElement: items,
+        },
+      });
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
+      <SEO
+        title={`${category.title} — Roxou`}
+        description={category.description}
+        canonical={canonical}
+        ogType="website"
+        noindex={shouldNoIndex}
+        jsonLd={jsonLdBlocks}
+      />
       <div className="mx-auto max-w-4xl px-4 pt-6">
-        {/* Breadcrumb simples */}
+        {/* Breadcrumb visual (o JSON-LD equivalente vai via <SEO />) */}
         <nav
           aria-label="Breadcrumb"
           className="mb-3 flex items-center gap-1 text-xs text-muted-foreground"
         >
-          <Link to="/" className="hover:text-foreground">
-            Início
-          </Link>
+          <Link to="/" className="hover:text-foreground">Início</Link>
           <ChevronRight className="h-3 w-3" />
-          <Link to="/descobrir" className="hover:text-foreground">
-            Descobrir
-          </Link>
+          <Link to="/descobrir" className="hover:text-foreground">Descobrir</Link>
           <ChevronRight className="h-3 w-3" />
           <span className="text-foreground">{category.title}</span>
         </nav>
@@ -147,9 +156,7 @@ const DiscoveryCategoryPage = () => {
 
         {isError && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-            <p className="mb-2">
-              Tivemos um problema ao carregar as recomendações.
-            </p>
+            <p className="mb-2">Tivemos um problema ao carregar as recomendações.</p>
             <button
               type="button"
               onClick={() => query.refetch()}
@@ -168,14 +175,11 @@ const DiscoveryCategoryPage = () => {
           </section>
         )}
 
-        {!isLoading && !isError && (
+        {hasLoaded && (
           <>
             {venues.length > 0 && (
               <section aria-labelledby="lugares-heading" className="mb-8">
-                <h2
-                  id="lugares-heading"
-                  className="mb-3 text-lg font-semibold tracking-tight"
-                >
+                <h2 id="lugares-heading" className="mb-3 text-lg font-semibold tracking-tight">
                   Lugares recomendados
                 </h2>
                 <ul className="grid gap-3 sm:grid-cols-2">
@@ -201,9 +205,7 @@ const DiscoveryCategoryPage = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <h3 className="truncate text-sm font-semibold">
-                              {venue.name}
-                            </h3>
+                            <h3 className="truncate text-sm font-semibold">{venue.name}</h3>
                             {venue.verified && (
                               <BadgeCheck className="h-4 w-4 shrink-0 text-primary" />
                             )}
@@ -218,8 +220,7 @@ const DiscoveryCategoryPage = () => {
                               <MapPin className="h-3 w-3" />
                               <span className="truncate">
                                 {venue.neighborhood}
-                                {typeof distanceKm === "number" &&
-                                  ` · ${distanceKm.toFixed(1)} km`}
+                                {typeof distanceKm === "number" && ` · ${distanceKm.toFixed(1)} km`}
                               </span>
                             </p>
                           )}
@@ -233,10 +234,7 @@ const DiscoveryCategoryPage = () => {
 
             {events.length > 0 && (
               <section aria-labelledby="eventos-heading" className="mb-8">
-                <h2
-                  id="eventos-heading"
-                  className="mb-3 text-lg font-semibold tracking-tight"
-                >
+                <h2 id="eventos-heading" className="mb-3 text-lg font-semibold tracking-tight">
                   Eventos relacionados
                 </h2>
                 <ul className="grid gap-3 sm:grid-cols-2">
@@ -261,9 +259,7 @@ const DiscoveryCategoryPage = () => {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="line-clamp-2 text-sm font-semibold">
-                            {event.title}
-                          </h3>
+                          <h3 className="line-clamp-2 text-sm font-semibold">{event.title}</h3>
                           {event.venueName && (
                             <p className="mt-0.5 truncate text-xs text-muted-foreground">
                               {event.venueName}
@@ -271,15 +267,12 @@ const DiscoveryCategoryPage = () => {
                           )}
                           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                             <CalendarDays className="h-3 w-3" />
-                            {new Date(event.dateTimeIso).toLocaleDateString(
-                              "pt-BR",
-                              {
-                                day: "2-digit",
-                                month: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                            {new Date(event.dateTimeIso).toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
                         </div>
                       </Link>
