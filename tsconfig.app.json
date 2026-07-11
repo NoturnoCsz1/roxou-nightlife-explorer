@@ -24,8 +24,14 @@
       "@transport/*": ["./src/apps/transport/*"],
       "@games/*": ["./src/apps/games/*"],
       "@shared/*": ["./src/shared/*"],
-      "@services/*": ["./src/services/*"]
+      "@services/*": ["./src/services/*"],
+      "@app/*": ["./src/app/*"],
+      "@modules/*": ["./src/modules/*"],
+      "@contracts/*": ["./src/contracts/*"],
+      "@integrations/*": ["./src/integrations/*"],
+      "@config/*": ["./src/config/*"]
     },
+
     "skipLibCheck": true,
     "strict": false,
     "target": "ES2020",
