@@ -380,3 +380,45 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 **Ciclos:** antes 1 → depois 1 (baseline herdado do Admin).
 
 **Validação:** typecheck ✅ · build ✅ (394 precache) · audit:cycles ✅ · lint dos arquivos novos ✅ 0 erros (erros `no-explicit-any` reportados em `EventDetail`/`LocalDetail` são pré-existentes em trechos não tocados).
+
+---
+
+## Onda 8 (2026-07-11) — Adoção Discovery nas superfícies públicas de maior tráfego
+
+**Arquivos criados:** nenhum (apenas extensão dos repositories existentes).
+
+**Arquivos alterados (7)**
+- `src/modules/discovery/events/repositories/eventsRepository.ts` (+5 funções)
+- `src/modules/discovery/venues/repositories/venuesRepository.ts` (+3 funções)
+- `src/pages/Index.tsx`, `src/pages/Hoje.tsx`, `src/pages/Semana.tsx`, `src/pages/PertoDeMim.tsx`, `src/components/search/GlobalSearchOverlay.tsx`
+
+**Consumidores migrados (5):** Home (`Index`), Hoje, Semana, Perto de Mim, GlobalSearchOverlay.
+
+**Queries públicas consolidadas em `@modules/discovery/events`**
+- `fetchUpcomingPublishedEventsForHome` (Home)
+- `fetchTodayPublishedEvents(startOfDay, endOfDay)` (Hoje)
+- `fetchWeekPublishedEvents` (Semana)
+- `fetchUpcomingEventsForNearby(limit)` (PertoDeMim)
+- `searchPublicEvents(limit)` (GlobalSearchOverlay)
+
+**Queries públicas consolidadas em `@modules/discovery/venues`**
+- `fetchPartnerSlugsByIds` (Home, Hoje, Semana)
+- `fetchPartnerCoordsByIds` (PertoDeMim)
+- `searchPublicVenues(limit)` (GlobalSearchOverlay)
+
+**Chamadas Supabase inline removidas:** 11 (5 events + 4 partners + 2 nas páginas Home/agenda). Chamadas fora do domínio Discovery (page_views, partner_awards, roxou_news, sports_matches, search_logs) foram mantidas onde já estavam.
+
+**Fontes de dados preservadas:** todas as leituras continuam batendo em `.from("events")` e `.from("partners")` (base table, `active = true` + `status = 'ativo'` quando aplicável). Sem troca para `public_partners`.
+
+**React Query / cache:** nenhuma das 5 superfícies usa React Query — mantidas em `useEffect + Promise.all`. O cache in-memory do `GlobalSearchOverlay` (`cachedData`, TTL 5min) foi preservado 1:1. Nenhuma query key nova, nenhum provider novo.
+
+**Legados:** nenhum arquivo removido. `services/eventService.ts` / `services/venueService.ts` continuam expostos pelo barrel (funções distintas do repository, sem duplicação de query real).
+
+**Adiado (fora do limite)**
+- V3Home / V3Agenda / V3Discover / V3EventDetail / V3LocalDetail / V3Parceiros / V3Profile / V3AIChat (vertical V3 dedicado).
+- `PopularVenues`, `VenueList`, `FeaturedCarousel` — não acessam Supabase diretamente (recebem props); nada a migrar aqui.
+- `categoryConfig` — 15 consumidores cross-produto, mantido.
+
+**Ciclos:** antes 1 → depois 1 (baseline herdado do Admin).
+
+**Validação:** typecheck ✅ · build ✅ (394 precache, 12 877 KiB) · audit:cycles ✅ · lint dos alterados ✅ 0 erros novos (14 erros `no-explicit-any` / `no-empty` reportados são pré-existentes em `PertoDeMim` e `GlobalSearchOverlay` fora dos trechos migrados).
