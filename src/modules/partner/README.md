@@ -1,22 +1,35 @@
 # modules/partner
 
-**Domínio:** Partner Pro — painel do parceiro + páginas públicas
-ligadas ao parceiro (Bio, VIP, Reserva).
+**Domínio:** Partner Pro — camada de dados/regras dos produtos do
+parceiro (Reservas, Lista VIP, Validador, Convites e futuros).
 
-Responsabilidades futuras deste módulo:
+**Submódulos ativos (Onda 4)**
 
-- Dashboard, Home, Configurações, Perfil.
-- Eventos do parceiro.
-- Reservas Pro (tipos, lista, fila, operação, equipe).
-- Listas VIP (abertas, fechadas, histórico, participantes, promoters).
-- Validador QR e Check-in.
-- Promoter Central.
-- Analytics do parceiro.
-- Bio pública (`/bio/:slug`, `/bio/:slug/menu`).
-- Páginas públicas de VIP e Reserva.
-- Área do cliente final do parceiro (`/cliente/*`).
+- `reservations/` — Reservas Pro.
+- `vip/` — Listas VIP + Promoters.
+- `validator/` — Parse e validação de QR.
+- `invitations/` — placeholder (aguardando fluxo).
+- `shared/` — tipos/helpers cross-submódulo.
 
-**Status:** pasta criada, nenhum arquivo migrado. O código atual segue
-em `src/apps/partner/**`, `src/pages/PublicVipList*`,
-`src/pages/PublicReservation*`, `src/pages/bio/*` e `src/pages/customer/*`
-até a Etapa 3 do plano de refatoração.
+**Convenção**
+
+- `services/` — regras de aplicação e queries.
+- `repositories/` — barrel público das operações de banco.
+- `types/` — tipos exportados.
+- Nada de JSX, `use-toast`, react-router ou DOM aqui.
+
+**Imports permitidos**
+
+- `@shared/*`, `@integrations/*`, `@contracts/*`, `@config/*`
+- tipos gerados do Supabase
+- outros submódulos de `@modules/partner/*`
+
+**Imports proibidos**
+
+- `@modules/discovery`, `@modules/transport`, `@modules/admin`
+- páginas ou componentes visuais (`src/apps/**`, `src/pages/**`)
+
+**Status:** páginas continuam em `src/apps/partner/**` e importam
+esta camada via shims em `src/apps/partner/services/partner*.ts`.
+Consumidores novos devem importar diretamente de
+`@modules/partner/<area>/...`.
