@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- preservado do original EventoForm.tsx (Fase 3C1) */
 import type React from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { buildEventPayload } from "@/lib/adminEventPayload";
 import { analyzeAndLinkEventTransmission } from "@/lib/sportsTransmission";
 import {
@@ -10,7 +9,14 @@ import {
   REASON_LABELS,
 } from "@/lib/eventIngestionGuard";
 import { buildRoxouCaption } from "./utils";
-import type { EventoFormActionDeps } from "./eventoFormActions";
+import {
+  type EventoFormActionDeps,
+  insertEvent,
+  updateEvent,
+  linkEventouImport,
+  insertContentGenerationPost,
+  logAiEventFeedback,
+} from "@modules/admin/events";
 
 /**
  * `handleSubmit` extraído para arquivo próprio a fim de manter cada módulo
@@ -19,6 +25,9 @@ import type { EventoFormActionDeps } from "./eventoFormActions";
  *
  * Recebe `checkDuplicateEvent` por injeção para evitar dependência circular
  * com `eventoFormActions.ts`.
+ *
+ * Onda 13: tipo `EventoFormActionDeps` e I/O Supabase agora vêm de
+ * `@modules/admin/events`. Sem alteração de comportamento.
  */
 export function buildHandleSubmit(
   deps: EventoFormActionDeps,
@@ -92,8 +101,7 @@ export function buildHandleSubmit(
     try {
       let savedEventId: string | undefined = id || undefined;
       if (isEdit) {
-        const { error } = await supabase.from("events").update(payload).eq("id", id!);
-        if (error) throw error;
+        await updateEvent(id!, payload);
         const orig = originalSnapshot.current;
         const newSub = (form as any)._sub || null;
         if (
@@ -102,7 +110,7 @@ export function buildHandleSubmit(
             orig.sub_category !== newSub ||
             (orig.description || "") !== (form.description || ""))
         ) {
-          await supabase.from("ai_event_feedback_memory" as any).insert({
+          await logAiEventFeedback({
             venue_name: form.venue_name || orig.venue_name,
             original_category: orig.category,
             corrected_category: form.category,
@@ -114,28 +122,17 @@ export function buildHandleSubmit(
         }
         toast.success("Evento atualizado!");
       } else {
-        const { data: inserted, error } = await supabase
-          .from("events")
-          .insert(payload)
-          .select("id")
-          .single();
-        if (error) throw error;
-
+        const inserted = await insertEvent(payload);
         const eventId = inserted?.id;
         savedEventId = eventId;
 
         if (eventouImportId && eventId) {
-          await supabase
-            .from("eventou_imports")
-            .update({ import_status: "approved", event_id: eventId })
-            .eq("id", eventouImportId);
+          await linkEventouImport(eventouImportId, eventId);
 
           const imageUrl = form.image_url || null;
           const caption = buildRoxouCaption(form);
 
-          await supabase.from("content_generations").insert({
-            type: "post",
-            source_type: "event",
+          await insertContentGenerationPost({
             source_id: eventId,
             title: form.title,
             generated_text: caption,
