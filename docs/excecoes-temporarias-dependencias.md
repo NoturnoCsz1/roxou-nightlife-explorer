@@ -76,3 +76,8 @@ Nenhuma regra ESLint foi relaxada. Pendências mantidas (não são exceções):
 (a) split físico repository ↔ service, (b) extração das duas chamadas
 Supabase inline em `PartnerRequestAccessPage` e `bio/tabs/BioHomeTab`,
 (c) hooks `usePartnerAuth`/`usePartnerBetaAccess`/`usePartnerRole` no local atual.
+
+
+## Onda 13
+- Ciclo eventoFormSubmit ↔ eventoFormActions ELIMINADO via @modules/admin/events/types/eventoFormDeps.ts.
+- Pendências Supabase Admin (fora deste vertical): supabase.functions.invoke em eventoFormActions.ts (edge functions — não é acesso de tabela, permanece); demais telas admin (partners, users, financeiro, analytics, noticias) mantêm supabase inline — não migradas nesta onda por escopo.

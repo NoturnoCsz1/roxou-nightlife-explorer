@@ -463,3 +463,12 @@ Ativação pública do Discovery Engine em rota genérica única `/descobrir/:ca
 - 7 consumidores migrados para @modules/transport; sem Supabase inline novo.
 - Rotas preservadas 1:1; nenhuma URL, layout ou navegação alterada.
 - Ciclos 1→1 (baseline eventoForm* herdado).
+
+
+## Onda 13 — Admin/Events + remoção do ciclo (concluída)
+- Causa: eventoFormSubmit importava type EventoFormActionDeps de eventoFormActions, que importa buildHandleSubmit de eventoFormSubmit.
+- Fix: interface movida para src/modules/admin/events/types/eventoFormDeps.ts.
+- Repository: src/modules/admin/events/repositories/eventsAdminRepository.ts consolida insertEvent/updateEvent/softArchiveEvent/linkEventouImport/insertContentGenerationPost/logAiEventFeedback/findDuplicateByImageHash/findDuplicateByTitleVenueDay.
+- Barrel: @modules/admin/events (contrato + repo).
+- Ciclos: 1 → 0. Nenhuma mudança de UI, rota, RLS, RPC ou Edge Function.
+- Eventos em Lote: intocado.
