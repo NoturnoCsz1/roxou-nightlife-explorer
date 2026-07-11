@@ -445,3 +445,13 @@ permissões, rotas, UI, textos, PWA ou SEO. Zero mudanças em consumidores
 
 ## Onda 10
 Ativação pública do Discovery Engine em rota genérica única `/descobrir/:categorySlug`. Ver `docs/plano-fase-descobertas.md`.
+
+
+## Onda 11 — SEO Descobertas (concluída)
+- Reuso do componente `src/components/SEO.tsx` (canonical, robots, OG, Twitter, JSON-LD).
+- `DiscoveryCategoryPage` migrada de useEffect ad-hoc para <SEO/> + BreadcrumbList + CollectionPage/ItemList quando totalItems>0.
+- Canonical: https://roxou.com.br/descobrir/:slug (sem query, sem tracking).
+- Regra index: !indexable || (loaded && total<6) → noindex,follow; loading/erro → index (evita soft-404).
+- Sitemap edge (`supabase/functions/sitemap`): 10 categorias adicionadas em /descobrir/:slug. Fallback script atualizado com /descobrir.
+- robots.txt preservado (/descobrir/ já liberado; /admin/, /partner/, /auth etc. bloqueados).
+- ads.txt inalterado.
