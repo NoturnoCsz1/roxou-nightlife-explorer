@@ -1,4 +1,4 @@
 # shared/layouts
 
-Layouts reutilizados por mais de um módulo (ex.: `V3Layout`,
+Layouts reutilizados por mais de um módulo (ex.: `PublicLayout`,
 `PartnerScreen`). Vazio nesta etapa.

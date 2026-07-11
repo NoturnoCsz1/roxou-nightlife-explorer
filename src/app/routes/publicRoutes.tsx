@@ -3,8 +3,8 @@ import { Route, Navigate, useLocation } from "react-router-dom";
 import { L } from "./lazyFallback";
 import { TransportRoutes } from "./transportRoutes";
 
-// V3 público — Home/Layout/Auth ficam eager (LCP + entrada) por decisão da Fase 7.
-import V3Layout from "@/components/v3/V3Layout";
+// Público — Layout/Home/Auth ficam eager (LCP + entrada) por decisão da Fase 7.
+import PublicLayout from "@/components/layouts/PublicLayout";
 import V3Auth from "@/pages/v3/V3Auth";
 import V3Home from "@/pages/v3/V3Home";
 
@@ -216,7 +216,7 @@ export const PublicRoutes = () => (
     <Route path="/v3" element={<Navigate to="/" replace />} />
     <Route path="/v3/*" element={<RedirectV3 />} />
 
-    <Route path="/" element={<V3Layout />}>
+    <Route path="/" element={<PublicLayout />}>
       <Route index element={<V3Home />} />
       <Route path="descobrir" element={L(<V3Discover />)} />
       <Route

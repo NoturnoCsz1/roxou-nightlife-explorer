@@ -1,6 +1,6 @@
 /**
  * V3 Skeletons — purple-tinted shimmer for premium loading state.
- * Use inside `.v3-theme` containers (V3Layout already provides it).
+ * Use inside `.v3-theme` containers (PublicLayout already provides it).
  */
 
 export function V3Skeleton({ className = "" }: { className?: string }) {

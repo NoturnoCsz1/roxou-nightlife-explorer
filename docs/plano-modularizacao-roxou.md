@@ -472,3 +472,12 @@ Ativação pública do Discovery Engine em rota genérica única `/descobrir/:ca
 - Barrel: @modules/admin/events (contrato + repo).
 - Ciclos: 1 → 0. Nenhuma mudança de UI, rota, RLS, RPC ou Edge Function.
 - Eventos em Lote: intocado.
+
+## Onda 14 — Desativação parcial do prefixo V3 (layout público)
+
+- Renomeado: `src/components/v3/V3Layout.tsx` → `src/components/layouts/PublicLayout.tsx` (componente `PublicLayout`). UI, header, bottom nav, providers e Outlet preservados 1:1.
+- Import atualizado em `src/app/routes/publicRoutes.tsx` (único consumidor de código); comentários atualizados em `src/app/routes/transportRoutes.tsx`, `src/shared/README.md`, `src/shared/layouts/README.md`, `src/components/v3/V3Skeletons.tsx`.
+- Removidos: diretórios `src/modules/transporte/` e `src/modules/motorista/` (READMEs órfãos; estrutura oficial é `src/modules/transport/`).
+- Preservados intencionalmente: arquivos `src/pages/v3/V3*.tsx` e `src/components/v3/*` (renomeação em massa fica para onda futura por volume ~60 arquivos e ausência de ganho arquitetural imediato). Não há mais layout com prefixo `V3` no código ativo.
+- Rotas, URLs, SEO, LCP, lazy split (Transport/Admin/Partner) e Discovery Engine intocados. Home pública continua eager.
+- Sem alterações em banco, RLS, RPC, Edge Functions, autenticação, ads.txt, robots ou sitemap.

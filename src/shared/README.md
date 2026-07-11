@@ -17,7 +17,7 @@ Sub-pastas:
   `supabaseFetchAll`, `analytics`, `ga`).
 - `types/` — tipos compartilhados (DTOs entre módulos, enums de
   domínio comum).
-- `layouts/` — layouts compartilhados (V3Layout, PartnerScreen
+- `layouts/` — layouts compartilhados (PublicLayout, PartnerScreen
   candidatos).
 
 **Status:** pastas criadas. Nada foi migrado ainda — os utilitários

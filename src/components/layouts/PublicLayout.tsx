@@ -18,7 +18,7 @@ const DESKTOP_EXTRA_ITEMS = [
   { to: "/economize", icon: PiggyBank, label: "Economize" },
 ];
 
-export default function V3Layout() {
+export default function PublicLayout() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuth();
   const { profile, isDriver } = useV3Profile();
@@ -34,8 +34,8 @@ export default function V3Layout() {
   const allDesktopItems = [...NAV_ITEMS.filter(i => i.to !== "/perfil"), ...DESKTOP_EXTRA_ITEMS, driverItem];
 
   const displayName = profile?.display_name?.trim() || user?.email?.split("@")[0] || "Visitante";
-  const nickname = (profile as any)?.nickname?.trim() || null;
-  const avatarUrl = (profile as any)?.avatar_url || null;
+  const nickname = (profile as { nickname?: string })?.nickname?.trim() || null;
+  const avatarUrl = (profile as { avatar_url?: string })?.avatar_url || null;
   const initial = (displayName?.[0] ?? "R").toUpperCase();
 
 
