@@ -6,6 +6,7 @@ import { searchPublicEvents } from "@modules/discovery/events";
 import { searchPublicVenues } from "@modules/discovery/venues";
 import { expandQuery, fuzzyScore, normalizeText, type SearchResultItem, type SearchResultType } from "./searchUtils";
 import { Highlight, QuickLinkCloud, QUICK_LINKS } from "./Highlight";
+import { listEnabledDiscoveryCategories } from "@modules/discovery";
 
 interface Props {
   open: boolean;
