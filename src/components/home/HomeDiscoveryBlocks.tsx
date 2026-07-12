@@ -212,6 +212,46 @@ const HomeDiscoveryBlocks = ({ context }: HomeDiscoveryBlocksProps = {}) => {
           </div>
         </section>
       )}
+
+      {cityTrends.length > 0 && (
+        <section aria-label="Tendências da Cidade">
+          <SectionHeader
+            emoji="📈"
+            title="Tendências da Cidade"
+            subtitle={`Movimento agora · ${activeContext.label}`}
+          />
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+            {cityTrends.map((r, i) => (
+              <button
+                key={r.venue.id}
+                type="button"
+                onClick={() => navigate(`/local/${r.venue.slug}`)}
+                className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/50 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-card"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                  {i + 1}
+                </span>
+                <PartnerLogo src={r.venue.logoUrl} alt={r.venue.name} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1">
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {r.venue.name}
+                    </span>
+                    {r.venue.verified && (
+                      <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    )}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {r.venue.type ?? "Local"}
+                    {r.venue.neighborhood ? ` · ${r.venue.neighborhood}` : ""}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
