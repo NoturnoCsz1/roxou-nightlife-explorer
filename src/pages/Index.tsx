@@ -320,6 +320,8 @@ const Index = () => {
               </section>
             )}
 
+            <HomeDiscoveryBlocks />
+
             <section>
               <PopularVenues />
             </section>
