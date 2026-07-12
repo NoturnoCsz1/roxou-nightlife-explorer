@@ -222,6 +222,14 @@ export function EstabelecimentosAuditRow(props: Props) {
           onApply={props.onApply}
         />
       )}
+
+      {featuresOpen && (
+        <EstabelecimentosFeaturesDialog
+          partnerId={e.id}
+          partnerName={e.name}
+          onClose={() => setFeaturesOpen(false)}
+        />
+      )}
     </div>
   );
 }
