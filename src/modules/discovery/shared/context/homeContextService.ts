@@ -7,7 +7,7 @@
  * banco, sem IA e sem novas queries.
  */
 import { listEnabledDiscoveryCategories } from "../../categories/discoveryCategories";
-import { hasFeatureSlug } from "../../features";
+import { FEATURE_CATALOG } from "../../features";
 
 export type HomeContextBucket =
   | "morning"
