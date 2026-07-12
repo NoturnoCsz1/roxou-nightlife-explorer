@@ -107,6 +107,13 @@ export interface VenueProfile {
   relatedEvents?: VenueRelatedEventRef[];
   similarVenues?: VenueSimilarVenueRef[];
 
+  /**
+   * Features aplicadas (Feature Engine — Onda 18).
+   * Referências ao catálogo `FEATURE_CATALOG` por slug.
+   * Sem consumidores nesta onda.
+   */
+  features?: import("../../../features/types/feature").VenueFeatureAssignment[];
+
   /** Resumo curto gerado por IA (não implementado nesta onda). */
   aiSummary?: string | null;
   /** Motivos de recomendação (bullets) — futuros. */
