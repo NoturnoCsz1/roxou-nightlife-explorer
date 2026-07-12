@@ -16,6 +16,8 @@ import SectionHeader from "@/shared/components/SectionHeader";
 
 import PopularVenues from "@/components/PopularVenues";
 import HomeDiscoveryBlocks from "@/components/home/HomeDiscoveryBlocks";
+import HomeIntentChips from "@/components/home/HomeIntentChips";
+import { getHomeContext } from "@modules/discovery";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchUpcomingPublishedEventsForHome } from "@modules/discovery/events";
 import { fetchPartnerSlugsByIds } from "@modules/discovery/venues";
@@ -35,6 +37,7 @@ const Index = () => {
   usePageTracking();
 
   const [activeAnchor, setActiveAnchor] = useState<DateAnchor | null>(null);
+  const homeContext = useMemo(() => getHomeContext(), []);
   const sectionRefs = useRef<Record<DateAnchor, HTMLElement | null>>({ hoje: null, amanha: null, fds: null });
 
   const scrollTo = useCallback((anchor: DateAnchor) => {
@@ -190,6 +193,7 @@ const Index = () => {
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
+          <HomeIntentChips context={homeContext} className="mt-3" />
           <div className="mt-3">
             <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
           </div>
@@ -198,14 +202,18 @@ const Index = () => {
 
       {/* Desktop search + pills bar */}
       <div className="hidden md:block border-b border-border/20 bg-card/30">
-        <div className="mx-auto max-w-6xl px-6 py-4 flex items-center gap-6">
-          <div className="flex items-center gap-2.5 rounded-2xl bg-secondary/80 px-4 py-3 flex-1 max-w-md">
-            <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+        <div className="mx-auto max-w-6xl px-6 py-4 space-y-3">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2.5 rounded-2xl bg-secondary/80 px-4 py-3 flex-1 max-w-md">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+            </div>
+            <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
           </div>
-          <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
+          <HomeIntentChips context={homeContext} />
         </div>
       </div>
+
 
       <main className="mx-auto max-w-lg md:max-w-6xl px-4 md:px-6 mt-4 md:mt-8 space-y-5 md:space-y-10">
         {/* Featured hero */}
@@ -320,7 +328,7 @@ const Index = () => {
               </section>
             )}
 
-            <HomeDiscoveryBlocks />
+            <HomeDiscoveryBlocks context={homeContext} />
 
             <section>
               <PopularVenues />

@@ -37,3 +37,10 @@ export {
 
 // Motor.
 export { discover, type DiscoverOptions } from "./recommendations";
+
+// Context Engine (Onda 22).
+export {
+  getHomeContext,
+  type HomeContext,
+  type HomeContextBucket,
+} from "./shared/context/homeContextService";

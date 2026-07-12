@@ -12,7 +12,9 @@ import { TrendingUp, ChevronRight, BadgeCheck } from "lucide-react";
 import {
   discover,
   listEnabledDiscoveryCategories,
+  getHomeContext,
   type DiscoveryResult,
+  type HomeContext,
 } from "@modules/discovery";
 import SectionHeader from "@/shared/components/SectionHeader";
 import PartnerLogo from "@/components/partners/PartnerLogo";
@@ -51,23 +53,48 @@ function toChip(slug: string, title: string): CategoryChip {
   return { slug, title, emoji: CATEGORY_EMOJI[slug] ?? "✨" };
 }
 
-const HomeDiscoveryBlocks = () => {
+interface HomeDiscoveryBlocksProps {
+  /** Contexto opcional; se ausente, é computado localmente. */
+  context?: HomeContext;
+}
+
+/** Reordena chips colocando slugs preferidos do contexto no topo. */
+function prioritize<T extends { slug: string }>(chips: T[], preferred: string[]): T[] {
+  if (!preferred.length) return chips;
+  const rank = new Map(preferred.map((s, i) => [s, i]));
+  return [...chips].sort((a, b) => {
+    const ra = rank.get(a.slug) ?? Number.POSITIVE_INFINITY;
+    const rb = rank.get(b.slug) ?? Number.POSITIVE_INFINITY;
+    return ra - rb;
+  });
+}
+
+const HomeDiscoveryBlocks = ({ context }: HomeDiscoveryBlocksProps = {}) => {
   const navigate = useNavigate();
+
+  const activeContext = useMemo(() => context ?? getHomeContext(), [context]);
+  const preferred = activeContext.preferredCategorySlugs;
 
   const categories = useMemo(() => listEnabledDiscoveryCategories(), []);
   const interestChips: CategoryChip[] = useMemo(
     () =>
-      categories
-        .filter((c) => INTEREST_SLUGS.has(c.slug))
-        .map((c) => toChip(c.slug, c.title)),
-    [categories],
+      prioritize(
+        categories
+          .filter((c) => INTEREST_SLUGS.has(c.slug))
+          .map((c) => toChip(c.slug, c.title)),
+        preferred,
+      ),
+    [categories, preferred],
   );
   const popularCategoryChips: CategoryChip[] = useMemo(
     () =>
-      categories
-        .filter((c) => !INTEREST_SLUGS.has(c.slug))
-        .map((c) => toChip(c.slug, c.title)),
-    [categories],
+      prioritize(
+        categories
+          .filter((c) => !INTEREST_SLUGS.has(c.slug))
+          .map((c) => toChip(c.slug, c.title)),
+        preferred,
+      ),
+    [categories, preferred],
   );
 
   // Em Alta — venues com eventos futuros, ordenados pelo motor.
@@ -78,6 +105,8 @@ const HomeDiscoveryBlocks = () => {
   });
 
   const trending = trendingQuery.data?.venues ?? [];
+  // Reutiliza o mesmo resultado para o bloco "Tendências da Cidade".
+  const cityTrends = trending.slice(0, 4);
 
   if (interestChips.length === 0 && popularCategoryChips.length === 0) {
     return null;
@@ -178,6 +207,46 @@ const HomeDiscoveryBlocks = () => {
                   </span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {cityTrends.length > 0 && (
+        <section aria-label="Tendências da Cidade">
+          <SectionHeader
+            emoji="📈"
+            title="Tendências da Cidade"
+            subtitle={`Movimento agora · ${activeContext.label}`}
+          />
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+            {cityTrends.map((r, i) => (
+              <button
+                key={r.venue.id}
+                type="button"
+                onClick={() => navigate(`/local/${r.venue.slug}`)}
+                className="flex items-center gap-3 rounded-2xl border border-border/40 bg-card/50 px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-card"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                  {i + 1}
+                </span>
+                <PartnerLogo src={r.venue.logoUrl} alt={r.venue.name} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1">
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {r.venue.name}
+                    </span>
+                    {r.venue.verified && (
+                      <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    )}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {r.venue.type ?? "Local"}
+                    {r.venue.neighborhood ? ` · ${r.venue.neighborhood}` : ""}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             ))}
           </div>
