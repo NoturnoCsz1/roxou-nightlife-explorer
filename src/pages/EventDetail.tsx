@@ -1,4 +1,5 @@
-import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import NotFoundView from "@/components/NotFoundView";
 import DesktopNav from "@/components/DesktopNav";
 import {
   ArrowLeft,
