@@ -328,7 +328,7 @@ const Index = () => {
               </section>
             )}
 
-            <HomeDiscoveryBlocks />
+            <HomeDiscoveryBlocks context={homeContext} />
 
             <section>
               <PopularVenues />
