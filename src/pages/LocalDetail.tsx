@@ -34,6 +34,12 @@ import type {
   VenueProfile,
   VenueActionIcon,
 } from "@/modules/discovery/venues/enrichment";
+import {
+  resolveVenueFeatures,
+  groupResolvedFeaturesByCategory,
+  hasFeatureSlug,
+  getFeatureIcon,
+} from "@/modules/discovery/features";
 
 const ACTION_ICONS: Record<VenueActionIcon, LucideIcon> = {
   calendar: Calendar,
@@ -145,6 +151,26 @@ const LocalDetail = () => {
       ),
     [venueProfile, pageUrl],
   );
+
+  // Feature Engine — Onda 19. Consome apenas VenueProfile.features.
+  const resolvedFeatures = useMemo(
+    () => resolveVenueFeatures(venueProfile.features),
+    [venueProfile.features],
+  );
+  const featureGroups = useMemo(
+    () => groupResolvedFeaturesByCategory(resolvedFeatures),
+    [resolvedFeatures],
+  );
+  const hasAreaKids = hasFeatureSlug(resolvedFeatures, "area-kids");
+  const hasPetFriendly = hasFeatureSlug(resolvedFeatures, "pet-friendly");
+  const hasMusicaAoVivo = hasFeatureSlug(resolvedFeatures, "musica-ao-vivo");
+  const hasHappyHour = hasFeatureSlug(resolvedFeatures, "happy-hour");
+  const specialSelos = [
+    hasAreaKids && { emoji: "👨‍👩‍👧", label: "Ideal para famílias" },
+    hasPetFriendly && { emoji: "🐾", label: "Aceita pets" },
+    hasMusicaAoVivo && { emoji: "🎵", label: "Música ao vivo" },
+    hasHappyHour && { emoji: "🍻", label: "Happy Hour" },
+  ].filter(Boolean) as { emoji: string; label: string }[];
 
   const mapsUrl = partner.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partner.address + ", " + partner.city)}`
@@ -300,6 +326,57 @@ const LocalDetail = () => {
             </div>
           </div>
         )}
+
+        {featureGroups.length > 0 && (
+          <div className="rounded-2xl bg-card p-5 card-shadow space-y-4">
+            <h3 className="text-sm font-bold text-foreground">Características</h3>
+
+            {specialSelos.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {specialSelos.map((s) => (
+                  <span
+                    key={s.label}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary ring-1 ring-primary/30"
+                  >
+                    <span aria-hidden>{s.emoji}</span>
+                    <span>{s.label}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {featureGroups.map((group) => (
+                <div key={group.category}>
+                  <p className="mb-2 text-[11px] uppercase tracking-wide font-bold text-muted-foreground">
+                    {group.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.items.map(({ feature }) => {
+                      const Icon = getFeatureIcon(feature.icon);
+                      const isKids = feature.slug === "area-kids";
+                      return (
+                        <span
+                          key={feature.id}
+                          title={feature.description}
+                          className={
+                            isKids
+                              ? "inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm"
+                              : "inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground"
+                          }
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <span>{feature.name}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
 
         {venueProfile.recommendationReasons && venueProfile.recommendationReasons.length > 0 && (
           <div className="rounded-2xl bg-card p-5 card-shadow">
