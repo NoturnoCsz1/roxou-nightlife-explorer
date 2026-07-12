@@ -93,10 +93,10 @@ export function createSuggestionService(
   }
 
   return {
-    async createSuggestion(input) {
+    async createSuggestion<S extends Suggestion>(input: SuggestionInput<S>): Promise<S> {
       const nowIso = now().toISOString();
       const suggestion = {
-        ...input,
+        ...(input as unknown as S),
         id: generateId(),
         confidence: clampConfidence(input.confidence),
         status: input.status ?? "pending",
@@ -104,8 +104,9 @@ export function createSuggestionService(
         updatedAt: nowIso,
         reviewedBy: null,
         reviewedAt: null,
-      } as Suggestion;
-      return (await repository.create(suggestion)) as typeof suggestion;
+      } as S;
+      await repository.create(suggestion);
+      return suggestion;
     },
 
     async approveSuggestion(id, options = {}) {
