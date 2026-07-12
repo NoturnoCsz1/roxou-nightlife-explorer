@@ -5,12 +5,12 @@
  * Não conhece Supabase — pai controla persistência.
  */
 import { useMemo } from "react";
+import { FEATURE_CATALOG } from "../catalog/featureCatalog";
 import {
-  FEATURE_CATALOG,
   groupResolvedFeaturesByCategory,
-  getFeatureIcon,
   type ResolvedVenueFeature,
-} from "..";
+} from "../services/featureGrouping";
+import { getFeatureIcon } from "./featureIconMap";
 import type { VenueFeatureAssignment } from "../types/feature";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
