@@ -4236,6 +4236,7 @@ export type Database = {
           city: string
           created_at: string
           featured_home: boolean
+          features: Json
           formatted_address: string | null
           full_description: string | null
           id: string
@@ -4285,6 +4286,7 @@ export type Database = {
           city?: string
           created_at?: string
           featured_home?: boolean
+          features?: Json
           formatted_address?: string | null
           full_description?: string | null
           id?: string
@@ -4334,6 +4336,7 @@ export type Database = {
           city?: string
           created_at?: string
           featured_home?: boolean
+          features?: Json
           formatted_address?: string | null
           full_description?: string | null
           id?: string
@@ -6529,6 +6532,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      set_partner_features: {
+        Args: { _partner_id: string; _slugs: string[]; _source: string }
+        Returns: Json
+      }
       set_partner_reservation_status: {
         Args: { _reservation_id: string; _status: string }
         Returns: {
@@ -6766,6 +6773,7 @@ export type Database = {
           city: string
           created_at: string
           featured_home: boolean
+          features: Json
           formatted_address: string | null
           full_description: string | null
           id: string
