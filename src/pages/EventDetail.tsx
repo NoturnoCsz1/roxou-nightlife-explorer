@@ -98,9 +98,20 @@ const EventDetail = () => {
   }
 
   if (!event) {
-    // Slug não encontrado: redireciona para /agenda (SPA fallback).
-    // Em servidor próprio, configurar 301 real para /evento/* não encontrado → /agenda.
-    return <Navigate to="/agenda" replace />;
+    // ESTRUTURAL — Onda 25 (correção Soft 404):
+    // Substitui <Navigate to="/agenda"> por NotFoundView (noindex + corpo real).
+    return (
+      <NotFoundView
+        title="Evento não encontrado"
+        message={`O evento "${slug}" não foi encontrado ou foi despublicado. Confira a agenda atualizada de Presidente Prudente.`}
+        seoTitle="Evento não encontrado | ROXOU"
+        suggestions={[
+          { label: "Agenda de eventos", to: "/agenda" },
+          { label: "Descobrir locais", to: "/descobrir" },
+          { label: "Início", to: "/" },
+        ]}
+      />
+    );
   }
 
   const dt = new Date(event.date_time);
