@@ -923,7 +923,16 @@ const SEOLanding = () => {
   }, []);
 
   if (!config) {
-    return <Navigate to="/" replace />;
+    // ESTRUTURAL — Onda 25 (correção Soft 404):
+    // Landing slug inválido antes redirecionava para "/" (Soft 404). Agora
+    // devolve NotFoundView com noindex,follow.
+    return (
+      <NotFoundView
+        title="Página não encontrada"
+        message={`A landing "${landingSlug}" não existe na ROXOU. Explore a agenda completa de Presidente Prudente.`}
+        seoTitle="Página não encontrada | ROXOU"
+      />
+    );
   }
 
   const filtered = events.filter(config.filter);
