@@ -193,6 +193,7 @@ const Index = () => {
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
             <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar eventos, bares, festas..." className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
+          <HomeIntentChips context={homeContext} className="mt-3" />
           <div className="mt-3">
             <DateFilterPills active={activeAnchor} onScrollTo={scrollTo} />
           </div>
