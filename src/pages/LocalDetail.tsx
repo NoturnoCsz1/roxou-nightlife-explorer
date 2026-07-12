@@ -1,12 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Instagram,
+  MessageCircle,
+  ExternalLink,
+  Phone,
+  Globe,
+  Menu as MenuIcon,
+  Map as MapIcon,
+  Star,
+  Ticket,
+  Calendar,
+  type LucideIcon,
+} from "lucide-react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
 import {
   fetchUpcomingEventsByPartner,
   fetchPastEventsByPartner,
@@ -16,6 +29,23 @@ import { fetchActiveVenueBySlug } from "@modules/discovery/venues";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
+import { VenueEnrichmentService } from "@/modules/discovery/venues/enrichment";
+import type {
+  VenueProfile,
+  VenueActionIcon,
+} from "@/modules/discovery/venues/enrichment";
+
+const ACTION_ICONS: Record<VenueActionIcon, LucideIcon> = {
+  calendar: Calendar,
+  whatsapp: MessageCircle,
+  phone: Phone,
+  instagram: Instagram,
+  globe: Globe,
+  menu: MenuIcon,
+  map: MapIcon,
+  star: Star,
+  ticket: Ticket,
+};
 
 interface Partner {
   id: string;
