@@ -327,6 +327,57 @@ const LocalDetail = () => {
           </div>
         )}
 
+        {featureGroups.length > 0 && (
+          <div className="rounded-2xl bg-card p-5 card-shadow space-y-4">
+            <h3 className="text-sm font-bold text-foreground">Características</h3>
+
+            {specialSelos.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {specialSelos.map((s) => (
+                  <span
+                    key={s.label}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary ring-1 ring-primary/30"
+                  >
+                    <span aria-hidden>{s.emoji}</span>
+                    <span>{s.label}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {featureGroups.map((group) => (
+                <div key={group.category}>
+                  <p className="mb-2 text-[11px] uppercase tracking-wide font-bold text-muted-foreground">
+                    {group.label}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.items.map(({ feature }) => {
+                      const Icon = getFeatureIcon(feature.icon);
+                      const isKids = feature.slug === "area-kids";
+                      return (
+                        <span
+                          key={feature.id}
+                          title={feature.description}
+                          className={
+                            isKids
+                              ? "inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm"
+                              : "inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground"
+                          }
+                        >
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <span>{feature.name}</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
         {venueProfile.recommendationReasons && venueProfile.recommendationReasons.length > 0 && (
           <div className="rounded-2xl bg-card p-5 card-shadow">
             <h3 className="text-sm font-bold text-foreground mb-2">Por que recomendamos</h3>
