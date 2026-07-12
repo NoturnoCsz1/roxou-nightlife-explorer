@@ -37,6 +37,7 @@ const Index = () => {
   usePageTracking();
 
   const [activeAnchor, setActiveAnchor] = useState<DateAnchor | null>(null);
+  const homeContext = useMemo(() => getHomeContext(), []);
   const sectionRefs = useRef<Record<DateAnchor, HTMLElement | null>>({ hoje: null, amanha: null, fds: null });
 
   const scrollTo = useCallback((anchor: DateAnchor) => {
