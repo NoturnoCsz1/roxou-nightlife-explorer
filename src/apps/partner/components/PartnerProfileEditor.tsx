@@ -69,9 +69,38 @@ export function PartnerProfileEditor({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Onda 20 — Features (persistidas em partners.features via RPC).
+  const [featuresSlugs, setFeaturesSlugs] = useState<string[]>([]);
+  const [featuresLoaded, setFeaturesLoaded] = useState(false);
+  const [featuresBaseline, setFeaturesBaseline] = useState<string[]>([]);
+  const [featuresSaving, setFeaturesSaving] = useState(false);
+
   useEffect(() => {
     setDraft(initial);
   }, [initial]);
+
+  useEffect(() => {
+    let cancel = false;
+    setFeaturesLoaded(false);
+    venueFeaturesRepository
+      .fetch(profile.id)
+      .then((rows) => {
+        if (cancel) return;
+        const slugs = rows
+          .filter((r) => r.approved !== false)
+          .map((r) => r.featureSlug);
+        setFeaturesSlugs(slugs);
+        setFeaturesBaseline(slugs);
+        setFeaturesLoaded(true);
+      })
+      .catch(() => {
+        if (cancel) return;
+        setFeaturesLoaded(true);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [profile.id]);
 
   const dirty = useMemo(() => {
     return (
