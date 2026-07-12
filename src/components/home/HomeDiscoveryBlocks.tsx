@@ -12,7 +12,9 @@ import { TrendingUp, ChevronRight, BadgeCheck } from "lucide-react";
 import {
   discover,
   listEnabledDiscoveryCategories,
+  getHomeContext,
   type DiscoveryResult,
+  type HomeContext,
 } from "@modules/discovery";
 import SectionHeader from "@/shared/components/SectionHeader";
 import PartnerLogo from "@/components/partners/PartnerLogo";
