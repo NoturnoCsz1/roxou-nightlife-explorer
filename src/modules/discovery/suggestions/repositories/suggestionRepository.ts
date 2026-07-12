@@ -8,8 +8,8 @@
 import type {
   Suggestion,
   SuggestionKind,
-  SuggestionStatus,
 } from "../types/suggestion";
+import type { SuggestionStatus } from "../types/status";
 
 export interface SuggestionListFilter {
   kind?: SuggestionKind;
