@@ -6,6 +6,7 @@ import { searchPublicEvents } from "@modules/discovery/events";
 import { searchPublicVenues } from "@modules/discovery/venues";
 import { expandQuery, fuzzyScore, normalizeText, type SearchResultItem, type SearchResultType } from "./searchUtils";
 import { Highlight, QuickLinkCloud, QUICK_LINKS } from "./Highlight";
+import { listEnabledDiscoveryCategories } from "@modules/discovery";
 
 interface Props {
   open: boolean;
@@ -17,6 +18,23 @@ interface RawNews { id: string; slug: string; title: string; excerpt?: string | 
 interface RawPartner { id: string; slug: string; name: string; type: string; neighborhood?: string | null; logo_url?: string | null; short_description?: string | null; }
 interface RawMatch { id: string; slug: string; home_team: string; away_team: string; league_label?: string | null; match_time: string; home_badge?: string | null; }
 
+/**
+ * Onda 24 — Padronização Discovery.
+ * Entradas de descoberta são geradas exclusivamente a partir de
+ * `listEnabledDiscoveryCategories()`. Nenhuma lista hardcoded aqui.
+ * Rota única e oficial: `/descobrir/{slug}`.
+ */
+const DISCOVERY_ENTRIES: Array<{ id: string; title: string; subtitle: string; href: string; keywords: string[] }> =
+  listEnabledDiscoveryCategories().map((c) => ({
+    id: `disc-${c.slug}`,
+    title: c.title,
+    subtitle: `Descobertas · ${c.description}`,
+    href: `/descobrir/${c.slug}`,
+    keywords: Array.from(
+      new Set([c.slug, c.title.toLowerCase(), ...c.slug.split("-")]),
+    ),
+  }));
+
 const CATEGORY_PAGES: Array<{ id: string; title: string; subtitle: string; href: string; keywords: string[] }> = [
   { id: "cat-pagode", title: "Pagode em Presidente Prudente", subtitle: "Agenda de pagode, samba e rodas", href: "/pagode-em-presidente-prudente", keywords: ["pagode", "samba", "roda"] },
   { id: "cat-funk", title: "Funk em Presidente Prudente", subtitle: "Bailes, MCs e festas funk", href: "/funk-em-presidente-prudente", keywords: ["funk", "baile", "mc"] },
@@ -26,9 +44,7 @@ const CATEGORY_PAGES: Array<{ id: string; title: string; subtitle: string; href:
   { id: "cat-baladas", title: "Baladas em Presidente Prudente", subtitle: "Festas, clubs e baladas", href: "/baladas-em-presidente-prudente", keywords: ["balada", "festa", "club"] },
   { id: "cat-bares", title: "Bares em Presidente Prudente", subtitle: "Bares, pubs e cervejarias", href: "/bares-em-presidente-prudente", keywords: ["bar", "barzinho", "pub", "cervejaria"] },
   { id: "cat-agenda", title: "Agenda completa", subtitle: "Todos os eventos", href: "/agenda", keywords: ["agenda", "eventos", "todos"] },
-  { id: "disc-onde-comer", title: "Onde comer", subtitle: "Descobertas · restaurantes e bares", href: "/descobrir/onde-comer", keywords: ["onde comer", "restaurante", "comer"] },
-  { id: "disc-happy-hour", title: "Happy hour", subtitle: "Descobertas · bares com happy hour", href: "/descobrir/happy-hour", keywords: ["happy hour", "bar"] },
-  { id: "disc-pet-friendly", title: "Pet friendly", subtitle: "Descobertas · locais que aceitam pets", href: "/descobrir/pet-friendly", keywords: ["pet", "pet friendly", "cachorro"] },
+  ...DISCOVERY_ENTRIES,
 ];
 
 let cachedData: {
