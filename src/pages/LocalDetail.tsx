@@ -1,12 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Navigate, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Instagram, MessageCircle, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Instagram,
+  MessageCircle,
+  ExternalLink,
+  Phone,
+  Globe,
+  Menu as MenuIcon,
+  Map as MapIcon,
+  Star,
+  Ticket,
+  Calendar,
+  type LucideIcon,
+} from "lucide-react";
 import EventCard from "@/components/EventCard";
 import type { SupabaseEvent } from "@/components/EventCard";
 import BottomNav from "@/components/BottomNav";
 import DesktopNav from "@/components/DesktopNav";
 import Footer from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
 import {
   fetchUpcomingEventsByPartner,
   fetchPastEventsByPartner,
@@ -16,6 +29,23 @@ import { fetchActiveVenueBySlug } from "@modules/discovery/venues";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import SEO from "@/components/SEO";
 import SpotlightBadge from "@/components/partners/SpotlightBadge";
+import { VenueEnrichmentService } from "@/modules/discovery/venues/enrichment";
+import type {
+  VenueProfile,
+  VenueActionIcon,
+} from "@/modules/discovery/venues/enrichment";
+
+const ACTION_ICONS: Record<VenueActionIcon, LucideIcon> = {
+  calendar: Calendar,
+  whatsapp: MessageCircle,
+  phone: Phone,
+  instagram: Instagram,
+  globe: Globe,
+  menu: MenuIcon,
+  map: MapIcon,
+  star: Star,
+  ticket: Ticket,
+};
 
 interface Partner {
   id: string;
@@ -79,6 +109,42 @@ const LocalDetail = () => {
     // Slug não encontrado: redireciona para /agenda (SPA fallback).
     return <Navigate to="/agenda" replace />;
   }
+
+  const venueProfile: VenueProfile = useMemo(() => {
+    const p = partner as (Partner & Record<string, any>) | null;
+    if (!p) return { venueId: "", slug: "" };
+    return {
+      venueId: p.id,
+      slug: p.slug,
+      contact: {
+        whatsapp: p.whatsapp ?? null,
+        telefone: (p as any).phone ?? (p as any).telefone ?? null,
+        instagram: p.instagram ?? null,
+        website: (p as any).website ?? null,
+      },
+      location: {
+        address: p.address ?? null,
+        neighborhood: p.neighborhood ?? null,
+        city: p.city ?? null,
+        latitude: (p as any).latitude ?? null,
+        longitude: (p as any).longitude ?? null,
+      },
+      aiSummary: p.aura_partner_summary ?? null,
+    };
+  }, [partner]);
+
+  const pageUrl =
+    typeof window !== "undefined"
+      ? window.location.href
+      : `https://roxou.com.br/local/${partner?.slug ?? ""}`;
+
+  const quickActions = useMemo(
+    () =>
+      VenueEnrichmentService.buildVenueActions(venueProfile, { pageUrl }).filter(
+        (a) => a.enabled,
+      ),
+    [venueProfile, pageUrl],
+  );
 
   const mapsUrl = partner.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partner.address + ", " + partner.city)}`
@@ -209,6 +275,47 @@ const LocalDetail = () => {
             <p className="text-sm text-muted-foreground whitespace-pre-line">{partner.full_description}</p>
           </div>
         )}
+
+        {quickActions.length > 0 && (
+          <div className="rounded-2xl bg-card p-5 card-shadow">
+            <h3 className="text-sm font-bold text-foreground mb-3">Ações rápidas</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {quickActions.map((a) => {
+                const Icon = ACTION_ICONS[a.icon];
+                const isTel = a.url?.startsWith("tel:");
+                return (
+                  <a
+                    key={a.id}
+                    href={a.url as string}
+                    target={isTel ? undefined : "_blank"}
+                    rel={isTel ? undefined : "noopener noreferrer"}
+                    data-lead-channel={a.trackingChannel}
+                    className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 text-xs font-bold text-foreground transition-all hover:bg-secondary/80"
+                  >
+                    <Icon className="h-4 w-4 text-primary shrink-0" />
+                    <span className="truncate">{a.label}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {venueProfile.recommendationReasons && venueProfile.recommendationReasons.length > 0 && (
+          <div className="rounded-2xl bg-card p-5 card-shadow">
+            <h3 className="text-sm font-bold text-foreground mb-2">Por que recomendamos</h3>
+            <ul className="space-y-1.5">
+              {venueProfile.recommendationReasons.map((r, i) => (
+                <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="text-primary">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+
 
         {upcomingEvents.length > 0 && (
           <div>
