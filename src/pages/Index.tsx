@@ -15,6 +15,7 @@ import Footer from "@/components/Footer";
 import SectionHeader from "@/shared/components/SectionHeader";
 
 import PopularVenues from "@/components/PopularVenues";
+import HomeDiscoveryBlocks from "@/components/home/HomeDiscoveryBlocks";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchUpcomingPublishedEventsForHome } from "@modules/discovery/events";
 import { fetchPartnerSlugsByIds } from "@modules/discovery/venues";
@@ -318,6 +319,8 @@ const Index = () => {
                 </div>
               </section>
             )}
+
+            <HomeDiscoveryBlocks />
 
             <section>
               <PopularVenues />
