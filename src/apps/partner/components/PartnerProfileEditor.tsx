@@ -23,6 +23,11 @@ import PartnerImageUploader from "./PartnerImageUploader";
 import PartnerSocialLinksEditor from "./PartnerSocialLinksEditor";
 import PartnerOpeningHoursEditor from "./PartnerOpeningHoursEditor";
 import PartnerProfilePreview from "./PartnerProfilePreview";
+import {
+  VenueFeaturesEditor,
+  venueFeaturesRepository,
+  parseVenueFeaturesJson,
+} from "@/modules/discovery/features";
 
 interface Props {
   profile: PartnerProfileRow;
