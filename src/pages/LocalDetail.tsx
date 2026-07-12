@@ -113,8 +113,24 @@ const LocalDetail = () => {
   }
 
   if (!partner) {
-    // Slug não encontrado: redireciona para /agenda (SPA fallback).
-    return <Navigate to="/agenda" replace />;
+    // ESTRUTURAL — Onda 25 (correção Soft 404):
+    // Antes redirecionávamos para /agenda com <Navigate>. Isso servia HTTP 200
+    // no path /local/:slug com conteúdo de outra página → Google classifica
+    // como Soft 404. Agora renderizamos noindex + corpo real de "não
+    // encontrado", que o Google descarta corretamente.
+    return (
+      <NotFoundView
+        title="Local não encontrado"
+        message={`O estabelecimento "${slug}" não foi encontrado ou não está mais ativo na ROXOU. Explore outros locais na agenda de Presidente Prudente.`}
+        seoTitle="Local não encontrado | ROXOU"
+        suggestions={[
+          { label: "Todos os locais", to: "/parceiros" },
+          { label: "Descobrir", to: "/descobrir" },
+          { label: "Agenda", to: "/agenda" },
+          { label: "Início", to: "/" },
+        ]}
+      />
+    );
   }
 
   const venueProfile: VenueProfile = useMemo(() => {
