@@ -34,6 +34,12 @@ import type {
   VenueProfile,
   VenueActionIcon,
 } from "@/modules/discovery/venues/enrichment";
+import {
+  resolveVenueFeatures,
+  groupResolvedFeaturesByCategory,
+  hasFeatureSlug,
+  getFeatureIcon,
+} from "@/modules/discovery/features";
 
 const ACTION_ICONS: Record<VenueActionIcon, LucideIcon> = {
   calendar: Calendar,
@@ -145,6 +151,26 @@ const LocalDetail = () => {
       ),
     [venueProfile, pageUrl],
   );
+
+  // Feature Engine — Onda 19. Consome apenas VenueProfile.features.
+  const resolvedFeatures = useMemo(
+    () => resolveVenueFeatures(venueProfile.features),
+    [venueProfile.features],
+  );
+  const featureGroups = useMemo(
+    () => groupResolvedFeaturesByCategory(resolvedFeatures),
+    [resolvedFeatures],
+  );
+  const hasAreaKids = hasFeatureSlug(resolvedFeatures, "area-kids");
+  const hasPetFriendly = hasFeatureSlug(resolvedFeatures, "pet-friendly");
+  const hasMusicaAoVivo = hasFeatureSlug(resolvedFeatures, "musica-ao-vivo");
+  const hasHappyHour = hasFeatureSlug(resolvedFeatures, "happy-hour");
+  const specialSelos = [
+    hasAreaKids && { emoji: "👨‍👩‍👧", label: "Ideal para famílias" },
+    hasPetFriendly && { emoji: "🐾", label: "Aceita pets" },
+    hasMusicaAoVivo && { emoji: "🎵", label: "Música ao vivo" },
+    hasHappyHour && { emoji: "🍻", label: "Happy Hour" },
+  ].filter(Boolean) as { emoji: string; label: string }[];
 
   const mapsUrl = partner.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partner.address + ", " + partner.city)}`
