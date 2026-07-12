@@ -57,6 +57,13 @@ function rowToDraft(row: PartnerProfileRow): Draft {
 const SHORT_LIMIT = 160;
 const FULL_LIMIT = 2000;
 
+function featuresSlugsEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort();
+  const sb = [...b].sort();
+  return sa.every((v, i) => v === sb[i]);
+}
+
 export function PartnerProfileEditor({
   profile,
   canSave,
