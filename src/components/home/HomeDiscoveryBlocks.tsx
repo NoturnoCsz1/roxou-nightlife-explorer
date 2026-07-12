@@ -125,8 +125,8 @@ const HomeDiscoveryBlocks = () => {
               >
                 <div className="flex items-center gap-3">
                   <PartnerLogo
-                    logoUrl={r.venue.logoUrl}
-                    name={r.venue.name}
+                    src={r.venue.logoUrl}
+                    alt={r.venue.name}
                     size="md"
                   />
                   <div className="min-w-0 flex-1">
