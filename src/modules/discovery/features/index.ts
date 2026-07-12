@@ -21,6 +21,17 @@ export {
   createFeatureService,
   featureService,
   getFeatureCatalog,
+  resolveVenueFeatures,
+  groupResolvedFeaturesByCategory,
+  hasFeatureSlug,
+  buildFeatureSeo,
   type FeatureService,
   type FeatureServiceDeps,
-} from "./services/featureService";
+  type ResolvedVenueFeature,
+  type FeatureGroup,
+  type FeatureSeoInput,
+  type FeatureSeoOutput,
+} from "./services";
+
+export { getFeatureIcon } from "./ui/featureIconMap";
+
