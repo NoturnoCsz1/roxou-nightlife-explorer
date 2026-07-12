@@ -53,23 +53,48 @@ function toChip(slug: string, title: string): CategoryChip {
   return { slug, title, emoji: CATEGORY_EMOJI[slug] ?? "✨" };
 }
 
-const HomeDiscoveryBlocks = () => {
+interface HomeDiscoveryBlocksProps {
+  /** Contexto opcional; se ausente, é computado localmente. */
+  context?: HomeContext;
+}
+
+/** Reordena chips colocando slugs preferidos do contexto no topo. */
+function prioritize<T extends { slug: string }>(chips: T[], preferred: string[]): T[] {
+  if (!preferred.length) return chips;
+  const rank = new Map(preferred.map((s, i) => [s, i]));
+  return [...chips].sort((a, b) => {
+    const ra = rank.get(a.slug) ?? Number.POSITIVE_INFINITY;
+    const rb = rank.get(b.slug) ?? Number.POSITIVE_INFINITY;
+    return ra - rb;
+  });
+}
+
+const HomeDiscoveryBlocks = ({ context }: HomeDiscoveryBlocksProps = {}) => {
   const navigate = useNavigate();
+
+  const activeContext = useMemo(() => context ?? getHomeContext(), [context]);
+  const preferred = activeContext.preferredCategorySlugs;
 
   const categories = useMemo(() => listEnabledDiscoveryCategories(), []);
   const interestChips: CategoryChip[] = useMemo(
     () =>
-      categories
-        .filter((c) => INTEREST_SLUGS.has(c.slug))
-        .map((c) => toChip(c.slug, c.title)),
-    [categories],
+      prioritize(
+        categories
+          .filter((c) => INTEREST_SLUGS.has(c.slug))
+          .map((c) => toChip(c.slug, c.title)),
+        preferred,
+      ),
+    [categories, preferred],
   );
   const popularCategoryChips: CategoryChip[] = useMemo(
     () =>
-      categories
-        .filter((c) => !INTEREST_SLUGS.has(c.slug))
-        .map((c) => toChip(c.slug, c.title)),
-    [categories],
+      prioritize(
+        categories
+          .filter((c) => !INTEREST_SLUGS.has(c.slug))
+          .map((c) => toChip(c.slug, c.title)),
+        preferred,
+      ),
+    [categories, preferred],
   );
 
   // Em Alta — venues com eventos futuros, ordenados pelo motor.
@@ -80,6 +105,8 @@ const HomeDiscoveryBlocks = () => {
   });
 
   const trending = trendingQuery.data?.venues ?? [];
+  // Reutiliza o mesmo resultado para o bloco "Tendências da Cidade".
+  const cityTrends = trending.slice(0, 4);
 
   if (interestChips.length === 0 && popularCategoryChips.length === 0) {
     return null;
