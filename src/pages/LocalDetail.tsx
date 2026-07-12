@@ -110,6 +110,42 @@ const LocalDetail = () => {
     return <Navigate to="/agenda" replace />;
   }
 
+  const venueProfile: VenueProfile = useMemo(() => {
+    const p = partner as (Partner & Record<string, any>) | null;
+    if (!p) return { venueId: "", slug: "" };
+    return {
+      venueId: p.id,
+      slug: p.slug,
+      contact: {
+        whatsapp: p.whatsapp ?? null,
+        telefone: (p as any).phone ?? (p as any).telefone ?? null,
+        instagram: p.instagram ?? null,
+        website: (p as any).website ?? null,
+      },
+      location: {
+        address: p.address ?? null,
+        neighborhood: p.neighborhood ?? null,
+        city: p.city ?? null,
+        latitude: (p as any).latitude ?? null,
+        longitude: (p as any).longitude ?? null,
+      },
+      aiSummary: p.aura_partner_summary ?? null,
+    };
+  }, [partner]);
+
+  const pageUrl =
+    typeof window !== "undefined"
+      ? window.location.href
+      : `https://roxou.com.br/local/${partner?.slug ?? ""}`;
+
+  const quickActions = useMemo(
+    () =>
+      VenueEnrichmentService.buildVenueActions(venueProfile, { pageUrl }).filter(
+        (a) => a.enabled,
+      ),
+    [venueProfile, pageUrl],
+  );
+
   const mapsUrl = partner.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(partner.address + ", " + partner.city)}`
     : null;
