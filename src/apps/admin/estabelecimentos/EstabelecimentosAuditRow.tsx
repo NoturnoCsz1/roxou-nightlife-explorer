@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle, Ban, CheckCircle2, Edit2, ExternalLink, Eye, Gauge,
-  Instagram as InstagramIcon, Loader2, Map as MapIcon, MapPin, RefreshCw, ShieldCheck, Sparkles, Star, Wand2,
+  Instagram as InstagramIcon, Loader2, Map as MapIcon, MapPin, RefreshCw, ShieldCheck, Sparkles, Star, Tag, Wand2,
 } from "lucide-react";
+import { EstabelecimentosFeaturesDialog } from "./EstabelecimentosFeaturesDialog";
 import type { ApplyKey, Establishment, ManualCoordsState, Metrics, SingleAI, Status, SuggestAI } from "./types";
 import { FLAG_LABELS, STATUS_META } from "./types";
 import { computeFlags, computeScore, scoreTone } from "./scoring";
@@ -39,6 +41,7 @@ interface Props {
 
 export function EstabelecimentosAuditRow(props: Props) {
   const { e, metrics: m } = props;
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const flags = computeFlags(e);
   const cur = (e.status as Status) || (e.active ? "ativo" : "bloqueado");
   const meta = STATUS_META[cur];
@@ -172,6 +175,9 @@ export function EstabelecimentosAuditRow(props: Props) {
         >
           <MapPin className="h-3 w-3" /> Coordenadas manuais
         </button>
+        <button onClick={() => setFeaturesOpen(true)} className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary">
+          <Tag className="h-3 w-3" /> Características
+        </button>
         <button onClick={props.onReloadOne} className="inline-flex items-center gap-1 rounded-lg bg-secondary/60 px-2.5 py-1 text-[10px] font-semibold hover:bg-secondary">
           <RefreshCw className="h-3 w-3" /> Recarregar dados
         </button>
@@ -214,6 +220,14 @@ export function EstabelecimentosAuditRow(props: Props) {
           toggle={props.onToggleApplySel}
           onClose={props.onCloseSuggest}
           onApply={props.onApply}
+        />
+      )}
+
+      {featuresOpen && (
+        <EstabelecimentosFeaturesDialog
+          partnerId={e.id}
+          partnerName={e.name}
+          onClose={() => setFeaturesOpen(false)}
         />
       )}
     </div>

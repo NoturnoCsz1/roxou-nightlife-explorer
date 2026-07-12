@@ -34,4 +34,10 @@ export {
 } from "./services";
 
 export { getFeatureIcon } from "./ui/featureIconMap";
+export { default as VenueFeaturesEditor } from "./ui/VenueFeaturesEditor";
+export {
+  venueFeaturesRepository,
+  parseVenueFeaturesJson,
+  type VenueFeaturesRepository,
+} from "./repositories/venueFeaturesRepository";
 

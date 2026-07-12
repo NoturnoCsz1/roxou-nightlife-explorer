@@ -39,6 +39,7 @@ import {
   groupResolvedFeaturesByCategory,
   hasFeatureSlug,
   getFeatureIcon,
+  parseVenueFeaturesJson,
 } from "@/modules/discovery/features";
 
 const ACTION_ICONS: Record<VenueActionIcon, LucideIcon> = {
@@ -136,6 +137,7 @@ const LocalDetail = () => {
         longitude: (p as any).longitude ?? null,
       },
       aiSummary: p.aura_partner_summary ?? null,
+      features: parseVenueFeaturesJson((p as any).features),
     };
   }, [partner]);
 

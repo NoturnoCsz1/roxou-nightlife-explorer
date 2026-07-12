@@ -23,6 +23,11 @@ import PartnerImageUploader from "./PartnerImageUploader";
 import PartnerSocialLinksEditor from "./PartnerSocialLinksEditor";
 import PartnerOpeningHoursEditor from "./PartnerOpeningHoursEditor";
 import PartnerProfilePreview from "./PartnerProfilePreview";
+import {
+  VenueFeaturesEditor,
+  venueFeaturesRepository,
+  parseVenueFeaturesJson,
+} from "@/modules/discovery/features";
 
 interface Props {
   profile: PartnerProfileRow;
@@ -52,6 +57,13 @@ function rowToDraft(row: PartnerProfileRow): Draft {
 const SHORT_LIMIT = 160;
 const FULL_LIMIT = 2000;
 
+function featuresSlugsEqual(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const sa = [...a].sort();
+  const sb = [...b].sort();
+  return sa.every((v, i) => v === sb[i]);
+}
+
 export function PartnerProfileEditor({
   profile,
   canSave,
@@ -64,9 +76,38 @@ export function PartnerProfileEditor({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Onda 20 — Features (persistidas em partners.features via RPC).
+  const [featuresSlugs, setFeaturesSlugs] = useState<string[]>([]);
+  const [featuresLoaded, setFeaturesLoaded] = useState(false);
+  const [featuresBaseline, setFeaturesBaseline] = useState<string[]>([]);
+  const [featuresSaving, setFeaturesSaving] = useState(false);
+
   useEffect(() => {
     setDraft(initial);
   }, [initial]);
+
+  useEffect(() => {
+    let cancel = false;
+    setFeaturesLoaded(false);
+    venueFeaturesRepository
+      .fetch(profile.id)
+      .then((rows) => {
+        if (cancel) return;
+        const slugs = rows
+          .filter((r) => r.approved !== false)
+          .map((r) => r.featureSlug);
+        setFeaturesSlugs(slugs);
+        setFeaturesBaseline(slugs);
+        setFeaturesLoaded(true);
+      })
+      .catch(() => {
+        if (cancel) return;
+        setFeaturesLoaded(true);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [profile.id]);
 
   const dirty = useMemo(() => {
     return (
@@ -215,9 +256,67 @@ export function PartnerProfileEditor({
         />
       </section>
 
+      <section className="space-y-4 rounded-lg border border-border p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">Características do estabelecimento</h2>
+            <p className="text-[11px] text-muted-foreground">
+              Marque tudo que se aplica. Aparece na sua página pública.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={
+              disabled ||
+              !featuresLoaded ||
+              featuresSaving ||
+              featuresSlugsEqual(featuresSlugs, featuresBaseline)
+            }
+            onClick={async () => {
+              setFeaturesSaving(true);
+              try {
+                const saved = await venueFeaturesRepository.save(
+                  profile.id,
+                  featuresSlugs,
+                  "manual_partner",
+                );
+                const slugs = parseVenueFeaturesJson(saved).map((r) => r.featureSlug);
+                setFeaturesBaseline(slugs);
+                setFeaturesSlugs(slugs);
+                toast.success("Características salvas.");
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : "Falha ao salvar características.";
+                toast.error(msg);
+              } finally {
+                setFeaturesSaving(false);
+              }
+            }}
+          >
+            {featuresSaving ? (
+              <>
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Salvando…
+              </>
+            ) : (
+              "Salvar características"
+            )}
+          </Button>
+        </div>
+        {featuresLoaded ? (
+          <VenueFeaturesEditor
+            selectedSlugs={featuresSlugs}
+            disabled={disabled || featuresSaving}
+            onChange={setFeaturesSlugs}
+          />
+        ) : (
+          <div className="text-xs text-muted-foreground">Carregando características…</div>
+        )}
+      </section>
+
       <section className="space-y-2">
         <PartnerOpeningHoursEditor />
       </section>
+
 
       <section>
         <PartnerProfilePreview base={profile} draft={draft} />
