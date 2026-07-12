@@ -18,7 +18,6 @@ interface RawNews { id: string; slug: string; title: string; excerpt?: string | 
 interface RawPartner { id: string; slug: string; name: string; type: string; neighborhood?: string | null; logo_url?: string | null; short_description?: string | null; }
 interface RawMatch { id: string; slug: string; home_team: string; away_team: string; league_label?: string | null; match_time: string; home_badge?: string | null; }
 
-const CATEGORY_PAGES: Array<{ id: string; title: string; subtitle: string; href: string; keywords: string[] }> = [
 /**
  * Onda 24 — Padronização Discovery.
  * Entradas de descoberta são geradas exclusivamente a partir de
