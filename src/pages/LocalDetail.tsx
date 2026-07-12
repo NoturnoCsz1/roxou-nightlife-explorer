@@ -276,6 +276,47 @@ const LocalDetail = () => {
           </div>
         )}
 
+        {quickActions.length > 0 && (
+          <div className="rounded-2xl bg-card p-5 card-shadow">
+            <h3 className="text-sm font-bold text-foreground mb-3">Ações rápidas</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {quickActions.map((a) => {
+                const Icon = ACTION_ICONS[a.icon];
+                const isTel = a.url?.startsWith("tel:");
+                return (
+                  <a
+                    key={a.id}
+                    href={a.url as string}
+                    target={isTel ? undefined : "_blank"}
+                    rel={isTel ? undefined : "noopener noreferrer"}
+                    data-lead-channel={a.trackingChannel}
+                    className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 text-xs font-bold text-foreground transition-all hover:bg-secondary/80"
+                  >
+                    <Icon className="h-4 w-4 text-primary shrink-0" />
+                    <span className="truncate">{a.label}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {venueProfile.recommendationReasons && venueProfile.recommendationReasons.length > 0 && (
+          <div className="rounded-2xl bg-card p-5 card-shadow">
+            <h3 className="text-sm font-bold text-foreground mb-2">Por que recomendamos</h3>
+            <ul className="space-y-1.5">
+              {venueProfile.recommendationReasons.map((r, i) => (
+                <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="text-primary">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+
+
         {upcomingEvents.length > 0 && (
           <div>
             <h3 className="text-sm font-bold text-foreground mb-3">Próximos Eventos</h3>
