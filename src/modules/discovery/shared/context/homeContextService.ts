@@ -127,9 +127,10 @@ export function getHomeContext(now: Date = new Date()): HomeContext {
     return true;
   });
 
+  const validFeatureSlugs = new Set(FEATURE_CATALOG.map((f) => f.slug));
   const featureSeen = new Set<string>();
   const preferredFeatureSlugs = BUCKET_FEATURES[bucket]
-    .filter((slug) => hasFeatureSlug(slug))
+    .filter((slug) => validFeatureSlugs.has(slug))
     .filter((slug) => {
       if (featureSeen.has(slug)) return false;
       featureSeen.add(slug);
