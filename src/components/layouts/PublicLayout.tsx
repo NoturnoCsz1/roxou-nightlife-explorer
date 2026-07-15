@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck, Search, Trophy } from "lucide-react";
+import { Home, Car, CalendarDays, User, LogIn, LogOut, Bot, PiggyBank, Twitter, Instagram, MapPin, Shield, BadgeCheck, Search, Compass } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
@@ -8,10 +8,11 @@ import AuraAvatar from "@/components/v3/AuraAvatar";
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
   { to: "/agenda", icon: CalendarDays, label: "Agenda" },
-  { to: "/jogos", icon: Trophy, label: "Jogos" },
+  { to: "/descobrir", icon: Compass, label: "Descobrir" },
   { to: "/transportes", icon: Car, label: "Transportes" },
   { to: "/perfil", icon: User, label: "Perfil" },
 ];
+
 
 const DESKTOP_EXTRA_ITEMS = [
   { to: "/ia", icon: Bot, label: "Aura" },
