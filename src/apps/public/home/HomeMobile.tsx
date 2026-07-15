@@ -139,12 +139,8 @@ export function HomeMobile(props: HomeMobileProps) {
         </HomeSectionBoundary>
       )}
 
-      {/* 6 · DESCobrir MAIS / CATEGORIAS (DiscoverGrid → /descobrir?cat=) */}
-      <HomeSectionBoundary name="Discover grid" silent>
-        <div className="pt-4">
-          <DiscoverGrid />
-        </div>
-      </HomeSectionBoundary>
+      {/* 6 · (removido) Bloco legado "Descobrir mais" — unificado dentro de Descubra na Roxou */}
+
 
       {/* 7 · DESTAQUE DA SEMANA */}
       <HomeSectionBoundary name="Destaque da semana" silent>
