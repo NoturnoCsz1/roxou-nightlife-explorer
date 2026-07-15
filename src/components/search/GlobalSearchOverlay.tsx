@@ -58,22 +58,22 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 async function loadData() {
   if (cachedData && Date.now() - cachedData.fetchedAt < CACHE_TTL) return cachedData;
-  const nowIso = new Date().toISOString();
-  const [evData, newsRes, partnersData, matchesRes] = await Promise.all([
+  // Jogos desativado publicamente — não consulta `sports_matches`.
+  const [evData, newsRes, partnersData] = await Promise.all([
     searchPublicEvents(500),
     supabase.from("roxou_news").select("id,slug,title,excerpt,cover_image_url,category,published_at").eq("status", "published").order("published_at", { ascending: false }).limit(200),
     searchPublicVenues(300),
-    supabase.from("sports_matches").select("id,slug,home_team,away_team,league_label,match_time,home_badge").gte("match_time", nowIso).order("match_time", { ascending: true }).limit(80),
   ]);
   cachedData = {
     events: (evData || []) as unknown as RawEvent[],
     news: (newsRes.data || []) as RawNews[],
     partners: (partnersData || []) as unknown as RawPartner[],
-    matches: (matchesRes.data || []) as RawMatch[],
+    matches: [],
     fetchedAt: Date.now(),
   };
   return cachedData;
 }
+
 
 function logSearch(payload: { query: string; clicked_result?: string; result_type?: string; results_count: number; time_to_click_ms?: number }) {
   try {

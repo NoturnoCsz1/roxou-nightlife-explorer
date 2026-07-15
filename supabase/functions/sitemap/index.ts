@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     .eq("active", true)
     .order("name");
 
-  // Static pages (V3 — raiz)
+  // Static pages (V3 — raiz). Jogos desativado publicamente: nenhuma URL esportiva.
   const staticPages = [
     { loc: "/", priority: "1.0", changefreq: "daily" },
     { loc: "/agenda", priority: "0.9", changefreq: "daily" },
@@ -44,24 +44,10 @@ Deno.serve(async (req) => {
     { loc: "/transporte", priority: "0.7", changefreq: "weekly" },
     { loc: "/sobre", priority: "0.5", changefreq: "monthly" },
     { loc: "/contato", priority: "0.5", changefreq: "monthly" },
-    { loc: "/jogos", priority: "0.95", changefreq: "hourly" },
-    { loc: "/resultados", priority: "0.7", changefreq: "daily" },
-    { loc: "/tabela/brasileirao", priority: "0.7", changefreq: "daily" },
-    { loc: "/tabela/libertadores", priority: "0.7", changefreq: "daily" },
-    { loc: "/tabela/champions", priority: "0.7", changefreq: "daily" },
     { loc: "/noticias", priority: "0.8", changefreq: "daily" },
   ];
 
-  // Sports matches (próximos 14 dias + últimos 3) — alta rotatividade SEO
-  const fromIso = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
-  const toIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: matches } = await supabase
-    .from("sports_matches")
-    .select("slug, updated_at, match_time")
-    .gte("match_time", fromIso)
-    .lte("match_time", toIso)
-    .order("match_time", { ascending: true })
-    .limit(500);
+
 
 
   // Fetch published Roxou noticias
@@ -188,17 +174,9 @@ Deno.serve(async (req) => {
 `;
   }
 
-  // Sports match pages (alta rotatividade — Discover/SEO)
-  for (const m of matches || []) {
-    const lastmod = (m.updated_at || today).split("T")[0];
-    xml += `  <url>
-    <loc>${BASE_URL}/jogo/${m.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.85</priority>
-  </url>
-`;
-  }
+  // Sports match pages — módulo desativado publicamente. Não emitir URLs esportivas.
+
+
 
   // Public reservation pages (one per active partner with reservations enabled)
   for (const rp of (reservationPartners || []) as Array<{ partners: { slug: string; active: boolean } | null }>) {

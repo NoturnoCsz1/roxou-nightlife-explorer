@@ -235,7 +235,7 @@ export default function JogoDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <SEO title={title} description={description} canonical={canonical} jsonLd={jsonLd} />
+      <SEO title={title} description={description} canonical={canonical} jsonLd={jsonLd} noindex />
 
       <div className={`relative overflow-hidden border-b border-border/40 ${isCopa ? "bg-gradient-to-br from-emerald-950 via-background to-yellow-900/30" : "bg-gradient-to-br from-primary/20 via-background to-accent/10"}`}>
         <div className="mx-auto max-w-3xl px-4 py-8 md:py-12">
