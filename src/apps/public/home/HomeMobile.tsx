@@ -1,6 +1,7 @@
 // ─── HomeMobile — Layout mobile (lg:hidden) refatorado ───
 // Ordem: Hero → Busca → Timeline Hoje → Destaques (Expo) → Descubra na Roxou
-//        → Descobrir Mais → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
+//        → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
+
 
 import { Link } from "react-router-dom";
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
