@@ -1,6 +1,7 @@
 // ─── HomeMobile — Layout mobile (lg:hidden) refatorado ───
 // Ordem: Hero → Busca → Timeline Hoje → Destaques (Expo) → Descubra na Roxou
-//        → Descobrir Mais → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
+//        → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
+
 
 import { Link } from "react-router-dom";
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
@@ -13,7 +14,7 @@ import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
 import MostViewedNews from "@/components/v3/home/MostViewedNews";
-import { DiscoverGrid } from "@/components/v3/home/DiscoverGrid";
+
 import HighlightsCarousel, { type HighlightSlide } from "@/components/v3/home/HighlightsCarousel";
 import ExpoHighlightCard from "@/components/v3/home/ExpoHighlightCard";
 
@@ -138,12 +139,8 @@ export function HomeMobile(props: HomeMobileProps) {
         </HomeSectionBoundary>
       )}
 
-      {/* 6 · DESCobrir MAIS / CATEGORIAS (DiscoverGrid → /descobrir?cat=) */}
-      <HomeSectionBoundary name="Discover grid" silent>
-        <div className="pt-4">
-          <DiscoverGrid />
-        </div>
-      </HomeSectionBoundary>
+      {/* 6 · (removido) Bloco legado "Descobrir mais" — unificado dentro de Descubra na Roxou */}
+
 
       {/* 7 · DESTAQUE DA SEMANA */}
       <HomeSectionBoundary name="Destaque da semana" silent>

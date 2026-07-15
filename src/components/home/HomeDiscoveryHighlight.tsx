@@ -1,12 +1,20 @@
 /**
- * DESCUBRA NA ROXOU — bloco de destaque do Discovery na Home.
+ * DESCUBRA NA ROXOU — bloco único de descoberta na Home.
  *
- * Substitui o antigo bloco "Jogos ao vivo". Consome exclusivamente o
- * catálogo oficial `listEnabledDiscoveryCategories()` do Discovery Engine.
- * Cada atalho leva para `/descobrir/{slug}`. Nenhuma lista hardcoded.
+ * Fonte de verdade: `listEnabledDiscoveryCategories()` do Discovery Engine.
+ * Exibe até 6 categorias estratégicas + botão "Ver todas" (/descobrir)
+ * + atalhos complementares (Agenda, Ingressos, Notícias, Transportes)
+ * na mesma seção — evita duplicação com o antigo bloco "Descobrir mais".
  */
 import { Link } from "react-router-dom";
-import { ChevronRight, Compass } from "lucide-react";
+import {
+  ChevronRight,
+  Compass,
+  CalendarDays,
+  Ticket,
+  Newspaper,
+  Bus,
+} from "lucide-react";
 import { listEnabledDiscoveryCategories } from "@modules/discovery";
 
 const EMOJI: Record<string, string> = {
@@ -22,12 +30,21 @@ const EMOJI: Record<string, string> = {
   cafeterias: "☕",
 };
 
+const SHORTCUTS = [
+  { to: "/agenda", label: "Agenda", Icon: CalendarDays },
+  { to: "/agenda", label: "Ingressos", Icon: Ticket },
+  { to: "/noticias", label: "Notícias", Icon: Newspaper },
+  { to: "/transportes", label: "Transportes", Icon: Bus },
+];
+
 export default function HomeDiscoveryHighlight() {
-  const categories = listEnabledDiscoveryCategories();
-  if (categories.length === 0) return null;
+  const all = listEnabledDiscoveryCategories();
+  if (all.length === 0) return null;
+  const featured = all.slice(0, 6);
+  const hasMore = all.length > featured.length;
 
   return (
-    <section aria-label="Descubra na Roxou" className="px-4 pt-5 pb-1">
+    <section aria-label="Descubra na Roxou" className="px-4 pt-5 pb-2">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center shrink-0">
@@ -38,20 +55,15 @@ export default function HomeDiscoveryHighlight() {
               Descubra na Roxou
             </h2>
             <p className="text-[10px] text-muted-foreground -mt-0.5 truncate">
-              Lugares para comer, beber e aproveitar a cidade.
+              Encontre lugares, experiências e o que fazer na cidade.
             </p>
           </div>
         </div>
-        <Link
-          to="/descobrir"
-          className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5 shrink-0"
-        >
-          Ver tudo <ChevronRight className="w-3 h-3" />
-        </Link>
       </div>
 
+      {/* Categorias Discovery — até 6 */}
       <div className="grid grid-cols-2 gap-2">
-        {categories.map((c) => (
+        {featured.map((c) => (
           <Link
             key={c.slug}
             to={`/descobrir/${c.slug}`}
@@ -66,6 +78,35 @@ export default function HomeDiscoveryHighlight() {
               </span>
             </span>
             <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          </Link>
+        ))}
+      </div>
+
+      {/* Ver todas as categorias — hub /descobrir */}
+      {hasMore && (
+        <div className="mt-2">
+          <Link
+            to="/descobrir"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-primary/30 bg-primary/5 py-2 text-[12px] font-bold text-primary hover:bg-primary/10 transition-colors"
+          >
+            Ver todas as categorias
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* Atalhos complementares — compactos, visualmente discretos */}
+      <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {SHORTCUTS.map(({ to, label, Icon }) => (
+          <Link
+            key={label}
+            to={to}
+            className="flex flex-col items-center gap-1 rounded-xl border border-border/30 bg-card/40 py-2 px-1 hover:border-primary/40 hover:bg-primary/5 transition-colors"
+          >
+            <Icon className="w-4 h-4 text-muted-foreground" />
+            <span className="text-[10px] font-semibold text-foreground/80 truncate max-w-full">
+              {label}
+            </span>
           </Link>
         ))}
       </div>
