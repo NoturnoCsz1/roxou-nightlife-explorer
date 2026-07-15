@@ -55,11 +55,11 @@ export default function PublicLayout() {
           <nav className="hidden lg:flex items-center gap-0.5 flex-1">
             {[
               { to: "/agenda",    label: "Agenda"    },
-              { to: "/jogos",     label: "Jogos"     },
-              { to: "/copa-do-mundo-2026", label: "Copa 2026" },
+              { to: "/descobrir", label: "Descobrir" },
               { to: "/noticias",  label: "Notícias"  },
               { to: "/parceiros", label: "Parceiros" },
             ].map(({ to, label }) => {
+
               const isActive = pathname === to || (to !== "/" && pathname.startsWith(to));
               return (
                 <Link
