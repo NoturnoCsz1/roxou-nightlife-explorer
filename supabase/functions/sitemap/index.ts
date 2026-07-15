@@ -174,17 +174,9 @@ Deno.serve(async (req) => {
 `;
   }
 
-  // Sports match pages (alta rotatividade — Discover/SEO)
-  for (const m of matches || []) {
-    const lastmod = (m.updated_at || today).split("T")[0];
-    xml += `  <url>
-    <loc>${BASE_URL}/jogo/${m.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>hourly</changefreq>
-    <priority>0.85</priority>
-  </url>
-`;
-  }
+  // Sports match pages — módulo desativado publicamente. Não emitir URLs esportivas.
+
+
 
   // Public reservation pages (one per active partner with reservations enabled)
   for (const rp of (reservationPartners || []) as Array<{ partners: { slug: string; active: boolean } | null }>) {
