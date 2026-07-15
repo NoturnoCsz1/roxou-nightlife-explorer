@@ -1,15 +1,14 @@
 // ─── HomeMobile — Layout mobile (lg:hidden) refatorado ───
-// Ordem: Hero → Busca → Timeline Hoje → Destaques (Expo) → Jogos ao vivo
+// Ordem: Hero → Busca → Timeline Hoje → Destaques (Expo) → Descubra na Roxou
 //        → Descobrir Mais → Destaque da Semana → Últimas Notícias → Mais Acessadas → Footer
 
 import { Link } from "react-router-dom";
-import { ChevronRight, Trophy } from "lucide-react";
 import { HomeSectionBoundary } from "@/components/v3/home/HomeSectionBoundary";
 import TodaySection from "@/components/v3/home/TodaySection";
 import { TodayTimeline as TodayTimelineRaw, TodayEmptyState } from "@/components/v3/home/TodayTimeline";
 import WeeklySpotlight from "@/components/v3/home/WeeklySpotlight";
 import FadeSection from "@/components/v3/home/FadeSection";
-import HomeJogosCard from "@/components/jogos/HomeJogosCard";
+import HomeDiscoveryHighlight from "@/components/home/HomeDiscoveryHighlight";
 import GlobalSearchTrigger from "@/components/search/GlobalSearchTrigger";
 
 import LatestNewsSection from "@/components/v3/home/LatestNewsSection";
@@ -132,26 +131,10 @@ export function HomeMobile(props: HomeMobileProps) {
         </div>
       </HomeSectionBoundary>
 
-      {/* 5 · JOGOS AO VIVO */}
+      {/* 5 · DESCUBRA NA ROXOU (substitui o bloco de Jogos) */}
       {!isLoading && !hasHomeDataError && (
-        <HomeSectionBoundary name="Jogos mobile" silent>
-          <div className="px-4 pt-5 pb-1">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/30 flex items-center justify-center shrink-0">
-                  <Trophy className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="font-display font-extrabold text-base text-foreground truncate">Jogos ao vivo hoje</h2>
-                  <p className="text-[10px] text-muted-foreground -mt-0.5 truncate">Futebol, onde assistir em Prudente</p>
-                </div>
-              </div>
-              <Link to="/jogos" className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5 shrink-0">
-                Ver todos <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-          <HomeJogosCard />
+        <HomeSectionBoundary name="Descubra na Roxou (mobile)" silent>
+          <HomeDiscoveryHighlight />
         </HomeSectionBoundary>
       )}
 
