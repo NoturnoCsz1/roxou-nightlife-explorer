@@ -260,7 +260,9 @@ export default function Jogos() {
         canonical="https://roxou.com.br/jogos"
         keywords="onde assistir futebol em prudente, bares futebol presidente prudente, jogos hoje, brasileirão, libertadores, copa do mundo, roxou jogos"
         ogType="website"
+        noindex
       />
+
 
       {/* Ribbon sazonal — Copa do Mundo (oculto na própria página /jogos; badge "Copa 2026" no header já cobre) */}
 
