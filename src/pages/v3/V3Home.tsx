@@ -143,11 +143,11 @@ export default function V3Home() {
 
       {/* SEO da home — JSON-LD WebSite + Organization + EntertainmentBusiness */}
       <SEO
-        title="Roxou | Eventos, Bares, Restaurantes e Jogos ao Vivo em Presidente Prudente"
-        description="A Roxou reúne eventos, shows, bares, restaurantes, música ao vivo, porções, chopp, jogos ao vivo e rolês em Presidente Prudente e região. Veja o que acontece hoje e no fim de semana."
+        title="Roxou | Eventos, Bares, Restaurantes e Descobertas em Presidente Prudente"
+        description="A Roxou reúne eventos, shows, bares, restaurantes, happy hour, música ao vivo e rolês em Presidente Prudente. Descubra onde comer, onde sair e o que fazer hoje e no fim de semana."
         canonical="https://roxou.com.br/"
         ogType="website"
-        keywords="eventos Presidente Prudente, bares Presidente Prudente, restaurantes Presidente Prudente, música ao vivo Prudente, jogos ao vivo Prudente, baladas Prudente, shows Prudente"
+        keywords="eventos Presidente Prudente, bares Presidente Prudente, restaurantes Presidente Prudente, onde comer Prudente, onde sair Prudente, happy hour Prudente, baladas Prudente, shows Prudente"
         jsonLd={{
           "@context": "https://schema.org",
           "@graph": [
@@ -155,7 +155,7 @@ export default function V3Home() {
               "@type": "WebSite",
               "name": "Roxou",
               "url": "https://roxou.com.br",
-              "description": "Portal local para descobrir eventos, shows, bares, restaurantes, música ao vivo, jogos ao vivo e entretenimento em Presidente Prudente.",
+              "description": "Portal local para descobrir eventos, shows, bares, restaurantes, música ao vivo e entretenimento em Presidente Prudente.",
               "inLanguage": "pt-BR",
               "potentialAction": {
                 "@type": "SearchAction",
@@ -167,7 +167,7 @@ export default function V3Home() {
               "@type": "Organization",
               "name": "Roxou",
               "url": "https://roxou.com.br",
-              "description": "Portal de eventos, bares, restaurantes, jogos ao vivo e entretenimento em Presidente Prudente e região.",
+              "description": "Portal de eventos, bares, restaurantes e entretenimento em Presidente Prudente e região.",
               "sameAs": ["https://www.instagram.com/roxou.pp/"]
             },
             {
@@ -180,10 +180,10 @@ export default function V3Home() {
                 "eventos em Presidente Prudente",
                 "bares em Presidente Prudente",
                 "restaurantes em Presidente Prudente",
+                "onde comer em Presidente Prudente",
+                "onde sair em Presidente Prudente",
+                "happy hour em Presidente Prudente",
                 "música ao vivo em Presidente Prudente",
-                "porções em Presidente Prudente",
-                "chopp em Presidente Prudente",
-                "jogos ao vivo em Presidente Prudente",
                 "baladas em Presidente Prudente"
               ]
             }
