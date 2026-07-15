@@ -209,9 +209,8 @@ export default function PublicLayout() {
             const isProfile = to === "/perfil";
             const active = to === "/"
               ? pathname === "/"
-              : to === "/jogos"
-                ? pathname.startsWith("/jogos") || pathname.startsWith("/jogo/")
-                : pathname.startsWith(to);
+              : pathname.startsWith(to);
+
             const isAura = to === "/ia";
             return (
               <button
