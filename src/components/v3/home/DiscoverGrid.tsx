@@ -1,7 +1,7 @@
 // ─── DiscoverGrid — modern 2-col category grid (mobile-first) ───
 import { Link } from "react-router-dom";
 import {
-  Beer, PartyPopper, Utensils, Music, Trophy, Bus, Ticket, Newspaper,
+  Beer, PartyPopper, Utensils, Music, Compass, Bus, Ticket, Newspaper,
   ArrowRight, ChevronRight,
 } from "lucide-react";
 import FadeSection from "@/components/v3/home/FadeSection";
@@ -15,11 +15,11 @@ type Cat = {
 };
 
 const CATS: Cat[] = [
-  { to: "/descobrir?cat=bar", label: "Bares", emoji: "🍻", Icon: Beer, tint: "from-amber-500/30 to-orange-500/10" },
-  { to: "/descobrir?cat=festa", label: "Festas", emoji: "🎉", Icon: PartyPopper, tint: "from-pink-500/30 to-purple-500/10" },
-  { to: "/descobrir?cat=restaurante", label: "Restaurantes", emoji: "🍽", Icon: Utensils, tint: "from-emerald-500/30 to-teal-500/10" },
-  { to: "/descobrir?cat=show", label: "Música", emoji: "🎵", Icon: Music, tint: "from-fuchsia-500/30 to-violet-500/10" },
-  { to: "/jogos", label: "Jogos ao vivo", emoji: "⚽", Icon: Trophy, tint: "from-amber-400/30 to-yellow-500/10" },
+  { to: "/descobrir/onde-comer", label: "Onde comer", emoji: "🍽", Icon: Utensils, tint: "from-emerald-500/30 to-teal-500/10" },
+  { to: "/descobrir/onde-sair", label: "Onde sair", emoji: "🌙", Icon: PartyPopper, tint: "from-pink-500/30 to-purple-500/10" },
+  { to: "/descobrir/happy-hour", label: "Happy hour", emoji: "🍻", Icon: Beer, tint: "from-amber-500/30 to-orange-500/10" },
+  { to: "/descobrir", label: "Descubra tudo", emoji: "✨", Icon: Compass, tint: "from-primary/30 to-accent/10" },
+  { to: "/agenda", label: "Agenda", emoji: "🎵", Icon: Music, tint: "from-fuchsia-500/30 to-violet-500/10" },
   { to: "/transportes", label: "Transportes", emoji: "🚍", Icon: Bus, tint: "from-sky-500/30 to-indigo-500/10" },
   { to: "/agenda", label: "Ingressos", emoji: "🎟", Icon: Ticket, tint: "from-rose-500/30 to-red-500/10" },
   { to: "/noticias", label: "Notícias", emoji: "📰", Icon: Newspaper, tint: "from-slate-400/30 to-zinc-500/10" },

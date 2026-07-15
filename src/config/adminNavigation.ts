@@ -19,6 +19,7 @@ import {
   Rocket,
   Activity,
   FileText,
+  Compass,
 
   type LucideIcon,
 } from "lucide-react";
@@ -56,6 +57,7 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/eventou", icon: Globe, label: "Eventou" },
   { to: "/admin/instagram", icon: Instagram, label: "Instagram" },
   { to: "/admin/estabelecimentos", icon: Building2, label: "Estabelecimentos" },
+  { to: "/admin/descobertas", icon: Compass, label: "Descobertas" },
   { to: "/admin/parceiros", icon: Users, label: "Parceiros (legado)" },
   { to: "/admin/editores", icon: ShieldCheck, label: "Editores" },
   { to: "/admin/partner-preview", icon: Briefcase, label: "Partner Pro Preview" },

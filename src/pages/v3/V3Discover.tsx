@@ -6,13 +6,15 @@ import { isAfter, startOfDay, addDays, format, isToday as isTodayFn } from "date
 import { ptBR } from "date-fns/locale";
 import {
   Search, MapPin, Clock, Flame, Music, Mic2, Beer, Zap, PartyPopper,
-  ChevronRight, Dribbble, UtensilsCrossed, Building2, Sparkles,
+  ChevronRight, Dribbble, UtensilsCrossed, Building2, Sparkles, Compass,
   TrendingUp, BadgeCheck, X, Bookmark, Heart, Filter as FilterIcon, SlidersHorizontal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedEvents } from "@/hooks/useSavedEvents";
 import { useSavedPartners } from "@/hooks/useSavedPartners";
+import SEO from "@/components/SEO";
+import { listEnabledDiscoveryCategories } from "@modules/discovery";
 
 const fmtTime = (d: string) => format(new Date(d), "HH'h'mm", { locale: ptBR });
 const getDayLabel = (d: string) => {
@@ -237,6 +239,39 @@ export default function V3Discover() {
 
   return (
     <div className="pb-4">
+      <SEO
+        title="Descubra — Restaurantes, Bares e Lugares em Presidente Prudente | Roxou"
+        description="Encontre onde comer, onde sair, happy hour, restaurantes, bares e lugares em Presidente Prudente. Descubra categorias e características dos melhores locais."
+        canonical="https://roxou.com.br/descobrir"
+      />
+
+      {/* ── Discovery Hub — categorias oficiais ── */}
+      <section className="px-4 pt-4 pb-1" aria-label="Descubra por categoria">
+        <div className="flex items-center gap-2 mb-2">
+          <Compass className="w-4 h-4 text-primary" />
+          <h2 className="font-display font-extrabold text-sm uppercase tracking-wide text-foreground">
+            Descubra na Roxou
+          </h2>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Encontre lugares para comer, beber e aproveitar a cidade.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {listEnabledDiscoveryCategories().map((c) => (
+            <Link
+              key={c.slug}
+              to={`/descobrir/${c.slug}`}
+              className="group flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-card/60 px-3 py-2.5 hover:border-primary/50 hover:bg-primary/10 transition-colors"
+            >
+              <span className="truncate text-[13px] font-bold text-foreground">
+                {c.title}
+              </span>
+              <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-primary" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* ── Search ── */}
       <div className="px-4 pt-4 pb-2">
         <div className="relative">
