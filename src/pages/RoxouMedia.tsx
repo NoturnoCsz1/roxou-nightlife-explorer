@@ -136,11 +136,11 @@ export default function RoxouMedia() {
         <div className="relative mx-auto max-w-6xl px-4 md:px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <img
-              src={roxouSymbol.url}
+              src={roxouLogo.url}
               alt="Roxou"
-              width={72}
-              height={72}
-              className="h-16 w-16 md:h-20 md:w-20 mb-6"
+              width={320}
+              height={120}
+              className="h-12 md:h-16 w-auto mb-6"
             />
             <p className="text-[11px] md:text-xs uppercase tracking-[0.3em] text-primary mb-4 font-semibold">
               Tecnologia • Mídia • Experiências
