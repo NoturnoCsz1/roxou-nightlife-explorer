@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import roxouMark from "@/assets/roxou-mark.png";
+import roxouSymbol from "@/assets/roxou-symbol.png.asset.json";
+import roxouLogo from "@/assets/roxou-logo.png.asset.json";
 
 /**
  * Roxou Media — Site institucional/comercial servido em midia.roxou.com.br

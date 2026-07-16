@@ -1,5 +1,5 @@
 import { CalendarDays, CalendarRange, Grid3X3, Bookmark, Home, MapPin, Star } from "lucide-react";
-import roxouMark from "@/assets/roxou-mark.png";
+import roxouMark from "@/assets/roxou-symbol.png.asset.json";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const tabs = [
@@ -20,7 +20,7 @@ const DesktopNav = () => {
       <div className="mx-auto max-w-6xl px-6 flex items-center justify-between h-16">
         <div className="flex items-center gap-6">
           <button onClick={() => navigate("/")} className="flex items-center gap-2">
-            <img src={roxouMark} alt="" aria-hidden width={28} height={28} className="h-7 w-7" />
+            <img src={roxouMark.url} alt="" aria-hidden width={28} height={28} className="h-7 w-7" />
             <h1 className="text-2xl font-black font-display neon-text text-primary tracking-tight">ROXOU</h1>
           </button>
           <div className="flex items-center gap-1 text-muted-foreground">
