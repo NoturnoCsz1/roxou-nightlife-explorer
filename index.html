@@ -37,7 +37,19 @@
     <!-- LCP-4B: preload de imagens Expo removido — competia com o LCP real da Home
          (hero dinâmico). O preload da imagem hero é injetado via JS em V3Home. -->
 
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4237790251786919" crossorigin="anonymous"></script>
+    <script>
+      // AdSense: NÃO carregar em midia.roxou.com.br (site institucional).
+      (function () {
+        try {
+          if (location.hostname.startsWith('midia.')) return;
+          var s = document.createElement('script');
+          s.async = true;
+          s.crossOrigin = 'anonymous';
+          s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4237790251786919';
+          document.head.appendChild(s);
+        } catch (_) {}
+      })();
+    </script>
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MLN9W59D9J"></script>

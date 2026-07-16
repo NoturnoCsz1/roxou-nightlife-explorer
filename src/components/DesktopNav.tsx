@@ -1,5 +1,5 @@
 import { CalendarDays, CalendarRange, Grid3X3, Bookmark, Home, MapPin, Star } from "lucide-react";
-import roxouMark from "@/assets/roxou-symbol.png.asset.json";
+const roxouMark = { url: "/brand/roxou-symbol.png" };
 import { useLocation, useNavigate } from "react-router-dom";
 
 const tabs = [
