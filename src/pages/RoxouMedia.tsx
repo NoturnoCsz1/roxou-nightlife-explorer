@@ -71,7 +71,9 @@ export default function RoxouMedia() {
     setMeta("property", "og:description", desc);
     setMeta("property", "og:url", CANONICAL);
     setMeta("property", "og:type", "website");
+    setMeta("property", "og:image", `${CANONICAL}${roxouLogo.url}`);
     setMeta("name", "twitter:card", "summary_large_image");
+    setMeta("name", "twitter:image", `${CANONICAL}${roxouLogo.url}`);
 
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {
@@ -90,6 +92,11 @@ export default function RoxouMedia() {
       url: CANONICAL,
       logo: `${CANONICAL}/favicon.png`,
       sameAs: [INSTAGRAM_URL],
+      founder: {
+        "@type": "Person",
+        name: "Fernando Henrique",
+        jobTitle: "CEO & Diretor Criativo",
+      },
       contactPoint: [
         { "@type": "ContactPoint", telephone: "+5518997469865", contactType: "sales", areaServed: "BR" },
       ],

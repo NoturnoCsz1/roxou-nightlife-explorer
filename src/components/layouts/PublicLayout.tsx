@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useV3Profile } from "@/hooks/useV3Profile";
 import PullToRefresh from "@/components/v3/PullToRefresh";
 import AuraAvatar from "@/components/v3/AuraAvatar";
+import roxouSymbol from "@/assets/roxou-symbol.png.asset.json";
 
 const NAV_ITEMS = [
   { to: "/", icon: Home, label: "Início" },
@@ -47,8 +48,9 @@ export default function PublicLayout() {
         <div className="flex items-center gap-5 px-5 h-16 max-w-7xl mx-auto">
 
           {/* Logo */}
-          <Link to="/" className="font-display font-black text-2xl tracking-tight shrink-0">
-            <span className="text-primary" style={{ textShadow: "0 0 24px hsl(var(--primary)/0.5)" }}>ROXOU</span>
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <img src={roxouSymbol.url} alt="" aria-hidden width={28} height={28} className="h-7 w-7" />
+            <span className="font-display font-black text-2xl tracking-tight text-primary" style={{ textShadow: "0 0 24px hsl(var(--primary)/0.5)" }}>ROXOU</span>
           </Link>
 
           {/* Desktop nav central */}
