@@ -62,6 +62,7 @@ const ExpoMapa = lazy(() => import("@/pages/expo2026/Mapa"));
 const ExpoMenores = lazy(() => import("@/pages/expo2026/Menores"));
 const ExpoInformacoes = lazy(() => import("@/pages/expo2026/Informacoes"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const RoxouMedia = lazy(() => import("@/pages/RoxouMedia"));
 const CopaDoMundo2026 = lazy(() => import("@/pages/CopaDoMundo2026"));
 
 // Parceiro público (VIP / reservas)
@@ -263,6 +264,9 @@ export const PublicRoutes = () => (
 
     {/* Premiações Roxou */}
     <Route path="/bar-do-mes" element={L(<BarDoMes />)} />
+
+    {/* Roxou Media — site institucional (também servido em midia.roxou.com.br) */}
+    <Route path="/midia" element={L(<RoxouMedia />)} />
 
     {/* SEO landings */}
     <Route path="/:landingSlug" element={L(<SEOLanding />)} />
