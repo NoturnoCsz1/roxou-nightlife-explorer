@@ -33,7 +33,16 @@ const marquee = [
   "PLATAFORMAS", "CONTEÚDO", "ESTRATÉGIA",
 ];
 
-const pillars = [
+type Pillar = {
+  icon: typeof Code2;
+  title: string;
+  tag: string;
+  highlight?: boolean;
+  desc: string;
+  caps: string[];
+};
+
+const pillars: Pillar[] = [
   {
     icon: Code2,
     title: "Tecnologia",
@@ -64,7 +73,7 @@ const pillars = [
     desc: "Divulgação, listas VIP, reservas, credenciamento e ferramentas para parceiros.",
     caps: ["Listas VIP", "Reservas", "Check-in QR", "Landing pages"],
   },
-] as const;
+];
 
 const builds = [
   { icon: MonitorSmartphone, title: "Sites e plataformas", desc: "Institucionais, comerciais, portais e áreas logadas." },
