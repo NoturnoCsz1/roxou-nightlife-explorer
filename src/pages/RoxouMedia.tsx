@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import roxouMark from "@/assets/roxou-mark.png";
+import roxouSymbol from "@/assets/roxou-symbol.png.asset.json";
+import roxouLogo from "@/assets/roxou-logo.png.asset.json";
 
 /**
  * Roxou Media — Site institucional/comercial servido em midia.roxou.com.br
@@ -105,7 +106,7 @@ export default function RoxouMedia() {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-background/70 border-b border-border/30">
         <div className="mx-auto max-w-6xl px-4 md:px-6 h-14 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <img src={roxouMark} alt="Roxou" width={28} height={28} className="h-7 w-7" />
+            <img src={roxouSymbol.url} alt="Roxou" width={28} height={28} className="h-7 w-7" />
             <span className="font-display font-black tracking-tight text-lg">ROXOU</span>
             <span className="hidden sm:inline text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-2">
               Media
@@ -135,11 +136,11 @@ export default function RoxouMedia() {
         <div className="relative mx-auto max-w-6xl px-4 md:px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <img
-              src={roxouMark}
+              src={roxouLogo.url}
               alt="Roxou"
-              width={72}
-              height={72}
-              className="h-16 w-16 md:h-20 md:w-20 mb-6"
+              width={320}
+              height={120}
+              className="h-12 md:h-16 w-auto mb-6"
             />
             <p className="text-[11px] md:text-xs uppercase tracking-[0.3em] text-primary mb-4 font-semibold">
               Tecnologia • Mídia • Experiências
@@ -169,7 +170,7 @@ export default function RoxouMedia() {
           </div>
           <div className="hidden md:block">
             <div className="relative aspect-square max-w-md ml-auto glass rounded-3xl border border-primary/20 p-8 flex items-center justify-center">
-              <img src={roxouMark} alt="" aria-hidden width={280} height={280} className="opacity-90" />
+              <img src={roxouSymbol.url} alt="" aria-hidden width={280} height={280} className="opacity-90" />
               <div className="absolute inset-0 rounded-3xl neon-border pointer-events-none" />
             </div>
           </div>
@@ -273,7 +274,7 @@ export default function RoxouMedia() {
       <footer className="border-t border-border/30 py-8">
         <div className="mx-auto max-w-6xl px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={roxouMark} alt="" aria-hidden width={20} height={20} className="h-5 w-5" />
+            <img src={roxouSymbol.url} alt="" aria-hidden width={20} height={20} className="h-5 w-5" />
             <span>© {new Date().getFullYear()} Roxou — Tecnologia • Mídia • Experiências</span>
           </div>
           <a href="https://roxou.com.br" className="hover:text-primary transition-colors">
