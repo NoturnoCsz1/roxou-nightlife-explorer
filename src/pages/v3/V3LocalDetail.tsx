@@ -23,7 +23,7 @@ import { usePartnerAwards, formatAwardPeriod } from "@/hooks/usePartnerAwards";
 const TOP_WEEK_THRESHOLD = 100;
 
 async function sharePartner(partner: { id: string; name: string; slug: string; city?: string | null; short_description?: string | null }) {
-  const url = `https://roxou.com.br/v3/local/${partner.slug}`;
+  const url = `https://roxou.com.br/local/${partner.slug}`;
   const title = `${partner.name} | Roxou`;
   const text = partner.short_description || `Veja o ${partner.name}${partner.city ? ` em ${partner.city}` : ""} na Roxou.`;
   try {
@@ -816,7 +816,7 @@ function RelatedPartnersSection({
         {partners.map((p) => (
           <Link
             key={p.id}
-            to={`/v3/local/${p.slug}`}
+            to={`/local/${p.slug}`}
             onClick={() => {
               try {
                 trackEvent({
