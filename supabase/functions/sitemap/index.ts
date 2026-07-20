@@ -20,11 +20,19 @@ Deno.serve(async (req) => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Fetch published events
+  // Onda SEO A — janela conservadora de 90 dias para eventos passados.
+  // Eventos futuros publicados: incluídos; eventos com date_time anterior a
+  // hoje - 90d: excluídos. Não temos coluna deleted_at em events (schema
+  // real), então basta status='published' + janela temporal.
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    .toISOString();
+
+  // Fetch published events (janela: passados últimos 90d + todos futuros)
   const { data: events } = await supabase
     .from("events")
     .select("slug, created_at, updated_at, date_time")
     .eq("status", "published")
+    .gte("date_time", ninetyDaysAgo)
     .order("date_time", { ascending: false });
 
   // Fetch active partners
