@@ -764,7 +764,7 @@ function NextEventCard({ event }: { event: { id: string; slug: string; title: st
 
   return (
     <Link
-      to={`/v3/evento/${event.slug}`}
+      to={`/evento/${event.slug}`}
       className="block mb-3 rounded-2xl v3-glass border border-primary/30 shadow-[0_8px_24px_-12px_hsl(var(--primary)/0.45)] backdrop-blur-xl px-3.5 py-3 hover:border-primary/50 transition-all"
     >
       <div className="flex items-center gap-3">
