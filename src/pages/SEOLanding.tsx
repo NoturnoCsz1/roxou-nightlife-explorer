@@ -959,24 +959,33 @@ const SEOLanding = () => {
     },
   };
 
-  const eventLd = config.emitEventJsonLd
-    ? filtered.slice(0, 10).map((e) => ({
-        "@context": "https://schema.org",
-        "@type": "Event",
-        name: e.title,
-        startDate: e.date_time,
-        eventStatus: "https://schema.org/EventScheduled",
-        eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-        location: {
-          "@type": "Place",
-          name: e.venue_name || CITY,
-          address: e.address || `${CITY}, SP, Brasil`,
-        },
-        ...(e.image_url ? { image: e.image_url } : {}),
-        url: `https://roxou.com.br/evento/${e.slug}`,
-        description: e.description?.slice(0, 280) || config.metaDescription,
-      }))
-    : null;
+  // Onda SEO A — nunca emitir Event JSON-LD sem eventos reais.
+  const eventLd =
+    config.emitEventJsonLd && filtered.length > 0
+      ? filtered.slice(0, 10).map((e) => ({
+          "@context": "https://schema.org",
+          "@type": "Event",
+          name: e.title,
+          startDate: e.date_time,
+          eventStatus: "https://schema.org/EventScheduled",
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          location: {
+            "@type": "Place",
+            name: e.venue_name || CITY,
+            address: e.address || `${CITY}, SP, Brasil`,
+          },
+          ...(e.image_url ? { image: e.image_url } : {}),
+          url: `https://roxou.com.br/evento/${e.slug}`,
+          description: e.description?.slice(0, 280) || config.metaDescription,
+        }))
+      : null;
+
+  // Landing sem eventos AND sem conteúdo editorial evergreen/longIntro:
+  // marca noindex,follow para evitar página fina. Landings com evergreen
+  // (padrão em todas as configs) permanecem indexáveis.
+  const hasEvergreen = !!(config.evergreen || (config.longIntro && config.longIntro.length > 0));
+  const shouldNoindex = filtered.length === 0 && !hasEvergreen;
+
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -1006,6 +1015,7 @@ const SEOLanding = () => {
         description={config.metaDescription}
         canonical={canonicalUrl}
         jsonLd={jsonLd}
+        noindex={shouldNoindex}
       />
       {/* Extra structured data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
