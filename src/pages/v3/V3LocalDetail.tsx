@@ -184,7 +184,7 @@ export default function V3LocalDetail() {
   const instagramUrl = partner.instagram ? `https://instagram.com/${partner.instagram.replace("@", "")}` : null;
   const whatsappUrl = partner.whatsapp ? `https://wa.me/55${cleanPhone(partner.whatsapp)}` : null;
   const isTopWeek = viewCount >= TOP_WEEK_THRESHOLD;
-  const canonical = `https://roxou.com.br/v3/local/${partner.slug}`;
+  const canonical = `https://roxou.com.br/local/${partner.slug}`;
   const seoTitle = `${partner.name}${partner.city ? ` em ${partner.city}` : ""} | Roxou`;
   const seoDescription = partner.short_description
     ? partner.short_description

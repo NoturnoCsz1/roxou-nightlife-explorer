@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import NotFoundView from "@/components/NotFoundView";
 import { trackEvent } from "@/lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,12 +75,9 @@ export default function V3EventDetail() {
   }
 
   if (!event) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-muted-foreground">Evento não encontrado</p>
-        <Link to="/" className="text-primary text-sm mt-2 inline-block">Voltar</Link>
-      </div>
-    );
+    // SPA — não podemos entregar HTTP 404 real, mas garantimos noindex,follow
+    // via NotFoundView (padrão do projeto) e removemos a página fina anterior.
+    return <NotFoundView />;
   }
 
   const date = new Date(event.date_time);
@@ -91,15 +89,65 @@ export default function V3EventDetail() {
     (event as any).flyer_url ||
     undefined;
 
+  const canonicalUrl = `https://roxou.com.br/evento/${event.slug}`;
+  const cleanDescription =
+    event.description?.replace(/<[^>]+>/g, "").trim() || "";
+  const seoDescription =
+    cleanDescription.slice(0, 155) ||
+    `${event.title} — ${event.venue_name || "Presidente Prudente"}`;
+
+  // JSON-LD Event — apenas campos com dado real. Sem offers fictício:
+  // omitimos `offers` inteiro quando não há preço/validFrom estruturados
+  // no schema atual de events (evita avisos de campos incompletos).
+  const partnerRel = (event as any).partners as
+    | { name?: string | null; slug?: string | null }
+    | null
+    | undefined;
+  const eventJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    startDate: event.date_time,
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    url: canonicalUrl,
+    ...(ogImg ? { image: ogImg } : {}),
+    ...(cleanDescription ? { description: cleanDescription.slice(0, 500) } : {}),
+    location: {
+      "@type": "Place",
+      name: event.venue_name || partnerRel?.name || "Presidente Prudente",
+      address: {
+        "@type": "PostalAddress",
+        ...(event.address ? { streetAddress: event.address } : {}),
+        addressLocality: (event as any).city || "Presidente Prudente",
+        addressRegion: "SP",
+        addressCountry: "BR",
+      },
+    },
+    ...(partnerRel?.name
+      ? {
+          organizer: {
+            "@type": "Organization",
+            name: partnerRel.name,
+            ...(partnerRel.slug
+              ? { url: `https://roxou.com.br/local/${partnerRel.slug}` }
+              : {}),
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="pb-8">
       <SEO
         title={`${event.title} | Roxou`}
-        description={(event.description?.replace(/<[^>]+>/g, "").slice(0, 155)) || `${event.title} — ${event.venue_name || "Presidente Prudente"}`}
-        canonical={`https://roxou.com.br/evento/${event.slug}`}
+        description={seoDescription}
+        canonical={canonicalUrl}
         ogImage={ogImg}
         ogType="article"
+        jsonLd={eventJsonLd}
       />
+
       {/* Image */}
       <div className="relative h-[260px] overflow-hidden">
         <img src={event.image_url || "/placeholder.svg"} alt={event.title} className="w-full h-full object-cover" fetchPriority="high" decoding="async" />
