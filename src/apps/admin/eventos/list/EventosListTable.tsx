@@ -52,6 +52,7 @@ export function EventosListTable({ ctx }: { ctx: EventosListCtx }) {
     setPastOpen,
     viewMode,
     duplicateIds,
+    activeTab,
   } = ctx;
 
   // Sinaliza ao analytics que duplicados foram exibidos (debounced via memo)
