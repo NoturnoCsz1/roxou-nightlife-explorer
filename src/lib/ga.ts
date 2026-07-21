@@ -1,4 +1,4 @@
-// Google Analytics 4 helper — ID: G-MLN9W59D9J
+// Google Analytics 4 helper — ID: G-0B5C1BNLPK
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-export const GA_ID = "G-MLN9W59D9J";
+export const GA_ID = "G-0B5C1BNLPK";
 
 export function gaEvent(name: string, params: Record<string, any> = {}) {
   if (typeof window === "undefined" || !window.gtag) return;
