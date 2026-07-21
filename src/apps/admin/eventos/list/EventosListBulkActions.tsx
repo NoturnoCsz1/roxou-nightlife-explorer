@@ -51,7 +51,9 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
     partnerOptions,
     bulkConfirm,
     setBulkConfirm,
+    activeTab,
   } = ctx;
+  const isPastTab = activeTab === "passados";
 
   const [showCat, setShowCat] = useState(false);
   const [showPartner, setShowPartner] = useState(false);
@@ -164,37 +166,44 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
               )}
             </div>
 
-            <button
-              onClick={() => {
-                track("needs_review");
-                setBulkConfirm({ kind: "needs-review", ids: idsArr });
-              }}
-              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 transition whitespace-nowrap"
-            >
-              <AlertTriangle className="h-3 w-3" /> Revisão
-            </button>
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("needs_review");
+                  setBulkConfirm({ kind: "needs-review", ids: idsArr });
+                }}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-yellow-400/40 bg-yellow-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-yellow-300 hover:bg-yellow-400/20 transition whitespace-nowrap"
+              >
+                <AlertTriangle className="h-3 w-3" /> Revisão
+              </button>
+            )}
 
-            <button
-              onClick={() => {
-                track("approve");
-                handleBulkApprove();
-              }}
-              disabled={selectedReadyToPublish === 0 || publishing}
-              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition whitespace-nowrap"
-              title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
-            >
-              <Check className="h-3 w-3" /> Aprovar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
-            </button>
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("approve");
+                  handleBulkApprove();
+                }}
+                disabled={selectedReadyToPublish === 0 || publishing}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition whitespace-nowrap"
+                title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
+              >
+                <Check className="h-3 w-3" /> Aprovar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
+              </button>
+            )}
 
-            <button
-              onClick={() => {
-                track("aura_pick");
-                handleBulkAura(true);
-              }}
-              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition whitespace-nowrap"
-            >
-              <Bot className="h-3 w-3" /> Aura
-            </button>
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("aura_pick");
+                  handleBulkAura(true);
+                }}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1.5 text-[10px] font-bold uppercase text-primary hover:bg-primary/20 transition whitespace-nowrap"
+              >
+                <Bot className="h-3 w-3" /> Aura
+              </button>
+            )}
+
 
             <button
               onClick={() => {
