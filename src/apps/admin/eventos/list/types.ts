@@ -61,7 +61,14 @@ export type DateQuickFilter =
   | "futuros"
   | "passados"
   | "sem-data";
-export type TabKey = "todos" | "hoje" | "rascunhos" | "problemas" | "destaques" | "revisao";
+export type TabKey =
+  | "todos"
+  | "hoje"
+  | "rascunhos"
+  | "problemas"
+  | "destaques"
+  | "revisao"
+  | "passados";
 export type ViewMode = "cards" | "compact";
 
 export type ChecklistKey = "title" | "date" | "description" | "flyer";
