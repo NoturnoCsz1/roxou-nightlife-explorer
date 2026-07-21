@@ -104,8 +104,26 @@ export function EventosListTable({ ctx }: { ctx: EventosListCtx }) {
     );
   }
 
+  // Aba dedicada de Passados / Arquivados: lista plana ordenada desc.
+  if (activeTab === "passados") {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+          📂 Passados / Arquivados ({filtered.length})
+        </h2>
+        <div className="space-y-2">
+          {visibleFiltered.map((e) => (
+            <EventosListRow key={e.id} e={e} ctx={ctx} isDuplicate={duplicateIds.has(e.id)} />
+          ))}
+        </div>
+        <EventosListPagination ctx={ctx} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+
       <Section title="Escolha da Aura" items={auraEvents} emoji="🤖" ctx={ctx} />
       <Section title="Destaques do dia" items={featuredTodayEvents} emoji="🔥" ctx={ctx} />
       <Section title="Hoje" items={todayEvents} emoji="📌" ctx={ctx} />
