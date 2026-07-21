@@ -3,7 +3,7 @@
 // Recebe o estado bruto e devolve todos os agregados/contadores usados
 // pela toolbar, seções, dialogs e bulk actions.
 
-import { isOperationalEvent } from "@/lib/eventLifecycle";
+import { isOperationalEvent, isPastEvent } from "@/lib/eventLifecycle";
 import { CATEGORIES, type EventRow } from "./types";
 import {
   detectDuplicates,
