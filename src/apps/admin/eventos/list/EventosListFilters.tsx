@@ -27,6 +27,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "revisao", label: "Revisão" },
   { key: "problemas", label: "Problemas" },
   { key: "destaques", label: "Destaques" },
+  { key: "passados", label: "Passados" },
 ];
 
 export function EventosListFilters({ ctx }: { ctx: EventosListCtx }) {

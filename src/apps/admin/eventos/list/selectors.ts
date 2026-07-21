@@ -3,7 +3,7 @@
 // Recebe o estado bruto e devolve todos os agregados/contadores usados
 // pela toolbar, seções, dialogs e bulk actions.
 
-import { isOperationalEvent } from "@/lib/eventLifecycle";
+import { isOperationalEvent, isPastEvent } from "@/lib/eventLifecycle";
 import { CATEGORIES, type EventRow } from "./types";
 import {
   detectDuplicates,
@@ -129,13 +129,22 @@ export function computeEventosListDerived(input: SelectorInput) {
       return true;
     })
     .filter((e) => {
-      if (activeTab === "todos") return true;
+      // "Passados" concentra eventos já realizados + arquivados.
+      const isPastOrArchived = isPastEvent(e) || e.status === "archived";
+      if (activeTab === "passados") return isPastOrArchived;
+      // "Todos" passa a representar somente eventos atuais + futuros.
+      if (activeTab === "todos") return !isPastOrArchived;
       if (activeTab === "hoje") return eventDayStr(e) === todayStr;
-      if (activeTab === "rascunhos") return e.status === "draft";
+      if (activeTab === "rascunhos") return e.status === "draft" && !isPastOrArchived;
       if (activeTab === "problemas")
-        return e.status !== "archived" && (needsReview(e) || !getChecklist(e).complete);
+        return (
+          !isPastOrArchived &&
+          e.status !== "archived" &&
+          (needsReview(e) || !getChecklist(e).complete)
+        );
       if (activeTab === "destaques") return e.featured || e.aura_pick;
       if (activeTab === "revisao") {
+        if (isPastOrArchived) return false;
         if (e.status === "archived") return false;
         const cl = getChecklist(e);
         return (
@@ -150,6 +159,15 @@ export function computeEventosListDerived(input: SelectorInput) {
       }
       return true;
     });
+
+  // Na aba Passados ordenamos do mais recente para o mais antigo.
+  if (activeTab === "passados") {
+    filtered.sort((a, b) => {
+      const ta = a.date_time ? new Date(a.date_time).getTime() : 0;
+      const tb = b.date_time ? new Date(b.date_time).getTime() : 0;
+      return tb - ta;
+    });
+  }
 
   const visibleFiltered = filtered.slice(0, visibleCount);
   const auraEvents = visibleFiltered.filter((e) => e.aura_pick && eventDayStr(e) >= todayStr);
