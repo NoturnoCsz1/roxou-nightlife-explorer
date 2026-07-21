@@ -51,7 +51,9 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
     partnerOptions,
     bulkConfirm,
     setBulkConfirm,
+    activeTab,
   } = ctx;
+  const isPastTab = activeTab === "passados";
 
   const [showCat, setShowCat] = useState(false);
   const [showPartner, setShowPartner] = useState(false);
