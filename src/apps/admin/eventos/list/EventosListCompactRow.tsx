@@ -282,11 +282,22 @@ export function EventosListCompactRow({
             {isDraft && (
               <>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleQuickApprove(e)}
+                  disabled={!cl.complete}
+                  className="text-green-400 focus:text-green-400"
+                >
+                  <Rocket className="h-4 w-4 mr-2" />
+                  {cl.complete ? "Publicar agora" : "Publicar (faltam dados)"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => regenerateTitle(e)} disabled={!!busy}>
                   <Sparkles className="h-4 w-4 mr-2" /> Gerar título (IA)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => regenerateDescription(e)} disabled={!!busy}>
                   <Wand2 className="h-4 w-4 mr-2" /> Gerar descrição (IA)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleArchive(e)}>
+                  🗃 Arquivar
                 </DropdownMenuItem>
               </>
             )}
