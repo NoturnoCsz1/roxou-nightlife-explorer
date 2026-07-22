@@ -758,6 +758,8 @@ export function useEventosListActions(deps: ActionsDeps) {
         }`
       );
     }
+
+    async function handleApproveAllSafe(visibleSafeIds: string[]) {
       if (visibleSafeIds.length === 0) {
         toast.error("Nenhum evento seguro encontrado nos filtros atuais.");
         return;
