@@ -13,7 +13,7 @@ import { trackExpoEvent } from "@/lib/expoAnalytics";
 type FilterStatus = "all" | CamaroteStatus;
 
 export default function Expo2026CamarotesAdmin() {
-  const { camarotes, loading } = useExpoCamarotes();
+  const { camarotes, loading } = useExpoCamarotes("admin");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Camarote | null>(null);
