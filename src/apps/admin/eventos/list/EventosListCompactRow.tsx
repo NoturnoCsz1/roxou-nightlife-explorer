@@ -88,6 +88,8 @@ export function EventosListCompactRow({
     setDeleteTarget,
     regenerateTitle,
     regenerateDescription,
+    handleQuickApprove,
+    handleArchive,
     aiBusy,
   } = ctx;
 
