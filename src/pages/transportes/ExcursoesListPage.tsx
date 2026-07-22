@@ -53,26 +53,19 @@ export default function ExcursoesListPage() {
   useEffect(() => {
     let alive = true;
     (async () => {
-      // Lê apenas viagens públicas abertas e futuras.
-      // RLS já restringe escrita — leitura usa SECURITY DEFINER por slug, mas
-      // listagem usa SELECT direto (policies de excursion_trips permitem
-      // somente staff). Como ainda não temos policy pública de SELECT,
-      // criamos a lista via RPC dedicada pode ser feito numa próxima sub-fase;
-      // por enquanto, fazemos um fetch ao endpoint REST público e degradamos
-      // se vier vazio (mostra mensagem amistosa).
-      const nowIso = new Date().toISOString();
+      // Lê apenas viagens públicas abertas via view proxy `public_excursion_trips`.
+      // A view expõe apenas colunas seguras e filtra internamente is_public/status/data,
+      // então anon nunca toca a tabela base excursion_trips.
       const { data } = await supabase
-        .from("excursion_trips")
+        // View pública ainda não aparece nos tipos gerados; cast pontual.
+        .from("public_excursion_trips" as never)
         .select(
           "id, public_slug, title, destination, departure_at, price_cents, partner_id",
         )
-        .eq("status", "open")
-        .eq("is_public", true)
-        .gte("departure_at", nowIso)
         .order("departure_at", { ascending: true })
         .limit(20);
       if (!alive) return;
-      setTrips((data ?? []) as TripRow[]);
+      setTrips(((data ?? []) as unknown) as TripRow[]);
       setLoading(false);
     })();
     return () => {

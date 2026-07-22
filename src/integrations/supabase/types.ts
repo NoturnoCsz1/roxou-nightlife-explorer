@@ -1814,6 +1814,13 @@ export type Database = {
             referencedRelation: "excursion_trips"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "excursion_board_logs_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "public_excursion_trips"
+            referencedColumns: ["id"]
+          },
         ]
       }
       excursion_gps_pings: {
@@ -1878,6 +1885,13 @@ export type Database = {
             referencedRelation: "excursion_trips"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "excursion_gps_pings_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "public_excursion_trips"
+            referencedColumns: ["id"]
+          },
         ]
       }
       excursion_seats: {
@@ -1938,6 +1952,13 @@ export type Database = {
             columns: ["trip_id"]
             isOneToOne: false
             referencedRelation: "excursion_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_seats_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "public_excursion_trips"
             referencedColumns: ["id"]
           },
         ]
@@ -5409,6 +5430,69 @@ export type Database = {
       }
     }
     Views: {
+      public_excursion_trips: {
+        Row: {
+          capacity: number | null
+          departure_address: string | null
+          departure_at: string | null
+          destination: string | null
+          id: string | null
+          is_public: boolean | null
+          partner_id: string | null
+          price_cents: number | null
+          public_slug: string | null
+          return_at: string | null
+          session_date: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          departure_address?: string | null
+          departure_at?: string | null
+          destination?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          partner_id?: string | null
+          price_cents?: number | null
+          public_slug?: string | null
+          return_at?: string | null
+          session_date?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          departure_address?: string | null
+          departure_at?: string | null
+          destination?: string | null
+          id?: string | null
+          is_public?: boolean | null
+          partner_id?: string | null
+          price_cents?: number | null
+          public_slug?: string | null
+          return_at?: string | null
+          session_date?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excursion_trips_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excursion_trips_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "public_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_partners: {
         Row: {
           active: boolean | null
