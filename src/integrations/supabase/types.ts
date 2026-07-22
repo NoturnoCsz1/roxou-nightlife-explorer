@@ -230,6 +230,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_counters: {
+        Row: {
+          bucket_at: string
+          bucket_key: string
+          bucket_window: string
+          count: number
+          mode: string
+          updated_at: string
+        }
+        Insert: {
+          bucket_at: string
+          bucket_key: string
+          bucket_window: string
+          count?: number
+          mode: string
+          updated_at?: string
+        }
+        Update: {
+          bucket_at?: string
+          bucket_key?: string
+          bucket_window?: string
+          count?: number
+          mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       analytics_daily_summary: {
         Row: {
           aura_clicks: number
@@ -2726,6 +2753,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      oauth_state_tokens: {
+        Row: {
+          admin_user_id: string
+          created_at: string
+          expires_at: string
+          provider: string
+          state_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          created_at?: string
+          expires_at: string
+          provider?: string
+          state_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          created_at?: string
+          expires_at?: string
+          provider?: string
+          state_hash?: string
+          used_at?: string | null
+        }
+        Relationships: []
       }
       page_views: {
         Row: {
