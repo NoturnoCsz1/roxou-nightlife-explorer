@@ -10,9 +10,11 @@ import {
   Copy as CopyIcon,
   ExternalLink,
   Flame,
+  ImageOff,
   Instagram,
   MoreHorizontal,
   Pencil,
+  Rocket,
   Sparkles,
   Square,
   Star,
@@ -30,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { categoryBadge, getEventEditPath, type EventRow } from "./types";
-import { getMissingFields, getOrigin, needsReview, spDateStr } from "./helpers";
+import { getChecklist, getMissingFields, getOrigin, needsReview, spDateStr } from "./helpers";
 import type { EventosListCtx } from "./useEventosList";
 
 const ORIGIN_TINT: Record<ReturnType<typeof getOrigin>, string> = {
