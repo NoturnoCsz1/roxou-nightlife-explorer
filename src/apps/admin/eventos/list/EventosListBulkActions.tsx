@@ -87,14 +87,59 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
         }}
       >
         <div className="md:ml-44 px-3 py-2 flex items-center gap-2">
-          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-            <CheckSquare className="h-4 w-4 text-primary shrink-0" />
-            <span className="text-xs font-bold text-primary whitespace-nowrap">
-              {selectedCount} selecionado(s)
-            </span>
+          <div className="flex flex-col items-start min-w-0 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-xs font-bold text-primary whitespace-nowrap">
+                {selectedCount} sel.
+              </span>
+            </div>
+            {!isPastTab && (selectedReadyToPublish > 0 || pendingCount > 0) && (
+              <div className="text-[10px] font-medium whitespace-nowrap leading-tight">
+                <span className="text-green-400">{selectedReadyToPublish} prontos</span>
+                {pendingCount > 0 && (
+                  <>
+                    <span className="text-muted-foreground/60"> · </span>
+                    <span className="text-yellow-300">{pendingCount} pendências</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("publish_request", { ready: selectedReadyToPublish });
+                  setBulkConfirm({ kind: "publish", ids: idsArr });
+                }}
+                disabled={selectedReadyToPublish === 0 || publishing}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/50 bg-green-500/20 px-3 py-1.5 text-[10px] font-bold uppercase text-green-300 hover:bg-green-500/30 disabled:opacity-40 transition whitespace-nowrap shadow-[0_0_10px_rgba(34,197,94,0.25)]"
+                title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
+              >
+                <Rocket className="h-3 w-3" /> Publicar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
+              </button>
+            )}
+
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("ai_publish_request", { eligible: missingDescCount });
+                  setBulkConfirm({ kind: "ai-publish", ids: idsArr });
+                }}
+                disabled={missingDescCount === 0 || publishing}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-fuchsia-500/50 bg-fuchsia-500/15 px-3 py-1.5 text-[10px] font-bold uppercase text-fuchsia-300 hover:bg-fuchsia-500/25 disabled:opacity-40 transition whitespace-nowrap"
+                title={
+                  missingDescCount > 0
+                    ? `Gera IA em ${missingDescCount} e publica os que ficarem prontos`
+                    : "Nenhum selecionado precisa de IA"
+                }
+              >
+                <Zap className="h-3 w-3" /> IA + Publicar {missingDescCount > 0 ? `(${missingDescCount})` : ""}
+              </button>
+            )}
+
             <button
               onClick={() => {
                 track("ai_desc_request", { eligible: missingDescCount });
