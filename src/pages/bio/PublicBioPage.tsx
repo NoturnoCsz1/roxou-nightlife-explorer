@@ -67,10 +67,11 @@ async function loadContext(bio: BioProfile): Promise<BioContext> {
       : Promise.resolve({ data: null, error: null } as never),
     bio.show_transport
       ? supabase
-          .from("excursion_trips")
+          // View pública proxy: já filtra is_public/status/data — só retorna
+          // viagens abertas e futuras. Nenhum acesso ao dado interno.
+          .from("public_excursion_trips" as never)
           .select("id")
           .eq("partner_id", bio.partner_id)
-          .gte("departure_at", nowIso)
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null } as never),
