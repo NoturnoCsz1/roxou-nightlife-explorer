@@ -5,6 +5,30 @@
 import { hasEventDescription } from "@/lib/eventDescription";
 import type { EventRow, Checklist } from "./types";
 
+export type PublishBlocker = "title" | "date" | "time" | "description";
+
+const PUBLISH_BLOCKER_LABELS: Record<PublishBlocker, string> = {
+  title: "título inválido",
+  date: "sem data válida",
+  time: "sem horário",
+  description: "sem descrição",
+};
+
+function getPublishDateState(e: EventRow): { valid: boolean; blocker?: Extract<PublishBlocker, "date" | "time"> } {
+  const dtStr = (e.date_time || "").trim();
+  if (!dtStr) return { valid: false, blocker: "date" };
+  const dtMs = new Date(dtStr).getTime();
+  if (!Number.isFinite(dtMs) || dtMs <= Date.now()) return { valid: false, blocker: "date" };
+
+  // Onda 4 — não basta ter date_time futuro: se time_is_unknown ou 00:00,
+  // o evento entra em Revisão até o admin confirmar o horário.
+  const timeIsUnknown = (e as { time_is_unknown?: boolean | null }).time_is_unknown === true;
+  const hasRealTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dtStr) && dtStr.slice(11, 16) !== "00:00";
+  if (timeIsUnknown || !hasRealTime) return { valid: false, blocker: "time" };
+
+  return { valid: true };
+}
+
 export function getQualityScore(e: EventRow): number {
   let s = 0;
   if (e.image_url) s += 25;
@@ -18,18 +42,12 @@ export function getQualityScore(e: EventRow): number {
  * `description` = "tem descrição alguma" (usado por badge "Falta descrição",
  *   contadores, filtros, bulk).
  * `descriptionRich` = "tem descrição rica pronta para publicar" (gate
- *   editorial usado por `complete`).
+ *   editorial/qualidade, não bloqueio técnico de publicação rápida).
  */
 export function getChecklist(e: EventRow): Checklist {
   const titleText = (e.title || "").trim();
   const title = titleText.length >= 5 && !/[—–\-:|/]/.test(titleText);
-  // Onda 4 — não basta ter date_time futuro: se time_is_unknown ou 00:00,
-  // o evento entra em Revisão até o admin confirmar o horário.
-  const dtStr = (e.date_time || "").trim();
-  const dtValid = !!dtStr && new Date(dtStr).getTime() > Date.now();
-  const timeIsUnknown = (e as { time_is_unknown?: boolean | null }).time_is_unknown === true;
-  const hasRealTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dtStr) && dtStr.slice(11, 16) !== "00:00";
-  const date = dtValid && !timeIsUnknown && hasRealTime;
+  const date = getPublishDateState(e).valid;
   const desc = (e.description || "").trim();
   const descriptionRich =
     desc.length >= 80 &&
@@ -37,8 +55,37 @@ export function getChecklist(e: EventRow): Checklist {
     (/O QUE VOC[ÊE] PRECISA SABER/i.test(desc) || /<ul[\s>]/i.test(desc));
   const description = hasEventDescription(e as unknown as Record<string, unknown>);
   const flyer = !!e.image_url && /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(e.image_url.trim());
-  const complete = title && date && descriptionRich && flyer;
+  // Regra única de publicação rápida do Admin > Eventos:
+  // requisitos técnicos reais = título válido, data/horário válidos e alguma
+  // descrição útil. Capa/flyer e descrição rica continuam como alertas editoriais.
+  const complete = title && date && description;
   return { title, date, description, descriptionRich, flyer, complete };
+}
+
+export function getPublishBlockers(e: EventRow): PublishBlocker[] {
+  const cl = getChecklist(e);
+  const blockers: PublishBlocker[] = [];
+  if (!cl.title) blockers.push("title");
+  const dateState = getPublishDateState(e);
+  if (!dateState.valid && dateState.blocker) blockers.push(dateState.blocker);
+  if (!cl.description) blockers.push("description");
+  return blockers;
+}
+
+export function canPublishEvent(e: EventRow): boolean {
+  return getPublishBlockers(e).length === 0;
+}
+
+export function summarizePublishBlockers(events: EventRow[]): string {
+  const counts = new Map<PublishBlocker, number>();
+  for (const e of events) {
+    for (const blocker of getPublishBlockers(e)) {
+      counts.set(blocker, (counts.get(blocker) || 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .map(([blocker, count]) => `${count} ${PUBLISH_BLOCKER_LABELS[blocker]}`)
+    .join(", ");
 }
 
 export function normalizeAiTitle(title: string) {
