@@ -108,3 +108,21 @@ export const STATUS_COLOR: Record<CamaroteStatus, string> = {
   reserved: "bg-amber-400",
   sold: "bg-rose-500",
 };
+
+export const STATUS_TEXT_COLOR: Record<CamaroteStatus, string> = {
+  available: "text-emerald-400",
+  reserved: "text-amber-300",
+  sold: "text-rose-400",
+};
+
+export const WHATSAPP_NUMBER = "5518991086855";
+
+export function buildCamaroteWhatsappUrl(number: number) {
+  const msg = `Olá! Tenho interesse no camarote ${String(number).padStart(2, "0")} da Expo Prudente 2026. Ele ainda está disponível?`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
+
+export function buildCamaroteGeneralWhatsappUrl() {
+  const msg = "Olá! Quero consultar os camarotes disponíveis da Expo Prudente 2026.";
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+}
