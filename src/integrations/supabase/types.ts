@@ -5905,6 +5905,7 @@ export type Database = {
       }
       board_excursion_seat: { Args: { _token: string }; Returns: Json }
       can_access_partner_beta: { Args: { _user: string }; Returns: boolean }
+      can_admin_city: { Args: { _city: string }; Returns: boolean }
       cancel_partner_vip_entry: {
         Args: { _entry_id: string }
         Returns: {
@@ -6367,6 +6368,7 @@ export type Database = {
       expire_due_partner_reservations: { Args: never; Returns: number }
       expire_due_waitlist_entries: { Args: never; Returns: number }
       expire_stale_ride_requests: { Args: never; Returns: number }
+      get_editor_city: { Args: { _user_id: string }; Returns: string }
       get_partner_reservation_waitlist: {
         Args: { _partner_id: string }
         Returns: {
