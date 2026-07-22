@@ -113,7 +113,8 @@ export function EventosListCompactRow({
       ? "bg-muted-foreground/40"
       : "bg-yellow-400";
 
-  // Sinal principal — prioridade: revisão técnica > sem capa > falta descrição > pronto.
+  // Sinal principal — prioridade operacional: pronto p/ publicar > revisão técnica > pendências.
+  // Capa continua alerta editorial, mas não bloqueia publicação rápida.
   const cl = getChecklist(e);
   const noFlyer = !cl.flyer;
   const noDesc = !cl.description;
@@ -121,7 +122,11 @@ export function EventosListCompactRow({
   let issueLabel = "";
   let issueLevel: IssueLevel = null;
   let IssueIcon: typeof AlertTriangle | null = null;
-  if (review) {
+  if (isDraft && cl.complete) {
+    issueLabel = "PRONTO";
+    issueLevel = "ok";
+    IssueIcon = Rocket;
+  } else if (review) {
     issueLabel = "REVISAR";
     issueLevel = "warn";
     IssueIcon = AlertTriangle;
@@ -141,10 +146,6 @@ export function EventosListCompactRow({
     issueLabel = "DUPLICADO?";
     issueLevel = "info";
     IssueIcon = Copy;
-  } else if (isDraft && cl.complete) {
-    issueLabel = "PRONTO";
-    issueLevel = "ok";
-    IssueIcon = Rocket;
   }
   const issueCls =
     issueLevel === "error"

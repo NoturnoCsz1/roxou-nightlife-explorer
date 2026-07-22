@@ -8,6 +8,7 @@ import { CATEGORIES, type EventRow } from "./types";
 import {
   detectDuplicates,
   eventDayStr,
+  canPublishEvent,
   getChecklist,
   getOrigin,
   getQualityScore,
@@ -209,13 +210,13 @@ export function computeEventosListDerived(input: SelectorInput) {
   const operationalEvents = events.filter((e) => isOperationalEvent(e));
 
   const draftEvents = operationalEvents.filter((e) => e.status === "draft");
-  const draftsReady = draftEvents.filter((e) => getChecklist(e).complete).length;
+  const draftsReady = draftEvents.filter((e) => canPublishEvent(e)).length;
   const draftsAttention = draftEvents.length - draftsReady;
   const selectedReadyToPublish = events.filter(
-    (e) => selectedIds.has(e.id) && getChecklist(e).complete && e.status === "draft"
+    (e) => selectedIds.has(e.id) && canPublishEvent(e) && e.status === "draft"
   ).length;
   const readyInFiltered = filtered.filter(
-    (e) => e.status !== "published" && e.status !== "archived" && getChecklist(e).complete
+    (e) => e.status !== "published" && e.status !== "archived" && canPublishEvent(e)
   ).length;
   const reviewInFiltered = filtered.filter(
     (e) =>
