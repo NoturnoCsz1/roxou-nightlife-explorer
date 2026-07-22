@@ -808,6 +808,7 @@ export function useEventosListActions(deps: ActionsDeps) {
       handleBulkAssignCategory,
       handleBulkAssignPartner,
       handleBulkGenerateDescriptions,
+      handleBulkAiThenPublish,
     };
   }, [deps]);
 }
