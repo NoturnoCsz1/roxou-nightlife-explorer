@@ -82,6 +82,93 @@ async function getWeather() {
   }
 }
 
+// -----------------------------------------------------------
+// Rate limit server-side (ai_usage_counters)
+// -----------------------------------------------------------
+// Limites por modo. Chat mantém a regra antiga em ai_message_usage.
+const RATE_LIMITS: Record<string, { perDay: number; perMinute: number }> = {
+  home:   { perDay: 30, perMinute: 5 },
+  studio: { perDay: 50, perMinute: 10 },
+};
+
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function buildRateKey(req: Request, userId: string | null): Promise<string> {
+  if (userId) return `u:${userId}`;
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
+  const ua = req.headers.get("user-agent") || "unknown";
+  return `ip:${await sha256Hex(`${ip}|${ua}`)}`;
+}
+
+function truncateMinute(d: Date): string {
+  const iso = d.toISOString();
+  return iso.slice(0, 16) + ":00Z";
+}
+function dayBucketISO(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()) + "T00:00:00Z";
+}
+
+/** Incrementa e retorna { allowed, reason }. Aplica limite diário e por minuto. */
+async function checkAndBumpRate(
+  supabase: any,
+  key: string,
+  mode: keyof typeof RATE_LIMITS,
+) {
+  const limits = RATE_LIMITS[mode];
+  const now = new Date();
+  const dayAt = dayBucketISO();
+  const minAt = truncateMinute(now);
+
+  // Best-effort atomic upsert usando SQL cru? Como não podemos executar SQL,
+  // usamos upsert + select. Sob concorrência extrema pode passar 1-2 chamadas
+  // acima do limite, o que é aceitável para rate limit de custo.
+  async function bumpBucket(window: "day" | "minute", at: string, cap: number) {
+    // Tenta inserir; se já existe, faz update com incremento.
+    const { data: existing } = await supabase
+      .from("ai_usage_counters")
+      .select("count")
+      .eq("bucket_key", key)
+      .eq("mode", mode)
+      .eq("bucket_window", window)
+      .eq("bucket_at", at)
+      .maybeSingle();
+    const current = existing?.count ?? 0;
+    if (current >= cap) return { ok: false, current };
+    if (existing) {
+      await supabase
+        .from("ai_usage_counters")
+        .update({ count: current + 1, updated_at: new Date().toISOString() })
+        .eq("bucket_key", key)
+        .eq("mode", mode)
+        .eq("bucket_window", window)
+        .eq("bucket_at", at);
+    } else {
+      await supabase
+        .from("ai_usage_counters")
+        .insert({ bucket_key: key, mode, bucket_window: window, bucket_at: at, count: 1 });
+    }
+    return { ok: true, current: current + 1 };
+  }
+
+  const day = await bumpBucket("day", dayAt, limits.perDay);
+  if (!day.ok) return { allowed: false, reason: "daily_limit", limit: limits.perDay, used: day.current };
+  const minute = await bumpBucket("minute", minAt, limits.perMinute);
+  if (!minute.ok) return { allowed: false, reason: "burst_limit", limit: limits.perMinute, used: minute.current };
+  return { allowed: true };
+}
+
+async function isAdminUser(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  return !!data;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -103,6 +190,30 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const mode = body.mode || "chat";
+
+    // ---- Rate limit (home/studio) — ANTES de qualquer trabalho pesado / call de IA
+    if (mode === "home") {
+      const key = await buildRateKey(req, user?.id ?? null);
+      const rl = await checkAndBumpRate(supabase, key, "home");
+      if (!rl.allowed) {
+        return json(
+          { error: "rate_limited", scope: "home", reason: rl.reason, limit: rl.limit, used: rl.used },
+          429,
+        );
+      }
+    } else if (mode === "studio") {
+      // Studio: exige auth + admin
+      if (!user) return json({ error: "auth_required", message: "Login necessário para o Studio." }, 401);
+      const isAdmin = await isAdminUser(supabase, user.id);
+      if (!isAdmin) return json({ error: "forbidden", message: "Apenas admin pode usar o Studio." }, 403);
+      const rl = await checkAndBumpRate(supabase, `u:${user.id}`, "studio");
+      if (!rl.allowed) {
+        return json(
+          { error: "rate_limited", scope: "studio", reason: rl.reason, limit: rl.limit, used: rl.used },
+          429,
+        );
+      }
+    }
 
 
     const nowIso = new Date().toISOString();
