@@ -39,19 +39,51 @@ Deno.serve(async (req) => {
   }
 
   // 🔒 Todas as ações exceto o callback OAuth exigem admin.
-  // O callback é público porque é o redirect_uri que a Meta chama via GET.
+  // O callback é público porque é o redirect_uri que a Meta chama via GET —
+  // mas ele valida o `state` (CSRF token) contra oauth_state_tokens antes
+  // de trocar o code por token.
+  let adminUserId: string | null = null;
   if (action !== "callback") {
     const auth = await requireAdmin(req);
     if (!auth.ok) return auth.response;
+    adminUserId = auth.userId;
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // Helper: sha256 hex
+  async function sha256Hex(input: string): Promise<string> {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
 
   // Action: get auth URL
   if (action === "auth_url") {
     const redirectUri = `${SUPABASE_URL}/functions/v1/instagram-oauth?action=callback`;
     const scopes = "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management";
-    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code`;
+
+    // Gera state CSRF: 32 bytes aleatórios, guardamos apenas o hash.
+    const stateBytes = new Uint8Array(32);
+    crypto.getRandomValues(stateBytes);
+    const state = Array.from(stateBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+    const stateHash = await sha256Hex(state);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min TTL
+
+    const { error: stateErr } = await supabase.from("oauth_state_tokens").insert({
+      state_hash: stateHash,
+      admin_user_id: adminUserId,
+      provider: "instagram",
+      expires_at: expiresAt,
+    });
+    if (stateErr) {
+      console.error("state insert error", stateErr);
+      return new Response(JSON.stringify({ error: "Falha ao preparar OAuth state" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${META_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
 
     return new Response(JSON.stringify({ authUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -61,15 +93,44 @@ Deno.serve(async (req) => {
   // Action: OAuth callback
   if (action === "callback") {
     const code = url.searchParams.get("code");
+    const stateParam = url.searchParams.get("state");
     if (!code) {
       return new Response("<h2>Erro: código não recebido</h2>", {
         status: 400,
         headers: { "Content-Type": "text/html" },
       });
     }
+    if (!stateParam) {
+      return new Response("<h2>❌ Erro: state ausente (possível CSRF)</h2>", {
+        status: 400,
+        headers: { "Content-Type": "text/html" },
+      });
+    }
+
+    // Validação atômica do state (uso único, TTL):
+    // UPDATE ... WHERE used_at IS NULL AND expires_at > now() RETURNING admin_user_id
+    const stateHash = await sha256Hex(stateParam);
+    const { data: consumed, error: consumeErr } = await supabase
+      .from("oauth_state_tokens")
+      .update({ used_at: new Date().toISOString() })
+      .eq("state_hash", stateHash)
+      .is("used_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .select("admin_user_id")
+      .maybeSingle();
+
+    if (consumeErr || !consumed) {
+      return new Response(
+        "<h2>❌ Erro: state inválido, expirado ou já utilizado</h2>",
+        { status: 400, headers: { "Content-Type": "text/html" } },
+      );
+    }
+    const callbackAdminUserId: string = consumed.admin_user_id;
 
     try {
       const redirectUri = `${SUPABASE_URL}/functions/v1/instagram-oauth?action=callback`;
+
+
 
       // 1. Exchange code for short-lived token
       const tokenRes = await fetch(
@@ -131,7 +192,7 @@ Deno.serve(async (req) => {
           access_token: finalToken,
           token_expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
           status: "active",
-          connected_by: "00000000-0000-0000-0000-000000000000",
+          connected_by: callbackAdminUserId,
         },
         { onConflict: "ig_account_id" }
       );
