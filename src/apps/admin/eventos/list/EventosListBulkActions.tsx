@@ -370,6 +370,77 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Confirm: publicar selecionados */}
+      <AlertDialog
+        open={bulkConfirm?.kind === "publish"}
+        onOpenChange={(open) => !open && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Publicar {selectedReadyToPublish} evento(s) selecionado(s)?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os eventos válidos sairão de Rascunhos e ficarão disponíveis na plataforma.
+              {pendingCount > 0 && (
+                <>
+                  {" "}
+                  <span className="text-yellow-300">
+                    {pendingCount} evento(s) com pendências permanecerão em rascunho.
+                  </span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                track("publish_confirmed", { ready: selectedReadyToPublish });
+                handleBulkApprove();
+                setBulkConfirm(null);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Publicar eventos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm: IA + Publicar */}
+      <AlertDialog
+        open={bulkConfirm?.kind === "ai-publish"}
+        onOpenChange={(open) => !open && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar descrições com IA e publicar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {missingDescCount} evento(s) sem descrição serão processados pela IA.
+              Descrições já preenchidas nunca são sobrescritas. Ao final, publicamos
+              apenas os rascunhos que ficarem completos pelas mesmas regras já usadas
+              hoje. Pode consumir créditos de IA.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (bulkConfirm?.kind === "ai-publish") {
+                  track("ai_publish_confirmed", { eligible: missingDescCount });
+                  handleBulkAiThenPublish(bulkConfirm.ids);
+                }
+                setBulkConfirm(null);
+              }}
+              className="bg-fuchsia-600 hover:bg-fuchsia-700"
+            >
+              Gerar IA e publicar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
