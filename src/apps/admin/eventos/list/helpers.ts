@@ -23,7 +23,13 @@ function getPublishDateState(e: EventRow): { valid: boolean; blocker?: Extract<P
   // Onda 4 — não basta ter date_time futuro: se time_is_unknown ou 00:00,
   // o evento entra em Revisão até o admin confirmar o horário.
   const timeIsUnknown = (e as { time_is_unknown?: boolean | null }).time_is_unknown === true;
-  const hasRealTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(dtStr) && dtStr.slice(11, 16) !== "00:00";
+  const spTime = new Date(dtStr).toLocaleString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+    hour12: false,
+  });
+  const hasRealTime = /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(dtStr) && spTime !== "00:00";
   if (timeIsUnknown || !hasRealTime) return { valid: false, blocker: "time" };
 
   return { valid: true };
