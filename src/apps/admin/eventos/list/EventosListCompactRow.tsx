@@ -10,9 +10,11 @@ import {
   Copy as CopyIcon,
   ExternalLink,
   Flame,
+  ImageOff,
   Instagram,
   MoreHorizontal,
   Pencil,
+  Rocket,
   Sparkles,
   Square,
   Star,
@@ -30,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { categoryBadge, getEventEditPath, type EventRow } from "./types";
-import { getMissingFields, getOrigin, needsReview, spDateStr } from "./helpers";
+import { getChecklist, getMissingFields, getOrigin, needsReview, spDateStr } from "./helpers";
 import type { EventosListCtx } from "./useEventosList";
 
 const ORIGIN_TINT: Record<ReturnType<typeof getOrigin>, string> = {
@@ -88,6 +90,8 @@ export function EventosListCompactRow({
     setDeleteTarget,
     regenerateTitle,
     regenerateDescription,
+    handleQuickApprove,
+    handleArchive,
     aiBusy,
   } = ctx;
 
@@ -109,14 +113,48 @@ export function EventosListCompactRow({
       ? "bg-muted-foreground/40"
       : "bg-yellow-400";
 
-  // Problema principal (1 sinal mais relevante) — evita renderizar muitos badges
-  const mainIssue =
-    missing.length > 0
-      ? `Falta ${missing[0]}${missing.length > 1 ? ` +${missing.length - 1}` : ""}`
-      : review
-      ? "Revisar"
-      : isDuplicate
-      ? "Possível duplicado"
+  // Sinal principal — prioridade: revisão técnica > sem capa > falta descrição > pronto.
+  const cl = getChecklist(e);
+  const noFlyer = !cl.flyer;
+  const noDesc = !cl.description;
+  type IssueLevel = "error" | "warn" | "info" | "ok" | null;
+  let issueLabel = "";
+  let issueLevel: IssueLevel = null;
+  let IssueIcon: typeof AlertTriangle | null = null;
+  if (review) {
+    issueLabel = "REVISAR";
+    issueLevel = "warn";
+    IssueIcon = AlertTriangle;
+  } else if (noFlyer) {
+    issueLabel = "SEM CAPA";
+    issueLevel = "error";
+    IssueIcon = ImageOff;
+  } else if (noDesc) {
+    issueLabel = "FALTA DESCRIÇÃO";
+    issueLevel = "warn";
+    IssueIcon = AlertTriangle;
+  } else if (missing.length > 0) {
+    issueLabel = `FALTA ${missing[0].toUpperCase()}${missing.length > 1 ? ` +${missing.length - 1}` : ""}`;
+    issueLevel = "warn";
+    IssueIcon = AlertTriangle;
+  } else if (isDuplicate) {
+    issueLabel = "DUPLICADO?";
+    issueLevel = "info";
+    IssueIcon = Copy;
+  } else if (isDraft && cl.complete) {
+    issueLabel = "PRONTO";
+    issueLevel = "ok";
+    IssueIcon = Rocket;
+  }
+  const issueCls =
+    issueLevel === "error"
+      ? "bg-red-500/15 text-red-300 border border-red-500/30"
+      : issueLevel === "warn"
+      ? "bg-yellow-400/15 text-yellow-300 border border-yellow-400/30"
+      : issueLevel === "info"
+      ? "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30"
+      : issueLevel === "ok"
+      ? "bg-green-500/15 text-green-300 border border-green-500/30"
       : "";
 
   return (
@@ -184,9 +222,13 @@ export function EventosListCompactRow({
               {e.aura_pick ? "Aura" : <><Flame className="h-2.5 w-2.5" />Dest</>}
             </span>
           )}
-          {mainIssue && (
-            <span className="text-muted-foreground truncate min-w-0">
-              <span className="opacity-50">·</span> {mainIssue}
+          {issueLabel && (
+            <span
+              className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-bold uppercase shrink-0 text-[9px] ${issueCls}`}
+              title={issueLabel}
+            >
+              {IssueIcon && <IssueIcon className="h-2.5 w-2.5" />}
+              {issueLabel}
             </span>
           )}
         </div>
@@ -240,11 +282,22 @@ export function EventosListCompactRow({
             {isDraft && (
               <>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleQuickApprove(e)}
+                  disabled={!cl.complete}
+                  className="text-green-400 focus:text-green-400"
+                >
+                  <Rocket className="h-4 w-4 mr-2" />
+                  {cl.complete ? "Publicar agora" : "Publicar (faltam dados)"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => regenerateTitle(e)} disabled={!!busy}>
                   <Sparkles className="h-4 w-4 mr-2" /> Gerar título (IA)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => regenerateDescription(e)} disabled={!!busy}>
                   <Wand2 className="h-4 w-4 mr-2" /> Gerar descrição (IA)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleArchive(e)}>
+                  🗃 Arquivar
                 </DropdownMenuItem>
               </>
             )}

@@ -74,6 +74,8 @@ export function useEventosList() {
     | { kind: "delete"; ids: string[] }
     | { kind: "ai-desc"; ids: string[] }
     | { kind: "needs-review"; ids: string[] }
+    | { kind: "publish"; ids: string[] }
+    | { kind: "ai-publish"; ids: string[] }
     | null
   >(null);
 

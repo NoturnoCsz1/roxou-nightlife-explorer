@@ -9,12 +9,13 @@ import {
   Bot,
   Check,
   CheckSquare,
-  Flame,
+  Rocket,
   Sparkles,
   Tag,
   Trash2,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { trackAdminEvent } from "@/lib/adminAnalytics";
 import { CATEGORIES } from "./types";
+import { getChecklist } from "./helpers";
 
 import { eventNeedsAiContent } from "./useEventosListActions";
 import type { EventosListCtx } from "./useEventosList";
@@ -39,6 +41,7 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
     selectedCount,
     selectedReadyToPublish,
     handleBulkApprove,
+    handleBulkAiThenPublish,
     publishing,
     handleBulkAura,
     handleBulkArchive,
@@ -65,6 +68,11 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
   const missingDescCount = events.filter(
     (e) => selectedIds.has(e.id) && eventNeedsAiContent(e)
   ).length;
+  // Pendências = rascunhos selecionados que ainda não estão prontos.
+  const selectedDrafts = events.filter(
+    (e) => selectedIds.has(e.id) && e.status === "draft"
+  );
+  const pendingCount = selectedDrafts.filter((e) => !getChecklist(e).complete).length;
 
   function track(action: string, extra: Record<string, unknown> = {}) {
     trackAdminEvent("admin_events_bulk_action", { action, count: idsArr.length, ...extra });
@@ -79,14 +87,59 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
         }}
       >
         <div className="md:ml-44 px-3 py-2 flex items-center gap-2">
-          <div className="flex items-center gap-1.5 min-w-0 shrink-0">
-            <CheckSquare className="h-4 w-4 text-primary shrink-0" />
-            <span className="text-xs font-bold text-primary whitespace-nowrap">
-              {selectedCount} selecionado(s)
-            </span>
+          <div className="flex flex-col items-start min-w-0 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-xs font-bold text-primary whitespace-nowrap">
+                {selectedCount} sel.
+              </span>
+            </div>
+            {!isPastTab && (selectedReadyToPublish > 0 || pendingCount > 0) && (
+              <div className="text-[10px] font-medium whitespace-nowrap leading-tight">
+                <span className="text-green-400">{selectedReadyToPublish} prontos</span>
+                {pendingCount > 0 && (
+                  <>
+                    <span className="text-muted-foreground/60"> · </span>
+                    <span className="text-yellow-300">{pendingCount} pendências</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-hide [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("publish_request", { ready: selectedReadyToPublish });
+                  setBulkConfirm({ kind: "publish", ids: idsArr });
+                }}
+                disabled={selectedReadyToPublish === 0 || publishing}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/50 bg-green-500/20 px-3 py-1.5 text-[10px] font-bold uppercase text-green-300 hover:bg-green-500/30 disabled:opacity-40 transition whitespace-nowrap shadow-[0_0_10px_rgba(34,197,94,0.25)]"
+                title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
+              >
+                <Rocket className="h-3 w-3" /> Publicar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
+              </button>
+            )}
+
+            {!isPastTab && (
+              <button
+                onClick={() => {
+                  track("ai_publish_request", { eligible: missingDescCount });
+                  setBulkConfirm({ kind: "ai-publish", ids: idsArr });
+                }}
+                disabled={missingDescCount === 0 || publishing}
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-fuchsia-500/50 bg-fuchsia-500/15 px-3 py-1.5 text-[10px] font-bold uppercase text-fuchsia-300 hover:bg-fuchsia-500/25 disabled:opacity-40 transition whitespace-nowrap"
+                title={
+                  missingDescCount > 0
+                    ? `Gera IA em ${missingDescCount} e publica os que ficarem prontos`
+                    : "Nenhum selecionado precisa de IA"
+                }
+              >
+                <Zap className="h-3 w-3" /> IA + Publicar {missingDescCount > 0 ? `(${missingDescCount})` : ""}
+              </button>
+            )}
+
             <button
               onClick={() => {
                 track("ai_desc_request", { eligible: missingDescCount });
@@ -178,19 +231,9 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
               </button>
             )}
 
-            {!isPastTab && (
-              <button
-                onClick={() => {
-                  track("approve");
-                  handleBulkApprove();
-                }}
-                disabled={selectedReadyToPublish === 0 || publishing}
-                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition whitespace-nowrap"
-                title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
-              >
-                <Check className="h-3 w-3" /> Aprovar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
-              </button>
-            )}
+            {/* Aprovar/Publicar consolidado no botão "Publicar" no topo da barra. */}
+
+
 
             {!isPastTab && (
               <button
@@ -323,6 +366,77 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
               className="bg-violet-600 hover:bg-violet-700"
             >
               Sim, gerar com IA
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm: publicar selecionados */}
+      <AlertDialog
+        open={bulkConfirm?.kind === "publish"}
+        onOpenChange={(open) => !open && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Publicar {selectedReadyToPublish} evento(s) selecionado(s)?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Os eventos válidos sairão de Rascunhos e ficarão disponíveis na plataforma.
+              {pendingCount > 0 && (
+                <>
+                  {" "}
+                  <span className="text-yellow-300">
+                    {pendingCount} evento(s) com pendências permanecerão em rascunho.
+                  </span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                track("publish_confirmed", { ready: selectedReadyToPublish });
+                handleBulkApprove();
+                setBulkConfirm(null);
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Publicar eventos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm: IA + Publicar */}
+      <AlertDialog
+        open={bulkConfirm?.kind === "ai-publish"}
+        onOpenChange={(open) => !open && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar descrições com IA e publicar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {missingDescCount} evento(s) sem descrição serão processados pela IA.
+              Descrições já preenchidas nunca são sobrescritas. Ao final, publicamos
+              apenas os rascunhos que ficarem completos pelas mesmas regras já usadas
+              hoje. Pode consumir créditos de IA.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (bulkConfirm?.kind === "ai-publish") {
+                  track("ai_publish_confirmed", { eligible: missingDescCount });
+                  handleBulkAiThenPublish(bulkConfirm.ids);
+                }
+                setBulkConfirm(null);
+              }}
+              className="bg-fuchsia-600 hover:bg-fuchsia-700"
+            >
+              Gerar IA e publicar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

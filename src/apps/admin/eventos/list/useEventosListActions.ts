@@ -698,6 +698,67 @@ export function useEventosListActions(deps: ActionsDeps) {
       }
     }
 
+    // === IA + Publicar ===
+    // Reutiliza handleBulkGenerateDescriptions (mesma Edge Function, mesmo
+    // prompt, mesma proteção contra sobrescrita) e, ao final, refetch dos
+    // eventos processados para decidir quais podem ser publicados usando
+    // exatamente as mesmas regras (getChecklist().complete + status draft).
+    async function handleBulkAiThenPublish(ids: string[]) {
+      if (ids.length === 0) return;
+      // 1) Gera descrições apenas para os que precisam. Não sobrescreve.
+      await handleBulkGenerateDescriptions(ids);
+      // 2) Recarrega estado atualizado do banco para evitar race conditions.
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          "id, title, slug, venue_name, address, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score, instagram_caption, short_summary, meta_title, meta_description, time_is_unknown"
+        )
+        .in("id", ids);
+      if (error || !data) {
+        toast.error("Não foi possível reavaliar os eventos após a IA.");
+        return;
+      }
+      // 3) Aplica patch local com o snapshot atualizado.
+      setEvents((prev) =>
+        prev.map((e) => {
+          const fresh = data.find((d: any) => d.id === e.id);
+          return fresh ? { ...e, ...(fresh as Partial<EventRow>) } : e;
+        })
+      );
+      // 4) Publica somente rascunhos que ficaram completos.
+      const readyIds = (data as unknown as EventRow[])
+        .filter((e) => e.status === "draft" && getChecklist(e).complete)
+        .map((e) => e.id);
+      if (readyIds.length === 0) {
+        const remaining = ids.length;
+        toast.message(`Nenhum evento ficou pronto. ${remaining} continuam com pendências.`);
+        return;
+      }
+      const { error: pubErr } = await supabase
+        .from("events")
+        .update({ status: "published" })
+        .in("id", readyIds);
+      if (pubErr) {
+        toast.error("Falha ao publicar após IA.");
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => (readyIds.includes(e.id) ? { ...e, status: "published" } : e))
+      );
+      // Remove da seleção só os publicados; mantém os pendentes para correção.
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        readyIds.forEach((id) => next.delete(id));
+        return next;
+      });
+      const stillPending = ids.length - readyIds.length;
+      toast.success(
+        `✨ ${readyIds.length} publicado(s) após IA${
+          stillPending > 0 ? ` · ${stillPending} continuam com pendências` : ""
+        }`
+      );
+    }
+
     async function handleApproveAllSafe(visibleSafeIds: string[]) {
       if (visibleSafeIds.length === 0) {
         toast.error("Nenhum evento seguro encontrado nos filtros atuais.");
@@ -747,6 +808,7 @@ export function useEventosListActions(deps: ActionsDeps) {
       handleBulkAssignCategory,
       handleBulkAssignPartner,
       handleBulkGenerateDescriptions,
+      handleBulkAiThenPublish,
     };
   }, [deps]);
 }
