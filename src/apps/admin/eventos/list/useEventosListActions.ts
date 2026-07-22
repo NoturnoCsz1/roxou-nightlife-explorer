@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { spLocalToISO } from "@/lib/dateUtils";
 import { downloadEventsZip } from "@/lib/downloadEventsZip";
 import type { EventRow } from "./types";
-import { getChecklist, normalizeAiTitle } from "./helpers";
+import { canPublishEvent, getChecklist, getPublishBlockers, normalizeAiTitle, summarizePublishBlockers } from "./helpers";
 import { hasEventDescription } from "@/lib/eventDescription";
 import { classifyAiError } from "@shared/utils/aiGatewayError";
 
@@ -385,12 +385,13 @@ export function useEventosListActions(deps: ActionsDeps) {
 
     async function handleBulkPublish() {
       const selected = events.filter((e) => selectedIds.has(e.id));
-      const ready = selected.filter((e) => getChecklist(e).complete && e.status !== "published");
+      const ready = selected.filter((e) => canPublishEvent(e) && e.status === "draft");
       const blocked =
-        selected.length - ready.length - selected.filter((e) => e.status === "published").length;
+        selected.length - ready.length - selected.filter((e) => e.status !== "draft").length;
 
       if (ready.length === 0) {
-        toast.error(`Nenhum evento pronto. ${blocked} bloqueado(s) por falta de informação.`);
+        const reasons = summarizePublishBlockers(selected.filter((e) => e.status === "draft"));
+        toast.error(`Nenhum evento pronto.${reasons ? ` Pendências: ${reasons}.` : ""}`);
         return;
       }
       setPublishing(true);
@@ -399,10 +400,15 @@ export function useEventosListActions(deps: ActionsDeps) {
         const { error } = await supabase.from("events").update({ status: "published" }).in("id", ids);
         if (error) throw error;
         setEvents((prev) => prev.map((e) => (ids.includes(e.id) ? { ...e, status: "published" } : e)));
-        setSelectedIds(new Set());
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          ids.forEach((id) => next.delete(id));
+          return next;
+        });
         toast.success(`${ready.length} evento(s) publicado(s)!`);
         if (blocked > 0) {
-          toast.warning(`${blocked} evento(s) não puderam ser postados por falta de informações.`);
+          const reasons = summarizePublishBlockers(selected.filter((e) => e.status === "draft" && !canPublishEvent(e)));
+          toast.warning(`${blocked} permaneceram em rascunho${reasons ? `: ${reasons}` : ""}.`);
         }
       } catch (err: any) {
         toast.error(err?.message || "Erro ao publicar em lote");
@@ -416,9 +422,9 @@ export function useEventosListActions(deps: ActionsDeps) {
       e: EventRow,
       opts?: { featured?: boolean; auraPick?: boolean }
     ) {
-      const cl = getChecklist(e);
-      if (!cl.complete) {
-        toast.error("Evento incompleto: preencha título, data, local, descrição e flyer.");
+      if (!canPublishEvent(e)) {
+        const reasons = summarizePublishBlockers([e]);
+        toast.error(`Evento incompleto${reasons ? `: ${reasons}` : ""}.`);
         return;
       }
       const patch: { status: string; featured?: boolean; aura_pick?: boolean } = {
@@ -451,10 +457,12 @@ export function useEventosListActions(deps: ActionsDeps) {
     async function handleBulkApprove(opts?: { featured?: boolean; auraPick?: boolean }) {
       const ids = Array.from(selectedIds);
       const ready = events.filter(
-        (e) => ids.includes(e.id) && getChecklist(e).complete && e.status !== "published"
+        (e) => ids.includes(e.id) && canPublishEvent(e) && e.status === "draft"
       );
       if (ready.length === 0) {
-        toast.error("Nenhum dos selecionados está pronto para aprovação.");
+        const selectedDrafts = events.filter((e) => ids.includes(e.id) && e.status === "draft");
+        const reasons = summarizePublishBlockers(selectedDrafts);
+        toast.error(`Nenhum dos selecionados está pronto para publicação${reasons ? `: ${reasons}` : ""}.`);
         return;
       }
       const patch: { status: string; featured?: boolean; aura_pick?: boolean } = {
@@ -469,12 +477,24 @@ export function useEventosListActions(deps: ActionsDeps) {
         return;
       }
       setEvents((prev) => prev.map((e) => (readyIds.includes(e.id) ? { ...e, ...patch } : e)));
-      setSelectedIds(new Set());
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        readyIds.forEach((id) => next.delete(id));
+        return next;
+      });
       toast.success(
-        `✓ ${ready.length} evento(s) aprovado(s)${opts?.featured ? " + destaque" : ""}${
+        `✓ ${ready.length} evento(s) publicado(s)${opts?.featured ? " + destaque" : ""}${
           opts?.auraPick ? " + Aura" : ""
         }`
       );
+
+      const pending = events.filter(
+        (e) => ids.includes(e.id) && e.status === "draft" && !readyIds.includes(e.id) && !canPublishEvent(e)
+      );
+      if (pending.length > 0) {
+        const reasons = summarizePublishBlockers(pending);
+        toast.warning(`${pending.length} permaneceram em rascunho${reasons ? `: ${reasons}` : ""}.`);
+      }
     }
 
     async function handleBulkArchive() {
@@ -702,61 +722,96 @@ export function useEventosListActions(deps: ActionsDeps) {
     // Reutiliza handleBulkGenerateDescriptions (mesma Edge Function, mesmo
     // prompt, mesma proteção contra sobrescrita) e, ao final, refetch dos
     // eventos processados para decidir quais podem ser publicados usando
-    // exatamente as mesmas regras (getChecklist().complete + status draft).
+    // exatamente a mesma regra da publicação individual/lote (canPublishEvent).
     async function handleBulkAiThenPublish(ids: string[]) {
       if (ids.length === 0) return;
-      // 1) Gera descrições apenas para os que precisam. Não sobrescreve.
-      await handleBulkGenerateDescriptions(ids);
-      // 2) Recarrega estado atualizado do banco para evitar race conditions.
-      const { data, error } = await supabase
-        .from("events")
-        .select(
-          "id, title, slug, venue_name, address, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score, instagram_caption, short_summary, meta_title, meta_description, time_is_unknown"
-        )
-        .in("id", ids);
-      if (error || !data) {
-        toast.error("Não foi possível reavaliar os eventos após a IA.");
-        return;
+      setPublishing(true);
+      try {
+        // 1) Gera descrições apenas para os que precisam. Não sobrescreve.
+        await handleBulkGenerateDescriptions(ids);
+        // 2) Recarrega estado atualizado do banco para evitar race conditions.
+        const { data, error } = await supabase
+          .from("events")
+          .select(
+            "id, title, slug, venue_name, address, date_time, category, sub_category, status, featured, aura_pick, image_url, description, partner_id, created_at, verification_source, ai_confidence, needs_review, aura_badge, aura_score, instagram_caption, short_summary, meta_title, meta_description, time_is_unknown"
+          )
+          .in("id", ids);
+        if (error || !data) {
+          toast.error("Não foi possível reavaliar os eventos após a IA.");
+          return;
+        }
+        const freshEvents = data as unknown as EventRow[];
+        // 3) Aplica patch local com o snapshot atualizado antes de publicar,
+        // para badges/contadores perderem pendências já resolvidas.
+        setEvents((prev) =>
+          prev.map((e) => {
+            const fresh = freshEvents.find((d) => d.id === e.id);
+            return fresh ? { ...e, ...fresh } : e;
+          })
+        );
+
+        if (import.meta.env.DEV) {
+          // Diagnóstico interno sem conteúdo sensível: não imprime descrição,
+          // apenas presença/tamanho e motivos técnicos reais de bloqueio.
+          // eslint-disable-next-line no-console
+          console.table(
+            freshEvents.map((e) => {
+              const cl = getChecklist(e);
+              return {
+                id: e.id,
+                status: e.status,
+                title: cl.title,
+                date: cl.date,
+                description: cl.description,
+                descriptionRich: cl.descriptionRich,
+                flyer: cl.flyer,
+                blockers: getPublishBlockers(e).join(",") || "—",
+              };
+            })
+          );
+        }
+
+        // 4) Publica somente rascunhos elegíveis pela mesma regra única.
+        const readyIds = freshEvents
+          .filter((e) => e.status === "draft" && canPublishEvent(e))
+          .map((e) => e.id);
+        const pending = freshEvents.filter((e) => e.status === "draft" && !canPublishEvent(e));
+        const pendingSummary = summarizePublishBlockers(pending);
+        if (readyIds.length === 0) {
+          toast.message(
+            `Nenhum evento ficou pronto. ${pending.length} permaneceram em rascunho${
+              pendingSummary ? `: ${pendingSummary}` : ""
+            }.`
+          );
+          return;
+        }
+        const { error: pubErr } = await supabase
+          .from("events")
+          .update({ status: "published" })
+          .in("id", readyIds);
+        if (pubErr) {
+          toast.error("Falha ao publicar após IA.");
+          return;
+        }
+        setEvents((prev) =>
+          prev.map((e) => (readyIds.includes(e.id) ? { ...e, status: "published" } : e))
+        );
+        // Remove da seleção só os publicados; mantém os pendentes para correção.
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          readyIds.forEach((id) => next.delete(id));
+          return next;
+        });
+        toast.success(
+          `✨ ${readyIds.length} publicado(s) após IA${
+            pending.length > 0
+              ? ` · ${pending.length} permaneceram em rascunho${pendingSummary ? `: ${pendingSummary}` : ""}`
+              : ""
+          }`
+        );
+      } finally {
+        setPublishing(false);
       }
-      // 3) Aplica patch local com o snapshot atualizado.
-      setEvents((prev) =>
-        prev.map((e) => {
-          const fresh = data.find((d: any) => d.id === e.id);
-          return fresh ? { ...e, ...(fresh as Partial<EventRow>) } : e;
-        })
-      );
-      // 4) Publica somente rascunhos que ficaram completos.
-      const readyIds = (data as unknown as EventRow[])
-        .filter((e) => e.status === "draft" && getChecklist(e).complete)
-        .map((e) => e.id);
-      if (readyIds.length === 0) {
-        const remaining = ids.length;
-        toast.message(`Nenhum evento ficou pronto. ${remaining} continuam com pendências.`);
-        return;
-      }
-      const { error: pubErr } = await supabase
-        .from("events")
-        .update({ status: "published" })
-        .in("id", readyIds);
-      if (pubErr) {
-        toast.error("Falha ao publicar após IA.");
-        return;
-      }
-      setEvents((prev) =>
-        prev.map((e) => (readyIds.includes(e.id) ? { ...e, status: "published" } : e))
-      );
-      // Remove da seleção só os publicados; mantém os pendentes para correção.
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        readyIds.forEach((id) => next.delete(id));
-        return next;
-      });
-      const stillPending = ids.length - readyIds.length;
-      toast.success(
-        `✨ ${readyIds.length} publicado(s) após IA${
-          stillPending > 0 ? ` · ${stillPending} continuam com pendências` : ""
-        }`
-      );
     }
 
     async function handleApproveAllSafe(visibleSafeIds: string[]) {
