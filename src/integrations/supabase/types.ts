@@ -5493,6 +5493,24 @@ export type Database = {
           },
         ]
       }
+      public_expo2026_camarotes: {
+        Row: {
+          number: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          number?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          number?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       public_partners: {
         Row: {
           active: boolean | null
