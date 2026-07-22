@@ -231,19 +231,9 @@ export function EventosListBulkActions({ ctx }: { ctx: EventosListCtx }) {
               </button>
             )}
 
-            {!isPastTab && (
-              <button
-                onClick={() => {
-                  track("approve");
-                  handleBulkApprove();
-                }}
-                disabled={selectedReadyToPublish === 0 || publishing}
-                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase text-green-400 hover:bg-green-500/25 disabled:opacity-40 transition whitespace-nowrap"
-                title={`${selectedReadyToPublish} pronto(s) p/ publicar`}
-              >
-                <Check className="h-3 w-3" /> Aprovar {selectedReadyToPublish > 0 ? `(${selectedReadyToPublish})` : ""}
-              </button>
-            )}
+            {/* Aprovar/Publicar consolidado no botão "Publicar" no topo da barra. */}
+
+
 
             {!isPastTab && (
               <button
