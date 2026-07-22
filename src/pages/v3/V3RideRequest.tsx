@@ -46,28 +46,8 @@ const MAP_STYLES = [
   { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
 ];
 
-let mapsLoadPromise: Promise<void> | null = null;
-let mapsApiKey: string | null = null;
-async function loadGoogleMaps(): Promise<void> {
-  if ((window as any).google?.maps) return;
-  if (mapsLoadPromise) return mapsLoadPromise;
-  mapsLoadPromise = (async () => {
-    if (!mapsApiKey) {
-      const { data, error } = await supabase.functions.invoke("maps-key");
-      if (error || !data?.key) throw new Error("Failed to load Maps API key");
-      mapsApiKey = data.key;
-    }
-    return new Promise<void>((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places,geocoding&language=pt-BR&loading=async`;
-      s.async = true;
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error("Failed to load Google Maps"));
-      document.head.appendChild(s);
-    });
-  })();
-  return mapsLoadPromise;
-}
+import { loadGoogleMaps } from "@/lib/googleMaps";
+
 
 interface PartnerData {
   name: string | null;

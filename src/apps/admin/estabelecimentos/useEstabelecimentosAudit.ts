@@ -29,7 +29,7 @@ import type {
 } from "./types";
 import { STATUS_META } from "./types";
 import { computeFlags, computeScore } from "./scoring";
-import { geocodeInBrowser } from "./geocoding";
+// geocoding server-side apenas — nenhum import de `./geocoding` para geocode.
 
 export function useEstabelecimentosAudit() {
   const { cityFilter } = useAdminProfile();
@@ -354,25 +354,17 @@ export function useEstabelecimentosAudit() {
     const address = norm(e.address);
     const neighborhood = e.neighborhood ? norm(e.neighborhood) : "";
     const city = norm(e.city || "Presidente Prudente");
-    const addrNoNeighborhood = address.replace(/\s*-\s*[^,]*$/, "");
-    const candidates = [
-      [address, neighborhood, city, "SP", "Brasil"],
-      [address, city, "SP", "Brasil"],
-      [addrNoNeighborhood, city, "SP", "Brasil"],
-      [e.name, city, "SP", "Brasil"],
-    ]
-      .map(parts => parts.filter(Boolean).map(String).join(", "))
-      .filter((q, i, arr) => q.length > 4 && arr.indexOf(q) === i);
     try {
+      // Server-side geocoding only. A chave do Google Maps NUNCA é exposta
+      // ao painel admin; toda a geocodificação passa por `geocode-address`
+      // (requer JWT + role admin).
       const { data, error } = await supabase.functions.invoke("geocode-address", {
         body: { address, neighborhood, city, state: "SP", country: "Brasil", name: e.name },
       });
-      let result = data?.ok !== false && data?.latitude && data?.longitude ? data : null;
-      if (!result && (data?.status === "REQUEST_DENIED" || error)) {
-        result = await geocodeInBrowser(candidates);
-      }
+      if (error) return { ok: false, error: "Falha no geocoding server-side." };
+      const result = data?.ok !== false && data?.latitude && data?.longitude ? data : null;
       if (!result?.latitude || !result?.longitude) {
-        return { ok: false, error: "Endereço não encontrado.", tried: data?.tried || candidates };
+        return { ok: false, error: data?.error || "Endereço não encontrado.", tried: data?.tried };
       }
       const payload = {
         latitude: result.latitude,
@@ -391,6 +383,7 @@ export function useEstabelecimentosAudit() {
       return { ok: false, error: err.message || "Falha no geocoding" };
     }
   }
+
 
   async function saveManualCoords(e: Establishment, lat: number, lng: number) {
     if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
