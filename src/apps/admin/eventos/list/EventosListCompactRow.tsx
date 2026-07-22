@@ -113,14 +113,48 @@ export function EventosListCompactRow({
       ? "bg-muted-foreground/40"
       : "bg-yellow-400";
 
-  // Problema principal (1 sinal mais relevante) — evita renderizar muitos badges
-  const mainIssue =
-    missing.length > 0
-      ? `Falta ${missing[0]}${missing.length > 1 ? ` +${missing.length - 1}` : ""}`
-      : review
-      ? "Revisar"
-      : isDuplicate
-      ? "Possível duplicado"
+  // Sinal principal — prioridade: revisão técnica > sem capa > falta descrição > pronto.
+  const cl = getChecklist(e);
+  const noFlyer = !cl.flyer;
+  const noDesc = !cl.description;
+  type IssueLevel = "error" | "warn" | "info" | "ok" | null;
+  let issueLabel = "";
+  let issueLevel: IssueLevel = null;
+  let IssueIcon: typeof AlertTriangle | null = null;
+  if (review) {
+    issueLabel = "REVISAR";
+    issueLevel = "warn";
+    IssueIcon = AlertTriangle;
+  } else if (noFlyer) {
+    issueLabel = "SEM CAPA";
+    issueLevel = "error";
+    IssueIcon = ImageOff;
+  } else if (noDesc) {
+    issueLabel = "FALTA DESCRIÇÃO";
+    issueLevel = "warn";
+    IssueIcon = AlertTriangle;
+  } else if (missing.length > 0) {
+    issueLabel = `FALTA ${missing[0].toUpperCase()}${missing.length > 1 ? ` +${missing.length - 1}` : ""}`;
+    issueLevel = "warn";
+    IssueIcon = AlertTriangle;
+  } else if (isDuplicate) {
+    issueLabel = "DUPLICADO?";
+    issueLevel = "info";
+    IssueIcon = Copy;
+  } else if (isDraft && cl.complete) {
+    issueLabel = "PRONTO";
+    issueLevel = "ok";
+    IssueIcon = Rocket;
+  }
+  const issueCls =
+    issueLevel === "error"
+      ? "bg-red-500/15 text-red-300 border border-red-500/30"
+      : issueLevel === "warn"
+      ? "bg-yellow-400/15 text-yellow-300 border border-yellow-400/30"
+      : issueLevel === "info"
+      ? "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30"
+      : issueLevel === "ok"
+      ? "bg-green-500/15 text-green-300 border border-green-500/30"
       : "";
 
   return (
