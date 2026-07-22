@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
           access_token: finalToken,
           token_expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
           status: "active",
-          connected_by: "00000000-0000-0000-0000-000000000000",
+          connected_by: callbackAdminUserId,
         },
         { onConflict: "ig_account_id" }
       );
