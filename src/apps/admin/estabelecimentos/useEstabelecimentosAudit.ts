@@ -29,7 +29,7 @@ import type {
 } from "./types";
 import { STATUS_META } from "./types";
 import { computeFlags, computeScore } from "./scoring";
-import { geocodeInBrowser } from "./geocoding";
+// geocoding server-side apenas — nenhum import de `./geocoding` para geocode.
 
 export function useEstabelecimentosAudit() {
   const { cityFilter } = useAdminProfile();
