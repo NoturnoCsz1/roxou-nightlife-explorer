@@ -222,9 +222,13 @@ export function EventosListCompactRow({
               {e.aura_pick ? "Aura" : <><Flame className="h-2.5 w-2.5" />Dest</>}
             </span>
           )}
-          {mainIssue && (
-            <span className="text-muted-foreground truncate min-w-0">
-              <span className="opacity-50">·</span> {mainIssue}
+          {issueLabel && (
+            <span
+              className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-bold uppercase shrink-0 text-[9px] ${issueCls}`}
+              title={issueLabel}
+            >
+              {IssueIcon && <IssueIcon className="h-2.5 w-2.5" />}
+              {issueLabel}
             </span>
           )}
         </div>
