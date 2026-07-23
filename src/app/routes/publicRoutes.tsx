@@ -99,6 +99,7 @@ const CustomerInvites = lazy(() => import("@/pages/customer/CustomerInvites"));
 // Dev / diversos
 const BarDoMes = lazy(() => import("@/pages/BarDoMes"));
 const DevRoutes = lazy(() => import("@/pages/DevRoutes"));
+const ShortLinkRedirect = lazy(() => import("@/pages/ShortLinkRedirect"));
 
 // Legacy v2
 const LegacyIndex = lazy(() => import("@/pages/Index"));
