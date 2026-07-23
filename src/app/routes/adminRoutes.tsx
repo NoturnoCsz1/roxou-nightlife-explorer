@@ -107,6 +107,7 @@ export const AdminRoutes = () => (
       <Route path="crm/:id" element={L(<CrmCustomerDetail />)} />
       <Route path="bios" element={L(<AdminBiosPage />)} />
       <Route path="descobertas" element={L(<AdminDiscovery />)} />
+      <Route path="links" element={L(<AdminLinks />)} />
     </Route>
   </>
 );
