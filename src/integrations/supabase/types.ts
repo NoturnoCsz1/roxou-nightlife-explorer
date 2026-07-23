@@ -4923,6 +4923,155 @@ export type Database = {
         }
         Relationships: []
       }
+      short_link_clicks: {
+        Row: {
+          browser: string | null
+          city: string | null
+          clicked_at: string
+          country: string | null
+          device_type: string | null
+          id: string
+          is_bot: boolean
+          metadata: Json
+          os: string | null
+          referrer: string | null
+          referrer_domain: string | null
+          region: string | null
+          session_hash: string | null
+          short_link_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          visitor_hash: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          clicked_at?: string
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          is_bot?: boolean
+          metadata?: Json
+          os?: string | null
+          referrer?: string | null
+          referrer_domain?: string | null
+          region?: string | null
+          session_hash?: string | null
+          short_link_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_hash?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          clicked_at?: string
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          is_bot?: boolean
+          metadata?: Json
+          os?: string | null
+          referrer?: string | null
+          referrer_domain?: string | null
+          region?: string | null
+          session_hash?: string | null
+          short_link_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_link_clicks_short_link_id_fkey"
+            columns: ["short_link_id"]
+            isOneToOne: false
+            referencedRelation: "short_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      short_links: {
+        Row: {
+          campaign_name: string | null
+          click_count: number
+          created_at: string
+          created_by: string
+          description: string | null
+          destination_url: string
+          event_id: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_clicks: number | null
+          partner_id: string | null
+          slug: string
+          tags: string[]
+          title: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          campaign_name?: string | null
+          click_count?: number
+          created_at?: string
+          created_by: string
+          description?: string | null
+          destination_url: string
+          event_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_clicks?: number | null
+          partner_id?: string | null
+          slug: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          campaign_name?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          destination_url?: string
+          event_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_clicks?: number | null
+          partner_id?: string | null
+          slug?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
       sports_league_standings: {
         Row: {
           created_at: string
@@ -6772,6 +6921,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      short_link_analytics: { Args: { _link_id: string }; Returns: Json }
+      short_links_overview: { Args: never; Returns: Json }
       submit_public_reservation: {
         Args: {
           p_email: string
