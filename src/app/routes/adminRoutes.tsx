@@ -61,6 +61,7 @@ const Expo2026CamarotesAdmin = lazy(
 );
 const AdminBiosPage = lazy(() => import("@/pages/admin/AdminBiosPage"));
 const AdminDiscovery = lazy(() => import("@/apps/admin/pages/AdminDiscovery"));
+const AdminLinks = lazy(() => import("@/apps/admin/pages/AdminLinks"));
 
 export const AdminRoutes = () => (
   <>
