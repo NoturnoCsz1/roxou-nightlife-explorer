@@ -20,6 +20,7 @@ import {
   Activity,
   FileText,
   Compass,
+  Link2,
 
   type LucideIcon,
 } from "lucide-react";
