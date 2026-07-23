@@ -61,6 +61,7 @@ const Expo2026CamarotesAdmin = lazy(
 );
 const AdminBiosPage = lazy(() => import("@/pages/admin/AdminBiosPage"));
 const AdminDiscovery = lazy(() => import("@/apps/admin/pages/AdminDiscovery"));
+const AdminLinks = lazy(() => import("@/apps/admin/pages/AdminLinks"));
 
 export const AdminRoutes = () => (
   <>
@@ -106,6 +107,7 @@ export const AdminRoutes = () => (
       <Route path="crm/:id" element={L(<CrmCustomerDetail />)} />
       <Route path="bios" element={L(<AdminBiosPage />)} />
       <Route path="descobertas" element={L(<AdminDiscovery />)} />
+      <Route path="links" element={L(<AdminLinks />)} />
     </Route>
   </>
 );

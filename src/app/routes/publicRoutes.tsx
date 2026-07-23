@@ -99,6 +99,7 @@ const CustomerInvites = lazy(() => import("@/pages/customer/CustomerInvites"));
 // Dev / diversos
 const BarDoMes = lazy(() => import("@/pages/BarDoMes"));
 const DevRoutes = lazy(() => import("@/pages/DevRoutes"));
+const ShortLinkRedirect = lazy(() => import("@/pages/ShortLinkRedirect"));
 
 // Legacy v2
 const LegacyIndex = lazy(() => import("@/pages/Index"));
@@ -120,6 +121,9 @@ function RedirectV3() {
 
 export const PublicRoutes = () => (
   <>
+    {/* Encurtador oficial — fallback SPA. Ideal: proxy Nginx /r/ → Edge Function `r`. */}
+    <Route path="/r/:slug" element={L(<ShortLinkRedirect />)} />
+
     {/* Privacidade / Opt-out */}
     <Route
       path="/privacidade/optout/:token"

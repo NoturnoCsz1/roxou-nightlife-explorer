@@ -23,6 +23,9 @@ verify_jwt = false
 [functions.aura-autoreels-generate]
 verify_jwt = false
 
+[functions.r]
+verify_jwt = false
+
 
 
 
