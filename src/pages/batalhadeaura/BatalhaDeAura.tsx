@@ -3,6 +3,8 @@ import { Instagram, Music2, Mail, Globe, ArrowRight, Play, Trophy, Medal, Star, 
 import SEO from "@/components/SEO";
 import { BdaLayout } from "@/components/bda/BdaLayout";
 import BdaCountdown from "@/components/bda/BdaCountdown";
+import BdaSponsors from "@/components/bda/BdaSponsors";
+import BdaParticipantsPreview from "@/components/bda/BdaParticipantsPreview";
 import {
   BDA_CATEGORIES,
   BDA_PRIZES,
