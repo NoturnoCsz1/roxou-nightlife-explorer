@@ -21,6 +21,8 @@ import {
   FileText,
   Compass,
   Link2,
+  Swords,
+  Handshake,
 
   type LucideIcon,
 } from "lucide-react";
