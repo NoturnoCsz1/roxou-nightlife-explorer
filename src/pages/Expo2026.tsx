@@ -454,7 +454,7 @@ export default function Expo2026() {
       </section>
 
       {/* ================= FOOTER ================= */}
-      <footer className="border-t border-white/5 bg-black/40 px-5 py-8">
+      <footer className="border-t border-white/5 bg-black/40 px-5 pt-8 pb-24 md:pb-8">
         <div className="mx-auto max-w-3xl space-y-3 text-center">
           <a
             href="https://instagram.com/expoprudente2026oficial"
