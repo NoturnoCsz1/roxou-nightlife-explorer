@@ -93,6 +93,26 @@ export default function BatalhaDeAura() {
           O primeiro campeonato de Farmar Aura de Presidente Prudente.
         </p>
 
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <span className="bda-font-body inline-flex items-center gap-2 rounded-full border border-[#C8D2E0]/18 bg-white/[0.03] px-4 py-2 text-xs text-[#C8D2E0]/80">
+            <MapPin className="h-3.5 w-3.5 text-[#8FC0FF]" />
+            {settings.event_location} — {settings.event_city}
+          </span>
+          <span className="bda-font-body inline-flex items-center gap-2 rounded-full border border-[#C8D2E0]/18 bg-white/[0.03] px-4 py-2 text-xs text-[#C8D2E0]/80">
+            <CalendarClock className="h-3.5 w-3.5 text-[#C8A8FF]" />
+            {settings.event_date
+              ? new Date(settings.event_date).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                  timeZone: "America/Sao_Paulo",
+                })
+              : "Data em breve"}
+          </span>
+        </div>
+
+
+
         <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
           <a
             href="#inscricoes"
