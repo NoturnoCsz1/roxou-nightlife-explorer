@@ -98,7 +98,7 @@ export interface BdaPublicStats {
 export async function fetchPublicStats(): Promise<BdaPublicStats> {
   const { data, error } = await (supabase as any)
     .from("public_bda_stats")
-    .select("*")
+    .select("total_registrations, solo_participants, duplas, total_participants")
     .maybeSingle();
   if (error || !data) {
     return { total_registrations: 0, solo_participants: 0, duplas: 0, total_participants: 0 };
@@ -153,7 +153,7 @@ export async function listPublicEntries(opts: {
 
   const { data: rows, error: e2 } = await (supabase as any)
     .from("public_bda_participants")
-    .select("*")
+    .select(PUBLIC_PARTICIPANT_FIELDS)
     .in("registration_id", ids)
     .order("registered_at", { ascending: false })
     .order("slot", { ascending: true });
