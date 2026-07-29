@@ -209,6 +209,25 @@ export default function AdminBdaRegistrations() {
             ))}
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome público, dupla ou cidade"
+              className="h-10 min-w-[240px] flex-1 rounded-xl border border-border/40 bg-background px-3 text-sm"
+            />
+            <button
+              onClick={exportCsv}
+              disabled={filtered.length === 0}
+              className="h-10 rounded-xl border border-border/40 px-4 text-xs font-semibold disabled:opacity-40"
+            >
+              Exportar CSV
+            </button>
+            <span className="text-xs text-muted-foreground">{filtered.length} inscrição(ões)</span>
+          </div>
+
+
+
           {loading ? (
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : filtered.length === 0 ? (
