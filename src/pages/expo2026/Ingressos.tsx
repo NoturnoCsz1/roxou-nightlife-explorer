@@ -127,7 +127,7 @@ export default function ExpoIngressos() {
               Garanta acesso para todos os dias da Expo Prudente 2026 em uma única opção de ingresso.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {["10 a 14 de setembro", "Todos os dias", "Link Eventou", "Programação completa"].map((chip) => (
+              {["11 a 14 de setembro", "Todos os dias", "Link Eventou", "Programação completa"].map((chip) => (
                 <span
                   key={chip}
                   className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold text-[#FFC300] bg-[#FFC300]/10 border border-[#FFC300]/25"

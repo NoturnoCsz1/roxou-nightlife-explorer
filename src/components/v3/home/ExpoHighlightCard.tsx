@@ -75,7 +75,7 @@ export default function ExpoHighlightCard() {
               </p>
               <p className="mt-1 text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
                 <Calendar className="h-3 w-3" />
-                10 a 14 de Setembro de 2026
+                11 a 14 de Setembro de 2026
               </p>
 
               {headlineArtists.length > 0 && (

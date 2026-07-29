@@ -50,6 +50,15 @@ export function ExpoStickyNav() {
               </NavLink>
             </li>
           ))}
+          <li>
+            <NavLink
+              to="/expo2026#ingressos"
+              className="inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full px-3 text-[12px] font-extrabold text-black"
+              style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+            >
+              Ver ingressos
+            </NavLink>
+          </li>
         </ul>
       </div>
     </nav>
