@@ -1,12 +1,31 @@
 /**
  * Batalha de Aura PP — configuração central do hotsite.
  * Hotsite isolado: nenhum módulo existente da Roxou depende deste arquivo.
+ *
+ * Valores operacionais (inscrições abertas, data do evento, local) vivem no
+ * banco (`bda_settings`) para que o admin altere sem deploy. Os defaults abaixo
+ * são apenas o fallback seguro usado enquanto as configurações carregam.
  */
 
-/** Data placeholder da Grande Final — editar aqui (ISO, timezone -03:00). */
-export const BDA_EVENT_DATE = "2026-10-10T20:00:00-03:00";
-
 export const BDA_BASE = "/batalhadeaura";
+
+/** Fallback seguro: inscrições fechadas e sem data até o admin liberar. */
+export const BDA_DEFAULT_SETTINGS = {
+  registrations_open: false,
+  public_list_enabled: true,
+  event_date: null as string | null,
+  event_location: "Quadra Coberta do Parque do Povo",
+  event_city: "Presidente Prudente - SP",
+};
+
+export type BdaSettings = typeof BDA_DEFAULT_SETTINGS;
+
+/** Quantidade de participantes exibidos na prévia da landing. */
+export const BDA_PREVIEW_COUNT = { mobile: 4, desktop: 8 };
+
+/** Tamanho de página da listagem pública de participantes. */
+export const BDA_PAGE_SIZE = 12;
+
 
 /** Rotas do hotsite (arquitetura pronta para crescimento). */
 export const BDA_ROUTES = {
@@ -36,11 +55,12 @@ export const BDA_NAV = [
 
 
 export const BDA_SOCIAL = {
-  instagram: "https://instagram.com/roxou.oficial",
-  tiktok: "https://tiktok.com/@roxou.oficial",
-  site: "https://roxou.com.br",
+  instagram: "https://instagram.com/batalhadeaurapp",
+  instagramHandle: "@batalhadeaurapp",
+  site: "https://roxou.com.br/batalhadeaura",
   contato: "mailto:contato@roxou.com.br",
 };
+
 
 /** Paleta oficial BDA. */
 export const BDA_COLORS = {
@@ -76,7 +96,7 @@ export const BDA_STEPS = [
 ] as const;
 
 export const BDA_PRIZES = [
-  { title: "Campeão", subtitle: "1º lugar", text: "Título oficial de Campeão da Batalha de Aura PP e premiação principal." },
-  { title: "Vice", subtitle: "2º lugar", text: "Reconhecimento oficial de vice-campeão e premiação secundária." },
-  { title: "Destaque", subtitle: "Menção especial", text: "Prêmio para o competidor de maior destaque durante a temporada." },
+  { title: "Campeão", subtitle: "1º lugar", text: "Título oficial de Campeão da Batalha de Aura PP." },
+  { title: "Vice", subtitle: "2º lugar", text: "Reconhecimento oficial de vice-campeão." },
 ] as const;
+

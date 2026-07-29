@@ -44,7 +44,17 @@ Deno.serve(async (req) => {
   );
 
   try {
+    // ---------- inscrições abertas? (configuração central no banco) ----------
+    const { data: settings } = await supabase
+      .from("bda_settings")
+      .select("registrations_open")
+      .maybeSingle();
+    if (!settings?.registrations_open) {
+      return json({ error: "As inscrições da Batalha de Aura PP não estão abertas." }, 403);
+    }
+
     const body = await req.json();
+
 
     // ---------- antispam ----------
     if (sanitizeText(body?.website, 50)) return json({ error: "Requisição inválida." }, 400);

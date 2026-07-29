@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
-import { Instagram, Music2, Mail, Globe, ArrowRight, Play, Trophy, Medal, Star, Sparkles } from "lucide-react";
+import { Instagram, Mail, Globe, ArrowRight, Play, Trophy, Medal, Sparkles, MapPin, CalendarClock } from "lucide-react";
+import { useBdaSettings } from "@/modules/bda/useBdaSettings";
+
 import SEO from "@/components/SEO";
 import { BdaLayout } from "@/components/bda/BdaLayout";
 import BdaCountdown from "@/components/bda/BdaCountdown";
@@ -17,7 +19,7 @@ const bdaLogoUrl = import.meta.env.DEV ? "/bda-logo.png" : bdaLogoAsset.url;
 
 const CANONICAL = "https://roxou.com.br/batalhadeaura";
 
-const PRIZE_ICONS = [Trophy, Medal, Star];
+const PRIZE_ICONS = [Trophy, Medal];
 
 function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
   return (
@@ -34,11 +36,12 @@ function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
 }
 
 export default function BatalhaDeAura() {
+  const { settings } = useBdaSettings();
   return (
     <BdaLayout>
       <SEO
-        title="Batalha de Aura PP | Campeonato Oficial"
-        description="O primeiro campeonato de Farmar Aura de Presidente Prudente."
+        title="Batalha de Aura PP | Campeonato de Farmar Aura em Prudente"
+        description="O primeiro campeonato de Farmar Aura de Presidente Prudente. Categorias Solo e Dupla na Quadra Coberta do Parque do Povo."
         canonical={CANONICAL}
         ogType="website"
         keywords="batalha de aura, campeonato aura, presidente prudente, esports prudente, farmar aura"
@@ -49,9 +52,10 @@ export default function BatalhaDeAura() {
           description: "O primeiro campeonato de Farmar Aura de Presidente Prudente.",
           url: CANONICAL,
           eventStatus: "https://schema.org/EventScheduled",
+          ...(settings.event_date ? { startDate: settings.event_date } : {}),
           location: {
             "@type": "Place",
-            name: "Presidente Prudente",
+            name: settings.event_location,
             address: {
               "@type": "PostalAddress",
               addressLocality: "Presidente Prudente",
@@ -62,6 +66,7 @@ export default function BatalhaDeAura() {
           organizer: { "@type": "Organization", name: "ROXOU", url: "https://roxou.com.br" },
         }}
       />
+
 
       {/* ================= HERO ================= */}
       <section className="relative flex min-h-[100svh] flex-col items-center justify-center px-4 py-16 text-center">
@@ -87,6 +92,26 @@ export default function BatalhaDeAura() {
         <p className="bda-font-body mx-auto mt-4 max-w-xl text-base text-[#C8D2E0]/85 sm:text-lg">
           O primeiro campeonato de Farmar Aura de Presidente Prudente.
         </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+          <span className="bda-font-body inline-flex items-center gap-2 rounded-full border border-[#C8D2E0]/18 bg-white/[0.03] px-4 py-2 text-xs text-[#C8D2E0]/80">
+            <MapPin className="h-3.5 w-3.5 text-[#8FC0FF]" />
+            {settings.event_location} — {settings.event_city}
+          </span>
+          <span className="bda-font-body inline-flex items-center gap-2 rounded-full border border-[#C8D2E0]/18 bg-white/[0.03] px-4 py-2 text-xs text-[#C8D2E0]/80">
+            <CalendarClock className="h-3.5 w-3.5 text-[#C8A8FF]" />
+            {settings.event_date
+              ? new Date(settings.event_date).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                  timeZone: "America/Sao_Paulo",
+                })
+              : "Data em breve"}
+          </span>
+        </div>
+
+
 
         <div className="mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
           <a
@@ -266,12 +291,18 @@ export default function BatalhaDeAura() {
               Inscrições nas categorias Solo e Dupla. Participantes menores de 18 anos precisam da
               autorização do responsável legal, e nenhum perfil é publicado sem aprovação da organização.
             </p>
-            <Link
-              to={BDA_ROUTES.inscricao}
-              className="bda-font-display mt-8 inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#A855F7] to-[#2E7DFF] px-10 text-base font-black uppercase tracking-[0.2em] text-white shadow-[0_0_44px_-8px_rgba(168,85,247,1)] transition-transform duration-200 hover:scale-[1.03]"
-            >
-              Inscreva-se
-            </Link>
+            {settings.registrations_open ? (
+              <Link
+                to={BDA_ROUTES.inscricao}
+                className="bda-font-display mt-8 inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#A855F7] to-[#2E7DFF] px-10 text-base font-black uppercase tracking-[0.2em] text-white shadow-[0_0_44px_-8px_rgba(168,85,247,1)] transition-transform duration-200 hover:scale-[1.03]"
+              >
+                Inscreva-se
+              </Link>
+            ) : (
+              <span className="bda-font-display mt-8 inline-flex h-14 items-center justify-center rounded-full border border-[#C8D2E0]/30 px-10 text-base font-black uppercase tracking-[0.2em] text-[#C8D2E0]/75">
+                Inscrições em breve
+              </span>
+            )}
             <p className="bda-font-body mt-4 text-[11px] text-[#C8D2E0]/55">
               <Link to={BDA_ROUTES.privacidade} className="underline underline-offset-2">
                 Privacidade e proteção de dados
@@ -280,6 +311,7 @@ export default function BatalhaDeAura() {
           </div>
         </div>
       </section>
+
 
 
       {/* ================= RODAPÉ ================= */}
@@ -295,11 +327,11 @@ export default function BatalhaDeAura() {
           />
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             {[
-              { href: BDA_SOCIAL.instagram, Icon: Instagram, label: "Instagram" },
-              { href: BDA_SOCIAL.tiktok, Icon: Music2, label: "TikTok" },
+              { href: BDA_SOCIAL.instagram, Icon: Instagram, label: BDA_SOCIAL.instagramHandle },
               { href: BDA_SOCIAL.contato, Icon: Mail, label: "Contato" },
-              { href: BDA_SOCIAL.site, Icon: Globe, label: "Site" },
+              { href: "https://roxou.com.br", Icon: Globe, label: "Roxou" },
             ].map(({ href, Icon, label }) => (
+
               <a
                 key={label}
                 href={href}

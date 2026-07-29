@@ -65,6 +65,9 @@ const AdminLinks = lazy(() => import("@/apps/admin/pages/AdminLinks"));
 const AdminBdaPartners = lazy(
   () => import("@/apps/admin/pages/bda/AdminBdaPartners"),
 );
+const AdminBdaDashboard = lazy(
+  () => import("@/apps/admin/pages/bda/AdminBdaDashboard"),
+);
 const AdminBdaRegistrations = lazy(
   () => import("@/apps/admin/pages/bda/AdminBdaRegistrations"),
 );
@@ -114,6 +117,7 @@ export const AdminRoutes = () => (
       <Route path="bios" element={L(<AdminBiosPage />)} />
       <Route path="descobertas" element={L(<AdminDiscovery />)} />
       <Route path="links" element={L(<AdminLinks />)} />
+      <Route path="bda" element={L(<AdminBdaDashboard />)} />
       <Route path="bda/parceiros" element={L(<AdminBdaPartners />)} />
       <Route path="bda/inscricoes" element={L(<AdminBdaRegistrations />)} />
     </Route>
