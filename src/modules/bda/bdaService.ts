@@ -61,13 +61,117 @@ export async function listPublicPartners(): Promise<BdaPartner[]> {
   return (data ?? []) as BdaPartner[];
 }
 
-export async function listPublicParticipants(): Promise<BdaPublicParticipant[]> {
+/** Configuração operacional (inscrições, data, local) — fonte única no banco. */
+export async function fetchBdaSettings(): Promise<BdaSettings> {
   const { data, error } = await (supabase as any)
-    .from("public_bda_participants")
-    .select("*");
-  if (error) throw error;
-  return (data ?? []) as BdaPublicParticipant[];
+    .from("bda_settings")
+    .select("registrations_open, public_list_enabled, event_date, event_location, event_city")
+    .maybeSingle();
+  if (error || !data) return BDA_DEFAULT_SETTINGS;
+  return data as BdaSettings;
 }
+
+export interface BdaPublicEntry {
+  registrationId: string;
+  category: "solo" | "dupla";
+  teamName: string | null;
+  registeredAt: string;
+  members: BdaPublicParticipant[];
+}
+
+export interface BdaPublicStats {
+  total_registrations: number;
+  solo_participants: number;
+  duplas: number;
+  total_participants: number;
+}
+
+export async function fetchPublicStats(): Promise<BdaPublicStats> {
+  const { data, error } = await (supabase as any)
+    .from("public_bda_stats")
+    .select("*")
+    .maybeSingle();
+  if (error || !data) {
+    return { total_registrations: 0, solo_participants: 0, duplas: 0, total_participants: 0 };
+  }
+  return data as BdaPublicStats;
+}
+
+const escapeLike = (s: string) => s.replace(/[%,()]/g, " ").trim();
+
+/**
+ * Listagem pública paginada.
+ * Pagina por inscrição (nunca separa integrantes de uma dupla entre páginas)
+ * e só consulta os campos autorizados da view curada.
+ */
+export async function listPublicEntries(opts: {
+  search?: string;
+  category?: "todos" | "solo" | "dupla";
+  page?: number;
+  pageSize?: number;
+}): Promise<{ entries: BdaPublicEntry[]; total: number }> {
+  const page = opts.page ?? 0;
+  const pageSize = opts.pageSize ?? 12;
+  const category = opts.category ?? "todos";
+  const search = escapeLike(opts.search ?? "");
+
+  let matchIds: string[] | null = null;
+  if (search.length >= 2) {
+    const { data: found, error: e1 } = await (supabase as any)
+      .from("public_bda_participants")
+      .select("registration_id")
+      .or(`public_name.ilike.%${search}%,team_name.ilike.%${search}%`)
+      .limit(500);
+    if (e1) throw e1;
+    matchIds = Array.from(new Set((found ?? []).map((r: any) => r.registration_id)));
+    if (!matchIds.length) return { entries: [], total: 0 };
+  }
+
+  // Uma linha por inscrição (slot 1) → paginação estável.
+  let head = (supabase as any)
+    .from("public_bda_participants")
+    .select("registration_id", { count: "exact" })
+    .eq("slot", 1)
+    .order("registered_at", { ascending: false })
+    .range(page * pageSize, page * pageSize + pageSize - 1);
+  if (category !== "todos") head = head.eq("category", category);
+  if (matchIds) head = head.in("registration_id", matchIds);
+
+  const { data: heads, count, error } = await head;
+  if (error) throw error;
+  const ids = (heads ?? []).map((r: any) => r.registration_id);
+  if (!ids.length) return { entries: [], total: count ?? 0 };
+
+  const { data: rows, error: e2 } = await (supabase as any)
+    .from("public_bda_participants")
+    .select("*")
+    .in("registration_id", ids)
+    .order("registered_at", { ascending: false })
+    .order("slot", { ascending: true });
+  if (e2) throw e2;
+
+  const byReg = new Map<string, BdaPublicEntry>();
+  for (const id of ids) {
+    const members = (rows ?? []).filter((r: any) => r.registration_id === id);
+    if (!members.length) continue;
+    byReg.set(id, {
+      registrationId: id,
+      category: members[0].category,
+      teamName: members[0].team_name ?? null,
+      registeredAt: members[0].registered_at,
+      members: members as BdaPublicParticipant[],
+    });
+  }
+
+  return { entries: Array.from(byReg.values()), total: count ?? 0 };
+}
+
+/** Prévia curta usada na landing. */
+export async function listPublicPreview(limit: number): Promise<BdaPublicEntry[]> {
+  const { entries } = await listPublicEntries({ page: 0, pageSize: limit });
+  return entries;
+}
+
 
 /* ============ INSCRIÇÃO PÚBLICA ============ */
 
