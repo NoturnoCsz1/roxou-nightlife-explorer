@@ -14,8 +14,8 @@ import {
   BDA_SOCIAL,
   BDA_STEPS,
 } from "@/components/bda/bdaConfig";
-import bdaLogoAsset from "@/assets/bda-logo.png.asset.json";
-const bdaLogoUrl = import.meta.env.DEV ? "/bda-logo.png" : bdaLogoAsset.url;
+/** Logo oficial servida a partir de `public/` — caminho absoluto estável em dev, build e VPS. */
+const bdaLogoUrl = "/bda-logo.png";
 
 const CANONICAL = "https://roxou.com.br/batalhadeaura";
 
