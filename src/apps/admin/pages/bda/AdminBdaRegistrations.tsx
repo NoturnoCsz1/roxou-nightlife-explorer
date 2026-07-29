@@ -38,6 +38,7 @@ export default function AdminBdaRegistrations() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("todas");
+  const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [cpfs, setCpfs] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
