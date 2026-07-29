@@ -108,30 +108,30 @@ export const SETORES: { name: string; items: string[] }[] = [
 export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: "Quando acontece a Expo Prudente 2026?",
-    a: "A Expo Prudente 2026 acontece de 10 a 14 de setembro, em Presidente Prudente/SP, conforme a programação oficial atualizada.",
+    a: "A Expo Prudente 2026 acontece de 11 a 14 de setembro de 2026, no Recinto de Exposições de Presidente Prudente/SP.",
+  },
+  {
+    q: "Quais dias têm pista com entrada gratuita?",
+    a: "Conforme o comunicado oficial da organização, os dias 11 e 13 de setembro têm pista com entrada gratuita.",
   },
   {
     q: "Onde comprar ingressos da Expo Prudente 2026?",
-    a: "Os ingressos podem ser acessados pelos links oficiais disponibilizados nos cards de cada show na página da Roxou, direcionando para a plataforma de venda responsável. Os dias 11/09 e 13/09 são de portões abertos.",
+    a: "Os ingressos são vendidos e gerenciados pela plataforma Eventou. Na Roxou você encontra os links oficiais de cada dia e do passaporte.",
   },
   {
     q: "Quais artistas estão confirmados na Expo Prudente 2026?",
-    a: "Conforme a programação oficial atualizada: 11/09 Loubet e Pedro Henrique & Trevisan (portões abertos); 12/09 Panda, Ícaro & Gilmar, MC Hariel e Hyllary Fernandes; 13/09 Antony & Gabriel e Pedro Sanchez & Thiago (portões abertos); 14/09 Zezé Di Camargo & Luciano, Mariana Fagundes e Hyllary Fernandes.",
-  },
-
-  {
-    q: "Onde fica o mapa dos setores da Expo Prudente 2026?",
-    a: "O mapa dos setores está disponível em /expo2026/mapa, com visualização ampliada, zoom e setores como Arquibancada, Pista Arena, Camarotes, Área VIP, Front Open Bar, Palco e Boate.",
+    a: "11/09: Loubet e Pedro Henrique e Trevizan. 12/09: Panda, Ícaro & Gilmar, MC Hariel e Hyllary Fernandes. 13/09: Antony & Gabriel e Pedro Sanches e Thiago. 14/09: Zezé Di Camargo & Luciano, Mariana Fagundes e Hyllary Fernandes.",
   },
   {
     q: "A Roxou é organizadora oficial da Expo Prudente?",
-    a: "Não. A Roxou atua como portal de divulgação e curadoria de informações públicas sobre eventos, ingressos, programação e agenda regional.",
+    a: "Não. A Roxou atua exclusivamente na divulgação de informações públicas. Organização, venda de ingressos, alterações, cancelamentos e reembolsos são responsabilidade dos organizadores e da plataforma Eventou.",
   },
   {
-    q: "Os camarotes da Expo Prudente 2026 já estão disponíveis?",
-    a: "Sim. A organização oficial divulgou o mapa de camarotes com 120 espaços numerados. Informações de venda pelo WhatsApp oficial: (18) 99108-6855.",
+    q: "Como falar com o suporte sobre ingressos?",
+    a: "O atendimento sobre pedidos, trocas e reembolsos é feito pelo suporte da Eventou: (18) 99126-1177.",
   },
 ];
+
 
 export function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
