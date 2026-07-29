@@ -11,12 +11,10 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/expo2026", icon: "🏠", label: "Início" },
+  { to: "/expo2026#programacao", icon: "🎤", label: "Programação" },
   { to: "/expo2026/ingressos", icon: "🎫", label: "Ingressos", event: "expo_nav_ingressos" },
-  { to: "/expo2026/front-stage", icon: "⭐", label: "Front", event: "expo_nav_front_stage" },
-  { to: "/expo2026/mapa", icon: "🗺️", label: "Mapa", event: "expo_nav_mapa" },
-  { to: "/expo2026/menores", icon: "👨‍👩‍👧", label: "Menores", event: "expo_nav_menores" },
-  { to: "/expo2026/informacoes", icon: "ℹ️", label: "Info", event: "expo_nav_info" },
+  { to: "/expo2026/informacoes", icon: "ℹ️", label: "Informações", event: "expo_nav_info" },
+  { to: "/expo2026#suporte", icon: "💬", label: "Suporte" },
 ];
 
 export function ExpoStickyNav() {
@@ -52,6 +50,15 @@ export function ExpoStickyNav() {
               </NavLink>
             </li>
           ))}
+          <li>
+            <NavLink
+              to="/expo2026#ingressos"
+              className="inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full px-3 text-[12px] font-extrabold text-black"
+              style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+            >
+              Ver ingressos
+            </NavLink>
+          </li>
         </ul>
       </div>
     </nav>
