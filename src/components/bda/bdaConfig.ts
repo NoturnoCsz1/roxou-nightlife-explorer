@@ -12,21 +12,28 @@ export const BDA_BASE = "/batalhadeaura";
 export const BDA_ROUTES = {
   home: BDA_BASE,
   inscricao: `${BDA_BASE}/inscricao`,
+  participantes: `${BDA_BASE}/participantes`,
   regulamento: `${BDA_BASE}/regulamento`,
+  privacidade: `${BDA_BASE}/privacidade`,
   ranking: `${BDA_BASE}/ranking`,
   patrocinadores: `${BDA_BASE}/patrocinadores`,
   faq: `${BDA_BASE}/faq`,
   admin: `${BDA_BASE}/admin`,
+  adminInscricoes: `${BDA_BASE}/admin/inscricoes`,
+  adminParceiros: `${BDA_BASE}/admin/parceiros`,
+  confirmacao: `${BDA_BASE}/confirmacao`,
 } as const;
 
 export const BDA_NAV = [
   { to: BDA_ROUTES.home, label: "Início" },
   { to: BDA_ROUTES.inscricao, label: "Inscrição" },
+  { to: BDA_ROUTES.participantes, label: "Participantes" },
   { to: BDA_ROUTES.regulamento, label: "Regulamento" },
   { to: BDA_ROUTES.ranking, label: "Ranking" },
   { to: BDA_ROUTES.patrocinadores, label: "Patrocinadores" },
   { to: BDA_ROUTES.faq, label: "FAQ" },
 ];
+
 
 export const BDA_SOCIAL = {
   instagram: "https://instagram.com/roxou.oficial",

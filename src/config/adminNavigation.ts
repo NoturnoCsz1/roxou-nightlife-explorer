@@ -21,6 +21,8 @@ import {
   FileText,
   Compass,
   Link2,
+  Swords,
+  Handshake,
 
   type LucideIcon,
 } from "lucide-react";
@@ -69,5 +71,8 @@ export const ADMIN_NAVIGATION: AdminNavItem[] = [
   { to: "/admin/logs", icon: FileText, label: "Logs" },
   { to: "/admin/expo2026", icon: Trophy, label: "Expo 2026" },
   { to: "/admin/expo2026/camarotes", icon: Building2, label: "Camarotes Expo" },
+  { to: "/admin/bda/inscricoes", icon: Swords, label: "BDA Inscrições" },
+  { to: "/admin/bda/parceiros", icon: Handshake, label: "BDA Parceiros" },
+
 ];
 
