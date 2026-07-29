@@ -1,16 +1,25 @@
 import { ReactNode } from "react";
 
-export const EVENT_START_RAW = "2026-09-10T19:00:00-03:00";
+/** Início oficial atualizado: 11/09/2026 às 19h (America/Sao_Paulo). */
+export const EVENT_START_RAW = "2026-09-11T19:00:00-03:00";
+export const EVENT_END_RAW = "2026-09-15T06:00:00-03:00";
+export const EVENT_PERIOD_LABEL = "11 a 14 de setembro de 2026";
+export const EVENT_VENUE = "Recinto de Exposições de Presidente Prudente";
+export const EVENT_ADDRESS = "Rodovia Raposo Tavares, km 563 — Presidente Prudente/SP";
+export const EVENT_AGE_RATING = "Maiores de 16 anos";
+export const SUPPORT_PHONE_LABEL = "(18) 99126-1177";
+export const SUPPORT_WHATSAPP = "https://wa.me/5518991261177";
+
 export const MAPA_IMG = "/images/expo2026-mapa.jpg";
 /** Arte oficial atualizada da programação geral (11 a 14/09). */
 export const GRADE_IMG = "/expo2026/programacao/programacao-geral.jpg";
 /** Comunicado oficial sobre a reestruturação da programação. */
 export const COMUNICADO_IMG = "/expo2026/programacao/comunicado-oficial.jpg";
 export const CAMAROTES_IMG = "/images/expo2026-camarotes.png";
-export const SHOWS_BUY_LINK =
-  "https://eventou.com.br/evento/Quinta-10-09---Leonardo---Expo-Prudente__3013";
 export const PASSPORT_LINK =
   "https://eventou.com.br/evento/PASSAPORTE---TODOS-OS-DIAS---Expo-Prudente__3018";
+/** Link genérico oficial (passaporte — todos os dias) usado nas sub-páginas. */
+export const SHOWS_BUY_LINK = PASSPORT_LINK;
 
 export interface ShowCard {
   id: string;
@@ -20,8 +29,14 @@ export interface ShowCard {
   link: string;
   /** Arte oficial do dia (imagem pública do projeto). */
   art?: string;
-  /** Dia com portões abertos (sem venda de ingresso). */
+  /** Dia com pista de entrada gratuita. */
   freeEntry?: boolean;
+  /** Selo extra (ex.: FERIADO). */
+  badge?: string;
+  /** Rótulo do botão de ingresso. */
+  ctaLabel: string;
+  /** Data ISO de início informada pela Eventou. */
+  startIso: string;
 }
 
 export const SHOWS: ShowCard[] = [
@@ -29,27 +44,33 @@ export const SHOWS: ShowCard[] = [
     id: "sex-11-09",
     date: "11/09",
     weekday: "SEXTA-FEIRA",
-    artists: ["Loubet", "Pedro Henrique & Trevisan"],
-    link: "",
+    artists: ["Loubet", "Pedro Henrique e Trevizan"],
+    link: "https://eventou.com.br/evento/Sexta-11-09---Loubet-e-Pedro-Henrique-e-Trevisan---Expo-Prudente__3014",
     art: "/expo2026/programacao/dia-11-09.webp",
     freeEntry: true,
+    ctaLabel: "Ver opções e setores",
+    startIso: "2026-09-11T19:00:00-03:00",
   },
   {
     id: "sab-12-09",
     date: "12/09",
     weekday: "SÁBADO",
     artists: ["Panda", "Ícaro & Gilmar", "MC Hariel", "Hyllary Fernandes"],
-    link: "https://eventou.com.br/evento/Sabado-12-09---Panda--icaro---Gilmar--Mc-Hariel-e-Pedro-Sanches-e-Thiago---Expo-Prudente__3015",
+    link: "https://eventou.com.br/evento/Sabado-12-09---Panda--icaro---Gilmar--Mc-Hariel-e-Hyllary-Fernandes---Expo-Prudente__3015",
     art: "/expo2026/programacao/dia-12-09.jpg",
+    ctaLabel: "Comprar ingressos",
+    startIso: "2026-09-12T19:00:00-03:00",
   },
   {
     id: "dom-13-09",
     date: "13/09",
     weekday: "DOMINGO",
-    artists: ["Antony & Gabriel", "Pedro Sanchez & Thiago"],
-    link: "",
+    artists: ["Antony & Gabriel", "Pedro Sanches e Thiago"],
+    link: "https://eventou.com.br/evento/Domingo-13-09--Antony---Gabriel---Pedro-Sanches-e-Thiago---Expo-Prudente__3016",
     art: "/expo2026/programacao/dia-13-09.jpg",
     freeEntry: true,
+    ctaLabel: "Ver opções e setores",
+    startIso: "2026-09-13T19:00:00-03:00",
   },
   {
     id: "seg-14-09",
@@ -58,8 +79,30 @@ export const SHOWS: ShowCard[] = [
     artists: ["Zezé Di Camargo & Luciano", "Mariana Fagundes", "Hyllary Fernandes"],
     link: "https://eventou.com.br/evento/Segunda-14-09---Zeze-Di-Camargo---Luciano-e-Mariana-Fagundes---Expo-Prudente__3017",
     art: "/expo2026/programacao/dia-14-09.jpg",
+    badge: "FERIADO",
+    ctaLabel: "Comprar ingressos",
+    startIso: "2026-09-14T19:00:00-03:00",
   },
 ];
+
+export const SETORES: { name: string; items: string[] }[] = [
+  {
+    name: "PISTA",
+    items: [
+      "Entrada gratuita nos dias 11 e 13 de setembro.",
+      "Nos demais dias, consultar disponibilidade e condições na Eventou.",
+    ],
+  },
+  { name: "ÁREA VIP", items: ["Consultar lotes e disponibilidade na Eventou."] },
+  { name: "FRONTSTAGE OPEN", items: ["Inclui cerveja, vodka, refrigerante, água e suco."] },
+  {
+    name: "BOATE",
+    items: [
+      "Acesso somente para quem adquiriu outro setor, conforme regras da organização e disponibilidade da Eventou.",
+    ],
+  },
+];
+
 
 
 export const FAQ_ITEMS: { q: string; a: string }[] = [
