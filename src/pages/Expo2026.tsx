@@ -7,6 +7,7 @@ import { ExpoLayout } from "@/components/expo/ExpoLayout";
 import {
   EVENT_START_RAW,
   GRADE_IMG,
+  COMUNICADO_IMG,
   SHOWS,
   SHOWS_BUY_LINK,
   SectionTitle,
