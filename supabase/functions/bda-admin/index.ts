@@ -183,6 +183,13 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "log_export") {
+      const rowCount = Number(body?.rowCount) || 0;
+      const filter = sanitizeText(body?.filter, 40) || "todas";
+      await log("export_csv", "bda_registrations", null, null, { rowCount, filter });
+      return json({ ok: true });
+    }
+
     return json({ error: "Ação não suportada." }, 400);
   } catch (e) {
     console.error("bda-admin error", e);

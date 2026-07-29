@@ -275,9 +275,15 @@ export default function AdminBdaRegistrations() {
                         <button
                           key={a.status}
                           disabled={busy === r.id || r.status === a.status}
-                          onClick={() =>
-                            run(r.id, () => adminSetRegistrationStatus(r.id, a.status), "Status atualizado.")
-                          }
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                `Confirmar ação “${a.label}” para esta inscrição? A mudança é registrada em auditoria.`,
+                              )
+                            )
+                              return;
+                            run(r.id, () => adminSetRegistrationStatus(r.id, a.status), "Status atualizado.");
+                          }}
                           className="h-8 rounded-lg border border-border/40 px-3 text-[11px] disabled:opacity-40"
                         >
                           {a.label}
