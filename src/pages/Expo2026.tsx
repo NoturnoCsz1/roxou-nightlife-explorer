@@ -298,6 +298,29 @@ export default function Expo2026() {
         </div>
       </section>
 
+      {/* ============== COMUNICADO OFICIAL ============== */}
+      <section
+        id="comunicado"
+        className="px-5 py-12 max-w-3xl mx-auto"
+        aria-label="Comunicado oficial da Expo Prudente 2026"
+      >
+        <SectionTitle eyebrow="📢 AVISO DA ORGANIZAÇÃO" title="Comunicado oficial" />
+        <p className="text-center text-[#B8B8B8] -mt-3 mb-6 text-sm sm:text-base">
+          A organização informou ajustes na grade de shows para atender às exigências do edital
+          de licitação, incluindo dois dias com portões abertos.
+        </p>
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/60">
+          <img
+            src={COMUNICADO_IMG}
+            alt="Comunicado oficial da Expo Prudente 2026 sobre a reestruturação da programação de shows"
+            loading="lazy"
+            decoding="async"
+            className="block w-full h-auto"
+          />
+        </div>
+      </section>
+
+
       {/* ============== CTA FINAL ============== */}
       <section className="px-5 py-12 max-w-3xl mx-auto text-center">
         <h2
