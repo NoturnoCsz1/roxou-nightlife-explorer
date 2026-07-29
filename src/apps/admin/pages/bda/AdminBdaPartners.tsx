@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import SEO from "@/components/SEO";
 import ImageUpload from "@/components/admin/ImageUpload";
 import {
   BDA_PARTNER_TYPE_LABEL,
@@ -80,6 +81,11 @@ export default function AdminBdaPartners() {
 
   return (
     <div className="space-y-5">
+      <SEO
+        title="BDA — Parceiros | Admin Roxou"
+        description="Área administrativa restrita."
+        noindex
+      />
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-black">Batalha de Aura — Parceiros</h1>

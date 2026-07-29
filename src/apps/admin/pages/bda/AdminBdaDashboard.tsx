@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Loader2, RefreshCw, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import SEO from "@/components/SEO";
 import {
   BdaAdminStats,
   fetchAdminDashboardStats,
@@ -67,6 +68,11 @@ export default function AdminBdaDashboard() {
 
   return (
     <div className="space-y-5">
+      <SEO
+        title="BDA — Painel | Admin Roxou"
+        description="Área administrativa restrita."
+        noindex
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-black">Batalha de Aura — Painel</h1>

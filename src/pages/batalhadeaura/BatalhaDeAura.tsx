@@ -118,7 +118,7 @@ export default function BatalhaDeAura() {
             href="#inscricoes"
             className="bda-font-display group inline-flex h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#A855F7] to-[#2E7DFF] px-7 text-sm font-bold uppercase tracking-widest text-white shadow-[0_0_34px_-6px_rgba(168,85,247,0.95)] transition-transform duration-200 hover:scale-[1.03]"
           >
-            Quero participar
+            {settings.registrations_open ? "Quero participar" : "Inscrições em breve"}
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </a>
           <a
