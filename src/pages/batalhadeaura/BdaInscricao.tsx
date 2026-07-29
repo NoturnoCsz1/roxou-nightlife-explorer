@@ -121,7 +121,9 @@ function Field({
 }
 
 export default function BdaInscricao() {
+  const { settings, loading: settingsLoading } = useBdaSettings();
   const startedAt = useRef(Date.now());
+
   const [step, setStep] = useState(0);
   const [category, setCategory] = useState<"solo" | "dupla">("solo");
   const [teamName, setTeamName] = useState("");
