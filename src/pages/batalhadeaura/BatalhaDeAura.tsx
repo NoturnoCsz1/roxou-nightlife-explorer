@@ -34,11 +34,12 @@ function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
 }
 
 export default function BatalhaDeAura() {
+  const { settings } = useBdaSettings();
   return (
     <BdaLayout>
       <SEO
-        title="Batalha de Aura PP | Campeonato Oficial"
-        description="O primeiro campeonato de Farmar Aura de Presidente Prudente."
+        title="Batalha de Aura PP | Campeonato de Farmar Aura em Prudente"
+        description="O primeiro campeonato de Farmar Aura de Presidente Prudente. Categorias Solo e Dupla na Quadra Coberta do Parque do Povo."
         canonical={CANONICAL}
         ogType="website"
         keywords="batalha de aura, campeonato aura, presidente prudente, esports prudente, farmar aura"
@@ -49,9 +50,10 @@ export default function BatalhaDeAura() {
           description: "O primeiro campeonato de Farmar Aura de Presidente Prudente.",
           url: CANONICAL,
           eventStatus: "https://schema.org/EventScheduled",
+          ...(settings.event_date ? { startDate: settings.event_date } : {}),
           location: {
             "@type": "Place",
-            name: "Presidente Prudente",
+            name: settings.event_location,
             address: {
               "@type": "PostalAddress",
               addressLocality: "Presidente Prudente",
@@ -62,6 +64,7 @@ export default function BatalhaDeAura() {
           organizer: { "@type": "Organization", name: "ROXOU", url: "https://roxou.com.br" },
         }}
       />
+
 
       {/* ================= HERO ================= */}
       <section className="relative flex min-h-[100svh] flex-col items-center justify-center px-4 py-16 text-center">
