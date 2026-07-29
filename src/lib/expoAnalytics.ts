@@ -55,7 +55,10 @@ export type ExpoEventName =
   | "expo_home_info_click"
   | "expo_passaporte_view"
   | "expo_passaporte_click"
-  | "expo_passaporte_eventou_click";
+  | "expo_passaporte_eventou_click"
+  | "expo_ticket_click"
+  | "expo_support_click"
+  | "expo_schedule_view";
 
 const SESSION_KEY = "expo2026:sid";
 const ONCE_PREFIX = "expo2026:once:";

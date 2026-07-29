@@ -11,12 +11,10 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: "/expo2026", icon: "🏠", label: "Início" },
+  { to: "/expo2026#programacao", icon: "🎤", label: "Programação" },
   { to: "/expo2026/ingressos", icon: "🎫", label: "Ingressos", event: "expo_nav_ingressos" },
-  { to: "/expo2026/front-stage", icon: "⭐", label: "Front", event: "expo_nav_front_stage" },
-  { to: "/expo2026/mapa", icon: "🗺️", label: "Mapa", event: "expo_nav_mapa" },
-  { to: "/expo2026/menores", icon: "👨‍👩‍👧", label: "Menores", event: "expo_nav_menores" },
-  { to: "/expo2026/informacoes", icon: "ℹ️", label: "Info", event: "expo_nav_info" },
+  { to: "/expo2026/informacoes", icon: "ℹ️", label: "Informações", event: "expo_nav_info" },
+  { to: "/expo2026#suporte", icon: "💬", label: "Suporte" },
 ];
 
 export function ExpoStickyNav() {
