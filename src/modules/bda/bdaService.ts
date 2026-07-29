@@ -54,14 +54,21 @@ export const BDA_STATUS_LABEL: Record<string, string> = {
 
 /* ============ PÚBLICO ============ */
 
+const PUBLIC_PARTNER_FIELDS =
+  "id, name, slug, type, logo_url, logo_alt, site_url, instagram_url, display_order, is_featured";
+
+const PUBLIC_PARTICIPANT_FIELDS =
+  "id, public_name, category, team_name, city, photo_public_url, registration_id, slot, registered_at";
+
 export async function listPublicPartners(): Promise<BdaPartner[]> {
   const { data, error } = await (supabase as any)
     .from("public_bda_partners")
-    .select("*")
+    .select(PUBLIC_PARTNER_FIELDS)
     .order("display_order", { ascending: true });
   if (error) throw error;
   return (data ?? []) as BdaPartner[];
 }
+
 
 /** Configuração operacional (inscrições, data, local) — fonte única no banco. */
 export async function fetchBdaSettings(): Promise<BdaSettings> {
@@ -371,6 +378,11 @@ export const adminSaveNote = (registrationId: string, note: string) =>
 
 export const adminRevokeConsent = (consentId: string) =>
   adminAction({ action: "revoke_consent", consentId });
+
+/** Registra a exportação de CSV na auditoria (sem enviar dados pessoais). */
+export const adminLogCsvExport = (rowCount: number, filter: string) =>
+  adminAction({ action: "log_export", rowCount, filter });
+
 
 export async function adminListAuditLogs(limit = 100) {
   const { data, error } = await (supabase as any)
