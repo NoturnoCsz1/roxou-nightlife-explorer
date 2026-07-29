@@ -55,11 +55,12 @@ export const BDA_NAV = [
 
 
 export const BDA_SOCIAL = {
-  instagram: "https://instagram.com/roxou.oficial",
-  tiktok: "https://tiktok.com/@roxou.oficial",
-  site: "https://roxou.com.br",
+  instagram: "https://instagram.com/batalhadeaurapp",
+  instagramHandle: "@batalhadeaurapp",
+  site: "https://roxou.com.br/batalhadeaura",
   contato: "mailto:contato@roxou.com.br",
 };
+
 
 /** Paleta oficial BDA. */
 export const BDA_COLORS = {
