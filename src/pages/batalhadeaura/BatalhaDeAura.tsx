@@ -19,7 +19,7 @@ const bdaLogoUrl = import.meta.env.DEV ? "/bda-logo.png" : bdaLogoAsset.url;
 
 const CANONICAL = "https://roxou.com.br/batalhadeaura";
 
-const PRIZE_ICONS = [Trophy, Medal, Star];
+const PRIZE_ICONS = [Trophy, Medal];
 
 function SectionTitle({ kicker, title }: { kicker: string; title: string }) {
   return (
