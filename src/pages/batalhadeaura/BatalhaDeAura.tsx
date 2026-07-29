@@ -11,7 +11,7 @@ import {
   BDA_STEPS,
 } from "@/components/bda/bdaConfig";
 import bdaLogoAsset from "@/assets/bda-logo.png.asset.json";
-const bdaLogoUrl = bdaLogoAsset.url || "/bda-logo.png";
+const bdaLogoUrl = import.meta.env.DEV ? "/bda-logo.png" : bdaLogoAsset.url;
 
 const CANONICAL = "https://roxou.com.br/batalhadeaura";
 
