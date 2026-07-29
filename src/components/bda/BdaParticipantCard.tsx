@@ -63,13 +63,16 @@ export default function BdaParticipantCard({ entry }: { entry: BdaPublicEntry })
         </h3>
       )}
 
-      <p
-        className={`bda-font-${isDupla ? "body" : "display"} mt-${isDupla ? "1" : "3"} text-${
-          isDupla ? "[12px] text-[#C8D2E0]/85" : "sm font-bold uppercase text-white"
-        }`}
-      >
-        {entry.members.map((m) => m.public_name).join(" & ")}
-      </p>
+      {isDupla ? (
+        <p className="bda-font-body mt-1 text-[12px] text-[#C8D2E0]/85">
+          {entry.members.map((m) => m.public_name).join(" & ")}
+        </p>
+      ) : (
+        <h3 className="bda-font-display mt-3 text-sm font-bold uppercase text-white">
+          {entry.members[0]?.public_name}
+        </h3>
+      )}
+
 
       {city && <p className="bda-font-body mt-1 text-[11px] text-[#C8D2E0]/60">{city}</p>}
 
