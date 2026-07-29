@@ -96,7 +96,7 @@ export const BDA_STEPS = [
 ] as const;
 
 export const BDA_PRIZES = [
-  { title: "Campeão", subtitle: "1º lugar", text: "Título oficial de Campeão da Batalha de Aura PP e premiação principal." },
-  { title: "Vice", subtitle: "2º lugar", text: "Reconhecimento oficial de vice-campeão e premiação secundária." },
-  { title: "Destaque", subtitle: "Menção especial", text: "Prêmio para o competidor de maior destaque durante a temporada." },
+  { title: "Campeão", subtitle: "1º lugar", text: "Título oficial de Campeão da Batalha de Aura PP." },
+  { title: "Vice", subtitle: "2º lugar", text: "Reconhecimento oficial de vice-campeão." },
 ] as const;
+
