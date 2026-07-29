@@ -65,16 +65,17 @@ export const SHOWS: ShowCard[] = [
 export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: "Quando acontece a Expo Prudente 2026?",
-    a: "A Expo Prudente 2026 acontece de 10 a 14 de setembro, em Presidente Prudente/SP.",
+    a: "A Expo Prudente 2026 acontece de 11 a 14 de setembro, em Presidente Prudente/SP, conforme a programação oficial atualizada.",
   },
   {
     q: "Onde comprar ingressos da Expo Prudente 2026?",
-    a: "Os ingressos podem ser acessados pelos links oficiais disponibilizados nos cards de cada show na página da Roxou, direcionando para a plataforma de venda responsável.",
+    a: "Os ingressos podem ser acessados pelos links oficiais disponibilizados nos cards de cada show na página da Roxou, direcionando para a plataforma de venda responsável. Os dias 11/09 e 13/09 são de portões abertos.",
   },
   {
     q: "Quais artistas estão confirmados na Expo Prudente 2026?",
-    a: "A programação divulgada inclui Leonardo, Antony & Gabriel, Loubet, Panda, Ícaro & Gilmar, MC Hariel, Pedro Sanches & Thiago, Zé Neto & Cristiano, Mariana & Mateus, Zezé Di Camargo & Luciano e Mariana Fagundes.",
+    a: "Conforme a programação oficial atualizada: 11/09 Loubet e Pedro Henrique & Trevisan (portões abertos); 12/09 Panda, Ícaro & Gilmar, MC Hariel e Hyllary Fernandes; 13/09 Antony & Gabriel e Pedro Sanchez & Thiago (portões abertos); 14/09 Zezé Di Camargo & Luciano, Mariana Fagundes e Hyllary Fernandes.",
   },
+
   {
     q: "Onde fica o mapa dos setores da Expo Prudente 2026?",
     a: "O mapa dos setores está disponível em /expo2026/mapa, com visualização ampliada, zoom e setores como Arquibancada, Pista Arena, Camarotes, Área VIP, Front Open Bar, Palco e Boate.",
