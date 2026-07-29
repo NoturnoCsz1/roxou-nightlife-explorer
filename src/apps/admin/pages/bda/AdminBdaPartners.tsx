@@ -81,6 +81,11 @@ export default function AdminBdaPartners() {
 
   return (
     <div className="space-y-5">
+      <SEO
+        title="BDA — Parceiros | Admin Roxou"
+        description="Área administrativa restrita."
+        noindex
+      />
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-black">Batalha de Aura — Parceiros</h1>
