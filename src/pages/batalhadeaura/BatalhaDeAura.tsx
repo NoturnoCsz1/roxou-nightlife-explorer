@@ -233,26 +233,15 @@ export default function BatalhaDeAura() {
       <section id="patrocinadores" className="relative scroll-mt-16 px-4 py-20">
         <div className="mx-auto max-w-5xl">
           <SectionTitle kicker="Parcerias" title="Patrocinadores" />
-          {[
-            { label: "Patrocínio Oficial", slots: 4 },
-            { label: "Apoio Oficial", slots: 6 },
-          ].map((group) => (
-            <div key={group.label} className="mb-10">
-              <h3 className="bda-font-display mb-4 text-center text-sm font-bold uppercase tracking-[0.28em] text-[#C8D2E0]/70">
-                {group.label}
-              </h3>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {Array.from({ length: group.slots }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex aspect-[3/2] items-center justify-center rounded-2xl border border-dashed border-[#C8D2E0]/20 bg-white/[0.02] text-[10px] uppercase tracking-[0.2em] text-[#C8D2E0]/40"
-                  >
-                    Sua marca aqui
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          <BdaSponsors />
+        </div>
+      </section>
+
+      {/* ================= PARTICIPANTES ================= */}
+      <section id="participantes" className="relative scroll-mt-16 px-4 py-20">
+        <div className="mx-auto max-w-5xl">
+          <SectionTitle kicker="Temporada" title="Participantes confirmados" />
+          <BdaParticipantsPreview />
         </div>
       </section>
 
@@ -272,8 +261,8 @@ export default function BatalhaDeAura() {
               Inscrições
             </h2>
             <p className="bda-font-body mx-auto mt-3 max-w-md text-[#C8D2E0]/85">
-              As inscrições da Batalha de Aura PP serão abertas em breve. Garanta seu lugar na
-              primeira temporada.
+              Inscrições nas categorias Solo e Dupla. Participantes menores de 18 anos precisam da
+              autorização do responsável legal, e nenhum perfil é publicado sem aprovação da organização.
             </p>
             <Link
               to={BDA_ROUTES.inscricao}
@@ -281,9 +270,15 @@ export default function BatalhaDeAura() {
             >
               Inscreva-se
             </Link>
+            <p className="bda-font-body mt-4 text-[11px] text-[#C8D2E0]/55">
+              <Link to={BDA_ROUTES.privacidade} className="underline underline-offset-2">
+                Privacidade e proteção de dados
+              </Link>
+            </p>
           </div>
         </div>
       </section>
+
 
       {/* ================= RODAPÉ ================= */}
       <footer className="relative border-t border-[#C8D2E0]/12 px-4 py-12">
