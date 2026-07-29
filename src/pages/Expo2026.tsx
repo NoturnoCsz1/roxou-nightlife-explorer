@@ -1,30 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Ticket, X, ZoomIn, Instagram } from "lucide-react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { useLocation } from "react-router-dom";
+import { Ticket, Instagram, MessageCircle, ArrowUp, CalendarDays, MapPin, Users } from "lucide-react";
 import SEO from "@/components/SEO";
-import { trackExpoEvent, createDebouncedTracker, detectSource } from "@/lib/expoAnalytics";
+import { trackExpoEvent, detectSource } from "@/lib/expoAnalytics";
 import { ExpoLayout } from "@/components/expo/ExpoLayout";
 import {
   EVENT_START_RAW,
+  EVENT_END_RAW,
+  EVENT_PERIOD_LABEL,
+  EVENT_VENUE,
+  EVENT_ADDRESS,
+  EVENT_AGE_RATING,
+  SUPPORT_PHONE_LABEL,
+  SUPPORT_WHATSAPP,
   GRADE_IMG,
   COMUNICADO_IMG,
   SHOWS,
-  SHOWS_BUY_LINK,
+  SETORES,
   SectionTitle,
   FAQ_ITEMS,
   type ShowCard,
   PASSPORT_LINK,
 } from "@/components/expo/ExpoShared";
 
-const debouncedZoomTrack = createDebouncedTracker(500);
-
 /* ============================================================================
- * EXPO PRUDENTE 2026 — Home (hub Roxou → Eventou)
+ * EXPO PRUDENTE 2026 — página pública enxuta (Roxou → Eventou)
  *
- * A Roxou NÃO é organizadora. Esta página apenas divulga e redireciona
- * para a compra oficial via Eventou. Conteúdo extenso vive nas sub-páginas:
- *   /expo2026/ingressos, /front-stage, /mapa, /menores, /informacoes
+ * A Roxou apenas divulga informações públicas do evento. Organização, venda
+ * de ingressos, alterações, atendimento e reembolsos são de responsabilidade
+ * dos organizadores e da plataforma Eventou.
+ *
+ * Ordem: header → hero → contador → ingressos → comunicado → programação →
+ *        setores → informações → suporte/disclaimer → footer.
  * ========================================================================= */
+
+const GOLD = "linear-gradient(135deg, #FF8A00, #FFC300)";
 
 function scrollToId(id: string) {
   const el = document.getElementById(id);
@@ -34,10 +44,18 @@ function scrollToId(id: string) {
 export default function Expo2026() {
   const [showFloatingCta, setShowFloatingCta] = useState(false);
   const programacaoRef = useRef<HTMLElement | null>(null);
+  const { hash } = useLocation();
+
+  /* Deep link por âncora vinda do header (#programacao, #ingressos, #suporte) */
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.replace("#", "");
+    const t = setTimeout(() => scrollToId(id), 120);
+    return () => clearTimeout(t);
+  }, [hash]);
 
   useEffect(() => {
     trackExpoEvent("expo_view", { page: "home" }, { once: true });
-    trackExpoEvent("expo_passaporte_view", { page: "home" }, { once: true, onceKey: "expo_passaporte_view_home" });
     try {
       const src = detectSource();
       if (src === "Google Search") trackExpoEvent("expo_google_organic", {}, { once: true });
@@ -46,47 +64,6 @@ export default function Expo2026() {
     } catch {
       /* noop */
     }
-
-    const capturePerf = () => {
-      try {
-        const nav = (performance.getEntriesByType("navigation")[0] ?? null) as
-          | PerformanceNavigationTiming
-          | null;
-        const fcpEntry = performance.getEntriesByName("first-contentful-paint")[0];
-        let lcp: number | undefined;
-        if ("PerformanceObserver" in window) {
-          try {
-            const po = new PerformanceObserver((list) => {
-              const entries = list.getEntries();
-              const last = entries[entries.length - 1];
-              if (last) lcp = last.startTime;
-            });
-            po.observe({ type: "largest-contentful-paint", buffered: true });
-            setTimeout(() => po.disconnect(), 5000);
-          } catch {
-            /* noop */
-          }
-        }
-        setTimeout(() => {
-          trackExpoEvent(
-            "expo_performance",
-            {
-              performance: {
-                fcp: fcpEntry ? Math.round(fcpEntry.startTime) : null,
-                lcp: lcp ? Math.round(lcp) : null,
-                domReady: nav ? Math.round(nav.domContentLoadedEventEnd) : null,
-                totalLoad: nav ? Math.round(nav.loadEventEnd || nav.duration) : null,
-              },
-            },
-            { once: true },
-          );
-        }, 3500);
-      } catch {
-        /* noop */
-      }
-    };
-    if (document.readyState === "complete") capturePerf();
-    else window.addEventListener("load", capturePerf, { once: true });
   }, []);
 
   useEffect(() => {
@@ -122,11 +99,12 @@ export default function Expo2026() {
         entries.forEach((e) => {
           if (e.isIntersecting) {
             trackExpoEvent("expo_programacao_view", {}, { once: true });
+            trackExpoEvent("expo_schedule_view", { section: "programacao" }, { once: true });
             obs.disconnect();
           }
         });
       },
-      { threshold: 0.4 },
+      { threshold: 0.3 },
     );
     obs.observe(programacaoRef.current);
     return () => obs.disconnect();
@@ -137,58 +115,38 @@ export default function Expo2026() {
       "@context": "https://schema.org",
       "@graph": [
         {
-          "@type": "WebSite",
-          "@id": "https://roxou.com.br/#website",
-          url: "https://roxou.com.br/",
-          name: "Roxou",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: {
-              "@type": "EntryPoint",
-              urlTemplate: "https://roxou.com.br/agenda?q={search_term_string}",
-            },
-            "query-input": "required name=search_term_string",
-          },
-        },
-        {
           "@type": "Festival",
-          "@id": "https://roxou.com.br/expo2026/#festival",
+          "@id": "https://roxou.com.br/expo2026#festival",
           name: "Expo Prudente 2026",
-          startDate: "2026-09-10",
-          endDate: "2026-09-14",
+          startDate: EVENT_START_RAW,
+          endDate: EVENT_END_RAW,
           eventStatus: "https://schema.org/EventScheduled",
           eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-          url: "https://roxou.com.br/expo2026/",
+          url: "https://roxou.com.br/expo2026",
           image: "https://roxou.com.br/expo2026/programacao/programacao-geral.jpg",
           location: {
             "@type": "Place",
-            name: "Recinto de Exposições — Presidente Prudente/SP",
+            name: EVENT_VENUE,
             address: {
               "@type": "PostalAddress",
+              streetAddress: "Rodovia Raposo Tavares, km 563",
               addressLocality: "Presidente Prudente",
               addressRegion: "SP",
               addressCountry: "BR",
             },
           },
-          offers: SHOWS.map((s) => ({
-            "@type": "Offer",
-            url: s.link,
-            availability: "https://schema.org/InStock",
-            category: "primary",
-          })),
           subEvent: SHOWS.map((s) => ({
             "@type": "MusicEvent",
             name: `${s.artists.join(", ")} — Expo Prudente 2026`,
-            startDate: `2026-09-${s.date.split("/")[0]}T22:00:00-03:00`,
+            startDate: s.startIso,
             eventStatus: "https://schema.org/EventScheduled",
             eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
             url: s.link,
-            image: "https://roxou.com.br/expo2026/programacao/programacao-geral.jpg",
-            description: `Show de ${s.artists.join(", ")} na Expo Prudente 2026 — ${s.weekday}, ${s.date}.`,
+            image: `https://roxou.com.br${s.art}`,
             performer: s.artists.map((a) => ({ "@type": "MusicGroup", name: a })),
             location: {
               "@type": "Place",
-              name: "Recinto de Exposições — Presidente Prudente/SP",
+              name: EVENT_VENUE,
               address: {
                 "@type": "PostalAddress",
                 addressLocality: "Presidente Prudente",
@@ -196,17 +154,11 @@ export default function Expo2026() {
                 addressCountry: "BR",
               },
             },
-            offers: {
-              "@type": "Offer",
-              url: s.link,
-              availability: "https://schema.org/InStock",
-              category: "primary",
-            },
           })),
         },
         {
           "@type": "FAQPage",
-          "@id": "https://roxou.com.br/expo2026/#faq",
+          "@id": "https://roxou.com.br/expo2026#faq",
           mainEntity: FAQ_ITEMS.map((f) => ({
             "@type": "Question",
             name: f.q,
@@ -215,20 +167,12 @@ export default function Expo2026() {
         },
         {
           "@type": "BreadcrumbList",
-          "@id": "https://roxou.com.br/expo2026/#breadcrumb",
+          "@id": "https://roxou.com.br/expo2026#breadcrumb",
           itemListElement: [
             { "@type": "ListItem", position: 1, name: "Início", item: "https://roxou.com.br/" },
             { "@type": "ListItem", position: 2, name: "Eventos", item: "https://roxou.com.br/agenda" },
-            { "@type": "ListItem", position: 3, name: "Expo Prudente 2026", item: "https://roxou.com.br/expo2026/" },
+            { "@type": "ListItem", position: 3, name: "Expo Prudente 2026", item: "https://roxou.com.br/expo2026" },
           ],
-        },
-        {
-          "@type": "ImageObject",
-          "@id": "https://roxou.com.br/expo2026/#grade-oficial",
-          name: "Grade Oficial de Shows Expo Prudente 2026",
-          description: "Programação oficial de shows da Expo Prudente 2026.",
-          contentUrl: "https://roxou.com.br/expo2026/programacao/programacao-geral.jpg",
-          url: "https://roxou.com.br/expo2026/",
         },
       ],
     }),
@@ -238,205 +182,307 @@ export default function Expo2026() {
   return (
     <ExpoLayout>
       <SEO
-        title="Expo Prudente 2026 | Shows, Programação e Ingressos Oficiais"
-        description="Confira a programação da Expo Prudente 2026, grade oficial de shows e links oficiais de ingressos. 10 a 14 de setembro em Presidente Prudente/SP."
-        canonical="https://roxou.com.br/expo2026/"
+        title="Expo Prudente 2026 | Programação, ingressos e informações"
+        description="Confira a programação atualizada da Expo Prudente 2026, de 11 a 14 de setembro, ingressos oficiais, dias com pista gratuita, setores e suporte."
+        canonical="https://roxou.com.br/expo2026"
         ogImage="https://roxou.com.br/expo2026/programacao/programacao-geral.jpg"
         ogImageWidth={1280}
         ogImageHeight={481}
-        keywords="expo prudente 2026, ingressos expo prudente, programação expo prudente, loubet prudente, zezé di camargo e luciano prudente, mc hariel prudente, portões abertos expo prudente"
+        keywords="expo prudente 2026, programação expo prudente, ingressos expo prudente, pista grátis expo prudente, loubet, zezé di camargo e luciano, mc hariel"
         jsonLd={jsonLd}
       />
 
-      {/* ============== HERO ============== */}
-      <section className="relative pt-10 pb-12 px-5 text-center">
-        <CornerCurve className="absolute -top-2 -left-2 w-24 h-24 md:w-32 md:h-32" />
-        <CornerCurve className="absolute -top-2 -right-2 w-24 h-24 md:w-32 md:h-32" rotate={90} />
-
-        <div className="relative max-w-3xl mx-auto">
-          <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold tracking-widest bg-gradient-to-r from-[#FF8A00] to-[#FFC300] text-black mb-6">
-            🎟️ VENDAS LIBERADAS
+      {/* ================= HERO ================= */}
+      <section className="relative px-5 pt-8 pb-8 text-center">
+        <div className="relative mx-auto max-w-3xl">
+          <span className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-black uppercase tracking-widest text-black" style={{ background: GOLD }}>
+            Pista grátis — 11 e 13 de setembro
           </span>
 
           <h1
-            className="font-black uppercase leading-[0.95] tracking-tight"
-            style={{
-              fontSize: "clamp(2.2rem, 9vw, 4.5rem)",
-              textShadow: "0 0 40px rgba(255,138,0,0.35)",
-            }}
+            className="mt-5 font-black uppercase leading-[0.95] tracking-tight"
+            style={{ fontSize: "clamp(2rem, 8.5vw, 4rem)", textShadow: "0 0 40px rgba(255,138,0,0.3)" }}
           >
-            <span className="block text-white">EXPO PRUDENTE</span>
-            <span
-              className="block bg-clip-text text-transparent"
-              style={{ backgroundImage: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-            >
+            <span className="block text-white">Expo Prudente</span>
+            <span className="block bg-clip-text text-transparent" style={{ backgroundImage: GOLD }}>
               2026
             </span>
           </h1>
 
-          <p className="mt-6 text-lg md:text-2xl font-bold text-white">
-            A MAIOR GRADE DE SHOWS JÁ DIVULGADA!
+          <p className="mt-4 text-base md:text-xl font-bold text-white uppercase tracking-wide">
+            11 a 14 de setembro
           </p>
-          <p className="mt-3 text-sm md:text-base text-[#B8B8B8] tracking-wider">
-            10 A 14 DE SETEMBRO · PRESIDENTE PRUDENTE/SP
+          <p className="mt-1.5 text-xs md:text-sm text-[#B8B8B8]">
+            {EVENT_VENUE} · Presidente Prudente – SP
           </p>
 
-          <PremiumCountdown targetIso={EVENT_START_RAW} />
+          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-black/50">
+            <img
+              src={GRADE_IMG}
+              alt="Arte oficial da programação da Expo Prudente 2026, de 11 a 14 de setembro, em Presidente Prudente"
+              width={1280}
+              height={481}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="block h-auto w-full"
+            />
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => scrollToId("ingressos")}
+              aria-label="Ir para a seção de ingressos"
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full px-7 font-extrabold text-black shadow-[0_10px_40px_-12px_rgba(255,138,0,0.7)] transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none"
+              style={{ background: GOLD }}
+            >
+              <Ticket className="h-4 w-4" aria-hidden /> Ver ingressos
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToId("programacao")}
+              aria-label="Ir para a programação por dia"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-[#FFC300]/40 bg-white/[0.04] px-7 font-bold text-white transition-colors hover:bg-white/10"
+            >
+              Ver programação
+            </button>
+          </div>
+
+          <Countdown targetIso={EVENT_START_RAW} />
         </div>
       </section>
 
-      {/* ============== GRADE OFICIAL ============== */}
-      <GradeOficialSection />
+      {/* ================= INGRESSOS ================= */}
+      <section id="ingressos" className="mx-auto max-w-5xl px-5 py-10 scroll-mt-16">
+        <SectionTitle eyebrow="🎟️ INGRESSOS OFICIAIS" title="Escolha seu dia" />
+        <p className="-mt-3 mb-6 text-center text-sm text-[#B8B8B8]">
+          Confira as opções oficiais disponíveis na Eventou.
+        </p>
 
-      {/* ============== PROGRAMAÇÃO COMPACTA ============== */}
-      <section id="shows" ref={programacaoRef} className="px-5 py-12 max-w-5xl mx-auto">
-        <SectionTitle eyebrow="PROGRAMAÇÃO OFICIAL" title="Todos os dias de shows" />
-        <div className="grid gap-2.5 md:gap-3 md:grid-cols-2 mt-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SHOWS.map((show) => (
-            <ShowCardItem key={show.id} show={show} />
+            <TicketCard key={show.id} show={show} />
+          ))}
+
+          <article className="flex flex-col rounded-2xl border border-[#FFC300]/35 bg-gradient-to-br from-[#1a1305] to-[#0a0a0a] p-4">
+            <p className="text-[10px] font-black tracking-widest text-[#FFC300]">TODOS OS DIAS</p>
+            <h3 className="mt-1 text-lg font-black leading-tight text-white">Passaporte</h3>
+            <p className="mt-2 flex-1 text-xs leading-relaxed text-[#B8B8B8]">
+              Acesso conforme os setores e condições disponíveis na plataforma oficial. Período:
+              11 a 14 de setembro de 2026.
+            </p>
+            <a
+              href={PASSPORT_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Ver passaporte de todos os dias na Eventou (abre em nova aba)"
+              onClick={() => {
+                trackExpoEvent("expo_ticket_click", {
+                  event_day: "todos",
+                  ticket_type: "passaporte",
+                  destination: PASSPORT_LINK,
+                  source_section: "ingressos",
+                });
+                trackExpoEvent("expo_passaporte_click", { source: "ingressos" });
+                trackExpoEvent("expo_passaporte_eventou_click", { source: "ingressos" });
+              }}
+              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-extrabold text-black transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none"
+              style={{ background: GOLD }}
+            >
+              Ver passaporte
+            </a>
+          </article>
+        </div>
+
+        <p className="mt-5 text-center text-[11px] leading-relaxed text-[#8a8a8a]">
+          Links externos da Eventou, plataforma responsável pela venda e gestão dos ingressos.
+        </p>
+      </section>
+
+      {/* ================= COMUNICADO OFICIAL ================= */}
+      <section id="comunicado" className="mx-auto max-w-5xl px-5 py-10 scroll-mt-16">
+        <SectionTitle eyebrow="📢 COMUNICADO OFICIAL" title="Atualização da programação" />
+        <div className="grid gap-5 md:grid-cols-2 md:items-start">
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/60">
+            <img
+              src={COMUNICADO_IMG}
+              alt="Comunicado oficial da organização sobre a adequação da programação de shows da Expo Prudente 2026 ao edital de licitação, com dois dias de portões abertos"
+              width={1440}
+              height={1920}
+              loading="lazy"
+              decoding="async"
+              className="block h-auto w-full"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <p className="text-sm leading-relaxed text-[#D4D4D4]">
+              A programação da Expo Prudente 2026 foi reestruturada para atender às exigências do
+              processo licitatório, incluindo dois dias com pista gratuita. O evento agora acontece
+              de 11 a 14 de setembro.
+            </p>
+
+            <div id="suporte-compra" className="rounded-2xl border border-[#FFC300]/30 bg-white/[0.03] p-4">
+              <p className="font-extrabold text-white">
+                Já havia comprado ingresso para uma atração ou data alterada?
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-[#B8B8B8]">
+                Entre em contato diretamente com o suporte da Eventou para consultar as opções
+                disponíveis para o seu pedido.
+              </p>
+              <a
+                href={SUPPORT_WHATSAPP}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Falar com o suporte da Eventou no WhatsApp (abre em nova aba)"
+                onClick={() => trackExpoEvent("expo_support_click", { source_section: "comunicado" })}
+                className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-extrabold text-black transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none"
+                style={{ background: GOLD }}
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden /> Falar com o suporte da Eventou
+              </a>
+              <p className="mt-2 text-xs text-[#B8B8B8]">{SUPPORT_PHONE_LABEL}</p>
+              <p className="mt-3 text-xs font-semibold text-[#FFC300]">
+                A Roxou não realiza cancelamentos, trocas ou reembolsos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= PROGRAMAÇÃO ================= */}
+      <section
+        id="programacao"
+        ref={programacaoRef}
+        className="mx-auto max-w-5xl px-5 py-10 scroll-mt-16"
+      >
+        <SectionTitle eyebrow="🎤 PROGRAMAÇÃO OFICIAL" title="Dia a dia" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SHOWS.map((show) => (
+            <ScheduleCard key={show.id} show={show} />
           ))}
         </div>
       </section>
 
-      {/* ============== COMUNICADO OFICIAL ============== */}
-      <section
-        id="comunicado"
-        className="px-5 py-12 max-w-3xl mx-auto"
-        aria-label="Comunicado oficial da Expo Prudente 2026"
-      >
-        <SectionTitle eyebrow="📢 AVISO DA ORGANIZAÇÃO" title="Comunicado oficial" />
-        <p className="text-center text-[#B8B8B8] -mt-3 mb-6 text-sm sm:text-base">
-          A organização informou ajustes na grade de shows para atender às exigências do edital
-          de licitação, incluindo dois dias com portões abertos.
-        </p>
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/60">
-          <img
-            src={COMUNICADO_IMG}
-            alt="Comunicado oficial da Expo Prudente 2026 sobre a reestruturação da programação de shows"
-            loading="lazy"
-            decoding="async"
-            className="block w-full h-auto"
-          />
+      {/* ================= SETORES ================= */}
+      <section id="setores" className="mx-auto max-w-5xl px-5 py-10 scroll-mt-16">
+        <SectionTitle eyebrow="🏟️ ESTRUTURA" title="Setores" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {SETORES.map((s) => (
+            <article key={s.name} className="rounded-2xl border border-white/10 bg-[#101010] p-4">
+              <h3 className="text-sm font-black tracking-wider text-[#FFC300]">{s.name}</h3>
+              <ul className="mt-2 space-y-1.5">
+                {s.items.map((item) => (
+                  <li key={item} className="text-sm leading-relaxed text-[#B8B8B8]">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </section>
 
+      {/* ================= INFORMAÇÕES ================= */}
+      <section id="informacoes" className="mx-auto max-w-3xl px-5 py-10 scroll-mt-16">
+        <SectionTitle eyebrow="ℹ️ ESSENCIAL" title="Informações do evento" />
+        <dl className="divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10 bg-[#101010]">
+          <InfoRow icon={<CalendarDays className="h-4 w-4" aria-hidden />} label="Data" value={EVENT_PERIOD_LABEL} />
+          <InfoRow
+            icon={<CalendarDays className="h-4 w-4" aria-hidden />}
+            label="Horário de referência"
+            value="A partir das 19h, conforme cada página oficial da Eventou"
+          />
+          <InfoRow icon={<MapPin className="h-4 w-4" aria-hidden />} label="Local" value={EVENT_VENUE} />
+          <InfoRow icon={<MapPin className="h-4 w-4" aria-hidden />} label="Endereço" value={EVENT_ADDRESS} />
+          <InfoRow icon={<Users className="h-4 w-4" aria-hidden />} label="Classificação" value={EVENT_AGE_RATING} />
+          <InfoRow icon={<Ticket className="h-4 w-4" aria-hidden />} label="Ingressos" value="Venda e gerenciamento pela Eventou" />
+          <InfoRow icon={<MessageCircle className="h-4 w-4" aria-hidden />} label="Suporte" value={SUPPORT_PHONE_LABEL} />
+        </dl>
+      </section>
 
-      {/* ============== CTA FINAL ============== */}
-      <section className="px-5 py-12 max-w-3xl mx-auto text-center">
-        <h2
-          className="font-black uppercase leading-tight"
-          style={{ fontSize: "clamp(1.6rem, 6vw, 2.6rem)" }}
-        >
-          GARANTA SEU INGRESSO
-          <br />
-          <span
-            className="bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-          >
-            ANTES QUE ESGOTE!
-          </span>
-        </h2>
-        <p className="mt-4 text-[#B8B8B8]">
-          Escolha sua data favorita e compre pelo site oficial da Eventou.
-        </p>
-        <button
-          onClick={() => scrollToId("shows")}
-          className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-full font-extrabold text-black text-base md:text-lg shadow-[0_10px_40px_-10px_rgba(255,138,0,0.7)] hover:scale-[1.03] active:scale-[0.98] transition-transform"
-          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-        >
-          🎟️ COMPRAR INGRESSOS
-        </button>
-
-        {/* ===== Destaque compacto Passaporte Todos os Dias ===== */}
-        <div className="mt-6 max-w-xl mx-auto rounded-2xl border border-[#FFC300]/35 bg-gradient-to-br from-[#1a1305] to-[#0a0a0a] p-4 md:p-5 text-left">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl leading-none">🎟️</div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">NOVIDADE</p>
-              <h3 className="font-extrabold text-white text-base md:text-lg leading-tight">
-                Passaporte — Todos os Dias
-              </h3>
-              <p className="mt-1.5 text-xs md:text-sm text-[#B8B8B8] leading-relaxed">
-                Acesso para todos os dias da Expo Prudente 2026. Ideal para quem quer curtir a programação completa de 10 a 14 de setembro.
-              </p>
-              <a
-                href={PASSPORT_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  trackExpoEvent("expo_passaporte_click", { source: "home_cta" });
-                  trackExpoEvent("expo_passaporte_eventou_click", { source: "home_cta" });
-                }}
-                className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-extrabold text-black text-xs md:text-sm hover:scale-[1.03] active:scale-[0.98] transition-transform"
-                style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-              >
-                Comprar Passaporte
-              </a>
-            </div>
+      {/* ================= SUPORTE E DISCLAIMER ================= */}
+      <section id="suporte" className="mx-auto max-w-3xl px-5 py-10 scroll-mt-16">
+        <div className="rounded-2xl border border-[#FFC300]/25 bg-white/[0.03] p-5">
+          <h2 className="text-base font-black uppercase tracking-wider text-[#FFC300]">
+            Aviso importante
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-[#D4D4D4]">
+            A Roxou atua exclusivamente na divulgação de informações públicas da Expo Prudente
+            2026. A organização, programação, venda de ingressos, alterações, cancelamentos,
+            atendimento, trocas e reembolsos são de responsabilidade dos organizadores do evento e
+            da plataforma Eventou.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href={PASSPORT_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Abrir a página oficial de ingressos na Eventou (abre em nova aba)"
+              onClick={() =>
+                trackExpoEvent("expo_ticket_click", {
+                  event_day: "todos",
+                  ticket_type: "passaporte",
+                  destination: PASSPORT_LINK,
+                  source_section: "disclaimer",
+                })
+              }
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-[#FFC300]/40 px-4 text-sm font-bold text-[#FFC300] hover:bg-[#FFC300]/10"
+            >
+              Ingressos oficiais na Eventou
+            </a>
+            <a
+              href={SUPPORT_WHATSAPP}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Falar com o suporte da Eventou no WhatsApp (abre em nova aba)"
+              onClick={() => trackExpoEvent("expo_support_click", { source_section: "disclaimer" })}
+              className="inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm font-bold text-white/90 hover:bg-white/10"
+            >
+              Suporte Eventou · {SUPPORT_PHONE_LABEL}
+            </a>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-white/15 px-4 text-sm font-bold text-white/90 hover:bg-white/10"
+            >
+              <ArrowUp className="h-4 w-4" aria-hidden /> Voltar ao topo
+            </button>
           </div>
         </div>
-
-
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            onClick={async () => {
-              const url = "https://roxou.com.br/expo2026/";
-              const data = {
-                title: "Expo Prudente 2026",
-                text: "Confira a programação, mapa e ingressos da Expo Prudente 2026!",
-                url,
-              };
-              try {
-                if (navigator.share) {
-                  await navigator.share(data);
-                  trackExpoEvent("expo_share_native", { method: "native" });
-                  return;
-                }
-              } catch {
-                /* cancelado */
-              }
-              try {
-                await navigator.clipboard.writeText(url);
-                trackExpoEvent("expo_copy_link", { method: "clipboard" });
-              } catch {
-                /* noop */
-              }
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
-          >
-            📤 Compartilhar
-          </button>
-        </div>
       </section>
 
-      {/* ============== FOOTER ============== */}
-      <footer className="px-5 py-12 border-t border-white/5 bg-black/40">
-        <div className="max-w-3xl mx-auto text-center space-y-4">
+      {/* ================= FOOTER ================= */}
+      <footer className="border-t border-white/5 bg-black/40 px-5 py-8">
+        <div className="mx-auto max-w-3xl space-y-3 text-center">
           <a
             href="https://instagram.com/expoprudente2026oficial"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#FFC300] hover:text-[#FF8A00]"
           >
-            <Instagram className="w-4 h-4" />
+            <Instagram className="h-4 w-4" aria-hidden />
             @expoprudente2026oficial
           </a>
-          <p className="text-xs text-[#B8B8B8] leading-relaxed">
-            A Roxou atua exclusivamente como página de divulgação e redirecionamento para compra de ingressos oficiais.
+          <p className="text-xs leading-relaxed text-[#8a8a8a]">
+            A Roxou apenas divulga informações públicas do evento. A organização, venda de
+            ingressos, alterações na programação, atendimento e reembolsos são de responsabilidade
+            dos organizadores e da plataforma Eventou.
           </p>
         </div>
       </footer>
 
-      {/* Floating CTA mobile */}
       {showFloatingCta && (
         <button
-          onClick={() => scrollToId("shows")}
-          className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 inline-flex items-center gap-2 px-6 py-3 rounded-full font-extrabold text-black text-sm shadow-[0_10px_40px_-10px_rgba(255,138,0,0.8)] animate-in fade-in slide-in-from-bottom-4"
-          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
+          type="button"
+          onClick={() => scrollToId("ingressos")}
+          aria-label="Ver ingressos oficiais"
+          className="fixed bottom-4 left-1/2 z-40 inline-flex min-h-[48px] -translate-x-1/2 items-center gap-2 rounded-full px-6 text-sm font-extrabold text-black shadow-[0_10px_40px_-10px_rgba(255,138,0,0.8)] md:hidden"
+          style={{ background: GOLD }}
         >
-          <Ticket className="w-4 h-4" />
-          COMPRAR INGRESSOS
+          <Ticket className="h-4 w-4" aria-hidden />
+          VER INGRESSOS
         </button>
       )}
     </ExpoLayout>
@@ -445,405 +491,174 @@ export default function Expo2026() {
 
 /* ========================================================================== */
 
-function ShowCardItem({ show }: { show: ShowCard }) {
-  const handleClick = () => {
-    trackExpoEvent("expo_show_card_click", {
-      artist: show.artists.join(", "),
-      date: show.date,
-      weekday: show.weekday,
-    });
-  };
-  const handleEventou = () => {
-    trackExpoEvent("expo_eventou_click", {
-      artist: show.artists.join(", "),
-      date: show.date,
-      weekday: show.weekday,
-    });
-  };
-  const artists = show?.artists ?? [];
-  const visibleArtists = artists.slice(0, 3);
-  const extraCount = Math.max(0, artists.length - 3);
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <article
-      onClick={handleClick}
-      className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] hover:border-[#FF8A00]/50 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
-    >
-      {show?.art && (
-        <img
-          src={show.art}
-          alt={`Arte oficial do dia ${show.date} da Expo Prudente 2026 — ${artists.join(", ")}`}
-          loading="lazy"
-          decoding="async"
-          className="block w-full h-auto"
-        />
+    <div className="flex items-start gap-3 px-4 py-3">
+      <span className="mt-0.5 text-[#FFC300]">{icon}</span>
+      <div className="min-w-0">
+        <dt className="text-[11px] font-bold uppercase tracking-wider text-[#8a8a8a]">{label}</dt>
+        <dd className="text-sm font-semibold leading-snug text-white break-words">{value}</dd>
+      </div>
+    </div>
+  );
+}
+
+function DayBadges({ show }: { show: ShowCard }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {show.freeEntry && (
+        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-black" style={{ background: GOLD }}>
+          Pista grátis
+        </span>
       )}
-      <div className="relative p-4">
-      <div
-        className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"
-        style={{ background: "radial-gradient(circle, #FF8A00, transparent)" }}
-      />
-      <div className="relative flex items-center justify-between gap-3 mb-2">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">{show?.weekday ?? ""}</p>
-          <p className="font-black leading-none mt-0.5" style={{ fontSize: "clamp(1.25rem, 4.5vw, 1.6rem)" }}>
-            {show?.date ?? ""}
-          </p>
+      {show.badge && (
+        <span className="inline-flex items-center rounded-full border border-[#FFC300]/40 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[#FFC300]">
+          {show.badge}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function TicketCard({ show }: { show: ShowCard }) {
+  return (
+    <article className="flex flex-col rounded-2xl border border-white/10 bg-[#101010] p-4 transition-colors hover:border-[#FF8A00]/50">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">{show.weekday}</p>
+          <p className="text-xl font-black leading-none text-white">{show.date}</p>
         </div>
-        {show?.freeEntry ? (
-          <span className="text-[10px] font-black uppercase tracking-wider text-black px-2.5 py-1 rounded-full flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}>
-            Portões abertos
-          </span>
-        ) : (
-          <Ticket className="w-5 h-5 text-[#FFC300]/70 flex-shrink-0" aria-hidden />
-        )}
+        <DayBadges show={show} />
       </div>
 
-      <div className="relative flex flex-wrap gap-1.5 mb-3" title={artists.join(" • ")}>
-        {visibleArtists.map((a) => (
-          <span
-            key={a}
-            className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold text-[#FFC300] bg-[#FFC300]/10 border border-[#FFC300]/20 max-w-full truncate"
-          >
+      <ul className="mt-3 flex-1 space-y-1">
+        {show.artists.map((a) => (
+          <li key={a} className="text-sm font-semibold leading-snug text-white/90">
             {a}
-          </span>
+          </li>
         ))}
-        {extraCount > 0 && (
-          <span
-            className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold text-black"
-            style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-            title={artists.slice(3).join(" • ")}
-          >
-            +{extraCount} {extraCount === 1 ? "atração" : "atrações"}
-          </span>
-        )}
-      </div>
+      </ul>
 
-      {show?.link ? (
-        <a
-          href={show.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleEventou}
-          className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-extrabold text-black text-xs shadow-[0_8px_30px_-10px_rgba(255,138,0,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
-          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-        >
-          <Ticket className="w-4 h-4" />
-          COMPRAR INGRESSOS
-        </a>
-      ) : show?.freeEntry ? (
-        <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-[#FFC300] text-xs bg-[#FFC300]/10 border border-[#FFC300]/25">
-          Entrada gratuita — portões abertos
-        </span>
-      ) : (
-        <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-white/60 text-xs bg-white/5">
-          Em breve
-        </span>
-      )}
-      </div>
-
+      <a
+        href={show.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${show.ctaLabel} do dia ${show.date} na Eventou (abre em nova aba)`}
+        onClick={() => {
+          trackExpoEvent("expo_ticket_click", {
+            event_day: show.date,
+            ticket_type: show.freeEntry ? "pista_gratis" : "ingresso",
+            destination: show.link,
+            source_section: "ingressos",
+          });
+          trackExpoEvent("expo_eventou_click", { date: show.date, artist: show.artists.join(", ") });
+        }}
+        className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-extrabold text-black transition-transform hover:scale-[1.02] active:scale-[0.98] motion-reduce:transform-none"
+        style={{ background: GOLD }}
+      >
+        {show.ctaLabel}
+      </a>
     </article>
   );
 }
 
-function CornerCurve({ className, rotate = 0 }: { className?: string; rotate?: number }) {
+function ScheduleCard({ show }: { show: ShowCard }) {
   return (
-    <svg
-      viewBox="0 0 100 100"
-      className={className}
-      style={{ transform: `rotate(${rotate}deg)` }}
-      aria-hidden
-    >
-      <defs>
-        <linearGradient id={`cg-${rotate}`} x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0%" stopColor="#FF8A00" />
-          <stop offset="100%" stopColor="#FFC300" />
-        </linearGradient>
-      </defs>
-      <path d="M0,0 L40,0 Q0,0 0,40 Z" fill={`url(#cg-${rotate})`} opacity="0.85" />
-    </svg>
+    <article className="overflow-hidden rounded-2xl border border-white/10 bg-[#101010]">
+      {show.art && (
+        <img
+          src={show.art}
+          alt={`Arte oficial do dia ${show.date} da Expo Prudente 2026 com ${show.artists.join(", ")}`}
+          width={1280}
+          height={481}
+          loading="lazy"
+          decoding="async"
+          className="block h-auto w-full"
+        />
+      )}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold tracking-widest text-[#FFC300]">{show.weekday}</p>
+            <p className="text-xl font-black leading-none text-white">{show.date}</p>
+          </div>
+          <DayBadges show={show} />
+        </div>
+
+        <p className="mt-2.5 text-sm leading-snug text-white/90">{show.artists.join(" · ")}</p>
+
+        <a
+          href={show.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${show.ctaLabel} do dia ${show.date} na Eventou (abre em nova aba)`}
+          onClick={() =>
+            trackExpoEvent("expo_ticket_click", {
+              event_day: show.date,
+              ticket_type: show.freeEntry ? "pista_gratis" : "ingresso",
+              destination: show.link,
+              source_section: "programacao",
+            })
+          }
+          className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#FFC300]/40 px-4 text-sm font-bold text-[#FFC300] hover:bg-[#FFC300]/10"
+        >
+          {show.ctaLabel}
+        </a>
+      </div>
+    </article>
   );
 }
 
-function PremiumCountdown({ targetIso }: { targetIso: string }) {
-  const targetMs = useMemo(() => {
-    const t = new Date(targetIso).getTime();
-    return Number.isFinite(t) ? t : NaN;
-  }, [targetIso]);
-
+function Countdown({ targetIso }: { targetIso: string }) {
+  const targetMs = useMemo(() => new Date(targetIso).getTime(), [targetIso]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!Number.isFinite(targetMs)) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [targetMs]);
-
-  if (!Number.isFinite(targetMs)) {
-    return (
-      <div className="mt-10 inline-flex items-center gap-3 px-5 py-3 rounded-2xl border border-white/10 bg-[#121212]/70 backdrop-blur">
-        <p className="text-sm md:text-base text-white font-bold">Expo Prudente 2026</p>
-      </div>
-    );
-  }
+  }, []);
 
   const diff = targetMs - now;
 
-  if (diff <= 0) {
+  if (!Number.isFinite(targetMs) || diff <= 0) {
     return (
-      <div
-        className="mt-10 inline-flex items-center gap-3 px-6 py-4 rounded-2xl border bg-[#121212]/70 backdrop-blur animate-fade-in"
-        style={{
-          borderColor: "rgba(255,195,0,0.4)",
-          boxShadow: "0 10px 40px -15px rgba(255,138,0,0.6)",
-        }}
-      >
-        <p className="text-base md:text-lg font-black text-white">
-          🎉 A Expo Prudente 2026 começou!
-        </p>
-      </div>
+      <p className="mt-8 inline-flex rounded-2xl border border-[#FFC300]/40 bg-white/[0.04] px-6 py-4 text-base font-black text-white">
+        🎉 A Expo Prudente 2026 começou!
+      </p>
     );
   }
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const days = Math.floor(diff / 86_400_000);
+  const hours = Math.floor((diff / 3_600_000) % 24);
+  const minutes = Math.floor((diff / 60_000) % 60);
   const seconds = Math.floor((diff / 1000) % 60);
 
-  const totalMs = targetMs - new Date("2026-01-01T00:00:00-03:00").getTime();
-  const elapsedMs = Math.max(0, totalMs - diff);
-  const progress = Math.min(100, Math.max(0, (elapsedMs / totalMs) * 100));
-
   return (
-    <div className="mt-10 w-full max-w-md mx-auto">
-      <p className="text-[11px] font-bold tracking-[0.3em] text-[#FFC300] text-center mb-3">
-        ⏳ FALTAM APENAS
+    <div className="mx-auto mt-8 w-full max-w-md">
+      <p className="mb-3 text-center text-[11px] font-bold tracking-[0.25em] text-[#FFC300]">
+        CONTAGEM REGRESSIVA PARA A EXPO PRUDENTE 2026
       </p>
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
-        <CountdownCard value={days} label="DIAS" />
-        <CountdownCard value={hours} label="HORAS" />
-        <CountdownCard value={minutes} label="MIN" />
-        <CountdownCard value={seconds} label="SEG" />
-      </div>
-      <p className="text-xs sm:text-sm text-[#B8B8B8] text-center mt-3">
-        Para a <span className="font-bold text-white">Expo Prudente 2026</span>
-      </p>
-      <div className="mt-4 px-1">
-        <div className="h-1.5 rounded-full bg-white/5 overflow-hidden border border-white/5">
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { v: days, l: "DIAS" },
+          { v: hours, l: "HORAS" },
+          { v: minutes, l: "MIN" },
+          { v: seconds, l: "SEG" },
+        ].map((item) => (
           <div
-            className="h-full rounded-full transition-all duration-1000 ease-out"
-            style={{
-              width: `${progress}%`,
-              background: "linear-gradient(90deg, #FF8A00, #FFC300)",
-              boxShadow: "0 0 12px rgba(255,138,0,0.6)",
-            }}
-          />
-        </div>
-        <p className="text-[10px] text-[#888] text-center mt-2 italic">
-          🔥 A cada segundo estamos mais perto da maior Expo Prudente da história.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function CountdownCard({ value, label }: { value: number; label: string }) {
-  const display = String(value).padStart(2, "0");
-  return (
-    <div
-      className="relative rounded-2xl border bg-white/[0.04] backdrop-blur-md px-2 py-3 sm:py-4 text-center overflow-hidden"
-      style={{
-        borderColor: "rgba(255,195,0,0.25)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px -12px rgba(255,138,0,0.5)",
-      }}
-    >
-      <div
-        className="absolute inset-0 pointer-events-none opacity-60"
-        style={{
-          background: "radial-gradient(120% 80% at 50% 0%, rgba(255,138,0,0.18), transparent 60%)",
-        }}
-      />
-      <p
-        key={display}
-        className="relative font-black tabular-nums leading-none animate-fade-in"
-        style={{
-          fontSize: "clamp(1.5rem, 7vw, 2.25rem)",
-          color: "#FFC300",
-          textShadow: "0 0 18px rgba(255,138,0,0.45)",
-        }}
-      >
-        {display}
-      </p>
-      <p className="relative mt-1.5 text-[9px] sm:text-[10px] font-bold tracking-[0.2em] text-white/70">
-        {label}
-      </p>
-    </div>
-  );
-}
-
-function GradeOficialSection() {
-  const [open, setOpen] = useState(false);
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!sectionRef.current) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            trackExpoEvent("expo_grade_oficial_view", {}, { once: true });
-            obs.disconnect();
-          }
-        });
-      },
-      { threshold: 0.35 },
-    );
-    obs.observe(sectionRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  const handleOpen = () => {
-    setOpen(true);
-    trackExpoEvent("expo_grade_oficial_open", {});
-  };
-
-  const handleShare = async () => {
-    const url = "https://roxou.com.br/expo2026/";
-    const data = {
-      title: "Grade Oficial — Expo Prudente 2026",
-      text: "Confira a programação oficial de shows da Expo Prudente 2026!",
-      url,
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(data);
-        trackExpoEvent("expo_grade_oficial_share", { method: "native" });
-        return;
-      }
-    } catch {
-      /* cancelado */
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      trackExpoEvent("expo_grade_oficial_share", { method: "clipboard" });
-    } catch {
-      /* noop */
-    }
-  };
-
-  return (
-    <section
-      ref={sectionRef}
-      className="px-2 sm:px-5 py-12 max-w-5xl mx-auto"
-      aria-label="Grade oficial de shows da Expo Prudente 2026"
-    >
-      <SectionTitle eyebrow="🎤 GRADE OFICIAL DE SHOWS" title="Programação completa" />
-      <p className="text-center text-[#B8B8B8] -mt-3 mb-6 text-sm sm:text-base px-3">
-        Confira a programação completa da Expo Prudente 2026, de 10 a 14 de setembro.
-      </p>
-
-      <button
-        type="button"
-        onClick={handleOpen}
-        aria-label="Ampliar grade oficial de shows"
-        className="group block w-full overflow-hidden bg-black/60 backdrop-blur border border-white/10 transition-all duration-300 hover:border-[#FF8A00]/50 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.6)] hover:scale-[1.01] focus:outline-none focus:ring-2 focus:ring-[#FFC300]/60"
-        style={{ borderRadius: 24, boxShadow: "0 12px 40px -20px rgba(0,0,0,0.8)" }}
-      >
-        <img
-          src={GRADE_IMG}
-          alt="Grade Oficial de Shows da Expo Prudente 2026"
-          loading="lazy"
-          decoding="async"
-          className="block w-full h-auto object-cover"
-        />
-        <div className="px-4 py-2 text-center bg-black/70 text-[11px] sm:text-xs font-semibold text-[#FFC300] tracking-wider inline-flex w-full items-center justify-center gap-2">
-          <ZoomIn className="w-3.5 h-3.5" /> Toque para ampliar e dar zoom
-        </div>
-      </button>
-
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <a
-          href={SHOWS_BUY_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => trackExpoEvent("expo_grade_oficial_buy_click", {})}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-extrabold text-black text-sm sm:text-base shadow-[0_10px_30px_-10px_rgba(255,138,0,0.7)] hover:scale-[1.03] active:scale-[0.98] transition-transform"
-          style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}
-        >
-          🎟️ Comprar Ingressos
-        </a>
-        <button
-          type="button"
-          onClick={handleShare}
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-full text-sm font-bold border border-white/15 text-white/90 bg-white/5 hover:bg-white/10 transition-colors"
-        >
-          📲 Compartilhar Programação
-        </button>
-      </div>
-
-      {open && (
-        <div
-          className="fixed inset-0 z-[100] bg-black flex flex-col"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Grade oficial ampliada"
-        >
-          <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/95 z-10">
-            <p className="text-xs sm:text-sm text-white/80 pr-2 truncate">
-              🎤 Grade Oficial — Expo Prudente 2026
+            key={item.l}
+            className="rounded-2xl border border-[#FFC300]/25 bg-white/[0.04] px-2 py-3 text-center"
+          >
+            <p
+              className="font-black tabular-nums leading-none"
+              style={{ fontSize: "clamp(1.4rem, 6.5vw, 2rem)", color: "#FFC300" }}
+            >
+              {String(item.v).padStart(2, "0")}
             </p>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center flex-shrink-0"
-              aria-label="Fechar"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <p className="mt-1.5 text-[9px] font-bold tracking-[0.2em] text-white/70">{item.l}</p>
           </div>
-          <div className="relative flex-1 overflow-hidden bg-black">
-            <TransformWrapper
-              initialScale={1}
-              minScale={1}
-              maxScale={5}
-              doubleClick={{ mode: "toggle", step: 2 }}
-              wheel={{ step: 0.2 }}
-              pinch={{ step: 5 }}
-              onZoom={() => debouncedZoomTrack("expo_grade_oficial_zoom", {})}
-            >
-              <TransformComponent
-                wrapperStyle={{ width: "100%", height: "100%", background: "#000" }}
-                contentStyle={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <img
-                  src={GRADE_IMG}
-                  alt="Grade Oficial Expo Prudente 2026 ampliada"
-                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                  draggable={false}
-                />
-              </TransformComponent>
-            </TransformWrapper>
-          </div>
-        </div>
-      )}
-    </section>
+        ))}
+      </div>
+    </div>
   );
 }
