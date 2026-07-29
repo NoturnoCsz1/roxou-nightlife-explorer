@@ -2,7 +2,10 @@ import { ReactNode } from "react";
 
 export const EVENT_START_RAW = "2026-09-10T19:00:00-03:00";
 export const MAPA_IMG = "/images/expo2026-mapa.jpg";
-export const GRADE_IMG = "/images/expo2026-grade-oficial.webp";
+/** Arte oficial atualizada da programação geral (11 a 14/09). */
+export const GRADE_IMG = "/expo2026/programacao/programacao-geral.jpg";
+/** Comunicado oficial sobre a reestruturação da programação. */
+export const COMUNICADO_IMG = "/expo2026/programacao/comunicado-oficial.jpg";
 export const CAMAROTES_IMG = "/images/expo2026-camarotes.png";
 export const SHOWS_BUY_LINK =
   "https://eventou.com.br/evento/Quinta-10-09---Leonardo---Expo-Prudente__3013";
@@ -15,59 +18,64 @@ export interface ShowCard {
   weekday: string;
   artists: string[];
   link: string;
+  /** Arte oficial do dia (imagem pública do projeto). */
+  art?: string;
+  /** Dia com portões abertos (sem venda de ingresso). */
+  freeEntry?: boolean;
 }
 
 export const SHOWS: ShowCard[] = [
   {
-    id: "qui-10-09",
-    date: "10/09",
-    weekday: "QUINTA-FEIRA",
-    artists: ["Leonardo"],
-    link: "https://eventou.com.br/evento/Quinta-10-09---Leonardo---Expo-Prudente__3013",
-  },
-  {
     id: "sex-11-09",
     date: "11/09",
     weekday: "SEXTA-FEIRA",
-    artists: ["Antony & Gabriel", "Loubet"],
-    link: "https://eventou.com.br/evento/Sexta-11-09---Antony---Gabriel-e-Loubet---Expo-Prudente__3014",
+    artists: ["Loubet", "Pedro Henrique & Trevisan"],
+    link: "",
+    art: "/expo2026/programacao/dia-11-09.webp",
+    freeEntry: true,
   },
   {
     id: "sab-12-09",
     date: "12/09",
     weekday: "SÁBADO",
-    artists: ["Panda", "Ícaro & Gilmar", "MC Hariel", "Pedro Sanches & Thiago"],
+    artists: ["Panda", "Ícaro & Gilmar", "MC Hariel", "Hyllary Fernandes"],
     link: "https://eventou.com.br/evento/Sabado-12-09---Panda--icaro---Gilmar--Mc-Hariel-e-Pedro-Sanches-e-Thiago---Expo-Prudente__3015",
+    art: "/expo2026/programacao/dia-12-09.jpg",
   },
   {
     id: "dom-13-09",
     date: "13/09",
     weekday: "DOMINGO",
-    artists: ["Zé Neto & Cristiano", "Mariana & Mateus"],
-    link: "https://eventou.com.br/evento/Domingo-13-09--Ze-Neto----Cristiano-e-Mariana---Mateus---Expo-Prudente__3016",
+    artists: ["Antony & Gabriel", "Pedro Sanchez & Thiago"],
+    link: "",
+    art: "/expo2026/programacao/dia-13-09.jpg",
+    freeEntry: true,
   },
   {
     id: "seg-14-09",
     date: "14/09",
     weekday: "SEGUNDA-FEIRA",
-    artists: ["Zezé Di Camargo & Luciano", "Mariana Fagundes"],
+    artists: ["Zezé Di Camargo & Luciano", "Mariana Fagundes", "Hyllary Fernandes"],
     link: "https://eventou.com.br/evento/Segunda-14-09---Zeze-Di-Camargo---Luciano-e-Mariana-Fagundes---Expo-Prudente__3017",
+    art: "/expo2026/programacao/dia-14-09.jpg",
   },
 ];
+
 
 export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: "Quando acontece a Expo Prudente 2026?",
-    a: "A Expo Prudente 2026 acontece de 10 a 14 de setembro, em Presidente Prudente/SP.",
+    a: "A Expo Prudente 2026 acontece de 10 a 14 de setembro, em Presidente Prudente/SP, conforme a programação oficial atualizada.",
   },
   {
     q: "Onde comprar ingressos da Expo Prudente 2026?",
-    a: "Os ingressos podem ser acessados pelos links oficiais disponibilizados nos cards de cada show na página da Roxou, direcionando para a plataforma de venda responsável.",
+    a: "Os ingressos podem ser acessados pelos links oficiais disponibilizados nos cards de cada show na página da Roxou, direcionando para a plataforma de venda responsável. Os dias 11/09 e 13/09 são de portões abertos.",
   },
   {
     q: "Quais artistas estão confirmados na Expo Prudente 2026?",
-    a: "A programação divulgada inclui Leonardo, Antony & Gabriel, Loubet, Panda, Ícaro & Gilmar, MC Hariel, Pedro Sanches & Thiago, Zé Neto & Cristiano, Mariana & Mateus, Zezé Di Camargo & Luciano e Mariana Fagundes.",
+    a: "Conforme a programação oficial atualizada: 11/09 Loubet e Pedro Henrique & Trevisan (portões abertos); 12/09 Panda, Ícaro & Gilmar, MC Hariel e Hyllary Fernandes; 13/09 Antony & Gabriel e Pedro Sanchez & Thiago (portões abertos); 14/09 Zezé Di Camargo & Luciano, Mariana Fagundes e Hyllary Fernandes.",
   },
+
   {
     q: "Onde fica o mapa dos setores da Expo Prudente 2026?",
     a: "O mapa dos setores está disponível em /expo2026/mapa, com visualização ampliada, zoom e setores como Arquibancada, Pista Arena, Camarotes, Área VIP, Front Open Bar, Palco e Boate.",

@@ -7,6 +7,7 @@ import { ExpoLayout } from "@/components/expo/ExpoLayout";
 import {
   EVENT_START_RAW,
   GRADE_IMG,
+  COMUNICADO_IMG,
   SHOWS,
   SHOWS_BUY_LINK,
   SectionTitle,
@@ -158,7 +159,7 @@ export default function Expo2026() {
           eventStatus: "https://schema.org/EventScheduled",
           eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
           url: "https://roxou.com.br/expo2026/",
-          image: "https://roxou.com.br/images/expo2026-grade-oficial.webp",
+          image: "https://roxou.com.br/expo2026/programacao/programacao-geral.jpg",
           location: {
             "@type": "Place",
             name: "Recinto de Exposições — Presidente Prudente/SP",
@@ -182,7 +183,7 @@ export default function Expo2026() {
             eventStatus: "https://schema.org/EventScheduled",
             eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
             url: s.link,
-            image: "https://roxou.com.br/images/expo2026-grade-oficial.webp",
+            image: "https://roxou.com.br/expo2026/programacao/programacao-geral.jpg",
             description: `Show de ${s.artists.join(", ")} na Expo Prudente 2026 — ${s.weekday}, ${s.date}.`,
             performer: s.artists.map((a) => ({ "@type": "MusicGroup", name: a })),
             location: {
@@ -226,7 +227,7 @@ export default function Expo2026() {
           "@id": "https://roxou.com.br/expo2026/#grade-oficial",
           name: "Grade Oficial de Shows Expo Prudente 2026",
           description: "Programação oficial de shows da Expo Prudente 2026.",
-          contentUrl: "https://roxou.com.br/images/expo2026-grade-oficial.webp",
+          contentUrl: "https://roxou.com.br/expo2026/programacao/programacao-geral.jpg",
           url: "https://roxou.com.br/expo2026/",
         },
       ],
@@ -240,10 +241,10 @@ export default function Expo2026() {
         title="Expo Prudente 2026 | Shows, Programação e Ingressos Oficiais"
         description="Confira a programação da Expo Prudente 2026, grade oficial de shows e links oficiais de ingressos. 10 a 14 de setembro em Presidente Prudente/SP."
         canonical="https://roxou.com.br/expo2026/"
-        ogImage="https://roxou.com.br/images/expo2026-grade-oficial.webp"
-        ogImageWidth={1536}
-        ogImageHeight={691}
-        keywords="expo prudente 2026, ingressos expo prudente, leonardo prudente, zé neto e cristiano prudente, zezé di camargo prudente, expo prudente programação"
+        ogImage="https://roxou.com.br/expo2026/programacao/programacao-geral.jpg"
+        ogImageWidth={1280}
+        ogImageHeight={481}
+        keywords="expo prudente 2026, ingressos expo prudente, programação expo prudente, loubet prudente, zezé di camargo e luciano prudente, mc hariel prudente, portões abertos expo prudente"
         jsonLd={jsonLd}
       />
 
@@ -296,6 +297,29 @@ export default function Expo2026() {
           ))}
         </div>
       </section>
+
+      {/* ============== COMUNICADO OFICIAL ============== */}
+      <section
+        id="comunicado"
+        className="px-5 py-12 max-w-3xl mx-auto"
+        aria-label="Comunicado oficial da Expo Prudente 2026"
+      >
+        <SectionTitle eyebrow="📢 AVISO DA ORGANIZAÇÃO" title="Comunicado oficial" />
+        <p className="text-center text-[#B8B8B8] -mt-3 mb-6 text-sm sm:text-base">
+          A organização informou ajustes na grade de shows para atender às exigências do edital
+          de licitação, incluindo dois dias com portões abertos.
+        </p>
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/60">
+          <img
+            src={COMUNICADO_IMG}
+            alt="Comunicado oficial da Expo Prudente 2026 sobre a reestruturação da programação de shows"
+            loading="lazy"
+            decoding="async"
+            className="block w-full h-auto"
+          />
+        </div>
+      </section>
+
 
       {/* ============== CTA FINAL ============== */}
       <section className="px-5 py-12 max-w-3xl mx-auto text-center">
@@ -442,8 +466,18 @@ function ShowCardItem({ show }: { show: ShowCard }) {
   return (
     <article
       onClick={handleClick}
-      className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] p-4 hover:border-[#FF8A00]/50 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
+      className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] hover:border-[#FF8A00]/50 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
     >
+      {show?.art && (
+        <img
+          src={show.art}
+          alt={`Arte oficial do dia ${show.date} da Expo Prudente 2026 — ${artists.join(", ")}`}
+          loading="lazy"
+          decoding="async"
+          className="block w-full h-auto"
+        />
+      )}
+      <div className="relative p-4">
       <div
         className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"
         style={{ background: "radial-gradient(circle, #FF8A00, transparent)" }}
@@ -455,7 +489,14 @@ function ShowCardItem({ show }: { show: ShowCard }) {
             {show?.date ?? ""}
           </p>
         </div>
-        <Ticket className="w-5 h-5 text-[#FFC300]/70 flex-shrink-0" aria-hidden />
+        {show?.freeEntry ? (
+          <span className="text-[10px] font-black uppercase tracking-wider text-black px-2.5 py-1 rounded-full flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}>
+            Portões abertos
+          </span>
+        ) : (
+          <Ticket className="w-5 h-5 text-[#FFC300]/70 flex-shrink-0" aria-hidden />
+        )}
       </div>
 
       <div className="relative flex flex-wrap gap-1.5 mb-3" title={artists.join(" • ")}>
@@ -490,11 +531,17 @@ function ShowCardItem({ show }: { show: ShowCard }) {
           <Ticket className="w-4 h-4" />
           COMPRAR INGRESSOS
         </a>
+      ) : show?.freeEntry ? (
+        <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-[#FFC300] text-xs bg-[#FFC300]/10 border border-[#FFC300]/25">
+          Entrada gratuita — portões abertos
+        </span>
       ) : (
         <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-white/60 text-xs bg-white/5">
           Em breve
         </span>
       )}
+      </div>
+
     </article>
   );
 }
