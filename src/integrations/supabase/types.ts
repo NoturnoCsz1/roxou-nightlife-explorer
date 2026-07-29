@@ -524,6 +524,428 @@ export type Database = {
         }
         Relationships: []
       }
+      bda_admin_audit_logs: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      bda_consents: {
+        Row: {
+          actor: string
+          consent_key: string
+          created_at: string
+          granted: boolean
+          granted_at: string | null
+          id: string
+          ip_address: string | null
+          participant_id: string | null
+          registration_id: string
+          revoked_at: string | null
+          terms_text: string | null
+          terms_version: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          actor?: string
+          consent_key: string
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          participant_id?: string | null
+          registration_id: string
+          revoked_at?: string | null
+          terms_text?: string | null
+          terms_version?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          actor?: string
+          consent_key?: string
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          participant_id?: string | null
+          registration_id?: string
+          revoked_at?: string | null
+          terms_text?: string | null
+          terms_version?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bda_consents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "bda_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bda_consents_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "public_bda_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bda_consents_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "bda_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bda_consents_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_bda_participants"
+            referencedColumns: ["registration_id"]
+          },
+        ]
+      }
+      bda_guardians: {
+        Row: {
+          authority_confirmed: boolean
+          birth_date: string | null
+          confirm_token_expires_at: string | null
+          confirm_token_hash: string | null
+          confirm_token_used_at: string | null
+          confirmed_at: string | null
+          cpf_encrypted: string | null
+          cpf_hash: string | null
+          cpf_masked: string | null
+          created_at: string
+          declaration_accepted: boolean
+          email: string
+          full_name: string
+          id: string
+          participant_id: string
+          phone: string | null
+          refused_at: string | null
+          relationship: string
+          updated_at: string
+        }
+        Insert: {
+          authority_confirmed?: boolean
+          birth_date?: string | null
+          confirm_token_expires_at?: string | null
+          confirm_token_hash?: string | null
+          confirm_token_used_at?: string | null
+          confirmed_at?: string | null
+          cpf_encrypted?: string | null
+          cpf_hash?: string | null
+          cpf_masked?: string | null
+          created_at?: string
+          declaration_accepted?: boolean
+          email: string
+          full_name: string
+          id?: string
+          participant_id: string
+          phone?: string | null
+          refused_at?: string | null
+          relationship: string
+          updated_at?: string
+        }
+        Update: {
+          authority_confirmed?: boolean
+          birth_date?: string | null
+          confirm_token_expires_at?: string | null
+          confirm_token_hash?: string | null
+          confirm_token_used_at?: string | null
+          confirmed_at?: string | null
+          cpf_encrypted?: string | null
+          cpf_hash?: string | null
+          cpf_masked?: string | null
+          created_at?: string
+          declaration_accepted?: boolean
+          email?: string
+          full_name?: string
+          id?: string
+          participant_id?: string
+          phone?: string | null
+          refused_at?: string | null
+          relationship?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bda_guardians_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "bda_participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bda_guardians_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "public_bda_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bda_participants: {
+        Row: {
+          age_group: string
+          birth_date: string
+          city: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          instagram: string | null
+          is_minor: boolean
+          notes: string | null
+          phone: string | null
+          photo_original_path: string | null
+          photo_public_url: string | null
+          public_name: string
+          registration_id: string
+          show_city_public: boolean
+          show_public: boolean
+          slot: number
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string
+          birth_date: string
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          instagram?: string | null
+          is_minor?: boolean
+          notes?: string | null
+          phone?: string | null
+          photo_original_path?: string | null
+          photo_public_url?: string | null
+          public_name: string
+          registration_id: string
+          show_city_public?: boolean
+          show_public?: boolean
+          slot?: number
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string
+          birth_date?: string
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          instagram?: string | null
+          is_minor?: boolean
+          notes?: string | null
+          phone?: string | null
+          photo_original_path?: string | null
+          photo_public_url?: string | null
+          public_name?: string
+          registration_id?: string
+          show_city_public?: boolean
+          show_public?: boolean
+          slot?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bda_participants_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "bda_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bda_participants_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_bda_participants"
+            referencedColumns: ["registration_id"]
+          },
+        ]
+      }
+      bda_partners: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          instagram_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          logo_alt: string
+          logo_url: string
+          name: string
+          site_url: string | null
+          slug: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          instagram_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          logo_alt?: string
+          logo_url: string
+          name: string
+          site_url?: string | null
+          slug: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          instagram_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          logo_alt?: string
+          logo_url?: string
+          name?: string
+          site_url?: string | null
+          slug?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bda_registration_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          registration_id: string
+          to_status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          registration_id: string
+          to_status: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          registration_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bda_registration_status_history_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "bda_registrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bda_registration_status_history_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "public_bda_participants"
+            referencedColumns: ["registration_id"]
+          },
+        ]
+      }
+      bda_registrations: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          id: string
+          status: string
+          submitted_at: string | null
+          team_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          team_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          team_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bda_submission_attempts: {
+        Row: {
+          created_at: string
+          email_hash: string | null
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email_hash?: string | null
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          email_hash?: string | null
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       bio_analytics_events: {
         Row: {
           bio_id: string
@@ -5579,6 +6001,57 @@ export type Database = {
       }
     }
     Views: {
+      public_bda_participants: {
+        Row: {
+          category: string | null
+          city: string | null
+          id: string | null
+          photo_public_url: string | null
+          public_name: string | null
+          registration_id: string | null
+          team_name: string | null
+        }
+        Relationships: []
+      }
+      public_bda_partners: {
+        Row: {
+          display_order: number | null
+          id: string | null
+          instagram_url: string | null
+          is_featured: boolean | null
+          logo_alt: string | null
+          logo_url: string | null
+          name: string | null
+          site_url: string | null
+          slug: string | null
+          type: string | null
+        }
+        Insert: {
+          display_order?: number | null
+          id?: string | null
+          instagram_url?: string | null
+          is_featured?: boolean | null
+          logo_alt?: string | null
+          logo_url?: string | null
+          name?: string | null
+          site_url?: string | null
+          slug?: string | null
+          type?: string | null
+        }
+        Update: {
+          display_order?: number | null
+          id?: string | null
+          instagram_url?: string | null
+          is_featured?: boolean | null
+          logo_alt?: string | null
+          logo_url?: string | null
+          name?: string | null
+          site_url?: string | null
+          slug?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       public_excursion_trips: {
         Row: {
           capacity: number | null
