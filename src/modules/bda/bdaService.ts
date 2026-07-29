@@ -381,3 +381,37 @@ export async function adminListAuditLogs(limit = 100) {
   if (error) throw error;
   return data ?? [];
 }
+
+/* ============ ADMIN — DASHBOARD E CONFIGURAÇÃO ============ */
+
+export interface BdaAdminStats {
+  total_registrations: number;
+  solo_registrations: number;
+  dupla_registrations: number;
+  adults: number;
+  minors: number;
+  aguardando_responsavel: number;
+  aguardando_analise: number;
+  pendencia: number;
+  aprovada_privada: number;
+  aprovada_publica: number;
+  recusada: number;
+  cancelada: number;
+  rascunho: number;
+  active_partners: number;
+  public_participants: number;
+}
+
+export async function fetchAdminDashboardStats(): Promise<BdaAdminStats> {
+  const { data, error } = await (supabase as any).rpc("bda_admin_dashboard_stats");
+  if (error) throw error;
+  return data as BdaAdminStats;
+}
+
+export async function updateBdaSettings(patch: Partial<BdaSettings>) {
+  const { error } = await (supabase as any)
+    .from("bda_settings")
+    .update(patch)
+    .eq("id", true);
+  if (error) throw error;
+}
