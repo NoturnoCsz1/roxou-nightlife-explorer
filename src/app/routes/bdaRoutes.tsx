@@ -8,14 +8,27 @@ import { L } from "./lazyFallback";
  */
 const BatalhaDeAura = lazy(() => import("@/pages/batalhadeaura/BatalhaDeAura"));
 const BdaComingSoon = lazy(() => import("@/pages/batalhadeaura/BdaComingSoon"));
+const BdaInscricao = lazy(() => import("@/pages/batalhadeaura/BdaInscricao"));
+const BdaParticipantes = lazy(
+  () => import("@/pages/batalhadeaura/BdaParticipantes"),
+);
+const BdaConfirmacao = lazy(
+  () => import("@/pages/batalhadeaura/BdaConfirmacao"),
+);
+const BdaPrivacidade = lazy(
+  () => import("@/pages/batalhadeaura/BdaPrivacidade"),
+);
 
 export const BdaRoutes = () => (
   <>
     <Route path="/batalhadeaura" element={L(<BatalhaDeAura />)} />
+    <Route path="/batalhadeaura/inscricao" element={L(<BdaInscricao />)} />
     <Route
-      path="/batalhadeaura/inscricao"
-      element={L(<BdaComingSoon title="Inscrição" />)}
+      path="/batalhadeaura/participantes"
+      element={L(<BdaParticipantes />)}
     />
+    <Route path="/batalhadeaura/confirmacao" element={L(<BdaConfirmacao />)} />
+    <Route path="/batalhadeaura/privacidade" element={L(<BdaPrivacidade />)} />
     <Route
       path="/batalhadeaura/regulamento"
       element={L(<BdaComingSoon title="Regulamento" />)}
