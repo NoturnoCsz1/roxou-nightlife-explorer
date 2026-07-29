@@ -60,10 +60,52 @@ export default function AdminBdaRegistrations() {
     load();
   }, []);
 
-  const filtered = useMemo(
-    () => regs.filter((r) => filter === "todas" || r.status === filter),
-    [regs, filter],
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return regs.filter((r) => {
+      if (filter !== "todas" && r.status !== filter) return false;
+      if (!q) return true;
+      const haystack = [
+        r.team_name ?? "",
+        r.category,
+        ...(r.participants ?? []).flatMap((p: any) => [p.public_name, p.full_name, p.city]),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [regs, filter, search]);
+
+  function exportCsv() {
+    const rows: string[][] = [
+      ["inscricao_id", "categoria", "dupla", "status", "criada_em", "nome_publico", "cidade", "menor", "responsavel_confirmado"],
+    ];
+    for (const r of filtered) {
+      for (const p of r.participants ?? []) {
+        rows.push([
+          r.id,
+          r.category,
+          r.team_name ?? "",
+          BDA_STATUS_LABEL[r.status] ?? r.status,
+          new Date(r.created_at).toLocaleString("pt-BR"),
+          p.public_name ?? "",
+          p.city ?? "",
+          p.guardian ? "sim" : "nao",
+          p.guardian?.confirmed_at ? "sim" : "nao",
+        ]);
+      }
+    }
+    const csv = rows
+      .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bda-inscricoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
 
   async function run(key: string, fn: () => Promise<unknown>, okMsg?: string) {
     setBusy(key);
