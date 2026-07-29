@@ -466,8 +466,18 @@ function ShowCardItem({ show }: { show: ShowCard }) {
   return (
     <article
       onClick={handleClick}
-      className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] p-4 hover:border-[#FF8A00]/50 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
+      className="group relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-[#121212] to-[#0a0a0a] hover:border-[#FF8A00]/50 transition-all hover:-translate-y-0.5 hover:shadow-[0_20px_60px_-20px_rgba(255,138,0,0.5)]"
     >
+      {show?.art && (
+        <img
+          src={show.art}
+          alt={`Arte oficial do dia ${show.date} da Expo Prudente 2026 — ${artists.join(", ")}`}
+          loading="lazy"
+          decoding="async"
+          className="block w-full h-auto"
+        />
+      )}
+      <div className="relative p-4">
       <div
         className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity"
         style={{ background: "radial-gradient(circle, #FF8A00, transparent)" }}
@@ -479,7 +489,14 @@ function ShowCardItem({ show }: { show: ShowCard }) {
             {show?.date ?? ""}
           </p>
         </div>
-        <Ticket className="w-5 h-5 text-[#FFC300]/70 flex-shrink-0" aria-hidden />
+        {show?.freeEntry ? (
+          <span className="text-[10px] font-black uppercase tracking-wider text-black px-2.5 py-1 rounded-full flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, #FF8A00, #FFC300)" }}>
+            Portões abertos
+          </span>
+        ) : (
+          <Ticket className="w-5 h-5 text-[#FFC300]/70 flex-shrink-0" aria-hidden />
+        )}
       </div>
 
       <div className="relative flex flex-wrap gap-1.5 mb-3" title={artists.join(" • ")}>
@@ -514,11 +531,17 @@ function ShowCardItem({ show }: { show: ShowCard }) {
           <Ticket className="w-4 h-4" />
           COMPRAR INGRESSOS
         </a>
+      ) : show?.freeEntry ? (
+        <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-[#FFC300] text-xs bg-[#FFC300]/10 border border-[#FFC300]/25">
+          Entrada gratuita — portões abertos
+        </span>
       ) : (
         <span className="relative inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 h-[42px] rounded-xl font-bold text-white/60 text-xs bg-white/5">
           Em breve
         </span>
       )}
+      </div>
+
     </article>
   );
 }
