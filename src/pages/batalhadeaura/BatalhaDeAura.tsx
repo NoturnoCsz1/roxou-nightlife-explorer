@@ -266,12 +266,18 @@ export default function BatalhaDeAura() {
               Inscrições nas categorias Solo e Dupla. Participantes menores de 18 anos precisam da
               autorização do responsável legal, e nenhum perfil é publicado sem aprovação da organização.
             </p>
-            <Link
-              to={BDA_ROUTES.inscricao}
-              className="bda-font-display mt-8 inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#A855F7] to-[#2E7DFF] px-10 text-base font-black uppercase tracking-[0.2em] text-white shadow-[0_0_44px_-8px_rgba(168,85,247,1)] transition-transform duration-200 hover:scale-[1.03]"
-            >
-              Inscreva-se
-            </Link>
+            {settings.registrations_open ? (
+              <Link
+                to={BDA_ROUTES.inscricao}
+                className="bda-font-display mt-8 inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#A855F7] to-[#2E7DFF] px-10 text-base font-black uppercase tracking-[0.2em] text-white shadow-[0_0_44px_-8px_rgba(168,85,247,1)] transition-transform duration-200 hover:scale-[1.03]"
+              >
+                Inscreva-se
+              </Link>
+            ) : (
+              <span className="bda-font-display mt-8 inline-flex h-14 items-center justify-center rounded-full border border-[#C8D2E0]/30 px-10 text-base font-black uppercase tracking-[0.2em] text-[#C8D2E0]/75">
+                Inscrições em breve
+              </span>
+            )}
             <p className="bda-font-body mt-4 text-[11px] text-[#C8D2E0]/55">
               <Link to={BDA_ROUTES.privacidade} className="underline underline-offset-2">
                 Privacidade e proteção de dados
@@ -280,6 +286,7 @@ export default function BatalhaDeAura() {
           </div>
         </div>
       </section>
+
 
 
       {/* ================= RODAPÉ ================= */}
