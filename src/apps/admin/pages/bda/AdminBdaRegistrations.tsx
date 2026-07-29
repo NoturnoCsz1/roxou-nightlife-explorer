@@ -174,6 +174,11 @@ export default function AdminBdaRegistrations() {
 
   return (
     <div className="space-y-5">
+      <SEO
+        title="BDA — Inscrições | Admin Roxou"
+        description="Área administrativa restrita."
+        noindex
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-black">Batalha de Aura — Inscrições</h1>

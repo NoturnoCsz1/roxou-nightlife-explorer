@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import SEO from "@/components/SEO";
 import ImageUpload from "@/components/admin/ImageUpload";
 import {
   BDA_PARTNER_TYPE_LABEL,
