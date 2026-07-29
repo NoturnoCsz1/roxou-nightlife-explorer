@@ -7,6 +7,8 @@ import { BDA_ROUTES } from "@/components/bda/bdaConfig";
 import { BDA_CONSENTS, BDA_LEGAL_LINKS, BDA_PRIVACY_NOTE } from "@/modules/bda/bdaLegal";
 import { preparePhoto } from "@/modules/bda/photoUtils";
 import { BdaParticipantInput, submitRegistration } from "@/modules/bda/bdaService";
+import { useBdaSettings } from "@/modules/bda/useBdaSettings";
+
 import { toast } from "sonner";
 
 const CANONICAL = "https://roxou.com.br/batalhadeaura/inscricao";
