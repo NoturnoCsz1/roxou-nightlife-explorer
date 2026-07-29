@@ -628,13 +628,6 @@ export type Database = {
             referencedRelation: "bda_registrations"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "bda_consents_registration_id_fkey"
-            columns: ["registration_id"]
-            isOneToOne: false
-            referencedRelation: "public_bda_participants"
-            referencedColumns: ["registration_id"]
-          },
         ]
       }
       bda_guardians: {
@@ -790,13 +783,6 @@ export type Database = {
             referencedRelation: "bda_registrations"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "bda_participants_registration_id_fkey"
-            columns: ["registration_id"]
-            isOneToOne: false
-            referencedRelation: "public_bda_participants"
-            referencedColumns: ["registration_id"]
-          },
         ]
       }
       bda_partners: {
@@ -883,13 +869,6 @@ export type Database = {
             referencedRelation: "bda_registrations"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "bda_registration_status_history_registration_id_fkey"
-            columns: ["registration_id"]
-            isOneToOne: false
-            referencedRelation: "public_bda_participants"
-            referencedColumns: ["registration_id"]
-          },
         ]
       }
       bda_registrations: {
@@ -921,6 +900,39 @@ export type Database = {
           status?: string
           submitted_at?: string | null
           team_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bda_settings: {
+        Row: {
+          created_at: string
+          event_city: string
+          event_date: string | null
+          event_location: string
+          id: boolean
+          public_list_enabled: boolean
+          registrations_open: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_city?: string
+          event_date?: string | null
+          event_location?: string
+          id?: boolean
+          public_list_enabled?: boolean
+          registrations_open?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_city?: string
+          event_date?: string | null
+          event_location?: string
+          id?: boolean
+          public_list_enabled?: boolean
+          registrations_open?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -6008,10 +6020,20 @@ export type Database = {
           id: string | null
           photo_public_url: string | null
           public_name: string | null
+          registered_at: string | null
           registration_id: string | null
+          slot: number | null
           team_name: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bda_participants_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "bda_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       public_bda_partners: {
         Row: {
@@ -6049,6 +6071,15 @@ export type Database = {
           site_url?: string | null
           slug?: string | null
           type?: string | null
+        }
+        Relationships: []
+      }
+      public_bda_stats: {
+        Row: {
+          duplas: number | null
+          solo_participants: number | null
+          total_participants: number | null
+          total_registrations: number | null
         }
         Relationships: []
       }
@@ -6525,6 +6556,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      bda_admin_dashboard_stats: { Args: never; Returns: Json }
       board_excursion_seat: { Args: { _token: string }; Returns: Json }
       can_access_partner_beta: { Args: { _user: string }; Returns: boolean }
       can_admin_city: { Args: { _city: string }; Returns: boolean }
