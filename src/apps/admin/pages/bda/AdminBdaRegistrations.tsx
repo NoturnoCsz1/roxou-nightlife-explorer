@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Eye, EyeOff, Loader2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import SEO from "@/components/SEO";
 import {
   BDA_STATUS_LABEL,
   BdaAdminRegistration,
   adminGuardianLink,
   adminListAuditLogs,
   adminListRegistrations,
+  adminLogCsvExport,
   adminRemovePublicPhoto,
   adminRevealCpf,
   adminRevokeConsent,
   adminSaveNote,
   adminSetRegistrationStatus,
 } from "@/modules/bda/bdaService";
+
 
 const STATUS_FILTERS = [
   "todas",
@@ -77,9 +80,22 @@ export default function AdminBdaRegistrations() {
     });
   }, [regs, filter, search]);
 
-  function exportCsv() {
+  /** Neutraliza CSV injection (=, +, -, @, tab e CR no início da célula). */
+  function safeCell(value: unknown) {
+    const s = String(value ?? "");
+    return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  }
+
+  async function exportCsv() {
+    if (
+      !window.confirm(
+        `Exportar ${filtered.length} inscrição(ões) em CSV? A ação será registrada na auditoria.`,
+      )
+    )
+      return;
+
     const rows: string[][] = [
-      ["inscricao_id", "categoria", "dupla", "status", "criada_em", "nome_publico", "cidade", "menor", "responsavel_confirmado"],
+      ["inscricao_id", "categoria", "dupla", "status", "criada_em", "nome_publico", "cidade", "menor", "responsavel_confirmado", "cpf_responsavel_mascarado"],
     ];
     for (const r of filtered) {
       for (const p of r.participants ?? []) {
@@ -93,7 +109,8 @@ export default function AdminBdaRegistrations() {
           p.city ?? "",
           p.guardian ? "sim" : "nao",
           p.guardian?.confirmed_at ? "sim" : "nao",
-        ]);
+          p.guardian?.cpf_masked ?? "",
+        ].map(safeCell));
       }
     }
     const csv = rows
@@ -105,7 +122,14 @@ export default function AdminBdaRegistrations() {
     a.download = `bda-inscricoes-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+
+    try {
+      await adminLogCsvExport(rows.length - 1, filter);
+    } catch {
+      /* a exportação já ocorreu; falha de log não deve travar o admin */
+    }
   }
+
 
 
   async function run(key: string, fn: () => Promise<unknown>, okMsg?: string) {
