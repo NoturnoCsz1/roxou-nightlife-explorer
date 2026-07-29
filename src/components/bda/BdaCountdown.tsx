@@ -1,14 +1,35 @@
 import { useEffect, useState } from "react";
-import { BDA_EVENT_DATE } from "./bdaConfig";
+import { useBdaSettings } from "@/modules/bda/useBdaSettings";
 
-/** Contagem regressiva HUD para a Grande Final. */
-export default function BdaCountdown({ target = BDA_EVENT_DATE }: { target?: string }) {
-  const [left, setLeft] = useState(() => diff(target));
+/**
+ * Contagem regressiva da Grande Final.
+ * Só é exibida quando existe data real cadastrada em `bda_settings`.
+ * Sem data → "Data em breve" (nenhum contador falso é ativado).
+ */
+export default function BdaCountdown({ target }: { target?: string | null }) {
+  const { settings, loading } = useBdaSettings();
+  const date = target ?? settings.event_date;
+  const [left, setLeft] = useState(() => diff(date));
 
   useEffect(() => {
-    const id = setInterval(() => setLeft(diff(target)), 1000);
+    if (!date) return;
+    setLeft(diff(date));
+    const id = setInterval(() => setLeft(diff(date)), 1000);
     return () => clearInterval(id);
-  }, [target]);
+  }, [date]);
+
+  if (loading || !date) {
+    return (
+      <div className="rounded-2xl border border-[#C8D2E0]/18 bg-white/[0.03] px-6 py-8 text-center">
+        <div className="bda-font-display text-2xl font-black uppercase text-white sm:text-3xl">
+          Data em breve
+        </div>
+        <p className="bda-font-body mt-2 text-sm text-[#C8D2E0]/70">
+          A data oficial da Grande Final será divulgada pela organização.
+        </p>
+      </div>
+    );
+  }
 
   const blocks = [
     { v: left.days, l: "Dias" },
@@ -41,7 +62,8 @@ export default function BdaCountdown({ target = BDA_EVENT_DATE }: { target?: str
   );
 }
 
-function diff(target: string) {
+function diff(target: string | null) {
+  if (!target) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
   const ms = Math.max(0, new Date(target).getTime() - Date.now());
   return {
     days: Math.floor(ms / 86400000),
