@@ -2,6 +2,8 @@ import { lazy } from "react";
 import { Route, Navigate, useLocation } from "react-router-dom";
 import { L } from "./lazyFallback";
 import { TransportRoutes } from "./transportRoutes";
+import { BdaRoutes } from "./bdaRoutes";
+
 
 // Público — Layout/Home/Auth ficam eager (LCP + entrada) por decisão da Fase 7.
 import PublicLayout from "@/components/layouts/PublicLayout";
@@ -191,8 +193,12 @@ export const PublicRoutes = () => (
     {/* Dev Navigator */}
     <Route path="/dev/rotas" element={L(<DevRoutes />)} />
 
+    {/* Hotsite Batalha de Aura PP (isolado) */}
+    {BdaRoutes()}
+
     {/* Expo 2026 */}
     <Route path="/expo2026" element={L(<Expo2026 />)} />
+
     <Route path="/expo2026/ingressos" element={L(<ExpoIngressos />)} />
     <Route path="/expo2026/front-stage" element={L(<ExpoFrontStage />)} />
     <Route path="/expo2026/mapa" element={L(<ExpoMapa />)} />
