@@ -53,7 +53,10 @@ Deno.serve(async (req) => {
     { loc: "/sobre", priority: "0.5", changefreq: "monthly" },
     { loc: "/contato", priority: "0.5", changefreq: "monthly" },
     { loc: "/noticias", priority: "0.8", changefreq: "daily" },
+    { loc: "/batalhadeaura", priority: "0.7", changefreq: "weekly" },
+    { loc: "/batalhadeaura/participantes", priority: "0.6", changefreq: "daily" },
   ];
+
 
 
 
