@@ -10,7 +10,8 @@ import {
   BDA_SOCIAL,
   BDA_STEPS,
 } from "@/components/bda/bdaConfig";
-import bdaLogo from "@/assets/bda-logo.png.asset.json";
+import bdaLogoAsset from "@/assets/bda-logo.png.asset.json";
+const bdaLogoUrl = bdaLogoAsset.url || "/bda-logo.png";
 
 const CANONICAL = "https://roxou.com.br/batalhadeaura";
 
@@ -65,7 +66,7 @@ export default function BatalhaDeAura() {
         <div className="relative">
           <div aria-hidden className="absolute inset-0 -z-10 rounded-full bg-[#A855F7]/30 blur-[70px]" />
           <img
-            src={bdaLogo.url}
+            src={bdaLogoUrl}
             alt="Logo oficial da Batalha de Aura PP"
             width={1024}
             height={1024}
@@ -288,7 +289,7 @@ export default function BatalhaDeAura() {
       <footer className="relative border-t border-[#C8D2E0]/12 px-4 py-12">
         <div className="mx-auto max-w-4xl text-center">
           <img
-            src={bdaLogo.url}
+            src={bdaLogoUrl}
             alt="Batalha de Aura PP"
             width={1024}
             height={1024}
