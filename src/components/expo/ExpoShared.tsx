@@ -65,7 +65,7 @@ export const SHOWS: ShowCard[] = [
 export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: "Quando acontece a Expo Prudente 2026?",
-    a: "A Expo Prudente 2026 acontece de 11 a 14 de setembro, em Presidente Prudente/SP, conforme a programação oficial atualizada.",
+    a: "A Expo Prudente 2026 acontece de 10 a 14 de setembro, em Presidente Prudente/SP, conforme a programação oficial atualizada.",
   },
   {
     q: "Onde comprar ingressos da Expo Prudente 2026?",

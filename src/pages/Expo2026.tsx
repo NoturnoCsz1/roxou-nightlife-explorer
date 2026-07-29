@@ -239,7 +239,7 @@ export default function Expo2026() {
     <ExpoLayout>
       <SEO
         title="Expo Prudente 2026 | Shows, Programação e Ingressos Oficiais"
-        description="Confira a programação da Expo Prudente 2026, grade oficial de shows e links oficiais de ingressos. 11 a 14 de setembro em Presidente Prudente/SP."
+        description="Confira a programação da Expo Prudente 2026, grade oficial de shows e links oficiais de ingressos. 10 a 14 de setembro em Presidente Prudente/SP."
         canonical="https://roxou.com.br/expo2026/"
         ogImage="https://roxou.com.br/expo2026/programacao/programacao-geral.jpg"
         ogImageWidth={1280}
@@ -278,7 +278,7 @@ export default function Expo2026() {
             A MAIOR GRADE DE SHOWS JÁ DIVULGADA!
           </p>
           <p className="mt-3 text-sm md:text-base text-[#B8B8B8] tracking-wider">
-            11 A 14 DE SETEMBRO · PRESIDENTE PRUDENTE/SP
+            10 A 14 DE SETEMBRO · PRESIDENTE PRUDENTE/SP
           </p>
 
           <PremiumCountdown targetIso={EVENT_START_RAW} />
@@ -751,7 +751,7 @@ function GradeOficialSection() {
     >
       <SectionTitle eyebrow="🎤 GRADE OFICIAL DE SHOWS" title="Programação completa" />
       <p className="text-center text-[#B8B8B8] -mt-3 mb-6 text-sm sm:text-base px-3">
-        Confira a programação completa da Expo Prudente 2026, de 11 a 14 de setembro.
+        Confira a programação completa da Expo Prudente 2026, de 10 a 14 de setembro.
       </p>
 
       <button
