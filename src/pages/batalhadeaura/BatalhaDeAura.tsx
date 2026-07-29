@@ -295,11 +295,11 @@ export default function BatalhaDeAura() {
           />
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             {[
-              { href: BDA_SOCIAL.instagram, Icon: Instagram, label: "Instagram" },
-              { href: BDA_SOCIAL.tiktok, Icon: Music2, label: "TikTok" },
+              { href: BDA_SOCIAL.instagram, Icon: Instagram, label: BDA_SOCIAL.instagramHandle },
               { href: BDA_SOCIAL.contato, Icon: Mail, label: "Contato" },
-              { href: BDA_SOCIAL.site, Icon: Globe, label: "Site" },
+              { href: "https://roxou.com.br", Icon: Globe, label: "Roxou" },
             ].map(({ href, Icon, label }) => (
+
               <a
                 key={label}
                 href={href}
