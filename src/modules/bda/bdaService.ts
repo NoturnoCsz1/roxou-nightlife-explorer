@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getAdminAuthHeaders } from "@/lib/adminFetch";
+import { BDA_DEFAULT_SETTINGS, type BdaSettings } from "@/components/bda/bdaConfig";
+
 
 /**
  * Serviço do módulo Batalha de Aura (BDA).
