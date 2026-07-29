@@ -244,7 +244,7 @@ export default function Expo2026() {
         ogImage="https://roxou.com.br/expo2026/programacao/programacao-geral.jpg"
         ogImageWidth={1280}
         ogImageHeight={481}
-        keywords="expo prudente 2026, ingressos expo prudente, leonardo prudente, zé neto e cristiano prudente, zezé di camargo prudente, expo prudente programação"
+        keywords="expo prudente 2026, ingressos expo prudente, programação expo prudente, loubet prudente, zezé di camargo e luciano prudente, mc hariel prudente, portões abertos expo prudente"
         jsonLd={jsonLd}
       />
 
