@@ -114,6 +114,8 @@ export const AdminRoutes = () => (
       <Route path="bios" element={L(<AdminBiosPage />)} />
       <Route path="descobertas" element={L(<AdminDiscovery />)} />
       <Route path="links" element={L(<AdminLinks />)} />
+      <Route path="bda/parceiros" element={L(<AdminBdaPartners />)} />
+      <Route path="bda/inscricoes" element={L(<AdminBdaRegistrations />)} />
     </Route>
   </>
 );
