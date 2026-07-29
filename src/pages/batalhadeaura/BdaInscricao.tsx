@@ -285,6 +285,37 @@ export default function BdaInscricao() {
     );
   }
 
+  // Inscrições fechadas por configuração: rota permanece válida, sem formulário.
+  if (!settingsLoading && !settings.registrations_open) {
+    return (
+      <BdaLayout>
+        <SEO
+          title="Inscrição | Batalha de Aura PP"
+          description="As inscrições da Batalha de Aura PP serão abertas em breve."
+          canonical={CANONICAL}
+          noindex
+        />
+        <section className="flex min-h-[70svh] flex-col items-center justify-center px-4 text-center">
+          <span className="bda-font-body rounded-full border border-[#2E7DFF]/40 bg-[#2E7DFF]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#8FC0FF]">
+            Em breve
+          </span>
+          <h1 className="bda-font-display mt-4 text-3xl font-black uppercase text-white sm:text-5xl">
+            Inscrições em breve
+          </h1>
+          <p className="bda-font-body mt-3 max-w-sm text-[#C8D2E0]/75">
+            A abertura das inscrições da Batalha de Aura PP será anunciada pela organização.
+          </p>
+          <Link
+            to={BDA_ROUTES.home}
+            className="bda-font-display mt-8 inline-flex h-11 items-center rounded-full border border-[#C8D2E0]/25 px-6 text-xs font-bold uppercase tracking-[0.2em] text-[#C8D2E0] hover:border-[#A855F7] hover:text-white"
+          >
+            Voltar ao campeonato
+          </Link>
+        </section>
+      </BdaLayout>
+    );
+  }
+
   return (
     <BdaLayout>
       <SEO
@@ -293,6 +324,7 @@ export default function BdaInscricao() {
         canonical={CANONICAL}
         ogType="website"
       />
+
 
       <section className="px-4 py-12">
         <div className="mx-auto max-w-2xl">
