@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
-import { Instagram, Music2, Mail, Globe, ArrowRight, Play, Trophy, Medal, Star, Sparkles } from "lucide-react";
+import { Instagram, Mail, Globe, ArrowRight, Play, Trophy, Medal, Sparkles, MapPin, CalendarClock } from "lucide-react";
+import { useBdaSettings } from "@/modules/bda/useBdaSettings";
+
 import SEO from "@/components/SEO";
 import { BdaLayout } from "@/components/bda/BdaLayout";
 import BdaCountdown from "@/components/bda/BdaCountdown";
