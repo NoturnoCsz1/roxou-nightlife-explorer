@@ -29,11 +29,13 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {AdminRoutes()}
-          {PartnerRoutes()}
-          {PublicRoutes()}
-        </Routes>
+        <MaintenanceGate>
+          <Routes>
+            {AdminRoutes()}
+            {PartnerRoutes()}
+            {PublicRoutes()}
+          </Routes>
+        </MaintenanceGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
