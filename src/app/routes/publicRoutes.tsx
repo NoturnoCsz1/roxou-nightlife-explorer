@@ -16,6 +16,7 @@ import LegacyArchiveLayout from "@/components/LegacyArchiveLayout";
 import PedirCaronaGate from "@/components/PedirCaronaGate";
 
 // Notícias
+const Manutencao = lazy(() => import("@/pages/Manutencao"));
 const Contato = lazy(() => import("@/pages/Contato"));
 const RoxouNoticias = lazy(() => import("@/pages/RoxouNoticias"));
 const RoxouNoticia = lazy(() => import("@/pages/RoxouNoticia"));
@@ -215,7 +216,8 @@ export const PublicRoutes = () => (
     <Route path="/noticia/:slug" element={L(<RoxouNoticia />)} />
 
     {/* V3 raiz pública */}
-    <Route path="/manutencao" element={<Maintenance />} />
+    <Route path="/manutencao" element={L(<Manutencao />)} />
+    <Route path="/manutencao-legado" element={<Maintenance />} />
     <Route path="/remover-dados" element={L(<RemoverDados />)} />
     <Route path="/cadastro-motorista" element={L(<CadastroMotorista />)} />
     <Route path="/pedir-carona" element={<PedirCaronaGate />} />

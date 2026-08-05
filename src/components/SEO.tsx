@@ -14,6 +14,8 @@ interface SEOProps {
   locale?: string;
   /** When true, emits `<meta name="robots" content="noindex,follow">`. */
   noindex?: boolean;
+  /** Overrides the robots meta content entirely (ex.: "noindex, nofollow"). */
+  robotsContent?: string;
 }
 
 const SITE_ORIGIN = "https://roxou.com.br";
@@ -62,7 +64,7 @@ function stripTrackingParams(url: string): string {
   }
 }
 
-const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogImageWidth = 1200, ogImageHeight = 630, ogType = "website", jsonLd, keywords, locale = "pt_BR", noindex = false }: SEOProps) => {
+const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og-image.png", ogImageWidth = 1200, ogImageHeight = 630, ogType = "website", jsonLd, keywords, locale = "pt_BR", noindex = false, robotsContent }: SEOProps) => {
   const resolvedCanonical = canonical
     ? stripTrackingParams(canonical)
     : buildCanonicalFromLocation();
@@ -98,7 +100,7 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
     setMeta("twitter:image", ogImage, "name");
 
     setMeta("og:url", resolvedCanonical, "property");
-    const robotsEl = setMeta("robots", noindex ? "noindex,follow" : "index,follow");
+    const robotsEl = setMeta("robots", robotsContent ?? (noindex ? "noindex,follow" : "index,follow"));
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) {
       link = document.createElement("link");
@@ -111,7 +113,7 @@ const SEO = ({ title, description, canonical, ogImage = "https://roxou.com.br/og
       // Restore robots default so leaving a noindex route doesn't leak.
       robotsEl.setAttribute("content", "index,follow");
     };
-  }, [title, description, resolvedCanonical, ogImage, ogImageWidth, ogImageHeight, ogType, keywords, locale, noindex]);
+  }, [title, description, resolvedCanonical, ogImage, ogImageWidth, ogImageHeight, ogType, keywords, locale, noindex, robotsContent]);
 
   if (!jsonLd) return null;
 
