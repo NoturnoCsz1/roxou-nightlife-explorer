@@ -14,6 +14,8 @@ interface SEOProps {
   locale?: string;
   /** When true, emits `<meta name="robots" content="noindex,follow">`. */
   noindex?: boolean;
+  /** Overrides the robots meta content entirely (ex.: "noindex, nofollow"). */
+  robotsContent?: string;
 }
 
 const SITE_ORIGIN = "https://roxou.com.br";
