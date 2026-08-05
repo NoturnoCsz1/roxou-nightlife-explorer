@@ -4,7 +4,6 @@ import { ArrowRight } from "lucide-react";
 import SEO from "@/components/SEO";
 import { MAINTENANCE_CONFIG } from "@/config/maintenance";
 import { gaEvent } from "@/lib/ga";
-import roxouSymbol from "/brand/roxou-symbol.png";
 
 function useCountdown(targetIso: string) {
   const target = useMemo(() => new Date(targetIso).getTime(), [targetIso]);
@@ -83,7 +82,7 @@ export default function Manutencao() {
 
       <div className="relative w-full max-w-3xl mx-auto flex flex-col items-center text-center">
         <img
-          src={roxouSymbol}
+          src="/brand/roxou-symbol.png"
           alt="Símbolo oficial da Roxou"
           width={96}
           height={96}
