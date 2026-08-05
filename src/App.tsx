@@ -7,6 +7,7 @@ import { BrowserRouter, Routes } from "react-router-dom";
 import { AdminRoutes } from "@/app/routes/adminRoutes";
 import { PartnerRoutes } from "@/app/routes/partnerRoutes";
 import { PublicRoutes } from "@/app/routes/publicRoutes";
+import { MaintenanceGate } from "@/components/MaintenanceGate";
 
 /**
  * Onda 3 (modularização) — App.tsx passa a ser somente o shell:
