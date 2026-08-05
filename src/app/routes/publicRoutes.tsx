@@ -16,6 +16,7 @@ import LegacyArchiveLayout from "@/components/LegacyArchiveLayout";
 import PedirCaronaGate from "@/components/PedirCaronaGate";
 
 // Notícias
+const Manutencao = lazy(() => import("@/pages/Manutencao"));
 const Contato = lazy(() => import("@/pages/Contato"));
 const RoxouNoticias = lazy(() => import("@/pages/RoxouNoticias"));
 const RoxouNoticia = lazy(() => import("@/pages/RoxouNoticia"));
