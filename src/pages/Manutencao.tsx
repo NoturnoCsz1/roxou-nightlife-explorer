@@ -61,7 +61,7 @@ export default function Manutencao() {
     <main className="min-h-[100dvh] bg-[#0a0510] text-white relative overflow-hidden flex items-center justify-center px-5 py-12">
       <SEO
         title="Roxou em manutenção | Voltamos em breve"
-        description="A Roxou está passando por uma atualização especial. Voltamos na sexta-feira, 7 de agosto, às 18h."
+        description="A Roxou está passando por uma atualização especial. Voltamos no sábado, 8 de agosto, às 18h."
         canonical="https://roxou.com.br/manutencao"
         noindex
         robotsContent="noindex, nofollow"
@@ -100,8 +100,8 @@ export default function Manutencao() {
         </h1>
 
         <p className="mt-4 max-w-xl text-sm sm:text-base text-white/70">
-          A plataforma está passando por uma atualização especial. Voltamos na
-          sexta-feira, 7 de agosto, às 18h.
+        A plataforma está passando por uma atualização especial. Voltamos no
+          sábado, 8 de agosto, às 18h.
         </p>
 
         <section
