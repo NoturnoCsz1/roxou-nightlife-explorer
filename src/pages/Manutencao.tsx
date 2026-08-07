@@ -100,8 +100,8 @@ export default function Manutencao() {
         </h1>
 
         <p className="mt-4 max-w-xl text-sm sm:text-base text-white/70">
-          A plataforma está passando por uma atualização especial. Voltamos na
-          sexta-feira, 7 de agosto, às 18h.
+        A plataforma está passando por uma atualização especial. Voltamos no
+          sábado, 8 de agosto, às 18h.
         </p>
 
         <section
