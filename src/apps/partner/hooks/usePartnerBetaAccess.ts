@@ -94,7 +94,9 @@ export function usePartnerBetaAccess(): PartnerBetaAccessResult {
       });
     }
     void load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: sub } = (
+      partnerBackendIsDedicated ? partnerSupabase : supabase
+    ).auth.onAuthStateChange(() => {
       void load();
     });
     return () => {
