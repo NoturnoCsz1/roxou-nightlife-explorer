@@ -33,7 +33,8 @@ export function usePartnerBetaAccess(): PartnerBetaAccessResult {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const { data: userData } = await supabase.auth.getUser();
+      const authClient = partnerBackendIsDedicated ? partnerSupabase : supabase;
+      const { data: userData } = await authClient.auth.getUser();
       const user = userData?.user ?? null;
       if (!user) {
         if (!cancelled)
@@ -46,6 +47,23 @@ export function usePartnerBetaAccess(): PartnerBetaAccessResult {
           });
         return;
       }
+
+      // Backend oficial dedicado: acesso vem da PartnerSession
+      // (organization_members). As tabelas legadas não existem nele.
+      if (partnerBackendIsDedicated) {
+        const memberships = await fetchOfficialMemberships(user.id);
+        if (cancelled) return;
+        setState({
+          hasAccess: memberships.length > 0,
+          isAdmin: false,
+          partnerIds: [],
+          loading: false,
+          userId: user.id,
+        });
+        return;
+      }
+
+
 
       const [rolesRes, betaRes] = await Promise.all([
         supabase
