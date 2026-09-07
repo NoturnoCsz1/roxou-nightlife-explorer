@@ -38,14 +38,14 @@ describe("promoters convertidos", () => {
       name: "Léo Promoter",
       organization_member_id: "member-1",
     });
-    const args = mock.client.rpc.mock.calls[0][1];
+    const args = mock.client.rpc.mock.calls[0][1] as Record<string, any>;
     expect(args.p_organization_id).toBe(ORG_A);
     expect(args.p_payload.organization_member_id).toBe("member-1");
   });
 
   it("promoter SEM conta existe sem user_id/member", async () => {
     await promoters.upsertPromoterProfile(scope, { name: "Bruna" });
-    const args = mock.client.rpc.mock.calls[0][1];
+    const args = mock.client.rpc.mock.calls[0][1] as Record<string, any>;
     expect(args.p_payload.organization_member_id).toBeUndefined();
     expect(args.p_promoter_id).toBeNull();
   });
@@ -58,7 +58,9 @@ describe("promoters convertidos", () => {
 
   it("gera slug a partir do nome no upsert", async () => {
     await promoters.upsertPromoterProfile(scope, { name: "Maria Éden" });
-    expect(mock.client.rpc.mock.calls[0][1].p_payload.slug).toBe("maria-eden");
+    expect(
+      (mock.client.rpc.mock.calls[0][1] as Record<string, any>).p_payload.slug,
+    ).toBe("maria-eden");
   });
 
   it("nome obrigatório na criação", async () => {
