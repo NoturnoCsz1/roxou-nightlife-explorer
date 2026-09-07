@@ -7,6 +7,11 @@
  */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerBackendIsDedicated,
+  partnerSupabase,
+} from "../backend/partnerSupabase";
+import { fetchOfficialMemberships } from "../domain/partnerSessionGateway";
 
 export interface PartnerBetaAccessResult {
   hasAccess: boolean;
@@ -28,7 +33,8 @@ export function usePartnerBetaAccess(): PartnerBetaAccessResult {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const { data: userData } = await supabase.auth.getUser();
+      const authClient = partnerBackendIsDedicated ? partnerSupabase : supabase;
+      const { data: userData } = await authClient.auth.getUser();
       const user = userData?.user ?? null;
       if (!user) {
         if (!cancelled)
@@ -41,6 +47,23 @@ export function usePartnerBetaAccess(): PartnerBetaAccessResult {
           });
         return;
       }
+
+      // Backend oficial dedicado: acesso vem da PartnerSession
+      // (organization_members). As tabelas legadas não existem nele.
+      if (partnerBackendIsDedicated) {
+        const memberships = await fetchOfficialMemberships(user.id);
+        if (cancelled) return;
+        setState({
+          hasAccess: memberships.length > 0,
+          isAdmin: false,
+          partnerIds: [],
+          loading: false,
+          userId: user.id,
+        });
+        return;
+      }
+
+
 
       const [rolesRes, betaRes] = await Promise.all([
         supabase
@@ -71,7 +94,9 @@ export function usePartnerBetaAccess(): PartnerBetaAccessResult {
       });
     }
     void load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: sub } = (
+      partnerBackendIsDedicated ? partnerSupabase : supabase
+    ).auth.onAuthStateChange(() => {
       void load();
     });
     return () => {
