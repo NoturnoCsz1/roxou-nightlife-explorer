@@ -17,6 +17,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerSupabase,
+  partnerBackendIsDedicated,
+} from "../backend/partnerSupabase";
 import { toast } from "sonner";
 import { listMyAccessRequests } from "../services/partnerAccessRequests";
 import { mapAuthError, signInWithGoogle, safeReturnTo } from "@/lib/authHelpers";
@@ -39,6 +43,10 @@ const readNextParam = (): string | null => {
 };
 
 async function resolveDestination(userId: string): Promise<string> {
+  // Backend oficial dedicado: as tabelas legadas (partner_beta_access /
+  // partner_users) não existem nele. O acesso é resolvido pela PartnerSession.
+  if (partnerBackendIsDedicated) return "/dashboard";
+
   const { data: beta } = await supabase
     .from("partner_beta_access")
     .select("partner_id")
@@ -92,7 +100,7 @@ const PartnerLoginPage = () => {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data } = await partnerSupabase.auth.getUser();
       if (cancelled || !data?.user) return;
       const next = readNextParam();
       const dest = next ?? (await resolveDestination(data.user.id));
@@ -111,7 +119,7 @@ const PartnerLoginPage = () => {
     }
     setEmailLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await partnerSupabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -136,7 +144,7 @@ const PartnerLoginPage = () => {
     }
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
+      const { error } = await partnerSupabase.auth.resetPasswordForEmail(
         email.trim(),
         { redirectTo: buildPartnerUrl("/auth/update-password") },
       );
@@ -163,7 +171,7 @@ const PartnerLoginPage = () => {
         setEmailLoading(false);
         return;
       }
-      const { data } = await supabase.auth.getUser();
+      const { data } = await partnerSupabase.auth.getUser();
       if (data?.user) {
         const dest = next ?? (await resolveDestination(data.user.id));
         navigate(dest, { replace: true });
