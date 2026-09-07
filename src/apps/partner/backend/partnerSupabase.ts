@@ -32,7 +32,14 @@ export const partnerSupabase: typeof coreSupabase = partnerBackendConfig
   ? (createClient(
       partnerBackendConfig.url,
       partnerBackendConfig.publishableKey,
-      { auth: { persistSession: true, autoRefreshToken: true } },
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          // storage próprio: não colide com a sessão do core (site/Admin/Garimpo).
+          storageKey: "roxou.partner.auth",
+        },
+      },
     ) as unknown as typeof coreSupabase)
   : coreSupabase;
 

@@ -29,7 +29,10 @@ function readEnv(key: string): string | undefined {
 
 export function resolvePartnerBackendConfig(): PartnerBackendConfig {
   const dedicatedUrl = readEnv("VITE_PARTNER_SUPABASE_URL");
-  const dedicatedKey = readEnv("VITE_PARTNER_SUPABASE_PUBLISHABLE_KEY");
+  // Aceita as duas convenções de nome da chave pública (anon = publishable).
+  const dedicatedKey =
+    readEnv("VITE_PARTNER_SUPABASE_ANON_KEY") ??
+    readEnv("VITE_PARTNER_SUPABASE_PUBLISHABLE_KEY");
 
   if (dedicatedUrl && dedicatedKey) {
     return { url: dedicatedUrl, publishableKey: dedicatedKey, isDedicated: true };
