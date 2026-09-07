@@ -1,0 +1,46 @@
+/**
+ * Fake client oficial para os testes da Fase 3.
+ * Registra as chamadas feitas pelos serviços convertidos (tabela, filtros e RPCs)
+ * para permitir asserções de tenancy/isolamento sem tocar em banco real.
+ */
+import { vi } from "vitest";
+
+export interface RecordedQuery {
+  table: string;
+  filters: Record<string, unknown>;
+  rpc?: string;
+  args?: Record<string, unknown>;
+}
+
+export function createMockOfficialClient(result: unknown = []) {
+  const calls: RecordedQuery[] = [];
+
+  function builder(table: string) {
+    const record: RecordedQuery = { table, filters: {} };
+    calls.push(record);
+    const chain: Record<string, unknown> = {};
+    const passthrough = ["select", "order", "limit", "or", "gte", "lte"];
+    for (const m of passthrough) {
+      chain[m] = vi.fn(() => chain);
+    }
+    chain.eq = vi.fn((col: string, val: unknown) => {
+      record.filters[col] = val;
+      return chain;
+    });
+    chain.maybeSingle = vi.fn(async () => ({ data: result, error: null }));
+    // await direto na query (PostgrestBuilder é thenable)
+    chain.then = (resolve: (v: unknown) => unknown) =>
+      Promise.resolve({ data: result, error: null }).then(resolve);
+    return chain;
+  }
+
+  const client = {
+    from: vi.fn((table: string) => builder(table)),
+    rpc: vi.fn(async (rpc: string, args: Record<string, unknown>) => {
+      calls.push({ table: `rpc:${rpc}`, filters: {}, rpc, args });
+      return { data: result, error: null };
+    }),
+  };
+
+  return { client, calls };
+}

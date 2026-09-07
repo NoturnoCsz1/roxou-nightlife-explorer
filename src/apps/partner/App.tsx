@@ -24,6 +24,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./styles/partner-ui.css";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
+import { PartnerSessionProvider } from "./contexts/PartnerSessionContext";
+import PartnerConvergedGate from "./components/PartnerConvergedGate";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
 const UpdatePasswordPage = lazy(() => import("@/pages/auth/UpdatePasswordPage"));
 
@@ -109,6 +111,14 @@ const PartnerPromoterCentralPage = lazy(() => import("./pages/PartnerPromoterCen
 
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
 
+/**
+ * FASE 3 — rotas dos módulos CONVERTIDOS (Reservas, VIP, Validador,
+ * Promotores). Passam pelo `PartnerConvergedGate`, que exige PartnerSession
+ * ativa quando o Supabase oficial estiver conectado. Enquanto não estiver,
+ * o gate é transparente (LEGACY COMPATIBILITY).
+ */
+const C = (el: React.ReactNode) => L(<PartnerConvergedGate>{el}</PartnerConvergedGate>);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -125,6 +135,7 @@ const PartnerApp = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <PartnerSessionProvider>
       <BrowserRouter>
         <Routes>
           {/* Rotas sem layout/gate */}
@@ -145,39 +156,39 @@ const PartnerApp = () => (
             <Route path="dashboard-antigo" element={L(<PartnerDashboardPage />)} />
             <Route path="inicio" element={<Navigate to="/" replace />} />
             <Route path="perfil" element={L(<PartnerProfilePage />)} />
-            <Route path="promoter-central" element={L(<PartnerPromoterCentralPage />)} />
+            <Route path="promoter-central" element={C(<PartnerPromoterCentralPage />)} />
             <Route path="promoters/central" element={<Navigate to="/promoter-central" replace />} />
             <Route path="eventos" element={L(<PartnerEventsPage />)} />
             <Route path="eventos/novo" element={L(<PartnerEventNewRoute />)} />
             <Route path="eventos/:eventId" element={L(<PartnerEventDetailRoute />)} />
             <Route path="eventos/:eventId/editar" element={L(<PartnerEventEditRoute />)} />
-            <Route path="reservas" element={L(<PartnerReservationsPage />)} />
-            <Route path="reservas/lista" element={L(<PartnerReservasListaPage />)} />
-            <Route path="reservas/tipos" element={L(<PartnerReservasTiposPage />)} />
-            <Route path="reservas/fila" element={L(<PartnerFilaPage />)} />
-            <Route path="reservas/configuracoes" element={L(<PartnerReservasConfiguracoesPage />)} />
-            <Route path="reservas/operacao" element={L(<PartnerOperacaoPage />)} />
-            <Route path="reservas/equipe" element={L(<PartnerReservasEquipePage />)} />
+            <Route path="reservas" element={C(<PartnerReservationsPage />)} />
+            <Route path="reservas/lista" element={C(<PartnerReservasListaPage />)} />
+            <Route path="reservas/tipos" element={C(<PartnerReservasTiposPage />)} />
+            <Route path="reservas/fila" element={C(<PartnerFilaPage />)} />
+            <Route path="reservas/configuracoes" element={C(<PartnerReservasConfiguracoesPage />)} />
+            <Route path="reservas/operacao" element={C(<PartnerOperacaoPage />)} />
+            <Route path="reservas/equipe" element={C(<PartnerReservasEquipePage />)} />
             <Route
               path="reservas/:reservationId"
-              element={L(<PartnerReservationDetailPage />)}
+              element={C(<PartnerReservationDetailPage />)}
             />
-            <Route path="fila" element={L(<PartnerFilaPage />)} />
+            <Route path="fila" element={C(<PartnerFilaPage />)} />
             <Route path="relatorios" element={L(<PartnerRelatoriosPage />)} />
-            <Route path="lista-vip" element={L(<PartnerVipListPage />)} />
+            <Route path="lista-vip" element={C(<PartnerVipListPage />)} />
             <Route
               path="lista-vip/:listId"
-              element={L(<PartnerVipListDetailRoute />)}
+              element={C(<PartnerVipListDetailRoute />)}
             />
-            <Route path="listas" element={L(<PartnerListasHubPage />)} />
-            <Route path="listas/abertas" element={L(<PartnerListasAbertasPage />)} />
-            <Route path="listas/fechadas" element={L(<PartnerListasFechadasPage />)} />
-            <Route path="listas/participantes" element={L(<PartnerListasParticipantesPage />)} />
-            <Route path="listas/promoters" element={L(<PartnerListasPromotersPage />)} />
-            <Route path="listas/configuracoes" element={L(<PartnerListasConfiguracoesPage />)} />
-            <Route path="listas/historico" element={L(<PartnerListasHistoricoPage />)} />
-            <Route path="listas/operacao" element={L(<PartnerListasOperacaoPage />)} />
-            <Route path="listas/equipe" element={L(<PartnerListasEquipePage />)} />
+            <Route path="listas" element={C(<PartnerListasHubPage />)} />
+            <Route path="listas/abertas" element={C(<PartnerListasAbertasPage />)} />
+            <Route path="listas/fechadas" element={C(<PartnerListasFechadasPage />)} />
+            <Route path="listas/participantes" element={C(<PartnerListasParticipantesPage />)} />
+            <Route path="listas/promoters" element={C(<PartnerListasPromotersPage />)} />
+            <Route path="listas/configuracoes" element={C(<PartnerListasConfiguracoesPage />)} />
+            <Route path="listas/historico" element={C(<PartnerListasHistoricoPage />)} />
+            <Route path="listas/operacao" element={C(<PartnerListasOperacaoPage />)} />
+            <Route path="listas/equipe" element={C(<PartnerListasEquipePage />)} />
             {/* Onda 1 V2: /excursoes/* foi consolidado em /transportes/* (rota canônica). */}
             <Route path="excursoes" element={<Navigate to="/transportes/excursoes" replace />} />
             <Route path="excursoes/veiculos" element={<Navigate to="/transportes/veiculos" replace />} />
@@ -208,13 +219,13 @@ const PartnerApp = () => (
             <Route path="bio/:tab" element={L(<PartnerBioHubPage />)} />
 
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
-            <Route path="validator" element={L(<PartnerValidatorPage />)} />
+            <Route path="validator" element={C(<PartnerValidatorPage />)} />
             <Route path="configuracoes" element={L(<PartnerConfiguracoesPage />)} />
             <Route path="configuracoes/avancado" element={L(<PartnerSettingsPage />)} />
             <Route path="configuracoes/limpeza" element={L(<PartnerLimpezaPage />)} />
             <Route path="configuracoes/operacao" element={L(<PartnerOperacaoPage />)} />
             <Route path="configuracoes/em-breve" element={L(<PartnerComingSoonPage />)} />
-            <Route path="checkin/:publicToken" element={L(<PartnerVipCheckinPage />)} />
+            <Route path="checkin/:publicToken" element={C(<PartnerVipCheckinPage />)} />
           </Route>
 
 
@@ -233,6 +244,7 @@ const PartnerApp = () => (
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </PartnerSessionProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
