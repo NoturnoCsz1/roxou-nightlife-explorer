@@ -7,6 +7,11 @@
  */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerBackendIsDedicated,
+  partnerSupabase,
+} from "../backend/partnerSupabase";
+import { fetchOfficialMemberships } from "../domain/partnerSessionGateway";
 
 export interface PartnerBetaAccessResult {
   hasAccess: boolean;
