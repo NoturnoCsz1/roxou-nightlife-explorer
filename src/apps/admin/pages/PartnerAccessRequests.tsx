@@ -12,8 +12,8 @@ import {
   listAllAccessRequests,
   rejectAccessRequest,
   type PartnerAccessRequestAdminRow,
-  type PartnerAccessRequestStatus,
-} from "@/apps/partner/services/partnerAccessRequests";
+  type LegacyAccessRequestStatus as PartnerAccessRequestStatus,
+} from "@/apps/partner/services/legacyPartnerAccessRequestsAdmin";
 import PartnerProCrmPage from "@/apps/admin/partnerProCrm/PartnerProCrmPage";
 
 type Tab = "crm" | "vinculos";

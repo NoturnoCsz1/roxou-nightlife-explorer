@@ -11,13 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { partnerSupabase } from "../backend/partnerSupabase";
 import {
   createAccessRequest,
   listMyAccessRequests,
-  searchPartnersForOnboarding,
+  searchVenuesForOnboarding,
   type PartnerAccessRequest,
-  type PartnerSearchResult,
+  type VenueSearchResult,
 } from "../services/partnerAccessRequests";
 
 const PartnerOnboardingPage = () => {
@@ -25,9 +25,9 @@ const PartnerOnboardingPage = () => {
   const [authChecked, setAuthChecked] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<PartnerSearchResult[]>([]);
+  const [results, setResults] = useState<VenueSearchResult[]>([]);
   const [myRequests, setMyRequests] = useState<PartnerAccessRequest[]>([]);
-  const [selected, setSelected] = useState<PartnerSearchResult | null>(null);
+  const [selected, setSelected] = useState<VenueSearchResult | null>(null);
   const [form, setForm] = useState({
     requested_name: "",
     requested_email: "",
@@ -39,7 +39,7 @@ const PartnerOnboardingPage = () => {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data } = await partnerSupabase.auth.getUser();
       if (cancelled) return;
       if (!data?.user) {
         navigate("/login?next=/onboarding", { replace: true });
@@ -77,7 +77,7 @@ const PartnerOnboardingPage = () => {
     let cancelled = false;
     const handle = setTimeout(() => {
       setLoading(true);
-      searchPartnersForOnboarding(query, 25)
+      searchVenuesForOnboarding(query, 25)
         .then((rows) => {
           if (!cancelled) setResults(rows);
         })
@@ -100,7 +100,7 @@ const PartnerOnboardingPage = () => {
   const pendingIds = useMemo(
     () =>
       new Set(
-        myRequests.filter((r) => r.status === "pending").map((r) => r.partner_id),
+        myRequests.filter((r) => r.status === "pending").map((r) => r.venue_id ?? ""),
       ),
     [myRequests],
   );
@@ -109,7 +109,7 @@ const PartnerOnboardingPage = () => {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await createAccessRequest(selected.id, form);
+      await createAccessRequest(selected.id, { message: form.message, requested_role: "owner" });
       toast.success("Solicitação enviada!");
       navigate("/pending?just=1", { replace: true });
     } catch (err) {
@@ -154,7 +154,7 @@ const PartnerOnboardingPage = () => {
             <div className="flex-1 min-w-0">
               <p className="font-semibold truncate">{selected.name}</p>
               <p className="text-xs text-muted-foreground truncate">
-                {[selected.city, selected.type, selected.instagram]
+                {[selected.city, selected.category, selected.instagram]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
@@ -260,7 +260,7 @@ const PartnerOnboardingPage = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{p.name}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {[p.city, p.type, p.instagram].filter(Boolean).join(" · ")}
+                      {[p.city, p.category, p.instagram].filter(Boolean).join(" · ")}
                     </p>
                   </div>
                   {alreadyPending && (
