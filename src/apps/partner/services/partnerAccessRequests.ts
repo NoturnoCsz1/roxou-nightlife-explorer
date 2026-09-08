@@ -1,13 +1,18 @@
 /**
- * Partner Access Requests service — Fase 10A.
+ * Partner Access Requests service — Convergência Onda 1.
  *
- * Camada cliente para o fluxo "Solicitar acesso ao Partner Pro".
- * Lê e escreve apenas em `partner_access_requests` + RPCs `request_partner_access`,
- * `approve_partner_access_request`, `reject_partner_access_request`.
+ * Fluxo oficial (Supabase oficial do Partner Pro):
+ *   public.venues                        → estabelecimentos canônicos
+ *   public.organization_access_requests  → solicitações de acesso
  *
- * NÃO cria cadastro paralelo de estabelecimento; a fonte continua sendo `partners`.
+ * Sem dependência do Supabase legado (partners / partner_access_requests /
+ * partner_users / partner_beta_access). Nunca cria organization, membership
+ * ou venue: aprovação é responsabilidade do Admin Roxou.
  */
-import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerBackendQuery,
+  partnerSupabase,
+} from "../backend/partnerSupabase";
 
 export type PartnerAccessRequestStatus =
   | "pending"
@@ -15,46 +20,66 @@ export type PartnerAccessRequestStatus =
   | "rejected"
   | "cancelled";
 
-export interface PartnerAccessRequest {
+export interface OrganizationAccessRequest {
   id: string;
   user_id: string;
-  partner_id: string;
-  requested_name: string | null;
-  requested_email: string | null;
-  requested_phone: string | null;
+  venue_id: string | null;
+  organization_id: string | null;
+  requested_role: string | null;
   message: string | null;
   status: PartnerAccessRequestStatus;
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
 }
 
-export interface PartnerSearchResult {
+/** Alias de compatibilidade de tipo para as telas já existentes. */
+export type PartnerAccessRequest = OrganizationAccessRequest;
+
+export interface VenueSearchResult {
   id: string;
   name: string;
   slug: string | null;
   city: string | null;
-  type: string | null;
+  category: string | null;
   instagram: string | null;
   logo_url: string | null;
   address: string | null;
 }
 
+/** Compat: nome antigo usado pelas telas. */
+export type PartnerSearchResult = VenueSearchResult;
 
+function toVenue(row: Record<string, unknown>): VenueSearchResult {
+  const str = (k: string): string | null => {
+    const v = row[k];
+    return typeof v === "string" && v.length > 0 ? v : null;
+  };
+  return {
+    id: String(row.id ?? ""),
+    name: str("name") ?? "Sem nome",
+    slug: str("slug"),
+    city: str("city"),
+    category: str("category"),
+    instagram: str("instagram"),
+    logo_url: str("logo_url") ?? str("cover_url") ?? str("image_url"),
+    address: str("address"),
+  };
+}
 
-/** Busca estabelecimentos existentes (somente leitura). */
-export async function searchPartnersForOnboarding(
+/** Busca estabelecimentos oficiais ativos (somente leitura). */
+export async function searchVenuesForOnboarding(
   query: string,
   limit = 20,
-): Promise<PartnerSearchResult[]> {
+): Promise<VenueSearchResult[]> {
+  const db = partnerBackendQuery();
   const q = query.trim();
-  let req = supabase
-    .from("partners")
-    .select(
-      "id, name, slug, city, type, instagram, logo_url, address",
-    )
 
+  let req = db
+    .from("venues")
+    .select("*")
+    .eq("status", "active")
     .order("name", { ascending: true })
     .limit(limit);
 
@@ -63,91 +88,83 @@ export async function searchPartnersForOnboarding(
     req = req.or(
       [
         `name.ilike.${like}`,
-        `instagram.ilike.${like}`,
+        `slug.ilike.${like}`,
         `city.ilike.${like}`,
-        `type.ilike.${like}`,
+        `category.ilike.${like}`,
+        `instagram.ilike.${like}`,
       ].join(","),
     );
   }
 
-
   const { data, error } = await req;
   if (error) throw error;
-  return (data ?? []) as PartnerSearchResult[];
+  return ((data ?? []) as Record<string, unknown>[]).map(toVenue);
 }
 
-export async function listMyAccessRequests(): Promise<PartnerAccessRequest[]> {
-  const { data: userData } = await supabase.auth.getUser();
+/** Compat: nome antigo mantido para não ampliar o escopo das telas. */
+export const searchPartnersForOnboarding = searchVenuesForOnboarding;
+
+export async function listMyAccessRequests(): Promise<OrganizationAccessRequest[]> {
+  const { data: userData } = await partnerSupabase.auth.getUser();
   const user = userData?.user;
   if (!user) return [];
-  const { data, error } = await supabase
-    .from("partner_access_requests")
+
+  const { data, error } = await partnerBackendQuery()
+    .from("organization_access_requests")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as PartnerAccessRequest[];
+  return (data ?? []) as unknown as OrganizationAccessRequest[];
 }
 
 export async function createAccessRequest(
-  partnerId: string,
-  payload: {
-    requested_name?: string;
-    requested_email?: string;
-    requested_phone?: string;
-    message?: string;
-  },
-): Promise<PartnerAccessRequest> {
-  const { data, error } = await supabase.rpc("request_partner_access", {
-    _partner_id: partnerId,
-    _payload: payload,
-  });
+  venueId: string,
+  payload: { message?: string; requested_role?: string } = {},
+): Promise<OrganizationAccessRequest | null> {
+  const { data: userData } = await partnerSupabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error("Faça login para solicitar acesso.");
+
+  const { data, error } = await partnerBackendQuery()
+    .from("organization_access_requests")
+    .insert({
+      venue_id: venueId,
+      user_id: user.id,
+      status: "pending",
+      requested_role: payload.requested_role ?? "owner",
+      message: payload.message?.trim() || null,
+    })
+    .select("*")
+    .maybeSingle();
+
   if (error) throw error;
-  return data as unknown as PartnerAccessRequest;
+  return (data as unknown as OrganizationAccessRequest) ?? null;
 }
 
 export async function cancelMyAccessRequest(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("partner_access_requests")
+  const { error } = await partnerBackendQuery()
+    .from("organization_access_requests")
     .update({ status: "cancelled" })
     .eq("id", id);
   if (error) throw error;
 }
 
-// =================== Admin ===================
-
-export interface PartnerAccessRequestAdminRow extends PartnerAccessRequest {
-  partner: { id: string; name: string; city: string | null; instagram: string | null } | null;
-}
-
-export async function listAllAccessRequests(
-  status?: PartnerAccessRequestStatus,
-): Promise<PartnerAccessRequestAdminRow[]> {
-  let req = supabase
-    .from("partner_access_requests")
-    .select(
-      `*, partner:partner_id ( id, name, city, instagram )`,
-    )
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (status) req = req.eq("status", status);
-  const { data, error } = await req;
-  if (error) throw error;
-  return (data ?? []) as unknown as PartnerAccessRequestAdminRow[];
-}
-
-export async function approveAccessRequest(id: string): Promise<PartnerAccessRequest> {
-  const { data, error } = await supabase.rpc("approve_partner_access_request", {
-    _request_id: id,
-  });
-  if (error) throw error;
-  return data as unknown as PartnerAccessRequest;
-}
-
-export async function rejectAccessRequest(id: string): Promise<PartnerAccessRequest> {
-  const { data, error } = await supabase.rpc("reject_partner_access_request", {
-    _request_id: id,
-  });
-  if (error) throw error;
-  return data as unknown as PartnerAccessRequest;
+/** Lê os venues referenciados por um conjunto de solicitações. */
+export async function fetchVenuesByIds(
+  ids: string[],
+): Promise<Record<string, VenueSearchResult>> {
+  const unique = Array.from(new Set(ids.filter(Boolean)));
+  if (unique.length === 0) return {};
+  const { data, error } = await partnerBackendQuery()
+    .from("venues")
+    .select("*")
+    .in("id", unique);
+  if (error) return {};
+  const map: Record<string, VenueSearchResult> = {};
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    const v = toVenue(row);
+    map[v.id] = v;
+  }
+  return map;
 }
