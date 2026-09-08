@@ -109,7 +109,11 @@ const PartnerOnboardingPage = () => {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await createAccessRequest(selected.id, { message: form.message, requested_role: "owner" });
+      const contact = [form.requested_name, form.requested_email, form.requested_phone]
+        .filter(Boolean)
+        .join(" · ");
+      const message = [form.message.trim(), contact].filter(Boolean).join("\n");
+      await createAccessRequest(selected.id, { message, requested_role: "owner" });
       toast.success("Solicitação enviada!");
       navigate("/pending?just=1", { replace: true });
     } catch (err) {
