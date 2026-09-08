@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { partnerSupabase } from "../backend/partnerSupabase";
 import {
   cancelMyAccessRequest,
   listMyAccessRequests,
@@ -36,7 +36,7 @@ const PartnerPendingApprovalPage = () => {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const { data } = await partnerSupabase.auth.getUser();
       if (cancelled) return;
       if (!data?.user) {
         navigate("/login", { replace: true });
