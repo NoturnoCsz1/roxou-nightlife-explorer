@@ -162,12 +162,12 @@ export default defineConfig(({ mode }) => ({
         ),
     },
     rollupOptions: {
-      input: partnerOnly
+      input: (partnerOnly
         ? { partner: path.resolve(__dirname, "partner/index.html") }
         : {
             main: path.resolve(__dirname, "index.html"),
             partner: path.resolve(__dirname, "partner/index.html"),
-          },
+          }) as Record<string, string>,
       output: {
         // LCP-4F-1-B: isola React/ReactDOM/scheduler em uma chunk vendor
         // dedicada. Sem isto, Rollup hoisted React para dentro da chunk
