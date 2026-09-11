@@ -167,7 +167,8 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!selectedPartnerId) {
+    // No backend oficial não existe `partner_subscriptions` (tabela legada).
+    if (partnerBackendIsDedicated || !selectedPartnerId) {
       setSubscription(null);
       return;
     }
