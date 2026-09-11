@@ -77,9 +77,10 @@ const PartnerConfiguracoesPage = () => {
 
   const doSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await partnerSignOut();
       toast({ title: "Sessão encerrada" });
       navigate("/login", { replace: true });
+      window.location.replace("/login");
     } catch {
       toast({ title: "Erro ao sair", variant: "destructive" });
     }
