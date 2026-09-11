@@ -80,7 +80,7 @@ export async function fetchOfficialMemberships(
       ? {
           id: r.organizations.id,
           name: r.organizations.name,
-          slug: r.organizations.slug ?? null,
+          slug: null,
         }
       : null,
     venues: venues
