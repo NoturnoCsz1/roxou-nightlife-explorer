@@ -1,71 +1,103 @@
 /**
- * Partner Profile Service — Fase 9E
+ * Partner Profile Service — Convergência (backend oficial)
  *
- * Edição controlada do perfil do parceiro.
- * Fonte única: tabela `partners` (não cria perfis paralelos).
+ * Fonte única: tabela `venues` do Supabase OFICIAL do Partner Pro, sempre
+ * através do client dedicado (`partnerSupabase` / `partnerBackendQuery`).
  *
- * Apenas um subconjunto de colunas é editável. Campos institucionais
- * (name, slug, city, address, lat/lng, status, featured) permanecem
- * sob curadoria do Admin.
+ * - Leitura direta em `venues` (RLS oficial).
+ * - Escrita EXCLUSIVAMENTE via RPC `partner_update_venue_profile`.
+ * - Upload de logo no bucket oficial `venues`, pasta `<organization_id>/`.
+ *
+ * Sem tabela `partners`, sem `update_partner_safe_profile`,
+ * sem `set_partner_features`, sem bucket `uploads`, sem client legado.
  */
-import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerBackendQuery,
+  partnerSupabase,
+} from "../backend/partnerSupabase";
 import { normalizeInstagramHandle } from "@shared/utils/instagramHandle";
 
-export type PartnerImageType = "logo";
+export type PartnerImageType = "logo" | "cover";
 
-/** Campos seguros que o parceiro pode editar. */
-export interface PartnerEditablePayload {
-  short_description?: string | null;
-  full_description?: string | null;
+/** Campos do venue que o parceiro pode editar. */
+export interface VenueEditablePayload {
+  description?: string | null;
   instagram?: string | null;
+  contact_phone?: string | null;
   whatsapp?: string | null;
+  website?: string | null;
   logo_url?: string | null;
+  cover_image?: string | null;
+  street?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  capacity?: number | null;
+  venue_type?: string | null;
+  category?: string | null;
 }
 
-export interface PartnerProfileRow extends PartnerEditablePayload {
+/** Alias mantido para os componentes existentes do Perfil. */
+export type PartnerEditablePayload = VenueEditablePayload;
+
+export interface VenueProfileRow extends VenueEditablePayload {
   id: string;
+  organization_id: string | null;
   name: string;
-  slug: string;
-  city: string;
-  type: string | null;
-  address: string | null;
-  formatted_address: string | null;
-  instagram_username: string | null;
-  verified_partner: boolean | null;
-  updated_at: string | null;
+  slug: string | null;
+  city: string | null;
+  verified: boolean | null;
+  status: string | null;
 }
+
+export type PartnerProfileRow = VenueProfileRow;
+
+const VENUE_SELECT =
+  "id, organization_id, name, slug, city, description, instagram, contact_phone, whatsapp, website, logo_url, cover_image, street, address, latitude, longitude, capacity, venue_type, category, verified, status";
 
 /**
- * Lista de colunas brancas. Qualquer chave fora daqui é descartada
- * antes do UPDATE para evitar escalação acidental.
+ * Colunas permitidas na escrita. Campos administrativos
+ * (id, organization_id, verified, status, slug, name, city) nunca entram.
  */
-const EDITABLE_COLUMNS = [
-  "short_description",
-  "full_description",
+const EDITABLE_COLUMNS: (keyof VenueEditablePayload)[] = [
+  "description",
   "instagram",
+  "contact_phone",
   "whatsapp",
+  "website",
   "logo_url",
-] as const;
+  "cover_image",
+  "street",
+  "address",
+  "latitude",
+  "longitude",
+  "capacity",
+  "venue_type",
+  "category",
+];
 
-export async function getPartnerProfile(
-  partnerId: string,
-): Promise<PartnerProfileRow | null> {
-  if (!partnerId) return null;
-  const { data, error } = await supabase
-    .from("partners")
-    .select(
-      "id, name, slug, city, type, address, formatted_address, short_description, full_description, instagram, instagram_username, whatsapp, logo_url, verified_partner, updated_at",
-    )
-    .eq("id", partnerId)
+export async function getVenueProfile(
+  venueId: string,
+): Promise<VenueProfileRow | null> {
+  if (!venueId) return null;
+  const { data, error } = await partnerBackendQuery()
+    .from("venues")
+    .select(VENUE_SELECT)
+    .eq("id", venueId)
     .maybeSingle();
-  if (error) throw error;
-  return (data as PartnerProfileRow | null) ?? null;
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[PartnerProfile] getVenueProfile failed:", error);
+    throw error;
+  }
+  return (data as unknown as VenueProfileRow | null) ?? null;
 }
 
-function sanitizePayload(
-  raw: PartnerEditablePayload,
-): PartnerEditablePayload {
-  const out: PartnerEditablePayload = {};
+/** Compat: mesma função, nome antigo usado pela página. */
+export const getPartnerProfile = getVenueProfile;
+
+function sanitizePayload(raw: VenueEditablePayload): VenueEditablePayload {
+  const out: Record<string, unknown> = {};
   for (const key of EDITABLE_COLUMNS) {
     if (!(key in raw)) continue;
     const value = raw[key];
@@ -76,56 +108,65 @@ function sanitizePayload(
         out.instagram = trimmed ? normalizeInstagramHandle(trimmed) : null;
         continue;
       }
-      if (key === "whatsapp") {
-        out.whatsapp = trimmed ? trimmed.replace(/[^\d+]/g, "") : null;
+      if (key === "whatsapp" || key === "contact_phone") {
+        out[key] = trimmed ? trimmed.replace(/[^\d+]/g, "") : null;
         continue;
       }
       out[key] = trimmed || null;
-    } else {
-      out[key] = value;
+      continue;
     }
+    out[key] = value;
   }
-  return out;
+  return out as VenueEditablePayload;
 }
 
-export async function updatePartnerProfile(
-  partnerId: string,
-  payload: PartnerEditablePayload,
-): Promise<PartnerProfileRow> {
-  if (!partnerId) throw new Error("partnerId obrigatório.");
-  const clean = sanitizePayload(payload);
-  if (Object.keys(clean).length === 0) {
-    throw new Error("Nada para atualizar.");
-  }
+export async function updateVenueProfile(
+  venueId: string,
+  payload: VenueEditablePayload,
+): Promise<VenueProfileRow> {
+  if (!venueId) throw new Error("venueId obrigatório.");
+  const patch = sanitizePayload(payload);
+  if (Object.keys(patch).length === 0) throw new Error("Nada para atualizar.");
 
-  // Fase 9F: usa SECURITY DEFINER RPC com whitelist server-side.
-  // O RLS de UPDATE em `partners` continua restrito ao Admin global;
-  // owners/admins de parceiro passam exclusivamente por esta função.
-  const { data, error } = await supabase.rpc("update_partner_safe_profile", {
-    _partner_id: partnerId,
-    _payload: clean as unknown as never,
-  });
+  const { data: auth } = await partnerSupabase.auth.getUser();
+  const callerId = auth?.user?.id ?? null;
+  if (!callerId) throw new Error("Sessão expirada. Entre novamente.");
 
-  if (error) throw error;
-  if (!data) {
+  const { error } = await partnerBackendQuery().rpc(
+    "partner_update_venue_profile",
+    {
+      _caller_id: callerId,
+      _venue_id: venueId,
+      _patch: patch,
+    },
+  );
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[PartnerProfile] partner_update_venue_profile failed:", error);
     throw new Error(
-      "Sem permissão para atualizar este estabelecimento ou registro não encontrado.",
+      error.message ||
+        "Sem permissão para atualizar este estabelecimento ou registro não encontrado.",
     );
   }
-  return data as unknown as PartnerProfileRow;
+
+  const row = await getVenueProfile(venueId);
+  if (!row) throw new Error("Perfil não encontrado após salvar.");
+  return row;
 }
 
+/** Compat: nome antigo usado pelo editor. */
+export const updatePartnerProfile = updateVenueProfile;
+
 /**
- * Sobe uma imagem do parceiro no bucket público `uploads` (pasta `partners/`)
- * e devolve a URL pública. Não altera a tabela — quem decide se grava em
- * `logo_url` é o chamador.
+ * Sobe uma imagem do venue no bucket oficial `venues`, isolada por
+ * organização (`<organization_id>/<arquivo>`), e devolve a URL pública.
  */
-export async function uploadPartnerImage(
-  partnerId: string,
+export async function uploadVenueImage(
+  organizationId: string,
   file: File,
   type: PartnerImageType = "logo",
 ): Promise<string> {
-  if (!partnerId) throw new Error("partnerId obrigatório.");
+  if (!organizationId) throw new Error("organizationId obrigatório.");
   if (!file) throw new Error("Arquivo obrigatório.");
   if (!file.type.startsWith("image/")) {
     throw new Error("Envie um arquivo de imagem.");
@@ -135,15 +176,17 @@ export async function uploadPartnerImage(
   }
 
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-  const path = `partners/${partnerId}/${type}-${crypto.randomUUID()}.${ext}`;
+  const path = `${organizationId}/${type}-${crypto.randomUUID()}.${ext}`;
 
-  const { error } = await supabase.storage.from("uploads").upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type,
-  });
+  const { error } = await partnerSupabase.storage
+    .from("venues")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type,
+    });
   if (error) throw error;
 
-  const { data } = supabase.storage.from("uploads").getPublicUrl(path);
+  const { data } = partnerSupabase.storage.from("venues").getPublicUrl(path);
   return data.publicUrl;
 }

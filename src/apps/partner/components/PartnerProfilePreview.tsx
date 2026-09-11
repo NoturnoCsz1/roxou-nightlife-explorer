@@ -1,25 +1,28 @@
 /**
- * PartnerProfilePreview — Fase 9E
- * Mostra como o perfil do parceiro aparecerá publicamente após salvar.
+ * PartnerProfilePreview — backend oficial (venues)
+ * Mostra como o perfil aparecerá publicamente após salvar.
  */
-import { BadgeCheck, Instagram, MapPin, Phone } from "lucide-react";
+import { BadgeCheck, Globe, Instagram, MapPin, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { normalizeInstagramHandle } from "@shared/utils/instagramHandle";
-import type { PartnerProfileRow } from "../services/partnerProfile";
+import type { VenueProfileRow } from "../services/partnerProfile";
 
 interface Props {
-  base: PartnerProfileRow;
+  base: VenueProfileRow;
   draft: {
-    short_description: string;
-    full_description: string;
+    description: string;
     instagram: string;
     whatsapp: string;
+    contact_phone: string;
+    website: string;
     logo_url: string;
   };
 }
 
 export function PartnerProfilePreview({ base, draft }: Props) {
   const handle = normalizeInstagramHandle(draft.instagram);
+  const address = base.address ?? base.street ?? null;
+
   return (
     <Card className="border-primary/30">
       <CardContent className="p-4">
@@ -39,25 +42,18 @@ export function PartnerProfilePreview({ base, draft }: Props) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h3 className="truncate font-semibold">{base.name}</h3>
-              {base.verified_partner ? (
+              {base.verified ? (
                 <BadgeCheck className="h-4 w-4 text-primary" />
               ) : null}
             </div>
             <div className="text-xs text-muted-foreground">
-              {base.type ?? "—"} · {base.city}
+              {base.venue_type ?? base.category ?? "—"} · {base.city ?? "—"}
             </div>
-            {draft.short_description ? (
-              <p className="mt-1.5 text-sm line-clamp-2">
-                {draft.short_description}
-              </p>
-            ) : null}
             <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-              {base.formatted_address || base.address ? (
+              {address ? (
                 <div className="flex items-start gap-1.5">
                   <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">
-                    {base.formatted_address ?? base.address}
-                  </span>
+                  <span className="truncate">{address}</span>
                 </div>
               ) : null}
               {handle ? (
@@ -65,16 +61,22 @@ export function PartnerProfilePreview({ base, draft }: Props) {
                   <Instagram className="h-3.5 w-3.5" />@{handle}
                 </div>
               ) : null}
-              {draft.whatsapp ? (
+              {draft.whatsapp || draft.contact_phone ? (
                 <div className="flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5" />
-                  {draft.whatsapp}
+                  {draft.whatsapp || draft.contact_phone}
+                </div>
+              ) : null}
+              {draft.website ? (
+                <div className="flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5" />
+                  <span className="truncate">{draft.website}</span>
                 </div>
               ) : null}
             </div>
-            {draft.full_description ? (
+            {draft.description ? (
               <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">
-                {draft.full_description}
+                {draft.description}
               </p>
             ) : null}
           </div>

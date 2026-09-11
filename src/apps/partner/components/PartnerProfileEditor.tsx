@@ -1,10 +1,9 @@
 /**
- * PartnerProfileEditor — Fase 9E
+ * PartnerProfileEditor — backend oficial (venues)
  *
- * Formulário de edição controlada do perfil do parceiro.
- * Edita APENAS um subconjunto seguro de colunas da tabela `partners`.
- * Nome, slug, cidade, endereço, lat/lng, status, featured e premiações
- * permanecem sob curadoria da Roxou.
+ * Edita apenas o subconjunto seguro de colunas de `venues`, sempre via RPC
+ * oficial `partner_update_venue_profile`. Nome, slug, cidade, verificação e
+ * status permanecem sob curadoria da Roxou.
  */
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, ShieldAlert, Info } from "lucide-react";
@@ -15,54 +14,43 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { validateInstagramHandle } from "@shared/utils/instagramHandle";
 import {
-  updatePartnerProfile,
-  type PartnerEditablePayload,
-  type PartnerProfileRow,
+  updateVenueProfile,
+  type VenueEditablePayload,
+  type VenueProfileRow,
 } from "../services/partnerProfile";
 import PartnerImageUploader from "./PartnerImageUploader";
 import PartnerSocialLinksEditor from "./PartnerSocialLinksEditor";
 import PartnerOpeningHoursEditor from "./PartnerOpeningHoursEditor";
 import PartnerProfilePreview from "./PartnerProfilePreview";
-import {
-  VenueFeaturesEditor,
-  venueFeaturesRepository,
-  parseVenueFeaturesJson,
-} from "@/modules/discovery/features";
 
 interface Props {
-  profile: PartnerProfileRow;
+  profile: VenueProfileRow;
   canSave: boolean;
   canSuggest: boolean;
-  onSaved: (row: PartnerProfileRow) => void;
+  onSaved: (row: VenueProfileRow) => void;
 }
 
-interface Draft {
-  short_description: string;
-  full_description: string;
+export interface ProfileDraft {
+  description: string;
   instagram: string;
   whatsapp: string;
+  contact_phone: string;
+  website: string;
   logo_url: string;
 }
 
-function rowToDraft(row: PartnerProfileRow): Draft {
+function rowToDraft(row: VenueProfileRow): ProfileDraft {
   return {
-    short_description: row.short_description ?? "",
-    full_description: row.full_description ?? "",
-    instagram: row.instagram ?? row.instagram_username ?? "",
+    description: row.description ?? "",
+    instagram: row.instagram ?? "",
     whatsapp: row.whatsapp ?? "",
+    contact_phone: row.contact_phone ?? "",
+    website: row.website ?? "",
     logo_url: row.logo_url ?? "",
   };
 }
 
-const SHORT_LIMIT = 160;
-const FULL_LIMIT = 2000;
-
-function featuresSlugsEqual(a: string[], b: string[]) {
-  if (a.length !== b.length) return false;
-  const sa = [...a].sort();
-  const sb = [...b].sort();
-  return sa.every((v, i) => v === sb[i]);
-}
+const DESCRIPTION_LIMIT = 2000;
 
 export function PartnerProfileEditor({
   profile,
@@ -71,55 +59,24 @@ export function PartnerProfileEditor({
   onSaved,
 }: Props) {
   const initial = useMemo(() => rowToDraft(profile), [profile]);
-  const [draft, setDraft] = useState<Draft>(initial);
+  const [draft, setDraft] = useState<ProfileDraft>(initial);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Onda 20 — Features (persistidas em partners.features via RPC).
-  const [featuresSlugs, setFeaturesSlugs] = useState<string[]>([]);
-  const [featuresLoaded, setFeaturesLoaded] = useState(false);
-  const [featuresBaseline, setFeaturesBaseline] = useState<string[]>([]);
-  const [featuresSaving, setFeaturesSaving] = useState(false);
 
   useEffect(() => {
     setDraft(initial);
   }, [initial]);
 
-  useEffect(() => {
-    let cancel = false;
-    setFeaturesLoaded(false);
-    venueFeaturesRepository
-      .fetch(profile.id)
-      .then((rows) => {
-        if (cancel) return;
-        const slugs = rows
-          .filter((r) => r.approved !== false)
-          .map((r) => r.featureSlug);
-        setFeaturesSlugs(slugs);
-        setFeaturesBaseline(slugs);
-        setFeaturesLoaded(true);
-      })
-      .catch(() => {
-        if (cancel) return;
-        setFeaturesLoaded(true);
-      });
-    return () => {
-      cancel = true;
-    };
-  }, [profile.id]);
+  const dirty = useMemo(
+    () =>
+      (Object.keys(initial) as (keyof ProfileDraft)[]).some(
+        (k) => draft[k] !== initial[k],
+      ),
+    [draft, initial],
+  );
 
-  const dirty = useMemo(() => {
-    return (
-      draft.short_description !== initial.short_description ||
-      draft.full_description !== initial.full_description ||
-      draft.instagram !== initial.instagram ||
-      draft.whatsapp !== initial.whatsapp ||
-      draft.logo_url !== initial.logo_url
-    );
-  }, [draft, initial]);
-
-  function patch(p: Partial<Draft>) {
+  function patch(p: Partial<ProfileDraft>) {
     setDraft((d) => ({ ...d, ...p }));
     setSavedAt(null);
     setError(null);
@@ -129,12 +86,8 @@ export function PartnerProfileEditor({
     if (!canSave) return;
     setError(null);
 
-    if (draft.short_description.length > SHORT_LIMIT) {
-      setError(`Descrição curta excede ${SHORT_LIMIT} caracteres.`);
-      return;
-    }
-    if (draft.full_description.length > FULL_LIMIT) {
-      setError(`Descrição completa excede ${FULL_LIMIT} caracteres.`);
+    if (draft.description.length > DESCRIPTION_LIMIT) {
+      setError(`Descrição excede ${DESCRIPTION_LIMIT} caracteres.`);
       return;
     }
     const ig = validateInstagramHandle(draft.instagram);
@@ -143,17 +96,18 @@ export function PartnerProfileEditor({
       return;
     }
 
-    const payload: PartnerEditablePayload = {
-      short_description: draft.short_description,
-      full_description: draft.full_description,
+    const payload: VenueEditablePayload = {
+      description: draft.description,
       instagram: draft.instagram,
       whatsapp: draft.whatsapp,
+      contact_phone: draft.contact_phone,
+      website: draft.website,
       logo_url: draft.logo_url,
     };
 
     setSaving(true);
     try {
-      const row = await updatePartnerProfile(profile.id, payload);
+      const row = await updateVenueProfile(profile.id, payload);
       onSaved(row);
       setSavedAt(Date.now());
       toast.success("Alterações salvas.");
@@ -176,7 +130,7 @@ export function PartnerProfileEditor({
           <div>
             Como <strong>editor</strong>, você pode revisar e propor mudanças.
             A publicação requer aprovação de um <strong>owner</strong> ou{" "}
-            <strong>admin</strong> (recurso de sugestões em breve).
+            <strong>admin</strong>.
           </div>
         </div>
       ) : null}
@@ -199,7 +153,7 @@ export function PartnerProfileEditor({
       <section className="space-y-4 rounded-lg border border-border p-4">
         <h2 className="text-sm font-semibold">Identidade visual</h2>
         <PartnerImageUploader
-          partnerId={profile.id}
+          organizationId={profile.organization_id ?? ""}
           currentUrl={draft.logo_url || null}
           onUploaded={(url) => patch({ logo_url: url })}
           disabled={disabled}
@@ -209,39 +163,21 @@ export function PartnerProfileEditor({
 
       <section className="space-y-4 rounded-lg border border-border p-4">
         <h2 className="text-sm font-semibold">Descrição</h2>
-
         <div className="space-y-1">
-          <Label htmlFor="partner-short" className="text-xs">
-            Descrição curta
-          </Label>
-          <Input
-            id="partner-short"
-            value={draft.short_description}
-            disabled={disabled}
-            maxLength={SHORT_LIMIT}
-            placeholder="Uma frase que resume o seu estabelecimento."
-            onChange={(e) => patch({ short_description: e.target.value })}
-          />
-          <div className="text-[11px] text-muted-foreground">
-            {draft.short_description.length}/{SHORT_LIMIT}
-          </div>
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="partner-full" className="text-xs">
-            Descrição completa
+          <Label htmlFor="venue-description" className="text-xs">
+            Sobre o estabelecimento
           </Label>
           <Textarea
-            id="partner-full"
-            value={draft.full_description}
+            id="venue-description"
+            value={draft.description}
             disabled={disabled}
-            maxLength={FULL_LIMIT}
+            maxLength={DESCRIPTION_LIMIT}
             rows={6}
             placeholder="Conte a história, ambiente, atrações e diferenciais."
-            onChange={(e) => patch({ full_description: e.target.value })}
+            onChange={(e) => patch({ description: e.target.value })}
           />
           <div className="text-[11px] text-muted-foreground">
-            {draft.full_description.length}/{FULL_LIMIT}
+            {draft.description.length}/{DESCRIPTION_LIMIT}
           </div>
         </div>
       </section>
@@ -254,69 +190,39 @@ export function PartnerProfileEditor({
           disabled={disabled}
           onChange={(p) => patch(p)}
         />
-      </section>
-
-      <section className="space-y-4 rounded-lg border border-border p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold">Características do estabelecimento</h2>
-            <p className="text-[11px] text-muted-foreground">
-              Marque tudo que se aplica. Aparece na sua página pública.
-            </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="venue-phone" className="text-xs">
+              Telefone de contato
+            </Label>
+            <Input
+              id="venue-phone"
+              value={draft.contact_phone}
+              inputMode="tel"
+              maxLength={20}
+              disabled={disabled}
+              placeholder="+55 18 3333-3333"
+              onChange={(e) => patch({ contact_phone: e.target.value })}
+            />
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={
-              disabled ||
-              !featuresLoaded ||
-              featuresSaving ||
-              featuresSlugsEqual(featuresSlugs, featuresBaseline)
-            }
-            onClick={async () => {
-              setFeaturesSaving(true);
-              try {
-                const saved = await venueFeaturesRepository.save(
-                  profile.id,
-                  featuresSlugs,
-                  "manual_partner",
-                );
-                const slugs = parseVenueFeaturesJson(saved).map((r) => r.featureSlug);
-                setFeaturesBaseline(slugs);
-                setFeaturesSlugs(slugs);
-                toast.success("Características salvas.");
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : "Falha ao salvar características.";
-                toast.error(msg);
-              } finally {
-                setFeaturesSaving(false);
-              }
-            }}
-          >
-            {featuresSaving ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Salvando…
-              </>
-            ) : (
-              "Salvar características"
-            )}
-          </Button>
+          <div className="space-y-1">
+            <Label htmlFor="venue-website" className="text-xs">
+              Site
+            </Label>
+            <Input
+              id="venue-website"
+              value={draft.website}
+              disabled={disabled}
+              placeholder="https://seusite.com.br"
+              onChange={(e) => patch({ website: e.target.value })}
+            />
+          </div>
         </div>
-        {featuresLoaded ? (
-          <VenueFeaturesEditor
-            selectedSlugs={featuresSlugs}
-            disabled={disabled || featuresSaving}
-            onChange={setFeaturesSlugs}
-          />
-        ) : (
-          <div className="text-xs text-muted-foreground">Carregando características…</div>
-        )}
       </section>
 
       <section className="space-y-2">
         <PartnerOpeningHoursEditor />
       </section>
-
 
       <section>
         <PartnerProfilePreview base={profile} draft={draft} />
@@ -340,11 +246,7 @@ export function PartnerProfileEditor({
             "Sem alterações pendentes."
           )}
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={disabled || !dirty}
-          size="sm"
-        >
+        <Button onClick={handleSave} disabled={disabled || !dirty} size="sm">
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando…
