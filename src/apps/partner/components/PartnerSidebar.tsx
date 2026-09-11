@@ -139,13 +139,13 @@ function PartnerSidebarImpl() {
       </SidebarContent>
 
 
-      <SidebarFooter className="border-t border-border/40 px-2 py-2 space-y-1">
+      <SidebarFooter className="border-t border-border/50 px-2 py-2.5 space-y-1">
         {/* Trocar contexto: aparece se o promoter também é gestor de algum partner */}
         {mode === "promoter" && canSwitchToManager && (
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-xs"
+            className="h-8 w-full justify-start text-xs"
             onClick={() => {
               setPromoterModeFlag(false);
               navigate("/");
@@ -160,7 +160,7 @@ function PartnerSidebarImpl() {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-xs"
+            className="h-8 w-full justify-start text-xs"
             onClick={() => {
               setPromoterModeFlag(true);
               navigate("/promoter-central");
@@ -171,14 +171,23 @@ function PartnerSidebarImpl() {
             {!collapsed && "Ver como Promoter"}
           </Button>
         )}
-        <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] text-muted-foreground min-w-0">
-          <UserCircle2 className="h-3.5 w-3.5 shrink-0" />
-          {!collapsed && <span className="truncate">{user?.email ?? "—"}</span>}
+        <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-2 py-2 min-w-0">
+          <UserCircle2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-medium text-foreground/90 truncate">
+                {user?.email ?? "—"}
+              </p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {roleLabel}
+              </p>
+            </div>
+          )}
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-xs text-destructive hover:text-destructive"
+          className="h-8 w-full justify-start text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
           onClick={handleLogout}
         >
           <LogOut className="h-3.5 w-3.5 mr-2" />
