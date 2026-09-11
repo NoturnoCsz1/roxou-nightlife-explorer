@@ -62,24 +62,65 @@ function Kpi({
 }) {
   const toneCls =
     tone === "warning"
-      ? "text-amber-300"
+      ? "text-amber-400"
       : tone === "danger"
-        ? "text-rose-300"
+        ? "text-destructive"
         : tone === "success"
-          ? "text-emerald-300"
+          ? "text-emerald-400"
           : "text-foreground";
+  const iconCls =
+    tone === "warning"
+      ? "bg-amber-500/10 text-amber-400"
+      : tone === "danger"
+        ? "bg-destructive/10 text-destructive"
+        : tone === "success"
+          ? "bg-emerald-500/10 text-emerald-400"
+          : "bg-primary/10 text-primary";
   return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3 min-w-0">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-        <Icon className="h-3 w-3 shrink-0" />
-        <span className="truncate">{label}</span>
+    <div className="group rounded-xl border border-border/60 bg-card/60 p-3.5 min-w-0 transition-colors hover:border-primary/40 hover:bg-card">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground truncate">
+          {label}
+        </span>
+        <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md", iconCls)}>
+          <Icon className="h-3.5 w-3.5" />
+        </span>
       </div>
-      <div className={`mt-1 text-xl font-bold tabular-nums ${toneCls}`}>{value}</div>
-      {hint ? (
-        <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{hint}</div>
-      ) : null}
+      <div className={cn("mt-2 text-2xl font-semibold tabular-nums tracking-tight", toneCls)}>
+        {value}
+      </div>
+      <div className="mt-0.5 h-4 text-[11px] text-muted-foreground truncate">{hint ?? ""}</div>
     </div>
   );
+}
+
+function SectionTitle({
+  icon: Icon,
+  title,
+  action,
+}: {
+  icon: typeof Calendar;
+  title: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-0.5">
+      <div className="flex items-center gap-2 min-w-0">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground truncate">
+          {title}
+        </h2>
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  );
+}
+
+function greetingFor(date: Date) {
+  const h = date.getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
 }
 
 const PartnerHomePage = () => {
