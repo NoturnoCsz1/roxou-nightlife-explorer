@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "bunx tsx scripts/generate-sitemap.ts && bunx tsx scripts/generate-health.ts",
     "build": "vite build",
+    "build:partner": "PARTNER_ONLY=true vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

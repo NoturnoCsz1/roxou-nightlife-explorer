@@ -13,7 +13,12 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 // `DISABLE_PWA=true`) antes do `bun run build` para gerar um bundle
 // sem o plugin PWA. Útil exclusivamente para destravar a VPS sem
 // quebrar o build padrão da Lovable.
+// Build isolado do Partner Pro: PARTNER_ONLY=true gera apenas
+// parceiro.roxou.com.br em dist-partner, sem PWA/visualizer.
+const partnerOnly = process.env.PARTNER_ONLY === "true";
+
 const disablePwa =
+  partnerOnly ||
   process.env.VITE_DISABLE_PWA === "true" ||
   process.env.DISABLE_PWA === "true";
 
@@ -111,7 +116,7 @@ export default defineConfig(({ mode }) => ({
           ],
         },
       }),
-    Boolean(process.env.ANALYZE) && visualizer({
+    Boolean(process.env.ANALYZE) && !partnerOnly && visualizer({
       filename: "dist/stats.html",
       template: "treemap",
       gzipSize: true,
@@ -143,6 +148,8 @@ export default defineConfig(({ mode }) => ({
   //   dist/index.html         → roxou.com.br (app público + admin)
   //   dist/partner/index.html → parceiro.roxou.com.br (Partner Pro)
   build: {
+    // PARTNER_ONLY: saída isolada do Partner Pro.
+    outDir: partnerOnly ? "dist-partner" : "dist",
     // LCP-4D: impede <link rel="modulepreload"> automático para chunks
     // que não são usados no first paint da Home (recharts, qrcode).
     // Os chunks continuam existindo e são carregados sob demanda.
@@ -155,10 +162,12 @@ export default defineConfig(({ mode }) => ({
         ),
     },
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, "index.html"),
-        partner: path.resolve(__dirname, "partner/index.html"),
-      },
+      input: (partnerOnly
+        ? { partner: path.resolve(__dirname, "partner/index.html") }
+        : {
+            main: path.resolve(__dirname, "index.html"),
+            partner: path.resolve(__dirname, "partner/index.html"),
+          }) as Record<string, string>,
       output: {
         // LCP-4F-1-B: isola React/ReactDOM/scheduler em uma chunk vendor
         // dedicada. Sem isto, Rollup hoisted React para dentro da chunk
