@@ -50,46 +50,47 @@ function PartnerSidebarImpl() {
     window.location.replace("/login");
   }
 
+  const roleLabel =
+    mode === "superAdmin"
+      ? "Admin"
+      : mode === "manager"
+        ? "Gestor"
+        : mode === "staff"
+          ? "Equipe"
+          : mode === "promoter"
+            ? "Promoter"
+            : "—";
+
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/40">
-      <SidebarHeader className="border-b border-border/40 px-3 py-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="h-8 w-8 shrink-0 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[11px] font-black uppercase">
+    <Sidebar collapsible="icon" className="border-r border-border/50 bg-sidebar">
+      <SidebarHeader className="border-b border-border/50 px-3 py-3.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-9 w-9 shrink-0 rounded-lg bg-primary/15 text-primary flex items-center justify-center text-xs font-bold uppercase">
             {(selectedPartner?.name ?? "R").slice(0, 2)}
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold truncate">
+              <p className="text-sm font-semibold tracking-tight truncate">
                 {selectedPartner?.name ?? "Roxou Partner"}
               </p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase tracking-wider">
-                  {mode === "superAdmin"
-                    ? "Admin"
-                    : mode === "manager"
-                      ? "Gestor"
-                      : mode === "staff"
-                        ? "Equipe"
-                        : mode === "promoter"
-                          ? "Promoter"
-                          : "—"}
-                </Badge>
-              </div>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground truncate">
+                {roleLabel}
+              </p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-1.5 py-2">
         {groups.map((group) => (
-          <SidebarGroup key={group.id}>
+          <SidebarGroup key={group.id} className="py-1.5">
             {!collapsed && (
-              <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+              <SidebarGroupLabel className="h-6 px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70">
                 {group.label}
               </SidebarGroupLabel>
             )}
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-0.5">
                 {group.items.map((item) => {
                   const active = isActive(item);
                   const Icon = item.icon;
@@ -100,24 +101,28 @@ function PartnerSidebarImpl() {
                         isActive={active}
                         tooltip={item.label}
                         disabled={item.comingSoon}
-                        className={cn(item.comingSoon && "opacity-50 cursor-not-allowed")}
+                        className={cn(
+                          "h-9 rounded-lg text-[13px] font-medium transition-colors",
+                          active && "bg-primary/12 text-primary font-semibold",
+                          item.comingSoon && "opacity-45 cursor-not-allowed",
+                        )}
                       >
                         {item.comingSoon ? (
-                          <span className="flex items-center gap-2 text-xs">
+                          <span className="flex items-center gap-2.5">
                             <Icon className="h-4 w-4 shrink-0" />
                             {!collapsed && (
                               <span className="flex-1 min-w-0 truncate">
                                 {item.label}{" "}
-                                <span className="text-[9px] uppercase opacity-60">em breve</span>
+                                <span className="text-[9px] uppercase opacity-70">em breve</span>
                               </span>
                             )}
                           </span>
                         ) : (
-                          <NavLink to={item.to} end={item.to === "/"} className="flex items-center gap-2 text-xs">
-                            <Icon className="h-4 w-4 shrink-0" />
+                          <NavLink to={item.to} end={item.to === "/"} className="flex items-center gap-2.5">
+                            <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
                             {!collapsed && <span className="flex-1 min-w-0 truncate">{item.label}</span>}
                             {!collapsed && item.badge && (
-                              <Badge variant="secondary" className="text-[9px] h-4 px-1">
+                              <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
                                 {item.badge}
                               </Badge>
                             )}
@@ -132,6 +137,7 @@ function PartnerSidebarImpl() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+
 
       <SidebarFooter className="border-t border-border/40 px-2 py-2 space-y-1">
         {/* Trocar contexto: aparece se o promoter também é gestor de algum partner */}
