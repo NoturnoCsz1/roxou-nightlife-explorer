@@ -26,7 +26,7 @@ interface OrganizationMemberRow {
   role_id: string | null;
   role_code: string | null;
   status: string | null;
-  organizations?: { id: string; name: string; slug: string | null } | null;
+  organizations?: { id: string; name: string } | null;
 }
 
 interface VenueRow {
@@ -46,12 +46,16 @@ export async function fetchOfficialMemberships(
   const { data, error } = await db
     .from("organization_members")
     .select(
-      "organization_id, user_id, role_id, role_code, status, organizations:organization_id ( id, name, slug )",
+      "organization_id, user_id, role_id, role_code, status, organizations:organization_id ( id, name )",
     )
     .eq("user_id", userId);
 
   // Schema oficial ainda indisponível neste backend → sem membership.
-  if (error) return [];
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[PartnerSessionGateway] fetchOfficialMemberships failed:", error);
+    return [];
+  }
 
   const rows = (data ?? []) as unknown as OrganizationMemberRow[];
   if (rows.length === 0) return [];
@@ -76,7 +80,7 @@ export async function fetchOfficialMemberships(
       ? {
           id: r.organizations.id,
           name: r.organizations.name,
-          slug: r.organizations.slug ?? null,
+          slug: null,
         }
       : null,
     venues: venues
