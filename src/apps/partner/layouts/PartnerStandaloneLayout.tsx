@@ -99,19 +99,25 @@ const PartnerStandaloneLayout = () => {
         <PartnerSidebar />
         <SidebarInset>
           <header
-            className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-border/40 bg-background/80 px-3 backdrop-blur md:px-4"
+            className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/50 bg-background/80 px-3 backdrop-blur-md md:px-5"
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             <SidebarTrigger className="md:flex hidden" />
-            <div className="flex-1 min-w-0">
-              <div className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-200 truncate">
-                <strong className="font-semibold">BETA</strong> · parceiro.roxou.com.br
-                {isAdmin ? (
-                  <span className="ml-1.5 rounded bg-amber-500/20 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                    Admin
-                  </span>
-                ) : null}
-              </div>
+            <div className="flex flex-1 items-center gap-2 min-w-0">
+              <span className="text-sm font-semibold tracking-tight truncate">Roxou Partner</span>
+              <span className="hidden sm:inline text-xs text-muted-foreground truncate">
+                parceiro.roxou.com.br
+              </span>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+                Beta
+              </span>
+              {isAdmin ? (
+                <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Admin
+                </span>
+              ) : null}
             </div>
           </header>
 
