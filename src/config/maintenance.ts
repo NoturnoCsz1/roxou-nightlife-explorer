@@ -8,7 +8,7 @@
  */
 export const MAINTENANCE_CONFIG = {
   /** Liga/desliga o modo de manutenção em toda a aplicação principal. */
-  enabled: true,
+  enabled: false,
   /** Fim previsto — sábado, 08/08/2026 18:00 (America/Sao_Paulo). */
   endsAt: "2026-08-08T18:00:00-03:00",
   /** Caminhos públicos liberados (match exato ou como prefixo de sub-rota). */
