@@ -14,6 +14,7 @@ import { useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import { PartnerProvider } from "../contexts/PartnerContext";
+import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { usePartnerBetaAccess } from "../hooks/usePartnerBetaAccess";
 
 import { PartnerBottomNav } from "../components/PartnerBottomNav";
