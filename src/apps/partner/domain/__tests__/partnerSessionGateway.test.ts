@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchOfficialMemberships } from "../partnerSessionGateway";
 
 const USER = "370a3a7d-5ffb-42d5-b356-0c261717828a";
@@ -44,7 +45,7 @@ function createMockClient({ members = [], venues = [], membershipError = null }:
     from: vi.fn((table: string) => builder(table)),
   };
 
-  return { client, calls };
+  return { client: client as unknown as SupabaseClient, calls };
 }
 
 vi.mock("../../backend/partnerSupabase", () => ({
