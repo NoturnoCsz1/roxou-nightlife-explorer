@@ -155,7 +155,7 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
   useEffect(() => {
     let mounted = true;
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: sub } = partnerSupabase.auth.onAuthStateChange(() => {
       if (mounted) void loadAccess();
     });
     void loadAccess();
