@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, RefreshCcw, Shield, UserCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { partnerSignOut } from "../services/partnerSignOut";
 
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { usePartnerRole, setPromoterModeFlag } from "../hooks/usePartnerRole";
@@ -44,8 +44,10 @@ function PartnerSidebarImpl() {
     item.match ? item.match(pathname) : pathname === item.to;
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await partnerSignOut();
     navigate("/login", { replace: true });
+    // garante que nenhum estado autenticado em memória sobreviva ao logout
+    window.location.replace("/login");
   }
 
   return (

@@ -20,7 +20,12 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerBackendIsDedicated,
+  partnerSupabase,
+} from "../backend/partnerSupabase";
+import { fetchOfficialMemberships } from "../domain/partnerSessionGateway";
+import type { PartnerRole } from "../types";
 import {
   getCurrentPartnerSubscription,
   listMyPartners,
@@ -83,13 +88,52 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const { data: userData } = await supabase.auth.getUser();
+      const { data: userData } = await partnerSupabase.auth.getUser();
       const currentUser = userData?.user ?? null;
       setUser(currentUser);
 
       if (!currentUser) {
         setPartners([]);
         setSubscription(null);
+        setSelectedPartnerIdState(null);
+        writeStoredPartnerId(null);
+        return;
+      }
+
+      // Backend oficial dedicado: a identidade vem de organization_members.
+      if (partnerBackendIsDedicated) {
+        const memberships = await fetchOfficialMemberships(currentUser.id);
+        const list: PartnerAccess[] = memberships.map((m) => {
+          const venue = m.venues?.[0] ?? null;
+          const role: PartnerRole =
+            m.role_code === "owner"
+              ? "owner"
+              : m.role_code === "manager"
+                ? "admin"
+                : "attendant";
+          return {
+            linkId: `${m.organization_id}:${m.user_id}`,
+            role,
+            isActive: true,
+            partner: {
+              id: m.organization_id,
+              name: venue?.name ?? m.organization?.name ?? "Meu estabelecimento",
+              slug: venue?.slug ?? null,
+              logo_url: null,
+              city: venue?.city ?? null,
+              type: null,
+            },
+          };
+        });
+        setPartners(list);
+        setSubscription(null);
+        const storedOfficial = readStoredPartnerId();
+        const nextOfficial =
+          storedOfficial && list.some((p) => p.partner.id === storedOfficial)
+            ? storedOfficial
+            : (list[0]?.partner.id ?? null);
+        setSelectedPartnerIdState(nextOfficial);
+        writeStoredPartnerId(nextOfficial);
         return;
       }
 
@@ -111,7 +155,7 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
   useEffect(() => {
     let mounted = true;
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: sub } = partnerSupabase.auth.onAuthStateChange(() => {
       if (mounted) void loadAccess();
     });
     void loadAccess();
@@ -123,7 +167,8 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!selectedPartnerId) {
+    // No backend oficial não existe `partner_subscriptions` (tabela legada).
+    if (partnerBackendIsDedicated || !selectedPartnerId) {
       setSubscription(null);
       return;
     }
