@@ -35,6 +35,28 @@ const ACTION_BY_PATH: Record<string, string> = {
   "/configuracoes": "open_settings",
 };
 
+/**
+ * Só renderiza as páginas depois que a sessão + membership do Partner
+ * estiverem resolvidas. Evita Dashboard com usuário indefinido.
+ */
+const PartnerShellOutlet = () => {
+  const { isLoading, user } = usePartnerAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Carregando sessão...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+};
+
 const PartnerStandaloneLayout = () => {
   const { hasAccess, isAdmin, loading, userId } = usePartnerBetaAccess();
   const { pathname } = useLocation();
