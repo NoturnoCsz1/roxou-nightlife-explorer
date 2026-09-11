@@ -20,7 +20,12 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  partnerBackendIsDedicated,
+  partnerSupabase,
+} from "../backend/partnerSupabase";
+import { fetchOfficialMemberships } from "../domain/partnerSessionGateway";
+import type { PartnerRole } from "../types";
 import {
   getCurrentPartnerSubscription,
   listMyPartners,
