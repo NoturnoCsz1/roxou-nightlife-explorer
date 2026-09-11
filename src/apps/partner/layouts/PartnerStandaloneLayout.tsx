@@ -101,7 +101,7 @@ const PartnerStandaloneLayout = () => {
             }}
           >
             <div className="min-w-0">
-              <Outlet />
+              <PartnerShellOutlet />
             </div>
           </div>
         </SidebarInset>
