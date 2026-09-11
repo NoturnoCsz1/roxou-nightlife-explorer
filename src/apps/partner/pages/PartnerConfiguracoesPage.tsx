@@ -47,7 +47,7 @@ import {
 
 import { PartnerScreen } from "../components/PartnerScreen";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { partnerSignOut } from "../services/partnerSignOut";
 import { toast } from "@/hooks/use-toast";
 import { trackPartnerClient } from "../lib/partnerInteractions";
 
