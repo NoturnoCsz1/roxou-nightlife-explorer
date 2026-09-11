@@ -13,6 +13,8 @@ interface Props {
   className?: string;
   /** quando true não adiciona padding-bottom extra (útil para telas com FAB já gerenciado) */
   noBottomGap?: boolean;
+  /** layout mais largo para telas densas (dashboard) */
+  wide?: boolean;
 }
 
 export function PartnerScreen({
@@ -22,11 +24,14 @@ export function PartnerScreen({
   children,
   className,
   noBottomGap,
+  wide,
 }: Props) {
   return (
-    <section className={cn("w-full max-w-3xl mx-auto min-w-0", className)}>
+    <section
+      className={cn("w-full mx-auto min-w-0", wide ? "max-w-3xl xl:max-w-5xl" : "max-w-3xl", className)}
+    >
       <header
-        className="sticky top-0 z-20 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-md border-b border-white/5"
+        className="sticky top-0 z-20 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-md border-b border-border/40"
         style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top, 0px))" }}
       >
         <div className="flex items-center justify-between gap-3">
