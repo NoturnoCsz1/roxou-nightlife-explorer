@@ -1,17 +1,15 @@
 /**
- * PartnerImageUploader — Fase 9E
- * Upload de logo do parceiro para o bucket `uploads` (pasta `partners/<id>/`).
+ * PartnerImageUploader — backend oficial
+ * Upload de imagem do venue no bucket oficial `venues`
+ * (pasta `<organization_id>/`).
  */
 import { useRef, useState } from "react";
 import { Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  uploadPartnerImage,
-  type PartnerImageType,
-} from "../services/partnerProfile";
+import { uploadVenueImage, type PartnerImageType } from "../services/partnerProfile";
 
 interface Props {
-  partnerId: string;
+  organizationId: string;
   currentUrl: string | null;
   onUploaded: (url: string) => void;
   type?: PartnerImageType;
@@ -20,7 +18,7 @@ interface Props {
 }
 
 export function PartnerImageUploader({
-  partnerId,
+  organizationId,
   currentUrl,
   onUploaded,
   type = "logo",
@@ -40,12 +38,13 @@ export function PartnerImageUploader({
 
     setUploading(true);
     try {
-      const url = await uploadPartnerImage(partnerId, file, type);
+      const url = await uploadVenueImage(organizationId, file, type);
       onUploaded(url);
       setPreview(url);
       toast.success("Imagem enviada.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha no upload.";
+      setPreview(currentUrl ?? null);
       toast.error(msg);
     } finally {
       setUploading(false);
@@ -85,7 +84,7 @@ export function PartnerImageUploader({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          disabled={uploading || disabled}
+          disabled={uploading || disabled || !organizationId}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs hover:border-primary/50 transition disabled:opacity-50"
         >
           {uploading ? (
