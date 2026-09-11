@@ -26,7 +26,7 @@ interface OrganizationMemberRow {
   role_id: string | null;
   role_code: string | null;
   status: string | null;
-  organizations?: { id: string; name: string; slug: string | null } | null;
+  organizations?: { id: string; name: string } | null;
 }
 
 interface VenueRow {
