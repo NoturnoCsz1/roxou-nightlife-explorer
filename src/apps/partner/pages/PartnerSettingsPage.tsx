@@ -21,6 +21,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { usePartnerAuth } from "../hooks/usePartnerAuth";
 import { submitBetaFeedback } from "../services/partnerBeta";
+import { AdminAdoptOrphanLinkTool } from "../components/AdminAdoptOrphanLinkTool";
 
 type FeedbackKind = "suggestion" | "issue" | "contact";
 
@@ -152,6 +153,10 @@ const PartnerSettingsPage = () => {
           />
         </div>
       </GlassCard>
+
+      {/* TEMPORÁRIO (homologação): visível apenas para admin/superadmin do
+          banco oficial. Remover após o vínculo do link expo2026. */}
+      <AdminAdoptOrphanLinkTool />
 
       <Dialog open={!!kind} onOpenChange={(o) => (!o ? close() : null)}>
         <DialogContent className="max-w-md">
