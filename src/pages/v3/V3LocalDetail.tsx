@@ -86,8 +86,7 @@ export default function V3LocalDetail() {
         .eq("slug", slug!)
         .eq("active", true)
         .maybeSingle();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return data as unknown as Record<string, any> | null;
+      return data as unknown as Tables<"partners"> | null;
     },
     enabled: !!slug,
   });
