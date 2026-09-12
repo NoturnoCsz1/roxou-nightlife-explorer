@@ -257,7 +257,7 @@ const PublicVenueBioPage = () => {
             </h2>
             <ul className="space-y-3">
               {giveaways.map((g) => {
-                const url = giveawayPublicUrl(g.slug);
+                const url = giveawayPublicUrl(data.venue.slug);
                 return (
                   <li key={g.id} className="overflow-hidden rounded-xl border border-white/10">
                     {g.banner_url ? (

@@ -516,9 +516,13 @@ export interface PublicBioPayload {
   instagram_posts: { url: string }[];
 }
 
-/** Página pública oficial do sorteio (módulo Descobertas). */
-export function giveawayPublicUrl(slug: string | null): string | null {
-  return slug ? `https://roxou.com.br/sorteio/${slug}` : null;
+/**
+ * CTA do sorteio na Bio aponta para a página pública oficial do local
+ * (`/local/{slug}`), única rota pública existente na Roxou — não há
+ * rota pública de detalhe de sorteio no roteamento (publicRoutes.tsx).
+ */
+export function giveawayPublicUrl(venueSlug: string | null): string | null {
+  return venueSlug ? `https://roxou.com.br/local/${venueSlug}` : null;
 }
 
 /** Única superfície de leitura da página pública. Nenhuma tabela protegida. */

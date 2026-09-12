@@ -167,9 +167,9 @@ describe("Roxou Bio oficial — fechamento do módulo", () => {
     expect(mock.calls.at(-1)?.filters).toMatchObject({ id: "link-1", venue_id: VENUE });
   });
 
-  it("monta a URL pública do sorteio a partir do slug oficial", () => {
-    expect(bio.giveawayPublicUrl("sorteio-1")).toBe(
-      "https://roxou.com.br/sorteio/sorteio-1",
+  it("CTA do sorteio aponta para a rota pública oficial do local", () => {
+    expect(bio.giveawayPublicUrl("cultura")).toBe(
+      "https://roxou.com.br/local/cultura",
     );
     expect(bio.giveawayPublicUrl(null)).toBeNull();
   });
