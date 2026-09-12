@@ -336,8 +336,7 @@ const PartnerBioHubPage = () => {
           </a>
         ) : null}
         <p className="text-[11px] text-muted-foreground">
-          O domínio parceiro.click ainda não está ativo no servidor; a página já
-          funciona nesta build para teste.
+          Domínio público oficial: parceiro.roxou.click/{venueSlug}. A rota /p/{venueSlug} continua disponível neste host para teste.
         </p>
       </section>
 
