@@ -117,11 +117,11 @@ const PublicVenueBioPage = lazy(() => import("./pages/PublicVenueBioPage"));
 
 /**
  * Domínio público da Roxou Bio. Nada é assumido no DNS/Nginx: o código só
- * habilita a rota raiz por slug quando o host já for parceiro.click.
+ * habilita a rota raiz por slug quando o host já for parceiro.roxou.click.
  */
 const IS_BIO_DOMAIN =
   typeof window !== "undefined" &&
-  /(^|\.)parceiro\.click$/i.test(window.location.hostname);
+  /(^|\.)parceiro\.roxou\.click$/i.test(window.location.hostname);
 const PartnerPromoterCentralPage = lazy(() => import("./pages/PartnerPromoterCentralPage"));
 
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
@@ -256,7 +256,7 @@ const PartnerApp = () => (
 
 
           {/* Roxou Bio pública — renderiza só o JSON da RPC public_get_venue_bio.
-              URL conceitual: parceiro.click/{slug}. Enquanto o DNS não estiver
+              URL conceitual: parceiro.roxou.click/{slug}. Enquanto o DNS não estiver
               ativo, /p/{slug} responde na build atual. */}
           <Route path="/p/:slug" element={L(<PublicVenueBioPage />)} />
           {IS_BIO_DOMAIN ? (

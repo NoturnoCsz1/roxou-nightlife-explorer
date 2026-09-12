@@ -97,6 +97,6 @@ describe("Roxou Bio oficial — links e página pública", () => {
   });
 
   it("URL pública usa o slug oficial do venue", () => {
-    expect(bio.bioPublicUrl("cultura")).toBe("https://parceiro.click/cultura");
+    expect(bio.bioPublicUrl("cultura")).toBe("https://parceiro.roxou.click/cultura");
   });
 });

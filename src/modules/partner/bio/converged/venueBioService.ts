@@ -20,8 +20,8 @@ export const BIO_UPSERT_RPC = "partner_upsert_venue_bio" as const;
 export const BIO_PUBLIC_RPC = "public_get_venue_bio" as const;
 export const SHORT_LINKS_TABLE = "short_links" as const;
 
-/** Domínio público conceitual da Bio (DNS ainda não configurado). */
-export const BIO_PUBLIC_BASE_URL = "https://parceiro.click";
+/** Domínio público oficial da Roxou Bio. */
+export const BIO_PUBLIC_BASE_URL = "https://parceiro.roxou.click";
 
 export const BIO_THEMES = [
   { value: "roxou_dark", label: "Roxou Dark" },
