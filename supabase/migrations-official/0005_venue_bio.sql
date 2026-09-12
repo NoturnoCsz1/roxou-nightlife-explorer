@@ -1,9 +1,11 @@
 -- =====================================================================
 -- Roxou Bio — camada de apresentação do venue (Supabase OFICIAL foteitrhbfwbzzeanxve)
 -- REVISÃO FINAL (não executada). NÃO APLICAR NO LEGADO (bapdgykghciiyvlqdrqx).
--- Requer 0001: is_org_member / is_org_manager_or_owner / is_staff_or_admin /
--- is_admin_or_superadmin / venue_belongs_to_organization /
--- enforce_org_venue_consistency / touch_updated_at.
+-- Requer APENAS helpers já existentes no banco oficial:
+--   is_org_member(uuid) / is_org_manager_or_owner(uuid) /
+--   is_staff_or_admin() / is_admin_or_superadmin().
+-- Consistência org<->venue e updated_at são resolvidas por funções
+-- específicas da Bio criadas aqui (sem helper genérico global).
 --
 -- PRINCÍPIO: a Bio NÃO duplica nenhum módulo.
 --   identidade/endereço/logo/contatos ....... public.venues
