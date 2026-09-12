@@ -26,6 +26,7 @@ import "./styles/partner-ui.css";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
 import { PartnerSessionProvider } from "./contexts/PartnerSessionContext";
 import PartnerConvergedGate from "./components/PartnerConvergedGate";
+import { convergenceBackendReady } from "@modules/partner/converged/client";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
 const UpdatePasswordPage = lazy(() => import("@/pages/auth/UpdatePasswordPage"));
 

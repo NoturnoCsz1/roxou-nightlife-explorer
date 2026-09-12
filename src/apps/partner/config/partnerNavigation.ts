@@ -16,6 +16,7 @@ import {
   Calendar,
   ClipboardList,
   Cog,
+  Gift,
   Hourglass,
   Layers,
   LayoutDashboard,
