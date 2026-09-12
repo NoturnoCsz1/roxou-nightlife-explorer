@@ -32,6 +32,13 @@ export const BIO_THEMES = [
 
 export type BioTheme = (typeof BIO_THEMES)[number]["value"];
 
+/** Post do Instagram destacado manualmente (sem Meta API, sem scraper). */
+export interface BioInstagramPost {
+  url: string;
+  enabled: boolean;
+  position: number;
+}
+
 export interface VenueBioProfile {
   id: string;
   organization_id: string;
@@ -48,6 +55,15 @@ export interface VenueBioProfile {
   show_giveaways: boolean;
   show_links: boolean;
   show_menu: boolean;
+  show_address: boolean;
+  show_whatsapp: boolean;
+  show_instagram: boolean;
+  show_website: boolean;
+  show_map: boolean;
+  show_hours: boolean;
+  instagram_featured_posts: BioInstagramPost[] | null;
+  reservations_cta_url: string | null;
+  vip_cta_url: string | null;
   primary_cta_label: string | null;
   primary_cta_url: string | null;
   is_published: boolean;
@@ -70,6 +86,15 @@ export type VenueBioPatch = Partial<
     | "show_giveaways"
     | "show_links"
     | "show_menu"
+    | "show_address"
+    | "show_whatsapp"
+    | "show_instagram"
+    | "show_website"
+    | "show_map"
+    | "show_hours"
+    | "instagram_featured_posts"
+    | "reservations_cta_url"
+    | "vip_cta_url"
     | "primary_cta_label"
     | "primary_cta_url"
     | "is_published"
@@ -77,7 +102,7 @@ export type VenueBioPatch = Partial<
 >;
 
 const BIO_SELECT =
-  "id, organization_id, venue_id, headline, about, theme, accent_color, avatar_url, cover_url, show_events, show_reservations, show_vip, show_giveaways, show_links, show_menu, primary_cta_label, primary_cta_url, is_published, published_at, updated_at";
+  "id, organization_id, venue_id, headline, about, theme, accent_color, avatar_url, cover_url, show_events, show_reservations, show_vip, show_giveaways, show_links, show_menu, show_address, show_whatsapp, show_instagram, show_website, show_map, show_hours, instagram_featured_posts, reservations_cta_url, vip_cta_url, primary_cta_label, primary_cta_url, is_published, published_at, updated_at";
 
 const PATCH_KEYS: (keyof VenueBioPatch)[] = [
   "headline",
@@ -92,10 +117,45 @@ const PATCH_KEYS: (keyof VenueBioPatch)[] = [
   "show_giveaways",
   "show_links",
   "show_menu",
+  "show_address",
+  "show_whatsapp",
+  "show_instagram",
+  "show_website",
+  "show_map",
+  "show_hours",
+  "instagram_featured_posts",
+  "reservations_cta_url",
+  "vip_cta_url",
   "primary_cta_label",
   "primary_cta_url",
   "is_published",
 ];
+
+/** Máximo de posts do Instagram destacados na Bio. */
+export const MAX_INSTAGRAM_POSTS = 6;
+
+export function isInstagramPostUrl(value: string): boolean {
+  return /^https:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[A-Za-z0-9_-]+\/?/.test(
+    value.trim(),
+  );
+}
+
+/** Normaliza a lista de posts: valida URL, limita a 6 e reindexa posições. */
+export function normalizeInstagramPosts(
+  posts: BioInstagramPost[],
+): BioInstagramPost[] {
+  const out: BioInstagramPost[] = [];
+  for (const post of posts) {
+    const url = (post?.url ?? "").trim();
+    if (!url) continue;
+    if (!isInstagramPostUrl(url)) {
+      throw new Error("Link do Instagram inválido. Use o endereço do post ou reel.");
+    }
+    out.push({ url, enabled: post.enabled !== false, position: out.length });
+    if (out.length >= MAX_INSTAGRAM_POSTS) break;
+  }
+  return out;
+}
 
 /* ------------------------------------------------------------ validação UI */
 /** Guarda-corpo de UI. A validação definitiva é do banco (CHECK constraints). */
