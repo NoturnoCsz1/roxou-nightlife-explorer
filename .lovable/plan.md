@@ -1,110 +1,61 @@
-## Onda 4 — Horário do flyer + status "confirmado / sugerido / a confirmar"
+# Partner Pro — auditoria e finalização das ferramentas operacionais
 
-### Diagnóstico
+Auditoria feita direto na base oficial (`foteitrhbfwbzzeanxve`, acesso público) e no código.
+Nada foi alterado, nenhuma migration criada, nenhum deploy.
 
-**Causa do horário não aplicado (confirmado no código, sem alterar prompts):**
+## 1. Mapa por módulo
 
-1. A Edge Function `extract-flyer-metadata` já retorna `date_iso` (com hora) e a flag `time_is_unknown` — mas o pipeline de bulk trata "hora ausente" e "hora extraída com baixa confiança" como o mesmo estado binário (`time_is_unknown: boolean`). Não existe distinção entre **horário confirmado no flyer**, **horário sugerido pelo parceiro** e **horário a confirmar**.
-2. Em `EventoBulkForm.tsx` (linhas 727-742), a variável `finalTimeIsUnknown` é forçada a `true` sempre que o `date_iso` não vem com hora, mesmo que exista contexto (funcionamento do parceiro). Não há tentativa de fallback.
-3. O contador "Prontos / Revisão / Publicáveis" usa `getChecklist(e).complete`, que exige `date_time` completo mas não distingue eventos com hora sugerida vs. confirmada.
+| Módulo | Estrutura oficial existente | O que funciona | O que está quebrado/faltando | Precisa migration? |
+| --- | --- | --- | --- | --- |
+| Reservas | `reservations`, `reservation_types`, `reservation_settings`, enums de status/pagamento/depósito | Leitura (listas, tipos, configurações) | **Todas as ações de escrita falham**: o app chama funções que não existem na base oficial (criar, editar, mudar status, check-in, pagamento, liberar mesa, salvar configurações e tipos, disponibilidade). Só existem de verdade `partner_reservation_set_status` e `partner_reservation_checkin` | Sim (mínima) |
+| Atendimento / fila | `reservation_waitlist` (nome, telefone, pessoas, tipo, status, avisado em, expira em) | Leitura da fila | Não existe ação de adicionar, chamar, atender, cancelar ou converter em reserva; tela só mostra estado vazio | Sim (mínima) |
+| Equipe e acessos | `organizations`, `organization_members`, `organization_invitations`, `users`, papéis oficiais | Sessão e permissões já resolvidas | Tela sem listagem real, sem criar acesso, sem revogar, sem trocar função; "Revogar tudo" sem confirmação forte | A confirmar (provavelmente só leitura/escrita direta com as regras já existentes) |
+| Eventos | `public.events` (venue_id, status, start_date, end_date) | Leitura por estabelecimento | Carrega no máximo 300 registros numa lista única, sem separação Próximos / Acontece agora / Pendentes / Passados e sem paginação | Não |
+| Eventos na Bio | `venue_bio_profiles` + `public_get_venue_bio` | Próximos eventos publicados | Não há separação de "acontece agora" nem opção de exibir eventos anteriores | Sim (1 coluna de preferência) |
+| Sorteios | `giveaways`, `giveaway_participants`, `giveaway_draws`, `giveaway_referrals` (com `venue_id`, prêmio, período, data do sorteio, evento) | Listagem básica e resultado | Sem visão por situação, sem contagem de participantes clara, sem link público/copiar, sem caminho para pedir um sorteio novo | Sim, se você quiser o pedido registrado no banco |
+| Lista VIP | `vip_lists`, `vip_list_entries`, `promoter_profiles`, enums de situação | Leitura de listas, participantes e promoters; check-in e mudança de situação de participante | **Criar lista, editar lista, abrir/encerrar, adicionar participante, criar/editar promoter e métricas de promoter chamam funções inexistentes**; fluxo espalhado em 9 telas | Sim (mínima) |
 
-**Campos envolvidos:**
+## 2. Causa raiz principal
 
-- `EventFormData.date_time` (string `YYYY-MM-DDTHH:mm`)
-- `EventFormData.time_is_unknown` (boolean, já existe em banco)
-- Retorno da edge: `data.date_iso`, `data.time_is_unknown`
-- Parceiro: `partners.*` (ver bloqueio abaixo)
+Quando o Partner Pro migrou para a base oficial, os serviços continuaram chamando as funções do banco antigo
+(`partner_create_reservation`, `partner_create_vip_list`, `partner_add_vip_entry`, `partner_upsert_promoter_profile`, etc.).
+Essas funções **não existem** na base oficial — por isso "Criar reserva manual", fila, criação de lista VIP e promoters
+simplesmente não funcionam. As leituras funcionam porque são consultas diretas às tabelas.
 
-### Bloqueio crítico — funcionalidade parcial
+Na base oficial existem hoje apenas: `partner_reservation_set_status`, `partner_reservation_checkin`,
+`partner_vip_entry_set_status`, `partner_vip_entry_checkin`, `partner_promoter_set_active`,
+`partner_update_venue_profile`, `partner_upsert_venue_bio`, `public_get_venue_bio`, `execute_giveaway_draw`.
 
-O escopo pede: **"se o flyer não tiver horário, sugerir horário pelo funcionamento do parceiro quando houver um único horário confiável"**.
+## 3. Como pretendo corrigir (sem duplicar nada)
 
-A coluna `partners.opening_hours` **não existe** no schema (confirmado em `src/integrations/supabase/types.ts` e no comentário do próprio `PartnerOpeningHoursEditor.tsx`: "A coluna `opening_hours` ainda não existe em `partners`"). O usuário proibiu explicitamente alterar banco/RLS nesta onda.
+**Escritas que faltam:** as tabelas oficiais já têm regras de acesso por organização, então a maior parte das ações
+passa a ser gravação direta na tabela oficial correspondente, respeitando exatamente as mesmas regras — sem
+funções novas, sem tabelas novas, sem banco paralelo. Onde a regra oficial exigir função (mudança de situação e
+check-in), uso as que já existem.
 
-**Duas opções — preciso da sua escolha antes de implementar:**
+**Migrations realmente necessárias (proposta mínima, entregue para você aprovar antes de rodar):**
+1. Uma coluna de preferência em `venue_bio_profiles` para exibir eventos anteriores na Bio.
+2. Opcional: registro de "pedido de sorteio" reaproveitando estrutura existente — só se você quiser o pedido
+   gravado; caso contrário o botão abre contato direto com a equipe Roxou.
 
-**Opção A (recomendada, 100% dentro das restrições):**  
-Implementar apenas o **status semântico do horário** (confirmado / a confirmar) usando o campo `time_is_unknown` já existente + uma flag client-side `time_source: "flyer" | "batch" | "manual" | "unknown"` no estado do bulk (não persistida). O fallback por parceiro fica registrado como **"pendente — depende de** `partners.opening_hours`**"** e a UI mostra o horário como "a confirmar" quando `time_is_unknown === true`.
+## 4. Entrega proposta, em ondas
 
-**Opção B:**  
-Você libera a criação da coluna `partners.opening_hours` (jsonb) via migration nesta onda. Aí o fallback fica funcional.
+- **Onda A — Reservas + Fila:** ações funcionando (criar reserva manual, confirmar, check-in, liberar mesa,
+  adicionar/chamar/atender/cancelar na fila, converter fila em reserva), tela principal focada em hoje,
+  próximas chegadas, pendentes, ocupação e próxima reserva; menus reagrupados em Reservas / Operação / Configuração.
+- **Onda B — Equipe e acessos:** lista real de acessos, criar, revogar (com confirmação forte) e trocar função.
+- **Onda C — Eventos:** histórico completo com abas Próximos / Acontece agora / Pendentes / Passados e carregamento
+  por páginas; publicado continua só leitura.
+- **Onda D — Bio:** blocos Próximos eventos / Acontece agora / Eventos anteriores (opcional pelo parceiro).
+- **Onda E — Sorteios:** painel útil por situação, com participantes, link público, copiar e CTA "Solicitar novo sorteio".
+- **Onda F — Lista VIP simplificada:** uma tela principal com listas abertas, criação em um fluxo único e tudo o mais
+  dentro da própria lista (participantes, promoters, check-in, link, histórico).
 
-### Plano (assumindo Opção A)
+Cada onda termina com verificação de tipos, testes (incluindo novos dos fluxos corrigidos) e build do Partner.
+Sem deploy.
 
-#### 1. Novo helper `src/lib/eventTimeStatus.ts`
+## 5. Depende de decisão sua
 
-Função pura que classifica um evento em um dos três estados, sem tocar banco:
-
-```text
-timeStatus(form) →
-  "confirmed"  se date_time tem hora E time_is_unknown === false E hora !== "00:00"
-  "suggested"  se date_time tem hora E time_is_unknown === false E veio de padrão do lote (marcador in-memory)
-  "unknown"    se time_is_unknown === true OU hora === "00:00"
-```
-
-#### 2. `EventoBulkForm.tsx`
-
-- Adicionar `timeSource?: "flyer" | "batch" | "manual"` no tipo local `BulkItem` (não vai para o payload).
-- Ao aplicar `finalDateTime`, marcar `timeSource` conforme origem (`extractedHasTime` → `"flyer"`; `useBatchTime` → `"batch"`; edição manual → `"manual"`).
-- Nunca inventar hora: se `data.time_is_unknown === true` e não há batch time, manter `time_is_unknown: true` e `date_time` sem hora (`T00:00`), exatamente como hoje.
-- Badge no card: `⏰ Horário confirmado` (verde) / `⏰ Horário sugerido — confira` (âmbar) / `⏰ Sem horário — a confirmar` (cinza).
-
-#### 3. Contadores "Prontos / Revisão / Publicáveis"
-
-- Em `itemFlags` (bulk form): item com `timeStatus === "unknown"` passa a contar em **Revisão**, não em **Prontos**, mesmo com todos os outros campos preenchidos.
-- Item com `timeStatus === "suggested"` conta em **Revisão** até o admin confirmar (clicar num check "confirmar horário").
-
-#### 4. Listagem admin (`useEventosListActions.ts` / `getChecklist`)
-
-- `getChecklist(e).complete` passa a exigir `!e.time_is_unknown` (já é hoje via `date_time`, mas explicitar reduz falso "pronto").
-- Sem alterar publicação/slug/Onda 2/Onda 3.
-
-#### 5. Validação
-
-- `bunx tsgo --noEmit`
-- `bun run build`
-- Reportar: causa, campos, fallback (bloqueado ou aplicado), impacto em Rascunhos/Revisão.
-
-### Não alterado
-
-Publicação, slug, Onda 2 (IA(N)), Onda 3 (402), banco, RLS, auth, prompts, Edge Functions, Partner Pro/Motorista/Transporte, concorrência, `handleBulkSave`, `DescriptionWorker`.
-
----
-
-**Confirme a Opção A (sem coluna nova) ou Opção B (crio a migration** `partners.opening_hours`**) para eu prosseguir.**
-
-&nbsp;
-
-Confirmo a Opção A.
-
-&nbsp;
-
-Prosseguir sem migration e sem coluna nova.
-
-&nbsp;
-
-Implementar apenas:
-
-- status semântico do horário: confirmado / sugerido / a confirmar;
-
-- flag client-side `timeSource`;
-
-- badges visuais;
-
-- item com horário desconhecido indo para Revisão;
-
-- item com horário sugerido exigindo confirmação manual;
-
-- sem fallback real por funcionamento do parceiro por enquanto.
-
-&nbsp;
-
-Registrar no relatório que o fallback por funcionamento do parceiro está bloqueado porque `partners.opening_hours` não existe no schema e será uma etapa futura separada.
-
-&nbsp;
-
-Rodar:
-
-bunx tsgo --noEmit
-
-bun run build
+1. Aprovar o caminho de escrita direta nas tabelas oficiais (em vez de criar funções novas no banco).
+2. "Solicitar novo sorteio": registro no banco ou apenas contato direto com a equipe Roxou?
+3. Confirmar a ordem das ondas (sugiro A → B → C → D → E → F) ou pedir que eu faça tudo de uma vez.
