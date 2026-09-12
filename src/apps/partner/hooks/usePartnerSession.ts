@@ -51,13 +51,15 @@ export function usePartnerSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
+  const load = useCallback(async (options?: { force?: boolean }) => {
+    // Só bloqueia com loader quando ainda não há identidade resolvida.
+    if (!getCachedPartnerIdentity() || options?.force) setIsLoading(true);
     setError(null);
     try {
-      const next = await resolvePartnerSession({
+      const next = await resolvePartnerSessionCached({
         preferredOrganizationId: readStored(SELECTED_ORGANIZATION_STORAGE_KEY),
         preferredVenueId: readStored(SELECTED_VENUE_STORAGE_KEY),
+        force: options?.force,
       });
       setSession(next);
       writeStored(SELECTED_ORGANIZATION_STORAGE_KEY, next.organizationId);
@@ -72,13 +74,13 @@ export function usePartnerSession() {
 
   useEffect(() => {
     let mounted = true;
-    const { data: sub } = partnerSupabase.auth.onAuthStateChange(() => {
+    const unsubscribe = subscribePartnerIdentity(() => {
       if (mounted) void load();
     });
     void load();
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [load]);
 
