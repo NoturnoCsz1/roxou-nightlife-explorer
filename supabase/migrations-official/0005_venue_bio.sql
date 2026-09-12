@@ -229,12 +229,17 @@ AS $$
       'primary_cta_label', b.primary_cta_label,
       'primary_cta_url', b.primary_cta_url
     ),
+    -- Links: sempre via URL OFICIAL do encurtador (https://roxou.click/<slug>).
+    -- target_url NÃO é exposto publicamente, para que todo clique passe pelo
+    -- redirecionador oficial e seja contabilizado no tracking já existente.
     'links', CASE WHEN b.show_links THEN COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
-               'title', l.title, 'slug', l.slug, 'url', l.target_url
+               'title', l.title,
+               'slug', l.slug,
+               'short_url', 'https://roxou.click/' || l.slug
              ) ORDER BY l.bio_position, l.created_at)
       FROM (
-        SELECT s.title, s.slug, s.target_url, s.bio_position, s.created_at
+        SELECT s.title, s.slug, s.bio_position, s.created_at
         FROM public.short_links s
         WHERE s.venue_id = v.id AND s.show_on_bio AND s.is_active
         ORDER BY s.bio_position, s.created_at
