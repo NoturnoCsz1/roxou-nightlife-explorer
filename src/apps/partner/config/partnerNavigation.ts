@@ -86,6 +86,8 @@ export const FULL_NAVIGATION: NavGroup[] = [
       { to: "/bio", label: "Bio", icon: Link2, modes: MANAGER_LIKE, match: (p) => p === "/bio" || p.startsWith("/bio/") && !p.startsWith("/bio/menu") && !p.startsWith("/bio/qr") && !p.startsWith("/bio/compartilhar") && !p.startsWith("/bio/analytics") },
       { to: "/bio/menu", label: "Cardápio", icon: ClipboardList, modes: MANAGER_LIKE, match: (p) => p.startsWith("/bio/menu") },
       { to: "/eventos", label: "Eventos", icon: Sparkles, modes: MANAGER_LIKE, match: (p) => p.startsWith("/eventos") },
+      { to: "/links", label: "Links", icon: Link2, modes: MANAGER_LIKE, match: (p) => p.startsWith("/links") },
+      { to: "/sorteios", label: "Sorteios", icon: Gift, modes: MANAGER_LIKE, match: (p) => p.startsWith("/sorteios") },
       { to: "/listas", label: "Lista VIP", icon: ListChecks, modes: MANAGER_LIKE, match: (p) => p.startsWith("/listas") || p.startsWith("/lista-vip") },
       { to: "/promoter-central", label: "Promoters", icon: Megaphone, modes: MANAGER_LIKE },
       { to: "/bio/qr", label: "QR Codes", icon: QrCode, modes: MANAGER_LIKE, match: (p) => p.startsWith("/bio/qr") },
