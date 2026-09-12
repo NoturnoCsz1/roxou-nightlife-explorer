@@ -202,10 +202,25 @@ export function buildBioPatch(raw: VenueBioPatch): Record<string, unknown> {
   if ("accent_color" in out && !isHexColor(out.accent_color as string | null)) {
     throw new Error("Cor inválida. Use o formato #RRGGBB.");
   }
-  for (const urlKey of ["avatar_url", "cover_url", "primary_cta_url"] as const) {
+  for (const urlKey of [
+    "avatar_url",
+    "cover_url",
+    "primary_cta_url",
+    "reservations_cta_url",
+    "vip_cta_url",
+  ] as const) {
     if (urlKey in out && !isSafePublicUrl(out[urlKey] as string | null)) {
       throw new Error("URL inválida. Use http:// ou https://.");
     }
+  }
+  if ("instagram_featured_posts" in out) {
+    const posts = out.instagram_featured_posts;
+    if (!Array.isArray(posts)) {
+      throw new Error("Lista de posts do Instagram inválida.");
+    }
+    out.instagram_featured_posts = normalizeInstagramPosts(
+      posts as BioInstagramPost[],
+    );
   }
   return out;
 }
