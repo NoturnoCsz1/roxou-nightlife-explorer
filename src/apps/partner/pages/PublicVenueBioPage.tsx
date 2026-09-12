@@ -2,6 +2,7 @@
  * PublicVenueBioPage — página pública da Roxou Bio.
  *
  * URL conceitual: parceiro.click/{venues.slug}
+ * Domínio público oficial: parceiro.roxou.click/{slug}
  * Rota de teste na build atual: /p/{slug}
  *
  * Renderiza EXCLUSIVAMENTE o JSON de `public.public_get_venue_bio(slug)`.
