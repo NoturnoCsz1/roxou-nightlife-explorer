@@ -181,3 +181,27 @@ describe("Roxou Bio oficial — fechamento do módulo", () => {
     expect(bio.giveawayPublicUrl(null)).toBeNull();
   });
 });
+
+describe("Roxou Bio — criação de link: conflito de código", () => {
+  it("consulta o slug no encurtador oficial antes de inserir", async () => {
+    await bio.createBioLink(
+      { title: "Expo", slug: "expo2026", target_url: "https://ex.com" },
+      VENUE,
+      "org-1",
+      USER,
+      0,
+    );
+    expect(mock.calls.filter((c) => c.table === "short_links").length).toBe(2);
+    expect(mock.calls.at(-2)?.filters).toMatchObject({ slug: "expo2026" });
+  });
+
+  it("traduz erro de código duplicado em mensagem clara", () => {
+    expect(bio.describeLinkError({ code: "23505" }, "expo2026").message).toContain(
+      "já está em uso",
+    );
+  });
+
+  it("traduz erro de permissão em mensagem clara", () => {
+    expect(bio.describeLinkError({ code: "42501" }).message).toContain("permissão");
+  });
+});
