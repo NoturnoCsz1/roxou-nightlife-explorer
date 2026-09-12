@@ -24,7 +24,11 @@ import {
   partnerBackendIsDedicated,
   partnerSupabase,
 } from "../backend/partnerSupabase";
-import { fetchOfficialMemberships } from "../domain/partnerSessionGateway";
+import {
+  getCachedPartnerIdentity,
+  loadPartnerIdentity,
+  subscribePartnerIdentity,
+} from "../domain/partnerIdentityStore";
 import type { PartnerRole } from "../types";
 import {
   getCurrentPartnerSubscription,
