@@ -353,6 +353,101 @@ export async function reorderBioLinks(
   }
 }
 
+export interface BioLinkInput {
+  title: string;
+  slug: string;
+  target_url: string;
+  bio_icon?: BioLinkIcon | null;
+}
+
+/** Normaliza o código do link (mesma regra do encurtador oficial). */
+export function normalizeBioLinkSlug(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+/**
+ * Cria um link novo já vinculado à Bio. O link continua sendo um registro
+ * normal do encurtador oficial (roxou.click) — nenhuma tabela paralela.
+ */
+export async function createBioLink(
+  input: BioLinkInput,
+  venueId: string,
+  organizationId: string,
+  userId: string,
+  position: number,
+): Promise<BioShortLink> {
+  const slug = normalizeBioLinkSlug(input.slug || input.title);
+  if (!slug) throw new Error("Informe um código para o link.");
+  const target = input.target_url?.trim();
+  if (!isSafePublicUrl(target) || !target) {
+    throw new Error("Informe uma URL de destino válida (https://...).");
+  }
+
+  const { data, error } = await officialClient()
+    .from(SHORT_LINKS_TABLE)
+    .insert({
+      title: input.title?.trim() || null,
+      slug,
+      target_url: target,
+      is_active: true,
+      created_by: userId,
+      venue_id: venueId,
+      organization_id: organizationId,
+      show_on_bio: true,
+      bio_position: position,
+      bio_icon: input.bio_icon ?? null,
+    })
+    .select(LINK_SELECT)
+    .single();
+  if (error) throw error;
+  return data as unknown as BioShortLink;
+}
+
+export async function updateBioLink(
+  linkId: string,
+  venueId: string,
+  patch: Partial<Pick<BioShortLink, "title" | "target_url" | "bio_icon" | "is_active">>,
+): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  if ("title" in patch) payload.title = patch.title?.trim() || null;
+  if ("bio_icon" in patch) payload.bio_icon = patch.bio_icon ?? null;
+  if ("is_active" in patch) payload.is_active = patch.is_active;
+  if ("target_url" in patch) {
+    const target = patch.target_url?.trim();
+    if (!target || !isSafePublicUrl(target)) {
+      throw new Error("Informe uma URL de destino válida (https://...).");
+    }
+    payload.target_url = target;
+  }
+  if (Object.keys(payload).length === 0) return;
+
+  const { error } = await officialClient()
+    .from(SHORT_LINKS_TABLE)
+    .update(payload)
+    .eq("id", linkId)
+    .eq("venue_id", venueId);
+  if (error) throw error;
+}
+
+/** Remove o link da Bio sem apagar histórico de cliques do encurtador. */
+export async function removeBioLink(
+  linkId: string,
+  venueId: string,
+): Promise<void> {
+  const { error } = await officialClient()
+    .from(SHORT_LINKS_TABLE)
+    .update({ show_on_bio: false, is_active: false })
+    .eq("id", linkId)
+    .eq("venue_id", venueId);
+  if (error) throw error;
+}
+
 /* ----------------------------------------------------------- página pública */
 export interface PublicBioPayload {
   venue: {
@@ -360,11 +455,13 @@ export interface PublicBioPayload {
     name: string;
     slug: string;
     city: string | null;
+    state: string | null;
     street: string | null;
     address: string | null;
     instagram: string | null;
     whatsapp: string | null;
     website: string | null;
+    opening_hours: Record<string, unknown> | null;
     description: string | null;
     logo_url: string | null;
     cover_url: string | null;
@@ -383,11 +480,17 @@ export interface PublicBioPayload {
     show_giveaways: boolean;
     show_links: boolean;
     show_menu: boolean;
+    show_map: boolean;
     primary_cta_label: string | null;
     primary_cta_url: string | null;
   };
   /** Links já vêm com `short_url` do roxou.click. `target_url` nunca é exposto. */
-  links: { title: string | null; slug: string; short_url: string }[];
+  links: {
+    title: string | null;
+    slug: string;
+    icon: BioLinkIcon | null;
+    short_url: string;
+  }[];
   events: {
     id: string;
     title: string;
@@ -398,6 +501,24 @@ export interface PublicBioPayload {
     ticket_url: string | null;
     is_free: boolean | null;
   }[];
+  giveaways: {
+    id: string;
+    title: string | null;
+    slug: string | null;
+    prize_title: string | null;
+    banner_url: string | null;
+    starts_at: string | null;
+    ends_at: string | null;
+    status: string | null;
+  }[];
+  reservations: { available: boolean; cta_url: string | null } | null;
+  vip: { available: boolean; cta_url: string | null } | null;
+  instagram_posts: { url: string }[];
+}
+
+/** Página pública oficial do sorteio (módulo Descobertas). */
+export function giveawayPublicUrl(slug: string | null): string | null {
+  return slug ? `https://roxou.com.br/sorteio/${slug}` : null;
 }
 
 /** Única superfície de leitura da página pública. Nenhuma tabela protegida. */
