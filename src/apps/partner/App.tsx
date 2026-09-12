@@ -26,6 +26,7 @@ import "./styles/partner-ui.css";
 import PartnerStandaloneLayout from "./layouts/PartnerStandaloneLayout";
 import { PartnerSessionProvider } from "./contexts/PartnerSessionContext";
 import PartnerConvergedGate from "./components/PartnerConvergedGate";
+import { convergenceBackendReady } from "@modules/partner/converged/client";
 import PartnerLoginPage from "./pages/PartnerLoginPage";
 const UpdatePasswordPage = lazy(() => import("@/pages/auth/UpdatePasswordPage"));
 
@@ -49,6 +50,11 @@ const PartnerOperacaoPage = lazy(() => import("./pages/PartnerOperacaoPage"));
 const PartnerComingSoonPage = lazy(() => import("./pages/PartnerComingSoonPage"));
 const PartnerProfilePage = lazy(() => import("./pages/PartnerProfilePage"));
 const PartnerEventsPage = lazy(() => import("./pages/PartnerEventsPage"));
+const PartnerEventsOfficialPage = lazy(
+  () => import("./pages/PartnerEventsOfficialPage"),
+);
+const PartnerLinksPage = lazy(() => import("./pages/PartnerLinksPage"));
+const PartnerSorteiosPage = lazy(() => import("./pages/PartnerSorteiosPage"));
 const PartnerEventNewRoute = lazy(() =>
   import("./routes/PartnerEventRoutes").then((m) => ({ default: m.PartnerEventNewRoute })),
 );
@@ -158,7 +164,18 @@ const PartnerApp = () => (
             <Route path="perfil" element={L(<PartnerProfilePage />)} />
             <Route path="promoter-central" element={C(<PartnerPromoterCentralPage />)} />
             <Route path="promoters/central" element={<Navigate to="/promoter-central" replace />} />
-            <Route path="eventos" element={L(<PartnerEventsPage />)} />
+            <Route
+              path="eventos"
+              element={L(
+                convergenceBackendReady ? (
+                  <PartnerEventsOfficialPage />
+                ) : (
+                  <PartnerEventsPage />
+                ),
+              )}
+            />
+            <Route path="links" element={C(<PartnerLinksPage />)} />
+            <Route path="sorteios" element={C(<PartnerSorteiosPage />)} />
             <Route path="eventos/novo" element={L(<PartnerEventNewRoute />)} />
             <Route path="eventos/:eventId" element={L(<PartnerEventDetailRoute />)} />
             <Route path="eventos/:eventId/editar" element={L(<PartnerEventEditRoute />)} />

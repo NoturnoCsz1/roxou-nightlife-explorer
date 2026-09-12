@@ -1,1 +1,0 @@
-import{s as r}from"./partner-BZuOX8FU.js";async function s(){try{await r.rpc("close_due_partner_vip_lists")}catch{}}async function t(){try{await r.rpc("close_due_partner_reservations")}catch{}}async function c(){try{await r.rpc("expire_due_partner_reservations")}catch{}}export{t as a,s as c,c as e};
