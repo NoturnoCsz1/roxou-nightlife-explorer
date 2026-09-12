@@ -17,8 +17,11 @@
 --     Storage ........... bucket oficial `venues` (já usado pelo Perfil)
 --   AUSENTE (único conteúdo criado aqui — colunas, nunca tabelas):
 --     venue_bio_profiles: flags de quais informações do venue aparecem,
---                         posts destacados do Instagram (jsonb),
---                         CTA de reservas/VIP
+--                         posts destacados do Instagram (jsonb)
+--   NAO CRIADO (decisao de revisao): reservations_cta_url / vip_cta_url.
+--     As URLs publicas de Reservas e VIP ja tem fonte de verdade oficial
+--     (rotas /:partnerSlug/reservas e /:partnerSlug/vip). A RPC devolve
+--     apenas `available`; nenhuma segunda fonte de URL e criada aqui.
 --     short_links:        bio_icon (apenas apresentação/ícone do link)
 -- =============================================================================
 
@@ -30,9 +33,7 @@ ALTER TABLE public.venue_bio_profiles
   ADD COLUMN IF NOT EXISTS show_website   boolean NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS show_map       boolean NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS show_hours     boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS instagram_featured_posts jsonb NOT NULL DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS reservations_cta_url text,
-  ADD COLUMN IF NOT EXISTS vip_cta_url text;
+  ADD COLUMN IF NOT EXISTS instagram_featured_posts jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 DO $$
 BEGIN
@@ -43,16 +44,6 @@ BEGIN
       ADD CONSTRAINT venue_bio_ig_posts_array CHECK (
         jsonb_typeof(instagram_featured_posts) = 'array'
         AND jsonb_array_length(instagram_featured_posts) <= 6
-      );
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'venue_bio_module_cta_urls'
-  ) THEN
-    ALTER TABLE public.venue_bio_profiles
-      ADD CONSTRAINT venue_bio_module_cta_urls CHECK (
-        (reservations_cta_url IS NULL OR reservations_cta_url ~* '^https?://[^\s<>"'']+$')
-        AND (vip_cta_url IS NULL OR vip_cta_url ~* '^https?://[^\s<>"'']+$')
       );
   END IF;
 END $$;
@@ -90,7 +81,7 @@ AS $$
       'slug', v.slug,
       'city', v.city,
       'state', v.state,
-      'street', v.street,
+      'street', CASE WHEN b.show_address THEN v.street ELSE NULL END,
       'address', CASE WHEN b.show_address THEN v.address ELSE NULL END,
       'instagram', CASE WHEN b.show_instagram THEN v.instagram ELSE NULL END,
       'whatsapp', CASE WHEN b.show_whatsapp THEN v.whatsapp ELSE NULL END,
@@ -166,7 +157,7 @@ AS $$
                gw.starts_at, gw.ends_at, gw.status
         FROM public.giveaways gw
         WHERE gw.venue_id = v.id
-          AND gw.status IN ('active', 'scheduled', 'published')
+          AND gw.status = 'active'
           AND (gw.ends_at IS NULL OR gw.ends_at >= now())
         ORDER BY gw.starts_at NULLS LAST
         LIMIT 6
@@ -177,18 +168,19 @@ AS $$
       'available', EXISTS (
         SELECT 1 FROM public.reservation_types rt
         WHERE rt.venue_id = v.id AND COALESCE(rt.active, false)
-      ),
-      'cta_url', b.reservations_cta_url
+      )
     ) ELSE NULL END,
     -- Lista VIP: apenas sinalização + CTA. Nenhum convidado é exposto.
     'vip', CASE WHEN b.show_vip THEN jsonb_build_object(
       'available', EXISTS (
         SELECT 1 FROM public.vip_lists vl
         WHERE vl.venue_id = v.id
-          AND COALESCE(vl.status, '') NOT IN ('closed', 'cancelled', 'archived', 'draft')
+          -- vip_lists.status e o enum public.vip_list_status
+          -- (draft | open | closed | cancelled | expired): comparacao direta,
+          -- sem COALESCE com texto, para evitar incompatibilidade de tipo.
+          AND vl.status = 'open'::public.vip_list_status
           AND (vl.closes_at IS NULL OR vl.closes_at >= now())
-      ),
-      'cta_url', b.vip_cta_url
+      )
     ) ELSE NULL END,
     -- Instagram: apenas URLs públicas informadas pelo parceiro.
     'instagram_posts', COALESCE((
@@ -231,7 +223,7 @@ DECLARE
     'show_events','show_reservations','show_vip','show_giveaways',
     'show_links','show_menu','primary_cta_label','primary_cta_url','is_published',
     'show_address','show_whatsapp','show_instagram','show_website','show_map',
-    'show_hours','instagram_featured_posts','reservations_cta_url','vip_cta_url'
+    'show_hours','instagram_featured_posts'
   ];
   _bool_keys text[] := ARRAY[
     'show_events','show_reservations','show_vip','show_giveaways','show_links',
@@ -305,8 +297,6 @@ BEGIN
       instagram_featured_posts = CASE WHEN _p ? 'instagram_featured_posts'
                                       THEN _p->'instagram_featured_posts'
                                       ELSE b.instagram_featured_posts END,
-      reservations_cta_url = CASE WHEN _p ? 'reservations_cta_url' THEN _p->>'reservations_cta_url' ELSE b.reservations_cta_url END,
-      vip_cta_url       = CASE WHEN _p ? 'vip_cta_url' THEN _p->>'vip_cta_url' ELSE b.vip_cta_url END,
       primary_cta_label = CASE WHEN _p ? 'primary_cta_label' THEN _p->>'primary_cta_label' ELSE b.primary_cta_label END,
       primary_cta_url   = CASE WHEN _p ? 'primary_cta_url' THEN _p->>'primary_cta_url' ELSE b.primary_cta_url END,
       is_published      = CASE WHEN _p ? 'is_published' THEN (_p->>'is_published')::boolean ELSE b.is_published END
@@ -325,8 +315,7 @@ GRANT EXECUTE ON FUNCTION public.partner_upsert_venue_bio(uuid, uuid, jsonb) TO 
 --   ALTER TABLE public.venue_bio_profiles
 --     DROP COLUMN show_address, DROP COLUMN show_whatsapp, DROP COLUMN show_instagram,
 --     DROP COLUMN show_website, DROP COLUMN show_map, DROP COLUMN show_hours,
---     DROP COLUMN instagram_featured_posts, DROP COLUMN reservations_cta_url,
---     DROP COLUMN vip_cta_url;
+--     DROP COLUMN instagram_featured_posts;
 --   ALTER TABLE public.short_links DROP COLUMN bio_icon;
 --   (reaplicar as funções da 0005_venue_bio.sql)
 -- =============================================================================
