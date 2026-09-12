@@ -336,7 +336,7 @@ const PartnerBioHubPage = () => {
           </a>
         ) : null}
         <p className="text-[11px] text-muted-foreground">
-          Domínio público oficial: parceiro.roxou.click/{venueSlug}. A rota /p/{venueSlug} continua disponível neste host para teste.
+          Domínio público oficial: parceiro.roxou.click/{venue?.slug}. A rota /p/{venue?.slug} continua disponível neste host para teste.
         </p>
       </section>
 
