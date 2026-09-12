@@ -9,12 +9,15 @@
  * hoje. Este hook é o caminho para os módulos convertidos nas próximas fases.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { partnerSupabase } from "../backend/partnerSupabase";
 import {
   EMPTY_PARTNER_SESSION,
   type PartnerSession,
 } from "../domain/partnerSession";
-import { resolvePartnerSession } from "../domain/partnerSessionGateway";
+import {
+  getCachedPartnerIdentity,
+  resolvePartnerSessionCached,
+  subscribePartnerIdentity,
+} from "../domain/partnerIdentityStore";
 import {
   canManageEvents,
   canManageReservations,
