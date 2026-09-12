@@ -1,0 +1,1 @@
+GRANT SELECT (instagram, whatsapp) ON public.partners TO anon;
