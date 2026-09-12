@@ -233,7 +233,7 @@ const PartnerApp = () => (
             <Route path="transportes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="crm" element={L(<PartnerCrmPage />)} />
             <Route path="bio" element={L(<PartnerBioHubPage />)} />
-            <Route path="bio/:tab" element={L(<PartnerBioHubPage />)} />
+            <Route path="bio/:tab" element={<Navigate to="/bio" replace />} />
 
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={C(<PartnerValidatorPage />)} />
