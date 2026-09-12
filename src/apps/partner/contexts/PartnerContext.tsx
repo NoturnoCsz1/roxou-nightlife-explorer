@@ -162,13 +162,13 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
   useEffect(() => {
     let mounted = true;
-    const { data: sub } = partnerSupabase.auth.onAuthStateChange(() => {
+    const unsubscribe = subscribePartnerIdentity(() => {
       if (mounted) void loadAccess();
     });
     void loadAccess();
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [loadAccess]);
 
