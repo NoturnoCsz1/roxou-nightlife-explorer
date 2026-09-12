@@ -18,11 +18,11 @@
 --   AUSENTE (único conteúdo criado aqui — colunas, nunca tabelas):
 --     venue_bio_profiles: flags de quais informações do venue aparecem,
 --                         posts destacados do Instagram (jsonb)
+--     short_links:        bio_icon (apenas apresentacao/icone do link)
 --   NAO CRIADO (decisao de revisao): reservations_cta_url / vip_cta_url.
 --     As URLs publicas de Reservas e VIP ja tem fonte de verdade oficial
 --     (rotas /:partnerSlug/reservas e /:partnerSlug/vip). A RPC devolve
 --     apenas `available`; nenhuma segunda fonte de URL e criada aqui.
---     short_links:        bio_icon (apenas apresentação/ícone do link)
 -- =============================================================================
 
 -- ------------------------------------------------- 1. Bio: novas configurações
@@ -163,14 +163,14 @@ AS $$
         LIMIT 6
       ) g
     ), '[]'::jsonb) ELSE '[]'::jsonb END,
-    -- Reservas: apenas sinalização + CTA. Nenhum dado de reserva é exposto.
+    -- Reservas: apenas sinalização de disponibilidade. Nenhum dado é exposto.
     'reservations', CASE WHEN b.show_reservations THEN jsonb_build_object(
       'available', EXISTS (
         SELECT 1 FROM public.reservation_types rt
         WHERE rt.venue_id = v.id AND COALESCE(rt.active, false)
       )
     ) ELSE NULL END,
-    -- Lista VIP: apenas sinalização + CTA. Nenhum convidado é exposto.
+    -- Lista VIP: apenas sinalização de disponibilidade. Nenhum convidado é exposto.
     'vip', CASE WHEN b.show_vip THEN jsonb_build_object(
       'available', EXISTS (
         SELECT 1 FROM public.vip_lists vl
