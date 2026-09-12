@@ -28,6 +28,8 @@ export function createMockOfficialClient(result: unknown = []) {
       return chain;
     });
     chain.maybeSingle = vi.fn(async () => ({ data: result, error: null }));
+    chain.single = vi.fn(async () => ({ data: result, error: null }));
+    chain.delete = vi.fn(() => chain);
     // await direto na query (PostgrestBuilder é thenable)
     chain.then = (resolve: (v: unknown) => unknown) =>
       Promise.resolve({ data: result, error: null }).then(resolve);

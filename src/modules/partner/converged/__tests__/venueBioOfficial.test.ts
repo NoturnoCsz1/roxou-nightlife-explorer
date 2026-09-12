@@ -100,3 +100,77 @@ describe("Roxou Bio oficial — links e página pública", () => {
     expect(bio.bioPublicUrl("cultura")).toBe("https://parceiro.roxou.click/cultura");
   });
 });
+
+describe("Roxou Bio oficial — fechamento do módulo", () => {
+  it("aceita as novas chaves de exibição e CTA dos módulos", () => {
+    expect(
+      bio.buildBioPatch({
+        show_address: false,
+        show_hours: true,
+        vip_cta_url: "https://roxou.com.br/vip/cultura",
+      }),
+    ).toEqual({
+      show_address: false,
+      show_hours: true,
+      vip_cta_url: "https://roxou.com.br/vip/cultura",
+    });
+  });
+
+  it("rejeita CTA de reservas inválido", () => {
+    expect(() =>
+      bio.buildBioPatch({ reservations_cta_url: "javascript:alert(1)" }),
+    ).toThrow();
+  });
+
+  it("valida, limita e reindexa os posts do Instagram", () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({
+      url: `https://www.instagram.com/p/ABC${i}/`,
+      enabled: true,
+      position: 99,
+    }));
+    const out = bio.buildBioPatch({ instagram_featured_posts: many })
+      .instagram_featured_posts as { position: number }[];
+    expect(out).toHaveLength(bio.MAX_INSTAGRAM_POSTS);
+    expect(out.map((p) => p.position)).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it("rejeita link que não é do Instagram", () => {
+    expect(() =>
+      bio.buildBioPatch({
+        instagram_featured_posts: [
+          { url: "https://exemplo.com/p/1", enabled: true, position: 0 },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("cria link na tabela oficial do encurtador, já vinculado à Bio", async () => {
+    await bio.createBioLink(
+      { title: "Ingressos", slug: "Ingressos da Festa", target_url: "https://ex.com" },
+      VENUE,
+      "org-1",
+      USER,
+      2,
+    );
+    expect(mock.calls.at(-1)?.table).toBe("short_links");
+  });
+
+  it("rejeita link sem destino válido", async () => {
+    await expect(
+      bio.createBioLink({ title: "x", slug: "x", target_url: "ftp://x" }, VENUE, "o", USER, 0),
+    ).rejects.toThrow();
+  });
+
+  it("remover link não apaga o registro do encurtador", async () => {
+    await bio.removeBioLink("link-1", VENUE);
+    expect(mock.calls.at(-1)?.table).toBe("short_links");
+    expect(mock.calls.at(-1)?.filters).toMatchObject({ id: "link-1", venue_id: VENUE });
+  });
+
+  it("monta a URL pública do sorteio a partir do slug oficial", () => {
+    expect(bio.giveawayPublicUrl("sorteio-1")).toBe(
+      "https://roxou.com.br/sorteio/sorteio-1",
+    );
+    expect(bio.giveawayPublicUrl(null)).toBeNull();
+  });
+});
