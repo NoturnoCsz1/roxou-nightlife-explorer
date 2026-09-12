@@ -24,7 +24,11 @@ import {
   partnerBackendIsDedicated,
   partnerSupabase,
 } from "../backend/partnerSupabase";
-import { fetchOfficialMemberships } from "../domain/partnerSessionGateway";
+import {
+  getCachedPartnerIdentity,
+  loadPartnerIdentity,
+  subscribePartnerIdentity,
+} from "../domain/partnerIdentityStore";
 import type { PartnerRole } from "../types";
 import {
   getCurrentPartnerSubscription,
@@ -84,15 +88,18 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
     writeStoredPartnerId(id);
   }, []);
 
-  const loadAccess = useCallback(async () => {
-    setIsLoading(true);
+  const loadAccess = useCallback(async (options?: { force?: boolean }) => {
+    // Loader global só no primeiro bootstrap; refresh acontece em background.
+    if (!getCachedPartnerIdentity() || options?.force) setIsLoading(true);
     setError(null);
     try {
-      const { data: userData } = await partnerSupabase.auth.getUser();
-      const currentUser = userData?.user ?? null;
+      const identity = await loadPartnerIdentity({ force: options?.force });
+      const { data: sessionData } = await partnerSupabase.auth.getSession();
+      const currentUser = sessionData?.session?.user ?? null;
       setUser(currentUser);
+      if (identity.error) setError(identity.error);
 
-      if (!currentUser) {
+      if (!identity.userId) {
         setPartners([]);
         setSubscription(null);
         setSelectedPartnerIdState(null);
@@ -102,7 +109,7 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
       // Backend oficial dedicado: a identidade vem de organization_members.
       if (partnerBackendIsDedicated) {
-        const memberships = await fetchOfficialMemberships(currentUser.id);
+        const memberships = identity.memberships;
         const list: PartnerAccess[] = memberships.map((m) => {
           const venue = m.venues?.[0] ?? null;
           const role: PartnerRole =
@@ -155,13 +162,13 @@ export function PartnerProvider({ children }: PartnerProviderProps) {
 
   useEffect(() => {
     let mounted = true;
-    const { data: sub } = partnerSupabase.auth.onAuthStateChange(() => {
+    const unsubscribe = subscribePartnerIdentity(() => {
       if (mounted) void loadAccess();
     });
     void loadAccess();
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [loadAccess]);
 

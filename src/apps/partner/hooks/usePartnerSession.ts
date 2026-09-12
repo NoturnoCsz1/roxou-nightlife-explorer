@@ -9,12 +9,15 @@
  * hoje. Este hook é o caminho para os módulos convertidos nas próximas fases.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { partnerSupabase } from "../backend/partnerSupabase";
 import {
   EMPTY_PARTNER_SESSION,
   type PartnerSession,
 } from "../domain/partnerSession";
-import { resolvePartnerSession } from "../domain/partnerSessionGateway";
+import {
+  getCachedPartnerIdentity,
+  resolvePartnerSessionCached,
+  subscribePartnerIdentity,
+} from "../domain/partnerIdentityStore";
 import {
   canManageEvents,
   canManageReservations,
@@ -51,13 +54,15 @@ export function usePartnerSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
+  const load = useCallback(async (options?: { force?: boolean }) => {
+    // Só bloqueia com loader quando ainda não há identidade resolvida.
+    if (!getCachedPartnerIdentity() || options?.force) setIsLoading(true);
     setError(null);
     try {
-      const next = await resolvePartnerSession({
+      const next = await resolvePartnerSessionCached({
         preferredOrganizationId: readStored(SELECTED_ORGANIZATION_STORAGE_KEY),
         preferredVenueId: readStored(SELECTED_VENUE_STORAGE_KEY),
+        force: options?.force,
       });
       setSession(next);
       writeStored(SELECTED_ORGANIZATION_STORAGE_KEY, next.organizationId);
@@ -72,13 +77,13 @@ export function usePartnerSession() {
 
   useEffect(() => {
     let mounted = true;
-    const { data: sub } = partnerSupabase.auth.onAuthStateChange(() => {
+    const unsubscribe = subscribePartnerIdentity(() => {
       if (mounted) void load();
     });
     void load();
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      unsubscribe();
     };
   }, [load]);
 
