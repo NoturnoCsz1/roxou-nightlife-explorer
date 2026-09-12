@@ -19,6 +19,7 @@ import SpotlightBadge from "@/components/partners/SpotlightBadge";
 import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
 import { buildPartnerRichDescription } from "@/lib/partnerDescription";
 import { usePartnerAwards, formatAwardPeriod } from "@/hooks/usePartnerAwards";
+import { PUBLIC_PARTNER_COLUMNS } from "@modules/discovery/venues/publicPartnerColumns";
 
 const TOP_WEEK_THRESHOLD = 100;
 
@@ -85,8 +86,8 @@ export default function V3LocalDetail() {
         .eq("slug", slug!)
         .eq("active", true)
         .maybeSingle();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data as unknown as Record<string, any> | null;
-      return data;
     },
     enabled: !!slug,
   });
