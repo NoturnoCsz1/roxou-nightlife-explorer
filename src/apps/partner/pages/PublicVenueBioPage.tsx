@@ -172,30 +172,25 @@ const PublicVenueBioPage = () => {
           </section>
         ) : null}
 
-        {/* Reservas / Lista VIP */}
-        {(data.reservations?.cta_url || data.vip?.cta_url) ? (
+        {/* Reservas / Lista VIP — apenas sinalização de disponibilidade.
+            A URL pública oficial não é derivada aqui (ver venueBioService). */}
+        {data.reservations?.available || data.vip?.available ? (
           <section className="mt-6 grid gap-2 sm:grid-cols-2">
-            {data.reservations?.cta_url ? (
-              <a
-                href={data.reservations.cta_url}
-                target="_blank"
-                rel="noreferrer"
+            {data.reservations?.available ? (
+              <div
                 className="rounded-xl px-4 py-3 text-center text-sm font-semibold text-white"
                 style={{ backgroundColor: accent }}
               >
-                Reservar mesa
-              </a>
+                Reservas disponíveis
+              </div>
             ) : null}
-            {data.vip?.cta_url ? (
-              <a
-                href={data.vip.cta_url}
-                target="_blank"
-                rel="noreferrer"
+            {data.vip?.available ? (
+              <div
                 className="rounded-xl border px-4 py-3 text-center text-sm font-semibold"
                 style={{ borderColor: accent }}
               >
-                Entrar na lista VIP
-              </a>
+                Lista VIP aberta
+              </div>
             ) : null}
           </section>
         ) : null}

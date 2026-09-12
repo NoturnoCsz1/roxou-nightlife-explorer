@@ -86,8 +86,6 @@ type FormState = Required<
     | "show_website"
     | "show_map"
     | "show_hours"
-    | "reservations_cta_url"
-    | "vip_cta_url"
     | "primary_cta_label"
     | "primary_cta_url"
   >
@@ -113,8 +111,6 @@ function toForm(bio: VenueBioProfile): FormState {
     show_website: bio.show_website ?? true,
     show_map: bio.show_map ?? true,
     show_hours: bio.show_hours ?? false,
-    reservations_cta_url: bio.reservations_cta_url ?? "",
-    vip_cta_url: bio.vip_cta_url ?? "",
     primary_cta_label: bio.primary_cta_label ?? "",
     primary_cta_url: bio.primary_cta_url ?? "",
     instagram_featured_posts: Array.isArray(bio.instagram_featured_posts)
@@ -128,7 +124,6 @@ const TOOLS: {
   key: keyof FormState;
   label: string;
   hint: string;
-  ctaKey?: "reservations_cta_url" | "vip_cta_url";
   disabled?: boolean;
 }[] = [
   { key: "show_events", label: "Eventos", hint: "Agenda oficial do estabelecimento" },
@@ -137,13 +132,11 @@ const TOOLS: {
     key: "show_reservations",
     label: "Reservas",
     hint: "Módulo oficial de reservas",
-    ctaKey: "reservations_cta_url",
   },
   {
     key: "show_vip",
     label: "Lista VIP",
     hint: "Módulo oficial de listas VIP",
-    ctaKey: "vip_cta_url",
   },
   { key: "show_giveaways", label: "Sorteios", hint: "Módulo oficial de sorteios" },
   {
@@ -742,15 +735,6 @@ const PartnerBioHubPage = () => {
                 onCheckedChange={(v) => patch({ [tool.key]: v } as Partial<FormState>)}
               />
             </div>
-            {tool.ctaKey && form[tool.key] ? (
-              <Input
-                value={String(form[tool.ctaKey] ?? "")}
-                onChange={(e) =>
-                  patch({ [tool.ctaKey as string]: e.target.value } as Partial<FormState>)
-                }
-                placeholder={`Link do botão de ${tool.label.toLowerCase()} (https://...)`}
-              />
-            ) : null}
           </div>
         ))}
       </section>
