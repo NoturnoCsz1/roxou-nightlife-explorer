@@ -1,0 +1,1 @@
+class n extends Error{constructor(a){super(a),this.name="PartnerScopeError"}}function e(r){if(!(r!=null&&r.organizationId))throw new n("Organização não resolvida na sessão do Partner Pro.");return r.organizationId}function t(r){if(e(r),!(r!=null&&r.venueId))throw new n("Estabelecimento não resolvido na sessão do Partner Pro.");return r.venueId}export{e as a,t as r};
