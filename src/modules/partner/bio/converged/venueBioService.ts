@@ -274,19 +274,36 @@ export function unpublishVenueBio(callerId: string, venueId: string) {
 }
 
 /* -------------------------------------------------------------------- links */
+/** Ícones aceitos pelo banco (`short_links.bio_icon`). */
+export const BIO_LINK_ICONS = [
+  { value: "ticket", label: "Ingresso" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "instagram", label: "Instagram" },
+  { value: "website", label: "Site" },
+  { value: "menu", label: "Cardápio" },
+  { value: "map", label: "Como chegar" },
+  { value: "shop", label: "Loja" },
+  { value: "info", label: "Informação" },
+  { value: "link", label: "Link" },
+] as const;
+
+export type BioLinkIcon = (typeof BIO_LINK_ICONS)[number]["value"];
+
 export interface BioShortLink {
   id: string;
   title: string | null;
   slug: string;
+  target_url: string;
   is_active: boolean;
   clicks_count: number | null;
   venue_id: string | null;
   show_on_bio: boolean;
   bio_position: number;
+  bio_icon: BioLinkIcon | null;
 }
 
 const LINK_SELECT =
-  "id, title, slug, is_active, clicks_count, venue_id, show_on_bio, bio_position, created_at";
+  "id, title, slug, target_url, is_active, clicks_count, venue_id, show_on_bio, bio_position, bio_icon, created_at";
 
 /** Links do estabelecimento + links do usuário ainda sem vínculo de venue. */
 export async function listBioCandidateLinks(
