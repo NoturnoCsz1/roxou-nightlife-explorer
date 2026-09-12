@@ -20,6 +20,7 @@ import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
 import { buildPartnerRichDescription } from "@/lib/partnerDescription";
 import { usePartnerAwards, formatAwardPeriod } from "@/hooks/usePartnerAwards";
 import { PUBLIC_PARTNER_COLUMNS } from "@modules/discovery/venues/publicPartnerColumns";
+import type { Tables } from "@/integrations/supabase/types";
 
 const TOP_WEEK_THRESHOLD = 100;
 
