@@ -62,8 +62,6 @@ export interface VenueBioProfile {
   show_map: boolean;
   show_hours: boolean;
   instagram_featured_posts: BioInstagramPost[] | null;
-  reservations_cta_url: string | null;
-  vip_cta_url: string | null;
   primary_cta_label: string | null;
   primary_cta_url: string | null;
   is_published: boolean;
@@ -93,8 +91,6 @@ export type VenueBioPatch = Partial<
     | "show_map"
     | "show_hours"
     | "instagram_featured_posts"
-    | "reservations_cta_url"
-    | "vip_cta_url"
     | "primary_cta_label"
     | "primary_cta_url"
     | "is_published"
@@ -102,7 +98,7 @@ export type VenueBioPatch = Partial<
 >;
 
 const BIO_SELECT =
-  "id, organization_id, venue_id, headline, about, theme, accent_color, avatar_url, cover_url, show_events, show_reservations, show_vip, show_giveaways, show_links, show_menu, show_address, show_whatsapp, show_instagram, show_website, show_map, show_hours, instagram_featured_posts, reservations_cta_url, vip_cta_url, primary_cta_label, primary_cta_url, is_published, published_at, updated_at";
+  "id, organization_id, venue_id, headline, about, theme, accent_color, avatar_url, cover_url, show_events, show_reservations, show_vip, show_giveaways, show_links, show_menu, show_address, show_whatsapp, show_instagram, show_website, show_map, show_hours, instagram_featured_posts, primary_cta_label, primary_cta_url, is_published, published_at, updated_at";
 
 const PATCH_KEYS: (keyof VenueBioPatch)[] = [
   "headline",
@@ -124,8 +120,6 @@ const PATCH_KEYS: (keyof VenueBioPatch)[] = [
   "show_map",
   "show_hours",
   "instagram_featured_posts",
-  "reservations_cta_url",
-  "vip_cta_url",
   "primary_cta_label",
   "primary_cta_url",
   "is_published",
@@ -206,8 +200,6 @@ export function buildBioPatch(raw: VenueBioPatch): Record<string, unknown> {
     "avatar_url",
     "cover_url",
     "primary_cta_url",
-    "reservations_cta_url",
-    "vip_cta_url",
   ] as const) {
     if (urlKey in out && !isSafePublicUrl(out[urlKey] as string | null)) {
       throw new Error("URL inválida. Use http:// ou https://.");
@@ -511,8 +503,14 @@ export interface PublicBioPayload {
     ends_at: string | null;
     status: string | null;
   }[];
-  reservations: { available: boolean; cta_url: string | null } | null;
-  vip: { available: boolean; cta_url: string | null } | null;
+  /**
+   * Reservas/VIP: a Bio expõe apenas disponibilidade. A URL pública oficial
+   * vive nas rotas /:partnerSlug/reservas e /:partnerSlug/vip, cujo slug vem
+   * de `partners.slug` (base legada) e NÃO de `venues.slug` — por isso nenhuma
+   * URL é derivada nem duplicada aqui.
+   */
+  reservations: { available: boolean } | null;
+  vip: { available: boolean } | null;
   instagram_posts: { url: string }[];
 }
 
