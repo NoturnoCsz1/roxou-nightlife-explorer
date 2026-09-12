@@ -85,7 +85,7 @@ export default function AdminAdoptOrphanShortLink() {
     setLink(null);
     setResult(null);
     const { data, error } = await partnerSupabase
-      .from("short_links")
+      .from("short_links" as never)
       .select("*")
       .eq("slug", s)
       .maybeSingle();
@@ -98,7 +98,7 @@ export default function AdminAdoptOrphanShortLink() {
       setSearchError(`Nenhum link encontrado com o código "${s}".`);
       return;
     }
-    setLink(data as OrphanLink);
+    setLink(data as unknown as OrphanLink);
   }
 
   async function searchVenues() {
@@ -106,7 +106,7 @@ export default function AdminAdoptOrphanShortLink() {
     if (qv.length < 2) return;
     setSearchingVenues(true);
     const { data, error } = await partnerSupabase
-      .from("venues")
+      .from("venues" as never)
       .select("id, name, city")
       .ilike("name", `%${qv}%`)
       .order("name", { ascending: true })
@@ -116,7 +116,7 @@ export default function AdminAdoptOrphanShortLink() {
       setSearchError(`Busca de estabelecimentos: ${error.message}`);
       return;
     }
-    setVenues((data ?? []) as VenueOption[]);
+    setVenues((data ?? []) as unknown as VenueOption[]);
   }
 
   async function adopt() {
