@@ -1,9 +1,11 @@
 -- =====================================================================
 -- Roxou Bio — camada de apresentação do venue (Supabase OFICIAL foteitrhbfwbzzeanxve)
 -- REVISÃO FINAL (não executada). NÃO APLICAR NO LEGADO (bapdgykghciiyvlqdrqx).
--- Requer 0001: is_org_member / is_org_manager_or_owner / is_staff_or_admin /
--- is_admin_or_superadmin / venue_belongs_to_organization /
--- enforce_org_venue_consistency / touch_updated_at.
+-- Requer APENAS helpers já existentes no banco oficial:
+--   is_org_member(uuid) / is_org_manager_or_owner(uuid) /
+--   is_staff_or_admin() / is_admin_or_superadmin().
+-- Consistência org<->venue e updated_at são resolvidas por funções
+-- específicas da Bio criadas aqui (sem helper genérico global).
 --
 -- PRINCÍPIO: a Bio NÃO duplica nenhum módulo.
 --   identidade/endereço/logo/contatos ....... public.venues
@@ -87,12 +89,39 @@ CREATE POLICY "venue_bio_write_managers" ON public.venue_bio_profiles
 CREATE INDEX venue_bio_profiles_org_idx
   ON public.venue_bio_profiles (organization_id, venue_id);
 
+-- organization_id NUNCA é confiada ao cliente: é sempre derivada do venue.
+CREATE OR REPLACE FUNCTION public.venue_bio_derive_organization()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
+DECLARE _org uuid;
+BEGIN
+  SELECT v.organization_id INTO _org
+  FROM public.venues v WHERE v.id = NEW.venue_id;
+
+  IF _org IS NULL THEN
+    RAISE EXCEPTION 'Estabelecimento % não existe ou não possui organização.',
+      NEW.venue_id USING ERRCODE = '23503';
+  END IF;
+
+  NEW.organization_id := _org;
+  RETURN NEW;
+END;
+$$;
+
+-- updated_at específico da Bio (sem helper genérico global).
+CREATE OR REPLACE FUNCTION public.venue_bio_touch_updated_at()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+
 CREATE TRIGGER venue_bio_profiles_org_venue BEFORE INSERT OR UPDATE
   ON public.venue_bio_profiles FOR EACH ROW
-  EXECUTE FUNCTION public.enforce_org_venue_consistency();
+  EXECUTE FUNCTION public.venue_bio_derive_organization();
 CREATE TRIGGER venue_bio_profiles_touch BEFORE UPDATE
   ON public.venue_bio_profiles FOR EACH ROW
-  EXECUTE FUNCTION public.touch_updated_at();
+  EXECUTE FUNCTION public.venue_bio_touch_updated_at();
 
 -- published_at segue is_published (publicar => now(); despublicar => NULL).
 CREATE OR REPLACE FUNCTION public.venue_bio_sync_published_at()
