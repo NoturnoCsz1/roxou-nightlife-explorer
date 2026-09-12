@@ -102,23 +102,30 @@ describe("Roxou Bio oficial — links e página pública", () => {
 });
 
 describe("Roxou Bio oficial — fechamento do módulo", () => {
-  it("aceita as novas chaves de exibição e CTA dos módulos", () => {
+  it("aceita as novas chaves de exibição dos módulos", () => {
     expect(
       bio.buildBioPatch({
         show_address: false,
         show_hours: true,
-        vip_cta_url: "https://roxou.com.br/vip/cultura",
       }),
     ).toEqual({
       show_address: false,
       show_hours: true,
-      vip_cta_url: "https://roxou.com.br/vip/cultura",
     });
   });
 
-  it("rejeita CTA de reservas inválido", () => {
+  it("não aceita CTA próprio de reservas/VIP (fonte de verdade é a rota oficial)", () => {
+    expect(
+      bio.buildBioPatch({
+        show_reservations: true,
+        vip_cta_url: "https://exemplo.com",
+      } as never),
+    ).toEqual({ show_reservations: true });
+  });
+
+  it("rejeita URL insegura em CTA principal", () => {
     expect(() =>
-      bio.buildBioPatch({ reservations_cta_url: "javascript:alert(1)" }),
+      bio.buildBioPatch({ primary_cta_url: "javascript:alert(1)" }),
     ).toThrow();
   });
 
