@@ -310,7 +310,7 @@ export async function listBioCandidateLinks(
     .order("bio_position", { ascending: true })
     .order("created_at", { ascending: false })
     .limit(200);
-  if (error) throw error;
+  if (error) throw describeLinkError(error);
   return (data ?? []) as unknown as BioShortLink[];
 }
 
@@ -328,7 +328,7 @@ export async function setLinkOnBio(
         : { show_on_bio: false },
     )
     .eq("id", linkId);
-  if (error) throw error;
+  if (error) throw describeLinkError(error);
 }
 
 export async function reorderBioLinks(
@@ -491,7 +491,7 @@ export async function updateBioLink(
     .update(payload)
     .eq("id", linkId)
     .eq("venue_id", venueId);
-  if (error) throw error;
+  if (error) throw describeLinkError(error);
 }
 
 /** Remove o link da Bio sem apagar histórico de cliques do encurtador. */
@@ -504,7 +504,7 @@ export async function removeBioLink(
     .update({ show_on_bio: false, is_active: false })
     .eq("id", linkId)
     .eq("venue_id", venueId);
-  if (error) throw error;
+  if (error) throw describeLinkError(error);
 }
 
 /* ----------------------------------------------------------- página pública */
