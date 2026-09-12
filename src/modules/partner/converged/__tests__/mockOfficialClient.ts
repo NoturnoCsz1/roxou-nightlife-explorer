@@ -14,6 +14,7 @@ export interface RecordedQuery {
 
 export function createMockOfficialClient(result: unknown = []) {
   const calls: RecordedQuery[] = [];
+  const state: { nextMaybeSingle?: unknown } = {};
 
   function builder(table: string) {
     const record: RecordedQuery = { table, filters: {} };
@@ -27,7 +28,14 @@ export function createMockOfficialClient(result: unknown = []) {
       record.filters[col] = val;
       return chain;
     });
-    chain.maybeSingle = vi.fn(async () => ({ data: result, error: null }));
+    chain.maybeSingle = vi.fn(async () => {
+      if (state.nextMaybeSingle !== undefined) {
+        const data = state.nextMaybeSingle;
+        state.nextMaybeSingle = undefined;
+        return { data, error: null };
+      }
+      return { data: result, error: null };
+    });
     chain.single = vi.fn(async () => ({ data: result, error: null }));
     chain.delete = vi.fn(() => chain);
     // await direto na query (PostgrestBuilder é thenable)
@@ -44,5 +52,11 @@ export function createMockOfficialClient(result: unknown = []) {
     }),
   };
 
-  return { client, calls };
+  return {
+    client,
+    calls,
+    set nextMaybeSingle(value: unknown) {
+      state.nextMaybeSingle = value;
+    },
+  };
 }

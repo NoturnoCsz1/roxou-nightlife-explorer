@@ -205,3 +205,43 @@ describe("Roxou Bio — criação de link: conflito de código", () => {
     expect(bio.describeLinkError({ code: "42501" }).message).toContain("permissão");
   });
 });
+
+describe("Roxou Bio — propriedade de short link existente", () => {
+  it("não adota link órfão (sem created_by e sem venue_id)", async () => {
+    mock.nextMaybeSingle = { id: "l1", venue_id: null, created_by: null };
+    await expect(
+      bio.createBioLink(
+        { title: "Expo", slug: "expo2026", target_url: "https://ex.com" },
+        VENUE,
+        "org-1",
+        USER,
+        0,
+      ),
+    ).rejects.toThrow(/sem dono registrado/);
+  });
+
+  it("recusa link de outro dono", async () => {
+    mock.nextMaybeSingle = { id: "l2", venue_id: "outro-venue", created_by: "outro" };
+    await expect(
+      bio.createBioLink(
+        { title: "Expo", slug: "expo2026", target_url: "https://ex.com" },
+        VENUE,
+        "org-1",
+        USER,
+        0,
+      ),
+    ).rejects.toThrow(/já está em uso/);
+  });
+
+  it("reaproveita link já vinculado ao mesmo estabelecimento", async () => {
+    mock.nextMaybeSingle = { id: "l3", venue_id: VENUE, created_by: "outro" };
+    await bio.createBioLink(
+      { title: "Expo", slug: "expo2026", target_url: "https://ex.com" },
+      VENUE,
+      "org-1",
+      USER,
+      0,
+    );
+    expect(mock.calls.at(-1)?.filters).toMatchObject({ id: "l3" });
+  });
+});

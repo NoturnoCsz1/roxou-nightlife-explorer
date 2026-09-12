@@ -394,12 +394,29 @@ export async function createBioLink(
   if (lookupError) throw describeLinkError(lookupError);
 
   if (existing) {
-    const owned =
-      (existing as { created_by: string | null }).created_by === userId;
-    const free =
-      !(existing as { venue_id: string | null }).venue_id ||
-      (existing as { venue_id: string | null }).venue_id === venueId;
-    if (!owned || !free) {
+    const row = existing as {
+      id: string;
+      venue_id: string | null;
+      created_by: string | null;
+    };
+    // Regra de propriedade IDÊNTICA à do módulo oficial de Links:
+    // um short link pertence a quem consta em `created_by` (e, quando já
+    // vinculado, ao estabelecimento em `venue_id`). Links antigos sem
+    // `created_by` e sem `venue_id` são de propriedade INDETERMINADA e nunca
+    // são adotados automaticamente.
+    const ownedByVenue = !!row.venue_id && row.venue_id === venueId;
+    const ownedByUser = !!row.created_by && row.created_by === userId;
+    const free = !row.venue_id || row.venue_id === venueId;
+    const orphan = !row.created_by && !row.venue_id;
+
+    if (orphan) {
+      throw new Error(
+        `O código "${slug}" já existe no encurtador, mas sem dono registrado. ` +
+          `Por segurança ele não é adotado automaticamente: peça à equipe Roxou ` +
+          `para vincular esse código ao seu estabelecimento, ou use outro código.`,
+      );
+    }
+    if (!(ownedByVenue || (ownedByUser && free))) {
       throw new Error(
         `O código "${slug}" já está em uso no encurtador. Escolha outro código.`,
       );
