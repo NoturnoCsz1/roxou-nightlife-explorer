@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   // Fetch published events (janela: passados últimos 90d + todos futuros)
   const { data: events } = await supabase
     .from("events")
-    .select("slug, created_at, updated_at, date_time")
+    .select("slug, created_at, date_time")
     .eq("status", "published")
     .gte("date_time", ninetyDaysAgo)
     .order("date_time", { ascending: false });
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
 
   // Event pages
   for (const event of events || []) {
-    const lastmod = (event.updated_at || event.created_at || today).split("T")[0];
+    const lastmod = (event.created_at || today).split("T")[0];
     xml += `  <url>
     <loc>${BASE_URL}/evento/${event.slug}</loc>
     <lastmod>${lastmod}</lastmod>
