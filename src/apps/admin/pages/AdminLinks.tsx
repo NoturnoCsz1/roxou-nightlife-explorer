@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import AdminAdoptOrphanShortLink from "../components/AdminAdoptOrphanShortLink";
 import QRCode from "qrcode";
 
 const RESERVED = new Set([
@@ -438,6 +439,9 @@ export default function AdminLinks() {
           </div>
         ))}
       </section>
+
+      {/* Adoção de links órfãos (banco oficial) — somente admin/superadmin */}
+      <AdminAdoptOrphanShortLink />
 
       {/* Search */}
       <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
