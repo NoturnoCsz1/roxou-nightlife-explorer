@@ -8,6 +8,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { PUBLIC_PARTNER_COLUMNS } from "../publicPartnerColumns";
 
 export type PublicVenueRow = Tables<"partners">;
 
@@ -17,11 +18,11 @@ export async function fetchActiveVenueBySlug(
 ): Promise<PublicVenueRow | null> {
   const { data } = await supabase
     .from("partners")
-    .select("*")
+    .select(PUBLIC_PARTNER_COLUMNS)
     .eq("slug", slug)
     .eq("active", true)
     .single();
-  return data ?? null;
+  return (data as unknown as PublicVenueRow) ?? null;
 }
 
 /** Identificação mínima do parceiro ativo — usado por LocalEventos. */
@@ -43,10 +44,10 @@ export async function fetchVenueById(
 ): Promise<PublicVenueRow | null> {
   const { data } = await supabase
     .from("partners")
-    .select("*")
+    .select(PUBLIC_PARTNER_COLUMNS)
     .eq("id", id)
     .single();
-  return data ?? null;
+  return (data as unknown as PublicVenueRow) ?? null;
 }
 
 // ────────────────────────────────────────────────────────────────────

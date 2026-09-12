@@ -19,6 +19,8 @@ import SpotlightBadge from "@/components/partners/SpotlightBadge";
 import PartnerInstagramFeed from "@/components/v3/local/PartnerInstagramFeed";
 import { buildPartnerRichDescription } from "@/lib/partnerDescription";
 import { usePartnerAwards, formatAwardPeriod } from "@/hooks/usePartnerAwards";
+import { PUBLIC_PARTNER_COLUMNS } from "@modules/discovery/venues/publicPartnerColumns";
+import type { Tables } from "@/integrations/supabase/types";
 
 const TOP_WEEK_THRESHOLD = 100;
 
@@ -79,8 +81,13 @@ export default function V3LocalDetail() {
   const { data: partner } = useQuery({
     queryKey: ["v3-partner", slug],
     queryFn: async () => {
-      const { data } = await supabase.from("partners").select("*").eq("slug", slug!).eq("active", true).maybeSingle();
-      return data;
+      const { data } = await supabase
+        .from("partners")
+        .select(PUBLIC_PARTNER_COLUMNS)
+        .eq("slug", slug!)
+        .eq("active", true)
+        .maybeSingle();
+      return data as unknown as Tables<"partners"> | null;
     },
     enabled: !!slug,
   });
