@@ -113,6 +113,15 @@ const PartnerExcursoesConfiguracoesPage = lazy(() => import("./pages/PartnerExcu
 const PartnerExcursaoOperacaoPage = lazy(() => import("./pages/PartnerExcursaoOperacaoPage"));
 const PartnerTransportesHubPage = lazy(() => import("./pages/PartnerTransportesHubPage"));
 const PartnerBioHubPage = lazy(() => import("./pages/PartnerBioHubPage"));
+const PublicVenueBioPage = lazy(() => import("./pages/PublicVenueBioPage"));
+
+/**
+ * Domínio público da Roxou Bio. Nada é assumido no DNS/Nginx: o código só
+ * habilita a rota raiz por slug quando o host já for parceiro.click.
+ */
+const IS_BIO_DOMAIN =
+  typeof window !== "undefined" &&
+  /(^|\.)parceiro\.click$/i.test(window.location.hostname);
 const PartnerPromoterCentralPage = lazy(() => import("./pages/PartnerPromoterCentralPage"));
 
 const L = (el: React.ReactNode) => <Suspense fallback={<Fallback />}>{el}</Suspense>;
@@ -233,7 +242,7 @@ const PartnerApp = () => (
             <Route path="transportes/configuracoes" element={L(<PartnerExcursoesConfiguracoesPage />)} />
             <Route path="crm" element={L(<PartnerCrmPage />)} />
             <Route path="bio" element={L(<PartnerBioHubPage />)} />
-            <Route path="bio/:tab" element={L(<PartnerBioHubPage />)} />
+            <Route path="bio/:tab" element={<Navigate to="/bio" replace />} />
 
             <Route path="analytics" element={L(<PartnerAnalyticsPage />)} />
             <Route path="validator" element={C(<PartnerValidatorPage />)} />
@@ -245,6 +254,14 @@ const PartnerApp = () => (
             <Route path="checkin/:publicToken" element={C(<PartnerVipCheckinPage />)} />
           </Route>
 
+
+          {/* Roxou Bio pública — renderiza só o JSON da RPC public_get_venue_bio.
+              URL conceitual: parceiro.click/{slug}. Enquanto o DNS não estiver
+              ativo, /p/{slug} responde na build atual. */}
+          <Route path="/p/:slug" element={L(<PublicVenueBioPage />)} />
+          {IS_BIO_DOMAIN ? (
+            <Route path="/:slug" element={L(<PublicVenueBioPage />)} />
+          ) : null}
 
           {/* Rotas públicas (sub-domínio parceiro também responde) */}
           <Route path="/:partnerSlug/reservas" element={L(<PublicReservation />)} />

@@ -19,7 +19,7 @@ export function createMockOfficialClient(result: unknown = []) {
     const record: RecordedQuery = { table, filters: {} };
     calls.push(record);
     const chain: Record<string, unknown> = {};
-    const passthrough = ["select", "order", "limit", "or", "gte", "lte"];
+    const passthrough = ["select", "order", "limit", "or", "gte", "lte", "update", "insert", "is", "in"];
     for (const m of passthrough) {
       chain[m] = vi.fn(() => chain);
     }
