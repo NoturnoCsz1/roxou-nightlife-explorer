@@ -79,7 +79,13 @@ export default function V3LocalDetail() {
   const { data: partner } = useQuery({
     queryKey: ["v3-partner", slug],
     queryFn: async () => {
-      const { data } = await supabase.from("partners").select("*").eq("slug", slug!).eq("active", true).maybeSingle();
+      const { data } = await supabase
+        .from("partners")
+        .select(PUBLIC_PARTNER_COLUMNS)
+        .eq("slug", slug!)
+        .eq("active", true)
+        .maybeSingle();
+      return data as unknown as Record<string, any> | null;
       return data;
     },
     enabled: !!slug,
