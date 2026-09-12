@@ -381,7 +381,49 @@ export async function createBioLink(
     throw new Error("Informe uma URL de destino válida (https://...).");
   }
 
-  const { data, error } = await officialClient()
+  const client = officialClient();
+
+  // O encurtador oficial exige slug único. Se o código já existir e for um link
+  // do próprio parceiro ainda sem estabelecimento, ele é REAPROVEITADO (nunca
+  // duplicado) — preservando cliques e histórico de roxou.click/{slug}.
+  const { data: existing, error: lookupError } = await client
+    .from(SHORT_LINKS_TABLE)
+    .select("id, venue_id, created_by")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (lookupError) throw describeLinkError(lookupError);
+
+  if (existing) {
+    const owned =
+      (existing as { created_by: string | null }).created_by === userId;
+    const free =
+      !(existing as { venue_id: string | null }).venue_id ||
+      (existing as { venue_id: string | null }).venue_id === venueId;
+    if (!owned || !free) {
+      throw new Error(
+        `O código "${slug}" já está em uso no encurtador. Escolha outro código.`,
+      );
+    }
+    const { data: adopted, error: adoptError } = await client
+      .from(SHORT_LINKS_TABLE)
+      .update({
+        title: input.title?.trim() || null,
+        target_url: target,
+        is_active: true,
+        venue_id: venueId,
+        organization_id: organizationId,
+        show_on_bio: true,
+        bio_position: position,
+        bio_icon: input.bio_icon ?? null,
+      })
+      .eq("id", (existing as { id: string }).id)
+      .select(LINK_SELECT)
+      .single();
+    if (adoptError) throw describeLinkError(adoptError);
+    return adopted as unknown as BioShortLink;
+  }
+
+  const { data, error } = await client
     .from(SHORT_LINKS_TABLE)
     .insert({
       title: input.title?.trim() || null,
@@ -397,8 +439,33 @@ export async function createBioLink(
     })
     .select(LINK_SELECT)
     .single();
-  if (error) throw error;
+  if (error) throw describeLinkError(error, slug);
   return data as unknown as BioShortLink;
+}
+
+/**
+ * Converte o erro cru do banco em mensagem compreensível, mantendo o erro
+ * técnico no console para diagnóstico.
+ */
+export function describeLinkError(error: unknown, slug?: string): Error {
+  const e = error as { code?: string; message?: string; details?: string };
+  console.error("[Bio] short_links:", e?.code, e?.message, e?.details);
+  if (e?.code === "23505") {
+    return new Error(
+      slug
+        ? `O código "${slug}" já está em uso no encurtador. Escolha outro código.`
+        : "Esse código já está em uso no encurtador. Escolha outro código.",
+    );
+  }
+  if (e?.code === "42501") {
+    return new Error(
+      "Sua conta não tem permissão para criar links neste estabelecimento.",
+    );
+  }
+  if (e?.code === "23514") {
+    return new Error("Algum campo do link não é aceito. Revise ícone e destino.");
+  }
+  return new Error(e?.message || "Erro inesperado ao salvar o link.");
 }
 
 export async function updateBioLink(
